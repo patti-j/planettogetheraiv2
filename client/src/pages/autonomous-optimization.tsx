@@ -322,7 +322,7 @@ export default function AutonomousOptimizationPage() {
             <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl shadow-lg">
-                  <Bot className="w-8 h-8 text-white" />
+                  <Sparkles className="w-8 h-8 text-white" />
                 </div>
                 <div>
                   <h1 className="text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -585,7 +585,7 @@ export default function AutonomousOptimizationPage() {
                         
                         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                           <div className="flex items-start gap-2">
-                            <Bot className="w-4 h-4 text-blue-600 mt-0.5" />
+                            <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
                             <div className="text-sm">
                               <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">AI Recommendation</p>
                               <p className="text-blue-700 dark:text-blue-300">
@@ -807,7 +807,7 @@ export default function AutonomousOptimizationPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Bot className="w-5 h-5" />
+                    <Sparkles className="w-5 h-5" />
                     AI Insights
                   </CardTitle>
                 </CardHeader>
@@ -1017,7 +1017,7 @@ export default function AutonomousOptimizationPage() {
                                 <TabsContent value="algorithms" className="space-y-4 mt-4">
                                   <div className="space-y-4">
                                     <div className="flex items-center gap-2 mb-4">
-                                      <Bot className="w-4 h-4 text-blue-600" />
+                                      <Sparkles className="w-4 h-4 text-blue-600" />
                                       <Label className="text-sm font-medium">Planning Process Algorithms</Label>
                                     </div>
                                     
@@ -1208,7 +1208,7 @@ export default function AutonomousOptimizationPage() {
 
                                     <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
                                       <div className="flex items-start gap-2">
-                                        <Bot className="w-4 h-4 text-blue-600 mt-0.5" />
+                                        <Sparkles className="w-4 h-4 text-blue-600 mt-0.5" />
                                         <div className="text-sm">
                                           <p className="font-medium text-blue-900 dark:text-blue-100 mb-1">Algorithm Selection Note</p>
                                           <p className="text-blue-700 dark:text-blue-300">

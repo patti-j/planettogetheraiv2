@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Bot, Clock, Trash2 } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Clock, Trash2 } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -437,7 +437,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="flex items-center gap-3">
               <div className="flex-shrink-0">
                 <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
-                  <Bot className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
+                  <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
                 </div>
               </div>
               <div className="flex-1">
@@ -469,7 +469,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
                 <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
-                  <Bot className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                  <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0 pr-6">
@@ -921,7 +921,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
-                  <Bot className="w-4 h-4 text-white" />
+                  <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 Max AI Settings
               </h2>

@@ -13,7 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { 
-  Presentation, Plus, FileText, Users, TrendingUp, Bot, 
+  Presentation, Plus, FileText, Users, TrendingUp, 
   Library, Settings, Play, Edit, Share, Trash2, Upload,
   BarChart3, Target, Calendar, Clock, Maximize2, Minimize2,
   ChevronLeft, ChevronRight, X, SkipBack, SkipForward,
@@ -668,7 +668,7 @@ Create presentations that users will find exciting and that effectively demonstr
             <Dialog open={aiGenerateDialogOpen} onOpenChange={setAiGenerateDialogOpen}>
               <DialogTrigger asChild>
                 <Button className="bg-gradient-to-r from-purple-500 to-pink-600 text-white">
-                  <Bot className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Generate with AI
                 </Button>
               </DialogTrigger>
@@ -740,7 +740,7 @@ Create presentations that users will find exciting and that effectively demonstr
               onClick={() => setAiGenerateDialogOpen(true)}
             >
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                <Bot className="w-8 h-8 text-purple-600" />
+                <Sparkles className="w-8 h-8 text-purple-600" />
               </div>
               <h3 className="font-semibold text-purple-800 mb-2">AI Generate</h3>
               <p className="text-sm text-purple-700 mb-2">Instant AI-created presentations from your description</p>
@@ -1662,7 +1662,7 @@ Create presentations that users will find exciting and that effectively demonstr
                     className="w-full bg-gray-800 border-gray-700 text-white hover:bg-gray-700 justify-start text-xs py-1"
                     onClick={() => setPresentationViewerOpen(false)}
                   >
-                    <Bot className="w-3 h-3 mr-2" />
+                    <Sparkles className="w-3 h-3 mr-2" />
                     Max AI Demo
                   </Button>
                 </div>
@@ -1697,7 +1697,7 @@ Create presentations that users will find exciting and that effectively demonstr
               <div className="p-3 border-t border-gray-800">
                 <div className="bg-purple-900 p-2 rounded border border-purple-700">
                   <div className="flex items-center space-x-2 mb-1">
-                    <Bot className="w-3 h-3 text-purple-300" />
+                    <Sparkles className="w-3 h-3 text-purple-300" />
                     <span className="text-xs font-medium text-purple-300">Max AI Ready</span>
                   </div>
                   <p className="text-xs text-purple-400">Use Max for presentation control and live demos</p>

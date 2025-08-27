@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Send, Bot, Loader2, ChevronDown, History, MessageSquare, User } from 'lucide-react';
+import { Send, Sparkles, Loader2, ChevronDown, History, MessageSquare, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useMutation } from '@tanstack/react-query';
@@ -194,7 +194,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
 
   return (
     <div className="relative flex items-center gap-2" ref={dropdownRef}>
-      <Bot className="h-4 w-4 text-muted-foreground" />
+      <Sparkles className="h-4 w-4 text-muted-foreground" />
       <form onSubmit={handleSubmit} className="relative flex items-center gap-1">
         <div className="relative">
           <Input
@@ -240,7 +240,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
                           {message.role === 'user' ? (
                             <User className="h-3 w-3 text-blue-500 flex-shrink-0 mt-0.5" />
                           ) : (
-                            <Bot className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                            <Sparkles className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">

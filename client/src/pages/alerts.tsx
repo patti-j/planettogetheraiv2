@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Bot, Shield, Zap } from "lucide-react";
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Sparkles, Shield, Zap } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -368,7 +368,7 @@ export default function AlertsPage() {
           <TabsTrigger value="resolved" className="text-xs sm:text-sm">Resolved</TabsTrigger>
           <TabsTrigger value="all" className="text-xs sm:text-sm">All</TabsTrigger>
           <TabsTrigger value="ai-settings" className="flex items-center gap-1 text-xs sm:text-sm">
-            <Bot className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
             <span className="hidden sm:inline">AI Settings</span>
             <span className="sm:hidden">AI</span>
           </TabsTrigger>
@@ -491,7 +491,7 @@ export default function AlertsPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-purple-500" />
+                  <Sparkles className="h-5 w-5 text-purple-500" />
                   AI Alert Generation
                 </CardTitle>
                 <CardDescription>

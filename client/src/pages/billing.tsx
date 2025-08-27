@@ -72,7 +72,7 @@ export default function Billing() {
       limit: 5000,
       unit: "requests",
       overageRate: "$0.10/request",
-      icon: <Bot className="w-5 h-5" />,
+      icon: <Sparkles className="w-5 h-5" />,
       trend: "up",
       trendValue: 8.2
     },

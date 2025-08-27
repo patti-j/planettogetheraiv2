@@ -467,7 +467,7 @@ export default function MasterProductionSchedulePage() {
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-sm"
             size="sm"
           >
-            <Bot className="h-4 w-4 mr-2" />
+            <Sparkles className="h-4 w-4 mr-2" />
             {optimizeMPSMutation.isPending ? 'Optimizing...' : 'AI Optimize'}
           </Button>
           <div className="flex gap-2">
@@ -553,7 +553,7 @@ export default function MasterProductionSchedulePage() {
                   <p className="text-xs md:text-sm font-medium text-muted-foreground">AI Confidence</p>
                   <p className="text-lg md:text-2xl font-bold">{summaryMetrics.averageAIConfidence}%</p>
                 </div>
-                <Bot className="h-6 w-6 md:h-8 md:w-8 text-pink-500" />
+                <Sparkles className="h-6 w-6 md:h-8 md:w-8 text-pink-500" />
               </div>
             </CardContent>
           </Card>
@@ -982,7 +982,7 @@ export default function MasterProductionSchedulePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-purple-500" />
+                <Sparkles className="h-5 w-5 text-purple-500" />
                 AI Analysis & Recommendations
               </CardTitle>
               <CardDescription>

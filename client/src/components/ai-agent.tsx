@@ -9,7 +9,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Mic, MicOff, Send, Bot, User, Volume2, Settings, Paperclip, X, FileText, Image, File, Edit2, Search } from "lucide-react";
+import { Mic, MicOff, Send, Sparkles, User, Volume2, Settings, Paperclip, X, FileText, Image, File, Edit2, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useAITheme } from "@/hooks/use-ai-theme";
 import { apiRequest } from "@/lib/queryClient";
@@ -739,7 +739,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
         <CardHeader className="pb-4 px-4 sm:px-6">
           {/* Single Clean Header with Search */}
           <div className="flex items-center gap-4">
-            <Bot className="w-6 h-6 text-gray-600 flex-shrink-0" />
+            <Sparkles className="w-6 h-6 text-gray-600 flex-shrink-0" />
             <form onSubmit={handleSearchSubmit} className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
@@ -786,7 +786,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                   }`}>
                     {message.type === "user" ? 
                       <User className="w-4 h-4 text-white flex-shrink-0" /> : 
-                      <Bot className="w-4 h-4 text-white flex-shrink-0" />
+                      <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
                     }
                   </div>
                   
@@ -849,7 +849,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
               <div className="flex gap-3 justify-start">
                 <div className="flex gap-2 max-w-[80%]">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center overflow-hidden ${aiTheme.gradient}`}>
-                    <Bot className="w-4 h-4 text-white flex-shrink-0" />
+                    <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
                   </div>
                   <div className="rounded-lg p-3 bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white">
                     <p className="text-sm">Processing your command...</p>

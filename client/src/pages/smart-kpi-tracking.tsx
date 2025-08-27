@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
   Target, TrendingUp, AlertTriangle, Calendar, Users, 
-  CheckCircle2, XCircle, Clock, BarChart3, Bot,
+  CheckCircle2, XCircle, Clock, BarChart3,
   Trophy, Zap, MessageSquare, Plus, Settings,
   Award, Flame, Star, ArrowUp, ArrowDown, Minus,
   Bell, UserCheck, Activity, RefreshCw, Eye,
@@ -1246,7 +1246,7 @@ export default function SmartKpiTrackingPage() {
                         Teams with daily morning huddles show 15% better KPI performance
                       </p>
                       <Badge className="mt-2" variant="outline">
-                        <Bot className="h-3 w-3 mr-1" />
+                        <Sparkles className="h-3 w-3 mr-1" />
                         Insight
                       </Badge>
                     </div>
@@ -1256,7 +1256,7 @@ export default function SmartKpiTrackingPage() {
                         Regular PM reduces downtime by 40% and improves OEE by 8%
                       </p>
                       <Badge className="mt-2" variant="outline">
-                        <Bot className="h-3 w-3 mr-1" />
+                        <Sparkles className="h-3 w-3 mr-1" />
                         Proven
                       </Badge>
                     </div>

@@ -182,7 +182,7 @@ export function DesignStudio({ open, onOpenChange }: DesignStudioProps) {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-blue-600" />
+                  <Sparkles className="h-5 w-5 text-blue-600" />
                   AI Design Assistant
                 </CardTitle>
                 <CardDescription>

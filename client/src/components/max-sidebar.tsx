@@ -1061,7 +1061,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         style={{ touchAction: 'none' }}
       >
         <div className="flex items-center gap-2">
-          <Bot className="h-5 w-5 text-white" />
+          <Sparkles className="h-5 w-5 text-white" />
           <h2 className="text-white text-sm font-medium">Max</h2>
         </div>
         <div className="flex gap-1">
@@ -1120,7 +1120,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                     className="h-6 w-6 p-0 text-white hover:bg-white/20"
                     title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
                   >
-                    {currentFullscreenView === 'main' ? <Bot className="h-3 w-3 text-white" /> : <MessageSquare className="h-3 w-3" />}
+                    {currentFullscreenView === 'main' ? <Sparkles className="h-3 w-3 text-white" /> : <MessageSquare className="h-3 w-3" />}
                   </Button>
                   <Button
                     variant="ghost"
@@ -1197,7 +1197,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                     {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
                     {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                     {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                    {insight.type === 'learning' && <Bot className="h-3 w-3 text-purple-500" />}
+                    {insight.type === 'learning' && <Sparkles className="h-3 w-3 text-purple-500" />}
                     <span className="font-medium">{insight.title}</span>
                   </div>
                 </div>
@@ -1268,7 +1268,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         <div className="space-y-3">
           {messages.length === 0 && (
             <div className="text-center text-gray-500 text-sm py-8">
-              <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+              <Sparkles className="h-8 w-8 mx-auto mb-2 text-gray-400" />
               <p>Hi! I'm Max, your AI planning assistant.</p>
               <p className="text-xs mt-1">I'm learning from your workflow to provide better suggestions.</p>
             </div>

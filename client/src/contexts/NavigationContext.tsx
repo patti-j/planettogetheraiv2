@@ -59,9 +59,9 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/production-planning': { label: 'Production Planning', icon: 'Target' },
   '/shift-management': { label: 'Shift Management', icon: 'Clock' },
   '/optimization-studio': { label: 'Optimization Studio', icon: 'Sparkles' },
-  '/autonomous-optimization': { label: 'Autonomous Optimization', icon: 'Bot' },
-  '/demand-forecasting': { label: 'Demand Forecasting', icon: 'Bot' },
-  '/demand-planning': { label: 'Demand Planning', icon: 'Bot' },
+  '/autonomous-optimization': { label: 'Autonomous Optimization', icon: 'Sparkles' },
+  '/demand-forecasting': { label: 'Demand Forecasting', icon: 'Sparkles' },
+  '/demand-planning': { label: 'Demand Planning', icon: 'Sparkles' },
   '/inventory-optimization': { label: 'Inventory Optimization', icon: 'Package' },
   '/shop-floor': { label: 'Shop Floor', icon: 'Factory' },
   '/operator-dashboard': { label: 'Operator Dashboard', icon: 'Settings' },
@@ -102,11 +102,11 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/smart-kpi-tracking': { label: 'Smart KPI Tracking', icon: 'TrendingUp' },
   '/onboarding-assistant': { label: 'Onboarding Assistant', icon: 'GraduationCap' },
   '/alerts': { label: 'Alerts & Notifications', icon: 'AlertTriangle' },
-  '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Bot' },
-  '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Bot' },
+  '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Sparkles' },
+  '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Sparkles' },
   '/production-scheduler-js': { label: 'Production Scheduler JS', icon: 'Calendar' },
   '/production-schedule-simple': { label: 'Production Schedule Simple', icon: 'Calendar' },
-  '#max': { label: 'Max AI Assistant', icon: 'Bot' }
+  '#max': { label: 'Max AI Assistant', icon: 'Sparkles' }
 };
 
 export function NavigationProvider({ children }: { children: ReactNode }) {

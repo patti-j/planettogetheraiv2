@@ -290,7 +290,7 @@ export default function AIDesignStudio({ open, onOpenChange }: AIDesignStudioPro
   const renderProcessingStep = () => (
     <div className="flex flex-col items-center justify-center py-12 space-y-4">
       <div className="relative">
-        <Bot className="w-16 h-16 text-purple-600" />
+        <Sparkles className="w-16 h-16 text-purple-600" />
         <Sparkles className="w-6 h-6 absolute -top-1 -right-1 text-yellow-500 animate-pulse" />
       </div>
       <div className="text-center space-y-2">
@@ -390,7 +390,7 @@ export default function AIDesignStudio({ open, onOpenChange }: AIDesignStudioPro
           <DialogTitle className="flex items-center gap-3">
             <div className="flex items-center gap-2">
               <div className="relative">
-                <Bot className="w-6 h-6 text-purple-600" />
+                <Sparkles className="w-6 h-6 text-purple-600" />
                 <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-400" />
               </div>
               <span className="bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 bg-clip-text text-transparent">

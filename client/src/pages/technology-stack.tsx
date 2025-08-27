@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   Server, Database, Cloud, Code, Cpu, Monitor, Globe, 
   Shield, Zap, BarChart3, Layers, Sparkles, Settings,
-  CheckCircle, ArrowRight, Bot, FileText, Gauge
+  CheckCircle, ArrowRight, FileText, Gauge
 } from "lucide-react";
 
 const TechnologyStack = () => {
@@ -96,7 +96,7 @@ const TechnologyStack = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <Bot className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+            <Sparkles className="h-8 w-8 mx-auto mb-2 text-purple-600" />
             <div className="text-2xl font-bold">GPT-4o</div>
             <div className="text-sm text-muted-foreground">AI Integration</div>
           </CardContent>

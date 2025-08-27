@@ -269,7 +269,7 @@ export default function AgentHistory() {
         ) : filteredActions.length === 0 ? (
           <Card>
             <CardContent className="py-8 text-center">
-              <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <Sparkles className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No Actions Found</h3>
               <p className="text-muted-foreground">
                 {searchTerm || filterAgent !== 'all' || filterAction !== 'all' || filterSuccess !== 'all'

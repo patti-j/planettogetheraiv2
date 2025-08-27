@@ -83,7 +83,7 @@ const MarketingHome: React.FC = () => {
 
   const features = [
     {
-      icon: <Bot className="w-6 h-6" />,
+      icon: <Sparkles className="w-6 h-6" />,
       title: "AI-Powered Intelligence",
       description: "Advanced AI assistant Max provides real-time insights, predictive analytics, and intelligent recommendations for optimal production planning.",
       highlight: true

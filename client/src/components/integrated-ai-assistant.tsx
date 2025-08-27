@@ -626,7 +626,7 @@ export default function IntegratedAIAssistant() {
                       {insight.type === 'suggestion' && <Lightbulb className="h-4 w-4 text-yellow-500" />}
                       {insight.type === 'warning' && <AlertTriangle className="h-4 w-4 text-orange-500" />}
                       {insight.type === 'optimization' && <TrendingUp className="h-4 w-4 text-green-500" />}
-                      {insight.type === 'learning' && <Bot className="h-4 w-4 text-purple-500" />}
+                      {insight.type === 'learning' && <Sparkles className="h-4 w-4 text-purple-500" />}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-medium text-gray-900">{insight.title}</p>
@@ -644,7 +644,7 @@ export default function IntegratedAIAssistant() {
           onClick={() => setIsOpen(true)}
           className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
         >
-          <Bot className="h-6 w-6 text-white" />
+          <Sparkles className="h-6 w-6 text-white" />
         </Button>
       </div>
     );
@@ -671,7 +671,7 @@ export default function IntegratedAIAssistant() {
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-white" />
+              <Sparkles className="h-5 w-5 text-white" />
               <CardTitle className="text-white text-sm">Max</CardTitle>
               <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
                 {user?.roles?.[0]?.name || 'Online'}
@@ -808,7 +808,7 @@ export default function IntegratedAIAssistant() {
                   {/* Memory Section */}
                   <div>
                     <h4 className="text-xs font-medium text-gray-600 mb-2 flex items-center gap-1">
-                      <Bot className="h-3 w-3" />
+                      <Sparkles className="h-3 w-3" />
                       What Max Remembers ({memoryData.length})
                     </h4>
                     <div className="space-y-2 max-h-32 overflow-y-auto">
@@ -939,7 +939,7 @@ export default function IntegratedAIAssistant() {
                         {insight.type === 'suggestion' && <Lightbulb className="h-3 w-3 text-yellow-500" />}
                         {insight.type === 'warning' && <AlertTriangle className="h-3 w-3 text-orange-500" />}
                         {insight.type === 'optimization' && <TrendingUp className="h-3 w-3 text-green-500" />}
-                        {insight.type === 'learning' && <Bot className="h-3 w-3 text-purple-500" />}
+                        {insight.type === 'learning' && <Sparkles className="h-3 w-3 text-purple-500" />}
                         <span className="font-medium">{insight.title}</span>
                       </div>
                       <p className="text-gray-600">{insight.message}</p>
@@ -958,7 +958,7 @@ export default function IntegratedAIAssistant() {
               <div className="space-y-3">
                 {messages.length === 0 && (
                   <div className="text-center text-gray-500 text-sm py-8">
-                    <Bot className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                    <Sparkles className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                     <p>Hi! I'm Max, your AI planning assistant.</p>
                     <p className="text-xs mt-1">I'm learning from your workflow to provide better suggestions.</p>
                   </div>

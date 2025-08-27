@@ -1987,7 +1987,7 @@ export default function MobileHomePage() {
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                  <Bot className="w-4 h-4 text-white flex-shrink-0" />
+                  <Sparkles className="w-4 h-4 text-white flex-shrink-0" />
                 </div>
                 
                 {/* Input Box in Header */}
@@ -2189,7 +2189,7 @@ export default function MobileHomePage() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Bot className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                  <Sparkles className="w-12 h-12 mx-auto mb-2 opacity-50" />
                   <p className="text-sm">Max is ready to help!</p>
                 </div>
               )}

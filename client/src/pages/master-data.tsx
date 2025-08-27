@@ -433,7 +433,7 @@ function EditableDataTable({
             onClick={onShowAiAssistant}
             className="shrink-0"
           >
-            <Bot className="h-4 w-4 sm:mr-2" />
+            <Sparkles className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline">AI Help</span>
           </Button>
         </div>
@@ -833,7 +833,7 @@ function HierarchicalDataTable({
             size="sm"
             className="gap-2"
           >
-            <Bot className="h-4 w-4" />
+            <Sparkles className="h-4 w-4" />
             AI Assistant
           </Button>
         )}
@@ -1384,7 +1384,7 @@ export default function MasterDataPage() {
             size="sm"
             className="flex-1 sm:flex-initial"
           >
-            <Bot className="h-4 w-4 sm:mr-2" />
+            <Sparkles className="h-4 w-4 sm:mr-2" />
             <span className="hidden sm:inline ml-2">AI Assistant</span>
             <span className="sm:hidden ml-1">AI</span>
           </Button>
@@ -1451,7 +1451,7 @@ export default function MasterDataPage() {
         <DialogContent className="w-[95vw] max-w-4xl max-h-[85vh] overflow-y-auto mx-2 sm:mx-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5" />
+              <Sparkles className="h-5 w-5" />
               AI Master Data Assistant
             </DialogTitle>
             <DialogDescription>
@@ -1493,7 +1493,7 @@ export default function MasterDataPage() {
                 size="sm"
                 className="text-xs sm:text-sm"
               >
-                <Bot className="h-4 w-4 mr-1 sm:mr-2" />
+                <Sparkles className="h-4 w-4 mr-1 sm:mr-2" />
                 Improve
               </Button>
               <Button 

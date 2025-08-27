@@ -52,7 +52,7 @@ export default function WhatsComing() {
       {
         title: "ML Demand Planning",
         description: "Machine learning powered demand forecasting and planning with predictive analytics",
-        icon: <Bot className="h-6 w-6" />,
+        icon: <Sparkles className="h-6 w-6" />,
         status: "New",
         benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing", "Pattern recognition"]
       },
@@ -82,14 +82,14 @@ export default function WhatsComing() {
       {
         title: "Max AI Assistant",
         description: "Natural language interface for all manufacturing operations",
-        icon: <Bot className="h-6 w-6" />,
+        icon: <Sparkles className="h-6 w-6" />,
         status: "Beta",
         benefits: ["Voice-controlled operations", "Intelligent recommendations", "Predictive insights"]
       },
       {
         title: "AI-Powered Optimization",
         description: "AI driven continuous improvement and performance optimization",
-        icon: <Bot className="h-6 w-6" />,
+        icon: <Sparkles className="h-6 w-6" />,
         status: "New",
         benefits: ["Optimization studio", "Autonomous scheduling", "Feedback driven adaptation"]
       },
@@ -110,7 +110,7 @@ export default function WhatsComing() {
       {
         title: "Agent-Based Autonomous Planning",
         description: "AI agents that can autonomously create, modify, and optimize production plans with human oversight",
-        icon: <Bot className="h-6 w-6" />,
+        icon: <Sparkles className="h-6 w-6" />,
         status: "New",
         benefits: ["Fully autonomous schedule creation", "Assisted planning with AI recommendations", "Real-time plan optimization", "Human-in-the-loop validation"]
       },
@@ -233,7 +233,7 @@ export default function WhatsComing() {
     ai: {
       title: "AI & Intelligence",
       description: "Revolutionary AI capabilities transforming manufacturing operations",
-      icon: <Bot className="h-5 w-5" />
+      icon: <Sparkles className="h-5 w-5" />
     },
     analytics: {
       title: "Analytics & Insights",

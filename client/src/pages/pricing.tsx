@@ -347,7 +347,7 @@ export default function Pricing() {
       description: "Advanced AI processing for optimization, forecasting, and intelligent automation",
       baseIncluded: "Base tier AI requests included",
       overageRate: "Contact Sales for pricing",
-      icon: <Bot className="w-6 h-6" />,
+      icon: <Sparkles className="w-6 h-6" />,
       examples: [
         "Max AI conversations and file analysis",
         "AI-powered demand forecasting",
@@ -939,7 +939,7 @@ export default function Pricing() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="text-center">
               <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Bot className="w-8 h-8 text-blue-600" />
+                <Sparkles className="w-8 h-8 text-blue-600" />
               </div>
               <h3 className="font-semibold text-gray-900">Max AI Assistant</h3>
               <p className="text-sm text-gray-600 mt-2">Voice-enabled AI that creates dashboards, analyzes files, and controls your entire interface</p>

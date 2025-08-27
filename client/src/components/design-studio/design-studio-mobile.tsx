@@ -56,7 +56,7 @@ export function MobileDesignStudio({
           size="sm"
           className="w-full h-6 bg-gradient-to-r from-purple-600 to-blue-600 text-white text-[10px] py-1"
         >
-          <Bot className="w-2 h-2 mr-1" />
+          <Sparkles className="w-2 h-2 mr-1" />
           AI Assistant
         </Button>
       </div>

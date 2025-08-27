@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { Search, Plus, Bot, FileText, Clock, Users, Target } from "lucide-react";
+import { Search, Plus, Sparkles, FileText, Clock, Users, Target } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { MemoryBook, MemoryBookEntry, InsertMemoryBook, InsertMemoryBookEntry } from "@shared/schema";
@@ -124,7 +124,7 @@ export default function MemoryBooksPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            <Bot className="h-8 w-8 text-blue-600" />
+            <Sparkles className="h-8 w-8 text-blue-600" />
             Max AI Memory Books
           </h1>
           <p className="text-gray-600 dark:text-gray-300 mt-2">
@@ -363,7 +363,7 @@ export default function MemoryBooksPage() {
             <Card>
               <CardContent className="flex items-center justify-center h-64">
                 <div className="text-center">
-                  <Bot className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <Sparkles className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <div className="text-gray-500">Select a memory book to view its entries</div>
                 </div>
               </CardContent>

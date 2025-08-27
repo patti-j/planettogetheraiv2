@@ -350,7 +350,7 @@ export default function OrderOptimization() {
                     disabled={generateOptionsMutation.isPending}
                     className="w-full"
                   >
-                    <Bot className="w-4 h-4 mr-2" />
+                    <Sparkles className="w-4 h-4 mr-2" />
                     {generateOptionsMutation.isPending ? 'Analyzing...' : 'Generate Options'}
                   </Button>
                 </CardContent>

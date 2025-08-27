@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Bot } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import AIAgent from "@/components/ai-agent";
 

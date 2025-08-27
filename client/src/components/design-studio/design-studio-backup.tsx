@@ -27,7 +27,7 @@ import {
   Search,
   Filter,
   MoreVertical,
-  Bot,
+
   Sparkles
 } from 'lucide-react';
 import { useDeviceType } from '@/hooks/useDeviceType';
@@ -388,11 +388,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
               >
                 <div className="flex items-center gap-3">
                   <div className="relative">
-                    <Bot className="w-5 h-5" />
+                    <Sparkles className="w-5 h-5" />
                     <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                   </div>
                   <span>AI Design Assistant</span>
-                  <Bot className="w-4 h-4" />
+                  <Sparkles className="w-4 h-4" />
                 </div>
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -595,11 +595,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
-                  <Bot className="w-5 h-5" />
+                  <Sparkles className="w-5 h-5" />
                   <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                 </div>
                 <span>AI Design Assistant</span>
-                <Bot className="w-4 h-4" />
+                <Sparkles className="w-4 h-4" />
               </div>
             </Button>
             <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -903,11 +903,11 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      <Bot className="w-5 h-5" />
+                      <Sparkles className="w-5 h-5" />
                       <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                     </div>
                     <span>AI Design Assistant</span>
-                    <Bot className="w-4 h-4" />
+                    <Sparkles className="w-4 h-4" />
                   </div>
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">

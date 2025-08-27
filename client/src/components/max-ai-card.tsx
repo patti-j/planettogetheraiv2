@@ -116,7 +116,7 @@ export function MaxAICard({ className = "", showDemo = false }: MaxAICardProps) 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-100">
-              <Bot className="w-6 h-6 text-blue-600" />
+              <Sparkles className="w-6 h-6 text-blue-600" />
             </div>
             <div>
               <CardTitle className="text-lg">Max AI Assistant</CardTitle>
@@ -143,7 +143,7 @@ export function MaxAICard({ className = "", showDemo = false }: MaxAICardProps) 
             <span>Voice Commands</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <Bot className="w-4 h-4 text-purple-500" />
+            <Sparkles className="w-4 h-4 text-purple-500" />
             <span>Smart Analysis</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
@@ -231,7 +231,7 @@ export function MaxAICard({ className = "", showDemo = false }: MaxAICardProps) 
             <DialogContent className="max-w-md">
               <DialogHeader>
                 <DialogTitle className="flex items-center gap-2">
-                  <Bot className="w-5 h-5 text-blue-600" />
+                  <Sparkles className="w-5 h-5 text-blue-600" />
                   Max AI Settings
                 </DialogTitle>
               </DialogHeader>

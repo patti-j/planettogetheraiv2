@@ -16,7 +16,7 @@ import {
   Clock, Target, Settings, Play, CheckCircle, AlertTriangle, 
   Info, TrendingUp, Calendar, Users, Zap, BarChart3,
   ArrowLeft, ArrowRight, Layers, Brain, BookmarkPlus, Edit,
-  Save, Trash2, History, Star, Bot, Send
+  Save, Trash2, History, Star, Send
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -530,7 +530,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
             }}
             className="bg-purple-50 border-purple-200 hover:bg-purple-100 text-purple-700 w-full sm:w-auto order-1 sm:order-none"
           >
-            <Bot className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4 mr-2" />
             AI Modify Algorithm
           </Button>
           
@@ -814,7 +814,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-purple-500" />
+                <Sparkles className="w-5 h-5 text-purple-500" />
                 How the Backwards Scheduling Algorithm Works
               </CardTitle>
               <CardDescription>
@@ -1254,7 +1254,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
           <DialogContent className="max-w-4xl w-[95vw] max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Bot className="w-5 h-5 text-purple-600" />
+                <Sparkles className="w-5 h-5 text-purple-600" />
                 AI Modify: Backwards Scheduling Algorithm
               </DialogTitle>
               <DialogDescription>

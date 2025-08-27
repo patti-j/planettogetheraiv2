@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { Button } from '@/components/ui/button';
-import { Bot, MessageSquare, SplitSquareVertical } from 'lucide-react';
+import { Sparkles, MessageSquare, SplitSquareVertical } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { MaxCanvas } from '@/components/max-canvas';
 
@@ -188,7 +188,7 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
               className={`w-12 h-12 rounded-full ${aiTheme.gradient} shadow-lg border-2 border-white text-white`}
               title={`Switch to ${currentFullscreenView === 'main' ? 'Max AI' : 'Main Content'}`}
             >
-              {currentFullscreenView === 'main' ? <Bot className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
+              {currentFullscreenView === 'main' ? <Sparkles className="h-5 w-5" /> : <MessageSquare className="h-5 w-5" />}
             </Button>
             
             {/* Back to split mode button */}
