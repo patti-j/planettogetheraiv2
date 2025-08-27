@@ -316,7 +316,9 @@ export function AILeftPanel() {
         });
 
         // Play voice response if enabled
-        playVoiceResponse(responseContent);
+        if (aiSettings.soundEnabled) {
+          speakResponse(responseContent);
+        }
       }
       
       // If there are insights, show them (but not if we just navigated)
@@ -560,23 +562,21 @@ export function AILeftPanel() {
     }
   };
 
-  const handleSendMessage = async () => {
+  const handleSendMessage = () => {
     if (!prompt.trim()) return;
 
     const currentPrompt = prompt;
     setPrompt('');
 
-    // Save user message first to ensure proper chronological order
-    await addMessage({
+    // Add user message immediately to chat UI
+    addMessage({
       role: 'user',
       content: currentPrompt,
       source: 'panel'
     });
 
-    // Small delay to ensure user message is saved before AI response
-    setTimeout(() => {
-      sendMessageMutation.mutate(currentPrompt);
-    }, 100);
+    // Send to AI (response will be added in mutation onSuccess)
+    sendMessageMutation.mutate(currentPrompt);
   };
 
   return (
