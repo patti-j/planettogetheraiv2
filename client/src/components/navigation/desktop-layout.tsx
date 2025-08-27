@@ -25,7 +25,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { isFullScreen, toggleFullScreen } = useFullScreen();
   const { user } = useAuth();
   const { addMessage } = useChatSync();
-  const [location] = useLocation();
+  const [location, setLocation] = useLocation();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
 
@@ -124,18 +124,30 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         source: 'floating'
       });
       
-      // Add assistant response
-      if (data?.content || data?.message) {
-        const responseContent = data.content || data.message;
+      // Handle navigation actions from Max AI
+      if (data?.action?.type === 'navigate' && data?.action?.target) {
+        setLocation(data.action.target);
         
+        // Add navigation confirmation message
         addMessage({
           role: 'assistant',
-          content: responseContent,
+          content: data.content || `Taking you to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
           source: 'floating'
         });
+      } else {
+        // Add assistant response
+        if (data?.content || data?.message) {
+          const responseContent = data.content || data.message;
+          
+          addMessage({
+            role: 'assistant',
+            content: responseContent,
+            source: 'floating'
+          });
 
-        // Temporarily disabled voice response to fix looping issue
-        // playVoiceResponse(responseContent);
+          // Temporarily disabled voice response to fix looping issue
+          // playVoiceResponse(responseContent);
+        }
       }
       
       setFloatingPrompt('');
@@ -221,7 +233,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
           <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
             <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+              <Bot className="w-4 h-4 text-white" />
             </div>
             <Input
               placeholder="Ask Max AI anything..."
