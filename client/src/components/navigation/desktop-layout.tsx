@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
@@ -165,6 +165,18 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
+  // Add keyboard support for exiting fullscreen with Escape key
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isFullScreen) {
+        toggleFullScreen();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isFullScreen, toggleFullScreen]);
+
   // For mobile, render content directly without TopMenu
   // Mobile pages should handle their own navigation
   if (!isDesktop) {
@@ -202,37 +214,56 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {!isFullScreen && <BottomDrawer />}
       
       {/* Floating Max AI Prompt - always visible, positioned at bottom center */}
-      {!isFullScreen && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
-              <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex-shrink-0">
-                <Sparkles className="w-4 h-4 text-white" />
-              </div>
-              <Input
-                placeholder="Ask Max AI anything..."
-                value={floatingPrompt}
-                onChange={(e) => setFloatingPrompt(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground"
-                disabled={isFloatingSending}
-              />
-              <Button
-                onClick={handleFloatingSend}
-                size="sm"
-                variant="ghost"
-                className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
-                disabled={!floatingPrompt.trim() || isFloatingSending}
-              >
-                {isFloatingSending ? (
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-3 h-3" />
-                )}
-              </Button>
+      <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
+          <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex-shrink-0">
+              <Sparkles className="w-4 h-4 text-white" />
             </div>
+            <Input
+              placeholder="Ask Max AI anything..."
+              value={floatingPrompt}
+              onChange={(e) => setFloatingPrompt(e.target.value)}
+              onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
+              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground"
+              disabled={isFloatingSending}
+            />
+            <Button
+              onClick={handleFloatingSend}
+              size="sm"
+              variant="ghost"
+              className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+              disabled={!floatingPrompt.trim() || isFloatingSending}
+            >
+              {isFloatingSending ? (
+                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <Send className="w-3 h-3" />
+              )}
+            </Button>
           </div>
         </div>
+      </div>
+
+      {/* Exit Fullscreen Button - only visible in fullscreen mode */}
+      {isFullScreen && (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                onClick={toggleFullScreen}
+                size="sm"
+                variant="outline"
+                className="fixed top-4 right-4 z-50 rounded-full w-10 h-10 p-0 bg-background/80 backdrop-blur-sm shadow-lg border-border/50"
+              >
+                <Minimize className="w-4 h-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Exit Fullscreen (ESC)</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </div>
   );
