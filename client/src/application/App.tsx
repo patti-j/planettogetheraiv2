@@ -25,6 +25,7 @@ import Feedback from "@/pages/feedback";
 import InboxPage from "@/pages/inbox";
 import AlertsPage from "@/pages/alerts";
 import AIAnalysisConfig from "@/pages/ai-analysis-config";
+import AIInsightsPage from "@/pages/ai-insights";
 import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
@@ -136,6 +137,11 @@ export default function ApplicationApp() {
               <Route path="/analytics">
                 <ProtectedRoute feature="analytics" action="view">
                   <Analytics />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/ai-insights">
+                <ProtectedRoute feature="analytics" action="view">
+                  <AIInsightsPage />
                 </ProtectedRoute>
               </Route>
               <Route path="/kpi">

@@ -28337,6 +28337,172 @@ Be careful to preserve data integrity and relationships.`;
     }
   }));
 
+  // AI Insights API
+  app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
+    try {
+      const { timeRange = '7d', page } = req.query;
+      
+      // Generate sample AI insights data
+      const sampleInsights = [
+        {
+          id: '1',
+          type: 'optimization',
+          title: 'Production Schedule Optimization Opportunity',
+          description: 'Max AI identified a 12% efficiency improvement by resequencing Job Orders PO-2024-001 through PO-2024-008.',
+          priority: 'high',
+          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
+          source: 'max_ai',
+          category: 'production',
+          status: 'new',
+          actionable: true,
+          impact: 'Reduce total production time by 4.2 hours and save $2,840 in labor costs',
+          recommendation: 'Reschedule orders to optimize resource utilization and minimize changeover times',
+          confidence: 92,
+          affected_areas: ['Production Line A', 'Production Line B'],
+          estimated_savings: 2840,
+          implementation_time: '15 minutes',
+          related_insights: []
+        },
+        {
+          id: '2',
+          type: 'anomaly',
+          title: 'Quality Deviation Pattern Detected',
+          description: 'Predictive AI detected unusual quality metrics in Batch B-2024-089 that may indicate equipment calibration issues.',
+          priority: 'critical',
+          timestamp: new Date(Date.now() - 45 * 60 * 1000).toISOString(), // 45 minutes ago
+          source: 'quality_ai',
+          category: 'quality',
+          status: 'new',
+          actionable: true,
+          impact: 'Potential quality issues affecting 15% of current production batch',
+          recommendation: 'Schedule immediate equipment calibration and quality inspection',
+          confidence: 87,
+          affected_areas: ['Quality Control', 'Production Line C'],
+          estimated_savings: 0,
+          implementation_time: '2 hours',
+          related_insights: ['3']
+        },
+        {
+          id: '3',
+          type: 'maintenance',
+          title: 'Predictive Maintenance Alert - Line 3 Mixer',
+          description: 'Machine learning models predict 78% probability of mixer bearing failure within 72 hours based on vibration patterns.',
+          priority: 'high',
+          timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
+          source: 'predictive_maintenance',
+          category: 'maintenance',
+          status: 'in_progress',
+          actionable: true,
+          impact: 'Prevent 16-hour unplanned downtime and $18,500 in lost production',
+          recommendation: 'Schedule bearing replacement during next maintenance window',
+          confidence: 78,
+          affected_areas: ['Production Line 3', 'Maintenance'],
+          estimated_savings: 18500,
+          implementation_time: '4 hours',
+          related_insights: ['2']
+        },
+        {
+          id: '4',
+          type: 'forecast',
+          title: 'Demand Surge Prediction - Product SKU-A201',
+          description: 'AI forecasting models predict 35% increase in demand for Product SKU-A201 over the next 14 days.',
+          priority: 'medium',
+          timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(), // 6 hours ago
+          source: 'max_ai',
+          category: 'supply_chain',
+          status: 'new',
+          actionable: true,
+          impact: 'Opportunity to increase production and capture additional $45,000 in revenue',
+          recommendation: 'Increase production capacity for SKU-A201 and review raw material inventory',
+          confidence: 82,
+          affected_areas: ['Production Planning', 'Inventory Management'],
+          estimated_savings: 45000,
+          implementation_time: '24 hours',
+          related_insights: []
+        },
+        {
+          id: '5',
+          type: 'insight',
+          title: 'Resource Utilization Pattern Analysis',
+          description: 'Analysis reveals Monday morning productivity is 23% lower than average, suggesting opportunity for schedule optimization.',
+          priority: 'medium',
+          timestamp: new Date(Date.now() - 12 * 60 * 60 * 1000).toISOString(), // 12 hours ago
+          source: 'max_ai',
+          category: 'efficiency',
+          status: 'new',
+          actionable: true,
+          impact: 'Potential 8% improvement in weekly productivity',
+          recommendation: 'Implement warm-up procedures or reschedule high-priority tasks',
+          confidence: 75,
+          affected_areas: ['All Production Lines'],
+          estimated_savings: 3200,
+          implementation_time: '1 week',
+          related_insights: []
+        },
+        {
+          id: '6',
+          type: 'recommendation',
+          title: 'Inventory Optimization Suggestion',
+          description: 'AI analysis suggests reducing safety stock for Component C-401 by 20% without impacting service levels.',
+          priority: 'low',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 24 hours ago
+          source: 'max_ai',
+          category: 'finance',
+          status: 'resolved',
+          actionable: false,
+          impact: 'Free up $12,500 in working capital',
+          recommendation: 'Reduce safety stock levels based on updated demand patterns',
+          confidence: 89,
+          affected_areas: ['Inventory Management', 'Finance'],
+          estimated_savings: 12500,
+          implementation_time: '2 days',
+          related_insights: []
+        }
+      ];
+
+      // Filter based on time range if needed
+      const filteredInsights = sampleInsights.filter(insight => {
+        const insightTime = new Date(insight.timestamp);
+        const now = new Date();
+        const timeDiff = now.getTime() - insightTime.getTime();
+        
+        switch (timeRange) {
+          case '24h':
+            return timeDiff <= 24 * 60 * 60 * 1000;
+          case '7d':
+            return timeDiff <= 7 * 24 * 60 * 60 * 1000;
+          case '30d':
+            return timeDiff <= 30 * 24 * 60 * 60 * 1000;
+          case '90d':
+            return timeDiff <= 90 * 24 * 60 * 60 * 1000;
+          default:
+            return true;
+        }
+      });
+
+      res.json(filteredInsights);
+    } catch (error) {
+      console.error('Error fetching AI insights:', error);
+      res.status(500).json({ error: 'Failed to fetch AI insights' });
+    }
+  }));
+
+  // Update AI insight status
+  app.patch('/api/ai-insights/:id', createSafeHandler(async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      
+      // In a real implementation, this would update the insight in the database
+      console.log(`Updating insight ${id} status to ${status}`);
+      
+      res.json({ success: true, message: 'Insight status updated successfully' });
+    } catch (error) {
+      console.error('Error updating insight status:', error);
+      res.status(500).json({ error: 'Failed to update insight status' });
+    }
+  }));
+
   // Start the monitoring agent automatically
   systemMonitoringAgent.start().catch(console.error);
 

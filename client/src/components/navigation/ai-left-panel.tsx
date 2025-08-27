@@ -766,12 +766,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         <>
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-5 mx-4 mt-2 text-xs">
+            <TabsList className="grid grid-cols-4 mx-4 mt-2 text-xs">
               <TabsTrigger value="chat" className="px-2" title="Chat">
                 <MessageSquare className="w-4 h-4" />
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="px-2" title="Insights">
-                <TrendingUp className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="anomalies" className="px-2" title="Alerts">
                 <AlertTriangle className="w-4 h-4" />
@@ -783,6 +780,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 <Settings className="w-4 h-4" />
               </TabsTrigger>
             </TabsList>
+
+            {/* AI Insights Navigation Button */}
+            <div className="mx-4 mt-2">
+              <Button
+                onClick={() => setLocation('/ai-insights')}
+                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0"
+                size="sm"
+              >
+                <TrendingUp className="w-4 h-4 mr-2" />
+                View AI Insights
+              </Button>
+            </div>
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
@@ -892,49 +901,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
             </TabsContent>
 
-            {/* Insights Tab */}
-            <TabsContent value="insights" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-2 pb-4">
-                {displayInsights
-                  .filter(i => i.type === 'insight' || i.type === 'recommendation' || i.type === 'optimization')
-                  .map(insight => (
-                    <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            {(() => {
-                              const Icon = getTypeIcon(insight.type);
-                              return <Icon className="w-4 h-4 text-primary" />;
-                            })()}
-                            <CardTitle className="text-sm">{insight.title}</CardTitle>
-                          </div>
-                          <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
-                            {insight.priority}
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
-                        {insight.impact && (
-                          <div className="text-xs bg-muted p-2 rounded mb-2">
-                            <span className="font-medium">Impact: </span>
-                            {insight.impact}
-                          </div>
-                        )}
-                        {insight.actionable && (
-                          <Button size="sm" className="w-full">
-                            <Play className="w-3 h-3 mr-1" />
-                            Apply Recommendation
-                          </Button>
-                        )}
-                        <div className="text-xs text-muted-foreground mt-2">{insight.timestamp}</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
+
 
             {/* Anomalies Tab */}
             <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
