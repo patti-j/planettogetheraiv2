@@ -8,10 +8,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, BookOpen, Edit, Trash2, Eye, User, Calendar, Tag, Filter } from "lucide-react";
+import { Search, Plus, BookOpen, Edit, Trash2, Eye, User, Calendar, Tag, Filter, Menu, ArrowLeft, X } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { MemoryBook, MemoryBookEntry, InsertMemoryBook, InsertMemoryBookEntry } from "@shared/schema";
@@ -53,8 +54,21 @@ export default function MemoryBookPage() {
   const [createBookOpen, setCreateBookOpen] = useState(false);
   const [createEntryOpen, setCreateEntryOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<MemoryBookEntry | null>(null);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Check if we're on mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Fetch memory books
   const { data: memoryBooks = [], isLoading: booksLoading } = useQuery<MemoryBook[]>({
@@ -248,156 +262,197 @@ export default function MemoryBookPage() {
     return colors[priority as keyof typeof colors] || "bg-gray-100 text-gray-800";
   };
 
-  return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar - Memory Books */}
-      <div className="w-80 bg-white border-r border-gray-200 flex flex-col">
-        <div className="p-4 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-xl font-semibold flex items-center gap-2">
-              <BookOpen className="h-5 w-5" />
-              Memory Books
-            </h1>
-            <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
-              <DialogTrigger asChild>
-                <Button size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  New Book
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create Memory Book</DialogTitle>
-                  <DialogDescription>
-                    Create a new collaborative knowledge base for your team.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...bookForm}>
-                  <form onSubmit={bookForm.handleSubmit(onCreateBook)} className="space-y-4">
-                    <FormField
-                      control={bookForm.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter book title" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={bookForm.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Enter book description" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={bookForm.control}
-                      name="scope"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Scope</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select scope" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="global">Global</SelectItem>
-                              <SelectItem value="plant">Plant</SelectItem>
-                              <SelectItem value="department">Department</SelectItem>
-                              <SelectItem value="project">Project</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button type="button" variant="outline" onClick={() => setCreateBookOpen(false)}>
-                        Cancel
-                      </Button>
-                      <Button type="submit" disabled={createBookMutation.isPending}>
-                        {createBookMutation.isPending ? "Creating..." : "Create"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
-          {booksLoading ? (
-            <div className="text-center py-8 text-gray-500">Loading books...</div>
-          ) : memoryBooks.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">No memory books found</div>
-          ) : (
-            memoryBooks.map((book: MemoryBook) => (
-              <Card
-                key={book.id}
-                className={`cursor-pointer transition-colors ${
-                  selectedBook?.id === book.id ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
-                }`}
-                onClick={() => setSelectedBook(book)}
-              >
-                <CardContent className="p-3">
-                  <div className="font-medium text-sm">{book.title}</div>
-                  {book.description && (
-                    <div className="text-xs text-gray-600 mt-1 line-clamp-2">{book.description}</div>
-                  )}
-                  <div className="flex items-center gap-2 mt-2">
-                    <Badge variant="outline" className="text-xs">
-                      {book.scope}
-                    </Badge>
-                    {book.tags && book.tags.length > 0 && (
-                      <Badge variant="secondary" className="text-xs">
-                        {book.tags.length} tags
-                      </Badge>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+  // Mobile sidebar component
+  const SidebarContent = () => (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b border-gray-200">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-xl font-semibold flex items-center gap-2">
+            <BookOpen className="h-5 w-5" />
+            Memory Books
+          </h1>
+          {isMobile && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSidebarOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
           )}
         </div>
+        <Dialog open={createBookOpen} onOpenChange={setCreateBookOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm" className="w-full">
+              <Plus className="h-4 w-4 mr-1" />
+              New Book
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Create Memory Book</DialogTitle>
+              <DialogDescription>
+                Create a new collaborative knowledge base for your team.
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...bookForm}>
+              <form onSubmit={bookForm.handleSubmit(onCreateBook)} className="space-y-4">
+                <FormField
+                  control={bookForm.control}
+                  name="title"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Title</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter book title" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={bookForm.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Enter book description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={bookForm.control}
+                  name="scope"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Scope</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select scope" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="global">Global</SelectItem>
+                          <SelectItem value="plant">Plant</SelectItem>
+                          <SelectItem value="department">Department</SelectItem>
+                          <SelectItem value="project">Project</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex flex-col sm:flex-row justify-end gap-2">
+                  <Button type="button" variant="outline" onClick={() => setCreateBookOpen(false)} className="w-full sm:w-auto">
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={createBookMutation.isPending} className="w-full sm:w-auto">
+                    {createBookMutation.isPending ? "Creating..." : "Create"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
+      
+      <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        {booksLoading ? (
+          <div className="text-center py-8 text-gray-500">Loading books...</div>
+        ) : memoryBooks.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">No memory books found</div>
+        ) : (
+          memoryBooks.map((book: MemoryBook) => (
+            <Card
+              key={book.id}
+              className={`cursor-pointer transition-colors ${
+                selectedBook?.id === book.id ? "bg-blue-50 border-blue-200" : "hover:bg-gray-50"
+              }`}
+              onClick={() => {
+                setSelectedBook(book);
+                if (isMobile) setSidebarOpen(false);
+              }}
+            >
+              <CardContent className="p-3">
+                <div className="font-medium text-sm">{book.title}</div>
+                {book.description && (
+                  <div className="text-xs text-gray-600 mt-1 line-clamp-2">{book.description}</div>
+                )}
+                <div className="flex items-center gap-2 mt-2">
+                  <Badge variant="outline" className="text-xs">
+                    {book.scope}
+                  </Badge>
+                  {book.tags && book.tags.length > 0 && (
+                    <Badge variant="secondary" className="text-xs">
+                      {book.tags.length} tags
+                    </Badge>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Desktop Sidebar */}
+      {!isMobile && (
+        <div className="w-80 bg-white border-r border-gray-200">
+          <SidebarContent />
+        </div>
+      )}
+
+      {/* Mobile Sidebar */}
+      {isMobile && (
+        <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
+          <SheetContent side="left" className="w-80 p-0">
+            <SidebarContent />
+          </SheetContent>
+        </Sheet>
+      )}
 
       {/* Main Content - Memory Entries */}
       <div className="flex-1 flex flex-col">
         {selectedBook ? (
           <>
             {/* Header */}
-            <div className="bg-white border-b border-gray-200 p-4">
+            <div className="bg-white border-b border-gray-200 p-3 md:p-4">
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <h2 className="text-lg font-semibold">{selectedBook.title}</h2>
-                  {selectedBook.description && (
-                    <p className="text-sm text-gray-600">{selectedBook.description}</p>
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  {isMobile && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setSidebarOpen(true)}
+                    >
+                      <Menu className="h-4 w-4" />
+                    </Button>
                   )}
+                  <div className="min-w-0 flex-1">
+                    <h2 className="text-lg font-semibold truncate">{selectedBook.title}</h2>
+                    {selectedBook.description && (
+                      <p className="text-sm text-gray-600 hidden sm:block">{selectedBook.description}</p>
+                    )}
+                  </div>
                 </div>
                 <Dialog open={createEntryOpen} onOpenChange={(open) => {
                   setCreateEntryOpen(open);
                   if (!open) setEditingEntry(null);
                 }}>
                   <DialogTrigger asChild>
-                    <Button>
+                    <Button size={isMobile ? "sm" : "default"} className="shrink-0">
                       <Plus className="h-4 w-4 mr-1" />
-                      Add Entry
+                      {isMobile ? "Add" : "Add Entry"}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4">
                     <DialogHeader>
                       <DialogTitle>
                         {editingEntry ? "Edit Entry" : "Add Memory Entry"}
@@ -422,7 +477,7 @@ export default function MemoryBookPage() {
                           )}
                         />
                         
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                           <FormField
                             control={entryForm.control}
                             name="entryType"
@@ -506,7 +561,7 @@ export default function MemoryBookPage() {
                           )}
                         />
 
-                        <div className="flex justify-end gap-2">
+                        <div className="flex flex-col sm:flex-row justify-end gap-2">
                           <Button 
                             type="button" 
                             variant="outline" 
@@ -514,10 +569,11 @@ export default function MemoryBookPage() {
                               setCreateEntryOpen(false);
                               setEditingEntry(null);
                             }}
+                            className="w-full sm:w-auto"
                           >
                             Cancel
                           </Button>
-                          <Button type="submit" disabled={saveEntryMutation.isPending}>
+                          <Button type="submit" disabled={saveEntryMutation.isPending} className="w-full sm:w-auto">
                             {saveEntryMutation.isPending 
                               ? (editingEntry ? "Updating..." : "Creating...") 
                               : (editingEntry ? "Update" : "Create")
@@ -531,8 +587,8 @@ export default function MemoryBookPage() {
               </div>
 
               {/* Filters */}
-              <div className="flex items-center gap-4">
-                <div className="relative flex-1 max-w-md">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
                   <Input
                     placeholder="Search entries..."
@@ -541,38 +597,40 @@ export default function MemoryBookPage() {
                     className="pl-10"
                   />
                 </div>
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Categories</SelectItem>
-                    <SelectItem value="scheduling">Scheduling</SelectItem>
-                    <SelectItem value="optimization">Optimization</SelectItem>
-                    <SelectItem value="production">Production</SelectItem>
-                    <SelectItem value="quality">Quality</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select value={entryTypeFilter} onValueChange={setEntryTypeFilter}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">All Types</SelectItem>
-                    <SelectItem value="instruction">Instruction</SelectItem>
-                    <SelectItem value="procedure">Procedure</SelectItem>
-                    <SelectItem value="lesson_learned">Lesson Learned</SelectItem>
-                    <SelectItem value="best_practice">Best Practice</SelectItem>
-                    <SelectItem value="troubleshooting">Troubleshooting</SelectItem>
-                    <SelectItem value="configuration">Configuration</SelectItem>
-                  </SelectContent>
-                </Select>
+                <div className="flex gap-2">
+                  <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-full sm:w-36">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Categories</SelectItem>
+                      <SelectItem value="scheduling">Scheduling</SelectItem>
+                      <SelectItem value="optimization">Optimization</SelectItem>
+                      <SelectItem value="production">Production</SelectItem>
+                      <SelectItem value="quality">Quality</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select value={entryTypeFilter} onValueChange={setEntryTypeFilter}>
+                    <SelectTrigger className="w-full sm:w-32">
+                      <SelectValue placeholder="Type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">All Types</SelectItem>
+                      <SelectItem value="instruction">Instruction</SelectItem>
+                      <SelectItem value="procedure">Procedure</SelectItem>
+                      <SelectItem value="lesson_learned">Lesson Learned</SelectItem>
+                      <SelectItem value="best_practice">Best Practice</SelectItem>
+                      <SelectItem value="troubleshooting">Troubleshooting</SelectItem>
+                      <SelectItem value="configuration">Configuration</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
 
             {/* Entries */}
-            <div className="flex-1 overflow-y-auto p-4">
+            <div className="flex-1 overflow-y-auto p-3 md:p-4">
               {entriesLoading ? (
                 <div className="text-center py-8 text-gray-500">Loading entries...</div>
               ) : filteredEntries.length === 0 ? (
@@ -580,14 +638,14 @@ export default function MemoryBookPage() {
                   No entries found. {searchTerm || categoryFilter || entryTypeFilter ? "Try adjusting your filters." : "Add your first entry to get started."}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3 md:space-y-4">
                   {filteredEntries.map((entry: MemoryBookEntry) => (
                     <Card key={entry.id} className="hover:shadow-md transition-shadow">
-                      <CardHeader>
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <CardTitle className="text-base">{entry.title}</CardTitle>
-                            <div className="flex items-center gap-2 mt-2">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="flex-1 min-w-0">
+                            <CardTitle className="text-base leading-tight">{entry.title}</CardTitle>
+                            <div className="flex flex-wrap items-center gap-2 mt-2">
                               <Badge className={getEntryTypeColor(entry.entryType)}>
                                 {entry.entryType.replace('_', ' ')}
                               </Badge>
@@ -602,11 +660,12 @@ export default function MemoryBookPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => handleEditEntry(entry)}
+                              className="h-8 w-8 p-0"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -614,23 +673,24 @@ export default function MemoryBookPage() {
                               size="sm"
                               variant="ghost"
                               onClick={() => handleDeleteEntry(entry.id)}
+                              className="h-8 w-8 p-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-0">
                         <div className="prose prose-sm max-w-none">
-                          <div className="whitespace-pre-wrap text-sm text-gray-700">
-                            {entry.content.substring(0, 300)}
-                            {entry.content.length > 300 && "..."}
+                          <div className="whitespace-pre-wrap text-sm text-gray-700 leading-relaxed">
+                            {isMobile ? entry.content.substring(0, 150) : entry.content.substring(0, 300)}
+                            {entry.content.length > (isMobile ? 150 : 300) && "..."}
                           </div>
                         </div>
-                        <div className="flex items-center gap-4 mt-4 text-xs text-gray-500">
+                        <div className="flex flex-wrap items-center gap-3 md:gap-4 mt-3 text-xs text-gray-500">
                           <div className="flex items-center gap-1">
                             <User className="h-3 w-3" />
-                            Created by User {entry.createdBy}
+                            <span className="hidden sm:inline">Created by</span> User {entry.createdBy}
                           </div>
                           <div className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
@@ -639,8 +699,10 @@ export default function MemoryBookPage() {
                           {entry.tags && entry.tags.length > 0 && (
                             <div className="flex items-center gap-1">
                               <Tag className="h-3 w-3" />
-                              {entry.tags.slice(0, 2).join(", ")}
-                              {entry.tags.length > 2 && ` +${entry.tags.length - 2} more`}
+                              {isMobile 
+                                ? `${entry.tags.length} tag${entry.tags.length > 1 ? 's' : ''}`
+                                : `${entry.tags.slice(0, 2).join(", ")}${entry.tags.length > 2 ? ` +${entry.tags.length - 2} more` : ''}`
+                              }
                             </div>
                           )}
                         </div>
@@ -652,11 +714,26 @@ export default function MemoryBookPage() {
             </div>
           </>
         ) : (
-          <div className="flex-1 flex items-center justify-center">
+          <div className="flex-1 flex items-center justify-center p-4">
             <div className="text-center">
+              {isMobile && (
+                <Button
+                  variant="outline"
+                  onClick={() => setSidebarOpen(true)}
+                  className="mb-6"
+                >
+                  <Menu className="h-4 w-4 mr-2" />
+                  Browse Memory Books
+                </Button>
+              )}
               <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-medium text-gray-900 mb-2">Select a Memory Book</h3>
-              <p className="text-gray-600">Choose a memory book from the sidebar to view and manage its knowledge entries.</p>
+              <p className="text-gray-600 text-center max-w-sm">
+                {isMobile 
+                  ? "Tap 'Browse Memory Books' to choose a memory book and view its knowledge entries."
+                  : "Choose a memory book from the sidebar to view and manage its knowledge entries."
+                }
+              </p>
             </div>
           </div>
         )}
