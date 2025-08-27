@@ -158,6 +158,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     next();
   });
 
+  // Public plants endpoint for map visualization (no auth required) - MUST BE EARLY
+  app.get("/api/plants/map", async (req, res) => {
+    try {
+      const plants = await storage.getPlants();
+      if (!plants) {
+        return res.status(500).json({ error: 'Failed to retrieve plants from database' });
+      }
+      
+      // Return only the data needed for map visualization
+      const mapData = plants.map(plant => ({
+        id: plant.id,
+        name: plant.name,
+        latitude: plant.latitude,
+        longitude: plant.longitude,
+        country: plant.country,
+        city: plant.city,
+        state: plant.state,
+        isActive: plant.isActive,
+        plantType: plant.plantType,
+        operationalMetrics: plant.operationalMetrics
+      }));
+      
+      res.json(mapData);
+    } catch (error) {
+      console.error('Error fetching plants for map:', error);
+      res.status(500).json({ error: 'Failed to fetch plants for map' });
+    }
+  });
+
   // Create trial account endpoint
   app.post("/api/auth/create-trial", async (req, res) => {
     try {

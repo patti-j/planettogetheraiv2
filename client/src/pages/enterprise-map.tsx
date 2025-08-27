@@ -104,7 +104,7 @@ export default function EnterpriseMapPage() {
 
   // Fetch plants data
   const { data: plants = [], isLoading } = useQuery<Plant[]>({
-    queryKey: ['/api/plants'],
+    queryKey: ['/api/plants/map'],
   });
 
   // Fetch optimization algorithms
