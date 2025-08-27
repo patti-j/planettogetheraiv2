@@ -227,14 +227,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const scrollElement = scrollAreaRef.current;
       scrollElement.scrollTop = scrollElement.scrollHeight;
       
-      // Check for new assistant messages and speak them
-      const lastMessage = chatMessages[chatMessages.length - 1];
-      if (lastMessage?.role === 'assistant' && aiSettings.soundEnabled) {
-        // Add small delay to ensure message is rendered
-        setTimeout(() => {
-          speakResponse(lastMessage.content);
-        }, 300);
-      }
+      // Disabled automatic voice playback to fix looping issue
+      // const lastMessage = chatMessages[chatMessages.length - 1];
+      // if (lastMessage?.role === 'assistant' && aiSettings.soundEnabled) {
+      //   // Add small delay to ensure message is rendered
+      //   setTimeout(() => {
+      //     speakResponse(lastMessage.content);
+      //   }, 300);
+      // }
     }
   }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
 
@@ -668,20 +668,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           </div>
         )}
         <div className="flex items-center gap-1">
-          {/* Audio Control Button */}
-          {!isCollapsed && aiSettings.soundEnabled && (
+          {/* Audio Control Button - only show when audio is playing */}
+          {!isCollapsed && isPlaying && (
             <Button
               variant="ghost"
               size="icon"
               onClick={stopAudio}
-              className={cn(
-                "text-white hover:bg-white/20 transition-all",
-                isPlaying ? "animate-pulse" : ""
-              )}
-              title={isPlaying ? "Stop audio" : "Audio ready"}
-              disabled={!isPlaying}
+              className="text-white hover:bg-white/20 animate-pulse"
+              title="Stop audio playback"
             >
-              {isPlaying ? <Square className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+              <Square className="w-4 h-4" />
             </Button>
           )}
           <Button

@@ -134,8 +134,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           source: 'floating'
         });
 
-        // Play voice response if enabled
-        playVoiceResponse(responseContent);
+        // Temporarily disabled voice response to fix looping issue
+        // playVoiceResponse(responseContent);
       }
       
       setFloatingPrompt('');
