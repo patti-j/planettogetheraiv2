@@ -115,9 +115,9 @@ import {
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
   
   // Memory Book System
-  memoryBooks, memoryBookEntries, memoryBookCollaborators, memoryBookEntryHistory, memoryBookUsage,
-  type MemoryBook, type MemoryBookEntry, type MemoryBookCollaborator, type MemoryBookEntryHistory, type MemoryBookUsage,
-  type InsertMemoryBook, type InsertMemoryBookEntry, type InsertMemoryBookCollaborator, type InsertMemoryBookEntryHistory, type InsertMemoryBookUsage,
+  memoryBooks, memoryBookCollaborators, memoryBookHistory, memoryBookUsage,
+  type MemoryBook, type MemoryBookCollaborator, type MemoryBookUsage,
+  type InsertMemoryBook, type InsertMemoryBookCollaborator, type InsertMemoryBookUsage,
   type PtJob, type PtResource, type PtJobOperation, type PtManufacturingOrder, type PtCapability, type PtMetric,
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,

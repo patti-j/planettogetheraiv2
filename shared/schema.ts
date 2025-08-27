@@ -1105,47 +1105,13 @@ export const scenarioDiscussions: any = pgTable("scenario_discussions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Memory Book System - Max AI's collaborative knowledge base similar to replit.md
+// Memory Book System - Free-form wiki-like collaborative knowledge base
 export const memoryBooks = pgTable("memory_books", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
-  description: text("description"),
-  scope: text("scope").notNull().default("global"), // global, plant, department, project
-  plantId: integer("plant_id").references(() => plants.id), // null for global scope
-  departmentId: integer("department_id"), // null for plant-wide or global scope
-  tags: jsonb("tags").$type<string[]>().default([]),
+  content: text("content").notNull(), // Free-form markdown content - the main wiki content
+  tags: jsonb("tags").$type<string[]>().default([]), // Flexible tagging system
   isActive: boolean("is_active").default(true),
-  createdBy: integer("created_by").references(() => users.id).notNull(),
-  lastEditedBy: integer("last_edited_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
-
-// Memory Book Entries - individual knowledge items within a memory book
-export const memoryBookEntries = pgTable("memory_book_entries", {
-  id: serial("id").primaryKey(),
-  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
-  title: text("title").notNull(),
-  content: text("content").notNull(), // Markdown content
-  entryType: text("entry_type").notNull().default("instruction"), // instruction, procedure, lesson_learned, best_practice, troubleshooting, configuration
-  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
-  category: text("category"), // scheduling, optimization, production, quality, maintenance, etc.
-  context: jsonb("context").$type<{
-    related_operations?: string[];
-    related_resources?: string[];
-    related_products?: string[];
-    situation_triggers?: string[];
-    prerequisites?: string[];
-  }>().default({}),
-  metadata: jsonb("metadata").$type<{
-    ai_generated?: boolean;
-    confidence_score?: number;
-    source_type?: "user_instruction" | "ai_learning" | "system_event" | "collaboration";
-    learning_iteration?: number;
-    effectiveness_rating?: number;
-  }>().default({}),
-  tags: jsonb("tags").$type<string[]>().default([]),
-  isArchived: boolean("is_archived").default(false),
   createdBy: integer("created_by").references(() => users.id).notNull(),
   lastEditedBy: integer("last_edited_by").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -1153,8 +1119,7 @@ export const memoryBookEntries = pgTable("memory_book_entries", {
 }, (table) => ({
   contentSearchIndex: index("memory_content_search_idx").on(table.content),
   titleSearchIndex: index("memory_title_search_idx").on(table.title),
-  categoryIndex: index("memory_category_idx").on(table.category),
-  typeIndex: index("memory_type_idx").on(table.entryType),
+  tagsIndex: index("memory_tags_idx").on(table.tags),
 }));
 
 // Memory Book Collaborators - users who can edit specific memory books
@@ -1169,10 +1134,10 @@ export const memoryBookCollaborators = pgTable("memory_book_collaborators", {
   collaboratorUnique: unique().on(table.memoryBookId, table.userId),
 }));
 
-// Memory Book Entry History - track all changes for audit purposes
-export const memoryBookEntryHistory = pgTable("memory_book_entry_history", {
+// Memory Book History - track all changes for audit purposes
+export const memoryBookHistory = pgTable("memory_book_history", {
   id: serial("id").primaryKey(),
-  entryId: integer("entry_id").references(() => memoryBookEntries.id).notNull(),
+  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
   previousContent: text("previous_content"),
   newContent: text("new_content"),
   changeType: text("change_type").notNull(), // created, updated, archived, restored
@@ -1184,7 +1149,7 @@ export const memoryBookEntryHistory = pgTable("memory_book_entry_history", {
 // Memory Book Usage Analytics - track how knowledge is being accessed and used
 export const memoryBookUsage = pgTable("memory_book_usage", {
   id: serial("id").primaryKey(),
-  entryId: integer("entry_id").references(() => memoryBookEntries.id).notNull(),
+  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   actionType: text("action_type").notNull(), // viewed, applied, referenced, shared
   context: text("context"), // where it was used (scheduling, optimization, etc.)
@@ -2929,18 +2894,12 @@ export const insertMemoryBookSchema = createInsertSchema(memoryBooks).omit({
   updatedAt: true,
 });
 
-export const insertMemoryBookEntrySchema = createInsertSchema(memoryBookEntries).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-});
-
 export const insertMemoryBookCollaboratorSchema = createInsertSchema(memoryBookCollaborators).omit({
   id: true,
   addedAt: true,
 });
 
-export const insertMemoryBookEntryHistorySchema = createInsertSchema(memoryBookEntryHistory).omit({
+export const insertMemoryBookHistorySchema = createInsertSchema(memoryBookHistory).omit({
   id: true,
   editedAt: true,
 });
@@ -2954,14 +2913,11 @@ export const insertMemoryBookUsageSchema = createInsertSchema(memoryBookUsage).o
 export type MemoryBook = typeof memoryBooks.$inferSelect;
 export type InsertMemoryBook = z.infer<typeof insertMemoryBookSchema>;
 
-export type MemoryBookEntry = typeof memoryBookEntries.$inferSelect;
-export type InsertMemoryBookEntry = z.infer<typeof insertMemoryBookEntrySchema>;
-
 export type MemoryBookCollaborator = typeof memoryBookCollaborators.$inferSelect;
 export type InsertMemoryBookCollaborator = z.infer<typeof insertMemoryBookCollaboratorSchema>;
 
-export type MemoryBookEntryHistory = typeof memoryBookEntryHistory.$inferSelect;
-export type InsertMemoryBookEntryHistory = z.infer<typeof insertMemoryBookEntryHistorySchema>;
+export type MemoryBookHistory = typeof memoryBookHistory.$inferSelect;
+export type InsertMemoryBookHistory = z.infer<typeof insertMemoryBookHistorySchema>;
 
 export type MemoryBookUsage = typeof memoryBookUsage.$inferSelect;
 export type InsertMemoryBookUsage = z.infer<typeof insertMemoryBookUsageSchema>;
