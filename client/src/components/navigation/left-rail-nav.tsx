@@ -11,7 +11,11 @@ import { useQuery } from '@tanstack/react-query';
 import { SlideOutMenu } from './slide-out-menu';
 import { navigationGroups } from '@/config/navigation-menu';
 
-export function LeftRailNav() {
+interface LeftRailNavProps {
+  onClose?: () => void;
+}
+
+export function LeftRailNav({ onClose }: LeftRailNavProps) {
   const [location, setLocation] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -92,6 +96,26 @@ export function LeftRailNav() {
                     </Button>
                   </TooltipTrigger>
                 </Tooltip>
+
+                {/* Close Button */}
+                {onClose && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onClose}
+                        className="h-8 w-8 p-0 flex-shrink-0"
+                        aria-label="Close navigation panel"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                      <p>Close panel</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )}
               </div>
             ) : (
               <div className="flex flex-col items-center space-y-1">

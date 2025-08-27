@@ -28,7 +28,14 @@ import { navigationGroups } from "@/config/navigation-menu";
 // Use shared navigation groups
 const featureGroups = navigationGroups;
 
-export default function TopMenu() {
+interface TopMenuProps {
+  onToggleAiPanel?: () => void;
+  onToggleNavPanel?: () => void;
+  isAiPanelOpen?: boolean;
+  isNavPanelOpen?: boolean;
+}
+
+export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOpen, isNavPanelOpen }: TopMenuProps) {
   const [location, setLocation] = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);

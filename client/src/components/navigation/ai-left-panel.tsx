@@ -33,7 +33,11 @@ interface AIInsight {
 
 // Remove duplicate interface - using the one from useChatSync
 
-export function AILeftPanel() {
+interface AILeftPanelProps {
+  onClose?: () => void;
+}
+
+export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
@@ -614,14 +618,27 @@ export function AILeftPanel() {
             <span className="font-semibold">Max AI Assistant</span>
           </div>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className={cn("text-white hover:bg-white/20", isCollapsed && "mx-auto")}
-        >
-          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsCollapsed(!isCollapsed)}
+            className="text-white hover:bg-white/20"
+          >
+            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+          </Button>
+          {onClose && !isCollapsed && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="text-white hover:bg-white/20"
+              title="Close panel"
+            >
+              <X className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {!isCollapsed && (

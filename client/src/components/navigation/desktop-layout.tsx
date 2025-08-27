@@ -9,7 +9,7 @@ import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Minimize, Send, Sparkles } from 'lucide-react';
+import { Minimize, Send, Sparkles, Brain, Menu } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
@@ -28,6 +28,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [location] = useLocation();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
+
+  // Panel visibility states with persistence
+  const [isAiPanelOpen, setIsAiPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('panel-ai-open');
+    return saved !== null ? JSON.parse(saved) : true; // Default to open
+  });
+
+  const [isNavPanelOpen, setIsNavPanelOpen] = useState(() => {
+    const saved = localStorage.getItem('panel-nav-open');
+    return saved !== null ? JSON.parse(saved) : true; // Default to open
+  });
+
+  // Persist panel states to localStorage
+  useEffect(() => {
+    localStorage.setItem('panel-ai-open', JSON.stringify(isAiPanelOpen));
+  }, [isAiPanelOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('panel-nav-open', JSON.stringify(isNavPanelOpen));
+  }, [isNavPanelOpen]);
 
   // Get AI settings for voice functionality
   const [aiSettings] = useState(() => {
@@ -192,11 +212,50 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Main content area with AI panel on left and navigation on right */}
       <div className="flex flex-1 overflow-hidden">
-        {/* AI Panel - now on the left side - hidden in full screen */}
-        {!isFullScreen && <AILeftPanel />}
+        {/* AI Panel - now on the left side - hidden in full screen or when closed */}
+        {!isFullScreen && isAiPanelOpen && <AILeftPanel onClose={() => setIsAiPanelOpen(false)} />}
         
         {/* Main content */}
         <div className="flex-1 flex flex-col">
+          {/* Panel toggle bar - hidden in full screen */}
+          {!isFullScreen && (
+            <div className="flex items-center justify-between px-4 py-2 border-b bg-background">
+              <div className="flex items-center gap-2">
+                {/* AI Panel Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsAiPanelOpen(!isAiPanelOpen)}
+                  className="h-8 px-3"
+                  title={isAiPanelOpen ? "Hide Max AI Panel" : "Show Max AI Panel"}
+                >
+                  <Brain className="w-4 h-4 mr-1" />
+                  {isAiPanelOpen ? "Hide AI" : "Show AI"}
+                </Button>
+                
+                {/* Navigation Panel Toggle */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsNavPanelOpen(!isNavPanelOpen)}
+                  className="h-8 px-3"
+                  title={isNavPanelOpen ? "Hide Navigation Panel" : "Show Navigation Panel"}
+                >
+                  <Menu className="w-4 h-4 mr-1" />
+                  {isNavPanelOpen ? "Hide Nav" : "Show Nav"}
+                </Button>
+              </div>
+              
+              {/* Status indicators */}
+              <div className="text-xs text-muted-foreground">
+                {!isAiPanelOpen && !isNavPanelOpen && "Panels hidden - use buttons to show"}
+                {isAiPanelOpen && isNavPanelOpen && "All panels visible"}
+                {isAiPanelOpen && !isNavPanelOpen && "AI panel visible"}
+                {!isAiPanelOpen && isNavPanelOpen && "Navigation panel visible"}
+              </div>
+            </div>
+          )}
+          
           {/* TopMenu for navigation menu - hidden in full screen */}
           {!isFullScreen && <TopMenu />}
           
@@ -206,8 +265,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </div>
         </div>
         
-        {/* Navigation Rail - now on the right side - hidden in full screen */}
-        {!isFullScreen && <LeftRailNav />}
+        {/* Navigation Rail - now on the right side - hidden in full screen or when closed */}
+        {!isFullScreen && isNavPanelOpen && <LeftRailNav onClose={() => setIsNavPanelOpen(false)} />}
       </div>
       
       {/* Bottom drawer for notifications - hidden in full screen */}
