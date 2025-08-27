@@ -392,7 +392,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                     <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                   </div>
                   <span>AI Design Assistant</span>
-                  <Wand2 className="w-4 h-4" />
+                  <Bot className="w-4 h-4" />
                 </div>
               </Button>
               <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -599,7 +599,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                   <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                 </div>
                 <span>AI Design Assistant</span>
-                <Wand2 className="w-4 h-4" />
+                <Bot className="w-4 h-4" />
               </div>
             </Button>
             <p className="text-xs text-muted-foreground mt-2 text-center">
@@ -907,7 +907,7 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                       <Sparkles className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300" />
                     </div>
                     <span>AI Design Assistant</span>
-                    <Wand2 className="w-4 h-4" />
+                    <Bot className="w-4 h-4" />
                   </div>
                 </Button>
                 <p className="text-xs text-muted-foreground mt-2 text-center">
