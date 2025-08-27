@@ -25,7 +25,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 // Check authentication status
 function useAuthStatus() {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
+  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation', '/production-scheduler-js', '/production-scheduler-js.html'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if token exists
