@@ -17,6 +17,7 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Major Changes (August 2025)
+- **Homepage Authentication Routing Fixed** (August 27, 2025): Resolved critical routing issue where authenticated users visiting homepage (/) were seeing WebsiteApp instead of ApplicationApp. Updated App.tsx authentication logic to properly show full application interface with complete navigation menu for authenticated users.
 - **AI Insights Dashboard**: Created comprehensive dedicated AI insights page with advanced filtering, search, statistics dashboard, and detailed insight cards replacing inline Max panel insights
 - **Max AI Panel Enhancement**: Streamlined Max AI panel by removing insights tab and adding navigation button to dedicated AI Insights page
 - **API Infrastructure**: Added comprehensive backend support for AI insights with /api/ai-insights endpoints and sample data including production optimization, quality alerts, and maintenance predictions

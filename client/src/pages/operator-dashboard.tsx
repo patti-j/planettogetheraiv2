@@ -81,13 +81,19 @@ interface OperatorOperation extends Operation {
 interface StatusReport {
   id: string;
   operationId: number;
-  type: "progress" | "issue" | "completion" | "quality";
+  type: "progress" | "issue" | "completion" | "quality" | "production";
   status: "in_progress" | "completed" | "blocked" | "issue";
   description: string;
   timestamp: string;
   operator: string;
   images?: string[];
   nextSteps?: string;
+  // Production status fields
+  quantityProduced?: number;
+  quantityComplete?: number;
+  quantityScrap?: number;
+  timeSpent?: number; // in minutes
+  targetQuantity?: number;
 }
 
 export default function OperatorDashboard() {
@@ -98,6 +104,12 @@ export default function OperatorDashboard() {
   const [reportDialogOpen, setReportDialogOpen] = useState(false);
   const [reportType, setReportType] = useState<string>("progress");
   const [reportDescription, setReportDescription] = useState("");
+  
+  // Production reporting states
+  const [quantityProduced, setQuantityProduced] = useState<number>(0);
+  const [quantityComplete, setQuantityComplete] = useState<number>(0);
+  const [quantityScrap, setQuantityScrap] = useState<number>(0);
+  const [timeSpent, setTimeSpent] = useState<number>(0);
   const [expandedOperation, setExpandedOperation] = useState<number | null>(null);
   const [currentOperator] = useState("John Smith"); // In real app, this would come from auth
   const { toast } = useToast();
@@ -292,51 +304,54 @@ export default function OperatorDashboard() {
           {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
         </Button>
       </div>
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
+      {/* Header - Much more compact on mobile */}
+      <div className="bg-white shadow-sm border-b p-1 sm:p-3 md:p-6 flex-shrink-0">
         <div className="relative">
           <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-              <Settings className="w-6 h-6 mr-2" />
-              Operator Dashboard
-            </h1>
-            <p className="text-sm md:text-base text-gray-600">Review upcoming operations and report status</p>
-          </div>
-          
-
-          
-          {/* Operator info below header */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 mt-4">
-            <User className="w-4 h-4" />
-            <span>{currentOperator}</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="bg-white border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">{upcomingCount}</div>
-            <div className="text-sm text-gray-500">Upcoming</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">{inProgressCount}</div>
-            <div className="text-sm text-gray-500">In Progress</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">{completedTodayCount}</div>
-            <div className="text-sm text-gray-500">Completed Today</div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-base sm:text-lg md:text-2xl font-semibold text-gray-800 flex items-center">
+                  <Settings className="w-3 h-3 sm:w-4 sm:h-4 md:w-6 md:h-6 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">Operator Dashboard</span>
+                  <span className="sm:hidden">Operator</span>
+                </h1>
+                <p className="text-xs text-gray-600 hidden md:block">Review upcoming operations and report status</p>
+              </div>
+              {/* Operator info - very compact on mobile */}
+              <div className="flex items-center gap-1 text-xs text-gray-600">
+                <User className="w-3 h-3" />
+                <span className="hidden sm:inline">{currentOperator}</span>
+                <span className="sm:hidden">{currentOperator.split(' ')[0]}</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white border-b px-4 py-3 sm:px-6 flex-shrink-0">
-        <div className="flex flex-wrap gap-4">
+      {/* Quick Stats - Much more compact on mobile */}
+      <div className="bg-white border-b px-2 py-1 sm:px-4 sm:py-2 md:px-6 md:py-3 flex-shrink-0">
+        <div className="grid grid-cols-3 gap-1 sm:gap-2 md:gap-4">
+          <div className="text-center">
+            <div className="text-sm sm:text-lg md:text-2xl font-bold text-blue-600">{upcomingCount}</div>
+            <div className="text-xs text-gray-500">Upcoming</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm sm:text-lg md:text-2xl font-bold text-orange-600">{inProgressCount}</div>
+            <div className="text-xs text-gray-500">In Progress</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm sm:text-lg md:text-2xl font-bold text-green-600">{completedTodayCount}</div>
+            <div className="text-xs text-gray-500">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters - Much more compact on mobile */}
+      <div className="bg-white border-b px-2 py-1 sm:px-4 sm:py-2 md:px-6 md:py-3 flex-shrink-0">
+        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 md:gap-4">
           <Select value={selectedResource} onValueChange={setSelectedResource}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Select resource" />
+            <SelectTrigger className="w-full sm:w-40 md:w-48 h-8 sm:h-9 md:h-10 text-xs sm:text-sm">
+              <SelectValue placeholder="Resource" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Resources</SelectItem>
@@ -348,8 +363,8 @@ export default function OperatorDashboard() {
             </SelectContent>
           </Select>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-48">
-              <SelectValue placeholder="Filter by status" />
+            <SelectTrigger className="w-full sm:w-40 md:w-48 h-8 sm:h-9 md:h-10 text-xs sm:text-sm">
+              <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Operations</SelectItem>
