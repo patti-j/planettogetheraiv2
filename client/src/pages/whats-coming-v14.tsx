@@ -32,9 +32,53 @@ import {
 
 export default function WhatsComing() {
   const [, setLocation] = useLocation();
-  const [selectedCategory, setSelectedCategory] = useState('ai');
+  const [selectedCategory, setSelectedCategory] = useState('planning');
 
   const features = {
+    planning: [
+      {
+        title: "Master Production Scheduling",
+        description: "Advanced MPS with constraint-based planning and capacity balancing",
+        icon: <Workflow className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Capacity balancing", "Demand alignment", "Production optimization", "Constraint-based planning"]
+      },
+      {
+        title: "DDMRP Implementation",
+        description: "Demand Driven Material Requirements Planning with intelligent buffer management",
+        icon: <Target className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Buffer management", "Flow optimization", "Demand sensing", "Supply chain responsiveness"]
+      },
+      {
+        title: "ML Demand Planning",
+        description: "Machine learning powered demand forecasting and planning with predictive analytics",
+        icon: <Brain className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing", "Pattern recognition"]
+      },
+      {
+        title: "Maintenance Planning",
+        description: "Integrated maintenance scheduling and management with predictive capabilities",
+        icon: <Settings className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Preventive scheduling", "Resource coordination", "Downtime optimization", "Predictive maintenance"]
+      },
+      {
+        title: "Advanced Labor Planning & Workforce Optimization",
+        description: "Comprehensive workforce planning synchronized with production scheduling and capacity requirements",
+        icon: <Users className="h-6 w-6" />,
+        status: "New",
+        benefits: [
+          "Shift optimization aligned with production capacity needs",
+          "Skills tracking and machine operator certification management",
+          "Capacity gap analysis between required vs available skills",
+          "Employee self-service scheduling preferences and availability",
+          "Automated planning algorithms via Optimization Studio",
+          "Real-time integration with production scheduling"
+        ]
+      }
+    ],
     ai: [
       {
         title: "Max AI Assistant",
@@ -94,27 +138,7 @@ export default function WhatsComing() {
         status: "New",
         benefits: ["Custom dashboards", "Trend analysis", "Benchmark comparisons"]
       },
-      {
-        title: "ML Demand Planning",
-        description: "Machine learning powered demand forecasting and planning",
-        icon: <Target className="h-6 w-6" />,
-        status: "New",
-        benefits: ["Predictive forecasting", "Seasonal adjustments", "Demand sensing"]
-      },
-      {
-        title: "Advanced Labor Planning & Workforce Optimization",
-        description: "Comprehensive workforce planning synchronized with production scheduling and capacity requirements. Automated shift planning using optimization algorithms to match employee skills with machine requirements. Includes employee self-service portal for schedule viewing and preference input.",
-        icon: <Users className="h-6 w-6" />,
-        status: "New",
-        benefits: [
-          "Shift optimization aligned with production capacity needs",
-          "Skills tracking and machine operator certification management",
-          "Capacity gap analysis between required vs available skills",
-          "Employee self-service scheduling preferences and availability",
-          "Automated planning algorithms via Optimization Studio",
-          "Real-time integration with production scheduling"
-        ]
-      },
+
       {
         title: "Control Tower",
         description: "Centralized command center for end-to-end visibility",
@@ -145,13 +169,7 @@ export default function WhatsComing() {
         status: "New",
         benefits: ["Production-aware messaging", "File sharing", "Task coordination"]
       },
-      {
-        title: "Master Production Scheduling",
-        description: "Advanced MPS with constraint-based planning",
-        icon: <Workflow className="h-6 w-6" />,
-        status: "New",
-        benefits: ["Capacity balancing", "Demand alignment", "Production optimization"]
-      },
+
       {
         title: "Operation Dispatcher",
         description: "Real-time work order dispatching and coordination",
@@ -182,20 +200,7 @@ export default function WhatsComing() {
       }
     ],
     integration: [
-      {
-        title: "DDMRP Implementation",
-        description: "Demand Driven Material Requirements Planning",
-        icon: <Target className="h-6 w-6" />,
-        status: "New",
-        benefits: ["Buffer management", "Flow optimization", "Demand sensing"]
-      },
-      {
-        title: "Maintenance Planning",
-        description: "Integrated maintenance scheduling and management",
-        icon: <Settings className="h-6 w-6" />,
-        status: "New",
-        benefits: ["Preventive scheduling", "Resource coordination", "Downtime optimization"]
-      },
+
       {
         title: "ERP Connectors",
         description: "Seamless integration with major ERP systems",
@@ -221,6 +226,11 @@ export default function WhatsComing() {
   };
 
   const categoryInfo = {
+    planning: {
+      title: "Planning Functions",
+      description: "Advanced planning capabilities for production, maintenance, and workforce optimization",
+      icon: <Workflow className="h-5 w-5" />
+    },
     ai: {
       title: "AI & Intelligence",
       description: "Revolutionary AI capabilities transforming manufacturing operations",
