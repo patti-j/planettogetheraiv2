@@ -608,50 +608,7 @@ export function AILeftPanel() {
                 </div>
               </ScrollArea>
               
-              {/* Chat Input */}
-              <div className="border-t pt-4 pb-2">
-                {/* Thinking indicator in input area */}
-                {showMaxThinking && (
-                  <div className="mb-3 p-2 bg-purple-50 dark:bg-purple-950/20 rounded-md border border-purple-200 dark:border-purple-800">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div className="flex gap-1">
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                          <div className="w-2 h-2 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                        </div>
-                        <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Max is thinking...</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={cancelMaxRequest}
-                        className="h-6 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/30"
-                      >
-                        <X className="h-3 w-3 mr-1" />
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex gap-2">
-                  <Input
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
-                    placeholder="Ask Max anything..."
-                    className="flex-1"
-                    disabled={showMaxThinking}
-                  />
-                  <Button onClick={handleSendMessage} size="icon" disabled={showMaxThinking}>
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1.5 mb-1">
-                  Max can help with scheduling, optimization, and insights
-                </p>
-              </div>
+
             </TabsContent>
 
             {/* Insights Tab */}

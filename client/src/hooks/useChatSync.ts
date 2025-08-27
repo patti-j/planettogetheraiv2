@@ -6,7 +6,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   createdAt: string;
-  source?: 'header' | 'panel'; // Track where the message came from
+  source?: 'header' | 'panel' | 'floating'; // Track where the message came from
 }
 
 // Current user ID - will be loaded from auth
