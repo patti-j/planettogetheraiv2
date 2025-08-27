@@ -113,6 +113,11 @@ import {
   industryTemplates, userIndustryTemplates, templateConfigurations,
   type IndustryTemplate, type UserIndustryTemplate, type TemplateConfiguration,
   type InsertIndustryTemplate, type InsertUserIndustryTemplate, type InsertTemplateConfiguration,
+  
+  // Memory Book System
+  memoryBooks, memoryBookEntries, memoryBookCollaborators, memoryBookEntryHistory, memoryBookUsage,
+  type MemoryBook, type MemoryBookEntry, type MemoryBookCollaborator, type MemoryBookEntryHistory, type MemoryBookUsage,
+  type InsertMemoryBook, type InsertMemoryBookEntry, type InsertMemoryBookCollaborator, type InsertMemoryBookEntryHistory, type InsertMemoryBookUsage,
   type PtJob, type PtResource, type PtJobOperation, type PtManufacturingOrder, type PtCapability, type PtMetric,
   shiftTemplates, resourceShiftAssignments, holidays, resourceAbsences, shiftScenarios, unplannedDowntime, overtimeShifts, downtimeActions, shiftChangeRequests,
   type ShiftTemplate, type ResourceShiftAssignment, type Holiday, type ResourceAbsence, type ShiftScenario, type UnplannedDowntime, type OvertimeShift, type DowntimeAction, type ShiftChangeRequest,
@@ -2116,6 +2121,40 @@ export interface IStorage {
   createImplementationProject(project: any): Promise<ImplementationProject>;
   updateImplementationProject(id: number, project: any): Promise<ImplementationProject | undefined>;
   deleteImplementationProject(id: number): Promise<boolean>;
+
+  // Memory Book System - Max AI's collaborative knowledge base
+  getMemoryBooks(scope?: string, plantId?: number, userId?: number): Promise<MemoryBook[]>;
+  getMemoryBook(id: number): Promise<MemoryBook | undefined>;
+  createMemoryBook(book: InsertMemoryBook): Promise<MemoryBook>;
+  updateMemoryBook(id: number, updates: Partial<InsertMemoryBook>): Promise<MemoryBook | undefined>;
+  deleteMemoryBook(id: number): Promise<boolean>;
+  
+  // Memory Book Entries
+  getMemoryBookEntries(memoryBookId?: number, category?: string, searchTerm?: string): Promise<MemoryBookEntry[]>;
+  getMemoryBookEntry(id: number): Promise<MemoryBookEntry | undefined>;
+  createMemoryBookEntry(entry: InsertMemoryBookEntry): Promise<MemoryBookEntry>;
+  updateMemoryBookEntry(id: number, updates: Partial<InsertMemoryBookEntry>): Promise<MemoryBookEntry | undefined>;
+  deleteMemoryBookEntry(id: number): Promise<boolean>;
+  searchMemoryBookEntries(searchTerm: string, memoryBookId?: number): Promise<MemoryBookEntry[]>;
+  
+  // Memory Book Collaborators
+  getMemoryBookCollaborators(memoryBookId: number): Promise<MemoryBookCollaborator[]>;
+  addMemoryBookCollaborator(collaborator: InsertMemoryBookCollaborator): Promise<MemoryBookCollaborator>;
+  updateMemoryBookCollaboratorPermission(id: number, permission: string): Promise<MemoryBookCollaborator | undefined>;
+  removeMemoryBookCollaborator(id: number): Promise<boolean>;
+  
+  // Memory Book Entry History
+  getMemoryBookEntryHistory(entryId: number): Promise<MemoryBookEntryHistory[]>;
+  createMemoryBookEntryHistory(history: InsertMemoryBookEntryHistory): Promise<MemoryBookEntryHistory>;
+  
+  // Memory Book Usage Analytics
+  recordMemoryBookUsage(usage: InsertMemoryBookUsage): Promise<MemoryBookUsage>;
+  getMemoryBookUsageStats(entryId?: number): Promise<{
+    totalViews: number;
+    totalApplications: number;
+    averageEffectiveness: number;
+    recentUsage: number;
+  }>;
 }
 
 export class MemStorage implements Partial<IStorage> {
@@ -17200,6 +17239,264 @@ export class DatabaseStorage implements IStorage {
       .delete(implementationProjects)
       .where(eq(implementationProjects.id, id));
     return result.rowCount > 0;
+  }
+
+  // Memory Book System Implementation
+  async getMemoryBooks(scope?: string, plantId?: number, userId?: number): Promise<MemoryBook[]> {
+    let query = this.db.select().from(memoryBooks);
+    const conditions = [];
+    
+    if (scope) conditions.push(eq(memoryBooks.scope, scope));
+    if (plantId) conditions.push(eq(memoryBooks.plantId, plantId));
+    if (userId) {
+      // Check if user is creator or collaborator
+      const collaboratorQuery = this.db
+        .select({ memoryBookId: memoryBookCollaborators.memoryBookId })
+        .from(memoryBookCollaborators)
+        .where(eq(memoryBookCollaborators.userId, userId));
+      
+      conditions.push(or(
+        eq(memoryBooks.createdBy, userId),
+        inArray(memoryBooks.id, collaboratorQuery)
+      ));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query
+      .where(eq(memoryBooks.isActive, true))
+      .orderBy(desc(memoryBooks.updatedAt));
+  }
+
+  async getMemoryBook(id: number): Promise<MemoryBook | undefined> {
+    const [book] = await this.db
+      .select()
+      .from(memoryBooks)
+      .where(eq(memoryBooks.id, id));
+    return book;
+  }
+
+  async createMemoryBook(book: InsertMemoryBook): Promise<MemoryBook> {
+    const [newBook] = await this.db
+      .insert(memoryBooks)
+      .values(book)
+      .returning();
+    return newBook;
+  }
+
+  async updateMemoryBook(id: number, updates: Partial<InsertMemoryBook>): Promise<MemoryBook | undefined> {
+    const [updated] = await this.db
+      .update(memoryBooks)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(memoryBooks.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteMemoryBook(id: number): Promise<boolean> {
+    const result = await this.db
+      .update(memoryBooks)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(memoryBooks.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Memory Book Entries
+  async getMemoryBookEntries(memoryBookId?: number, category?: string, searchTerm?: string): Promise<MemoryBookEntry[]> {
+    let query = this.db.select().from(memoryBookEntries);
+    const conditions = [];
+    
+    if (memoryBookId) conditions.push(eq(memoryBookEntries.memoryBookId, memoryBookId));
+    if (category) conditions.push(eq(memoryBookEntries.category, category));
+    if (searchTerm) {
+      conditions.push(or(
+        ilike(memoryBookEntries.title, `%${searchTerm}%`),
+        ilike(memoryBookEntries.content, `%${searchTerm}%`)
+      ));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    return await query
+      .where(eq(memoryBookEntries.isArchived, false))
+      .orderBy(desc(memoryBookEntries.updatedAt));
+  }
+
+  async getMemoryBookEntry(id: number): Promise<MemoryBookEntry | undefined> {
+    const [entry] = await this.db
+      .select()
+      .from(memoryBookEntries)
+      .where(eq(memoryBookEntries.id, id));
+    return entry;
+  }
+
+  async createMemoryBookEntry(entry: InsertMemoryBookEntry): Promise<MemoryBookEntry> {
+    const [newEntry] = await this.db
+      .insert(memoryBookEntries)
+      .values(entry)
+      .returning();
+    
+    // Record the creation in history
+    await this.createMemoryBookEntryHistory({
+      entryId: newEntry.id,
+      newContent: newEntry.content,
+      changeType: 'created',
+      changeDescription: 'Initial entry creation',
+      editedBy: newEntry.createdBy
+    });
+    
+    return newEntry;
+  }
+
+  async updateMemoryBookEntry(id: number, updates: Partial<InsertMemoryBookEntry>): Promise<MemoryBookEntry | undefined> {
+    // Get current entry for history
+    const currentEntry = await this.getMemoryBookEntry(id);
+    if (!currentEntry) return undefined;
+    
+    const [updated] = await this.db
+      .update(memoryBookEntries)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(memoryBookEntries.id, id))
+      .returning();
+    
+    // Record the change in history
+    if (updated && updates.content) {
+      await this.createMemoryBookEntryHistory({
+        entryId: id,
+        previousContent: currentEntry.content,
+        newContent: updates.content,
+        changeType: 'updated',
+        changeDescription: 'Content updated',
+        editedBy: updates.lastEditedBy || currentEntry.createdBy
+      });
+    }
+    
+    return updated;
+  }
+
+  async deleteMemoryBookEntry(id: number): Promise<boolean> {
+    const result = await this.db
+      .update(memoryBookEntries)
+      .set({ isArchived: true, updatedAt: new Date() })
+      .where(eq(memoryBookEntries.id, id));
+    return result.rowCount > 0;
+  }
+
+  async searchMemoryBookEntries(searchTerm: string, memoryBookId?: number): Promise<MemoryBookEntry[]> {
+    let query = this.db
+      .select()
+      .from(memoryBookEntries)
+      .where(and(
+        eq(memoryBookEntries.isArchived, false),
+        or(
+          ilike(memoryBookEntries.title, `%${searchTerm}%`),
+          ilike(memoryBookEntries.content, `%${searchTerm}%`)
+        )
+      ));
+    
+    if (memoryBookId) {
+      query = query.where(eq(memoryBookEntries.memoryBookId, memoryBookId));
+    }
+    
+    return await query.orderBy(desc(memoryBookEntries.updatedAt));
+  }
+
+  // Memory Book Collaborators
+  async getMemoryBookCollaborators(memoryBookId: number): Promise<MemoryBookCollaborator[]> {
+    return await this.db
+      .select()
+      .from(memoryBookCollaborators)
+      .where(eq(memoryBookCollaborators.memoryBookId, memoryBookId))
+      .orderBy(desc(memoryBookCollaborators.addedAt));
+  }
+
+  async addMemoryBookCollaborator(collaborator: InsertMemoryBookCollaborator): Promise<MemoryBookCollaborator> {
+    const [newCollaborator] = await this.db
+      .insert(memoryBookCollaborators)
+      .values(collaborator)
+      .returning();
+    return newCollaborator;
+  }
+
+  async updateMemoryBookCollaboratorPermission(id: number, permission: string): Promise<MemoryBookCollaborator | undefined> {
+    const [updated] = await this.db
+      .update(memoryBookCollaborators)
+      .set({ permission })
+      .where(eq(memoryBookCollaborators.id, id))
+      .returning();
+    return updated;
+  }
+
+  async removeMemoryBookCollaborator(id: number): Promise<boolean> {
+    const result = await this.db
+      .delete(memoryBookCollaborators)
+      .where(eq(memoryBookCollaborators.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Memory Book Entry History
+  async getMemoryBookEntryHistory(entryId: number): Promise<MemoryBookEntryHistory[]> {
+    return await this.db
+      .select()
+      .from(memoryBookEntryHistory)
+      .where(eq(memoryBookEntryHistory.entryId, entryId))
+      .orderBy(desc(memoryBookEntryHistory.editedAt));
+  }
+
+  async createMemoryBookEntryHistory(history: InsertMemoryBookEntryHistory): Promise<MemoryBookEntryHistory> {
+    const [newHistory] = await this.db
+      .insert(memoryBookEntryHistory)
+      .values(history)
+      .returning();
+    return newHistory;
+  }
+
+  // Memory Book Usage Analytics
+  async recordMemoryBookUsage(usage: InsertMemoryBookUsage): Promise<MemoryBookUsage> {
+    const [newUsage] = await this.db
+      .insert(memoryBookUsage)
+      .values(usage)
+      .returning();
+    return newUsage;
+  }
+
+  async getMemoryBookUsageStats(entryId?: number): Promise<{
+    totalViews: number;
+    totalApplications: number;
+    averageEffectiveness: number;
+    recentUsage: number;
+  }> {
+    let query = this.db.select().from(memoryBookUsage);
+    
+    if (entryId) {
+      query = query.where(eq(memoryBookUsage.entryId, entryId));
+    }
+    
+    const usageData = await query;
+    
+    const totalViews = usageData.filter(u => u.actionType === 'viewed').length;
+    const totalApplications = usageData.filter(u => u.actionType === 'applied').length;
+    const effectivenessRatings = usageData
+      .filter(u => u.effectivenessRating !== null)
+      .map(u => u.effectivenessRating!);
+    const averageEffectiveness = effectivenessRatings.length > 0 
+      ? effectivenessRatings.reduce((a, b) => a + b, 0) / effectivenessRatings.length 
+      : 0;
+    
+    const weekAgo = new Date();
+    weekAgo.setDate(weekAgo.getDate() - 7);
+    const recentUsage = usageData.filter(u => u.usedAt && u.usedAt > weekAgo).length;
+    
+    return {
+      totalViews,
+      totalApplications,
+      averageEffectiveness,
+      recentUsage
+    };
   }
 }
 

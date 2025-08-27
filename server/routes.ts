@@ -59,6 +59,9 @@ import {
   insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
   insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
   insertFieldCommentSchema,
+  // Memory Book Schemas
+  insertMemoryBookSchema, insertMemoryBookEntrySchema, insertMemoryBookCollaboratorSchema,
+  insertMemoryBookEntryHistorySchema, insertMemoryBookUsageSchema,
   // Constraints Management Schemas
   insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema,
   // Buffer Management Schemas
@@ -27608,6 +27611,241 @@ Be careful to preserve data integrity and relationships.`;
     } catch (error) {
       console.error("Error updating monitoring interval:", error);
       res.status(500).json({ error: "Failed to update monitoring interval" });
+    }
+  });
+
+  // Memory Book System Routes
+  app.get("/api/memory-books", requireAuth, async (req, res) => {
+    try {
+      const { scope, plantId, userId } = req.query;
+      const books = await storage.getMemoryBooks(
+        scope as string, 
+        plantId ? parseInt(plantId as string) : undefined,
+        userId ? parseInt(userId as string) : undefined
+      );
+      res.json(books);
+    } catch (error) {
+      console.error("Error fetching memory books:", error);
+      res.status(500).json({ error: "Failed to fetch memory books" });
+    }
+  });
+
+  app.get("/api/memory-books/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const book = await storage.getMemoryBook(id);
+      if (!book) return res.status(404).json({ error: "Memory book not found" });
+      res.json(book);
+    } catch (error) {
+      console.error("Error fetching memory book:", error);
+      res.status(500).json({ error: "Failed to fetch memory book" });
+    }
+  });
+
+  app.post("/api/memory-books", requireAuth, async (req, res) => {
+    try {
+      const book = await storage.createMemoryBook(req.body);
+      res.status(201).json(book);
+    } catch (error) {
+      console.error("Error creating memory book:", error);
+      res.status(500).json({ error: "Failed to create memory book" });
+    }
+  });
+
+  app.put("/api/memory-books/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const book = await storage.updateMemoryBook(id, req.body);
+      if (!book) return res.status(404).json({ error: "Memory book not found" });
+      res.json(book);
+    } catch (error) {
+      console.error("Error updating memory book:", error);
+      res.status(500).json({ error: "Failed to update memory book" });
+    }
+  });
+
+  app.delete("/api/memory-books/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMemoryBook(id);
+      if (!success) return res.status(404).json({ error: "Memory book not found" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting memory book:", error);
+      res.status(500).json({ error: "Failed to delete memory book" });
+    }
+  });
+
+  // Memory Book Entries Routes
+  app.get("/api/memory-book-entries", requireAuth, async (req, res) => {
+    try {
+      const { memoryBookId, category, search } = req.query;
+      const entries = await storage.getMemoryBookEntries(
+        memoryBookId ? parseInt(memoryBookId as string) : undefined,
+        category as string,
+        search as string
+      );
+      res.json(entries);
+    } catch (error) {
+      console.error("Error fetching memory book entries:", error);
+      res.status(500).json({ error: "Failed to fetch memory book entries" });
+    }
+  });
+
+  app.get("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const entry = await storage.getMemoryBookEntry(id);
+      if (!entry) return res.status(404).json({ error: "Memory book entry not found" });
+      
+      // Record view usage
+      await storage.recordMemoryBookUsage({
+        entryId: id,
+        userId: req.user?.id || null,
+        actionType: 'viewed',
+        context: 'api_access'
+      });
+      
+      res.json(entry);
+    } catch (error) {
+      console.error("Error fetching memory book entry:", error);
+      res.status(500).json({ error: "Failed to fetch memory book entry" });
+    }
+  });
+
+  app.post("/api/memory-book-entries", requireAuth, async (req, res) => {
+    try {
+      const entry = await storage.createMemoryBookEntry(req.body);
+      res.status(201).json(entry);
+    } catch (error) {
+      console.error("Error creating memory book entry:", error);
+      res.status(500).json({ error: "Failed to create memory book entry" });
+    }
+  });
+
+  app.put("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const entry = await storage.updateMemoryBookEntry(id, req.body);
+      if (!entry) return res.status(404).json({ error: "Memory book entry not found" });
+      res.json(entry);
+    } catch (error) {
+      console.error("Error updating memory book entry:", error);
+      res.status(500).json({ error: "Failed to update memory book entry" });
+    }
+  });
+
+  app.delete("/api/memory-book-entries/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteMemoryBookEntry(id);
+      if (!success) return res.status(404).json({ error: "Memory book entry not found" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting memory book entry:", error);
+      res.status(500).json({ error: "Failed to delete memory book entry" });
+    }
+  });
+
+  app.get("/api/memory-book-entries/search/:searchTerm", requireAuth, async (req, res) => {
+    try {
+      const { searchTerm } = req.params;
+      const { memoryBookId } = req.query;
+      const entries = await storage.searchMemoryBookEntries(
+        searchTerm,
+        memoryBookId ? parseInt(memoryBookId as string) : undefined
+      );
+      res.json(entries);
+    } catch (error) {
+      console.error("Error searching memory book entries:", error);
+      res.status(500).json({ error: "Failed to search memory book entries" });
+    }
+  });
+
+  // Memory Book Collaborators Routes
+  app.get("/api/memory-books/:id/collaborators", requireAuth, async (req, res) => {
+    try {
+      const memoryBookId = parseInt(req.params.id);
+      const collaborators = await storage.getMemoryBookCollaborators(memoryBookId);
+      res.json(collaborators);
+    } catch (error) {
+      console.error("Error fetching memory book collaborators:", error);
+      res.status(500).json({ error: "Failed to fetch memory book collaborators" });
+    }
+  });
+
+  app.post("/api/memory-books/:id/collaborators", requireAuth, async (req, res) => {
+    try {
+      const memoryBookId = parseInt(req.params.id);
+      const collaborator = await storage.addMemoryBookCollaborator({
+        ...req.body,
+        memoryBookId
+      });
+      res.status(201).json(collaborator);
+    } catch (error) {
+      console.error("Error adding memory book collaborator:", error);
+      res.status(500).json({ error: "Failed to add memory book collaborator" });
+    }
+  });
+
+  app.put("/api/memory-book-collaborators/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { permission } = req.body;
+      const collaborator = await storage.updateMemoryBookCollaboratorPermission(id, permission);
+      if (!collaborator) return res.status(404).json({ error: "Collaborator not found" });
+      res.json(collaborator);
+    } catch (error) {
+      console.error("Error updating memory book collaborator:", error);
+      res.status(500).json({ error: "Failed to update memory book collaborator" });
+    }
+  });
+
+  app.delete("/api/memory-book-collaborators/:id", requireAuth, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.removeMemoryBookCollaborator(id);
+      if (!success) return res.status(404).json({ error: "Collaborator not found" });
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error removing memory book collaborator:", error);
+      res.status(500).json({ error: "Failed to remove memory book collaborator" });
+    }
+  });
+
+  // Memory Book Entry History Routes
+  app.get("/api/memory-book-entries/:id/history", requireAuth, async (req, res) => {
+    try {
+      const entryId = parseInt(req.params.id);
+      const history = await storage.getMemoryBookEntryHistory(entryId);
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching memory book entry history:", error);
+      res.status(500).json({ error: "Failed to fetch memory book entry history" });
+    }
+  });
+
+  // Memory Book Usage Analytics Routes
+  app.post("/api/memory-book-usage", requireAuth, async (req, res) => {
+    try {
+      const usage = await storage.recordMemoryBookUsage(req.body);
+      res.status(201).json(usage);
+    } catch (error) {
+      console.error("Error recording memory book usage:", error);
+      res.status(500).json({ error: "Failed to record memory book usage" });
+    }
+  });
+
+  app.get("/api/memory-book-usage/stats", requireAuth, async (req, res) => {
+    try {
+      const { entryId } = req.query;
+      const stats = await storage.getMemoryBookUsageStats(
+        entryId ? parseInt(entryId as string) : undefined
+      );
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching memory book usage stats:", error);
+      res.status(500).json({ error: "Failed to fetch memory book usage stats" });
     }
   });
 

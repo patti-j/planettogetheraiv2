@@ -1105,6 +1105,93 @@ export const scenarioDiscussions: any = pgTable("scenario_discussions", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Memory Book System - Max AI's collaborative knowledge base similar to replit.md
+export const memoryBooks = pgTable("memory_books", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description"),
+  scope: text("scope").notNull().default("global"), // global, plant, department, project
+  plantId: integer("plant_id").references(() => plants.id), // null for global scope
+  departmentId: integer("department_id"), // null for plant-wide or global scope
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  lastEditedBy: integer("last_edited_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Memory Book Entries - individual knowledge items within a memory book
+export const memoryBookEntries = pgTable("memory_book_entries", {
+  id: serial("id").primaryKey(),
+  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
+  title: text("title").notNull(),
+  content: text("content").notNull(), // Markdown content
+  entryType: text("entry_type").notNull().default("instruction"), // instruction, procedure, lesson_learned, best_practice, troubleshooting, configuration
+  priority: text("priority").notNull().default("medium"), // low, medium, high, critical
+  category: text("category"), // scheduling, optimization, production, quality, maintenance, etc.
+  context: jsonb("context").$type<{
+    related_operations?: string[];
+    related_resources?: string[];
+    related_products?: string[];
+    situation_triggers?: string[];
+    prerequisites?: string[];
+  }>().default({}),
+  metadata: jsonb("metadata").$type<{
+    ai_generated?: boolean;
+    confidence_score?: number;
+    source_type?: "user_instruction" | "ai_learning" | "system_event" | "collaboration";
+    learning_iteration?: number;
+    effectiveness_rating?: number;
+  }>().default({}),
+  tags: jsonb("tags").$type<string[]>().default([]),
+  isArchived: boolean("is_archived").default(false),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  lastEditedBy: integer("last_edited_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  contentSearchIndex: index("memory_content_search_idx").on(table.content),
+  titleSearchIndex: index("memory_title_search_idx").on(table.title),
+  categoryIndex: index("memory_category_idx").on(table.category),
+  typeIndex: index("memory_type_idx").on(table.entryType),
+}));
+
+// Memory Book Collaborators - users who can edit specific memory books
+export const memoryBookCollaborators = pgTable("memory_book_collaborators", {
+  id: serial("id").primaryKey(),
+  memoryBookId: integer("memory_book_id").references(() => memoryBooks.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  permission: text("permission").notNull().default("edit"), // read, edit, admin
+  addedBy: integer("added_by").references(() => users.id).notNull(),
+  addedAt: timestamp("added_at").defaultNow(),
+}, (table) => ({
+  collaboratorUnique: unique().on(table.memoryBookId, table.userId),
+}));
+
+// Memory Book Entry History - track all changes for audit purposes
+export const memoryBookEntryHistory = pgTable("memory_book_entry_history", {
+  id: serial("id").primaryKey(),
+  entryId: integer("entry_id").references(() => memoryBookEntries.id).notNull(),
+  previousContent: text("previous_content"),
+  newContent: text("new_content"),
+  changeType: text("change_type").notNull(), // created, updated, archived, restored
+  changeDescription: text("change_description"),
+  editedBy: integer("edited_by").references(() => users.id).notNull(),
+  editedAt: timestamp("edited_at").defaultNow(),
+});
+
+// Memory Book Usage Analytics - track how knowledge is being accessed and used
+export const memoryBookUsage = pgTable("memory_book_usage", {
+  id: serial("id").primaryKey(),
+  entryId: integer("entry_id").references(() => memoryBookEntries.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  actionType: text("action_type").notNull(), // viewed, applied, referenced, shared
+  context: text("context"), // where it was used (scheduling, optimization, etc.)
+  effectivenessRating: integer("effectiveness_rating"), // 1-5 scale, how helpful it was
+  usedAt: timestamp("used_at").defaultNow(),
+});
+
 // Unified Widget System - supports widgets across all application areas
 export const unifiedWidgets = pgTable("unified_widgets", {
   id: serial("id").primaryKey(),
@@ -2834,6 +2921,50 @@ export const insertCockpitLayoutSchema = createInsertSchema(cockpitLayouts).omit
   createdAt: true,
   updatedAt: true,
 });
+
+// Memory Book Insert Schemas
+export const insertMemoryBookSchema = createInsertSchema(memoryBooks).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMemoryBookEntrySchema = createInsertSchema(memoryBookEntries).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMemoryBookCollaboratorSchema = createInsertSchema(memoryBookCollaborators).omit({
+  id: true,
+  addedAt: true,
+});
+
+export const insertMemoryBookEntryHistorySchema = createInsertSchema(memoryBookEntryHistory).omit({
+  id: true,
+  editedAt: true,
+});
+
+export const insertMemoryBookUsageSchema = createInsertSchema(memoryBookUsage).omit({
+  id: true,
+  usedAt: true,
+});
+
+// Memory Book Types
+export type MemoryBook = typeof memoryBooks.$inferSelect;
+export type InsertMemoryBook = z.infer<typeof insertMemoryBookSchema>;
+
+export type MemoryBookEntry = typeof memoryBookEntries.$inferSelect;
+export type InsertMemoryBookEntry = z.infer<typeof insertMemoryBookEntrySchema>;
+
+export type MemoryBookCollaborator = typeof memoryBookCollaborators.$inferSelect;
+export type InsertMemoryBookCollaborator = z.infer<typeof insertMemoryBookCollaboratorSchema>;
+
+export type MemoryBookEntryHistory = typeof memoryBookEntryHistory.$inferSelect;
+export type InsertMemoryBookEntryHistory = z.infer<typeof insertMemoryBookEntryHistorySchema>;
+
+export type MemoryBookUsage = typeof memoryBookUsage.$inferSelect;
+export type InsertMemoryBookUsage = z.infer<typeof insertMemoryBookUsageSchema>;
 
 export const insertCockpitWidgetSchema = createInsertSchema(cockpitWidgets).omit({
   id: true,
