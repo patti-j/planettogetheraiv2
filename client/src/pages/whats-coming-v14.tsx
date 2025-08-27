@@ -26,7 +26,8 @@ import {
   Settings,
   History,
   BookOpen,
-  RefreshCw
+  RefreshCw,
+  Package
 } from 'lucide-react';
 
 export default function WhatsComing() {
@@ -75,6 +76,20 @@ export default function WhatsComing() {
           "Employee self-service scheduling preferences and availability",
           "Automated planning algorithms via Optimization Studio",
           "Real-time integration with production scheduling"
+        ]
+      },
+      {
+        title: "Inventory Optimization",
+        description: "AI-powered inventory management with automated replenishment and demand-driven optimization",
+        icon: <Package className="h-6 w-6" />,
+        status: "New",
+        benefits: [
+          "Intelligent safety stock calculation",
+          "Automated reorder point optimization",
+          "Demand variability analysis",
+          "Multi-echelon inventory planning",
+          "Cost optimization algorithms",
+          "Integration with production scheduling"
         ]
       }
     ],
