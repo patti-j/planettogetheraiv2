@@ -869,6 +869,17 @@ export function AILeftPanel() {
                       Voice Settings
                     </h3>
                     
+                    <div className="flex items-center justify-between">
+                      <Label htmlFor="enable-voice" className="text-sm cursor-pointer">
+                        Enable Voice Responses
+                      </Label>
+                      <Switch
+                        id="enable-voice"
+                        checked={aiSettings.soundEnabled}
+                        onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, soundEnabled: checked }))}
+                      />
+                    </div>
+                    
                     <div>
                       <Label htmlFor="voice" className="text-sm">Voice</Label>
                       <Select value={aiSettings.voice} onValueChange={(value) => setAiSettings(prev => ({ ...prev, voice: value }))}>
