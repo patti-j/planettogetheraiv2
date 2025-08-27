@@ -1315,58 +1315,58 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       {/* Collapsed state - show icon indicators */}
       {isCollapsed && (
         <div className="flex-1 flex flex-col items-center py-4 gap-4">
-          <button 
-            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
-            style={{ backgroundColor: 'transparent' }}
+          <div 
+            className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('chat');
             }}
             title="Open AI Chat"
+            style={{ padding: '8px', background: 'none', border: 'none' }}
           >
             <Brain className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-          </button>
+          </div>
           <Separator className="w-6" />
-          <button 
-            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
-            style={{ backgroundColor: 'transparent' }}
+          <div 
+            className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('insights');
             }}
             title="View AI Insights (3 new)"
+            style={{ padding: '8px', background: 'none', border: 'none' }}
           >
             <TrendingUp className="w-5 h-5" />
             <Badge className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               3
             </Badge>
-          </button>
-          <button 
-            className="relative p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
-            style={{ backgroundColor: 'transparent' }}
+          </div>
+          <div 
+            className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('anomalies');
             }}
             title="View Anomalies (1 critical)"
+            style={{ padding: '8px', background: 'none', border: 'none' }}
           >
             <AlertTriangle className="w-5 h-5 text-orange-500" />
             <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
               1
             </Badge>
-          </button>
-          <button 
-            className="p-2 !bg-transparent hover:!bg-transparent border-0 outline-none focus:outline-none cursor-pointer"
-            style={{ backgroundColor: 'transparent' }}
+          </div>
+          <div 
+            className="cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
               setActiveTab('simulations');
             }}
             title="Run AI Simulations"
+            style={{ padding: '8px', background: 'none', border: 'none' }}
           >
             <Activity className="w-5 h-5" />
-          </button>
+          </div>
         </div>
       )}
     </div>
