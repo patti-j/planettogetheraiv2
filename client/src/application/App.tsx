@@ -198,6 +198,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/bryntum-scheduler-pro-direct" component={BryntumSchedulerProDirect} />
               <Route path="/production-scheduler-js" component={ProductionSchedulerStandalone} />
+              <Route path="/production-scheduler-js.html" component={ProductionSchedulerStandalone} />
 
               {/* Planning & Scheduling Routes */}
               <Route path="/planning-overview" component={PlanningOverview} />
