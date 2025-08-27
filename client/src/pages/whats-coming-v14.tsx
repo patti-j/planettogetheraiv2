@@ -394,7 +394,7 @@ export default function WhatsComing() {
             <div className="space-y-12">
               {[
                 { quarter: "Q4 2025", title: "AI Assistant Beta", description: "Max AI voice interface and intelligent recommendations" },
-                { quarter: "Q1 2026", title: "Analytics Platform", description: "Advanced KPI tracking and visual factory displays" },
+                { quarter: "Q1 2026", title: "General Release", description: "Official AI platform release" },
                 { quarter: "Q2 2026", title: "Collaboration Suite", description: "Integrated chat, partner portal, and mobile apps" },
                 { quarter: "Q3 2026", title: "Integration Hub", description: "Enhanced ERP connectors and API management" }
               ].map((milestone, index) => (
