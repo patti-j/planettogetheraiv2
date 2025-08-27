@@ -17,7 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
-import { useChatSync } from '@/hooks/useChatSync';
+import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 
 interface AIInsight {
   id: string;
@@ -121,6 +121,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [userPreferences]);
 
+  const { chatMessages, addMessage } = useChatSync();
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const previousMessageCountRef = useRef(0);
+
   // Monitor for new messages and show floating notification when collapsed
   useEffect(() => {
     const currentMessageCount = chatMessages.length;
@@ -150,10 +154,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   useEffect(() => {
     localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
   }, [aiSettings]);
-  
-  const { chatMessages, addMessage } = useChatSync();
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
-  const previousMessageCountRef = useRef(chatMessages.length);
 
   // Stop current audio playback
   const stopAudio = useCallback(() => {
@@ -639,7 +639,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       case 'insight': return TrendingUp;
       case 'recommendation': return Lightbulb;
       case 'simulation': return Activity;
-      default: return Brain;
+      default: return Wand2;
     }
   };
 
