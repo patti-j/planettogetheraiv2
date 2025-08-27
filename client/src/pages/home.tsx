@@ -201,13 +201,13 @@ export default function HomePage() {
                     <Button
                       key={index}
                       variant="outline"
-                      className="justify-start gap-2 h-auto py-3 px-3 flex-wrap min-h-[3rem]"
+                      className="justify-start gap-2 h-auto py-3 px-3 min-h-[3rem] min-w-0"
                       onClick={() => setLocation(link.href)}
                     >
                       <div className={`w-8 h-8 rounded-lg ${link.color} flex items-center justify-center flex-shrink-0`}>
                         <link.icon className="w-4 h-4 text-white" />
                       </div>
-                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-left leading-tight`}>
+                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-left leading-tight truncate flex-1`}>
                         {link.label}
                       </span>
                     </Button>
