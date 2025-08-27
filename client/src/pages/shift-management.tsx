@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/select';
 import { 
   Clock, Users, Calendar, Settings, BarChart3, 
-  Plus, Building2, Brain, ChevronLeft, Trash2, UserCheck, 
+  Plus, Building2, Wand2, ChevronLeft, Trash2, UserCheck, 
   ArrowRight, CheckCircle, AlertCircle, Edit, AlertTriangle,
   Wrench, Timer, DollarSign, User, MapPin, FileText,
   PlayCircle, PauseCircle, StopCircle, Activity

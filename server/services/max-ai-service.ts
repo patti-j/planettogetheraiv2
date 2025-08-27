@@ -236,10 +236,50 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     return 'general';
   }
   
+  // Analyze specific data queries using internal data
+  async analyzeInternalDataQuery(query: string, context: MaxContext): Promise<string> {
+    try {
+      const lowerQuery = query.toLowerCase();
+      
+      // Handle job-related queries
+      if (lowerQuery.includes('job') || lowerQuery.includes('operation')) {
+        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjoboperations`);
+        const totalJobs = Number(jobCountResult.rows[0]?.count || 0);
+        
+        if (lowerQuery.includes('how many') || lowerQuery.includes('count') || lowerQuery.includes('total')) {
+          return `We currently have ${totalJobs} jobs in the system. These are production operations from our PT Publish data. Would you like me to show you the production schedule or analyze these jobs further?`;
+        }
+      }
+      
+      // Handle resource queries
+      if (lowerQuery.includes('resource') || lowerQuery.includes('equipment')) {
+        const resourcesResult = await db.execute(sql`
+          SELECT COUNT(*) as count 
+          FROM ptResources 
+          WHERE instance_id = 'BREW-SIM-001' AND active = true
+        `);
+        const activeResources = Number(resourcesResult.rows[0]?.count || 0);
+        
+        return `We have ${activeResources} active resources available in the BREW-SIM-001 instance. These include equipment, machinery, and work centers for production.`;
+      }
+      
+      // Handle alert queries
+      if (lowerQuery.includes('alert')) {
+        const alertList = await db.select().from(alerts).where(eq(alerts.status, 'active'));
+        return `There are currently ${alertList.length} active alerts in the system. ${alertList.length > 0 ? 'Would you like me to analyze them?' : 'Everything looks good!'}`;
+      }
+      
+      return ''; // Return empty string if no specific data match
+    } catch (error) {
+      console.error('Internal data analysis error:', error);
+      return '';
+    }
+  }
+
   // Get real-time production status
   async getProductionStatus(context: MaxContext) {
     try {
-      // Get active alerts only - other tables may not exist yet
+      // Get active alerts
       const alertList = await db.select({
         id: alerts.id,
         title: alerts.title,
@@ -251,12 +291,31 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         .where(eq(alerts.status, 'active'))
         .limit(5);
 
+      // Get job count from PT Publish table
+      let totalJobs = 0;
+      let runningOperations = 0;
+      try {
+        // Query PT Publish job operations table directly
+        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjoboperations`);
+        totalJobs = jobCountResult.rows[0]?.count || 0;
+        
+        // Count operations in progress
+        const runningOpsResult = await db.execute(sql`
+          SELECT COUNT(*) as count 
+          FROM ptjoboperations 
+          WHERE scheduled_start <= NOW() AND scheduled_end >= NOW()
+        `);
+        runningOperations = runningOpsResult.rows[0]?.count || 0;
+      } catch (jobError) {
+        console.log('Job data unavailable:', jobError.message);
+      }
+
       return {
-        activeOrders: 0, // Will be updated when tables are available
-        runningOperations: 0,
-        resourceUtilization: { average: 0, critical: 0, warning: 0 }, // Basic structure
+        activeOrders: totalJobs,
+        runningOperations: runningOperations,
+        resourceUtilization: { average: 0, critical: 0, warning: 0 },
         criticalAlerts: alertList.filter(a => a.severity === 'critical'),
-        summary: `System status: ${alertList.length} active alerts tracked`
+        summary: `System status: ${totalJobs} jobs total, ${runningOperations} operations running, ${alertList.length} active alerts`
       };
     } catch (error) {
       console.error('Production status error:', error);
@@ -330,10 +389,15 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       description: page.description
     }));
     
-    // Quick check for obvious data requests
-    const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is'];
-    if (dataKeywords.some(keyword => query.toLowerCase().includes(keyword))) {
-      return { type: 'show_data', confidence: 0.8 };
+    // Enhanced check for data requests - specifically handle job questions
+    const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is', 'count', 'total'];
+    const jobKeywords = ['job', 'jobs', 'operation', 'operations', 'order', 'orders', 'work'];
+    
+    const hasDataKeyword = dataKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    const hasJobKeyword = jobKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    
+    if (hasDataKeyword || hasJobKeyword) {
+      return { type: 'show_data', confidence: 0.9 };
     }
     
     // Check for navigation intent - be more inclusive

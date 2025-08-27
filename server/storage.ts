@@ -2851,8 +2851,46 @@ export class DatabaseStorage implements IStorage {
     return updated || undefined;
   }
 
-  async getJobs(): Promise<ProductionOrder[]> {
-    return await db.select().from(productionOrders).orderBy(asc(productionOrders.dueDate));
+  async getJobs(): Promise<any[]> {
+    console.log("getJobs: Redirecting to PT Publish Jobs table");
+    
+    try {
+      // Get jobs from PT Publish tables 
+      const result = await this.db.execute(sql`
+        SELECT DISTINCT 
+          job_id as id,
+          job_id as order_number,
+          MAX(name) as name,
+          MAX(description) as description,
+          'active' as status,
+          MIN(scheduled_start) as start_date,
+          MAX(scheduled_end) as due_date,
+          COUNT(*) as operation_count,
+          publish_date
+        FROM ptjoboperations
+        WHERE instance_id = 'BREW-SIM-001'
+        GROUP BY job_id, publish_date
+        ORDER BY job_id ASC
+      `);
+      
+      console.log(`PT Publish jobs count: ${result.rows.length}`);
+      
+      return result.rows.map((row: any) => ({
+        id: parseInt(row.id) || 0,
+        orderNumber: row.order_number || '',
+        name: row.name || `Job ${row.id}`,
+        description: row.description || '',
+        status: row.status || 'active',
+        startDate: row.start_date,
+        dueDate: row.due_date,
+        operationCount: row.operation_count,
+        publishDate: row.publish_date
+      }));
+      
+    } catch (error) {
+      console.error('Error fetching jobs from PT tables:', error);
+      return [];
+    }
   }
 
   async getJob(id: number): Promise<ProductionOrder | undefined> {

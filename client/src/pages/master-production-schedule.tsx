@@ -14,7 +14,7 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Brain,
+  Wand2,
   RefreshCw,
   Download,
   Upload,
