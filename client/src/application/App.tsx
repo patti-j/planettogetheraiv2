@@ -144,7 +144,7 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
               <Route path="/business-goals">
-                <ProtectedRoute feature="business_goals" action="view">
+                <ProtectedRoute feature="business-goals" action="view">
                   <BusinessGoals />
                 </ProtectedRoute>
               </Route>
