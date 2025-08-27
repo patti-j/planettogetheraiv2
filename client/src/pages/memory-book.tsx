@@ -12,7 +12,7 @@ import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Brain } from "lucide-react";
+import { Search, Plus, BookOpen, Edit, Trash2, User, Calendar, Tag, Menu, X, Save, FileText, Wand2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Playbook } from "@shared/schema";
