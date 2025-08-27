@@ -65,6 +65,26 @@ app.use((req, res, next) => {
     log("⚠️  OpenAI API key not configured - AI features will be limited");
   }
   
+  // Serve HTML files directly from public directory with no caching
+  app.get('/*.html', (req, res) => {
+    const filePath = `client/public${req.path}`;
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Set no-cache headers
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(path.resolve(filePath));
+    } else {
+      res.status(404).send('File not found');
+    }
+  });
+
   // Register API routes (registerRoutes returns a Promise<Server>)
   const server = await registerRoutes(app);
 

@@ -154,6 +154,11 @@ import {
   type Alert, type InsertAlert, type AlertComment, type InsertAlertComment,
   type AlertTemplate, type InsertAlertTemplate, type AlertTrainingData, type InsertAlertTrainingData,
   type AlertSubscription, type InsertAlertSubscription,
+  // AI Schedule Recommendations
+  userAuthorities, aiScheduleRecommendations, aiRecommendationFeedback,
+  type UserAuthority, type InsertUserAuthority,
+  type AIScheduleRecommendation, type InsertAIScheduleRecommendation,
+  type AIRecommendationFeedback, type InsertAIRecommendationFeedback,
   type InsertResourceRequirement, type InsertResourceRequirementAssignment, type InsertResourceRequirementBlock,
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,

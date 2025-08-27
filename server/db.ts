@@ -4,6 +4,7 @@ import { sql } from 'drizzle-orm';
 import ws from "ws";
 import * as schema from "@shared/schema-simple";
 import * as alertsSchema from "@shared/alerts-schema";
+import * as timeTrackingSchema from "@shared/time-tracking-schema";
 
 neonConfig.webSocketConstructor = ws;
 
@@ -22,7 +23,7 @@ let queryCount = 0;
 let errorCount = 0;
 
 export const db = drizzle(sql_connection, {
-  schema: { ...schema, ...alertsSchema },
+  schema: { ...schema, ...alertsSchema, ...timeTrackingSchema },
   logger: process.env.NODE_ENV === 'development'
 });
 

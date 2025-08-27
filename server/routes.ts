@@ -106,6 +106,7 @@ import OpenAI from "openai";
 import crypto from "crypto";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { agentActionService } from "./agent-action-service";
+import { registerTimeTrackingRoutes } from "./routes/time-tracking-routes";
 
 // Session interface is declared in index.ts
 
@@ -27146,6 +27147,9 @@ Be careful to preserve data integrity and relationships.`;
 
   // Register widget routes
   setupWidgetRoutes(app, storage);
+  
+  // Register time tracking routes
+  registerTimeTrackingRoutes(app);
 
   // Algorithm Version Control Routes
   app.get('/api/algorithm-versions', createSafeHandler(async (req, res) => {

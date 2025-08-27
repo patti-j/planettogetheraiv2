@@ -53,6 +53,7 @@ import MRP from "@/pages/mrp";
 import ProductionPlanning from "@/pages/production-planning";
 import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
+import TimeTracking from "@/pages/time-tracking";
 
 // Additional page imports for missing routes
 import AutonomousOptimization from "@/pages/autonomous-optimization";
@@ -251,6 +252,11 @@ export default function ApplicationApp() {
               <Route path="/shift-management">
                 <ProtectedRoute feature="planning-scheduling" action="view">
                   <ShiftManagement />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/time-tracking">
+                <ProtectedRoute feature="planning-scheduling" action="view">
+                  <TimeTracking />
                 </ProtectedRoute>
               </Route>
               <Route path="/order-optimization">

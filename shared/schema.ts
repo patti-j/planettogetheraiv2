@@ -3962,6 +3962,141 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Departments table for organizational structure
+export const departments = pgTable("departments", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  description: text("description"),
+  parentDepartmentId: integer("parent_department_id"),
+  plantId: integer("plant_id").references(() => plants.id),
+  managerUserId: integer("manager_user_id").references(() => users.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniquePlantDept: unique().on(table.name, table.plantId),
+}));
+
+// User Authority Management - Link users to their areas of responsibility
+export const userAuthorities = pgTable("user_authorities", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  authorityType: varchar("authority_type", { length: 50 }).notNull(), // 'plant', 'department', 'resource'
+  authorityId: integer("authority_id").notNull(), // ID of plant, department, or resource
+  authorityLevel: varchar("authority_level", { length: 50 }).notNull().default("view"), // 'view', 'schedule', 'manage', 'admin'
+  isActive: boolean("is_active").default(true),
+  effectiveFrom: timestamp("effective_from").defaultNow(),
+  effectiveTo: timestamp("effective_to"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  uniqueUserAuthority: unique().on(table.userId, table.authorityType, table.authorityId),
+  authorityIdx: index().on(table.userId, table.authorityType, table.isActive),
+}));
+
+// AI Schedule Recommendations
+export const aiScheduleRecommendations = pgTable("ai_schedule_recommendations", {
+  id: serial("id").primaryKey(),
+  recommendationType: varchar("recommendation_type", { length: 100 }).notNull(), // 'optimization', 'conflict_resolution', 'resource_reallocation', 'maintenance_scheduling', etc.
+  priority: varchar("priority", { length: 20 }).notNull().default("medium"), // 'critical', 'high', 'medium', 'low'
+  status: varchar("status", { length: 50 }).notNull().default("pending"), // 'pending', 'reviewed', 'applied', 'ignored', 'expired'
+  
+  // Scope of recommendation
+  scopeType: varchar("scope_type", { length: 50 }).notNull(), // 'global', 'plant', 'department', 'resource', 'job'
+  scopeId: integer("scope_id"), // ID of the specific plant, department, resource, or job
+  plantId: integer("plant_id").references(() => plants.id),
+  departmentId: integer("department_id").references(() => departments.id),
+  resourceId: integer("resource_id").references(() => resources.id),
+  
+  // Recommendation details
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description").notNull(),
+  impact: text("impact"), // Expected impact if applied
+  reasoning: text("reasoning"), // AI's reasoning for the recommendation
+  confidence: numeric("confidence", { precision: 5, scale: 2 }), // 0-100 confidence percentage
+  
+  // Proposed changes
+  proposedChanges: jsonb("proposed_changes").$type<{
+    operations?: Array<{
+      operationId: number;
+      currentStart: string;
+      currentEnd: string;
+      proposedStart: string;
+      proposedEnd: string;
+      currentResource?: number;
+      proposedResource?: number;
+    }>;
+    resources?: Array<{
+      resourceId: number;
+      currentAllocation: number;
+      proposedAllocation: number;
+    }>;
+    sequencing?: Array<{
+      jobId: number;
+      currentSequence: number;
+      proposedSequence: number;
+    }>;
+  }>().notNull(),
+  
+  // Metrics and improvements
+  currentMetrics: jsonb("current_metrics").$type<{
+    makespan?: number;
+    utilization?: number;
+    tardiness?: number;
+    setupTime?: number;
+    throughput?: number;
+    cost?: number;
+  }>(),
+  proposedMetrics: jsonb("proposed_metrics").$type<{
+    makespan?: number;
+    utilization?: number;
+    tardiness?: number;
+    setupTime?: number;
+    throughput?: number;
+    cost?: number;
+  }>(),
+  
+  // AI generation details
+  aiModel: varchar("ai_model", { length: 100 }).default("gpt-5"),
+  generatedAt: timestamp("generated_at").defaultNow(),
+  expiresAt: timestamp("expires_at"),
+  
+  // Review and application
+  reviewedBy: integer("reviewed_by").references(() => users.id),
+  reviewedAt: timestamp("reviewed_at"),
+  reviewNotes: text("review_notes"),
+  appliedBy: integer("applied_by").references(() => users.id),
+  appliedAt: timestamp("applied_at"),
+  applicationNotes: text("application_notes"),
+  rollbackData: jsonb("rollback_data"), // Data needed to rollback changes if needed
+  
+  // Tracking
+  viewCount: integer("view_count").default(0),
+  lastViewedAt: timestamp("last_viewed_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  statusIdx: index().on(table.status, table.priority),
+  scopeIdx: index().on(table.scopeType, table.scopeId),
+  plantIdx: index().on(table.plantId, table.status),
+  expiryIdx: index().on(table.expiresAt, table.status),
+}));
+
+// Track actions on recommendations
+export const recommendationActions = pgTable("recommendation_actions", {
+  id: serial("id").primaryKey(),
+  recommendationId: integer("recommendation_id").references(() => aiScheduleRecommendations.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  action: varchar("action", { length: 50 }).notNull(), // 'view', 'review', 'apply', 'ignore', 'rollback'
+  notes: text("notes"),
+  metadata: jsonb("metadata"), // Any additional action-specific data
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  recActionIdx: index().on(table.recommendationId, table.action),
+  userActionIdx: index().on(table.userId, table.createdAt),
+}));
+
 export const roles = pgTable("roles", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 50 }).notNull().unique(),
@@ -4100,6 +4235,62 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions).om
   grantedAt: true,
 });
 
+// Insert schemas for new AI recommendations tables
+export const insertDepartmentSchema = createInsertSchema(departments).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertUserAuthoritySchema = createInsertSchema(userAuthorities).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAiScheduleRecommendationSchema = createInsertSchema(aiScheduleRecommendations).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  generatedAt: true,
+  viewCount: true,
+});
+
+export const insertRecommendationActionSchema = createInsertSchema(recommendationActions).omit({ 
+  id: true,
+  createdAt: true,
+});
+
+// Type exports for new tables
+export type Department = typeof departments.$inferSelect;
+export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+
+export type UserAuthority = typeof userAuthorities.$inferSelect;
+export type InsertUserAuthority = z.infer<typeof insertUserAuthoritySchema>;
+
+export type AiScheduleRecommendation = typeof aiScheduleRecommendations.$inferSelect;
+export type InsertAiScheduleRecommendation = z.infer<typeof insertAiScheduleRecommendationSchema>;
+
+export type RecommendationAction = typeof recommendationActions.$inferSelect;
+export type InsertRecommendationAction = z.infer<typeof insertRecommendationActionSchema>;
+
+// NOTE: userAuthorities and aiScheduleRecommendations tables are already defined earlier in the schema
+
+// AI Recommendation Feedback - Track user feedback on recommendations
+export const aiRecommendationFeedback = pgTable("ai_recommendation_feedback", {
+  id: serial("id").primaryKey(),
+  recommendationId: integer("recommendation_id").references(() => aiScheduleRecommendations.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  feedbackType: text("feedback_type").notNull(), // 'helpful', 'not_helpful', 'partially_helpful', 'wrong'
+  rating: integer("rating"), // 1-5 stars
+  comment: text("comment"),
+  suggestedImprovement: text("suggested_improvement"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  recommendationIdx: index("ai_feedback_rec_idx").on(table.recommendationId),
+  userIdx: index("ai_feedback_user_idx").on(table.userId),
+}));
+
 // User Management Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -4115,6 +4306,15 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+
+export type UserAuthority = typeof userAuthorities.$inferSelect;
+export type InsertUserAuthority = typeof userAuthorities.$inferInsert;
+
+export type AIScheduleRecommendation = typeof aiScheduleRecommendations.$inferSelect;
+export type InsertAIScheduleRecommendation = typeof aiScheduleRecommendations.$inferInsert;
+
+export type AIRecommendationFeedback = typeof aiRecommendationFeedback.$inferSelect;
+export type InsertAIRecommendationFeedback = typeof aiRecommendationFeedback.$inferInsert;
 
 // User with roles and permissions type for authentication
 export type UserWithRoles = User & {
@@ -8368,20 +8568,7 @@ export const resourceRequirementAssignmentsRelations = relations(resourceRequire
 
 // ===== COMPREHENSIVE ERP MANUFACTURING DATA STRUCTURES =====
 
-// Departments and organizational structure
-export const departments = pgTable("departments", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  code: text("code").notNull().unique(),
-  parentDepartmentId: integer("parent_department_id").references((): any => departments.id),
-  managerId: integer("manager_id"), // Will reference employees table
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  costCenter: text("cost_center"),
-  budgetAmount: integer("budget_amount").default(0), // in cents
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// NOTE: departments table is already defined earlier in the schema
 
 // Work centers - physical or logical groupings where work is performed
 export const workCenters = pgTable("work_centers", {
@@ -9991,11 +10178,7 @@ export const vendorsRelations = relations(vendors, ({ many }) => ({
 
 
 // ===== ERP INSERT SCHEMAS =====
-
-export const insertDepartmentSchema = createInsertSchema(departments, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// NOTE: insertDepartmentSchema is already defined earlier in the schema
 
 export const insertWorkCenterSchema = createInsertSchema(workCenters, { 
   id: undefined,
@@ -10204,7 +10387,7 @@ export const insertForecastSchema = createInsertSchema(forecasts, {
 // ===== ERP TYPE EXPORTS =====
 
 export type Department = typeof departments.$inferSelect;
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
+// InsertDepartment already exported above at line 4266
 
 export type WorkCenter = typeof workCenters.$inferSelect;
 export type InsertWorkCenter = z.infer<typeof insertWorkCenterSchema>;

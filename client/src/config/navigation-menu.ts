@@ -121,6 +121,7 @@ export const navigationGroups: NavigationGroup[] = [
     features: [
       { icon: Smartphone, label: "Shop Floor", href: "/shop-floor", feature: "shop-floor", action: "view", color: "bg-orange-500" },
       { icon: Users, label: "Labor Management", href: "/labor-planning", feature: "labor", action: "view", color: "bg-indigo-500" },
+      { icon: Clock, label: "Time Tracking", href: "/time-tracking", feature: "labor", action: "view", color: "bg-purple-600" },
       { icon: Settings, label: "Operator Dashboard", href: "/operator-dashboard", feature: "operator-dashboard", action: "view", color: "bg-gray-500" },
       { icon: Truck, label: "Forklift Driver", href: "/forklift-driver", feature: "forklift-driver", action: "view", color: "bg-yellow-500" },
       { icon: Wrench, label: "Maintenance", href: "/maintenance", feature: "maintenance", action: "view", color: "bg-red-500" },
