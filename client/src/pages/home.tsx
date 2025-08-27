@@ -277,39 +277,7 @@ export default function HomePage() {
               </Card>
             )}
 
-            {/* Recent Pages */}
-            {recentPages && recentPages.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <Clock className="w-4 h-4" />
-                    Recently Visited
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {recentPages.slice(0, 8).map((page, index) => {
-                      // Handle icon - it could be a string name, component, or empty/invalid
-                      const IconComponent = typeof page.icon === 'string' 
-                        ? null // Icon names as strings aren't directly renderable
-                        : (typeof page.icon === 'function' ? page.icon : null);
-                      
-                      return (
-                        <Button
-                          key={index}
-                          variant="ghost"
-                          className="w-full justify-start gap-2 h-8"
-                          onClick={() => setLocation(page.path)}
-                        >
-                          {IconComponent && typeof IconComponent === 'function' && <IconComponent className="w-4 h-4" />}
-                          <span className="text-sm">{page.label}</span>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+
           </div>
           </div>
         )}
