@@ -44,6 +44,7 @@ export function AILeftPanel() {
   const [isResizing, setIsResizing] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   
@@ -108,7 +109,15 @@ export function AILeftPanel() {
       }));
     }
   }, [userPreferences]);
+  
   const { chatMessages, addMessage } = useChatSync();
+
+  // Auto-scroll to bottom when new messages are added
+  useEffect(() => {
+    if (chatScrollRef.current) {
+      chatScrollRef.current.scrollTop = chatScrollRef.current.scrollHeight;
+    }
+  }, [chatMessages]);
   
   const [showMaxThinking, setShowMaxThinking] = useState(false);
   const [currentRequestController, setCurrentRequestController] = useState<AbortController | null>(null);
@@ -537,7 +546,7 @@ export function AILeftPanel() {
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
-              <ScrollArea className="flex-1 pr-2">
+              <ScrollArea className="flex-1 pr-2" ref={chatScrollRef}>
                 <div className="space-y-4 pb-4">
                   {chatMessages
                     .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
