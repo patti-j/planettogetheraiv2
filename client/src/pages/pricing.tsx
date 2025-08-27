@@ -581,7 +581,14 @@ export default function Pricing() {
                 <CardTitle className="text-2xl font-bold">{tier.name}</CardTitle>
                 <div className="text-4xl font-bold mt-4">
                   {tier.price === 0 ? (
-                    <span className="text-2xl">Contact Sales</span>
+                    <a 
+                      href="https://www.planettogether.com/contact-sales"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-2xl text-blue-600 hover:text-blue-700 underline decoration-2 underline-offset-4 transition-colors"
+                    >
+                      Contact Sales
+                    </a>
                   ) : (
                     <>
                       ${tier.price}
@@ -655,16 +662,16 @@ export default function Pricing() {
                     {selectedTier === tier.id ? "Getting Started..." : "Get Started"}
                   </Button>
                   <Button
-                    onClick={() => window.location.href = 'mailto:sales@planettogether.com?subject=Pricing Inquiry'}
+                    onClick={() => window.open('https://www.planettogether.com/contact-sales', '_blank')}
                     className={`w-full ${
                       tier.popular 
                         ? "bg-blue-600 hover:bg-blue-700" 
                         : tier.enterprise
                           ? "bg-purple-600 hover:bg-purple-700"
-                          : ""
-                    }`}
+                          : "bg-gray-900 hover:bg-gray-800"
+                    } text-white`}
                   >
-                    Contact Sales
+                    Contact Sales Team
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </div>
@@ -731,8 +738,15 @@ export default function Pricing() {
                               {addon.complexity}
                             </Badge>
                           </CardTitle>
-                          <div className="text-xl font-bold text-blue-600 mt-1">
-                            Contact Sales
+                          <div className="text-xl font-bold mt-1">
+                            <a 
+                              href="https://www.planettogether.com/contact-sales"
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-600 hover:text-blue-700 underline decoration-2 underline-offset-2 transition-colors"
+                            >
+                              Contact Sales
+                            </a>
                           </div>
                         </div>
                       </div>
