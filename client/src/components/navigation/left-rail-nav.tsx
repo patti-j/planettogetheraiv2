@@ -88,6 +88,24 @@ export function LeftRailNav() {
           <div className="p-2 border-b relative">
             {!isCollapsed ? (
               <div className="flex items-center gap-1">
+                {/* Collapse Button - expanded state - moved to left */}
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsCollapsed(!isCollapsed)}
+                      className="h-8 w-8 p-0 flex-shrink-0"
+                      aria-label="Collapse navigation"
+                    >
+                      <ChevronRight className="h-3 w-3 transition-transform" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="left">
+                    <p>Collapse navigation</p>
+                  </TooltipContent>
+                </Tooltip>
+                
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
@@ -100,27 +118,27 @@ export function LeftRailNav() {
                     </Button>
                   </TooltipTrigger>
                 </Tooltip>
-                
-                {/* Collapse Button - expanded state */}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center space-y-1">
+                {/* Collapse Button - collapsed state - pointing left */}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
                       size="sm"
                       onClick={() => setIsCollapsed(!isCollapsed)}
-                      className="h-8 w-8 p-0 flex-shrink-0"
-                      aria-label="Collapse navigation"
+                      className="w-6 h-6 p-0 flex-shrink-0"
+                      aria-label="Expand navigation"
                     >
                       <ChevronLeft className="h-3 w-3 transition-transform" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="left">
-                    <p>Collapse navigation</p>
+                    <p>Expand navigation</p>
                   </TooltipContent>
                 </Tooltip>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center space-y-1">
+                
                 {/* Home Button - collapsed state */}
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -132,26 +150,8 @@ export function LeftRailNav() {
                       <Home className="h-4 w-4" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>Home</p>
-                  </TooltipContent>
-                </Tooltip>
-                
-                {/* Collapse Button - collapsed state */}
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsCollapsed(!isCollapsed)}
-                      className="w-6 h-6 p-0 flex-shrink-0"
-                      aria-label="Expand navigation"
-                    >
-                      <ChevronRight className="h-3 w-3 transition-transform" />
-                    </Button>
-                  </TooltipTrigger>
                   <TooltipContent side="left">
-                    <p>Expand navigation</p>
+                    <p>Home</p>
                   </TooltipContent>
                 </Tooltip>
               </div>
