@@ -491,7 +491,7 @@ export function AILeftPanel() {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn("text-white hover:bg-white/20", isCollapsed && "mx-auto")}
         >
-          {isCollapsed ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
       </div>
 
