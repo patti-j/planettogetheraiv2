@@ -105,6 +105,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Brain' },
   '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Bot' },
   '/production-scheduler-js': { label: 'Production Scheduler JS', icon: 'Calendar' },
+  '/production-schedule-simple': { label: 'Production Schedule Simple', icon: 'Calendar' },
   '#max': { label: 'Max AI Assistant', icon: 'Bot' }
 };
 
