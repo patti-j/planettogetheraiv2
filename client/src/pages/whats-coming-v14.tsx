@@ -302,6 +302,35 @@ export default function WhatsComing() {
         </div>
       </div>
 
+      {/* Important Disclaimer */}
+      <div className="bg-amber-50 border-l-4 border-amber-400 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <Shield className="h-8 w-8 text-amber-600" />
+            </div>
+            <div className="ml-4">
+              <h3 className="text-lg font-bold text-amber-800">Important Disclaimer</h3>
+              <div className="mt-2 text-amber-700">
+                <p className="mb-2">
+                  <strong>All features, timelines, and specifications shown on this roadmap are preliminary and subject to change without notice.</strong>
+                </p>
+                <ul className="list-disc list-inside space-y-1 text-sm">
+                  <li>Feature availability, functionality, and release dates may be modified, delayed, or cancelled</li>
+                  <li>Development priorities may shift based on customer feedback, market conditions, and technical feasibility</li>
+                  <li>Some features may be released as beta versions or with limited functionality initially</li>
+                  <li>Pricing, licensing terms, and system requirements are not finalized and may change</li>
+                  <li>This roadmap does not constitute a commitment to deliver any specific feature or timeline</li>
+                </ul>
+                <p className="mt-3 text-sm font-medium">
+                  Please contact our sales team for the most current information about upcoming features and official release schedules.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Core Message */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
