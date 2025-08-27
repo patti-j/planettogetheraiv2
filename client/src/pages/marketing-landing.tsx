@@ -314,7 +314,7 @@ export default function MarketingLandingPage() {
                   onClick={() => window.location.href = '/whats-coming'}
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  What's Coming in V13
+                  What's Coming in V14
                 </Button>
                 <Button 
                   size="lg" 

@@ -241,7 +241,7 @@ export default function WhatsComing() {
               </Badge>
             </div>
             <h1 className="text-4xl md:text-6xl font-bold mb-6">
-              PlanetTogether <span className="text-yellow-300">13</span>
+              PlanetTogether <span className="text-yellow-300">14</span>
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-blue-100 max-w-3xl mx-auto">
               The next generation of AI-first manufacturing optimization
@@ -277,7 +277,7 @@ export default function WhatsComing() {
           </h2>
           <p className="text-xl text-gray-600 max-w-4xl mx-auto">
             While PlanetTogether continues to excel at production scheduling, MRP, and capacity planning, 
-            version 13 introduces breakthrough capabilities that transform your entire manufacturing ecosystem.
+            version 14 introduces breakthrough capabilities that transform your entire manufacturing ecosystem.
           </p>
         </div>
 
