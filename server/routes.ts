@@ -12750,7 +12750,160 @@ Focus on realistic, actionable scenarios that help with decision making.`;
   // Visual Factory routes
   app.get('/api/visual-factory/displays', async (req, res) => {
     try {
-      const displays = await storage.getVisualFactoryDisplays();
+      let displays = await storage.getVisualFactoryDisplays();
+      
+      // If no displays exist, return sample displays
+      if (displays.length === 0) {
+        const sampleDisplays = [
+          {
+            id: 1,
+            name: 'Shop Floor Production Display',
+            description: 'Main production metrics and schedule display for shop floor',
+            location: 'Production Floor - Line 1',
+            audience: 'shop-floor',
+            autoRotationInterval: 10,
+            isActive: true,
+            useAiMode: false,
+            useDashboardRotation: false,
+            widgets: [
+              {
+                id: 'metrics-1',
+                type: 'metrics',
+                title: 'Production Overview',
+                position: { x: 0, y: 0, width: 4, height: 2 },
+                config: { showJobs: true, showUtilization: true, showOnTime: true },
+                priority: 10,
+                audienceRelevance: { 'shop-floor': 10, 'management': 9, 'general': 7 }
+              },
+              {
+                id: 'schedule-1',
+                type: 'schedule',
+                title: 'Today\'s Schedule',
+                position: { x: 4, y: 0, width: 8, height: 6 },
+                config: { timeRange: 'today', showDetails: true },
+                priority: 9,
+                audienceRelevance: { 'shop-floor': 10, 'management': 8, 'general': 6 }
+              },
+              {
+                id: 'alerts-1',
+                type: 'alerts',
+                title: 'System Alerts',
+                position: { x: 0, y: 2, width: 4, height: 2 },
+                config: { showCritical: true, showWarnings: true },
+                priority: 7,
+                audienceRelevance: { 'shop-floor': 9, 'management': 10, 'general': 6 }
+              }
+            ],
+            dashboardSequence: [],
+            schedule: {
+              startTime: '06:00',
+              endTime: '22:00',
+              daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+              isScheduled: false
+            },
+            createdAt: new Date('2025-08-27T10:00:00.000Z')
+          },
+          {
+            id: 2,
+            name: 'Management Dashboard Display',
+            description: 'Executive dashboard showing KPIs and business metrics',
+            location: 'Management Office - Conference Room',
+            audience: 'management',
+            autoRotationInterval: 15,
+            isActive: true,
+            useAiMode: true,
+            useDashboardRotation: false,
+            widgets: [
+              {
+                id: 'metrics-2',
+                type: 'metrics',
+                title: 'Business KPIs',
+                position: { x: 0, y: 0, width: 6, height: 3 },
+                config: { showRevenue: true, showEfficiency: true, showQuality: true },
+                priority: 10,
+                audienceRelevance: { 'management': 10, 'general': 5 }
+              },
+              {
+                id: 'orders-2',
+                type: 'orders',
+                title: 'Priority Orders',
+                position: { x: 6, y: 0, width: 6, height: 3 },
+                config: { showPriority: true, showDueDate: true, limit: 8 },
+                priority: 8,
+                audienceRelevance: { 'management': 9, 'sales': 8 }
+              },
+              {
+                id: 'chart-2',
+                type: 'chart',
+                title: 'Production Trends',
+                position: { x: 0, y: 3, width: 12, height: 3 },
+                config: { chartType: 'line', timeRange: '7d', metric: 'throughput' },
+                priority: 7,
+                audienceRelevance: { 'management': 8, 'general': 6 }
+              }
+            ],
+            dashboardSequence: [],
+            schedule: {
+              startTime: '07:00',
+              endTime: '18:00',
+              daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+              isScheduled: true
+            },
+            createdAt: new Date('2025-08-27T11:00:00.000Z')
+          },
+          {
+            id: 3,
+            name: 'Customer Service Display',
+            description: 'Order status and customer service metrics for front desk',
+            location: 'Customer Service Desk',
+            audience: 'customer-service',
+            autoRotationInterval: 12,
+            isActive: true,
+            useAiMode: false,
+            useDashboardRotation: false,
+            widgets: [
+              {
+                id: 'orders-3',
+                type: 'orders',
+                title: 'Customer Orders',
+                position: { x: 0, y: 0, width: 8, height: 4 },
+                config: { showCustomer: true, showStatus: true, showDelivery: true, limit: 12 },
+                priority: 10,
+                audienceRelevance: { 'customer-service': 10, 'sales': 8 }
+              },
+              {
+                id: 'announcements-3',
+                type: 'announcements',
+                title: 'Daily Updates',
+                position: { x: 8, y: 0, width: 4, height: 2 },
+                config: { showInternal: true, showCustomer: false },
+                priority: 6,
+                audienceRelevance: { 'customer-service': 8, 'general': 7 }
+              },
+              {
+                id: 'metrics-3',
+                type: 'metrics',
+                title: 'Service Metrics',
+                position: { x: 8, y: 2, width: 4, height: 2 },
+                config: { showResponse: true, showSatisfaction: true },
+                priority: 8,
+                audienceRelevance: { 'customer-service': 9, 'management': 7 }
+              }
+            ],
+            dashboardSequence: [],
+            schedule: {
+              startTime: '08:00',
+              endTime: '17:00',
+              daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+              isScheduled: false
+            },
+            createdAt: new Date('2025-08-27T12:00:00.000Z')
+          }
+        ];
+        
+        displays = sampleDisplays as any;
+      }
+      
       res.json(displays);
     } catch (error) {
       console.error('Error fetching visual factory displays:', error);
