@@ -17,7 +17,9 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Major Changes (August 2025)
+- **Role-Based Workspaces**: Created comprehensive sample workspaces for 10 key manufacturing roles including Production Manager, Quality Manager, Maintenance Manager, Supply Chain Manager, Plant Manager, Shift Operations, Production Planning, Engineering Support, Warehouse Operations, and Manufacturing Finance
 - **Sample Data Implementation**: Successfully added comprehensive AI memories sample data including scheduling optimization, quality management, maintenance strategy, dashboard configuration, and inventory optimization preferences
+- **Max AI Prompt Simplification**: Updated all user-facing prompts from "Ask Max AI anything..." to "Ask anything" for cleaner, more concise interface
 - **Icon Standardization**: Completed comprehensive replacement of all Brain icons with Magic Wand (Wand2) icons across the entire application (35+ files updated)
 - **Authentication Enhancement**: Successfully added five admin users with "padres" password and Administrator roles
 - **Route Security**: Fixed critical routing issue by adding /production-scheduler-js to publicPaths array
