@@ -25,7 +25,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 // Check authentication status
 function useAuthStatus() {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/login', '/home', '/', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation', '/production-scheduler-js', '/production-scheduler-js.html'];
+  const publicPaths = ['/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation', '/production-scheduler-js', '/production-scheduler-js.html'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if token exists
@@ -154,10 +154,8 @@ export default function App() {
   
   // Determine if we should show website or app (but not for portal routes)
   const shouldShowWebsite = !isPortalRoute && (
-    // Show website for public paths (except root when authenticated)
-    (isPublicPath && !(currentPath === '/' && hasToken)) || 
-    // Show website when not authenticated and not loading
-    (!hasToken && !isLoading)
+    // Show website for public paths OR when not authenticated
+    isPublicPath || (!hasToken && !isLoading)
   );
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
