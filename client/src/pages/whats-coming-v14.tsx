@@ -24,7 +24,10 @@ import {
   Target,
   Network,
   Eye,
-  Settings
+  Settings,
+  History,
+  BookOpen,
+  RefreshCw
 } from 'lucide-react';
 
 export default function WhatsComing() {
@@ -60,6 +63,27 @@ export default function WhatsComing() {
         icon: <Settings className="h-6 w-6" />,
         status: "New",
         benefits: ["Drag-and-drop designer", "Custom widgets", "Real-time preview"]
+      },
+      {
+        title: "Agent-Based Autonomous Planning",
+        description: "AI agents that can autonomously create, modify, and optimize production plans with human oversight",
+        icon: <Bot className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Fully autonomous schedule creation", "Assisted planning with AI recommendations", "Real-time plan optimization", "Human-in-the-loop validation"]
+      },
+      {
+        title: "Playbooks Knowledge Base",
+        description: "Collaborative wiki-like knowledge management system with intelligent tagging and search",
+        icon: <BookOpen className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Flexible content organization", "Smart tagging system", "Collaborative editing", "AI-powered search and recommendations"]
+      },
+      {
+        title: "Agent Actions History & Undo",
+        description: "Complete tracking and reversibility of all AI agent actions across the platform",
+        icon: <History className="h-6 w-6" />,
+        status: "New",
+        benefits: ["Full action audit trail", "One-click undo capability", "Action reasoning display", "Change impact analysis"]
       }
     ],
     analytics: [
