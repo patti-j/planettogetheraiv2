@@ -4514,45 +4514,11 @@ If nothing important to remember, respond with:
       const userId = (req as any).userId;
       const { search, agent, action, success } = req.query;
       
-      // Build the query with filters
-      let query = db.select({
-        id: schema.agentActions.id,
-        sessionId: schema.agentActions.sessionId,
-        agentType: schema.agentActions.agentType,
-        actionType: schema.agentActions.actionType,
-        entityType: schema.agentActions.entityType,
-        entityId: schema.agentActions.entityId,
-        actionDescription: schema.agentActions.actionDescription,
-        reasoning: schema.agentActions.reasoning,
-        userPrompt: schema.agentActions.userPrompt,
-        beforeState: schema.agentActions.beforeState,
-        afterState: schema.agentActions.afterState,
-        undoInstructions: schema.agentActions.undoInstructions,
-        isUndone: schema.agentActions.isUndone,
-        undoneAt: schema.agentActions.undoneAt,
-        undoneBy: schema.agentActions.undoneBy,
-        parentActionId: schema.agentActions.parentActionId,
-        batchId: schema.agentActions.batchId,
-        executionTime: schema.agentActions.executionTime,
-        success: schema.agentActions.success,
-        errorMessage: schema.agentActions.errorMessage,
-        createdBy: schema.agentActions.createdBy,
-        createdAt: schema.agentActions.createdAt,
-        // Join with users table for created by and undone by user info
-        createdByUser: {
-          id: schema.users.id,
-          username: schema.users.username
-        },
-        undoneByUser: {
-          id: schema.users.id,
-          username: schema.users.username
-        }
-      })
-      .from(schema.agentActions)
-      .leftJoin(schema.users, eq(schema.agentActions.createdBy, schema.users.id))
-      .leftJoin(schema.users, eq(schema.agentActions.undoneBy, schema.users.id))
-      .orderBy(sql`${schema.agentActions.createdAt} DESC`)
-      .limit(500);
+      // Build the query with filters - simplified without joins for now
+      let query = db.select()
+        .from(schema.agentActions)
+        .orderBy(sql`${schema.agentActions.createdAt} DESC`)
+        .limit(500);
 
       // Apply filters
       const conditions = [];
