@@ -25,7 +25,6 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     onOperationUpdate 
   } = props;
   const schedulerRef = useRef<any>(null);
-  const isInitializedRef = useRef(false); // Burrell Fix #1: Track initialization state
   
   // Expose the scheduler instance through the ref
   useImperativeHandle(ref, () => schedulerRef.current, []);

@@ -38,8 +38,6 @@ import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
 import ProductionScheduleSimple from "@/pages/production-schedule-simple";
 import MasterProductionSchedule from "@/pages/master-production-schedule";
-import BryntumSchedulerProDirect from "@/pages/bryntum-scheduler-pro-direct";
-import ProductionSchedulerStandalone from "@/pages/production-scheduler-standalone";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
@@ -54,7 +52,6 @@ import ProductionPlanning from "@/pages/production-planning";
 import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
 import TimeTracking from "@/pages/time-tracking";
-import ProductionScheduler from "@/pages/production-scheduler";
 
 // Additional page imports for missing routes
 import AutonomousOptimization from "@/pages/autonomous-optimization";
@@ -189,29 +186,12 @@ export default function ApplicationApp() {
                   <ProductionScheduleSimple />
                 </ProtectedRoute>
               </Route>
-              <Route path="/production-scheduler">
-                <ProtectedRoute feature="schedule" action="view">
-                  <ProductionScheduler />
-                </ProtectedRoute>
-              </Route>
               <Route path="/master-production-schedule">
                 <ProtectedRoute feature="master-production-schedule" action="view">
                   <MasterProductionSchedule />
                 </ProtectedRoute>
               </Route>
-              <Route path="/production-scheduler-dashboard">
-                <ProtectedRoute feature="scheduling" action="view">
-                  <Dashboard />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/bryntum-scheduler-pro">
-                <ProtectedRoute feature="schedule" action="view">
-                  <BryntumSchedulerProDirect />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/bryntum-scheduler-pro-direct" component={BryntumSchedulerProDirect} />
-              <Route path="/production-scheduler-js" component={ProductionSchedulerStandalone} />
-              <Route path="/production-scheduler-js.html" component={ProductionSchedulerStandalone} />
+
 
               {/* Planning & Scheduling Routes */}
               <Route path="/planning-overview" component={PlanningOverview} />
