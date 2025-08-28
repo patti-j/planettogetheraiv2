@@ -29,6 +29,7 @@ import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesServic
 
 const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
+  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [resourceCount, setResourceCount] = useState(0);
   const [operationCount, setOperationCount] = useState(0);
@@ -137,74 +138,87 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
-  // Set initial zoom level and fit to view after scheduler mounts
+  // Capture scheduler instance after mount
   useEffect(() => {
-    // Use a timer to ensure the scheduler is fully rendered
-    const timer = setTimeout(() => {
-      const scheduler = schedulerRef.current?.instance;
-      if (scheduler) {
-        console.log('Scheduler mounted, applying initial zoom');
-        if (scheduler.zoomToFit) {
-          scheduler.zoomToFit();
-          console.log('Initial zoom to fit applied');
-        } else if (scheduler.zoomLevel !== undefined) {
-          scheduler.zoomLevel = 10;
-          console.log('Initial zoom level set to 10');
+    const timer = setInterval(() => {
+      // Try to get the actual Bryntum instance from the React component
+      if (schedulerRef.current) {
+        // The Bryntum React wrapper exposes the instance as schedulerInstance
+        const instance = schedulerRef.current.schedulerInstance || 
+                        schedulerRef.current.instance || 
+                        schedulerRef.current;
+        
+        // Check if we have the actual Bryntum widget with zoom methods
+        if (instance && typeof instance.zoomToFit === 'function') {
+          console.log('✅ Scheduler instance captured successfully');
+          setSchedulerInstance(instance);
+          
+          // Apply initial zoom to fit
+          setTimeout(() => {
+            instance.zoomToFit();
+            console.log('Initial zoom to fit applied');
+          }, 100);
+          
+          clearInterval(timer);
         }
       }
-    }, 500);
+    }, 100);
     
-    return () => clearTimeout(timer);
+    // Clear interval after 5 seconds if not found
+    const timeout = setTimeout(() => clearInterval(timer), 5000);
+    
+    return () => {
+      clearInterval(timer);
+      clearTimeout(timeout);
+    };
   }, [schedulerData, schedulerConfig]);
 
   // Toolbar actions - memoized with useCallback
   const handleZoomIn = useCallback(() => {
-    const scheduler = schedulerRef.current?.instance;
-    
-    if (scheduler && scheduler.zoomLevel !== undefined) {
-      // Direct zoom control like in HTML version
-      scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
-      console.log('Zoomed in to level:', scheduler.zoomLevel);
+    if (schedulerInstance && typeof schedulerInstance.zoomIn === 'function') {
+      schedulerInstance.zoomIn();
+      console.log('Zoomed in');
+    } else if (schedulerInstance && schedulerInstance.zoomLevel !== undefined) {
+      // Fallback to direct property access
+      schedulerInstance.zoomLevel = Math.min((schedulerInstance.zoomLevel || 10) + 2, 20);
+      console.log('Zoomed in to level:', schedulerInstance.zoomLevel);
     } else {
       console.log('Scheduler not ready for zoom in');
     }
-  }, []);
+  }, [schedulerInstance]);
 
   const handleZoomOut = useCallback(() => {
-    const scheduler = schedulerRef.current?.instance;
-    
-    if (scheduler && scheduler.zoomLevel !== undefined) {
-      // Direct zoom control like in HTML version
-      scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
-      console.log('Zoomed out to level:', scheduler.zoomLevel);
+    if (schedulerInstance && typeof schedulerInstance.zoomOut === 'function') {
+      schedulerInstance.zoomOut();
+      console.log('Zoomed out');
+    } else if (schedulerInstance && schedulerInstance.zoomLevel !== undefined) {
+      // Fallback to direct property access
+      schedulerInstance.zoomLevel = Math.max((schedulerInstance.zoomLevel || 10) - 2, 0);
+      console.log('Zoomed out to level:', schedulerInstance.zoomLevel);
     } else {
       console.log('Scheduler not ready for zoom out');
     }
-  }, []);
+  }, [schedulerInstance]);
 
   const handleZoomToFit = useCallback(() => {
-    const scheduler = schedulerRef.current?.instance;
-    
-    if (scheduler && scheduler.zoomToFit) {
-      scheduler.zoomToFit();
+    if (schedulerInstance && typeof schedulerInstance.zoomToFit === 'function') {
+      schedulerInstance.zoomToFit();
       console.log('Zoomed to fit');
     } else {
       console.log('Scheduler not ready for zoom to fit');
     }
-  }, []);
+  }, [schedulerInstance]);
 
   const handleViewChange = (preset: string) => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
-      scheduler.viewPreset = preset;
+    if (schedulerInstance) {
+      schedulerInstance.viewPreset = preset;
       setCurrentView(preset);
       configService.setZoomLevel(preset);
     }
   };
 
   const handleRefresh = async () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
+    if (schedulerInstance) {
       setIsLoading(true);
       const ganttData = await dataService.getProductionData();
       scheduler.project.loadInlineData(ganttData);
@@ -225,8 +239,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   };
 
   const handleSaveFavorite = () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
+    if (schedulerInstance) {
       const name = prompt('Enter a name for this view:');
       if (name) {
         const favorite = {
@@ -252,12 +265,11 @@ const ProductionSchedulerProV2: React.FC = () => {
   };
 
   const handleLoadFavorite = (favoriteId: string) => {
-    const scheduler = schedulerRef.current?.instance;
     const favorite = favoritesService.getFavorite(favoriteId);
-    if (scheduler && favorite) {
-      scheduler.viewPreset = favorite.config.viewPreset;
-      scheduler.startDate = new Date(favorite.config.startDate);
-      scheduler.endDate = new Date(favorite.config.endDate);
+    if (schedulerInstance && favorite) {
+      schedulerInstance.viewPreset = favorite.config.viewPreset;
+      schedulerInstance.startDate = new Date(favorite.config.startDate);
+      schedulerInstance.endDate = new Date(favorite.config.endDate);
       toast({
         title: "Loaded",
         description: `View "${favorite.name}" loaded`
