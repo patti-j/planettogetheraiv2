@@ -525,6 +525,15 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
           { name: 'Maintenance', value: 15, color: '#ff7300' },
           { name: 'R&D', value: 5, color: '#d084d0' }
         ];
+      } else if (data?.chartType === 'line') {
+        return [
+          { name: 'Week 1', value: 28 },
+          { name: 'Week 2', value: 35 },
+          { name: 'Week 3', value: 32 },
+          { name: 'Week 4', value: 42 },
+          { name: 'Week 5', value: 38 },
+          { name: 'Week 6', value: 45 }
+        ];
       } else {
         return [
           { name: 'Manufacturing', value: 35 },
@@ -543,6 +552,15 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
           { name: 'Quality Testing', value: 8, color: '#ff7300' },
           { name: 'Cleaning', value: 4, color: '#d084d0' }
         ];
+      } else if (data?.chartType === 'line') {
+        return [
+          { name: 'Mon', value: 42 },
+          { name: 'Tue', value: 38 },
+          { name: 'Wed', value: 45 },
+          { name: 'Thu', value: 40 },
+          { name: 'Fri', value: 48 },
+          { name: 'Sat', value: 35 }
+        ];
       } else {
         return [
           { name: 'Brewing', value: 42 },
@@ -560,6 +578,15 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
           { name: 'Quality', value: 30, color: '#82ca9d' },
           { name: 'Maintenance', value: 20, color: '#ffc658' },
           { name: 'Other', value: 10, color: '#ff7300' }
+        ];
+      } else if (data?.chartType === 'line') {
+        return [
+          { name: 'Jan', value: 40 },
+          { name: 'Feb', value: 35 },
+          { name: 'Mar', value: 42 },
+          { name: 'Apr', value: 38 },
+          { name: 'May', value: 45 },
+          { name: 'Jun', value: 50 }
         ];
       } else {
         return [
@@ -626,6 +653,98 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
                 ))}
               </div>
             </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Line chart
+  if (data?.chartType === 'line') {
+    return (
+      <div className="h-64 bg-white rounded-lg border p-4">
+        <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
+        {isEmptyData ? (
+          <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
+            <div className="text-center">
+              <TrendingUp className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No data available</p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-48 p-4 bg-gray-50 rounded relative">
+            <svg viewBox="0 0 300 150" className="w-full h-full">
+              {/* Grid lines */}
+              <defs>
+                <pattern id="grid" width="30" height="15" patternUnits="userSpaceOnUse">
+                  <path d="M 30 0 L 0 0 0 15" fill="none" stroke="#e5e7eb" strokeWidth="0.5"/>
+                </pattern>
+              </defs>
+              <rect width="100%" height="100%" fill="url(#grid)" />
+              
+              {/* Chart line */}
+              {chartData.length > 1 && (
+                <path
+                  d={chartData.map((entry, index) => {
+                    const maxValue = Math.max(...chartData.map(d => d.value));
+                    const x = (index / (chartData.length - 1)) * 260 + 20;
+                    const y = 130 - (entry.value / maxValue) * 110;
+                    return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+                  }).join(' ')}
+                  fill="none"
+                  stroke="#8884d8"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                />
+              )}
+              
+              {/* Data points */}
+              {chartData.map((entry, index) => {
+                const maxValue = Math.max(...chartData.map(d => d.value));
+                const x = (index / (chartData.length - 1)) * 260 + 20;
+                const y = 130 - (entry.value / maxValue) * 110;
+                
+                return (
+                  <g key={entry.name}>
+                    <circle
+                      cx={x}
+                      cy={y}
+                      r="4"
+                      fill="#8884d8"
+                      stroke="white"
+                      strokeWidth="2"
+                    />
+                    <text
+                      x={x}
+                      y={y - 10}
+                      textAnchor="middle"
+                      className="text-xs font-medium"
+                      fill="#374151"
+                    >
+                      {entry.value}
+                    </text>
+                  </g>
+                );
+              })}
+              
+              {/* X-axis labels */}
+              {chartData.map((entry, index) => {
+                const x = (index / (chartData.length - 1)) * 260 + 20;
+                return (
+                  <text
+                    key={entry.name}
+                    x={x}
+                    y={145}
+                    textAnchor="middle"
+                    className="text-xs"
+                    fill="#6b7280"
+                  >
+                    {entry.name.length > 8 ? entry.name.slice(0, 8) + '...' : entry.name}
+                  </text>
+                );
+              })}
+            </svg>
           </div>
         )}
       </div>
