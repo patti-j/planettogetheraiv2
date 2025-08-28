@@ -3,15 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Production Schedule - PlanetTogether [LATEST WORKING VERSION]</title>
-    <!-- BYPASSED VITE CACHE - v1756337700 -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta name="version" content="1756337500">
+    <title>Production Schedule - PlanetTogether</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
     
     <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
     <style>
         * {
@@ -27,7 +26,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -96,14 +95,14 @@
         }
 
         .toolbar button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white !important;
             border: none;
             font-weight: 500;
         }
 
         .toolbar button:hover {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
             transform: translateY(-1px);
             color: white !important;
         }
@@ -155,7 +154,7 @@
             width: 50px;
             height: 50px;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            border-top: 3px solid #3b82f6;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -222,7 +221,7 @@
         }
         
         .hamburger-btn, .max-ai-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             border: none;
             color: white;
             padding: 0.5rem 1rem;
@@ -233,7 +232,7 @@
         }
         
         .hamburger-btn:hover, .max-ai-btn:hover {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
             transform: translateY(-1px);
         }
         
@@ -255,7 +254,7 @@
         }
         
         .nav-menu-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white;
             padding: 1rem;
             display: flex;
@@ -295,8 +294,8 @@
         }
         
         .nav-item.active {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
             font-weight: 500;
         }
         
@@ -320,7 +319,7 @@
         }
         
         .max-ai-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white;
             padding: 1rem;
             display: flex;
@@ -359,7 +358,7 @@
         }
         
         .max-ai-message.user {
-            background: rgba(102, 126, 234, 0.1);
+            background: rgba(59, 130, 246, 0.1);
             margin-left: 2rem;
         }
         
@@ -370,7 +369,7 @@
         
         .max-ai-message strong {
             font-weight: 600;
-            color: #667eea;
+            color: #3b82f6;
         }
         
         .max-ai-input {
@@ -390,7 +389,7 @@
         
         .max-ai-input button {
             padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
             color: white;
             border: none;
             border-radius: 4px;
@@ -399,7 +398,7 @@
         }
         
         .max-ai-input button:hover {
-            background: linear-gradient(135deg, #5a67d8 0%, #6b42a1 100%);
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
         }
         
         /* Dark theme for nav menu and Max AI */
@@ -418,7 +417,7 @@
         }
         
         .dark-theme .nav-item.active {
-            background: rgba(102, 126, 234, 0.2);
+            background: rgba(59, 130, 246, 0.2);
         }
         
         .dark-theme .max-ai-message.assistant {
@@ -427,7 +426,7 @@
         }
         
         .dark-theme .max-ai-message.user {
-            background: rgba(102, 126, 234, 0.2);
+            background: rgba(59, 130, 246, 0.2);
             color: #ccc;
         }
         
@@ -439,6 +438,120 @@
             background: #333;
             color: white;
             border-color: #444;
+        }
+        
+        /* Quick Actions Styles */
+        .max-ai-quick-actions {
+            padding: 0.75rem;
+            background: linear-gradient(to right, #eff6ff, #e0e7ff);
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .dark-theme .max-ai-quick-actions {
+            background: linear-gradient(to right, #1a2332, #202842);
+            border-bottom: 1px solid #444;
+        }
+        
+        .quick-actions-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .dark-theme .quick-actions-title {
+            color: #cbd5e0;
+        }
+        
+        .quick-actions-section {
+            margin-bottom: 0.75rem;
+        }
+        
+        .quick-actions-label {
+            font-size: 0.75rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dark-theme .quick-actions-label {
+            color: #a0aec0;
+        }
+        
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-action-btn {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        
+        .dark-theme .quick-action-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
+        .quick-action-btn:hover {
+            background: #edf2f7;
+            border-color: #3b82f6;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .dark-theme .quick-action-btn:hover {
+            background: #374151;
+            border-color: #3b82f6;
+        }
+        
+        .quick-action-btn.full-width {
+            grid-column: span 2;
+        }
+        
+        .view-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-control-btn {
+            flex: 1;
+            padding: 0.4rem;
+            font-size: 0.7rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .dark-theme .view-control-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
+        .view-control-btn:hover {
+            background: #f7fafc;
+            border-color: #a0aec0;
+        }
+        
+        .dark-theme .view-control-btn:hover {
+            background: #374151;
         }
     </style>
 </head>
@@ -474,23 +587,37 @@
             <h3>🤖 Max AI Assistant</h3>
             <button id="closeMaxAI" class="close-max-ai">×</button>
         </div>
+        
+        <!-- Quick Actions Panel -->
+        <div class="max-ai-quick-actions">
+            <div class="quick-actions-title">✨ Quick Actions</div>
+            <div class="quick-actions-section">
+                <div class="quick-actions-grid">
+                    <button class="quick-action-btn" onclick="runSchedulerAlgorithm('ASAP')">
+                        📈 Run ASAP
+                    </button>
+                    <button class="quick-action-btn" onclick="runSchedulerAlgorithm('ALAP')">
+                        📉 Run ALAP
+                    </button>
+                    <button class="quick-action-btn" onclick="runSchedulerAlgorithm('CRITICAL_PATH')">
+                        ⚠️ Critical Path
+                    </button>
+                    <button class="quick-action-btn" onclick="runSchedulerAlgorithm('LEVEL_RESOURCES')">
+                        ⚖️ Level Resources
+                    </button>
+                    <button class="quick-action-btn" onclick="runSchedulerAlgorithm('DRUM_TOC')">
+                        🎯 Drum (TOC)
+                    </button>
+                    <button class="quick-action-btn" onclick="analyzeSchedule()">
+                        ✨ Analyze Schedule
+                    </button>
+                </div>
+            </div>
+        </div>
+        
         <div class="max-ai-content">
             <div class="max-ai-messages" id="maxMessages">
-                <div class="max-ai-message assistant">Hello! I'm Max, your AI scheduling assistant. I can optimize your production schedule using different algorithms.
-
-<strong>💡 Quick Commands:</strong>
-• "Run ASAP" - Schedule operations as early as possible
-• "Apply ALAP" - Schedule operations as late as possible
-• "Execute critical path" - Optimize the critical path
-• "Level resources" - Balance workload across resources
-• "Apply drum scheduling" - Optimize around bottlenecks
-
-<strong>📊 Analysis:</strong>
-• "Analyze schedule" - Get current schedule statistics
-• "What is the current algorithm?" - Check active algorithm
-• "Explain [algorithm name]" - Learn about an algorithm
-
-Type "help" for all available commands. What would you like to optimize?</div>
+                <div class="max-ai-message assistant">Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?</div>
             </div>
             <div class="max-ai-input">
                 <input type="text" id="maxInput" placeholder="Ask me anything about scheduling..." />
@@ -626,7 +753,7 @@ Type "help" for all available commands. What would you like to optimize?</div>
                         durationUnit: 'hour',
                         resourceId: 'packaging1',
                         percentDone: 0,
-                        eventColor: 'purple'
+                        eventColor: 'blue'
                     },
                     {
                         id: 6,
@@ -647,7 +774,8 @@ Type "help" for all available commands. What would you like to optimize?</div>
                 ];
 
                 // Create scheduler instance
-                const scheduler = new SchedulerPro({
+                // Make scheduler globally accessible for Max AI
+                window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: [
@@ -746,6 +874,8 @@ Type "help" for all available commands. What would you like to optimize?</div>
                 });
 
                 // Setup toolbar handlers
+                const scheduler = window.scheduler;
+                
                 function updateStatus() {
                     const operationCount = scheduler.eventStore.count || 0;
                     document.getElementById('operationCount').textContent = `${operationCount} operations scheduled`;
@@ -771,6 +901,15 @@ Type "help" for all available commands. What would you like to optimize?</div>
                     navMenu.classList.remove('open');
                 });
                 
+                // Handle navigation links - just close the menu
+                const navLinks = document.querySelectorAll('.nav-item');
+                navLinks.forEach(link => {
+                    link.addEventListener('click', () => {
+                        navMenu.classList.remove('open');
+                        // Let the browser handle the navigation naturally
+                    });
+                });
+                
                 // Max AI Handler
                 const maxAIBtn = document.getElementById('maxAIBtn');
                 const maxAI = document.getElementById('maxAI');
@@ -786,6 +925,48 @@ Type "help" for all available commands. What would you like to optimize?</div>
                 closeMaxAI.addEventListener('click', () => {
                     maxAI.classList.remove('open');
                 });
+                
+                // Function to run scheduler algorithms from quick actions
+                function runSchedulerAlgorithm(algorithm) {
+                    const algorithmDropdown = document.getElementById('schedulingAlgorithm');
+                    const applyButton = document.getElementById('applyScheduling');
+                    
+                    // Map algorithm names to dropdown values
+                    const algorithmMap = {
+                        'ASAP': 'asap',
+                        'ALAP': 'alap',
+                        'CRITICAL_PATH': 'criticalPath',
+                        'LEVEL_RESOURCES': 'levelResources',
+                        'DRUM_TOC': 'drum'
+                    };
+                    
+                    // Set the dropdown value and trigger the algorithm
+                    if (algorithmMap[algorithm]) {
+                        algorithmDropdown.value = algorithmMap[algorithm];
+                        applyButton.click();
+                        
+                        // Add a feedback message in Max AI
+                        const aiMsg = document.createElement('div');
+                        aiMsg.className = 'max-ai-message assistant';
+                        aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
+                        maxMessages.appendChild(aiMsg);
+                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }
+                }
+                
+                // Function to analyze the schedule
+                function analyzeSchedule() {
+                    const maxInput = document.getElementById('maxInput');
+                    const maxSend = document.getElementById('maxSend');
+                    
+                    // Set the analysis message and send it
+                    maxInput.value = 'Analyze the current production schedule and provide insights on bottlenecks, resource utilization, and optimization opportunities';
+                    maxSend.click();
+                }
+                
+                // Make functions available globally for onclick handlers
+                window.runSchedulerAlgorithm = runSchedulerAlgorithm;
+                window.analyzeSchedule = analyzeSchedule;
                 
                 // Max AI chat functionality with algorithm execution
                 function sendMaxMessage() {
@@ -863,10 +1044,100 @@ Type "help" for all available commands. What would you like to optimize?</div>
                             response = '📊 **Schedule Optimization Commands:**\n\n**Execute Algorithms:**\n• Run ASAP\n• Apply ALAP\n• Execute critical path\n• Level resources\n• Apply drum scheduling\n\n**Get Information:**\n• What is ASAP?\n• Explain critical path\n• Current algorithm?\n\n**Analysis:**\n• Analyze schedule\n• Show utilization';
                         }
                         // Check for analysis commands
-                        else if (lowerMessage.includes('analyze') || lowerMessage.includes('utilization')) {
-                            const utilization = document.getElementById('resourceUtilization').textContent;
-                            const totalOps = document.getElementById('totalOperations').textContent;
-                            response = `📈 **Current Schedule Analysis:**\n• ${totalOps}\n• ${utilization}\n\nTry different algorithms to optimize for your specific goals!`;
+                        else if (lowerMessage.includes('analyze') || lowerMessage.includes('utilization') || lowerMessage.includes('insights') || lowerMessage.includes('bottleneck')) {
+                            // Perform detailed schedule analysis
+                            const scheduler = window.scheduler;
+                            const events = scheduler.eventStore.records || [];
+                            const resources = scheduler.resourceStore.records || [];
+                            
+                            // Calculate resource utilization details
+                            const resourceUsage = {};
+                            resources.forEach(resource => {
+                                const resourceEvents = events.filter(e => e.resourceId === resource.id);
+                                let totalDuration = 0;
+                                resourceEvents.forEach(event => {
+                                    const duration = (event.endDate - event.startDate) / (1000 * 60 * 60); // hours
+                                    totalDuration += duration;
+                                });
+                                resourceUsage[resource.name] = {
+                                    operations: resourceEvents.length,
+                                    hoursUsed: totalDuration.toFixed(1),
+                                    utilization: resourceEvents.length > 0 ? 100 : 0
+                                };
+                            });
+                            
+                            // Find bottlenecks (resources with highest utilization)
+                            let bottleneck = null;
+                            let maxOps = 0;
+                            Object.entries(resourceUsage).forEach(([name, data]) => {
+                                if (data.operations > maxOps) {
+                                    maxOps = data.operations;
+                                    bottleneck = name;
+                                }
+                            });
+                            
+                            // Calculate timeline span
+                            let earliestStart = null;
+                            let latestEnd = null;
+                            events.forEach(event => {
+                                if (!earliestStart || event.startDate < earliestStart) {
+                                    earliestStart = event.startDate;
+                                }
+                                if (!latestEnd || event.endDate > latestEnd) {
+                                    latestEnd = event.endDate;
+                                }
+                            });
+                            
+                            const makespan = earliestStart && latestEnd ? 
+                                ((latestEnd - earliestStart) / (1000 * 60 * 60)).toFixed(1) : 0;
+                            
+                            // Build comprehensive analysis
+                            response = '📊 **Production Schedule Analysis**\n\n';
+                            response += `📈 **Overall Metrics:**\n`;
+                            response += `• Total Operations: ${events.length}\n`;
+                            response += `• Active Resources: ${Object.values(resourceUsage).filter(r => r.operations > 0).length}/${resources.length}\n`;
+                            response += `• Total Makespan: ${makespan} hours\n`;
+                            response += `• Current Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}\n\n`;
+                            
+                            response += `🏭 **Resource Utilization:**\n`;
+                            Object.entries(resourceUsage).forEach(([name, data]) => {
+                                if (data.operations > 0) {
+                                    response += `• ${name}: ${data.operations} operations, ${data.hoursUsed} hours\n`;
+                                }
+                            });
+                            
+                            if (bottleneck) {
+                                response += `\n⚠️ **Bottleneck Identified:**\n`;
+                                response += `• ${bottleneck} has the highest load with ${maxOps} operations\n`;
+                            }
+                            
+                            // Optimization recommendations
+                            response += `\n💡 **Optimization Recommendations:**\n`;
+                            
+                            const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+                            if (currentAlgo === 'asap') {
+                                response += `• Current: ASAP - Good for urgent orders\n`;
+                                response += `• Consider: ALAP to reduce inventory costs\n`;
+                                response += `• Consider: Level Resources to balance workload\n`;
+                            } else if (currentAlgo === 'alap') {
+                                response += `• Current: ALAP - Minimizing inventory\n`;
+                                response += `• Consider: ASAP for faster delivery\n`;
+                                response += `• Consider: Critical Path to reduce makespan\n`;
+                            } else if (currentAlgo === 'criticalPath') {
+                                response += `• Current: Critical Path - Optimized for completion time\n`;
+                                response += `• Consider: Level Resources if some resources are overloaded\n`;
+                                response += `• Consider: Drum/TOC if bottleneck is limiting throughput\n`;
+                            } else if (currentAlgo === 'levelResources') {
+                                response += `• Current: Resource Leveling - Balanced workload\n`;
+                                response += `• Consider: Critical Path to reduce total time\n`;
+                                response += `• Consider: Drum/TOC to optimize bottlenecks\n`;
+                            } else {
+                                response += `• Current: Drum/TOC - Optimized for bottlenecks\n`;
+                                response += `• Consider: ASAP for urgent completion\n`;
+                                response += `• Consider: Level Resources for even distribution\n`;
+                            }
+                            
+                            response += `\nWould you like me to apply a different algorithm to optimize the schedule?`;
                         }
                         else {
                             response = `I understand you're asking about "${message}". I can help you optimize the schedule using different algorithms. Say "help" to see available commands.`;
@@ -1310,6 +1581,96 @@ Type "help" for all available commands. What would you like to optimize?</div>
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
                 
+                // Check for pending scheduler commands from Max AI (after navigation)
+                const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
+                if (pendingCommand) {
+                    try {
+                        const commandData = JSON.parse(pendingCommand);
+                        sessionStorage.removeItem('pendingSchedulerCommand');
+                        
+                        // Execute the pending command after a short delay to ensure page is ready
+                        setTimeout(() => {
+                            if (commandData.command === 'RUN_ALGORITHM') {
+                                window.postMessage({
+                                    type: 'RUN_SCHEDULER_ALGORITHM',
+                                    algorithm: commandData.algorithm
+                                }, '*');
+                            } else if (commandData.command === 'VIEW_CONTROL') {
+                                window.postMessage({
+                                    type: 'SCHEDULER_VIEW_CONTROL',
+                                    action: commandData.action
+                                }, '*');
+                            }
+                        }, 500);
+                    } catch (error) {
+                        console.error('Failed to execute pending scheduler command:', error);
+                    }
+                }
+                
+                // Listen for messages from Max AI
+                window.addEventListener('message', (event) => {
+                    console.log('Production Scheduler received message:', event.data);
+                    
+                    // Handle scheduler commands from Max AI
+                    if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
+                        const action = event.data.action;
+                        
+                        switch (action) {
+                            case 'zoom_in':
+                                document.getElementById('zoomIn')?.click();
+                                break;
+                            case 'zoom_out':
+                                document.getElementById('zoomOut')?.click();
+                                break;
+                            case 'zoom_fit':
+                                document.getElementById('zoomToFit')?.click();
+                                break;
+                            case 'week_view':
+                                const viewSelect = document.getElementById('viewPreset');
+                                if (viewSelect) {
+                                    viewSelect.value = 'dayAndWeek';
+                                    viewSelect.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'day_view':
+                                const viewSelectDay = document.getElementById('viewPreset');
+                                if (viewSelectDay) {
+                                    viewSelectDay.value = 'hourAndDay';
+                                    viewSelectDay.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'month_view':
+                                const viewSelectMonth = document.getElementById('viewPreset');
+                                if (viewSelectMonth) {
+                                    viewSelectMonth.value = 'monthAndYear';
+                                    viewSelectMonth.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                        }
+                    } else if (event.data?.type === 'RUN_SCHEDULER_ALGORITHM') {
+                        const algorithm = event.data.algorithm;
+                        const algorithmMap = {
+                            'ASAP': 'asap',
+                            'ALAP': 'alap',
+                            'CRITICAL_PATH': 'criticalPath',
+                            'LEVEL_RESOURCES': 'levelResources',
+                            'DRUM_TOC': 'drum'
+                        };
+                        
+                        const algorithmValue = algorithmMap[algorithm];
+                        if (algorithmValue) {
+                            const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                            const applyButton = document.getElementById('applyScheduling');
+                            
+                            if (algorithmSelect && applyButton) {
+                                algorithmSelect.value = algorithmValue;
+                                applyButton.click();
+                                console.log(`Applied scheduling algorithm: ${algorithm}`);
+                            }
+                        }
+                    }
+                });
+                
             } catch (error) {
                 console.error('Failed to initialize scheduler:', error);
                 document.getElementById('scheduler').innerHTML = `
@@ -1323,4 +1684,3 @@ Type "help" for all available commands. What would you like to optimize?</div>
     </script>
 </body>
 </html>
-timestamp: Wed Aug 27 11:32:30 PM UTC 2025
