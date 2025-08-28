@@ -49,6 +49,7 @@ Note on concurrent work:
 - **Performance**: Optimize for fast loading and smooth interactions.
 - **Accessibility**: Ensure mobile-responsive design with proper touch targets.
 - **Consistency**: Maintain uniform styling, patterns, and user flows.
+- **Quality Assurance**: Always test fixes and check for runtime errors before completing tasks. Restart workflows to verify server-side changes and monitor console logs for errors.
 
 ### Frontend Architecture
 - **Framework**: React 18 with TypeScript.
