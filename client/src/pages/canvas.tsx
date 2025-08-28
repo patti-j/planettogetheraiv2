@@ -147,12 +147,13 @@ export default function CanvasPage() {
         await Promise.all(
           canvasWidgets.map(async (widget: CanvasWidget) => {
             try {
-              await fetch(`/api/canvas/widgets/${widget.id}`, {
-                method: 'PATCH',
+              await fetch(`/api/canvas/widgets/${widget.id}/visibility`, {
+                method: 'PUT',
                 headers: {
                   'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`,
                 },
-                body: JSON.stringify({ isVisible: false }),
+                body: JSON.stringify({ visible: false }),
               });
             } catch (error) {
               console.log(`Failed to hide widget ${widget.id}:`, error);
