@@ -63,18 +63,41 @@ const ProductionSchedulerPro: React.FC = () => {
     const loadedFavorites = favoritesService.getAllFavorites();
     setFavorites(loadedFavorites);
     
-    // Check if Bryntum is loaded
-    const checkBryntum = () => {
-      const bryntumGlobal = (window as any).bryntum as BryntumSchedulerPro;
-      if (bryntumGlobal && bryntumGlobal.schedulerpro && containerRef.current) {
+    // Load Bryntum SchedulerPro script if not already loaded
+    const loadBryntumScript = () => {
+      if ((window as any).bryntum) {
+        // Already loaded
         initializeScheduler();
-      } else {
-        // Retry after a short delay
-        setTimeout(checkBryntum, 100);
+        return;
       }
+      
+      const script = document.createElement('script');
+      script.src = '/schedulerpro.umd.js';
+      script.async = true;
+      script.onload = () => {
+        console.log('Bryntum SchedulerPro loaded');
+        // Wait a bit for the library to fully initialize
+        setTimeout(initializeScheduler, 100);
+      };
+      script.onerror = () => {
+        console.error('Failed to load Bryntum SchedulerPro script');
+        toast({
+          title: "Error",
+          description: "Failed to load scheduler library. Please refresh the page.",
+          variant: "destructive"
+        });
+        setIsLoading(false);
+      };
+      document.body.appendChild(script);
+      
+      // Also load the CSS
+      const link = document.createElement('link');
+      link.rel = 'stylesheet';
+      link.href = '/schedulerpro.classic-light.css';
+      document.head.appendChild(link);
     };
 
-    checkBryntum();
+    loadBryntumScript();
 
     // Cleanup
     return () => {
@@ -90,57 +113,75 @@ const ProductionSchedulerPro: React.FC = () => {
       setIsLoading(true);
       
       const bryntumGlobal = (window as any).bryntum as BryntumSchedulerPro;
-      const { SchedulerPro, ProjectModel } = bryntumGlobal.schedulerpro;
-
-      if (!SchedulerPro) {
-        console.error('SchedulerPro not found in window.bryntum.schedulerpro');
+      
+      if (!bryntumGlobal || !bryntumGlobal.schedulerpro) {
+        console.error('Bryntum SchedulerPro not loaded');
         toast({
           title: "Error",
-          description: "Failed to load scheduler library",
+          description: "Scheduler library not available. Please refresh the page.",
           variant: "destructive"
         });
+        setIsLoading(false);
+        return;
+      }
+      
+      const { SchedulerPro, ProjectModel } = bryntumGlobal.schedulerpro;
+
+      if (!SchedulerPro || !ProjectModel) {
+        console.error('SchedulerPro components not found');
+        toast({
+          title: "Error",
+          description: "Failed to load scheduler components",
+          variant: "destructive"
+        });
+        setIsLoading(false);
         return;
       }
 
       // Get demo data from service
       const ganttData = await dataService.getDemoData();
+      console.log('Gantt data loaded:', ganttData);
       
       // Get default configuration
       const config = configService.getDefaultConfig();
       
-      // Create project model
+      // Create project model with updated API properties
+      console.log('Creating ProjectModel...');
       const project = new ProjectModel({
-        resourcesData: ganttData.resources,
-        eventsData: ganttData.events,
-        dependenciesData: ganttData.dependencies,
-        assignmentsData: ganttData.assignments,
+        resources: ganttData.resources,
+        events: ganttData.events,
+        dependencies: ganttData.dependencies,
+        assignments: ganttData.assignments,
         
         // Enable scheduling features
         autoSync: false,
         validateResponse: true
       });
 
-      // Create the scheduler
-      schedulerRef.current = new SchedulerPro({
-        appendTo: containerRef.current,
-        project,
-        
-        // Layout configuration
-        startDate: config.startDate,
-        endDate: config.endDate,
-        viewPreset: config.viewPreset,
-        barMargin: config.barMargin,
-        rowHeight: config.rowHeight,
-        
-        // Columns
-        columns: config.columns,
-        
-        // Features
-        features: config.features,
-        
-        // Event listeners
-        listeners: {
-          beforeEventEdit: ({ eventRecord }: any) => {
+      console.log('ProjectModel created, creating scheduler...');
+      
+      // Use simplified configuration to avoid missing features error
+      try {
+        schedulerRef.current = new SchedulerPro({
+          appendTo: containerRef.current,
+          project,
+          
+          // Basic configuration
+          startDate: new Date(2025, 7, 28),
+          endDate: new Date(2025, 8, 7),
+          viewPreset: 'weekAndDayLetter',
+          rowHeight: 50,
+          barMargin: 5,
+          
+          // Simple columns configuration
+          columns: config.columns,
+          
+          // Use simplified features from config
+          features: config.features,
+          
+          // Event listeners
+          listeners: {
+            beforeEventEdit: ({ eventRecord }: any) => {
             console.log('Editing event:', eventRecord);
             return true;
           },
@@ -178,18 +219,32 @@ const ProductionSchedulerPro: React.FC = () => {
           }
         }
       });
+      } catch (innerError) {
+        console.error('Failed to create scheduler with simple config:', innerError);
+        throw innerError;
+      }
 
+      console.log('Scheduler created successfully');
+      
+      // Update counts
+      setResourceCount(ganttData.resources.length);
+      setOperationCount(ganttData.events.length);
+      
       toast({
         title: "Success",
-        description: "Scheduler loaded successfully with demo data"
+        description: `Scheduler loaded with ${ganttData.resources.length} resources and ${ganttData.events.length} operations`
       });
       
       setIsLoading(false);
     } catch (error) {
-      console.error('Failed to initialize scheduler:', error);
+      console.error('Failed to initialize scheduler - Full error:', error);
+      if (error instanceof Error) {
+        console.error('Error message:', error.message);
+        console.error('Error stack:', error.stack);
+      }
       toast({
         title: "Error",
-        description: "Failed to initialize scheduler",
+        description: error instanceof Error ? error.message : "Failed to initialize scheduler",
         variant: "destructive"
       });
       setIsLoading(false);

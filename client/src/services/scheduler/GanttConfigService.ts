@@ -154,80 +154,38 @@ export class GanttConfigService {
    */
   getDefaultFeatures(): any {
     return {
-      // Scheduling features
+      // Core scheduling features
       dependencies: true,
-      dependencyEdit: {
-        showLagField: true
-      },
+      dependencyEdit: true,
       
-      // Event manipulation
+      // Event manipulation  
       eventDrag: {
-        constrainDragToResource: false,
-        showExactDropPosition: true,
-        validatorFn: this.validateDrag
+        constrainDragToResource: false
       },
       eventDragCreate: true,
-      eventDragSelect: true,
-      eventEdit: {
-        items: this.getEventEditItems()
-      },
+      eventEdit: true,
       eventResize: true,
-      eventTooltip: {
-        template: this.getEventTooltipTemplate()
-      },
+      eventTooltip: true,
       
-      // Navigation and UI
+      // Basic UI features
       cellEdit: false,
-      cellMenu: true,
       columnLines: true,
       columnReorder: true,
       columnResize: true,
-      contextMenu: {
-        items: this.getContextMenuItems()
-      },
-      filter: true,
-      filterBar: true,
-      group: 'department',
-      headerContextMenu: true,
-      labels: {
-        left: {
-          field: 'name',
-          editor: false
-        }
-      },
+      filterBar: false,
+      group: false,
       nonWorkingTime: true,
-      pan: true,
       percentBar: true,
-      quickFind: true,
       regionResize: true,
-      resourceTimeRanges: true,
-      rowReorder: false,
-      scheduleContextMenu: {
-        items: this.getScheduleContextMenuItems()
-      },
       sort: 'name',
-      stickyCells: false,
       stripe: true,
-      summary: {
-        renderer: this.renderSummary
-      },
-      taskEdit: false,
-      timeRanges: {
-        showCurrentTimeLine: true,
-        showHeaderElements: true
-      },
       tree: true,
       zoomOnMouseWheel: true,
       zoomOnTimeAxisDoubleClick: true,
       
-      // Critical path and slack
-      criticalPaths: {
-        disabled: false
-      },
-      
-      // Resource histogram
-      resourceHistogram: {
-        barTooltipTemplate: (data: any) => `${data.resource.name}: ${data.allocation}%`
+      // Time ranges
+      timeRanges: {
+        showCurrentTimeLine: true
       }
     };
   }
