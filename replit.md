@@ -10,6 +10,8 @@ Multiple users working on project:
 - JC = Jim
 - PJ = Patti
 
+**AI Branding Standard**: Always use Sparkles icon for AI-related features and branding. Never use Brain or other icons for AI functionality.
+
 Note on concurrent work:
 - Jim and Patti work on different issues concurrently
 - Each conversation/thread is independent - I don't retain context between different sessions
@@ -26,11 +28,11 @@ Note on concurrent work:
 - **Role-Based Workspaces**: Created comprehensive sample workspaces for 10 key manufacturing roles including Production Manager, Quality Manager, Maintenance Manager, Supply Chain Manager, Plant Manager, Shift Operations, Production Planning, Engineering Support, Warehouse Operations, and Manufacturing Finance
 - **Sample Data Implementation**: Successfully added comprehensive AI memories sample data including scheduling optimization, quality management, maintenance strategy, dashboard configuration, and inventory optimization preferences
 - **Max AI Prompt Simplification**: Updated all user-facing prompts from "Ask Max AI anything..." to "Ask anything" for cleaner, more concise interface
-- **Icon Standardization**: Completed comprehensive replacement of all Brain icons with Magic Wand (Wand2) icons across the entire application (35+ files updated)
+- **AI Icon Standardization**: Completed comprehensive replacement of all Brain icons with Sparkles icons across the entire application for consistent AI branding (35+ files updated)
 - **Authentication Enhancement**: Successfully added five admin users with "padres" password and Administrator roles
 - **Route Security**: Fixed critical routing issue by adding /production-scheduler-js to publicPaths array
 - **PlanetTogether Migration**: Completed v13-14 migration with all branding and authentication issues resolved
-- **Design Consistency**: All AI-related features now use consistent Wand2 icon throughout navigation panels, dialogs, and interface elements
+- **AI Design Consistency**: All AI-related features now use consistent Sparkles icon throughout navigation panels, dialogs, and interface elements. **Always use Sparkles icon for AI branding, never Brain or other icons.**
 - **Global Control Tower Advanced Features**: Enhanced with comprehensive KPI target management, weighted performance tracking, autonomous optimization configuration, performance visualization charts, and real-time plant monitoring with automated algorithm selection and parameter tuning capabilities
 
 ## System Architecture

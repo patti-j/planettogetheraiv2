@@ -13,7 +13,7 @@ import {
   BarChart3,
   Target,
   Zap,
-  Brain,
+
   Search,
   Filter,
   Calendar,
@@ -106,7 +106,11 @@ export default function AIInsightsPage() {
   // Mutation to update insight status
   const updateInsightMutation = useMutation({
     mutationFn: async ({ insightId, status }: { insightId: string; status: string }) => {
-      return await apiRequest('PATCH', `/api/ai-insights/${insightId}`, { status });
+      return await apiRequest(`/api/ai-insights/${insightId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+        headers: { 'Content-Type': 'application/json' }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/ai-insights'] });
@@ -169,7 +173,7 @@ export default function AIInsightsPage() {
       forecast: TrendingUp,
       quality: CheckCircle,
       maintenance: Cog,
-      simulation: Brain
+      simulation: Sparkles
     };
     return iconMap[type as keyof typeof iconMap] || Sparkles;
   };
@@ -242,7 +246,7 @@ export default function AIInsightsPage() {
           <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 rounded-lg">
-                <Brain className="w-6 h-6 text-white" />
+                <Sparkles className="w-6 h-6 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
@@ -494,7 +498,7 @@ export default function AIInsightsPage() {
 
         {filteredInsights.length === 0 && (
           <div className="text-center py-12">
-            <Brain className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+            <Sparkles className="w-16 h-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
               No insights found
             </h3>
