@@ -389,13 +389,15 @@ export default function LaborPlanning() {
                     <h3 className="text-lg font-semibold mb-3 flex items-center">
                       <Star className="h-5 w-5 mr-2 text-blue-500" />
                       Skills Matrix
+                      <span className="ml-2 text-sm text-gray-500 font-normal">(Scroll horizontally to see all skills →)</span>
                     </h3>
-                    <div className="overflow-x-auto">
-                      <table className="w-full border-collapse border border-gray-200">
+                    <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
+                      <div className="min-w-max">
+                        <table className="w-full border-collapse border border-gray-200">
                         <thead>
                           <tr className="bg-gray-50">
-                            <th className="border border-gray-200 p-3 text-left font-medium">Employee</th>
-                            <th className="border border-gray-200 p-2 text-center font-medium">Dept</th>
+                            <th className="border border-gray-200 p-3 text-left font-medium sticky left-0 bg-gray-50 z-10 min-w-[180px]">Employee</th>
+                            <th className="border border-gray-200 p-2 text-center font-medium sticky left-[180px] bg-gray-50 z-10 min-w-[80px]">Dept</th>
                             {availableSkills.map((skill) => (
                               <th key={skill} className="border border-gray-200 p-2 text-center font-medium text-xs min-w-[80px]" style={{writingMode: 'vertical-rl', textOrientation: 'mixed'}}>
                                 {skill}
@@ -406,7 +408,7 @@ export default function LaborPlanning() {
                         <tbody>
                           {employees.map((employee) => (
                             <tr key={employee.id} className="hover:bg-gray-50">
-                              <td className="border border-gray-200 p-3">
+                              <td className="border border-gray-200 p-3 sticky left-0 bg-white z-10 hover:bg-gray-50 min-w-[180px]">
                                 <div className="flex items-center gap-2">
                                   <div>
                                     <div className="font-medium">{employee.name}</div>
@@ -414,7 +416,7 @@ export default function LaborPlanning() {
                                   </div>
                                 </div>
                               </td>
-                              <td className="border border-gray-200 p-2 text-center text-xs">
+                              <td className="border border-gray-200 p-2 text-center text-xs sticky left-[180px] bg-white z-10 hover:bg-gray-50 min-w-[80px]">
                                 <Badge variant="outline" className="text-xs">
                                   {employee.department}
                                 </Badge>
@@ -455,7 +457,8 @@ export default function LaborPlanning() {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                        </table>
+                      </div>
                     </div>
                   </div>
 
@@ -464,13 +467,15 @@ export default function LaborPlanning() {
                     <h3 className="text-lg font-semibold mb-3 flex items-center">
                       <Settings className="h-5 w-5 mr-2 text-green-500" />
                       Resource Capability Matrix
+                      <span className="ml-2 text-sm text-gray-500 font-normal">(Scroll horizontally to see all resources →)</span>
                     </h3>
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto border rounded-lg shadow-sm bg-white">
+                      <div className="min-w-max">
                       <table className="w-full border-collapse border border-gray-200">
                         <thead>
                           <tr className="bg-gray-50">
-                            <th className="border border-gray-200 p-3 text-left font-medium">Employee</th>
-                            <th className="border border-gray-200 p-2 text-center font-medium">Dept</th>
+                            <th className="border border-gray-200 p-3 text-left font-medium sticky left-0 bg-gray-50 z-10 min-w-[180px]">Employee</th>
+                            <th className="border border-gray-200 p-2 text-center font-medium sticky left-[180px] bg-gray-50 z-10 min-w-[80px]">Dept</th>
                             {availableResources.map((resource) => (
                               <th key={resource} className="border border-gray-200 p-2 text-center font-medium text-xs min-w-[80px]" style={{writingMode: 'vertical-rl', textOrientation: 'mixed'}}>
                                 {resource}
@@ -481,7 +486,7 @@ export default function LaborPlanning() {
                         <tbody>
                           {employees.map((employee) => (
                             <tr key={employee.id} className="hover:bg-gray-50">
-                              <td className="border border-gray-200 p-3">
+                              <td className="border border-gray-200 p-3 sticky left-0 bg-white z-10 hover:bg-gray-50 min-w-[180px]">
                                 <div className="flex items-center gap-2">
                                   <div>
                                     <div className="font-medium">{employee.name}</div>
@@ -492,7 +497,7 @@ export default function LaborPlanning() {
                                   </div>
                                 </div>
                               </td>
-                              <td className="border border-gray-200 p-2 text-center text-xs">
+                              <td className="border border-gray-200 p-2 text-center text-xs sticky left-[180px] bg-white z-10 hover:bg-gray-50 min-w-[80px]">
                                 <Badge variant="outline" className="text-xs">
                                   {employee.department}
                                 </Badge>
@@ -533,7 +538,8 @@ export default function LaborPlanning() {
                             </tr>
                           ))}
                         </tbody>
-                      </table>
+                        </table>
+                      </div>
                     </div>
                   </div>
                 </div>
