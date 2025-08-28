@@ -60,7 +60,7 @@ export default function TopUserProfile() {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => window.location.href = '/account'}
+                        onClick={() => window.location.href = '/settings'}
                         className="h-5 w-5 p-0 text-gray-500 hover:text-gray-700"
                       >
                         <CreditCard className="w-3 h-3" />
