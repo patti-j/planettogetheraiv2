@@ -101,7 +101,7 @@ export default function AIInsightsPage() {
 
   // Fetch insights data
   const { data: insights = [], isLoading, refetch } = useQuery<AIInsight[]>({
-    queryKey: ['/api/ai-insights', { timeRange, location }],
+    queryKey: ['/api/ai-insights', timeRange, location],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -119,7 +119,7 @@ export default function AIInsightsPage() {
       if (response.ok) {
         const freshInsights = await response.json();
         // Update the query cache with fresh insights
-        queryClient.setQueryData(['/api/ai-insights', { timeRange, location }], freshInsights);
+        queryClient.setQueryData(['/api/ai-insights', timeRange, location], freshInsights);
         
         toast({
           title: "Fresh Insights Generated",
