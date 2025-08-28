@@ -105,6 +105,7 @@ export class GanttConfigService {
         field: 'name', 
         width: 250,
         editor: false,
+        htmlEncode: false,  // Important: Allow HTML in resource names
         renderer: ({ record, value }: any) => {
           if (!record || !record.type || !value) return value || '';
           const iconCls = this.getResourceIcon(record.type);
