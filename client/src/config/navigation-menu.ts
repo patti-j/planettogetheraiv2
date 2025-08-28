@@ -63,7 +63,7 @@ export const navigationGroups: NavigationGroup[] = [
       
       // 5. Scheduling and execution
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
-      { icon: Calendar, label: "Production Scheduler Pro", href: "/production-scheduler-pro", feature: "schedule", action: "view", color: "bg-indigo-600" },
+      { icon: Calendar, label: "Production Scheduler Pro", href: "/production-scheduler.html", feature: "schedule", action: "view", color: "bg-indigo-600" },
       { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "schedule", action: "view", color: "bg-purple-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "planning-scheduling", action: "view", color: "bg-cyan-500" },
       
