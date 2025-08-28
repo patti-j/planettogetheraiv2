@@ -36,7 +36,8 @@ import {
   MoreVertical,
   Trash2,
   Copy,
-  FileImage
+  FileImage,
+  RefreshCw
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
@@ -77,7 +78,9 @@ export default function CanvasPage() {
         throw new Error('Failed to fetch canvas widgets');
       }
       return response.json();
-    }
+    },
+    refetchInterval: 3000, // Refresh every 3 seconds to catch new Max AI charts
+    refetchIntervalInBackground: false
   });
 
   // Load canvas items from localStorage on mount (legacy items)
@@ -306,6 +309,15 @@ export default function CanvasPage() {
           </div>
           
           <div className="flex items-center gap-2 lg:flex-shrink-0">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => refetchWidgets()}
+              className="text-white hover:bg-white/20 p-2"
+              title="Refresh Canvas"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
             {allItems.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
