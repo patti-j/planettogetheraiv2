@@ -48,8 +48,7 @@ const UnscheduledOperationsGrid: React.FC<UnscheduledOperationsGridProps> = ({
         // Required capabilities for resource matching
         requiredCapabilities: op.requiredCapabilities || [],
         // Visual indicators
-        iconCls: getOperationIcon(op),
-        cls: `priority-${op.priority || 5} status-${op.status || 'planned'}`
+        iconCls: getOperationIcon(op)
       }));
   }, [ptOperations]);
 

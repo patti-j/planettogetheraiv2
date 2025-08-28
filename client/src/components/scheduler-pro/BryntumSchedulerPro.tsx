@@ -75,7 +75,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           // Jim's corrections: Track if this is a bottleneck resource
           isBottleneck: resource.bottleneck || false,
           // Custom styling based on resource status
-          cls: resource.active ? 'resource-active' : 'resource-inactive'
+          enabled: resource.active
         });
       }
     });
@@ -123,7 +123,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         isActuallyScheduled: op.isActuallyScheduled || false,
         resourceBlockId: op.resourceBlockId,
         // Visual indicators for different assignment types
-        cls: `assignment-${op.assignmentType || 'unscheduled'} ${op.isLocked ? 'locked' : ''}`,
+        eventStyle: op.isLocked ? 'locked' : 'normal',
         eventColor: getOperationColor(op),
         // Additional operation data
         jobId: op.jobId,

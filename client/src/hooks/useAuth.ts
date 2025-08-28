@@ -130,7 +130,7 @@ export function useAuth() {
         const tokenParts = token.split('_');
         if (tokenParts.length >= 3) {
           const expiresAt = parseInt(tokenParts[2]);
-          if (Date.now() > expiresAt) {
+          if (isNaN(expiresAt) || Date.now() > expiresAt) {
             // Token is expired, clear it
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');

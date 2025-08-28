@@ -179,7 +179,6 @@ export const transformToБryntumTasks = (operations: any[], orders: any[]): Bryn
       operationName: op.operationName,
       status: op.status,
       priority: op.priority,
-      cls: `status-${op.status}`,
       eventColor: getStatusColor(op.status)
     };
   });
