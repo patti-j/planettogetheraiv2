@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, AlertTriangle, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -314,7 +314,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const { data: maxInsights } = useQuery({
     queryKey: [`/api/max-ai/insights?page=${location}`],
     refetchInterval: 60000, // Refresh every minute
-    enabled: activeTab === 'insights' || activeTab === 'anomalies'
+    enabled: activeTab === 'insights'
   });
   
   // Cancel current Max request
@@ -445,10 +445,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const renderContentWithClickableKeywords = (content: string) => {
     // Define important patterns to make clickable - now much more comprehensive
     const importantPatterns = [
-      // Specific alerts and issues
-      { pattern: /Resource Overutilization Alert/gi, query: 'Tell me more about the resource overutilization issue' },
-      { pattern: /Material Shortage Alert/gi, query: 'Analyze the material shortage situation in detail' },
-      { pattern: /Quality Deviation Alert/gi, query: 'Explain the quality deviation issue and how to fix it' },
+      // Specific issues (alerts removed)
       { pattern: /CNC Milling Machine/gi, query: 'Show me detailed status of the CNC Milling Machine' },
       { pattern: /Aluminum Sheets/gi, query: 'Check inventory levels for Aluminum Sheets' },
       { pattern: /defect rate/gi, query: 'Analyze defect rates and quality trends' },
@@ -650,7 +647,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'anomaly': return AlertTriangle;
       case 'insight': return TrendingUp;
       case 'recommendation': return Lightbulb;
       case 'simulation': return Activity;
@@ -781,12 +777,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         <>
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-4 mx-4 mt-2 text-xs">
+            <TabsList className="grid grid-cols-3 mx-4 mt-2 text-xs">
               <TabsTrigger value="chat" className="px-2" title="Chat">
                 <MessageSquare className="w-4 h-4" />
-              </TabsTrigger>
-              <TabsTrigger value="anomalies" className="px-2" title="Alerts">
-                <AlertTriangle className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="simulations" className="px-2" title="Simulations">
                 <Activity className="w-4 h-4" />
@@ -908,54 +901,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
 
 
-            {/* Anomalies Tab */}
-            <TabsContent value="anomalies" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-2 pb-4">
-                {displayInsights
-                  .filter(i => i.type === 'anomaly' || i.type === 'bottleneck' || i.type === 'conflict')
-                  .map(insight => (
-                    <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors border-orange-200">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-2">
-                            <AlertTriangle className="w-4 h-4 text-orange-500" />
-                            <CardTitle className="text-sm">{insight.title}</CardTitle>
-                          </div>
-                          <Badge variant="destructive" className="text-xs">
-                            Anomaly
-                          </Badge>
-                        </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
-                        {insight.impact && (
-                          <div className="text-xs bg-orange-50 dark:bg-orange-950 p-2 rounded mb-2">
-                            <span className="font-medium">Impact: </span>
-                            {insight.impact}
-                          </div>
-                        )}
-                        {insight.recommendation && (
-                          <div className="text-xs bg-muted p-2 rounded mb-2">
-                            <span className="font-medium">Recommendation: </span>
-                            {insight.recommendation}
-                          </div>
-                        )}
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="flex-1">
-                            Investigate
-                          </Button>
-                          <Button size="sm" className="flex-1">
-                            Fix Now
-                          </Button>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-2">{insight.timestamp}</div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
+
 
             {/* Simulations Tab */}
             <TabsContent value="simulations" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
@@ -1384,20 +1330,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               3
             </Badge>
           </div>
-          <div 
-            className="relative cursor-pointer"
-            onClick={() => {
-              setIsCollapsed(false);
-              setActiveTab('anomalies');
-            }}
-            title="View Anomalies (1 critical)"
-            style={{ padding: '8px', background: 'none', border: 'none' }}
-          >
-            <AlertTriangle className="w-5 h-5 text-orange-500" />
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-4 w-4 p-0 flex items-center justify-center">
-              1
-            </Badge>
-          </div>
+
           <div 
             className="cursor-pointer"
             onClick={() => {
