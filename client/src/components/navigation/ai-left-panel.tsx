@@ -809,8 +809,12 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       const timeB = new Date(b.createdAt).getTime();
                       const timeDiff = timeA - timeB;
                       
-                      // If times are very close (within 5 seconds), use ID to maintain conversation order
+                      // If times are very close (within 5 seconds), ensure user messages come before assistant messages
                       if (Math.abs(timeDiff) < 5000) {
+                        // If one is user and one is assistant, prioritize user message first
+                        if (a.role === 'user' && b.role === 'assistant') return -1;
+                        if (a.role === 'assistant' && b.role === 'user') return 1;
+                        // If both are same role, use ID for order
                         return a.id - b.id;
                       }
                       return timeDiff;
