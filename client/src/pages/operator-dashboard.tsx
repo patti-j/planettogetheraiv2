@@ -111,7 +111,8 @@ export default function OperatorDashboard() {
   const [quantityScrap, setQuantityScrap] = useState<number>(0);
   const [timeSpent, setTimeSpent] = useState<number>(0);
   const [expandedOperation, setExpandedOperation] = useState<number | null>(null);
-  const [currentOperator] = useState("John Smith"); // In real app, this would come from auth
+  const [currentOperator, setCurrentOperator] = useState("John Smith");
+  const [operatorSwitchDialogOpen, setOperatorSwitchDialogOpen] = useState(false);
   
   // Operation control states
   const [operationControlDialogOpen, setOperationControlDialogOpen] = useState(false);
@@ -631,12 +632,18 @@ export default function OperatorDashboard() {
                   <span className="hidden sm:inline">Report Equipment Problem</span>
                   <span className="sm:hidden">Report Problem</span>
                 </Button>
-                {/* Operator info - very compact on mobile */}
-                <div className="flex items-center gap-1 text-xs text-gray-600">
+                {/* Operator info - very compact on mobile with switch button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setOperatorSwitchDialogOpen(true)}
+                  className="flex items-center gap-1 text-gray-600 hover:bg-blue-50 hover:text-blue-600"
+                >
                   <User className="w-3 h-3" />
                   <span className="hidden sm:inline">{currentOperator}</span>
                   <span className="sm:hidden">{currentOperator.split(' ')[0]}</span>
-                </div>
+                  <ChevronDown className="w-3 h-3" />
+                </Button>
               </div>
             </div>
           </div>
@@ -1584,6 +1591,87 @@ export default function OperatorDashboard() {
                 )}
               </Button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Operator Switch Dialog */}
+      <Dialog open={operatorSwitchDialogOpen} onOpenChange={setOperatorSwitchDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <User className="w-5 h-5 text-blue-600" />
+              Switch Operator
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Select Operator</label>
+              <Select 
+                value={currentOperator} 
+                onValueChange={setCurrentOperator}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select an operator" />
+                </SelectTrigger>
+                <SelectContent>
+                  {/* Default operators for quick switching */}
+                  <SelectItem value="John Smith">John Smith</SelectItem>
+                  <SelectItem value="Maria Rodriguez">Maria Rodriguez</SelectItem>
+                  <SelectItem value="David Chen">David Chen</SelectItem>
+                  <SelectItem value="Sarah Johnson">Sarah Johnson</SelectItem>
+                  <SelectItem value="Michael Brown">Michael Brown</SelectItem>
+                  <SelectItem value="Lisa Wilson">Lisa Wilson</SelectItem>
+                  <SelectItem value="James Taylor">James Taylor</SelectItem>
+                  <SelectItem value="Jennifer Davis">Jennifer Davis</SelectItem>
+                  
+                  {/* Dynamic operators from database */}
+                  {allUsers.filter(user => 
+                    !["John Smith", "Maria Rodriguez", "David Chen", "Sarah Johnson", 
+                      "Michael Brown", "Lisa Wilson", "James Taylor", "Jennifer Davis"].includes(
+                        user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username
+                      )
+                  ).map((user) => (
+                    <SelectItem 
+                      key={user.id} 
+                      value={user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
+                    >
+                      {user.firstName && user.lastName ? `${user.firstName} ${user.lastName}` : user.username}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-800">
+                <strong>Operator Switch:</strong> All future operations and reports will be recorded under the selected operator. 
+                This is useful for shared workstations where multiple operators use the same terminal.
+              </AlertDescription>
+            </Alert>
+          </div>
+          
+          <div className="flex gap-2 justify-end pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setOperatorSwitchDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                setOperatorSwitchDialogOpen(false);
+                toast({
+                  title: "Operator Switched",
+                  description: `Now operating as ${currentOperator}`,
+                });
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              <User className="w-4 h-4 mr-2" />
+              Switch Operator
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
