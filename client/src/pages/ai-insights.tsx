@@ -19,7 +19,8 @@ import {
   ArrowUpRight,
   Play,
   X,
-  Check
+  Check,
+  RotateCcw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -321,6 +322,36 @@ export default function AIInsightsPage() {
     });
   };
 
+  const markComplete = (insightId: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === insightId 
+        ? { ...insight, status: 'applied' as const }
+        : insight
+    ));
+    
+    const insight = insights.find(i => i.id === insightId);
+    toast({
+      title: "Marked Complete",
+      description: `Completed: ${insight?.title}`,
+      variant: "default"
+    });
+  };
+
+  const revertToNew = (insightId: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === insightId 
+        ? { ...insight, status: 'new' as const }
+        : insight
+    ));
+    
+    const insight = insights.find(i => i.id === insightId);
+    toast({
+      title: "Reverted to New",
+      description: `Reverted: ${insight?.title}`,
+      variant: "default"
+    });
+  };
+
   // Refresh insights
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -581,17 +612,66 @@ export default function AIInsightsPage() {
                   </div>
                 )}
 
-                {/* Status indicators for non-new insights */}
-                {insight.status !== 'new' && (
+                {/* Action Buttons for In Progress */}
+                {insight.status === 'in_progress' && insight.actionable && (
+                  <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                    <TooltipProvider>
+                      <div className="grid grid-cols-2 gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => revertToNew(insight.id)}
+                              className="h-6 px-1 text-[10px] py-0"
+                            >
+                              <RotateCcw className="h-2 w-2" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Revert to new</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              onClick={() => markComplete(insight.id)}
+                              className="h-6 px-1 text-[10px] bg-green-600 hover:bg-green-700 text-white py-0"
+                            >
+                              <Check className="h-2 w-2" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as complete</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
+                  </div>
+                )}
+
+                {/* Status indicators for completed/ignored insights */}
+                {(insight.status === 'applied' || insight.status === 'ignored') && (
                   <div className="pt-3 border-t">
                     <Badge 
-                      variant={insight.status === 'applied' ? 'default' : insight.status === 'ignored' ? 'destructive' : 'secondary'}
+                      variant={insight.status === 'applied' ? 'default' : 'destructive'}
                       className="text-xs"
                     >
                       {insight.status === 'applied' && <CheckCircle className="h-3 w-3 mr-1" />}
                       {insight.status === 'ignored' && <XCircle className="h-3 w-3 mr-1" />}
-                      {insight.status === 'in_progress' && <Clock className="h-3 w-3 mr-1" />}
                       {insight.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Status indicator for in progress (when showing badge) */}
+                {insight.status === 'in_progress' && !insight.actionable && (
+                  <div className="pt-3 border-t">
+                    <Badge variant="secondary" className="text-xs">
+                      <Clock className="h-3 w-3 mr-1" />
+                      IN PROGRESS
                     </Badge>
                   </div>
                 )}
