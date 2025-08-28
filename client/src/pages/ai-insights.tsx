@@ -103,6 +103,13 @@ export default function AIInsightsPage() {
   const { data: insights = [], isLoading, refetch } = useQuery<AIInsight[]>({
     queryKey: [`/api/ai-insights?days=${timeRange.replace('d', '')}`],
     refetchInterval: 30000, // Refresh every 30 seconds
+    onSuccess: (data) => {
+      console.log('🔍 AI Insights received:', data?.length || 0, 'items');
+      console.log('📊 First insight:', data?.[0]);
+    },
+    onError: (error) => {
+      console.error('❌ AI Insights fetch error:', error);
+    }
   });
 
   // Force refresh with AI analysis

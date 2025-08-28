@@ -29108,7 +29108,8 @@ Be careful to preserve data integrity and relationships.`;
     }
   }));
 
-  // Direct test route to verify routing works
+  // REMOVED CONFLICTING ROUTE - using main route instead
+  /*
   app.get('/api/ai-insights/7d/ai-insights', createSafeHandler(async (req, res) => {
     console.log('🔍 DIRECT ROUTE HIT - AI Insights 7d/ai-insights');
     console.log('🔍 Query params:', req.query);
@@ -29172,10 +29173,10 @@ Be careful to preserve data integrity and relationships.`;
       console.error("Error fetching AI insights:", error);
       res.status(500).json({ error: "Failed to fetch AI insights" });
     }
-  }));
+  // }));
 
-  // AI Insights API - Handle nested path pattern from React Query  
-  app.get('/api/ai-insights/:timeRange/:location', createSafeHandler(async (req, res) => {
+  // REMOVED CONFLICTING ROUTE - using main route instead  
+  // app.get('/api/ai-insights/:timeRange/:location', createSafeHandler(async (req, res) => {
     const { timeRange, location } = req.params;
     const { force_refresh } = req.query;
     
@@ -29256,13 +29257,18 @@ Be careful to preserve data integrity and relationships.`;
     
     // Default behavior - return existing sample insights
     try {
-      const insights = await storage.getAIInsights(parseInt(timeRange.replace('d', '')));
+      const daysParam = parseInt((timeRange as string).replace('d', '')) || 7;
+      console.log('🔍 Fetching AI insights for days:', daysParam);
+      const insights = await storage.getAIInsights(daysParam);
+      console.log('✅ AI insights fetched:', insights?.length || 0, 'items');
+      console.log('📊 First insight preview:', insights?.[0]?.title || 'No insights found');
       res.json(insights);
     } catch (error) {
-      console.error("Error fetching AI insights:", error);
+      console.error("❌ Error fetching AI insights:", error);
       res.status(500).json({ error: "Failed to fetch AI insights" });
     }
-  }));
+  });
+  */
 
   // AI Insights API
   app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
