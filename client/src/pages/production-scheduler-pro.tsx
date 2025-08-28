@@ -72,10 +72,10 @@ const ProductionSchedulerProV2: React.FC = () => {
           }
         });
         
-        // Set scheduler configuration
+        // Set scheduler configuration with shorter date range to prevent Bryntum error
         setSchedulerConfig({
           startDate: new Date(2025, 7, 28),
-          endDate: new Date(2025, 8, 7),
+          endDate: new Date(2025, 7, 30),
           viewPreset: 'weekAndDayLetter',
           rowHeight: 50,
           barMargin: 5,

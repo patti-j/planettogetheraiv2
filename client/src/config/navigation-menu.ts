@@ -156,7 +156,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: GraduationCap, label: "Training", href: "/training", feature: "training", action: "view", color: "bg-cyan-500", requiresOnboarding: false },
       { icon: Building, label: "Industry Templates", href: "/industry-templates", feature: "industry-templates", action: "view", color: "bg-cyan-600" },
       { icon: Presentation, label: "Presentation System", href: "/presentation-system", feature: "training", action: "view", color: "bg-blue-700" },
-      { icon: PlayCircle, label: "Take a Guided Tour", href: "/training", feature: "training", action: "view", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true }
+      { icon: PlayCircle, label: "Take a Guided Tour", href: "/guided-tour", feature: "training", action: "view", color: "bg-blue-500", requiresOnboarding: false, isSpecial: true }
     ]
   },
   {

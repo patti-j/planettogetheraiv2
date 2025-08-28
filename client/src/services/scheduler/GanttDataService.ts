@@ -48,8 +48,8 @@ export class GanttDataService {
       { id: 'r8', name: 'Operator Team B', type: 'Human', capacity: 100 }
     ];
     
-    const baseDate = new Date();
-    baseDate.setHours(8, 0, 0, 0);
+    // Use August 28, 2025 as base date to match scheduler configuration
+    const baseDate = new Date(2025, 7, 28, 8, 0, 0, 0);
     
     const events = [
       {

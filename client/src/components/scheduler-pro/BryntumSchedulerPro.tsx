@@ -336,8 +336,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         ref={schedulerRef}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
-        startDate={new Date(2025, 7, 22)} // August 22, 2025 to match our data
-        endDate={new Date(2025, 7, 29)}   // One week view
+        startDate={new Date(2025, 7, 28)} // August 28, 2025
+        endDate={new Date(2025, 7, 30)}   // 2 days view to prevent timeline error
         viewPreset="hourAndDay"
         rowHeight={60}
         barMargin={8}
@@ -613,8 +613,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             });
           }
           console.log('Assignment types:', {
-            scheduled: bryntumEvents.filter(e => e.assignmentType === 'scheduled').length,
-            unscheduled: bryntumEvents.filter(e => e.assignmentType === 'unscheduled').length
+            scheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'scheduled').length,
+            unscheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'unscheduled').length
           });
         }}
       />
