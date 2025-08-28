@@ -369,16 +369,29 @@ export default function OperatorDashboard() {
   // Operation control mutation
   const operationControlMutation = useMutation({
     mutationFn: async ({ operationId, action, notes }: { operationId: number; action: string; notes?: string }) => {
-      const response = await apiRequest("POST", `/api/operations/${operationId}/control`, {
+      console.log("Operation control request:", { operationId, action, notes, operatorId: currentUser?.id, operatorName: currentUser?.username || currentOperator });
+      
+      const requestData = {
         action,
         notes,
         timestamp: new Date().toISOString(),
-        operatorId: currentUser?.id,
+        operatorId: currentUser?.id || 4, // Fallback for demo
         operatorName: currentUser?.username || currentOperator
-      });
+      };
+      
+      const response = await apiRequest("POST", `/api/operations/${operationId}/control`, requestData);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Operation control error:", response.status, errorText);
+        throw new Error(`Request failed: ${response.status} ${errorText}`);
+      }
+      
       return response.json();
     },
     onSuccess: (data, variables) => {
+      console.log("Operation control success:", data);
+      
       const actionMessages = {
         start: "Operation started successfully",
         pause: "Operation paused",
@@ -396,10 +409,11 @@ export default function OperatorDashboard() {
       setControllingOperation(null);
       queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error("Operation control mutation error:", error);
       toast({
         title: "Action Failed",
-        description: "Failed to update operation. Please try again.",
+        description: `Failed to update operation: ${error.message || "Please try again."}`,
         variant: "destructive",
       });
     },
