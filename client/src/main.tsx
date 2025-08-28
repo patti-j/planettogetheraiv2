@@ -13,17 +13,27 @@ if (typeof window !== 'undefined') {
              message.includes('ResizeObserver loop limit exceeded') ||
              message.includes('undelivered notifications');
     }
-    if (message && typeof message === 'object' && message.message) {
-      return isResizeObserverError(message.message);
+    if (message && typeof message === 'object') {
+      // Check both message property and direct object properties
+      if (message.message && typeof message.message === 'string') {
+        return isResizeObserverError(message.message);
+      }
+      // Check if it's an error object with type property
+      if (message.type === 'error' && message.message && 
+          typeof message.message === 'string' && 
+          message.message.includes('ResizeObserver')) {
+        return true;
+      }
     }
     return false;
   };
 
   // Handle error events
   const resizeObserverErrorHandler = (e: ErrorEvent) => {
-    if (isResizeObserverError(e.message) || isResizeObserverError(e.error)) {
+    if (isResizeObserverError(e.message) || isResizeObserverError(e.error) || isResizeObserverError(e)) {
       e.stopImmediatePropagation();
       e.preventDefault();
+      e.stopPropagation();
       return false;
     }
   };
@@ -95,8 +105,24 @@ if (typeof window !== 'undefined') {
     }
   };
   
+  // Add multiple event listeners for comprehensive coverage
   window.addEventListener('error', resizeObserverErrorHandler, true);
   window.addEventListener('unhandledrejection', unhandledRejectionHandler, true);
+  
+  // Also intercept at the capture phase
+  document.addEventListener('error', resizeObserverErrorHandler, true);
+  
+  // Override window.onerror as a fallback
+  const originalOnError = window.onerror;
+  window.onerror = function(message, source, lineno, colno, error) {
+    if (isResizeObserverError(message) || isResizeObserverError(error)) {
+      return true; // Prevent default error handling
+    }
+    if (originalOnError) {
+      return originalOnError.apply(window, arguments as any);
+    }
+    return false;
+  };
 }
 
 createRoot(document.getElementById("root")!).render(<App />);

@@ -29,6 +29,7 @@ import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesServic
 
 const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
+  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [resourceCount, setResourceCount] = useState(0);
   const [operationCount, setOperationCount] = useState(0);
@@ -135,43 +136,57 @@ const ProductionSchedulerProV2: React.FC = () => {
   // Set initial zoom level after scheduler is ready
   useEffect(() => {
     const timer = setTimeout(() => {
-      const scheduler = schedulerRef.current;
-      if (scheduler && scheduler.widget) {
-        scheduler.widget.zoomLevel = 10; // Set initial zoom like HTML version
-        console.log('Initial zoom level set to 10');
+      const schedulerComponent = schedulerRef.current;
+      let scheduler = null;
+      
+      if (schedulerComponent) {
+        scheduler = schedulerComponent.widget || schedulerComponent.instance || schedulerComponent;
       }
-    }, 500); // Wait for scheduler to be fully initialized
+      
+      if (scheduler && scheduler.zoomLevel !== undefined) {
+        scheduler.zoomLevel = 10; // Set initial zoom like HTML version
+        console.log('Initial zoom level set to 10');
+      } else {
+        console.log('Scheduler not ready for initial zoom setup');
+      }
+    }, 1000); // Wait longer for scheduler to be fully initialized
     
     return () => clearTimeout(timer);
   }, [schedulerData]);
 
   // Toolbar actions
   const handleZoomIn = () => {
-    const scheduler = schedulerRef.current;
-    if (scheduler && scheduler.widget) {
+    // Use captured instance or try to get it from ref
+    const scheduler = schedulerInstance || schedulerRef.current?.widget || schedulerRef.current?.instance || schedulerRef.current;
+    
+    if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
-      scheduler.widget.zoomLevel = Math.min((scheduler.widget.zoomLevel || 10) + 2, 20);
-      console.log('Zoomed in to level:', scheduler.widget.zoomLevel);
+      scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
+      console.log('Zoomed in to level:', scheduler.zoomLevel);
     } else {
       console.log('Scheduler not ready for zoom in');
     }
   };
 
   const handleZoomOut = () => {
-    const scheduler = schedulerRef.current;
-    if (scheduler && scheduler.widget) {
+    // Use captured instance or try to get it from ref
+    const scheduler = schedulerInstance || schedulerRef.current?.widget || schedulerRef.current?.instance || schedulerRef.current;
+    
+    if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
-      scheduler.widget.zoomLevel = Math.max((scheduler.widget.zoomLevel || 10) - 2, 0);
-      console.log('Zoomed out to level:', scheduler.widget.zoomLevel);
+      scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
+      console.log('Zoomed out to level:', scheduler.zoomLevel);
     } else {
       console.log('Scheduler not ready for zoom out');
     }
   };
 
   const handleZoomToFit = () => {
-    const scheduler = schedulerRef.current;
-    if (scheduler && scheduler.widget) {
-      scheduler.widget.zoomToFit();
+    // Use captured instance or try to get it from ref
+    const scheduler = schedulerInstance || schedulerRef.current?.widget || schedulerRef.current?.instance || schedulerRef.current;
+    
+    if (scheduler && scheduler.zoomToFit) {
+      scheduler.zoomToFit();
       console.log('Zoomed to fit');
     } else {
       console.log('Scheduler not ready for zoom to fit');
@@ -398,6 +413,25 @@ const ProductionSchedulerProV2: React.FC = () => {
           onEventResizeEnd={handleSchedulerEvent.eventResizeEnd}
           onDependencyAdd={handleSchedulerEvent.dependencyAdd}
           onDependencyRemove={handleSchedulerEvent.dependencyRemove}
+          onPaint={() => {
+            // Capture the scheduler instance when it's painted
+            const component = schedulerRef.current;
+            if (component) {
+              const instance = component.widget || component.instance || component;
+              if (instance && !schedulerInstance) {
+                setSchedulerInstance(instance);
+                console.log('Scheduler instance captured on paint', {
+                  hasZoomLevel: 'zoomLevel' in instance,
+                  hasZoomToFit: 'zoomToFit' in instance
+                });
+                // Set initial zoom
+                if (instance.zoomLevel !== undefined) {
+                  instance.zoomLevel = 10;
+                  console.log('Initial zoom set on paint to:', instance.zoomLevel);
+                }
+              }
+            }
+          }}
         />
       </div>
 
