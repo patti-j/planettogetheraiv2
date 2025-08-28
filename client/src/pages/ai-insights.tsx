@@ -201,6 +201,61 @@ export default function AIInsightsPage() {
         affected_areas: ['Packaging Line 2'],
         estimated_savings: 2400,
         implementation_time: '30 minutes'
+      },
+      // Add some insights with different statuses for demonstration
+      {
+        id: `insight_${baseTime}_6`,
+        type: 'optimization',
+        title: 'Energy Usage Optimization',
+        description: 'HVAC system running 18% above optimal during off-peak hours.',
+        priority: 'medium',
+        timestamp,
+        source: 'energy_monitor',
+        category: 'efficiency',
+        status: 'applied',
+        actionable: true,
+        impact: 'Reduce energy costs by 12%',
+        recommendation: 'Adjust HVAC schedule for off-peak optimization',
+        confidence: 84,
+        affected_areas: ['HVAC System'],
+        estimated_savings: 850,
+        implementation_time: '15 minutes'
+      },
+      {
+        id: `insight_${baseTime}_7`,
+        type: 'quality',
+        title: 'Batch Consistency Improvement',
+        description: 'Temperature variance in Fermentation Tank 3 exceeds quality standards.',
+        priority: 'high',
+        timestamp,
+        source: 'quality_monitor',
+        category: 'quality',
+        status: 'in_progress',
+        actionable: true,
+        impact: 'Maintain product quality standards',
+        recommendation: 'Calibrate temperature sensors and adjust control parameters',
+        confidence: 91,
+        affected_areas: ['Fermentation Tank 3'],
+        estimated_savings: 1200,
+        implementation_time: '45 minutes'
+      },
+      {
+        id: `insight_${baseTime}_8`,
+        type: 'maintenance',
+        title: 'Conveyor Belt Wear Analysis',
+        description: 'Belt tension fluctuations indicate potential wear on Conveyor B-7.',
+        priority: 'low',
+        timestamp,
+        source: 'vibration_analysis',
+        category: 'maintenance',
+        status: 'ignored',
+        actionable: true,
+        impact: 'Prevent unexpected belt failure',
+        recommendation: 'Schedule belt inspection and tension adjustment',
+        confidence: 67,
+        affected_areas: ['Conveyor B-7'],
+        estimated_savings: 300,
+        implementation_time: '1 hour'
       }
     ];
   };
@@ -468,6 +523,53 @@ export default function AIInsightsPage() {
                 <div className="text-xs text-muted-foreground">
                   {new Date(insight.timestamp).toLocaleString()}
                 </div>
+
+                {/* Action Buttons */}
+                {insight.status === 'new' && insight.actionable && (
+                  <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => ignoreRecommendation(insight.id)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <X className="h-3 w-3 mr-1" />
+                      Ignore
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => markInProgress(insight.id)}
+                      className="h-7 px-2 text-xs"
+                    >
+                      <Play className="h-3 w-3 mr-1" />
+                      In Progress
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => applyRecommendation(insight.id)}
+                      className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700"
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      Apply
+                    </Button>
+                  </div>
+                )}
+
+                {/* Status indicators for non-new insights */}
+                {insight.status !== 'new' && (
+                  <div className="pt-3 border-t">
+                    <Badge 
+                      variant={insight.status === 'applied' ? 'default' : insight.status === 'ignored' ? 'destructive' : 'secondary'}
+                      className="text-xs"
+                    >
+                      {insight.status === 'applied' && <CheckCircle className="h-3 w-3 mr-1" />}
+                      {insight.status === 'ignored' && <XCircle className="h-3 w-3 mr-1" />}
+                      {insight.status === 'in_progress' && <Clock className="h-3 w-3 mr-1" />}
+                      {insight.status.replace('_', ' ').toUpperCase()}
+                    </Badge>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
