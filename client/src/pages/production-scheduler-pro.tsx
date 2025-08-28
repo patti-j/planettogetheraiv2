@@ -31,6 +31,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
   const schedulerInstanceRef = useRef<any>(null);
   const [schedulerReady, setSchedulerReady] = useState(false);
+  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [resourceCount, setResourceCount] = useState(0);
   const [operationCount, setOperationCount] = useState(0);
@@ -75,9 +76,14 @@ const ProductionSchedulerProV2: React.FC = () => {
         });
         
         // Set scheduler configuration with shorter date range to prevent Bryntum error
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endDate = new Date(today);
+        endDate.setDate(endDate.getDate() + 7); // Show 1 week
+        
         setSchedulerConfig({
-          startDate: new Date(2025, 7, 28),
-          endDate: new Date(2025, 7, 30),
+          startDate: today,
+          endDate: endDate,
           viewPreset: 'weekAndDayLetter',
           zoomLevel: 10,  // Set initial zoom level like in HTML version
           rowHeight: 50,
@@ -134,53 +140,73 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
-  // Set initial zoom level after scheduler is ready
+  // Set initial zoom level and fit to view after scheduler is ready
   useEffect(() => {
     if (schedulerReady && schedulerInstanceRef.current) {
       const scheduler = schedulerInstanceRef.current;
-      if (scheduler && scheduler.zoomLevel !== undefined) {
-        scheduler.zoomLevel = 10; // Set initial zoom like HTML version
-        console.log('Initial zoom level set to 10');
-      }
+      console.log('Scheduler ready, instance available:', !!scheduler);
+      
+      // Use setTimeout to ensure scheduler is fully rendered
+      setTimeout(() => {
+        if (scheduler && scheduler.zoomToFit) {
+          scheduler.zoomToFit();
+          console.log('Initial zoom to fit applied');
+        } else if (scheduler && scheduler.zoomLevel !== undefined) {
+          scheduler.zoomLevel = 10;
+          console.log('Initial zoom level set to 10');
+        }
+      }, 100);
     }
   }, [schedulerReady]);
 
   // Toolbar actions
   const handleZoomIn = () => {
-    // Use captured instance from ref
-    const scheduler = schedulerInstanceRef.current;
+    // Try both captured instance and direct scheduler instance
+    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
       scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
       console.log('Zoomed in to level:', scheduler.zoomLevel);
     } else {
-      console.log('Scheduler not ready for zoom in');
+      console.log('Scheduler not ready for zoom in', {
+        hasRef: !!schedulerInstanceRef.current,
+        hasInstance: !!schedulerInstance,
+        hasSchedulerRef: !!schedulerRef.current
+      });
     }
   };
 
   const handleZoomOut = () => {
-    // Use captured instance from ref
-    const scheduler = schedulerInstanceRef.current;
+    // Try both captured instance and direct scheduler instance
+    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
       scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
       console.log('Zoomed out to level:', scheduler.zoomLevel);
     } else {
-      console.log('Scheduler not ready for zoom out');
+      console.log('Scheduler not ready for zoom out', {
+        hasRef: !!schedulerInstanceRef.current,
+        hasInstance: !!schedulerInstance,
+        hasSchedulerRef: !!schedulerRef.current
+      });
     }
   };
 
   const handleZoomToFit = () => {
-    // Use captured instance from ref
-    const scheduler = schedulerInstanceRef.current;
+    // Try both captured instance and direct scheduler instance
+    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomToFit) {
       scheduler.zoomToFit();
       console.log('Zoomed to fit');
     } else {
-      console.log('Scheduler not ready for zoom to fit');
+      console.log('Scheduler not ready for zoom to fit', {
+        hasRef: !!schedulerInstanceRef.current,
+        hasInstance: !!schedulerInstance,
+        hasSchedulerRef: !!schedulerRef.current
+      });
     }
   };
 
@@ -392,8 +418,8 @@ const ProductionSchedulerProV2: React.FC = () => {
       </div>
 
       {/* Scheduler Component */}
-      <div className="flex-1 relative overflow-hidden flex flex-col" style={{ minHeight: 0 }}>
-        <div className="flex-1 min-h-0">
+      <div className="flex-1 relative flex flex-col" style={{ minHeight: 0, overflow: 'auto' }}>
+        <div className="flex-1 min-h-0" style={{ overflow: 'auto' }}>
           <BryntumSchedulerPro
           ref={schedulerRef}
           {...schedulerConfig}
@@ -409,14 +435,26 @@ const ProductionSchedulerProV2: React.FC = () => {
             // Capture the scheduler instance when it's painted
             const component = schedulerRef.current;
             if (component) {
-              const instance = component.widget || component.instance || component;
-              if (instance) {
+              // Try multiple ways to get the Bryntum instance
+              const instance = component.instance || component.widget || component.schedulerInstance || component;
+              
+              // Check if it's the actual Bryntum widget
+              if (instance && (instance.zoomLevel !== undefined || instance.zoomToFit)) {
                 // Store in ref to persist across renders
                 schedulerInstanceRef.current = instance;
                 setSchedulerReady(true);
-                console.log('Scheduler instance captured on paint', {
+                console.log('✅ Scheduler instance captured on paint', {
                   hasZoomLevel: 'zoomLevel' in instance,
-                  hasZoomToFit: 'zoomToFit' in instance
+                  hasZoomToFit: 'zoomToFit' in instance,
+                  type: instance.constructor?.name
+                });
+                
+                // Set instance immediately for zoom controls
+                setSchedulerInstance(instance);
+              } else {
+                console.log('⚠️ Instance found but not ready:', {
+                  hasInstance: !!instance,
+                  keys: instance ? Object.keys(instance).slice(0, 10) : []
                 });
               }
             }
