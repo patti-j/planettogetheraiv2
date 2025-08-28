@@ -29266,11 +29266,20 @@ Be careful to preserve data integrity and relationships.`;
 
   // AI Insights API
   app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
+    console.log('🚨 AI INSIGHTS ROUTE HIT - START');
+    console.log('🚨 Request URL:', req.originalUrl);
+    console.log('🚨 Request method:', req.method);
+    console.log('🚨 Request query:', req.query);
+    
     try {
-      const { timeRange = '7d', page, force_refresh } = req.query;
-      console.log('🔍 AI Insights API called with params:', { timeRange, page, force_refresh });
+      const { timeRange = '7d', page, force_refresh, days } = req.query;
+      console.log('🔍 AI Insights API called with params:', { timeRange, page, force_refresh, days });
       console.log('🔍 Request URL:', req.originalUrl);
       console.log('🔍 Request method:', req.method);
+      
+      // Use days parameter if provided, otherwise extract from timeRange
+      const daysToFetch = days || parseInt((timeRange as string).replace('d', '')) || 7;
+      console.log('🔍 Days to fetch:', daysToFetch);
       
       // If force_refresh is true, generate new insights (temporarily disabled OpenAI due to timeout issues)
       if (force_refresh === 'true') {
@@ -29788,8 +29797,19 @@ Be careful to preserve data integrity and relationships.`;
         }
       ];
 
+      // Use storage method to get insights if available, otherwise use sample data
+      let insights;
+      try {
+        console.log('🔍 Calling storage.getAIInsights with days:', daysToFetch);
+        insights = await storage.getAIInsights(daysToFetch);
+        console.log('🔍 Storage returned insights count:', insights.length);
+      } catch (error) {
+        console.log('🔍 Storage method failed, using sample data:', error.message);
+        insights = sampleInsights;
+      }
+
       // Filter based on time range if needed
-      const filteredInsights = sampleInsights.filter(insight => {
+      const filteredInsights = insights.filter(insight => {
         const insightTime = new Date(insight.timestamp);
         const now = new Date();
         const timeDiff = now.getTime() - insightTime.getTime();
@@ -29808,6 +29828,9 @@ Be careful to preserve data integrity and relationships.`;
         }
       });
 
+      console.log('🔍 Filtered insights count:', filteredInsights.length);
+      console.log('🔍 First filtered insight:', filteredInsights[0] ? filteredInsights[0].title : 'none');
+      console.log('🔍 Sending response...');
       res.json(filteredInsights);
     } catch (error) {
       console.error('Error fetching AI insights:', error);

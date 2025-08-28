@@ -17554,6 +17554,7 @@ export class DatabaseStorage implements IStorage {
 
   // AI Insights Implementation
   async getAIInsights(days = 7): Promise<any[]> {
+    console.log('🔍 Storage.getAIInsights called with days:', days);
     const timestamp = new Date().toISOString();
     const baseTime = Date.now();
     
