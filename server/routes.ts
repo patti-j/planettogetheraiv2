@@ -29112,6 +29112,7 @@ Be careful to preserve data integrity and relationships.`;
   app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
     try {
       const { timeRange = '7d', page, force_refresh } = req.query;
+      console.log('🔍 AI Insights API called with params:', { timeRange, page, force_refresh });
       
       // If force_refresh is true, generate new insights (temporarily disabled OpenAI due to timeout issues)
       if (force_refresh === 'true') {
