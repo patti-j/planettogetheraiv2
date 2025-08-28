@@ -130,10 +130,16 @@ export function WorkspaceSwitcher({
       `;
       document.head.appendChild(style);
       
-      // Invalidate all queries and reload after animation
+      // Invalidate all queries to refresh data without losing authentication
       setTimeout(() => {
         queryClient.invalidateQueries();
-        window.location.reload();
+        // Remove overlay after queries refresh
+        setTimeout(() => {
+          const overlayElement = document.getElementById('workspace-switch-overlay');
+          if (overlayElement) {
+            overlayElement.remove();
+          }
+        }, 500);
       }, 1500);
       
       toast({
