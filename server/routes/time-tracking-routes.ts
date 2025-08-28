@@ -27,7 +27,10 @@ export function registerTimeTrackingRoutes(app: Express) {
   // Clock In - Individual
   app.post("/api/time-tracking/clock-in", async (req, res) => {
     try {
-      const { userId, operationId, jobId, location, notes } = req.body;
+      const { operationId, jobId, location, notes } = req.body;
+      
+      // Get userId from session/auth (simplified for demo)
+      const userId = 1; // In real app, this would come from authenticated session
       
       // Check if user already has active clock entry
       const activeEntry = await db.select()
@@ -153,7 +156,10 @@ export function registerTimeTrackingRoutes(app: Express) {
   // Team Clock In
   app.post("/api/time-tracking/team-clock-in", async (req, res) => {
     try {
-      const { supervisorId, teamMembers, operationId, jobId, teamName, location, notes } = req.body;
+      const { teamMembers, operationId, jobId, teamName, location, notes } = req.body;
+      
+      // Get supervisorId from session/auth (simplified for demo)
+      const supervisorId = 1; // In real app, this would come from authenticated session
       
       if (!teamMembers || teamMembers.length === 0) {
         return res.status(400).json({ 

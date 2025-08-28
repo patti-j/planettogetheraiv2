@@ -2776,6 +2776,97 @@ Rules:
     }
   });
 
+  // Production Reports API
+  app.post("/api/production-reports", async (req, res) => {
+    try {
+      const { operationId, quantityProduced, quantityComplete, quantityScrap, timeSpent, notes } = req.body;
+      
+      // Validate required fields
+      if (!operationId || quantityProduced === undefined) {
+        return res.status(400).json({ 
+          success: false,
+          message: "Operation ID and quantity produced are required" 
+        });
+      }
+
+      // Create production report entry - for now, we'll log it and store in a simple way
+      // In a real system, this would go to a dedicated production reports table
+      const productionReport = {
+        id: Date.now(), // Simple ID generation
+        operationId: parseInt(operationId),
+        quantityProduced: parseInt(quantityProduced) || 0,
+        quantityComplete: parseInt(quantityComplete) || 0,
+        quantityScrap: parseInt(quantityScrap) || 0,
+        timeSpent: parseInt(timeSpent) || 0,
+        notes: notes || '',
+        reportedAt: new Date().toISOString(),
+        reportedBy: 'current_user' // Would come from auth in real system
+      };
+
+      console.log("Production Report Submitted:", productionReport);
+
+      // Store production progress update in operation if needed
+      if (quantityComplete > 0) {
+        try {
+          const completionPercentage = Math.min(100, Math.round((quantityComplete / (quantityComplete + (quantityProduced - quantityComplete))) * 100));
+          await db.execute(sql`
+            UPDATE operations 
+            SET completion_percentage = ${completionPercentage},
+                actual_duration = ${timeSpent},
+                notes = ${notes || ''},
+                updated_at = NOW()
+            WHERE id = ${operationId}
+          `);
+        } catch (updateError) {
+          console.warn("Could not update operation progress:", updateError);
+          // Don't fail the report submission if operation update fails
+        }
+      }
+
+      res.json({ 
+        success: true, 
+        message: "Production report submitted successfully",
+        report: productionReport 
+      });
+    } catch (error) {
+      console.error("Error submitting production report:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to submit production report" 
+      });
+    }
+  });
+
+  app.get("/api/production-reports", async (req, res) => {
+    try {
+      const { operationId, date } = req.query;
+      
+      // For now, return mock data structure for testing
+      // In real system, query from production_reports table
+      const mockReports = [
+        {
+          id: 1,
+          operationId: operationId ? parseInt(operationId as string) : 1,
+          quantityProduced: 150,
+          quantityComplete: 145,
+          quantityScrap: 5,
+          timeSpent: 240,
+          notes: "Production running smoothly, minor quality issues resolved",
+          reportedAt: new Date().toISOString(),
+          reportedBy: "operator_john"
+        }
+      ];
+
+      res.json(mockReports);
+    } catch (error) {
+      console.error("Error fetching production reports:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Failed to fetch production reports" 
+      });
+    }
+  });
+
   // Operations
   // Updated PT-based operations endpoint following Jim's corrections
   app.get("/api/pt-operations", async (req, res) => {

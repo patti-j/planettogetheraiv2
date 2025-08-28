@@ -112,6 +112,13 @@ export default function OperatorDashboard() {
   const [timeSpent, setTimeSpent] = useState<number>(0);
   const [expandedOperation, setExpandedOperation] = useState<number | null>(null);
   const [currentOperator] = useState("John Smith"); // In real app, this would come from auth
+  
+  // Time tracking states
+  const [timeTrackingDialogOpen, setTimeTrackingDialogOpen] = useState(false);
+  const [selectedTeamMembers, setSelectedTeamMembers] = useState<number[]>([]);
+  const [clockingMode, setClockingMode] = useState<"individual" | "team">("individual");
+  const [productionReportDialogOpen, setProductionReportDialogOpen] = useState(false);
+  const [teamName, setTeamName] = useState<string>("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
@@ -127,6 +134,22 @@ export default function OperatorDashboard() {
 
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
+  });
+
+  // Get current user for time tracking
+  const { data: currentUser } = useQuery({
+    queryKey: ['/api/auth/me'],
+  });
+
+  // Get active time entries
+  const { data: activeTimeEntry } = useQuery({
+    queryKey: ['/api/time-tracking/active', currentUser?.id],
+    enabled: !!currentUser?.id,
+  });
+
+  // Get all users for team selection
+  const { data: allUsers = [] } = useQuery({
+    queryKey: ['/api/users-with-roles'],
   });
 
   // Auto-refresh every 30 seconds
@@ -237,6 +260,79 @@ export default function OperatorDashboard() {
     },
   });
 
+  // Clock in mutation
+  const clockInMutation = useMutation({
+    mutationFn: async ({ operationId, teamMembers }: { operationId: number; teamMembers?: number[] }) => {
+      if (clockingMode === "team" && teamMembers && teamMembers.length > 0) {
+        const response = await apiRequest("POST", "/api/time-tracking/team-clock-in", {
+          operationId,
+          teamMembers,
+          teamName: teamName || `Team for Operation ${operationId}`,
+          location: "Production Floor"
+        });
+        return response.json();
+      } else {
+        const response = await apiRequest("POST", "/api/time-tracking/clock-in", {
+          operationId,
+          location: "Production Floor"
+        });
+        return response.json();
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Clocked In Successfully",
+        description: clockingMode === "team" ? "Team has been clocked into the operation" : "You have been clocked into the operation",
+      });
+      setTimeTrackingDialogOpen(false);
+      setSelectedTeamMembers([]);
+      setTeamName("");
+      queryClient.invalidateQueries({ queryKey: ['/api/time-tracking/active'] });
+    },
+    onError: () => {
+      toast({
+        title: "Clock In Failed", 
+        description: "Failed to clock in. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Production report mutation
+  const submitProductionReportMutation = useMutation({
+    mutationFn: async (productionData: {
+      operationId: number;
+      quantityProduced: number;
+      quantityComplete: number;
+      quantityScrap: number;
+      timeSpent: number;
+      notes?: string;
+    }) => {
+      const response = await apiRequest("POST", "/api/production-reports", productionData);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Production Report Submitted",
+        description: "Production data has been recorded successfully.",
+      });
+      setProductionReportDialogOpen(false);
+      setQuantityProduced(0);
+      setQuantityComplete(0);
+      setQuantityScrap(0);
+      setTimeSpent(0);
+      setReportDescription("");
+      setSelectedOperation(null);
+    },
+    onError: () => {
+      toast({
+        title: "Report Failed",
+        description: "Failed to submit production report. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Get status color
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -272,6 +368,42 @@ export default function OperatorDashboard() {
   // Handle status report submission
   const handleSubmitReport = () => {
     if (!selectedOperation || !reportDescription.trim()) return;
+  };
+
+  // Handle clock in
+  const handleClockIn = (operation: OperatorOperation) => {
+    setSelectedOperation(operation);
+    setTimeTrackingDialogOpen(true);
+  };
+
+  // Handle production report
+  const handleProductionReport = (operation: OperatorOperation) => {
+    setSelectedOperation(operation);
+    setProductionReportDialogOpen(true);
+  };
+
+  // Submit production report
+  const handleSubmitProductionReport = () => {
+    if (!selectedOperation) return;
+    
+    submitProductionReportMutation.mutate({
+      operationId: selectedOperation.id,
+      quantityProduced,
+      quantityComplete,
+      quantityScrap,
+      timeSpent,
+      notes: reportDescription
+    });
+  };
+
+  // Submit clock in
+  const handleSubmitClockIn = () => {
+    if (!selectedOperation) return;
+    
+    clockInMutation.mutate({
+      operationId: selectedOperation.id,
+      teamMembers: clockingMode === "team" ? selectedTeamMembers : undefined
+    });
     
     submitReportMutation.mutate({
       operationId: selectedOperation.id,
@@ -569,6 +701,24 @@ export default function OperatorDashboard() {
                     <Flag className="w-4 h-4" />
                     Quality Report
                   </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => handleClockIn(operation)}
+                    className="flex items-center gap-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    Clock In
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => handleProductionReport(operation)}
+                    className="flex items-center gap-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Production Report
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -583,6 +733,193 @@ export default function OperatorDashboard() {
           </div>
         )}
       </div>
+
+      {/* Time Tracking Dialog */}
+      <Dialog open={timeTrackingDialogOpen} onOpenChange={setTimeTrackingDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Clock In to Operation</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedOperation && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">{selectedOperation.name}</p>
+                <p className="text-sm text-gray-600">{selectedOperation.jobName}</p>
+                <p className="text-sm text-gray-500">Resource: {selectedOperation.resourceName}</p>
+              </div>
+            )}
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Clock In Mode
+              </label>
+              <Select value={clockingMode} onValueChange={(value: "individual" | "team") => setClockingMode(value)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Individual Clock In</SelectItem>
+                  <SelectItem value="team">Team Clock In</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {clockingMode === "team" && (
+              <>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Team Name (Optional)
+                  </label>
+                  <Input
+                    placeholder="Enter team name..."
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium text-gray-700 mb-2 block">
+                    Select Team Members
+                  </label>
+                  <div className="space-y-2 max-h-32 overflow-y-auto border rounded p-2">
+                    {allUsers.map((user: any) => (
+                      <div key={user.id} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`user-${user.id}`}
+                          checked={selectedTeamMembers.includes(user.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedTeamMembers(prev => [...prev, user.id]);
+                            } else {
+                              setSelectedTeamMembers(prev => prev.filter(id => id !== user.id));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <label htmlFor={`user-${user.id}`} className="text-sm">
+                          {user.username} {user.department && `(${user.department})`}
+                        </label>
+                      </div>
+                    ))}
+                  </div>
+                  {clockingMode === "team" && selectedTeamMembers.length === 0 && (
+                    <p className="text-sm text-red-600 mt-1">Please select at least one team member.</p>
+                  )}
+                </div>
+              </>
+            )}
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setTimeTrackingDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmitClockIn}
+                disabled={clockInMutation.isPending || (clockingMode === "team" && selectedTeamMembers.length === 0)}
+              >
+                {clockInMutation.isPending ? "Clocking In..." : "Clock In"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Production Report Dialog */}
+      <Dialog open={productionReportDialogOpen} onOpenChange={setProductionReportDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>Production Report</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {selectedOperation && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="font-medium">{selectedOperation.name}</p>
+                <p className="text-sm text-gray-600">{selectedOperation.jobName}</p>
+                <p className="text-sm text-gray-500">Resource: {selectedOperation.resourceName}</p>
+              </div>
+            )}
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Quantity Produced
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={quantityProduced || ''}
+                  onChange={(e) => setQuantityProduced(parseInt(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Quantity Complete
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={quantityComplete || ''}
+                  onChange={(e) => setQuantityComplete(parseInt(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Quantity Scrap
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={quantityScrap || ''}
+                  onChange={(e) => setQuantityScrap(parseInt(e.target.value) || 0)}
+                />
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Time Spent (minutes)
+                </label>
+                <Input
+                  type="number"
+                  min="0"
+                  placeholder="0"
+                  value={timeSpent || ''}
+                  onChange={(e) => setTimeSpent(parseInt(e.target.value) || 0)}
+                />
+              </div>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Production Notes
+              </label>
+              <Textarea
+                placeholder="Add any notes about production status, issues, or observations..."
+                value={reportDescription}
+                onChange={(e) => setReportDescription(e.target.value)}
+                rows={3}
+              />
+            </div>
+            
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setProductionReportDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSubmitProductionReport}
+                disabled={submitProductionReportMutation.isPending}
+              >
+                {submitProductionReportMutation.isPending ? "Submitting..." : "Submit Report"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Status Report Dialog */}
       <Dialog open={reportDialogOpen} onOpenChange={setReportDialogOpen}>
