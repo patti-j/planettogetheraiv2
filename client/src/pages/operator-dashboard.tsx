@@ -950,19 +950,7 @@ export default function OperatorDashboard() {
                 <div>
                   <h4 className="font-medium mb-2 text-gray-700">Additional Actions</h4>
                   <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSelectedOperation(operation);
-                        setReportType("progress");
-                        setReportDialogOpen(true);
-                      }}
-                      className="flex items-center gap-2"
-                    >
-                      <BarChart3 className="w-4 h-4" />
-                      Report Progress
-                    </Button>
-                    
+
                     <Button
                       variant="outline"
                       onClick={() => {
