@@ -522,8 +522,42 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
           { name: 'R&D', value: 5 }
         ];
       }
+    } else if (data?.template === 'operations') {
+      if (data?.chartType === 'pie') {
+        return [
+          { name: 'Brewing', value: 42, color: '#8884d8' },
+          { name: 'Fermentation', value: 28, color: '#82ca9d' },
+          { name: 'Packaging', value: 18, color: '#ffc658' },
+          { name: 'Quality Testing', value: 8, color: '#ff7300' },
+          { name: 'Cleaning', value: 4, color: '#d084d0' }
+        ];
+      } else {
+        return [
+          { name: 'Brewing', value: 42 },
+          { name: 'Fermentation', value: 28 },
+          { name: 'Packaging', value: 18 },
+          { name: 'Quality Testing', value: 8 },
+          { name: 'Cleaning', value: 4 }
+        ];
+      }
+    } else {
+      // Default sample data for any chart
+      if (data?.chartType === 'pie') {
+        return [
+          { name: 'Production', value: 40, color: '#8884d8' },
+          { name: 'Quality', value: 30, color: '#82ca9d' },
+          { name: 'Maintenance', value: 20, color: '#ffc658' },
+          { name: 'Other', value: 10, color: '#ff7300' }
+        ];
+      } else {
+        return [
+          { name: 'Production', value: 40 },
+          { name: 'Quality', value: 30 },
+          { name: 'Maintenance', value: 20 },
+          { name: 'Other', value: 10 }
+        ];
+      }
     }
-    return [];
   };
 
   const chartData = generateChartData();
