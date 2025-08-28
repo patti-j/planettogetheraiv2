@@ -731,9 +731,11 @@ Available actions you can take:
 1. FETCH_DATA - if they want specific information from the system
 2. NAVIGATE - if they want to go to a specific page/feature  
 3. ANALYZE - if they want analysis of current data
-4. CREATE - if they want to create charts, widgets, or content
+4. CREATE - if they want to create charts, widgets, or content (keywords: create, make, show, generate, chart, pie, bar, graph, visualization)
 5. HELP - if they need guidance or have questions
 6. CHAT - for general conversation
+
+IMPORTANT: Any request containing words like "chart", "pie chart", "bar chart", "graph", "create chart", "show chart", "make chart", "generate chart" should ALWAYS be classified as CREATE intent.
 
 Manufacturing system capabilities:
 - Production data: jobs, operations, schedules, resources
@@ -741,6 +743,7 @@ Manufacturing system capabilities:
 - Quality data: metrics, inspections, compliance
 - Analytics: KPIs, trends, optimization insights
 - System navigation: schedule views, dashboards, reports
+- Chart creation: pie charts, bar charts, line charts for canvas
 
 Respond with JSON:
 {
@@ -761,6 +764,7 @@ Respond with JSON:
       });
       
       const intent = JSON.parse(intentResponse.choices[0].message.content || '{}');
+      console.log(`[Max AI] Intent analysis result:`, intent);
       
       // Handle the intent flexibly
       if (intent.intent === 'FETCH_DATA') {
@@ -1423,12 +1427,20 @@ Provide analysis and recommendations.`
 
   private async handleCreateIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
     try {
+      console.log(`[Max AI] CREATE Intent detected for query: "${query}"`);
+      
       // Check if this is a chart creation request
       const isChartRequest = query.toLowerCase().includes('chart') || 
                            query.toLowerCase().includes('pie') || 
                            query.toLowerCase().includes('bar') || 
                            query.toLowerCase().includes('line') ||
-                           query.toLowerCase().includes('graph');
+                           query.toLowerCase().includes('graph') ||
+                           query.toLowerCase().includes('create') ||
+                           query.toLowerCase().includes('make') ||
+                           query.toLowerCase().includes('show') ||
+                           query.toLowerCase().includes('generate');
+
+      console.log(`[Max AI] Is chart request: ${isChartRequest}`);
 
       if (isChartRequest) {
         // Import storage to create canvas widget
@@ -1463,6 +1475,7 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
         });
 
         const chartConfig = JSON.parse(chartResponse.choices[0].message.content || '{}');
+        console.log(`[Max AI] Chart config generated:`, chartConfig);
         
         // Create the canvas widget
         const widgetData = {
@@ -1491,7 +1504,9 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
           metadata: { createdByMaxAI: true, userQuery: query }
         };
 
+        console.log(`[Max AI] Creating widget with data:`, widgetData);
         const widget = await storage.createCanvasWidget(widgetData);
+        console.log(`[Max AI] Widget created successfully:`, widget);
         
         return {
           content: `I've created a ${chartConfig.chartType || 'pie'} chart showing ${chartConfig.description || 'the requested data'} in your canvas!`,
