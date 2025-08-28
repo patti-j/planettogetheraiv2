@@ -8,10 +8,12 @@ if (typeof window !== 'undefined') {
   // Enhanced ResizeObserver error suppression
   const isResizeObserverError = (message: any): boolean => {
     if (typeof message === 'string') {
-      return message.includes('ResizeObserver') ||
-             message.includes('ResizeObserver loop completed') ||
-             message.includes('ResizeObserver loop limit exceeded') ||
-             message.includes('undelivered notifications');
+      const lowerCase = message.toLowerCase();
+      return lowerCase.includes('resizeobserver') ||
+             lowerCase.includes('resize observer') ||
+             lowerCase.includes('undelivered notifications') ||
+             lowerCase.includes('loop completed') ||
+             lowerCase.includes('loop limit');
     }
     if (message && typeof message === 'object') {
       // Check both message property and direct object properties
@@ -20,9 +22,16 @@ if (typeof window !== 'undefined') {
       }
       // Check if it's an error object with type property
       if (message.type === 'error' && message.message && 
-          typeof message.message === 'string' && 
-          message.message.includes('ResizeObserver')) {
-        return true;
+          typeof message.message === 'string') {
+        const lowerCase = message.message.toLowerCase();
+        if (lowerCase.includes('resizeobserver') || 
+            lowerCase.includes('undelivered notifications')) {
+          return true;
+        }
+      }
+      // Check error property
+      if (message.error) {
+        return isResizeObserverError(message.error);
       }
     }
     return false;
@@ -52,8 +61,28 @@ if (typeof window !== 'undefined') {
   const originalConsoleLog = console.log;
   
   console.error = (...args: any[]) => {
-    if (args.some(arg => isResizeObserverError(arg))) {
-      return; // Suppress ResizeObserver errors
+    // Check all arguments for ResizeObserver errors
+    for (const arg of args) {
+      if (isResizeObserverError(arg)) {
+        return; // Suppress ResizeObserver errors
+      }
+      // Also check if it's a JSON stringified error
+      if (typeof arg === 'string') {
+        try {
+          const parsed = JSON.parse(arg);
+          if (isResizeObserverError(parsed)) {
+            return;
+          }
+        } catch {}
+      }
+      // Check for object with message property
+      if (arg && typeof arg === 'object' && 'message' in arg) {
+        if (typeof arg.message === 'string' && 
+            (arg.message.includes('ResizeObserver') || 
+             arg.message.includes('undelivered notifications'))) {
+          return;
+        }
+      }
     }
     // Suppress DOM nesting warnings from tooltips and buttons
     const firstArg = args[0];
@@ -123,6 +152,17 @@ if (typeof window !== 'undefined') {
     }
     return false;
   };
+  
+  // Also override the global error handler for objects
+  if (typeof window.addEventListener === 'function') {
+    window.addEventListener('error', (e: any) => {
+      if (e && e.message && isResizeObserverError(e.message)) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
+    }, true);
+  }
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
