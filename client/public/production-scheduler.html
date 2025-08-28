@@ -678,8 +678,13 @@
     <!-- Initialize the scheduler -->
     <script>
         // Wait for DOM and Bryntum to load
-        document.addEventListener('DOMContentLoaded', async () => {
+        function initializeScheduler() {
             try {
+                // Check if bryntum is available
+                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                    throw new Error('Bryntum Scheduler Pro not loaded');
+                }
+                
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
@@ -1680,7 +1685,7 @@
                 `;
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
-        });
+        }
 
         // Track page visit for recent pages functionality
         function trackPageVisit() {
@@ -1717,6 +1722,34 @@
                 console.warn('Error in trackPageVisit:', error);
             }
         }
+
+        // Initialize when both DOM and Bryntum are ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check if Bryntum is already loaded
+            if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
+                initializeScheduler();
+            } else {
+                // Wait for Bryntum to load
+                let checkInterval = setInterval(() => {
+                    if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
+                        clearInterval(checkInterval);
+                        initializeScheduler();
+                    }
+                }, 100);
+                
+                // Timeout after 10 seconds
+                setTimeout(() => {
+                    clearInterval(checkInterval);
+                    console.error('Bryntum Scheduler Pro failed to load within 10 seconds');
+                    document.getElementById('scheduler').innerHTML = `
+                        <div class="error-message">
+                            Failed to load Bryntum Scheduler Pro. Please check if the library files are available.
+                        </div>
+                    `;
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }, 10000);
+            }
+        });
 
         // Track the page visit when loaded
         trackPageVisit();
