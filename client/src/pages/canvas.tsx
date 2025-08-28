@@ -68,7 +68,7 @@ export default function CanvasPage() {
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
 
   // Fetch canvas widgets from API (created by Max AI)
-  const { data: canvasWidgets, isLoading } = useQuery({
+  const { data: canvasWidgets, isLoading, refetch: refetchWidgets } = useQuery({
     queryKey: ['/api/canvas/widgets'],
     queryFn: async () => {
       const response = await fetch('/api/canvas/widgets');
@@ -138,8 +138,9 @@ export default function CanvasPage() {
 
   const confirmClearCanvas = async () => {
     try {
-      // Clear local items
+      // Clear local items first
       setItems([]);
+      localStorage.removeItem('max-canvas-items');
       
       // Clear database widgets by making them invisible
       if (canvasWidgets && canvasWidgets.length > 0) {
@@ -162,7 +163,10 @@ export default function CanvasPage() {
       
       setShowClearConfirmation(false);
       
-      // Invalidate and refetch the canvas widgets query to update the display
+      // Force immediate refetch of the canvas widgets to update the display
+      await refetchWidgets();
+      
+      // Also invalidate the cache for good measure
       await queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
       
       toast({
