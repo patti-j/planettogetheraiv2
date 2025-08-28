@@ -63,7 +63,11 @@ export default function Settings() {
   // Update AI agent mutation
   const updateAgentMutation = useMutation({
     mutationFn: async ({ agentId, data }: { agentId: string; data: any }) => {
-      const response = await apiRequest('PUT', `/api/ai-agents/${agentId}`, data);
+      const response = await apiRequest(`/api/ai-agents/${agentId}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -85,7 +89,11 @@ export default function Settings() {
   // Update global settings mutation
   const updateGlobalSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('PUT', '/api/ai-agents/global/settings', data);
+      const response = await apiRequest('/api/ai-agents/global/settings', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -128,7 +136,11 @@ export default function Settings() {
   // Update user preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('PUT', `/api/user-preferences/${user?.id}`, data);
+      const response = await apiRequest(`/api/user-preferences/${user?.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -150,7 +162,11 @@ export default function Settings() {
   // Update user profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('PUT', `/api/users/${user?.id}`, data);
+      const response = await apiRequest(`/api/users/${user?.id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
       return response.json();
     },
     onSuccess: () => {
@@ -172,7 +188,11 @@ export default function Settings() {
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('POST', `/api/users/${user?.id}/change-password`, data);
+      const response = await apiRequest(`/api/users/${user?.id}/change-password`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: { 'Content-Type': 'application/json' }
+      });
       return response.json();
     },
     onSuccess: () => {
