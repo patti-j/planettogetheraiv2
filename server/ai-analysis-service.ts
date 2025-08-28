@@ -65,8 +65,8 @@ export class AIAnalysisService {
       autoCreateAlerts: Boolean(row.autoCreateAlerts),
       alertSeverity: String(row.alertSeverity),
       alertType: String(row.alertType),
-      lastAnalysisAt: row.lastAnalysisAt ? new Date(row.lastAnalysisAt) : null,
-      lastAlertCreatedAt: row.lastAlertCreatedAt ? new Date(row.lastAlertCreatedAt) : null
+      lastAnalysisAt: row.lastAnalysisAt ? new Date(String(row.lastAnalysisAt)) : null,
+      lastAlertCreatedAt: row.lastAlertCreatedAt ? new Date(String(row.lastAlertCreatedAt)) : null
     }));
   }
 
@@ -254,7 +254,12 @@ export class AIAnalysisService {
     `;
 
     try {
-      const response = await openai.chat.completions.create({
+      // Add timeout handling
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('AI analysis timed out. This may be due to high server load.')), 30000); // 30 second timeout
+      });
+
+      const analysisPromise = openai.chat.completions.create({
         model: "gpt-4o",
         messages: [
           { role: "system", content: systemPrompt },
@@ -263,6 +268,8 @@ export class AIAnalysisService {
         temperature: 0.3,
         max_tokens: 2000
       });
+
+      const response = await Promise.race([analysisPromise, timeoutPromise]) as any;
 
       let content = response.choices[0].message.content;
       if (!content) throw new Error('No content in AI response');

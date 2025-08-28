@@ -29178,7 +29178,13 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
 
         try {
           console.log('🚀 Making OpenAI API request for AI insights...');
-          const response = await openai.chat.completions.create({
+          
+          // Add timeout handling with 30 second limit
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('AI analysis timed out. This may be due to high server load.')), 30000);
+          });
+
+          const apiPromise = openai.chat.completions.create({
             model: "gpt-4o", // Using gpt-4o as gpt-5 might not be available yet
             messages: [
               { role: "system", content: "You are Max AI, an expert manufacturing analyst. Generate insights in JSON format with an 'insights' array." },
@@ -29188,6 +29194,8 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
             max_tokens: 3000,
             temperature: 0.3
           });
+
+          const response = await Promise.race([apiPromise, timeoutPromise]) as any;
 
           console.log('📝 OpenAI response received, parsing content...');
           const aiContent = response.choices[0].message.content;
@@ -29231,6 +29239,15 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
         } catch (aiError) {
           console.error('❌ AI analysis failed with error:', aiError);
           console.log('🔄 Falling back to enhanced sample data');
+          
+          // Return proper error response if timeout
+          if (aiError.message?.includes('timed out')) {
+            return res.status(408).json({
+              error: 'Analysis Failed',
+              message: 'AI analysis timed out. This may be due to high server load.',
+              fallback: true
+            });
+          }
         }
       }
       
