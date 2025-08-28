@@ -48,6 +48,7 @@ import PlantsManagement from "@/pages/plants-management";
 import DemandSupplyAlignment from "@/pages/demand-supply-alignment";
 import InventoryOptimization from "@/pages/inventory-optimization";
 import MRP from "@/pages/mrp";
+import DDMRP from "@/pages/ddmrp";
 import ProductionPlanning from "@/pages/production-planning";
 import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
@@ -219,6 +220,11 @@ export default function ApplicationApp() {
               <Route path="/mrp">
                 <ProtectedRoute feature="schedule" action="view">
                   <MRP />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/ddmrp">
+                <ProtectedRoute feature="schedule" action="view">
+                  <DDMRP />
                 </ProtectedRoute>
               </Route>
               <Route path="/production-planning">
