@@ -101,7 +101,6 @@ export class GanttConfigService {
   getDefaultColumns(): any[] {
     return [
       { 
-        type: 'tree',
         text: 'Resources', 
         field: 'name', 
         width: 250,
@@ -180,8 +179,6 @@ export class GanttConfigService {
       sort: 'name',
       stripe: true,
       tree: true,
-      zoomOnMouseWheel: true,
-      zoomOnTimeAxisDoubleClick: true,
       
       // Time ranges
       timeRanges: {
