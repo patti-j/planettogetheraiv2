@@ -502,15 +502,125 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
 };
 
 const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
+  // Generate sample data based on chart type and template
+  const generateChartData = () => {
+    if (data?.template === 'jobs') {
+      if (data?.chartType === 'pie') {
+        return [
+          { name: 'Manufacturing', value: 35, color: '#8884d8' },
+          { name: 'Quality Control', value: 25, color: '#82ca9d' },
+          { name: 'Packaging', value: 20, color: '#ffc658' },
+          { name: 'Maintenance', value: 15, color: '#ff7300' },
+          { name: 'R&D', value: 5, color: '#d084d0' }
+        ];
+      } else {
+        return [
+          { name: 'Manufacturing', value: 35 },
+          { name: 'Quality Control', value: 25 },
+          { name: 'Packaging', value: 20 },
+          { name: 'Maintenance', value: 15 },
+          { name: 'R&D', value: 5 }
+        ];
+      }
+    }
+    return [];
+  };
+
+  const chartData = generateChartData();
+  const isEmptyData = !chartData || chartData.length === 0;
+
+  if (data?.chartType === 'pie') {
+    return (
+      <div className="h-64 bg-white rounded-lg border p-4">
+        <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
+        {isEmptyData ? (
+          <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
+            <div className="text-center">
+              <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-500">No data available</p>
+            </div>
+          </div>
+        ) : (
+          <div className="h-48 relative">
+            <svg viewBox="0 0 200 200" className="w-full h-full">
+              {chartData.map((entry, index) => {
+                const total = chartData.reduce((sum, item) => sum + item.value, 0);
+                const percentage = (entry.value / total) * 100;
+                const angle = (entry.value / total) * 360;
+                const prevAngles = chartData.slice(0, index).reduce((sum, item) => sum + (item.value / total) * 360, 0);
+                const startAngle = prevAngles - 90;
+                const endAngle = startAngle + angle;
+                
+                const x1 = 100 + 80 * Math.cos((startAngle * Math.PI) / 180);
+                const y1 = 100 + 80 * Math.sin((startAngle * Math.PI) / 180);
+                const x2 = 100 + 80 * Math.cos((endAngle * Math.PI) / 180);
+                const y2 = 100 + 80 * Math.sin((endAngle * Math.PI) / 180);
+                
+                const largeArcFlag = angle > 180 ? 1 : 0;
+                const pathData = `M 100 100 L ${x1} ${y1} A 80 80 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+                
+                return (
+                  <path
+                    key={entry.name}
+                    d={pathData}
+                    fill={entry.color}
+                    stroke="white"
+                    strokeWidth="2"
+                  />
+                );
+              })}
+            </svg>
+            <div className="absolute bottom-0 left-0 right-0">
+              <div className="flex flex-wrap justify-center gap-2 text-xs">
+                {chartData.map((entry) => (
+                  <div key={entry.name} className="flex items-center gap-1">
+                    <div className="w-3 h-3 rounded" style={{ backgroundColor: entry.color }}></div>
+                    <span>{entry.name}: {entry.value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Bar chart
   return (
     <div className="h-64 bg-white rounded-lg border p-4">
       <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
-      <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
-        <div className="text-center">
-          <PieChart className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-500">Chart visualization would appear here</p>
+      {isEmptyData ? (
+        <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
+          <div className="text-center">
+            <BarChart3 className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+            <p className="text-sm text-gray-500">No data available</p>
+          </div>
         </div>
-      </div>
+      ) : (
+        <div className="h-48 flex items-end justify-between gap-2 p-2 bg-gray-50 rounded">
+          {chartData.map((entry, index) => {
+            const maxValue = Math.max(...chartData.map(d => d.value));
+            const height = (entry.value / maxValue) * 100;
+            const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d084d0'];
+            
+            return (
+              <div key={entry.name} className="flex flex-col items-center flex-1">
+                <div className="text-xs font-medium mb-1">{entry.value}</div>
+                <div 
+                  className="w-full rounded-t"
+                  style={{ 
+                    height: `${height}%`, 
+                    backgroundColor: colors[index % colors.length],
+                    minHeight: '20px'
+                  }}
+                ></div>
+                <div className="text-xs mt-1 text-center break-words">{entry.name}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
