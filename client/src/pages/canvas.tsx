@@ -54,10 +54,11 @@ interface CanvasItem {
 interface CanvasWidget {
   id: number;
   title: string;
-  type: string;
-  config: any;
-  position: { x: number; y: number };
-  size: { width: number; height: number };
+  widgetType: string;
+  widgetSubtype: string;
+  data: any;
+  configuration: any;
+  position: { x: number; y: number } | null;
   isVisible: boolean;
   createdByMax: boolean;
 }
@@ -100,11 +101,16 @@ export default function CanvasPage() {
   const convertWidgetToCanvasItem = (widget: CanvasWidget): CanvasItem => {
     return {
       id: widget.id.toString(),
-      type: widget.type as any,
+      type: widget.widgetType as any,
       title: widget.title,
-      content: widget.config?.data || widget.config,
-      width: widget.size?.width ? `${widget.size?.width || 400}px` : undefined,
-      height: widget.size?.height ? `${widget.size.height}px` : undefined,
+      content: { 
+        ...widget.data, 
+        ...widget.configuration,
+        chartType: widget.widgetSubtype,
+        template: widget.data?.template
+      },
+      width: widget.configuration?.size === 'large' ? '600px' : widget.configuration?.size === 'small' ? '300px' : '400px',
+      height: '300px',
       position: widget.position
     };
   };
