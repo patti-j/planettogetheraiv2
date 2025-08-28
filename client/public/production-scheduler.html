@@ -673,7 +673,46 @@
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
+    <script>
+        // Prevent Bryntum from trying to use require() in browser environment
+        if (typeof module !== 'undefined') {
+            window.moduleBackup = module;
+            module = undefined;
+        }
+        if (typeof require !== 'undefined') {
+            window.requireBackup = require;
+            require = undefined;
+        }
+        if (typeof exports !== 'undefined') {
+            window.exportsBackup = exports;
+            exports = undefined;
+        }
+        // Force browser environment detection
+        if (typeof global !== 'undefined') {
+            window.globalBackup = global;
+            global = undefined;
+        }
+    </script>
     <script src="/schedulerpro.umd.js"></script>
+    <script>
+        // Restore any backed up globals if needed
+        if (window.moduleBackup) {
+            module = window.moduleBackup;
+            delete window.moduleBackup;
+        }
+        if (window.requireBackup) {
+            require = window.requireBackup;
+            delete window.requireBackup;
+        }
+        if (window.exportsBackup) {
+            exports = window.exportsBackup;
+            delete window.exportsBackup;
+        }
+        if (window.globalBackup) {
+            global = window.globalBackup;
+            delete window.globalBackup;
+        }
+    </script>
     
     <!-- Initialize the scheduler -->
     <script>

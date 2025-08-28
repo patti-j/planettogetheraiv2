@@ -1,4 +1,6 @@
 import express from "express";
+import fs from "fs";
+import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 
@@ -68,8 +70,6 @@ app.use((req, res, next) => {
   // Serve HTML files directly from public directory with no caching
   app.get('/*.html', (req, res) => {
     const filePath = `client/public${req.path}`;
-    const fs = require('fs');
-    const path = require('path');
     
     // Set no-cache headers
     res.set({
