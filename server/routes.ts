@@ -15932,6 +15932,65 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Track page visits for recent pages - used by standalone HTML pages
+  app.post("/api/track-page-visit", requireAuth, async (req, res) => {
+    try {
+      const { path, label, icon } = req.body;
+      const userId = req.user?.id;
+      
+      if (!userId || !path || !label) {
+        return res.status(400).json({ error: "Missing required fields: path, label" });
+      }
+      
+      // Get current user preferences to access recent pages
+      let preferences = await storage.getUserPreferences(userId);
+      if (!preferences) {
+        preferences = await storage.upsertUserPreferences({ userId });
+      }
+      
+      // Parse existing recent pages
+      let recentPages = [];
+      try {
+        recentPages = preferences.recentPages ? JSON.parse(preferences.recentPages) : [];
+      } catch (e) {
+        console.warn("Failed to parse recent pages, starting fresh:", e);
+        recentPages = [];
+      }
+      
+      // Check if page already exists
+      const existingIndex = recentPages.findIndex((page: any) => page.path === path);
+      
+      if (existingIndex !== -1) {
+        // Update timestamp for existing page
+        recentPages[existingIndex].timestamp = Date.now();
+      } else {
+        // Add new page to beginning of list
+        const newPage = { 
+          path, 
+          label, 
+          icon: icon || 'FileText', 
+          timestamp: Date.now(), 
+          isPinned: false 
+        };
+        recentPages.unshift(newPage);
+        
+        // Limit to max 12 recent pages
+        recentPages = recentPages.slice(0, 12);
+      }
+      
+      // Save updated recent pages
+      await storage.upsertUserPreferences({
+        userId,
+        recentPages: JSON.stringify(recentPages)
+      });
+      
+      res.json({ success: true, message: "Page visit tracked" });
+    } catch (error) {
+      console.error("Error tracking page visit:", error);
+      res.status(500).json({ error: "Failed to track page visit" });
+    }
+  });
+
   // Simplified user preferences endpoints for AI theme system
   app.get("/api/user-preferences/:userId", requireAuth, async (req, res) => {
     try {

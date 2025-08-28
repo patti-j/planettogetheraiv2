@@ -1681,6 +1681,45 @@
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
         });
+
+        // Track page visit for recent pages functionality
+        function trackPageVisit() {
+            try {
+                const token = localStorage.getItem('auth_token');
+                if (!token) {
+                    console.log('No auth token found, skipping page visit tracking');
+                    return;
+                }
+
+                fetch('/api/track-page-visit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        path: '/production-scheduler.html',
+                        label: 'Production Scheduler',
+                        icon: 'Calendar'
+                    })
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Page visit tracked successfully');
+                    } else {
+                        console.warn('Failed to track page visit:', response.status);
+                    }
+                })
+                .catch(error => {
+                    console.warn('Error tracking page visit:', error);
+                });
+            } catch (error) {
+                console.warn('Error in trackPageVisit:', error);
+            }
+        }
+
+        // Track the page visit when loaded
+        trackPageVisit();
     </script>
 </body>
 </html>
