@@ -1430,7 +1430,7 @@ Provide analysis and recommendations.`
                            query.toLowerCase().includes('line') ||
                            query.toLowerCase().includes('graph');
 
-      if (isChartRequest && context.currentPage === '/canvas') {
+      if (isChartRequest) {
         // Import storage to create canvas widget
         const { storage } = await import('../storage');
         
