@@ -526,35 +526,32 @@ export default function AIInsightsPage() {
 
                 {/* Action Buttons */}
                 {insight.status === 'new' && insight.actionable && (
-                  <div className="space-y-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center gap-2">
+                  <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="grid grid-cols-3 gap-1">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => ignoreRecommendation(insight.id)}
-                        className="h-7 px-3 text-xs flex-1"
+                        className="h-6 px-1 text-[10px] py-0"
                       >
-                        <X className="h-3 w-3 mr-1" />
-                        Ignore
+                        <X className="h-2 w-2" />
                       </Button>
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => markInProgress(insight.id)}
-                        className="h-7 px-3 text-xs flex-1"
+                        className="h-6 px-1 text-[10px] py-0"
                       >
-                        <Play className="h-3 w-3 mr-1" />
-                        In Progress
+                        <Play className="h-2 w-2" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => applyRecommendation(insight.id)}
+                        className="h-6 px-1 text-[10px] bg-green-600 hover:bg-green-700 text-white py-0"
+                      >
+                        <Check className="h-2 w-2" />
                       </Button>
                     </div>
-                    <Button
-                      size="sm"
-                      onClick={() => applyRecommendation(insight.id)}
-                      className="h-7 px-3 text-xs w-full bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <Check className="h-3 w-3 mr-1" />
-                      Apply Recommendation
-                    </Button>
                   </div>
                 )}
 
