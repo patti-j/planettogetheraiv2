@@ -86,7 +86,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Sparkles, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "optimization", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "demand-forecasting", action: "view", color: "bg-purple-500" },
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
-      { icon: Sparkles, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
+      { icon: TrendingUp, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "optimization-studio", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
