@@ -221,7 +221,7 @@ const ProductionSchedulerProV2: React.FC = () => {
     if (schedulerInstance) {
       setIsLoading(true);
       const ganttData = await dataService.getProductionData();
-      scheduler.project.loadInlineData(ganttData);
+      schedulerInstance.project.loadInlineData(ganttData);
       setIsLoading(false);
       toast({
         title: "Refreshed",
@@ -247,9 +247,9 @@ const ProductionSchedulerProV2: React.FC = () => {
           name,
           description: `Saved on ${new Date().toLocaleDateString()}`,
           config: {
-            viewPreset: scheduler.viewPreset,
-            startDate: scheduler.startDate.toISOString(),
-            endDate: scheduler.endDate.toISOString()
+            viewPreset: schedulerInstance.viewPreset,
+            startDate: schedulerInstance.startDate.toISOString(),
+            endDate: schedulerInstance.endDate.toISOString()
           },
           createdAt: new Date().toISOString(),
           createdBy: '1'
