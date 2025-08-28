@@ -16,7 +16,10 @@ import {
   XCircle,
   Clock,
   BarChart3,
-  ArrowUpRight
+  ArrowUpRight,
+  Play,
+  X,
+  Check
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,7 +40,7 @@ interface AIInsight {
   timestamp: string;
   source: string;
   category: string;
-  status: string;
+  status: 'new' | 'applied' | 'ignored' | 'in_progress';
   actionable: boolean;
   impact?: string;
   recommendation?: string;
@@ -63,6 +66,14 @@ const PRIORITY_FILTERS = [
   { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },
   { value: 'low', label: 'Low' }
+];
+
+const STATUS_FILTERS = [
+  { value: 'all', label: 'All Status' },
+  { value: 'new', label: 'New' },
+  { value: 'in_progress', label: 'In Progress' },
+  { value: 'applied', label: 'Applied' },
+  { value: 'ignored', label: 'Ignored' }
 ];
 
 function getPriorityColor(priority: string) {
@@ -91,6 +102,7 @@ export default function AIInsightsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
 
@@ -202,9 +214,56 @@ export default function AIInsightsPage() {
                          insight.description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesType = typeFilter === 'all' || insight.type === typeFilter;
     const matchesPriority = priorityFilter === 'all' || insight.priority === priorityFilter;
+    const matchesStatus = statusFilter === 'all' || insight.status === statusFilter;
     
-    return matchesSearch && matchesType && matchesPriority;
+    return matchesSearch && matchesType && matchesPriority && matchesStatus;
   });
+
+  // Action functions for insights
+  const applyRecommendation = (insightId: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === insightId 
+        ? { ...insight, status: 'applied' as const }
+        : insight
+    ));
+    
+    const insight = insights.find(i => i.id === insightId);
+    toast({
+      title: "Recommendation Applied",
+      description: `Applied: ${insight?.title}. Implementation time: ${insight?.implementation_time}`,
+      variant: "default"
+    });
+  };
+
+  const ignoreRecommendation = (insightId: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === insightId 
+        ? { ...insight, status: 'ignored' as const }
+        : insight
+    ));
+    
+    const insight = insights.find(i => i.id === insightId);
+    toast({
+      title: "Recommendation Ignored",
+      description: `Ignored: ${insight?.title}`,
+      variant: "default"
+    });
+  };
+
+  const markInProgress = (insightId: string) => {
+    setInsights(prev => prev.map(insight => 
+      insight.id === insightId 
+        ? { ...insight, status: 'in_progress' as const }
+        : insight
+    ));
+    
+    const insight = insights.find(i => i.id === insightId);
+    toast({
+      title: "Marked In Progress",
+      description: `Working on: ${insight?.title}`,
+      variant: "default"
+    });
+  };
 
   // Refresh insights
   const handleRefresh = async () => {

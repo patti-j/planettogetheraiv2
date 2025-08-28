@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -161,8 +162,8 @@ export default function CanvasPage() {
       
       setShowClearConfirmation(false);
       
-      // Refresh the canvas widgets query to update the display
-      window.location.reload();
+      // Invalidate and refetch the canvas widgets query to update the display
+      await queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
       
       toast({
         title: "Canvas Cleared",
