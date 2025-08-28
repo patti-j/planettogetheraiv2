@@ -110,6 +110,7 @@ import crypto from "crypto";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { agentActionService } from "./agent-action-service";
 import { registerTimeTrackingRoutes } from "./routes/time-tracking-routes";
+import aiAgentsRouter from "./routes/ai-agents-routes";
 
 // Session interface is declared in index.ts
 
@@ -27656,6 +27657,9 @@ Be careful to preserve data integrity and relationships.`;
   
   // Register chat routes
   app.use("/api/chat", chatRouter);
+  
+  // Register AI agents routes
+  app.use("/api/ai-agents", aiAgentsRouter);
   
   // Register comments routes
   app.use(commentsRouter);

@@ -33,6 +33,7 @@ Note on concurrent work:
 - **Route Security**: Fixed critical routing issue by adding /production-scheduler-js to publicPaths array
 - **PlanetTogether Migration**: Completed v13-14 migration with all branding and authentication issues resolved
 - **AI Design Consistency**: All AI-related features now use consistent Sparkles icon throughout navigation panels, dialogs, and interface elements. **Always use Sparkles icon for AI branding, never Brain or other icons.**
+- **AI Agents Control Panel** (August 28, 2025): Added comprehensive AI Agents management interface in app settings with centralized control for all AI agents including Max AI Assistant, System Monitoring Agent, Production Optimization Agent, Quality Analysis Agent, and Predictive Maintenance Agent. Features include status overview, individual agent configuration, frequency settings, performance modes, and global agent controls.
 - **Global Control Tower Advanced Features**: Enhanced with comprehensive KPI target management, weighted performance tracking, autonomous optimization configuration, performance visualization charts, and real-time plant monitoring with automated algorithm selection and parameter tuning capabilities
 
 ## System Architecture

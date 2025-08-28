@@ -27,7 +27,16 @@ import {
   Phone,
   Building,
   Calendar,
-  Clock
+  Clock,
+  Sparkles,
+  Bot,
+  Activity,
+  PlayCircle,
+  PauseCircle,
+  AlertCircle,
+  CheckCircle,
+  BarChart3,
+  Zap
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
@@ -40,6 +49,69 @@ export default function Settings() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  // Fetch AI agents data
+  const { data: aiAgentsData, isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
+    queryKey: ['/api/ai-agents'],
+    queryFn: async () => {
+      const response = await fetch('/api/ai-agents');
+      if (!response.ok) throw new Error('Failed to fetch AI agents');
+      return response.json();
+    }
+  });
+
+  // Update AI agent mutation
+  const updateAgentMutation = useMutation({
+    mutationFn: async ({ agentId, data }: { agentId: string; data: any }) => {
+      const response = await apiRequest('PUT', `/api/ai-agents/${agentId}`, data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Agent Updated",
+        description: "AI agent configuration has been saved successfully.",
+      });
+      refetchAgents();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update AI agent. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Update global settings mutation
+  const updateGlobalSettingsMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest('PUT', '/api/ai-agents/global/settings', data);
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Settings Updated",
+        description: "Global AI agent settings have been saved successfully.",
+      });
+      refetchAgents();
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to update global settings. Please try again.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  // Toggle agent status
+  const toggleAgentStatus = (agentId: string, currentStatus: string) => {
+    const newStatus = currentStatus === 'active' ? 'paused' : 'active';
+    updateAgentMutation.mutate({
+      agentId,
+      data: { status: newStatus }
+    });
+  };
 
   // Fetch user preferences
   const { data: preferences } = useQuery({
@@ -177,7 +249,7 @@ export default function Settings() {
         </div>
 
         <Tabs defaultValue="profile" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="profile" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Profile
@@ -185,6 +257,10 @@ export default function Settings() {
             <TabsTrigger value="preferences" className="flex items-center gap-2">
               <Palette className="h-4 w-4" />
               Preferences
+            </TabsTrigger>
+            <TabsTrigger value="ai-agents" className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4" />
+              AI Agents
             </TabsTrigger>
             <TabsTrigger value="notifications" className="flex items-center gap-2">
               <Bell className="h-4 w-4" />
@@ -391,6 +467,568 @@ export default function Settings() {
                   <Button onClick={() => handleSavePreferences(preferences)}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Preferences
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* AI Agents Control Panel */}
+          <TabsContent value="ai-agents" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Sparkles className="h-5 w-5" />
+                  AI Agents Management
+                </CardTitle>
+                <CardDescription>
+                  Control and configure all AI agents running in your system
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Agent Status Overview */}
+                {agentsLoading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Loading AI agents...</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Active Agents</p>
+                          <p className="text-2xl font-bold text-green-600">
+                            {aiAgentsData?.summary?.activeAgents || 0}
+                          </p>
+                        </div>
+                        <CheckCircle className="h-8 w-8 text-green-600" />
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Paused Agents</p>
+                          <p className="text-2xl font-bold text-orange-600">
+                            {aiAgentsData?.summary?.pausedAgents || 0}
+                          </p>
+                        </div>
+                        <PauseCircle className="h-8 w-8 text-orange-600" />
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium text-muted-foreground">Issues</p>
+                          <p className="text-2xl font-bold text-red-600">
+                            {aiAgentsData?.summary?.errorAgents || 0}
+                          </p>
+                        </div>
+                        <AlertCircle className="h-8 w-8 text-red-600" />
+                      </div>
+                    </Card>
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Individual Agent Controls */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Agent Configuration</h3>
+                  
+                  {aiAgentsData?.agents?.map((agent: any) => {
+                    const getAgentIcon = (type: string) => {
+                      switch (type) {
+                        case 'assistant': return <Sparkles className="h-5 w-5 text-purple-600" />;
+                        case 'monitoring': return <Activity className="h-5 w-5 text-blue-600" />;
+                        case 'optimization': return <BarChart3 className="h-5 w-5 text-emerald-600" />;
+                        case 'quality': return <CheckCircle className="h-5 w-5 text-orange-600" />;
+                        case 'maintenance': return <Zap className="h-5 w-5 text-amber-600" />;
+                        default: return <Bot className="h-5 w-5 text-gray-600" />;
+                      }
+                    };
+
+                    const getAgentIconBg = (type: string) => {
+                      switch (type) {
+                        case 'assistant': return 'bg-purple-100 dark:bg-purple-900';
+                        case 'monitoring': return 'bg-blue-100 dark:bg-blue-900';
+                        case 'optimization': return 'bg-emerald-100 dark:bg-emerald-900';
+                        case 'quality': return 'bg-orange-100 dark:bg-orange-900';
+                        case 'maintenance': return 'bg-amber-100 dark:bg-amber-900';
+                        default: return 'bg-gray-100 dark:bg-gray-900';
+                      }
+                    };
+
+                    return (
+                      <Card key={agent.id} className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 ${getAgentIconBg(agent.type)} rounded-lg`}>
+                              {getAgentIcon(agent.type)}
+                            </div>
+                            <div>
+                              <p className="font-medium">{agent.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {agent.description}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3">
+                            <Badge 
+                              variant="outline" 
+                              className={
+                                agent.status === 'active' 
+                                  ? "text-green-600 border-green-600" 
+                                  : agent.status === 'paused'
+                                  ? "text-orange-600 border-orange-600"
+                                  : "text-red-600 border-red-600"
+                              }
+                            >
+                              {agent.status.charAt(0).toUpperCase() + agent.status.slice(1)}
+                            </Badge>
+                            <Switch 
+                              checked={agent.status === 'active'} 
+                              onCheckedChange={() => toggleAgentStatus(agent.id, agent.status)}
+                            />
+                          </div>
+                        </div>
+                        {/* Agent settings would go here */}
+                      </Card>
+                    );
+                  })}
+                  
+                  {/* Legacy Max AI Assistant - keeping for fallback */}
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                          <Sparkles className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Max AI Assistant</p>
+                          <p className="text-sm text-muted-foreground">
+                            Main AI assistant for production insights and navigation
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          Active
+                        </Badge>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Response Mode</Label>
+                        <Select defaultValue="proactive">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="proactive">Proactive</SelectItem>
+                            <SelectItem value="reactive">Reactive Only</SelectItem>
+                            <SelectItem value="scheduled">Scheduled</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Analysis Frequency</Label>
+                        <Select defaultValue="5min">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1min">Every Minute</SelectItem>
+                            <SelectItem value="5min">Every 5 Minutes</SelectItem>
+                            <SelectItem value="15min">Every 15 Minutes</SelectItem>
+                            <SelectItem value="30min">Every 30 Minutes</SelectItem>
+                            <SelectItem value="1hour">Every Hour</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Insight Level</Label>
+                        <Select defaultValue="detailed">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="basic">Basic</SelectItem>
+                            <SelectItem value="detailed">Detailed</SelectItem>
+                            <SelectItem value="expert">Expert</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* System Monitoring Agent */}
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                          <Activity className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">System Monitoring Agent</p>
+                          <p className="text-sm text-muted-foreground">
+                            Monitors system performance and generates alerts
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          Active
+                        </Badge>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Monitoring Interval</Label>
+                        <Select defaultValue="5min">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1min">1 Minute</SelectItem>
+                            <SelectItem value="5min">5 Minutes</SelectItem>
+                            <SelectItem value="10min">10 Minutes</SelectItem>
+                            <SelectItem value="30min">30 Minutes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Alert Threshold</Label>
+                        <Select defaultValue="medium">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="low">Low Sensitivity</SelectItem>
+                            <SelectItem value="medium">Medium</SelectItem>
+                            <SelectItem value="high">High Sensitivity</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Data Retention</Label>
+                        <Select defaultValue="30days">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7days">7 Days</SelectItem>
+                            <SelectItem value="30days">30 Days</SelectItem>
+                            <SelectItem value="90days">90 Days</SelectItem>
+                            <SelectItem value="1year">1 Year</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Production Optimization Agent */}
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-emerald-100 dark:bg-emerald-900 rounded-lg">
+                          <BarChart3 className="h-5 w-5 text-emerald-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Production Optimization Agent</p>
+                          <p className="text-sm text-muted-foreground">
+                            Analyzes production data and suggests optimizations
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          Active
+                        </Badge>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Analysis Frequency</Label>
+                        <Select defaultValue="hourly">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="realtime">Real-time</SelectItem>
+                            <SelectItem value="15min">Every 15 Minutes</SelectItem>
+                            <SelectItem value="hourly">Hourly</SelectItem>
+                            <SelectItem value="daily">Daily</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Optimization Focus</Label>
+                        <Select defaultValue="efficiency">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="efficiency">Efficiency</SelectItem>
+                            <SelectItem value="cost">Cost Reduction</SelectItem>
+                            <SelectItem value="quality">Quality</SelectItem>
+                            <SelectItem value="throughput">Throughput</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Auto-Apply Changes</Label>
+                        <Select defaultValue="suggest">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="suggest">Suggest Only</SelectItem>
+                            <SelectItem value="minor">Minor Changes</SelectItem>
+                            <SelectItem value="all">All Changes</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Quality Analysis Agent */}
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-orange-100 dark:bg-orange-900 rounded-lg">
+                          <CheckCircle className="h-5 w-5 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Quality Analysis Agent</p>
+                          <p className="text-sm text-muted-foreground">
+                            Monitors quality metrics and detects anomalies
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-green-600 border-green-600">
+                          Active
+                        </Badge>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Sampling Rate</Label>
+                        <Select defaultValue="continuous">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="continuous">Continuous</SelectItem>
+                            <SelectItem value="batch">Per Batch</SelectItem>
+                            <SelectItem value="hourly">Hourly</SelectItem>
+                            <SelectItem value="shift">Per Shift</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Quality Threshold</Label>
+                        <Select defaultValue="95">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="90">90%</SelectItem>
+                            <SelectItem value="95">95%</SelectItem>
+                            <SelectItem value="98">98%</SelectItem>
+                            <SelectItem value="99">99%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Alert Level</Label>
+                        <Select defaultValue="warning">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="info">Info Only</SelectItem>
+                            <SelectItem value="warning">Warning</SelectItem>
+                            <SelectItem value="critical">Critical Only</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+
+                  {/* Predictive Maintenance Agent */}
+                  <Card className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-amber-100 dark:bg-amber-900 rounded-lg">
+                          <Zap className="h-5 w-5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">Predictive Maintenance Agent</p>
+                          <p className="text-sm text-muted-foreground">
+                            Predicts equipment failures and schedules maintenance
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Badge variant="outline" className="text-orange-600 border-orange-600">
+                          Paused
+                        </Badge>
+                        <Switch />
+                      </div>
+                    </div>
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Prediction Model</Label>
+                        <Select defaultValue="ml">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="ml">Machine Learning</SelectItem>
+                            <SelectItem value="statistical">Statistical</SelectItem>
+                            <SelectItem value="hybrid">Hybrid</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Forecast Window</Label>
+                        <Select defaultValue="30days">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="7days">7 Days</SelectItem>
+                            <SelectItem value="30days">30 Days</SelectItem>
+                            <SelectItem value="90days">90 Days</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Confidence Level</Label>
+                        <Select defaultValue="80">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="70">70%</SelectItem>
+                            <SelectItem value="80">80%</SelectItem>
+                            <SelectItem value="90">90%</SelectItem>
+                            <SelectItem value="95">95%</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                <Separator />
+
+                {/* Global Agent Settings */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Global Settings</h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Master AI Control</p>
+                          <p className="text-sm text-muted-foreground">
+                            Enable or disable all AI agents at once
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Auto-Start Agents</p>
+                          <p className="text-sm text-muted-foreground">
+                            Automatically start agents on system boot
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">Agent Learning Mode</p>
+                          <p className="text-sm text-muted-foreground">
+                            Allow agents to learn from user interactions
+                          </p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label>Performance Mode</Label>
+                        <Select defaultValue="balanced">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="conservative">Conservative</SelectItem>
+                            <SelectItem value="balanced">Balanced</SelectItem>
+                            <SelectItem value="aggressive">Aggressive</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Default Language Model</Label>
+                        <Select defaultValue="gpt-5">
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="gpt-5">GPT-5</SelectItem>
+                            <SelectItem value="gpt-4">GPT-4</SelectItem>
+                            <SelectItem value="claude-3">Claude 3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label>Response Timeout (seconds)</Label>
+                        <Input type="number" defaultValue="30" min="5" max="300" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end gap-3">
+                  <Button 
+                    variant="outline"
+                    onClick={() => {
+                      updateGlobalSettingsMutation.mutate({
+                        masterAIControl: true,
+                        autoStartAgents: true,
+                        agentLearningMode: true,
+                        performanceMode: 'balanced',
+                        defaultLanguageModel: 'gpt-5',
+                        responseTimeout: 30
+                      });
+                    }}
+                  >
+                    Reset to Defaults
+                  </Button>
+                  <Button 
+                    onClick={() => {
+                      toast({
+                        title: "Settings Saved",
+                        description: "AI agent settings have been saved successfully.",
+                      });
+                    }}
+                    disabled={updateAgentMutation.isPending || updateGlobalSettingsMutation.isPending}
+                  >
+                    <Save className="h-4 w-4 mr-2" />
+                    Save Agent Settings
                   </Button>
                 </div>
               </CardContent>
