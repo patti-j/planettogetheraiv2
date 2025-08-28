@@ -16,7 +16,7 @@ import {
   Clock, Target, Settings, Play, CheckCircle, AlertTriangle, 
   Info, TrendingUp, Calendar, Users, Zap, BarChart3,
   ArrowLeft, ArrowRight, Layers, Brain, BookmarkPlus, Edit,
-  Save, Trash2, History, Star, Send
+  Save, Trash2, History, Star, Send, Sparkles
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
