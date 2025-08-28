@@ -91,12 +91,7 @@ export default function AgentHistory() {
 
   // Fetch agent actions
   const { data: actions = [], isLoading } = useQuery({
-    queryKey: ['/api/agent-actions', { 
-      search: searchTerm, 
-      agent: filterAgent, 
-      action: filterAction, 
-      success: filterSuccess 
-    }],
+    queryKey: ['/api/agent-actions', searchTerm, filterAgent, filterAction, filterSuccess],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
