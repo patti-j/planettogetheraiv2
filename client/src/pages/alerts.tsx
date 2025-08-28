@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Sparkles, Shield, Zap } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { AlertCircle, AlertTriangle, Info, CheckCircle, Clock, Bell, Settings, Plus, Filter, Sparkles, Shield, Zap, Mail, MessageSquare, Phone, Users, Wrench, Factory, TrendingDown, Package, Calendar, Cpu, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
 
@@ -51,7 +52,15 @@ export default function AlertsPage() {
     title: '',
     description: '',
     severity: 'medium' as const,
-    type: 'custom'
+    type: 'custom',
+    category: '',
+    notificationChannels: ['in_app'] as string[],
+    recipients: [] as string[],
+    priority: 50,
+    slaMinutes: 240, // 4 hours default
+    dueDate: '',
+    plantId: null as number | null,
+    resourceId: null as number | null
   });
   const [resolution, setResolution] = useState('');
   const [rootCause, setRootCause] = useState('');
@@ -68,6 +77,117 @@ export default function AlertsPage() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Comprehensive alert types and categories
+  const alertTypes = {
+    production: {
+      label: 'Production',
+      icon: Factory,
+      categories: [
+        { value: 'line_down', label: 'Production Line Down', icon: AlertCircle },
+        { value: 'capacity_shortage', label: 'Capacity Shortage', icon: TrendingDown },
+        { value: 'schedule_delay', label: 'Schedule Delay', icon: Calendar },
+        { value: 'yield_variance', label: 'Yield Variance', icon: TrendingDown },
+        { value: 'throughput_decline', label: 'Throughput Decline', icon: TrendingDown },
+        { value: 'batch_failure', label: 'Batch Failure', icon: AlertTriangle }
+      ]
+    },
+    quality: {
+      label: 'Quality',
+      icon: Shield,
+      categories: [
+        { value: 'quality_control_fail', label: 'Quality Control Failure', icon: AlertTriangle },
+        { value: 'specification_deviation', label: 'Specification Deviation', icon: Eye },
+        { value: 'rework_required', label: 'Rework Required', icon: Wrench },
+        { value: 'contamination', label: 'Contamination Detected', icon: AlertCircle },
+        { value: 'calibration_due', label: 'Calibration Due', icon: Settings }
+      ]
+    },
+    maintenance: {
+      label: 'Maintenance',
+      icon: Wrench,
+      categories: [
+        { value: 'equipment_failure', label: 'Equipment Failure', icon: AlertCircle },
+        { value: 'preventive_due', label: 'Preventive Maintenance Due', icon: Calendar },
+        { value: 'breakdown', label: 'Equipment Breakdown', icon: AlertTriangle },
+        { value: 'performance_degradation', label: 'Performance Degradation', icon: TrendingDown },
+        { value: 'vibration_anomaly', label: 'Vibration Anomaly', icon: Zap },
+        { value: 'temperature_alert', label: 'Temperature Alert', icon: AlertTriangle }
+      ]
+    },
+    inventory: {
+      label: 'Inventory',
+      icon: Package,
+      categories: [
+        { value: 'stock_shortage', label: 'Stock Shortage', icon: AlertTriangle },
+        { value: 'material_shortage', label: 'Material Shortage', icon: Package },
+        { value: 'excess_inventory', label: 'Excess Inventory', icon: Package },
+        { value: 'expiration_warning', label: 'Expiration Warning', icon: Calendar },
+        { value: 'supplier_delay', label: 'Supplier Delay', icon: Clock }
+      ]
+    },
+    resource: {
+      label: 'Resource',
+      icon: Cpu,
+      categories: [
+        { value: 'resource_conflict', label: 'Resource Conflict', icon: AlertTriangle },
+        { value: 'overallocation', label: 'Resource Overallocation', icon: TrendingDown },
+        { value: 'underutilization', label: 'Resource Underutilization', icon: TrendingDown },
+        { value: 'operator_shortage', label: 'Operator Shortage', icon: Users },
+        { value: 'skill_gap', label: 'Skill Gap', icon: Users }
+      ]
+    },
+    safety: {
+      label: 'Safety',
+      icon: Shield,
+      categories: [
+        { value: 'safety_incident', label: 'Safety Incident', icon: AlertCircle },
+        { value: 'hazard_detected', label: 'Hazard Detected', icon: AlertTriangle },
+        { value: 'ppe_violation', label: 'PPE Violation', icon: Shield },
+        { value: 'emergency_stop', label: 'Emergency Stop Triggered', icon: AlertCircle },
+        { value: 'gas_leak', label: 'Gas Leak Detected', icon: AlertCircle }
+      ]
+    },
+    ai_detected: {
+      label: 'AI Detected',
+      icon: Sparkles,
+      categories: [
+        { value: 'anomaly_detection', label: 'Anomaly Detection', icon: Eye },
+        { value: 'predictive_failure', label: 'Predictive Failure', icon: TrendingDown },
+        { value: 'pattern_deviation', label: 'Pattern Deviation', icon: TrendingDown },
+        { value: 'optimization_opportunity', label: 'Optimization Opportunity', icon: Sparkles },
+        { value: 'efficiency_decline', label: 'Efficiency Decline', icon: TrendingDown }
+      ]
+    },
+    custom: {
+      label: 'Custom',
+      icon: Settings,
+      categories: [
+        { value: 'manual_alert', label: 'Manual Alert', icon: Bell },
+        { value: 'custom_rule', label: 'Custom Rule Triggered', icon: Settings },
+        { value: 'escalation', label: 'Escalation Required', icon: AlertTriangle }
+      ]
+    }
+  };
+
+  // Available notification channels
+  const notificationChannels = [
+    { value: 'in_app', label: 'In-App Notification', icon: Bell, description: 'Show alert in dashboard' },
+    { value: 'email', label: 'Email', icon: Mail, description: 'Send email notification' },
+    { value: 'sms', label: 'SMS/Text', icon: Phone, description: 'Send text message' },
+    { value: 'teams', label: 'Microsoft Teams', icon: MessageSquare, description: 'Post to Teams channel' },
+    { value: 'slack', label: 'Slack', icon: MessageSquare, description: 'Post to Slack channel' }
+  ];
+
+  // Mock users for recipient selection (in real app, fetch from API)
+  const availableUsers = [
+    { id: 1, name: 'Jim Cerra', email: 'jim@company.com', role: 'Administrator', phone: '+1-555-0001' },
+    { id: 2, name: 'Production Manager', email: 'production@company.com', role: 'Production Manager', phone: '+1-555-0002' },
+    { id: 3, name: 'Quality Manager', email: 'quality@company.com', role: 'Quality Manager', phone: '+1-555-0003' },
+    { id: 4, name: 'Maintenance Manager', email: 'maintenance@company.com', role: 'Maintenance Manager', phone: '+1-555-0004' },
+    { id: 5, name: 'Plant Manager', email: 'plant@company.com', role: 'Plant Manager', phone: '+1-555-0005' },
+    { id: 6, name: 'Shift Supervisor', email: 'shift@company.com', role: 'Shift Supervisor', phone: '+1-555-0006' }
+  ];
 
   // Fetch alerts
   const { data: alerts = [], isLoading: alertsLoading } = useQuery({
@@ -108,7 +228,20 @@ export default function AlertsPage() {
         description: "New alert has been created successfully."
       });
       setShowCreateDialog(false);
-      setNewAlert({ title: '', description: '', severity: 'medium', type: 'custom' });
+      setNewAlert({
+        title: '',
+        description: '',
+        severity: 'medium',
+        type: 'custom',
+        category: '',
+        notificationChannels: ['in_app'],
+        recipients: [],
+        priority: 50,
+        slaMinutes: 240,
+        dueDate: '',
+        plantId: null,
+        resourceId: null
+      });
     },
     onError: (error: any) => {
       console.error('Create alert error:', error);
@@ -242,62 +375,250 @@ export default function AlertsPage() {
                 <span className="sm:hidden">Create</span>
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Create New Alert</DialogTitle>
                 <DialogDescription>
-                  Create a custom alert for your team to track important events.
+                  Configure a detailed alert with notification settings and recipient management.
                 </DialogDescription>
               </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="title">Title</Label>
-                  <Input
-                    id="title"
-                    value={newAlert.title}
-                    onChange={(e) => setNewAlert(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="Alert title"
-                  />
+              <div className="grid gap-6 py-4">
+                {/* Basic Information */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Basic Information</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="title">Alert Title</Label>
+                      <Input
+                        id="title"
+                        value={newAlert.title}
+                        onChange={(e) => setNewAlert(prev => ({ ...prev, title: e.target.value }))}
+                        placeholder="Enter alert title"
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="severity">Severity Level</Label>
+                      <Select value={newAlert.severity} onValueChange={(value: any) => setNewAlert(prev => ({ ...prev, severity: value }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="critical">🔴 Critical - Immediate action required</SelectItem>
+                          <SelectItem value="high">🟠 High - Action required within 1 hour</SelectItem>
+                          <SelectItem value="medium">🟡 Medium - Action required within 4 hours</SelectItem>
+                          <SelectItem value="low">🔵 Low - Action required within 24 hours</SelectItem>
+                          <SelectItem value="info">ℹ️ Info - For information only</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      id="description"
+                      value={newAlert.description}
+                      onChange={(e) => setNewAlert(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="Detailed description of the alert and required actions"
+                      rows={3}
+                    />
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    id="description"
-                    value={newAlert.description}
-                    onChange={(e) => setNewAlert(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="Detailed description of the alert"
-                  />
+
+                {/* Alert Type & Category */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Alert Classification</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="type">Alert Type</Label>
+                      <Select value={newAlert.type} onValueChange={(value) => setNewAlert(prev => ({ ...prev, type: value, category: '' }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(alertTypes).map(([key, type]) => {
+                            const Icon = type.icon;
+                            return (
+                              <SelectItem key={key} value={key}>
+                                <div className="flex items-center gap-2">
+                                  <Icon className="h-4 w-4" />
+                                  {type.label}
+                                </div>
+                              </SelectItem>
+                            );
+                          })}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    {newAlert.type && alertTypes[newAlert.type as keyof typeof alertTypes] && (
+                      <div className="grid gap-2">
+                        <Label htmlFor="category">Specific Category</Label>
+                        <Select value={newAlert.category} onValueChange={(value) => setNewAlert(prev => ({ ...prev, category: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select specific category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {alertTypes[newAlert.type as keyof typeof alertTypes].categories.map((category) => {
+                              const Icon = category.icon;
+                              return (
+                                <SelectItem key={category.value} value={category.value}>
+                                  <div className="flex items-center gap-2">
+                                    <Icon className="h-4 w-4" />
+                                    {category.label}
+                                  </div>
+                                </SelectItem>
+                              );
+                            })}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="severity">Severity</Label>
-                  <Select value={newAlert.severity} onValueChange={(value: any) => setNewAlert(prev => ({ ...prev, severity: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="critical">Critical</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="info">Info</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                {/* Priority & SLA */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Priority & Response Time</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="priority">Priority Score (1-100)</Label>
+                      <div className="flex items-center gap-3">
+                        <Slider
+                          value={[newAlert.priority]}
+                          onValueChange={(value) => setNewAlert(prev => ({ ...prev, priority: value[0] }))}
+                          max={100}
+                          min={1}
+                          step={1}
+                          className="flex-1"
+                        />
+                        <span className="w-12 text-sm font-medium">{newAlert.priority}</span>
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="sla">Response SLA (minutes)</Label>
+                      <Select value={newAlert.slaMinutes.toString()} onValueChange={(value) => setNewAlert(prev => ({ ...prev, slaMinutes: parseInt(value) }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="15">15 minutes - Urgent</SelectItem>
+                          <SelectItem value="60">1 hour - High</SelectItem>
+                          <SelectItem value="240">4 hours - Standard</SelectItem>
+                          <SelectItem value="480">8 hours - Normal</SelectItem>
+                          <SelectItem value="1440">24 hours - Low</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="type">Type</Label>
-                  <Select value={newAlert.type} onValueChange={(value) => setNewAlert(prev => ({ ...prev, type: value }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="production">Production</SelectItem>
-                      <SelectItem value="quality">Quality</SelectItem>
-                      <SelectItem value="maintenance">Maintenance</SelectItem>
-                      <SelectItem value="inventory">Inventory</SelectItem>
-                      <SelectItem value="custom">Custom</SelectItem>
-                    </SelectContent>
-                  </Select>
+
+                {/* Notification Channels */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Notification Delivery</h3>
+                  <div className="grid gap-3">
+                    <Label>Delivery Methods</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {notificationChannels.map((channel) => {
+                        const Icon = channel.icon;
+                        return (
+                          <div key={channel.value} className="flex items-start space-x-3">
+                            <Checkbox
+                              id={channel.value}
+                              checked={newAlert.notificationChannels.includes(channel.value)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setNewAlert(prev => ({
+                                    ...prev,
+                                    notificationChannels: [...prev.notificationChannels, channel.value]
+                                  }));
+                                } else {
+                                  setNewAlert(prev => ({
+                                    ...prev,
+                                    notificationChannels: prev.notificationChannels.filter(c => c !== channel.value)
+                                  }));
+                                }
+                              }}
+                            />
+                            <div className="grid gap-1.5 leading-none">
+                              <label
+                                htmlFor={channel.value}
+                                className="flex items-center gap-2 text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                              >
+                                <Icon className="h-4 w-4" />
+                                {channel.label}
+                              </label>
+                              <p className="text-xs text-muted-foreground">
+                                {channel.description}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
+
+                {/* Recipients */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-medium">Alert Recipients</h3>
+                  <div className="grid gap-3">
+                    <Label>Who should receive this alert?</Label>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-40 overflow-y-auto border rounded-md p-3">
+                      {availableUsers.map((user) => (
+                        <div key={user.id} className="flex items-start space-x-3">
+                          <Checkbox
+                            id={`user-${user.id}`}
+                            checked={newAlert.recipients.includes(user.id.toString())}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setNewAlert(prev => ({
+                                  ...prev,
+                                  recipients: [...prev.recipients, user.id.toString()]
+                                }));
+                              } else {
+                                setNewAlert(prev => ({
+                                  ...prev,
+                                  recipients: prev.recipients.filter(r => r !== user.id.toString())
+                                }));
+                              }
+                            }}
+                          />
+                          <div className="grid gap-1.5 leading-none">
+                            <label
+                              htmlFor={`user-${user.id}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                            >
+                              {user.name}
+                            </label>
+                            <p className="text-xs text-muted-foreground">
+                              {user.role} • {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Summary */}
+                {(newAlert.notificationChannels.length > 0 || newAlert.recipients.length > 0) && (
+                  <div className="space-y-3 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="text-sm font-medium">Alert Summary</h4>
+                    <div className="space-y-2 text-sm">
+                      {newAlert.notificationChannels.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Bell className="h-4 w-4 text-blue-600" />
+                          <span>Will send via: {newAlert.notificationChannels.map(ch => notificationChannels.find(c => c.value === ch)?.label).join(', ')}</span>
+                        </div>
+                      )}
+                      {newAlert.recipients.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <Users className="h-4 w-4 text-blue-600" />
+                          <span>Will notify: {newAlert.recipients.length} recipient{newAlert.recipients.length !== 1 ? 's' : ''}</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
               <DialogFooter>
                 <Button 
