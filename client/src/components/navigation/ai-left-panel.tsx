@@ -741,6 +741,15 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               >
                 <History className="w-4 h-4" />
               </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLocation('/ai-insights')}
+                className="text-white hover:text-white/80 bg-transparent"
+                title="Open AI Insights"
+              >
+                <TrendingUp className="w-4 h-4" />
+              </Button>
             </>
           )}
           
@@ -787,17 +796,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               </TabsTrigger>
             </TabsList>
 
-            {/* AI Insights Navigation Button */}
-            <div className="mx-4 mt-2">
-              <Button
-                onClick={() => setLocation('/ai-insights')}
-                className="w-full bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white border-0"
-                size="sm"
-              >
-                <TrendingUp className="w-4 h-4 mr-2" />
-                View AI Insights
-              </Button>
-            </div>
+
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
