@@ -672,26 +672,6 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
-    <!-- Polyfill for Node.js-style modules in browser -->
-    <script>
-        // Add minimal polyfills for UMD compatibility
-        if (typeof global === 'undefined') {
-            window.global = window;
-        }
-        if (typeof require === 'undefined') {
-            window.require = function(module) {
-                console.warn('require() polyfill: attempted to require', module);
-                return {};
-            };
-        }
-        if (typeof module === 'undefined') {
-            window.module = { exports: {} };
-        }
-        if (typeof exports === 'undefined') {
-            window.exports = {};
-        }
-    </script>
-    
     <!-- Load Bryntum Scheduler Pro UMD -->
     <script src="/schedulerpro.umd.js"></script>
     
