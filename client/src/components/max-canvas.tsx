@@ -76,6 +76,32 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const { canvasItems, setCanvasItems } = useMaxDock();
 
+  // Load widgets from database and transform to canvas items
+  const { data: dbWidgets } = useQuery({
+    queryKey: ['/api/canvas/widgets'],
+    refetchInterval: 3000
+  });
+
+  // Transform database widgets to canvas items
+  useEffect(() => {
+    if (dbWidgets && Array.isArray(dbWidgets)) {
+      const transformedItems: CanvasItem[] = dbWidgets.map((widget: any) => ({
+        id: widget.id.toString(),
+        type: widget.widgetType || 'chart',
+        title: widget.title || 'Untitled Widget',
+        content: {
+          ...widget.data,
+          chartType: widget.configuration?.chartType || widget.widgetSubtype || 'bar',
+          configuration: widget.configuration
+        },
+        timestamp: widget.createdAt
+      }));
+      
+      console.log('Transformed database widgets to canvas items:', transformedItems);
+      setCanvasItems(transformedItems);
+    }
+  }, [dbWidgets, setCanvasItems]);
+
   console.log('MaxCanvas rendered with items:', canvasItems, 'isVisible:', isVisible);
 
   // Clear items function with confirmation
