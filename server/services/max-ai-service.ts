@@ -23,14 +23,22 @@ interface MaxContext {
 interface MaxResponse {
   content: string;
   action?: {
-    type: 'navigate' | 'show_data' | 'execute_function';
+    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart';
     target?: string;
     data?: any;
+    chartConfig?: ChartConfig;
   };
   insights?: ProductionInsight[];
   suggestions?: string[];
   data?: any;
   error?: boolean;
+}
+
+interface ChartConfig {
+  type: 'pie' | 'bar' | 'line' | 'gauge' | 'kpi';
+  title: string;
+  data: any;
+  configuration: any;
 }
 
 interface ConversationMessage {
@@ -381,13 +389,33 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
   }
 
   // Use AI to intelligently determine user intent and target route
-  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat'; target?: string; confidence: number }> {
+  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart'; target?: string; confidence: number; chartType?: string }> {
     const navigationMapping = await this.getNavigationMapping();
     const routes = Object.values(navigationMapping).map(page => ({
       route: page.path,
       label: page.name,
       description: page.description
     }));
+    
+    // Check for chart creation requests
+    const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi'];
+    const createKeywords = ['create', 'show', 'make', 'generate', 'display', 'build'];
+    const canvasKeywords = ['canvas', 'in the canvas', 'on canvas', 'to canvas'];
+    
+    const hasChartKeyword = chartKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    const hasCreateKeyword = createKeywords.some(keyword => query.toLowerCase().includes(keyword));
+    const hasCanvasKeyword = canvasKeywords.some(keyword => query.toLowerCase().includes(keyword)) || query.toLowerCase().includes('canvas');
+    
+    if (hasChartKeyword && (hasCreateKeyword || hasCanvasKeyword)) {
+      let chartType = 'pie'; // default
+      if (query.toLowerCase().includes('pie')) chartType = 'pie';
+      else if (query.toLowerCase().includes('bar')) chartType = 'bar';
+      else if (query.toLowerCase().includes('line')) chartType = 'line';
+      else if (query.toLowerCase().includes('gauge')) chartType = 'gauge';
+      else if (query.toLowerCase().includes('kpi')) chartType = 'kpi';
+      
+      return { type: 'create_chart', confidence: 0.95, chartType };
+    }
     
     // Enhanced check for data requests - specifically handle job questions
     const dataKeywords = ['status', 'how many', 'current', 'show data', 'what is', 'count', 'total'];
@@ -473,6 +501,20 @@ Rules:
     // Analyze user intent using AI
     const intent = await this.analyzeUserIntentWithAI(query);
     
+    // Handle chart creation intent
+    if (intent.type === 'create_chart' && intent.confidence > 0.7) {
+      const chartConfig = await this.createChartConfig(query, intent.chartType || 'pie', context);
+      
+      return {
+        content: `Creating ${intent.chartType || 'pie'} chart and adding it to your canvas...`,
+        action: {
+          type: 'create_chart',
+          target: '/canvas',
+          chartConfig
+        }
+      };
+    }
+
     // Handle navigation intent
     if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
       return {
