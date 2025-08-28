@@ -187,30 +187,74 @@ export default function OperatorDashboard() {
 
   // Transform operations for operator view
   const operatorOperations: OperatorOperation[] = operations.map(op => {
-    const job = jobs.find(j => j.id === op.jobId);
-    const resource = resources.find(r => r.id === op.resourceId);
+    // Match job by jobId (operation.jobId should match job.jobId or job.id)
+    const job = jobs.find(j => j.id === op.jobId || j.jobId === op.jobId);
+    // Match resource by assignedResourceId or workCenterId
+    const resource = resources.find(r => r.id === op.assignedResourceId || r.id === op.workCenterId);
+    
+    // Extract meaningful data from PT Publish tables
+    const jobName = job?.externalId || job?.description || job?.name || op.name || "Unknown Job";
+    const customer = job?.customers || "Manufacturing Order";
+    const priority = job?.priority ? 
+      (job.priority <= 2 ? "urgent" : 
+       job.priority <= 4 ? "high" : 
+       job.priority <= 6 ? "medium" : "low") : "medium";
+    const dueDate = job?.needDateTime || job?.scheduledEndDateTime || op.endTime || "";
+    const resourceName = resource?.name || "Unassigned Resource";
+    const resourceType = resource?.type || "equipment";
+    
+    // Calculate estimated duration from operation data
+    const estimatedDuration = op.duration || 
+      (op.endTime && op.startTime ? 
+        Math.round((new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60)) : 
+        4);
     
     return {
       ...op,
-      jobName: job?.name || "Unknown Job",
-      customer: job?.customer || "Unknown Customer",
-      priority: job?.priority || "medium",
-      dueDate: job?.dueDate || "",
-      resourceName: resource?.name || "Unknown Resource",
-      resourceType: resource?.type || "Unknown",
-      estimatedDuration: 4, // Mock duration in hours
-      qualityChecks: [
-        { id: "1", name: "Dimensional Check", status: "pending" },
-        { id: "2", name: "Surface Finish", status: "pending" },
-        { id: "3", name: "Material Verification", status: "pending" }
+      jobName,
+      customer,
+      priority,
+      dueDate,
+      resourceName,
+      resourceType,
+      estimatedDuration,
+      qualityChecks: op.name?.toLowerCase().includes('mill') || op.description?.toLowerCase().includes('mill') ? [
+        { id: "1", name: "Grain Size Check", status: "pending" },
+        { id: "2", name: "Moisture Content", status: "pending" },
+        { id: "3", name: "Temperature Verification", status: "pending" }
+      ] : op.name?.toLowerCase().includes('ferment') || op.description?.toLowerCase().includes('ferment') ? [
+        { id: "1", name: "pH Level Check", status: "pending" },
+        { id: "2", name: "Yeast Viability", status: "pending" },
+        { id: "3", name: "Sugar Content (Brix)", status: "pending" }
+      ] : op.name?.toLowerCase().includes('boil') || op.description?.toLowerCase().includes('boil') ? [
+        { id: "1", name: "Temperature Control", status: "pending" },
+        { id: "2", name: "Hop Addition Timing", status: "pending" },
+        { id: "3", name: "Specific Gravity", status: "pending" }
+      ] : [
+        { id: "1", name: "Process Parameters", status: "pending" },
+        { id: "2", name: "Quality Standards", status: "pending" },
+        { id: "3", name: "Safety Check", status: "pending" }
       ],
-      materials: [
-        { id: "1", name: "Steel Rod 10mm", quantity: 50, unit: "pcs", available: true },
-        { id: "2", name: "Cutting Fluid", quantity: 2, unit: "L", available: true }
+      materials: op.name?.toLowerCase().includes('mill') || op.description?.toLowerCase().includes('mill') ? [
+        { id: "1", name: "Malted Barley", quantity: job?.qty || 5804, unit: "kg", available: true },
+        { id: "2", name: "Water", quantity: 2000, unit: "L", available: true }
+      ] : op.name?.toLowerCase().includes('ferment') || op.description?.toLowerCase().includes('ferment') ? [
+        { id: "1", name: "Yeast Culture", quantity: 50, unit: "kg", available: true },
+        { id: "2", name: "Nutrient Solution", quantity: 25, unit: "L", available: true }
+      ] : op.name?.toLowerCase().includes('boil') || op.description?.toLowerCase().includes('boil') ? [
+        { id: "1", name: "Hops - Cascade", quantity: 15, unit: "kg", available: true },
+        { id: "2", name: "Irish Moss", quantity: 2, unit: "kg", available: true }
+      ] : [
+        { id: "1", name: "Process Materials", quantity: 100, unit: "units", available: true },
+        { id: "2", name: "Cleaning Solution", quantity: 50, unit: "L", available: true }
       ],
-      tools: [
-        { id: "1", name: "End Mill 6mm", available: true, condition: "good" },
-        { id: "2", name: "Drill Bit Set", available: true, condition: "fair" }
+      tools: resourceType === "machine" ? [
+        { id: "1", name: resource?.name || "Primary Equipment", available: true, condition: "good" },
+        { id: "2", name: "Temperature Sensor", available: true, condition: "good" },
+        { id: "3", name: "Control Panel", available: true, condition: "good" }
+      ] : [
+        { id: "1", name: "Process Tools", available: true, condition: "good" },
+        { id: "2", name: "Measurement Equipment", available: true, condition: "fair" }
       ]
     };
   });
