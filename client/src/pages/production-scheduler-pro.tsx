@@ -1,56 +1,41 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { Card } from '@/components/ui/card';
+import React, { useRef, useState, useEffect, useMemo } from 'react';
+import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
+import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card } from '@/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
+} from '@/components/ui/select';
 import { 
-  Calendar, 
   ZoomIn, 
   ZoomOut, 
-  Maximize2, 
-  Save, 
-  Settings,
-  Filter,
+  Maximize2,
+  RefreshCw,
+  Save,
+  Star,
+  Calendar,
   Download,
   Upload,
-  Star,
-  RefreshCw,
-  Play,
-  Pause,
-  FastForward
+  Filter
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { GanttDataService } from '@/services/scheduler/GanttDataService';
 import { GanttConfigService } from '@/services/scheduler/GanttConfigService';
 import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesService';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 
-// Type declaration for Bryntum SchedulerPro
-interface BryntumSchedulerPro {
-  schedulerpro: {
-    SchedulerPro: any;
-    ProjectModel: any;
-    EventModel: any;
-    ResourceModel: any;
-    DependencyModel: any;
-    AssignmentModel: any;
-  };
-}
-
-const ProductionSchedulerPro: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
+const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState('weekAndDay');
+  const [resourceCount, setResourceCount] = useState(0);
+  const [operationCount, setOperationCount] = useState(0);
+  const [currentView, setCurrentView] = useState('weekAndDayLetter');
   const [favorites, setFavorites] = useState<any[]>([]);
-  const [selectedFavorite, setSelectedFavorite] = useState<string>('');
-  const [saveDialogOpen, setSaveDialogOpen] = useState(false);
-  const [favoriteName, setFavoriteName] = useState('');
-  const [favoriteDescription, setFavoriteDescription] = useState('');
-  
+  const [schedulerData, setSchedulerData] = useState<any>(null);
+  const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const { toast } = useToast();
   
   // Services
@@ -58,367 +43,259 @@ const ProductionSchedulerPro: React.FC = () => {
   const configService = GanttConfigService.getInstance();
   const favoritesService = GanttFavoritesService.getInstance();
 
+  // Load initial data
   useEffect(() => {
-    // Load favorites
-    const loadedFavorites = favoritesService.getAllFavorites();
-    setFavorites(loadedFavorites);
-    
-    // Load Bryntum SchedulerPro script if not already loaded
-    const loadBryntumScript = () => {
-      if ((window as any).bryntum) {
-        // Already loaded
-        initializeScheduler();
-        return;
-      }
-      
-      const script = document.createElement('script');
-      script.src = '/schedulerpro.umd.js';
-      script.async = true;
-      script.onload = () => {
-        console.log('Bryntum SchedulerPro loaded');
-        // Wait a bit for the library to fully initialize
-        setTimeout(initializeScheduler, 100);
-      };
-      script.onerror = () => {
-        console.error('Failed to load Bryntum SchedulerPro script');
-        toast({
-          title: "Error",
-          description: "Failed to load scheduler library. Please refresh the page.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-      };
-      document.body.appendChild(script);
-      
-      // Also load the CSS
-      const link = document.createElement('link');
-      link.rel = 'stylesheet';
-      link.href = '/schedulerpro.classic-light.css';
-      document.head.appendChild(link);
-    };
-
-    loadBryntumScript();
-
-    // Cleanup
-    return () => {
-      if (schedulerRef.current) {
-        schedulerRef.current.destroy();
-        schedulerRef.current = null;
-      }
-    };
-  }, []);
-
-  const initializeScheduler = async () => {
-    try {
-      setIsLoading(true);
-      
-      const bryntumGlobal = (window as any).bryntum as BryntumSchedulerPro;
-      
-      if (!bryntumGlobal || !bryntumGlobal.schedulerpro) {
-        console.error('Bryntum SchedulerPro not loaded');
-        toast({
-          title: "Error",
-          description: "Scheduler library not available. Please refresh the page.",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-      
-      const { SchedulerPro, ProjectModel } = bryntumGlobal.schedulerpro;
-
-      if (!SchedulerPro || !ProjectModel) {
-        console.error('SchedulerPro components not found');
-        toast({
-          title: "Error",
-          description: "Failed to load scheduler components",
-          variant: "destructive"
-        });
-        setIsLoading(false);
-        return;
-      }
-
-      // Get demo data from service
-      const ganttData = await dataService.getDemoData();
-      console.log('Gantt data loaded:', ganttData);
-      
-      // Get default configuration
-      const config = configService.getDefaultConfig();
-      
-      // Create project model with updated API properties
-      console.log('Creating ProjectModel...');
-      const project = new ProjectModel({
-        resources: ganttData.resources,
-        events: ganttData.events,
-        dependencies: ganttData.dependencies,
-        assignments: ganttData.assignments,
-        
-        // Enable scheduling features
-        autoSync: false,
-        validateResponse: true
-      });
-
-      console.log('ProjectModel created, creating scheduler...');
-      
-      // Use simplified configuration to avoid missing features error
+    const loadData = async () => {
       try {
-        schedulerRef.current = new SchedulerPro({
-          appendTo: containerRef.current,
-          project,
-          
-          // Basic configuration
+        setIsLoading(true);
+        
+        // Load favorites
+        const loadedFavorites = favoritesService.getAllFavorites();
+        setFavorites(loadedFavorites);
+        
+        // Get demo data from service
+        const ganttData = await dataService.getDemoData();
+        console.log('Gantt data loaded:', ganttData);
+        
+        // Get default configuration
+        const config = configService.getDefaultConfig();
+        
+        // Set scheduler data
+        setSchedulerData({
+          project: {
+            resources: ganttData.resources,
+            events: ganttData.events,
+            dependencies: ganttData.dependencies,
+            assignments: ganttData.assignments,
+            autoSync: false,
+            validateResponse: true
+          }
+        });
+        
+        // Set scheduler configuration
+        setSchedulerConfig({
           startDate: new Date(2025, 7, 28),
           endDate: new Date(2025, 8, 7),
           viewPreset: 'weekAndDayLetter',
           rowHeight: 50,
           barMargin: 5,
-          
-          // Simple columns configuration
           columns: config.columns,
-          
-          // Use simplified features from config
-          features: config.features,
-          
-          // Event listeners
-          listeners: {
-            beforeEventEdit: ({ eventRecord }: any) => {
-            console.log('Editing event:', eventRecord);
-            return true;
-          },
-          
-          beforeEventSave: ({ eventRecord, values }: any) => {
-            console.log('Saving event:', eventRecord, values);
-            // TODO: Save to backend
-            return true;
-          },
-          
-          beforeEventDelete: ({ eventRecords }: any) => {
-            console.log('Deleting events:', eventRecords);
-            // TODO: Delete from backend
-            return true;
-          },
-          
-          eventDrop: ({ eventRecords, targetResourceRecord, startDate }: any) => {
-            console.log('Event dropped:', eventRecords, targetResourceRecord, startDate);
-            // TODO: Update backend
-          },
-          
-          eventResizeEnd: ({ eventRecord, startDate, endDate }: any) => {
-            console.log('Event resized:', eventRecord, startDate, endDate);
-            // TODO: Update backend
-          },
-          
-          dependencyAdd: ({ dependency }: any) => {
-            console.log('Dependency added:', dependency);
-            // TODO: Save to backend
-          },
-          
-          dependencyRemove: ({ dependency }: any) => {
-            console.log('Dependency removed:', dependency);
-            // TODO: Remove from backend
+          features: {
+            dependencies: true,
+            dependencyEdit: true,
+            eventDrag: {
+              constrainDragToResource: false
+            },
+            eventDragCreate: true,
+            eventEdit: true,
+            eventResize: true,
+            eventTooltip: true,
+            columnLines: true,
+            columnReorder: true,
+            columnResize: true,
+            filterBar: false,
+            nonWorkingTime: true,
+            percentBar: true,
+            regionResize: true,
+            sort: 'name',
+            stripe: true,
+            tree: true,
+            timeRanges: {
+              showCurrentTimeLine: true
+            }
           }
-        }
-      });
-      } catch (innerError) {
-        console.error('Failed to create scheduler with simple config:', innerError);
-        throw innerError;
+        });
+        
+        // Update counts
+        setResourceCount(ganttData.resources.length);
+        setOperationCount(ganttData.events.length);
+        
+        setIsLoading(false);
+        
+        toast({
+          title: "Success",
+          description: `Scheduler loaded with ${ganttData.resources.length} resources and ${ganttData.events.length} operations`
+        });
+        
+      } catch (error) {
+        console.error('Failed to load scheduler data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load scheduler data",
+          variant: "destructive"
+        });
+        setIsLoading(false);
       }
-
-      console.log('Scheduler created successfully');
-      
-      // Update counts
-      setResourceCount(ganttData.resources.length);
-      setOperationCount(ganttData.events.length);
-      
-      toast({
-        title: "Success",
-        description: `Scheduler loaded with ${ganttData.resources.length} resources and ${ganttData.events.length} operations`
-      });
-      
-      setIsLoading(false);
-    } catch (error) {
-      console.error('Failed to initialize scheduler - Full error:', error);
-      if (error instanceof Error) {
-        console.error('Error message:', error.message);
-        console.error('Error stack:', error.stack);
-      }
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to initialize scheduler",
-        variant: "destructive"
-      });
-      setIsLoading(false);
-    }
-  };
+    };
+    
+    loadData();
+  }, []);
 
   // Toolbar actions
   const handleZoomIn = () => {
-    if (schedulerRef.current) {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
       const newZoom = configService.zoomIn();
       if (newZoom) {
-        schedulerRef.current.viewPreset = newZoom.preset;
+        scheduler.viewPreset = newZoom.preset;
       }
     }
   };
 
   const handleZoomOut = () => {
-    if (schedulerRef.current) {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
       const newZoom = configService.zoomOut();
       if (newZoom) {
-        schedulerRef.current.viewPreset = newZoom.preset;
+        scheduler.viewPreset = newZoom.preset;
       }
     }
   };
 
   const handleZoomToFit = () => {
-    if (schedulerRef.current) {
-      schedulerRef.current.zoomToFit();
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
+      scheduler.zoomToFit();
     }
   };
 
   const handleViewChange = (preset: string) => {
-    if (schedulerRef.current) {
-      schedulerRef.current.viewPreset = preset;
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
+      scheduler.viewPreset = preset;
       setCurrentView(preset);
       configService.setZoomLevel(preset);
     }
   };
 
   const handleRefresh = async () => {
-    if (schedulerRef.current) {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
       setIsLoading(true);
       const ganttData = await dataService.getProductionData();
-      schedulerRef.current.project.loadInlineData(ganttData);
+      scheduler.project.loadInlineData(ganttData);
       setIsLoading(false);
       toast({
-        title: "Success",
-        description: "Data refreshed"
+        title: "Refreshed",
+        description: "Data refreshed successfully"
       });
     }
   };
 
-  const handleSaveFavorite = () => {
-    if (!favoriteName) {
-      toast({
-        title: "Error",
-        description: "Please enter a name for the favorite",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (schedulerRef.current) {
-      const config = {
-        viewPreset: schedulerRef.current.viewPreset.id,
-        startDate: schedulerRef.current.startDate.toISOString(),
-        endDate: schedulerRef.current.endDate.toISOString(),
-        filters: schedulerRef.current.store.filters?.values,
-        grouping: schedulerRef.current.store.groupers?.[0]?.field,
-        sorting: schedulerRef.current.store.sorters?.[0]?.field,
-        columns: schedulerRef.current.columns.map((c: any) => ({
-          field: c.field,
-          width: c.width,
-          hidden: c.hidden
-        }))
-      };
-
-      favoritesService.saveFavorite({
-        name: favoriteName,
-        description: favoriteDescription,
-        config,
-        isShared: false,
-        createdBy: 'current-user' // TODO: Get from auth context
-      }).then(favorite => {
-        setFavorites([...favorites, favorite]);
-        setSaveDialogOpen(false);
-        setFavoriteName('');
-        setFavoriteDescription('');
-        toast({
-          title: "Success",
-          description: "Favorite saved successfully"
-        });
-      });
-    }
-  };
-
-  const handleLoadFavorite = (favoriteId: string) => {
-    if (schedulerRef.current && favoriteId) {
-      const config = favoritesService.applyFavorite(favoriteId);
-      schedulerRef.current.setTimeSpan(config.startDate, config.endDate);
-      schedulerRef.current.viewPreset = config.viewPreset;
-      
-      if (config.filters) {
-        schedulerRef.current.store.filter(config.filters);
-      }
-      if (config.grouping) {
-        schedulerRef.current.store.group(config.grouping);
-      }
-      if (config.sorting) {
-        schedulerRef.current.store.sort(config.sorting);
-      }
-      
-      setSelectedFavorite(favoriteId);
-      toast({
-        title: "Success",
-        description: "Favorite loaded"
-      });
-    }
-  };
-
-  const handleRunOptimization = (algorithm: string) => {
+  const handleOptimize = (algorithm: string) => {
+    console.log('Optimizing with algorithm:', algorithm);
     toast({
       title: "Optimization Started",
       description: `Running ${algorithm} optimization...`
     });
-    // TODO: Implement optimization algorithms
   };
 
-  return (
-    <div className="h-full flex flex-col bg-background">
-      {/* Header Toolbar */}
-      <div className="border-b bg-card p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <Calendar className="h-6 w-6" />
-              Production Scheduler Pro
-            </h1>
-            
-            {/* View Preset Selector */}
-            <Select value={currentView} onValueChange={handleViewChange}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select view" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="minuteAndHour">Minute & Hour</SelectItem>
-                <SelectItem value="hourAndDay">Hour & Day</SelectItem>
-                <SelectItem value="dayAndWeek">Day & Week</SelectItem>
-                <SelectItem value="weekAndDay">Week & Day</SelectItem>
-                <SelectItem value="weekAndMonth">Week & Month</SelectItem>
-                <SelectItem value="monthAndYear">Month & Year</SelectItem>
-              </SelectContent>
-            </Select>
+  const handleSaveFavorite = () => {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler) {
+      const name = prompt('Enter a name for this view:');
+      if (name) {
+        const favorite = {
+          id: Date.now().toString(),
+          name,
+          description: `Saved on ${new Date().toLocaleDateString()}`,
+          config: {
+            viewPreset: scheduler.viewPreset,
+            startDate: scheduler.startDate.toISOString(),
+            endDate: scheduler.endDate.toISOString()
+          },
+          createdAt: new Date().toISOString(),
+          createdBy: '1'
+        };
+        favoritesService.saveFavorite(favorite);
+        setFavorites([...favorites, favorite]);
+        toast({
+          title: "Saved",
+          description: `View "${name}" saved successfully`
+        });
+      }
+    }
+  };
 
+  const handleLoadFavorite = (favoriteId: string) => {
+    const scheduler = schedulerRef.current?.instance;
+    const favorite = favoritesService.getFavorite(favoriteId);
+    if (scheduler && favorite) {
+      scheduler.viewPreset = favorite.config.viewPreset;
+      scheduler.startDate = new Date(favorite.config.startDate);
+      scheduler.endDate = new Date(favorite.config.endDate);
+      toast({
+        title: "Loaded",
+        description: `View "${favorite.name}" loaded`
+      });
+    }
+  };
+
+  // Event handlers
+  const handleSchedulerEvent = useMemo(() => ({
+    beforeEventEdit: ({ eventRecord }: any) => {
+      console.log('Editing event:', eventRecord);
+      return true;
+    },
+    beforeEventSave: ({ eventRecord, values }: any) => {
+      console.log('Saving event:', eventRecord, values);
+      return true;
+    },
+    beforeEventDelete: ({ eventRecords }: any) => {
+      console.log('Deleting events:', eventRecords);
+      return true;
+    },
+    eventDrop: ({ eventRecords, targetResourceRecord, startDate }: any) => {
+      console.log('Event dropped:', eventRecords, targetResourceRecord, startDate);
+    },
+    eventResizeEnd: ({ eventRecord, startDate, endDate }: any) => {
+      console.log('Event resized:', eventRecord, startDate, endDate);
+    },
+    dependencyAdd: ({ dependency }: any) => {
+      console.log('Dependency added:', dependency);
+    },
+    dependencyRemove: ({ dependency }: any) => {
+      console.log('Dependency removed:', dependency);
+    }
+  }), []);
+
+  if (isLoading || !schedulerData || !schedulerConfig) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4">Loading Scheduler...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-screen bg-gray-50">
+      {/* Toolbar */}
+      <div className="bg-white border-b px-4 py-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
             {/* Zoom Controls */}
-            <div className="flex items-center gap-1">
-              <Button 
-                variant="outline" 
+            <div className="flex items-center gap-1 border-r pr-2">
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleZoomIn}
                 title="Zoom In"
               >
                 <ZoomIn className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleZoomOut}
                 title="Zoom Out"
               >
                 <ZoomOut className="h-4 w-4" />
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="ghost"
                 size="icon"
                 onClick={handleZoomToFit}
                 title="Zoom to Fit"
@@ -427,128 +304,105 @@ const ProductionSchedulerPro: React.FC = () => {
               </Button>
             </div>
 
+            {/* View Selector */}
+            <Select value={currentView} onValueChange={handleViewChange}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Select View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hourAndDay">Hour & Day</SelectItem>
+                <SelectItem value="dayAndWeek">Day & Week</SelectItem>
+                <SelectItem value="weekAndDay">Week & Day</SelectItem>
+                <SelectItem value="weekAndDayLetter">Week & Day (Letter)</SelectItem>
+                <SelectItem value="weekAndMonth">Week & Month</SelectItem>
+                <SelectItem value="monthAndYear">Month & Year</SelectItem>
+                <SelectItem value="year">Year</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Optimization Algorithms */}
+            <Select onValueChange={handleOptimize}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Optimization Algorithm" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asap">ASAP</SelectItem>
+                <SelectItem value="alap">ALAP</SelectItem>
+                <SelectItem value="critical">Critical Path</SelectItem>
+                <SelectItem value="resource">Level Resources</SelectItem>
+                <SelectItem value="toc">Theory of Constraints</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button variant="outline" onClick={handleRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
             {/* Favorites */}
-            <Select value={selectedFavorite} onValueChange={handleLoadFavorite}>
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Load favorite view" />
+            <Select onValueChange={handleLoadFavorite}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Load Favorite" />
               </SelectTrigger>
               <SelectContent>
                 {favorites.map(fav => (
                   <SelectItem key={fav.id} value={fav.id}>
-                    <Star className="h-3 w-3 inline mr-1" />
-                    {fav.name}
+                    <div className="flex items-center">
+                      <Star className="h-3 w-3 mr-2" />
+                      {fav.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Optimization Algorithms */}
-            <Select onValueChange={handleRunOptimization}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Run optimization" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asap">
-                  <Play className="h-3 w-3 inline mr-1" />
-                  ASAP (Forward)
-                </SelectItem>
-                <SelectItem value="alap">
-                  <Pause className="h-3 w-3 inline mr-1" />
-                  ALAP (Backward)
-                </SelectItem>
-                <SelectItem value="critical">
-                  <FastForward className="h-3 w-3 inline mr-1" />
-                  Critical Path
-                </SelectItem>
-                <SelectItem value="level">
-                  Level Resources
-                </SelectItem>
-                <SelectItem value="toc">
-                  Theory of Constraints
-                </SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Actions */}
-            <Button 
-              variant="outline" 
-              size="icon"
-              onClick={handleRefresh}
-              title="Refresh Data"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-
-            <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="icon" title="Save View">
-                  <Save className="h-4 w-4" />
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Save Current View as Favorite</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="favorite-name">Name</Label>
-                    <Input
-                      id="favorite-name"
-                      value={favoriteName}
-                      onChange={(e) => setFavoriteName(e.target.value)}
-                      placeholder="Enter favorite name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="favorite-description">Description (optional)</Label>
-                    <Textarea
-                      id="favorite-description"
-                      value={favoriteDescription}
-                      onChange={(e) => setFavoriteDescription(e.target.value)}
-                      placeholder="Enter description"
-                      rows={3}
-                    />
-                  </div>
-                  <Button onClick={handleSaveFavorite} className="w-full">
-                    Save Favorite
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-
-            <Button variant="outline" size="icon" title="Settings">
-              <Settings className="h-4 w-4" />
+            
+            <Button variant="outline" onClick={handleSaveFavorite}>
+              <Save className="h-4 w-4 mr-2" />
+              Save View
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
+      {/* Scheduler Component */}
       <div className="flex-1 relative">
-        {isLoading && (
-          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <RefreshCw className="h-8 w-8 animate-spin text-primary" />
-              <p className="text-sm text-muted-foreground">Loading scheduler...</p>
-            </div>
-          </div>
-        )}
-        
-        <div ref={containerRef} className="h-full w-full" />
+        <BryntumSchedulerPro
+          ref={schedulerRef}
+          {...schedulerConfig}
+          project={schedulerData.project}
+          onBeforeEventEdit={handleSchedulerEvent.beforeEventEdit}
+          onBeforeEventSave={handleSchedulerEvent.beforeEventSave}
+          onBeforeEventDelete={handleSchedulerEvent.beforeEventDelete}
+          onEventDrop={handleSchedulerEvent.eventDrop}
+          onEventResizeEnd={handleSchedulerEvent.eventResizeEnd}
+          onDependencyAdd={handleSchedulerEvent.dependencyAdd}
+          onDependencyRemove={handleSchedulerEvent.dependencyRemove}
+        />
       </div>
 
       {/* Status Bar */}
-      <div className="border-t bg-card px-4 py-2">
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
-          <div>
-            Ready • Demo Data Loaded
-          </div>
+      <div className="bg-white border-t px-4 py-2">
+        <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center gap-4">
-            <span>Resources: 8</span>
-            <span>Operations: 6</span>
-            <span>Dependencies: 5</span>
+            <span>Resources: {resourceCount}</span>
+            <span>Operations: {operationCount}</span>
+            <span>View: {currentView}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm">
+              <Download className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Upload className="h-4 w-4 mr-2" />
+              Import
+            </Button>
+            <Button variant="ghost" size="sm">
+              <Filter className="h-4 w-4 mr-2" />
+              Filter
+            </Button>
           </div>
         </div>
       </div>
@@ -556,4 +410,4 @@ const ProductionSchedulerPro: React.FC = () => {
   );
 };
 
-export default ProductionSchedulerPro;
+export default ProductionSchedulerProV2;
