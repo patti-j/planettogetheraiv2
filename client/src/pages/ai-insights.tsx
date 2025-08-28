@@ -101,7 +101,7 @@ export default function AIInsightsPage() {
 
   // Fetch insights data
   const { data: insights = [], isLoading, refetch } = useQuery<AIInsight[]>({
-    queryKey: ['/api/ai-insights', timeRange, location],
+    queryKey: [`/api/ai-insights?days=${timeRange.replace('d', '')}`],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
@@ -199,7 +199,7 @@ export default function AIInsightsPage() {
       console.log('Generated fresh insights:', dynamicInsights.length);
       
       // Update the query cache with fresh insights
-      queryClient.setQueryData(['/api/ai-insights', timeRange, location], dynamicInsights);
+      queryClient.setQueryData([`/api/ai-insights?days=${timeRange.replace('d', '')}`], dynamicInsights);
       
       toast({
         title: "Fresh Insights Generated",
