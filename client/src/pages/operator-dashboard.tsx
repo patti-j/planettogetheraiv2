@@ -39,9 +39,7 @@ import {
   FileText,
   Camera,
   Upload,
-  Send,
-  Maximize2,
-  Minimize2
+  Send
 } from "lucide-react";
 import { Job, Operation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
@@ -97,7 +95,7 @@ interface StatusReport {
 }
 
 export default function OperatorDashboard() {
-  const [isMaximized, setIsMaximized] = useState(false);
+
   const [selectedResource, setSelectedResource] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("upcoming");
   const [selectedOperation, setSelectedOperation] = useState<OperatorOperation | null>(null);
@@ -654,17 +652,7 @@ export default function OperatorDashboard() {
   const completedTodayCount = resourceFilteredOperations.filter(op => op.status === "completed").length;
 
   return (
-    <div className={`bg-gray-50 ${isMaximized ? 'fixed inset-0 z-50' : 'h-screen'} flex flex-col`}>
-      {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed top-2 right-2 z-50">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMaximized(!isMaximized)}
-        >
-          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </Button>
-      </div>
+    <div className="bg-gray-50 h-screen flex flex-col">
       {/* Header - Much more compact on mobile */}
       <div className="bg-white shadow-sm border-b p-1 sm:p-3 md:p-6 flex-shrink-0">
         <div className="relative">
