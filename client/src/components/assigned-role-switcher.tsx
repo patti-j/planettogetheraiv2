@@ -105,7 +105,7 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
         duration: 1500,
       });
       
-      // Only invalidate role-related and auth queries, preserve other app data
+      // Immediately invalidate all role and user-related queries to refresh UI
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
       await queryClient.invalidateQueries({ 
         predicate: query => 
@@ -114,10 +114,18 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
           query.queryKey[0]?.toString().includes("users")
       });
       
-      // Reload the page after a short delay to refresh UI with new role
+      // Immediately refetch user data to update UI state
+      await queryClient.refetchQueries({ queryKey: ["/api/auth/me"] });
+      
+      // Remove overlay after successful role switch
       setTimeout(() => {
-        window.location.href = '/dashboard';
-      }, 800);
+        const overlay = document.getElementById('role-switch-overlay');
+        if (overlay) {
+          overlay.remove();
+        }
+        // Force a complete page reload to ensure all components reflect new role
+        window.location.reload();
+      }, 1000);
     },
     onError: (error: any) => {
       // Remove overlay on error if it exists
