@@ -29036,7 +29036,336 @@ Be careful to preserve data integrity and relationships.`;
           affected_areas: ['Production Line A', 'Production Line B'],
           estimated_savings: 2840,
           implementation_time: '15 minutes',
-          related_insights: []
+          related_insights: [],
+          scheduling_details: {
+            algorithm: 'Critical Path Optimization',
+            current_makespan: '18.2 hours',
+            optimized_makespan: '14.8 hours',
+            bottleneck_resource: 'Brew Kettle 1',
+            suggested_changes: [
+              {
+                operation: 'Milling - Newcastle Brown Ale',
+                current_start: '2025-08-28T06:00:00Z',
+                suggested_start: '2025-08-28T04:30:00Z',
+                reason: 'Earlier start reduces bottleneck waiting time'
+              },
+              {
+                operation: 'Fermentation - IPA Batch 401',
+                current_start: '2025-08-28T10:00:00Z', 
+                suggested_start: '2025-08-28T14:00:00Z',
+                reason: 'Parallel processing with milling operation'
+              }
+            ]
+          }
+        },
+        {
+          id: '7',
+          type: 'schedule',
+          title: 'Optimal Production Sequence for Tomorrow',
+          description: 'AI Schedule Generator recommends reordering 6 production jobs tomorrow to achieve 18% faster completion and reduce energy costs by $450.',
+          priority: 'high',
+          timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+          source: 'schedule_optimizer',
+          category: 'scheduling',
+          status: 'new',
+          actionable: true,
+          impact: 'Complete all jobs 3.2 hours earlier with 18% energy savings',
+          recommendation: 'Apply the optimized production sequence starting at 6:00 AM tomorrow',
+          confidence: 94,
+          affected_areas: ['All Production Lines', 'Energy Management'],
+          estimated_savings: 1250,
+          implementation_time: '5 minutes to apply',
+          related_insights: ['8'],
+          scheduling_details: {
+            algorithm: 'Energy-Aware Job Shop Scheduling',
+            jobs_affected: 6,
+            current_completion_time: '17:45',
+            optimized_completion_time: '14:30',
+            energy_reduction: '18%',
+            sequence_changes: [
+              {
+                job: 'Newcastle Brown Ale - Batch 901',
+                current_position: 3,
+                new_position: 1,
+                reason: 'High-temperature process benefits from morning ambient conditions'
+              },
+              {
+                job: 'IPA Premium - Batch 402', 
+                current_position: 1,
+                new_position: 4,
+                reason: 'Lower priority, can utilize afternoon slot efficiently'
+              },
+              {
+                job: 'Lager Classic - Batch 203',
+                current_position: 5,
+                new_position: 2,
+                reason: 'Parallel processing opportunity with reduced changeover'
+              }
+            ]
+          }
+        },
+        {
+          id: '8', 
+          type: 'constraint',
+          title: 'Resource Constraint Resolution Recommendation',
+          description: 'Identified scheduling conflict: Brew Kettle 1 is overbooked by 2.5 hours on Thursday. AI suggests load balancing across available kettles.',
+          priority: 'critical',
+          timestamp: new Date(Date.now() - 1 * 60 * 60 * 1000).toISOString(), // 1 hour ago
+          source: 'constraint_solver',
+          category: 'capacity',
+          status: 'new',
+          actionable: true,
+          impact: 'Prevents production delays and maintains on-time delivery for 3 customer orders',
+          recommendation: 'Redistribute 2 operations to Brew Kettle 2 and adjust downstream operations accordingly',
+          confidence: 89,
+          affected_areas: ['Brew House', 'Packaging Line'],
+          estimated_savings: 3200,
+          implementation_time: '20 minutes',
+          related_insights: ['7', '9'],
+          scheduling_details: {
+            constraint_type: 'Resource Capacity',
+            overbooked_resource: 'Brew Kettle 1',
+            overbook_amount: '2.5 hours',
+            alternative_resources: ['Brew Kettle 2', 'Brew Kettle 3'],
+            redistribution_plan: [
+              {
+                operation: 'Premium Lager Batch 505',
+                from: 'Brew Kettle 1',
+                to: 'Brew Kettle 2',
+                time_slot: '2025-08-29T10:00:00Z - 2025-08-29T14:00:00Z'
+              },
+              {
+                operation: 'Wheat Beer Batch 306', 
+                from: 'Brew Kettle 1',
+                to: 'Brew Kettle 3',
+                time_slot: '2025-08-29T14:30:00Z - 2025-08-29T17:00:00Z'
+              }
+            ]
+          }
+        },
+        {
+          id: '9',
+          type: 'algorithm',
+          title: 'Multi-Objective Scheduling Algorithm Recommendation', 
+          description: 'For current production mix, switch from ASAP to TOC Drum scheduling algorithm to improve throughput by 15% while maintaining quality standards.',
+          priority: 'medium',
+          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(), // 4 hours ago
+          source: 'algorithm_advisor',
+          category: 'methodology',
+          status: 'new',
+          actionable: true,
+          impact: 'Increase daily throughput from 95 units to 109 units while reducing WIP inventory',
+          recommendation: 'Configure production scheduler to use TOC Drum algorithm for beer production lines',
+          confidence: 87,
+          affected_areas: ['Scheduling Engine', 'All Production Lines'],
+          estimated_savings: 2100,
+          implementation_time: '2 hours for setup and testing',
+          related_insights: ['8'],
+          scheduling_details: {
+            current_algorithm: 'ASAP (As Soon As Possible)',
+            recommended_algorithm: 'TOC Drum (Theory of Constraints)',
+            drum_resource: 'Fermentation Tank Bank',
+            expected_improvements: {
+              throughput_increase: '15%',
+              wip_reduction: '22%',
+              cycle_time_reduction: '8%',
+              on_time_delivery_improvement: '12%'
+            },
+            configuration_steps: [
+              'Identify drum resource (Fermentation capacity)',
+              'Set subordination rules for upstream operations',
+              'Configure buffer management for drum protection',
+              'Implement rope mechanism for material release'
+            ]
+          }
+        },
+        {
+          id: '10',
+          type: 'performance',
+          title: 'Weekly Schedule Performance Analysis',
+          description: 'This week schedule achieved 94% on-time delivery. Analysis shows 3 specific improvements could reach 99% performance target.',
+          priority: 'medium',
+          timestamp: new Date(Date.now() - 18 * 60 * 60 * 1000).toISOString(), // 18 hours ago
+          source: 'performance_analyzer',
+          category: 'kpi',
+          status: 'new',
+          actionable: true,
+          impact: 'Achieve 99% on-time delivery target and improve customer satisfaction scores',
+          recommendation: 'Implement the 3 identified schedule refinements for next week planning',
+          confidence: 91,
+          affected_areas: ['Customer Service', 'Production Planning'],
+          estimated_savings: 1850,
+          implementation_time: '1 hour for planning adjustments',
+          related_insights: [],
+          scheduling_details: {
+            current_otd: '94%',
+            target_otd: '99%',
+            gap_analysis: '5% improvement needed',
+            root_causes: [
+              {
+                issue: 'Setup time variability',
+                frequency: '40% of delays',
+                solution: 'Add 15-minute buffer for complex changeovers'
+              },
+              {
+                issue: 'Material availability delays',
+                frequency: '35% of delays', 
+                solution: 'Implement 2-day material staging for critical jobs'
+              },
+              {
+                issue: 'Quality inspection queues',
+                frequency: '25% of delays',
+                solution: 'Schedule quality checks in parallel with next operation setup'
+              }
+            ],
+            weekly_metrics: {
+              jobs_completed: 47,
+              jobs_on_time: 44,
+              average_lateness: '2.3 hours',
+              schedule_adherence: '87%'
+            }
+          }
+        },
+        {
+          id: '11',
+          type: 'schedule',
+          title: 'Real-Time Schedule Adjustment Recommendation',
+          description: 'Equipment maintenance on Line 2 requires immediate 3-hour schedule adjustment. AI recommends optimal load redistribution to minimize impact.',
+          priority: 'critical',
+          timestamp: new Date(Date.now() - 15 * 60 * 1000).toISOString(), // 15 minutes ago
+          source: 'real_time_optimizer',
+          category: 'emergency',
+          status: 'new',
+          actionable: true,
+          impact: 'Maintain 96% of planned production output despite unplanned downtime',
+          recommendation: 'Execute emergency schedule rebalancing across Lines 1 and 3 immediately',
+          confidence: 92,
+          affected_areas: ['Production Line 1', 'Production Line 2', 'Production Line 3'],
+          estimated_savings: 8500,
+          implementation_time: 'Immediate - 10 minutes',
+          related_insights: ['12'],
+          scheduling_details: {
+            disruption_type: 'Unplanned Maintenance',
+            affected_operations: [
+              'Wheat Beer Batch 307 - Mashing',
+              'Pilsner Batch 105 - Boiling', 
+              'Stout Batch 202 - Cooling'
+            ],
+            rebalancing_plan: {
+              'Wheat Beer Batch 307': {
+                original_line: 'Line 2',
+                reassigned_to: 'Line 1',
+                time_adjustment: '+45 minutes',
+                completion_impact: 'Delayed by 45 min'
+              },
+              'Pilsner Batch 105': {
+                original_line: 'Line 2',
+                reassigned_to: 'Line 3',
+                time_adjustment: '+30 minutes',
+                completion_impact: 'Delayed by 30 min'
+              }
+            },
+            recovery_metrics: {
+              original_completion: '2025-08-28T18:00:00Z',
+              adjusted_completion: '2025-08-28T19:15:00Z',
+              production_maintained: '96%',
+              customer_orders_protected: 8
+            }
+          }
+        },
+        {
+          id: '12',
+          type: 'prediction',
+          title: 'Demand Spike Schedule Preparation',
+          description: 'Forecasting models predict 40% demand increase for Weekend Special Brew starting Friday. Recommend preemptive capacity allocation.',
+          priority: 'high',
+          timestamp: new Date(Date.now() - 8 * 60 * 60 * 1000).toISOString(), // 8 hours ago
+          source: 'demand_predictor',
+          category: 'capacity_planning',
+          status: 'new',
+          actionable: true,
+          impact: 'Capture additional $15,000 revenue opportunity while maintaining service levels',
+          recommendation: 'Reserve 60% of Friday-Sunday capacity for Weekend Special production',
+          confidence: 85,
+          affected_areas: ['Production Planning', 'Raw Materials', 'Packaging'],
+          estimated_savings: 15000,
+          implementation_time: '4 hours for capacity reallocation',
+          related_insights: ['11'],
+          scheduling_details: {
+            product: 'Weekend Special Brew',
+            demand_increase: '40%',
+            affected_period: 'Friday 6AM - Sunday 11PM',
+            capacity_requirements: {
+              brewing_time: '16 additional hours',
+              fermentation_tanks: '4 additional tanks needed',
+              packaging_slots: '12 hours additional packaging time'
+            },
+            recommended_actions: [
+              {
+                action: 'Reschedule regular production',
+                timeline: 'Tuesday-Thursday intensification',
+                impact: 'Move 3 regular batches to early week'
+              },
+              {
+                action: 'Secure additional raw materials',
+                timeline: 'Order by Wednesday noon',
+                impact: 'Ensure adequate malt and hops inventory'
+              },
+              {
+                action: 'Staff overtime scheduling',
+                timeline: 'Confirm by Thursday',
+                impact: 'Weekend crew expansion for extended operations'
+              }
+            ]
+          }
+        },
+        {
+          id: '13',
+          type: 'optimization',
+          title: 'Cross-Plant Production Balance Opportunity',
+          description: 'Analysis shows Plant A running at 78% capacity while Plant B at 98%. Recommend job redistribution for optimal utilization.',
+          priority: 'medium',
+          timestamp: new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString(), // 24 hours ago
+          source: 'multi_plant_optimizer',
+          category: 'capacity',
+          status: 'new',
+          actionable: true,
+          impact: 'Improve overall plant utilization to 89% and reduce overtime costs by $3,200',
+          recommendation: 'Transfer 4 production orders from Plant B to Plant A for balanced loading',
+          confidence: 88,
+          affected_areas: ['Plant A', 'Plant B', 'Logistics'],
+          estimated_savings: 3200,
+          implementation_time: '2 days for coordination and transfer',
+          related_insights: [],
+          scheduling_details: {
+            current_utilization: {
+              'Plant A': '78%',
+              'Plant B': '98%'
+            },
+            target_utilization: {
+              'Plant A': '87%', 
+              'Plant B': '91%'
+            },
+            transfer_candidates: [
+              {
+                order: 'Seasonal Ale Batch 801',
+                complexity: 'Low',
+                transfer_time: '6 hours',
+                setup_requirements: 'Standard equipment available'
+              },
+              {
+                order: 'Light Beer Batch 502',
+                complexity: 'Medium',
+                transfer_time: '12 hours',
+                setup_requirements: 'Minor recipe adjustments needed'
+              }
+            ],
+            logistics_impact: {
+              transportation_cost: '$450',
+              coordination_effort: '8 person-hours',
+              risk_level: 'Low'
+            }
+          }
         },
         {
           id: '2',
@@ -29159,6 +29488,188 @@ Be careful to preserve data integrity and relationships.`;
     } catch (error) {
       console.error('Error fetching AI insights:', error);
       res.status(500).json({ error: 'Failed to fetch AI insights' });
+    }
+  }));
+
+  // Dedicated AI Schedule Recommendations endpoint
+  app.get('/api/ai-schedule-recommendations', createSafeHandler(async (req, res) => {
+    try {
+      const { timeRange = '24h', priority } = req.query;
+      
+      // Generate schedule-specific AI recommendations
+      const scheduleRecommendations = [
+        {
+          id: 'sched_1',
+          type: 'immediate_action',
+          title: 'Critical Path Optimization Available Now',
+          description: 'Immediate 2.3-hour reduction in total production time available by resequencing 3 high-priority jobs currently in queue.',
+          priority: 'critical',
+          algorithm: 'Critical Path Method with Resource Leveling',
+          time_savings: '2.3 hours',
+          cost_savings: 1840,
+          confidence: 96,
+          implementation_time: '8 minutes',
+          affected_jobs: ['Newcastle Brown Ale Batch 901', 'IPA Premium Batch 402', 'Stout Classic Batch 201'],
+          resource_conflicts: 0,
+          customer_impact: 'Positive - 3 orders delivered 2+ hours early',
+          details: {
+            current_completion: '2025-08-28T17:30:00Z',
+            optimized_completion: '2025-08-28T15:12:00Z',
+            key_changes: [
+              {
+                job: 'Newcastle Brown Ale Batch 901',
+                change: 'Start 90 minutes earlier on Line 1',
+                reason: 'Utilizes morning peak efficiency period'
+              },
+              {
+                job: 'IPA Premium Batch 402',
+                change: 'Parallel fermentation on Tank 3',
+                reason: 'Eliminates sequential bottleneck'
+              }
+            ]
+          }
+        },
+        {
+          id: 'sched_2',
+          type: 'daily_optimization',
+          title: 'Tomorrow\'s Production Sequence Optimization',
+          description: 'AI generated optimal production sequence for Thursday reduces energy consumption by 22% and improves throughput by 14%.',
+          priority: 'high',
+          algorithm: 'Multi-Objective Genetic Algorithm',
+          time_savings: '4.7 hours',
+          cost_savings: 3200,
+          energy_reduction: '22%',
+          confidence: 91,
+          implementation_time: '15 minutes to apply schedule',
+          affected_jobs: ['All 8 scheduled production jobs for Thursday'],
+          resource_conflicts: 0,
+          customer_impact: 'Neutral - maintains all delivery commitments',
+          details: {
+            total_jobs: 8,
+            sequence_changes: 6,
+            optimal_sequence: [
+              'Wheat Beer Batch 307 - 6:00 AM (High temp process during cool morning)',
+              'Pilsner Batch 105 - 8:30 AM (Quick changeover from wheat)',
+              'Lager Classic Batch 203 - 11:00 AM (Peak efficiency period)',
+              'Stout Batch 202 - 2:00 PM (Afternoon steady operations)',
+              'Light Beer Batch 404 - 4:30 PM (Low complexity for shift change)',
+              'IPA Batch 501 - 6:00 PM (Extended process for night shift)'
+            ],
+            energy_benefits: {
+              peak_hour_avoidance: '$450 savings',
+              thermal_efficiency: '$180 savings',
+              demand_charge_reduction: '$270 savings'
+            }
+          }
+        },
+        {
+          id: 'sched_3',
+          type: 'constraint_resolution',
+          title: 'Bottleneck Resolution - Fermentation Capacity',
+          description: 'Smart scheduling resolves Friday fermentation tank shortage by 6-hour staggered start pattern, maintaining all deliveries.',
+          priority: 'high',
+          algorithm: 'Constraint Programming with Time Windows',
+          time_savings: '0 hours (maintains schedule)',
+          cost_savings: 2100,
+          confidence: 94,
+          implementation_time: '12 minutes to reschedule',
+          affected_jobs: ['All Friday fermentation operations'],
+          resource_conflicts: 'Resolves 1 critical conflict',
+          customer_impact: 'Positive - maintains all delivery dates',
+          details: {
+            constraint: 'Fermentation tank capacity shortage (5 needed, 4 available)',
+            solution: 'Staggered start times with optimized tank utilization',
+            tank_schedule: {
+              'Tank 1': 'Lager Batch 601 (Fri 6:00 AM - Sun 2:00 PM)',
+              'Tank 2': 'IPA Batch 602 (Fri 12:00 PM - Mon 8:00 AM)', 
+              'Tank 3': 'Wheat Batch 603 (Fri 6:00 PM - Mon 2:00 PM)',
+              'Tank 4': 'Stout Batch 604 (Sat 6:00 AM - Tue 2:00 PM)'
+            },
+            risk_mitigation: 'Built-in 2-hour buffer for each fermentation cycle'
+          }
+        },
+        {
+          id: 'sched_4',
+          type: 'predictive_scheduling',
+          title: 'Weather-Based Schedule Optimization',
+          description: 'Forecast shows ideal brewing conditions Monday-Tuesday. Reschedule temperature-sensitive operations for 8% quality improvement.',
+          priority: 'medium',
+          algorithm: 'Weather-Aware Scheduling with Quality Optimization',
+          quality_improvement: '8%',
+          cost_savings: 950,
+          confidence: 87,
+          implementation_time: '25 minutes to reorganize',
+          affected_jobs: ['Temperature-sensitive brewing operations'],
+          resource_conflicts: 0,
+          customer_impact: 'Positive - higher quality products delivered',
+          details: {
+            weather_forecast: {
+              monday: 'Optimal: 68°F, 45% humidity, stable pressure',
+              tuesday: 'Good: 72°F, 50% humidity, stable pressure',
+              current_week: 'Suboptimal: 78°F, 65% humidity, variable pressure'
+            },
+            operations_to_move: [
+              'Premium Lager fermentation start',
+              'Wheat Beer temperature-critical mashing',
+              'Quality-grade IPA brewing process'
+            ],
+            expected_benefits: {
+              consistency: '+12% batch consistency',
+              yield: '+3% ingredient utilization',
+              quality_score: '+8% average quality rating'
+            }
+          }
+        },
+        {
+          id: 'sched_5',
+          type: 'cost_optimization',
+          title: 'Labor Cost Optimization Opportunity',
+          description: 'Reschedule 4 non-critical operations to regular hours, reducing overtime costs by $1,200 while maintaining production targets.',
+          priority: 'medium',
+          algorithm: 'Labor Cost Minimization with Production Constraints',
+          cost_savings: 1200,
+          confidence: 92,
+          implementation_time: '18 minutes to adjust',
+          affected_jobs: ['4 non-critical maintenance and setup operations'],
+          resource_conflicts: 0,
+          customer_impact: 'Neutral - no delivery impact',
+          details: {
+            overtime_reduction: '16 hours @ $75/hour saved',
+            operations_rescheduled: [
+              'Equipment deep cleaning - moved to Tuesday morning',
+              'Line 2 calibration - moved to Wednesday early shift', 
+              'Inventory count - distributed across regular hours',
+              'Preventive maintenance - scheduled during normal operations'
+            ],
+            labor_schedule_impact: {
+              overtime_hours_saved: 16,
+              regular_hours_utilized: '+12 hours',
+              efficiency_maintained: '100%'
+            }
+          }
+        }
+      ];
+
+      // Filter by priority if specified
+      const filteredRecommendations = priority 
+        ? scheduleRecommendations.filter(rec => rec.priority === priority)
+        : scheduleRecommendations;
+
+      res.json({
+        recommendations: filteredRecommendations,
+        summary: {
+          total_recommendations: filteredRecommendations.length,
+          total_savings: filteredRecommendations.reduce((sum, rec) => sum + (rec.cost_savings || 0), 0),
+          implementation_time: filteredRecommendations.reduce((sum, rec) => {
+            const time = rec.implementation_time.match(/(\d+)/);
+            return sum + (time ? parseInt(time[1]) : 0);
+          }, 0) + ' minutes total',
+          high_priority_count: filteredRecommendations.filter(rec => rec.priority === 'critical' || rec.priority === 'high').length
+        }
+      });
+    } catch (error) {
+      console.error("Error fetching AI schedule recommendations:", error);
+      res.status(500).json({ error: "Failed to fetch schedule recommendations" });
     }
   }));
 
