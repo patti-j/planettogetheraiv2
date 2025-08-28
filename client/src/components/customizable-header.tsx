@@ -59,6 +59,7 @@ const iconMap = {
 // Default header items by role
 const defaultHeaderItemsByRole = {
   'Administrator': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
@@ -67,6 +68,7 @@ const defaultHeaderItemsByRole = {
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Production Manager': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
@@ -75,6 +77,7 @@ const defaultHeaderItemsByRole = {
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Plant Manager': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking' },
     { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio' },
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
@@ -83,6 +86,7 @@ const defaultHeaderItemsByRole = {
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Operator': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard' },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
     { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat' },
@@ -91,9 +95,26 @@ const defaultHeaderItemsByRole = {
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ],
   'Quality Manager': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
+    { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
+  ],
+  'Maintenance Manager': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'maintenance', label: 'Maintenance', icon: 'Settings', href: '/maintenance' },
+    { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
+    { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
+    { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
+    { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
+  ],
+  'Supply Chain Manager': [
+    { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'inventory', label: 'Inventory', icon: 'Package', href: '/inventory-optimization' },
+    { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning' },
+    { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'theme', label: 'Theme', icon: 'Settings', action: 'theme', alwaysVisible: true }
   ]
