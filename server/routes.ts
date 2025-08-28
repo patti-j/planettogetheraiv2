@@ -29117,82 +29117,63 @@ Be careful to preserve data integrity and relationships.`;
       if (force_refresh === 'true') {
         console.log('🤖 Generating fresh AI insights using OpenAI...');
         
-        // Fetch current production data for analysis
+        // Fetch minimal production data for analysis - reduce payload size
         const [operations, alerts, resources] = await Promise.all([
-          // Get current operations data
-          db.select().from(schema.ptJobOperations).limit(50),
-          // Get recent alerts
-          db.select().from(schema.alerts).where(sql`created_at >= NOW() - INTERVAL '7 days'`).limit(20),
-          // Get resource data
-          db.select().from(schema.ptResources).limit(20)
+          // Get only 10 most recent operations
+          db.select().from(schema.ptJobOperations).limit(10),
+          // Get only 5 recent critical alerts
+          db.select().from(schema.alerts).where(sql`created_at >= NOW() - INTERVAL '24 hours'`).limit(5),
+          // Get only 5 key resources
+          db.select().from(schema.ptResources).limit(5)
         ]);
 
-        // Prepare data for AI analysis
-        const productionData = {
-          operations: operations.map(op => ({
-            id: op.id,
+        // Prepare minimal data summary for AI analysis
+        const productionSummary = {
+          operations_count: operations.length,
+          active_operations: operations.filter(op => op.status === 'active').length,
+          recent_alerts: alerts.length,
+          critical_alerts: alerts.filter(a => a.severity === 'critical').length,
+          resources_count: resources.length,
+          sample_operations: operations.slice(0, 3).map(op => ({
             name: op.name,
-            status: op.status || 'planned',
-            scheduledStart: op.scheduledStart,
-            scheduledEnd: op.scheduledEnd,
-            setupHours: op.setupHours,
-            runHrs: op.runHrs
-          })),
-          alerts: alerts.map(alert => ({
-            type: alert.type,
-            severity: alert.severity,
-            message: alert.message,
-            createdAt: alert.createdAt
-          })),
-          resources: resources.map(res => ({
-            name: res.name,
-            type: res.type,
-            status: res.status,
-            utilization: res.utilization
+            status: op.status || 'planned'
           }))
         };
 
         // Use OpenAI to analyze production data
         const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
         
-        const prompt = `You are Max AI, an expert manufacturing production analyst. Analyze the following real production data and generate actionable insights.
+        const prompt = `You are Max AI, a manufacturing analyst. Based on this production summary, generate 3 quick insights:
 
-Production Data:
-${JSON.stringify(productionData, null, 2)}
+Summary: ${JSON.stringify(productionSummary, null, 2)}
 
-Generate 5-8 specific, actionable insights in JSON format. Each insight should include:
-- type: one of [optimization, anomaly, recommendation, bottleneck, forecast, quality, maintenance]
-- title: specific, actionable title
-- description: detailed analysis with specific data points
-- priority: critical/high/medium/low based on impact
-- category: production/quality/maintenance/supply_chain/efficiency
-- actionable: true/false
-- impact: specific business impact with numbers when possible
-- recommendation: specific actions to take
-- confidence: 0-100 percentage
-- affected_areas: array of specific areas/equipment
-- estimated_savings: dollar amount if applicable
-- implementation_time: time estimate
+Return JSON with "insights" array. Each insight needs:
+- type: optimization/quality/maintenance 
+- title: brief title
+- description: 1-2 sentences
+- priority: high/medium/low
+- category: production/quality/maintenance
+- confidence: 85-95
 
-Focus on real inefficiencies, bottlenecks, optimization opportunities, and predictive insights based on the actual data provided.`;
+Keep it brief and actionable.`;
 
         try {
           console.log('🚀 Making OpenAI API request for AI insights...');
           
-          // Add timeout handling with 30 second limit
+          // Add timeout handling with 15 second limit for faster response
           const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('AI analysis timed out. This may be due to high server load.')), 30000);
+            setTimeout(() => reject(new Error('AI analysis timed out. This may be due to high server load.')), 15000);
           });
 
           const apiPromise = openai.chat.completions.create({
             model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
             messages: [
-              { role: "system", content: "You are Max AI, an expert manufacturing analyst. Generate insights in JSON format with an 'insights' array." },
+              { role: "system", content: "You are Max AI. Return brief JSON with 'insights' array." },
               { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
-            max_tokens: 3000,
-            temperature: 0.3
+            max_tokens: 800, // Reduced for faster processing
+            temperature: 0.1  // Lower temperature for consistent, quick responses
           });
 
           const response = await Promise.race([apiPromise, timeoutPromise]) as any;
