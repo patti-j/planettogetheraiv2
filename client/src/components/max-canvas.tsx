@@ -637,22 +637,22 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
         );
 
       case 'bar':
-        // Calculate domain for proper scaling
-        const values = chartData.map((item: any) => Number(item.value) || 0);
-        const maxValue = Math.max(...values);
-        const minValue = Math.min(...values);
-        const domain = [Math.max(0, minValue - (maxValue * 0.1)), maxValue + (maxValue * 0.1)];
+        // Ensure data is properly formatted for bar charts
+        const processedData = chartData.map((item: any) => ({
+          name: item.name || item.label || 'Unknown',
+          value: Number(item.value) || 0
+        }));
         
-        console.log('Bar chart data:', chartData);
-        console.log('Values:', values);
-        console.log('Domain:', domain);
+        console.log('Bar chart data (original):', chartData);
+        console.log('Bar chart data (processed):', processedData);
         
+        // Let Recharts handle auto-scaling for proper bar height differences
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={chartData}>
+            <RechartsBarChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
-              <YAxis domain={domain} />
+              <YAxis />
               <Tooltip />
               <Legend />
               <Bar dataKey="value" fill="#8884d8" />
