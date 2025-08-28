@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { z } from "zod";
 import { storage } from "../storage";
 import { db } from "../db";
-import { timeClockEntries, teamClockEntries, teamMemberClockDetails, laborCostSummary } from "@shared/time-tracking-schema";
+import { timeClockEntries, teamClockEntries, teamMemberClockDetails, laborCostSummary } from "@shared/schema";
 import { eq, and, isNull, gte, lte, desc, sql } from "drizzle-orm";
 
 // Define storage interface

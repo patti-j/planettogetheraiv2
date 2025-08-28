@@ -93,11 +93,12 @@ export default function TimeTracking() {
   // Clock In mutation
   const clockInMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/time-tracking/clock-in', {
+      const response = await apiRequest('/api/time-tracking/clock-in', {
         method: 'POST',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' },
       });
+      return await response.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/time-tracking'] });
@@ -121,13 +122,14 @@ export default function TimeTracking() {
   // Clock Out mutation
   const clockOutMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/time-tracking/clock-out', {
+      const response = await apiRequest('/api/time-tracking/clock-out', {
         method: 'POST',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' },
       });
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/time-tracking'] });
       toast({
         title: "Success",
@@ -148,13 +150,14 @@ export default function TimeTracking() {
   // Team Clock In mutation
   const teamClockInMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest('/api/time-tracking/team-clock-in', {
+      const response = await apiRequest('/api/time-tracking/team-clock-in', {
         method: 'POST',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' },
       });
+      return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       queryClient.invalidateQueries({ queryKey: ['/api/time-tracking'] });
       toast({
         title: "Success",

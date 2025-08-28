@@ -13222,5 +13222,8 @@ export const resourceRequirementBlocksRelations = relations(resourceRequirementB
 // Note: PT Job Activities and PT Job Resources relationships are handled 
 // through the ptJobOperations relationship already established above
 
+// Time Tracking Tables - Import from separate schema file
+export * from "./time-tracking-schema";
+
 
 
