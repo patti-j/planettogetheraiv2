@@ -501,18 +501,10 @@ Rules:
     // Analyze user intent using AI
     const intent = await this.analyzeUserIntentWithAI(query);
     
-    // Handle chart creation intent
-    if (intent.type === 'create_chart' && intent.confidence > 0.7) {
-      const chartConfig = await this.createChartConfig(query, intent.chartType || 'pie', context);
-      
-      return {
-        content: `Creating ${intent.chartType || 'pie'} chart and adding it to your canvas...`,
-        action: {
-          type: 'create_chart',
-          target: '/canvas',
-          chartConfig
-        }
-      };
+    // Use the new flexible AI response system
+    const flexibleResponse = await this.getAIFlexibleResponse(query, context);
+    if (flexibleResponse) {
+      return flexibleResponse;
     }
 
     // Handle navigation intent
