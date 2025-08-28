@@ -403,6 +403,10 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           // Workspace switcher is handled by the component directly
           // No action needed here since it's a dropdown component
           break;
+        case 'role-switcher':
+          // Role switcher is handled by the component directly
+          // No action needed here since it's a dropdown component
+          break;
       }
     }
   };

@@ -83,7 +83,7 @@ export function WorkspaceSwitcher({
   // Switch role mutation
   const switchRoleMutation = useMutation({
     mutationFn: ({ roleId }: { roleId: number }) => 
-      apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
+      apiRequest(`/api/users/${userId}/switch-role`, { method: 'POST', data: { roleId } }),
     onSuccess: async (_, variables) => {
       setIsLoading(false);
       
@@ -153,9 +153,9 @@ export function WorkspaceSwitcher({
 
   // Determine the current workspace name - use active role if available, otherwise use first assigned role
   let currentRoleName = null;
-  if (currentRoleData?.activeRole?.name) {
-    currentRoleName = currentRoleData.activeRole.name;
-  } else if (assignedRoles.length > 0) {
+  if (currentRoleData && typeof currentRoleData === 'object' && 'name' in currentRoleData) {
+    currentRoleName = (currentRoleData as any).name;
+  } else if (Array.isArray(assignedRoles) && assignedRoles.length > 0) {
     // If no active role is set, use the first assigned role
     currentRoleName = assignedRoles[0].name;
   }
@@ -167,7 +167,7 @@ export function WorkspaceSwitcher({
   const isCompact = variant === 'compact';
 
   // Always show dropdown if user has multiple assigned roles, or show static if single role
-  if (assignedRoles.length === 0) {
+  if (!Array.isArray(assignedRoles) || assignedRoles.length === 0) {
     // Only show static display if user has no roles at all
     return (
       <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-3 py-2'}`}>
@@ -180,7 +180,7 @@ export function WorkspaceSwitcher({
   }
 
   // Show static display for single role (no switching needed)
-  if (assignedRoles.length === 1) {
+  if (Array.isArray(assignedRoles) && assignedRoles.length === 1) {
     return (
       <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-3 py-2'}`}>
         {showIcon && <Building2 className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} text-muted-foreground`} />}
@@ -227,11 +227,11 @@ export function WorkspaceSwitcher({
         </div>
         <DropdownMenuSeparator />
         
-        {assignedRoles.map((role: Role) => {
+        {Array.isArray(assignedRoles) && assignedRoles.map((role: Role) => {
           const workspace = getWorkspaceFromRole(role.name);
           // Consider role current if it's the active role OR if no active role set and it's the first role
-          const isCurrentRole = currentRoleData?.activeRole?.id === role.id || 
-            (!currentRoleData?.activeRole && assignedRoles[0]?.id === role.id);
+          const isCurrentRole = (currentRoleData && typeof currentRoleData === 'object' && 'id' in currentRoleData && (currentRoleData as any).id === role.id) || 
+            (!(currentRoleData && typeof currentRoleData === 'object' && 'id' in currentRoleData) && Array.isArray(assignedRoles) && assignedRoles[0]?.id === role.id);
           
           return (
             <DropdownMenuItem
@@ -258,7 +258,7 @@ export function WorkspaceSwitcher({
           );
         })}
         
-        {assignedRoles.length === 0 && (
+        {(!Array.isArray(assignedRoles) || assignedRoles.length === 0) && (
           <div className="px-3 py-2 text-sm text-muted-foreground">
             No workspaces available
           </div>
