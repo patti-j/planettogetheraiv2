@@ -100,7 +100,6 @@ export default function Sidebar() {
     isExternal?: boolean;
   }> = [
     { icon: Home, label: "Home", href: "/", active: location === "/", feature: "", action: "" },
-    { icon: BarChart3, label: "Production Schedule", href: "/production-scheduler.html", active: false, feature: "", action: "", isExternal: true },
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
     { icon: Briefcase, label: "Implementation Projects", href: "/implementation-projects", active: location === "/implementation-projects", feature: "implementation-projects", action: "view" },
@@ -153,10 +152,9 @@ export default function Sidebar() {
     { icon: MessageSquare, label: "Feedback", href: "/feedback", active: location === "/feedback", feature: "feedback", action: "view" },
 
   ].filter(item => {
-    // Always show Home, Getting Started, Production Schedule, Canvas, Max AI Assistant (when closed), and temporarily Constraints Management
+    // Always show Home, Getting Started, Canvas, Max AI Assistant (when closed), and temporarily Constraints Management
     const isAlwaysVisible = item.href === "#" || 
       item.href === "/" ||  // Always show Home page
-      item.href === "/production-schedule" || 
       item.href === "/canvas" ||
       item.href === "#max" ||
       item.href === "/constraints" || // TEMPORARY: Always show constraints for debugging
@@ -229,7 +227,6 @@ export default function Sidebar() {
   const originalItems = [
     { icon: BookOpen, label: "Getting Started", href: "/help", active: location === "/help", feature: "getting-started", action: "view" },
     { icon: TrendingUp, label: "Business Goals", href: "/business-goals", active: location === "/business-goals", feature: "business-goals", action: "view" },
-    { icon: BarChart3, label: "Production Schedule", href: "/production-scheduler.html", active: location === "/production-scheduler.html", feature: "production-scheduling", action: "view" },
     { icon: Target, label: "Optimize Orders", href: "/optimize-orders", active: location === "/optimize-orders", feature: "scheduling-optimizer", action: "view" },
     { icon: Target, label: "Production Planning", href: "/production-planning", active: location === "/production-planning", feature: "production-planning", action: "view" },
     { icon: Briefcase, label: "Capacity Planning", href: "/capacity-planning", active: location === "/capacity-planning", feature: "capacity-planning", action: "view" },

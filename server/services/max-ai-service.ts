@@ -361,7 +361,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     return [
       { route: '/', label: 'Home', description: 'Main dashboard and homepage' },
       { route: '/control-tower', label: 'Global Control Tower', description: 'Enterprise-wide monitoring and insights' },
-      { route: '/production-scheduler.html', label: 'Production Scheduler Pro', description: 'Advanced production scheduling with Gantt chart and operations timeline' },
+      { route: '/production-scheduler-pro', label: 'Production Scheduler Pro', description: 'Advanced production scheduling with Gantt chart and operations timeline' },
       { route: '/master-production-schedule', label: 'Master Production Schedule', description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
       { route: '/shop-floor', label: 'Shop Floor', description: 'Shop floor monitoring and real-time production' },
       { route: '/analytics', label: 'Analytics', description: 'Analytics and performance metrics' },
@@ -463,14 +463,14 @@ Rules:
 - If they say "show me X" or "see X" they want to navigate to X
 - If uncertain, respond with "NONE"
 - Be flexible with language:
-  * "production schedule", "production scheduling", "scheduler" = "/production-scheduler.html"
+  * "production schedule", "production scheduling", "scheduler" = "/production-scheduler-pro"
   * "master production schedule" = "/master-production-schedule"
   * "control tower" = "/control-tower"
   * "shop floor" = "/shop-floor"
   * "analytics" = "/analytics"
   * "capacity planning" = "/capacity-planning"
   * "inventory" = "/inventory-optimization"
-- IMPORTANT: For production scheduling requests, always use "/production-scheduler.html"
+- IMPORTANT: For production scheduling requests, always use "/production-scheduler-pro"
 - Always prefer navigation over explanation`
             },
             {
@@ -877,7 +877,7 @@ Respond with JSON:
         keywords: ['analytics', 'data', 'reports', 'insights', 'metrics']
       },
       'production-schedule': {
-        path: '/production-scheduler.html',
+        path: '/production-scheduler-pro',
         name: 'Production Scheduler Pro',
         description: 'advanced production scheduling with Gantt chart and timeline management',
         keywords: ['schedule', 'production', 'planning', 'timeline', 'gantt', 'scheduler', 'pro']
@@ -1333,9 +1333,9 @@ Available pages:
 ${availablePages}
 
 IMPORTANT RULES:
-- For "production schedule", "production scheduling", "scheduler" requests → use "/production-scheduler.html"
+- For "production schedule", "production scheduling", "scheduler" requests → use "/production-scheduler-pro"
 - For other requests, match to the most relevant available page
-- Respond with just the route path (e.g., "/production-scheduler.html") or "NONE" if no navigation is needed
+- Respond with just the route path (e.g., "/production-scheduler-pro") or "NONE" if no navigation is needed
 - Focus on the most relevant page that matches the user's intent`
           },
           {
@@ -1356,7 +1356,7 @@ IMPORTANT RULES:
         let pageName = pageInfo?.name || route.replace('/', '').replace('-', ' ');
         
         // Special handling for HTML files to show cleaner names
-        if (route === '/production-scheduler.html') {
+        if (route === '/production-scheduler-pro') {
           pageName = 'Production Scheduler';
         }
         
