@@ -83,20 +83,41 @@ export function registerTimeTrackingRoutes(app: Express) {
     try {
       const { entryId, userId, breakMinutes = 0, notes } = req.body;
       
-      // Get the active clock entry
-      const [entry] = await db.select()
-        .from(timeClockEntries)
-        .where(and(
-          eq(timeClockEntries.id, entryId),
-          eq(timeClockEntries.userId, userId),
-          eq(timeClockEntries.status, 'active')
-        ))
-        .limit(1);
+      console.log('Clock out request:', { entryId, userId, breakMinutes, notes });
+      
+      // If no entryId provided, find the active entry by userId
+      let entry;
+      if (entryId) {
+        // Get the specific entry
+        const result = await db.select()
+          .from(timeClockEntries)
+          .where(and(
+            eq(timeClockEntries.id, entryId),
+            eq(timeClockEntries.userId, userId),
+            eq(timeClockEntries.status, 'active')
+          ))
+          .limit(1);
+        entry = result[0];
+      } else if (userId) {
+        // Find any active entry for the user
+        const result = await db.select()
+          .from(timeClockEntries)
+          .where(and(
+            eq(timeClockEntries.userId, userId),
+            eq(timeClockEntries.status, 'active'),
+            isNull(timeClockEntries.clockOutTime)
+          ))
+          .limit(1);
+        entry = result[0];
+      }
+      
+      console.log('Found entry:', entry);
       
       if (!entry) {
         return res.status(404).json({ 
           success: false,
-          message: "No active clock entry found" 
+          message: "No active clock entry found",
+          debug: { entryId, userId, searchCriteria: entryId ? 'by_id' : 'by_user' }
         });
       }
       
@@ -130,7 +151,7 @@ export function registerTimeTrackingRoutes(app: Express) {
           notes: entry.notes ? `${entry.notes}\n${notes || ''}` : notes,
           updatedAt: new Date(),
         })
-        .where(eq(timeClockEntries.id, entryId))
+        .where(eq(timeClockEntries.id, entry.id))
         .returning();
       
       // Update labor cost summary
