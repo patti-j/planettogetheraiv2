@@ -526,32 +526,34 @@ export default function AIInsightsPage() {
 
                 {/* Action Buttons */}
                 {insight.status === 'new' && insight.actionable && (
-                  <div className="flex items-center justify-between gap-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => ignoreRecommendation(insight.id)}
-                      className="h-7 px-2 text-xs flex-1 max-w-[70px]"
-                    >
-                      <X className="h-3 w-3" />
-                      <span className="ml-1 hidden sm:inline">Ignore</span>
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => markInProgress(insight.id)}
-                      className="h-7 px-2 text-xs flex-1 max-w-[90px]"
-                    >
-                      <Play className="h-3 w-3" />
-                      <span className="ml-1 hidden sm:inline">Progress</span>
-                    </Button>
+                  <div className="space-y-2 pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => ignoreRecommendation(insight.id)}
+                        className="h-7 px-3 text-xs flex-1"
+                      >
+                        <X className="h-3 w-3 mr-1" />
+                        Ignore
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => markInProgress(insight.id)}
+                        className="h-7 px-3 text-xs flex-1"
+                      >
+                        <Play className="h-3 w-3 mr-1" />
+                        In Progress
+                      </Button>
+                    </div>
                     <Button
                       size="sm"
                       onClick={() => applyRecommendation(insight.id)}
-                      className="h-7 px-2 text-xs bg-green-600 hover:bg-green-700 flex-1 max-w-[70px]"
+                      className="h-7 px-3 text-xs w-full bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <Check className="h-3 w-3" />
-                      <span className="ml-1 hidden sm:inline">Apply</span>
+                      <Check className="h-3 w-3 mr-1" />
+                      Apply Recommendation
                     </Button>
                   </div>
                 )}
