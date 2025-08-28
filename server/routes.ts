@@ -72,7 +72,10 @@ import {
   insertSmartKpiMeetingSchema, insertSmartKpiDefinitionSchema, insertSmartKpiTargetSchema, 
   insertSmartKpiActualSchema, insertSmartKpiImprovementSchema, insertSmartKpiAlertSchema,
   // MRP Schemas
-  insertMasterProductionScheduleSchema, insertMrpRunSchema, insertMrpRequirementSchema, 
+  insertMasterProductionScheduleSchema, insertMrpRunSchema, insertMrpRequirementSchema,
+  // KPI and Autonomous Optimization Schemas
+  insertPlantKpiTargetSchema, insertPlantKpiPerformanceSchema, 
+  insertAutonomousOptimizationSchema, insertOptimizationHistorySchema, 
   insertMrpActionMessageSchema, insertMrpPlanningParametersSchema,
   // Collaborative Demand Management Schemas
   insertDemandChangeRequestSchema, insertDemandChangeCommentSchema,
@@ -8492,6 +8495,345 @@ User Prompt: "${prompt}"`;
     } catch (error) {
       console.error('Error fetching inventory:', error);
       res.status(500).json({ error: 'Failed to fetch inventory' });
+    }
+  });
+
+  // ===== KPI MANAGEMENT & AUTONOMOUS OPTIMIZATION ROUTES =====
+  
+  // Plant KPI Targets
+  app.get("/api/plant-kpi-targets", async (req, res) => {
+    try {
+      const kpiTargets = await db.select({
+        id: schema.plantKpiTargets.id,
+        plantId: schema.plantKpiTargets.plantId,
+        kpiName: schema.plantKpiTargets.kpiName,
+        kpiType: schema.plantKpiTargets.kpiType,
+        targetValue: schema.plantKpiTargets.targetValue,
+        unitOfMeasure: schema.plantKpiTargets.unitOfMeasure,
+        weight: schema.plantKpiTargets.weight,
+        isActive: schema.plantKpiTargets.isActive,
+        description: schema.plantKpiTargets.description,
+        excellentThreshold: schema.plantKpiTargets.excellentThreshold,
+        goodThreshold: schema.plantKpiTargets.goodThreshold,
+        warningThreshold: schema.plantKpiTargets.warningThreshold,
+        createdAt: schema.plantKpiTargets.createdAt,
+        updatedAt: schema.plantKpiTargets.updatedAt,
+        plant: {
+          id: schema.plants.id,
+          name: schema.plants.name,
+          location: schema.plants.location,
+          isActive: schema.plants.isActive,
+        }
+      })
+      .from(schema.plantKpiTargets)
+      .leftJoin(schema.plants, eq(schema.plantKpiTargets.plantId, schema.plants.id))
+      .orderBy(schema.plantKpiTargets.plantId, schema.plantKpiTargets.kpiName);
+      
+      res.json(kpiTargets);
+    } catch (error) {
+      console.error('Error fetching plant KPI targets:', error);
+      res.status(500).json({ message: "Failed to fetch plant KPI targets" });
+    }
+  });
+
+  app.get("/api/plant-kpi-targets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [kpiTarget] = await db.select()
+        .from(schema.plantKpiTargets)
+        .where(eq(schema.plantKpiTargets.id, id));
+      
+      if (!kpiTarget) {
+        return res.status(404).json({ message: "Plant KPI target not found" });
+      }
+      
+      res.json(kpiTarget);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch plant KPI target" });
+    }
+  });
+
+  app.post("/api/plant-kpi-targets", async (req, res) => {
+    try {
+      const kpiTarget = insertPlantKpiTargetSchema.parse(req.body);
+      const [newKpiTarget] = await db.insert(schema.plantKpiTargets)
+        .values(kpiTarget)
+        .returning();
+      
+      res.status(201).json(newKpiTarget);
+    } catch (error) {
+      console.error('Error creating plant KPI target:', error);
+      res.status(400).json({ message: "Invalid plant KPI target data" });
+    }
+  });
+
+  app.patch("/api/plant-kpi-targets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = insertPlantKpiTargetSchema.partial().parse(req.body);
+      
+      const [updatedKpiTarget] = await db.update(schema.plantKpiTargets)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(schema.plantKpiTargets.id, id))
+        .returning();
+      
+      if (!updatedKpiTarget) {
+        return res.status(404).json({ message: "Plant KPI target not found" });
+      }
+      
+      res.json(updatedKpiTarget);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid plant KPI target data" });
+    }
+  });
+
+  app.delete("/api/plant-kpi-targets/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [deletedKpiTarget] = await db.delete(schema.plantKpiTargets)
+        .where(eq(schema.plantKpiTargets.id, id))
+        .returning();
+      
+      if (!deletedKpiTarget) {
+        return res.status(404).json({ message: "Plant KPI target not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete plant KPI target" });
+    }
+  });
+
+  // Plant KPI Performance
+  app.get("/api/plant-kpi-performance", async (req, res) => {
+    try {
+      const { plantId, kpiTargetId, startDate, endDate } = req.query;
+      
+      let query = db.select().from(schema.plantKpiPerformance);
+      
+      if (plantId) {
+        query = query.leftJoin(schema.plantKpiTargets, eq(schema.plantKpiPerformance.plantKpiTargetId, schema.plantKpiTargets.id))
+          .where(eq(schema.plantKpiTargets.plantId, parseInt(plantId as string)));
+      }
+      
+      if (kpiTargetId) {
+        query = query.where(eq(schema.plantKpiPerformance.plantKpiTargetId, parseInt(kpiTargetId as string)));
+      }
+      
+      if (startDate && endDate) {
+        query = query.where(
+          and(
+            sql`${schema.plantKpiPerformance.measurementDate} >= ${startDate}`,
+            sql`${schema.plantKpiPerformance.measurementDate} <= ${endDate}`
+          )
+        );
+      }
+      
+      const performance = await query.orderBy(schema.plantKpiPerformance.measurementDate);
+      res.json(performance);
+    } catch (error) {
+      console.error('Error fetching plant KPI performance:', error);
+      res.status(500).json({ message: "Failed to fetch plant KPI performance" });
+    }
+  });
+
+  app.post("/api/plant-kpi-performance", async (req, res) => {
+    try {
+      const performance = insertPlantKpiPerformanceSchema.parse(req.body);
+      
+      // Calculate performance ratio if not provided
+      if (!performance.performanceRatio && performance.actualValue && performance.targetValue) {
+        performance.performanceRatio = performance.actualValue / performance.targetValue;
+      }
+      
+      // Determine performance grade based on thresholds
+      if (!performance.performanceGrade && performance.performanceRatio) {
+        const kpiTarget = await db.select()
+          .from(schema.plantKpiTargets)
+          .where(eq(schema.plantKpiTargets.id, performance.plantKpiTargetId))
+          .limit(1);
+        
+        if (kpiTarget.length > 0) {
+          const target = kpiTarget[0];
+          const ratio = performance.performanceRatio;
+          
+          if (target.excellentThreshold && ratio >= target.excellentThreshold / target.targetValue) {
+            performance.performanceGrade = 'excellent';
+          } else if (target.goodThreshold && ratio >= target.goodThreshold / target.targetValue) {
+            performance.performanceGrade = 'good';
+          } else if (target.warningThreshold && ratio >= target.warningThreshold / target.targetValue) {
+            performance.performanceGrade = 'warning';
+          } else {
+            performance.performanceGrade = 'critical';
+          }
+        }
+      }
+      
+      const [newPerformance] = await db.insert(schema.plantKpiPerformance)
+        .values(performance)
+        .returning();
+      
+      res.status(201).json(newPerformance);
+    } catch (error) {
+      console.error('Error creating plant KPI performance:', error);
+      res.status(400).json({ message: "Invalid plant KPI performance data" });
+    }
+  });
+
+  // Autonomous Optimization
+  app.get("/api/autonomous-optimization", async (req, res) => {
+    try {
+      const optimizations = await db.select({
+        id: schema.autonomousOptimization.id,
+        name: schema.autonomousOptimization.name,
+        description: schema.autonomousOptimization.description,
+        plantId: schema.autonomousOptimization.plantId,
+        isEnabled: schema.autonomousOptimization.isEnabled,
+        optimizationObjective: schema.autonomousOptimization.optimizationObjective,
+        targetKpiIds: schema.autonomousOptimization.targetKpiIds,
+        allowedAlgorithms: schema.autonomousOptimization.allowedAlgorithms,
+        currentAlgorithm: schema.autonomousOptimization.currentAlgorithm,
+        autoAlgorithmSelection: schema.autonomousOptimization.autoAlgorithmSelection,
+        enableParameterTuning: schema.autonomousOptimization.enableParameterTuning,
+        learningMode: schema.autonomousOptimization.learningMode,
+        performanceThreshold: schema.autonomousOptimization.performanceThreshold,
+        evaluationPeriodMinutes: schema.autonomousOptimization.evaluationPeriodMinutes,
+        totalOptimizations: schema.autonomousOptimization.totalOptimizations,
+        successfulOptimizations: schema.autonomousOptimization.successfulOptimizations,
+        lastOptimizationAt: schema.autonomousOptimization.lastOptimizationAt,
+        lastPerformanceScore: schema.autonomousOptimization.lastPerformanceScore,
+        createdAt: schema.autonomousOptimization.createdAt,
+        updatedAt: schema.autonomousOptimization.updatedAt,
+        plant: {
+          id: schema.plants.id,
+          name: schema.plants.name,
+          location: schema.plants.location,
+          isActive: schema.plants.isActive,
+        }
+      })
+      .from(schema.autonomousOptimization)
+      .leftJoin(schema.plants, eq(schema.autonomousOptimization.plantId, schema.plants.id))
+      .orderBy(schema.autonomousOptimization.plantId, schema.autonomousOptimization.name);
+      
+      res.json(optimizations);
+    } catch (error) {
+      console.error('Error fetching autonomous optimization configs:', error);
+      res.status(500).json({ message: "Failed to fetch autonomous optimization configs" });
+    }
+  });
+
+  app.get("/api/autonomous-optimization/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [optimization] = await db.select()
+        .from(schema.autonomousOptimization)
+        .where(eq(schema.autonomousOptimization.id, id));
+      
+      if (!optimization) {
+        return res.status(404).json({ message: "Autonomous optimization config not found" });
+      }
+      
+      res.json(optimization);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to fetch autonomous optimization config" });
+    }
+  });
+
+  app.post("/api/autonomous-optimization", async (req, res) => {
+    try {
+      const optimization = insertAutonomousOptimizationSchema.parse(req.body);
+      const [newOptimization] = await db.insert(schema.autonomousOptimization)
+        .values(optimization)
+        .returning();
+      
+      res.status(201).json(newOptimization);
+    } catch (error) {
+      console.error('Error creating autonomous optimization config:', error);
+      res.status(400).json({ message: "Invalid autonomous optimization config data" });
+    }
+  });
+
+  app.patch("/api/autonomous-optimization/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const updates = insertAutonomousOptimizationSchema.partial().parse(req.body);
+      
+      const [updatedOptimization] = await db.update(schema.autonomousOptimization)
+        .set({ ...updates, updatedAt: new Date() })
+        .where(eq(schema.autonomousOptimization.id, id))
+        .returning();
+      
+      if (!updatedOptimization) {
+        return res.status(404).json({ message: "Autonomous optimization config not found" });
+      }
+      
+      res.json(updatedOptimization);
+    } catch (error) {
+      res.status(400).json({ message: "Invalid autonomous optimization config data" });
+    }
+  });
+
+  app.delete("/api/autonomous-optimization/:id", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const [deletedOptimization] = await db.delete(schema.autonomousOptimization)
+        .where(eq(schema.autonomousOptimization.id, id))
+        .returning();
+      
+      if (!deletedOptimization) {
+        return res.status(404).json({ message: "Autonomous optimization config not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Failed to delete autonomous optimization config" });
+    }
+  });
+
+  // Optimization History
+  app.get("/api/optimization-history", async (req, res) => {
+    try {
+      const { autonomousOptimizationId, plantId, startDate, endDate } = req.query;
+      
+      let query = db.select().from(schema.optimizationHistory);
+      
+      if (autonomousOptimizationId) {
+        query = query.where(eq(schema.optimizationHistory.autonomousOptimizationId, parseInt(autonomousOptimizationId as string)));
+      }
+      
+      if (plantId) {
+        query = query.leftJoin(schema.autonomousOptimization, eq(schema.optimizationHistory.autonomousOptimizationId, schema.autonomousOptimization.id))
+          .where(eq(schema.autonomousOptimization.plantId, parseInt(plantId as string)));
+      }
+      
+      if (startDate && endDate) {
+        query = query.where(
+          and(
+            sql`${schema.optimizationHistory.createdAt} >= ${startDate}`,
+            sql`${schema.optimizationHistory.createdAt} <= ${endDate}`
+          )
+        );
+      }
+      
+      const history = await query.orderBy(schema.optimizationHistory.createdAt);
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching optimization history:', error);
+      res.status(500).json({ message: "Failed to fetch optimization history" });
+    }
+  });
+
+  app.post("/api/optimization-history", async (req, res) => {
+    try {
+      const history = insertOptimizationHistorySchema.parse(req.body);
+      const [newHistory] = await db.insert(schema.optimizationHistory)
+        .values(history)
+        .returning();
+      
+      res.status(201).json(newHistory);
+    } catch (error) {
+      console.error('Error creating optimization history:', error);
+      res.status(400).json({ message: "Invalid optimization history data" });
     }
   });
 

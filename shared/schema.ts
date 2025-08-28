@@ -2521,6 +2521,172 @@ export const canvasContent = pgTable("canvas_content", {
   isVisible: boolean("is_visible").default(true),
 });
 
+// Plant KPI Targets - Define target KPIs for each plant with weights
+export const plantKpiTargets = pgTable("plant_kpi_targets", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  kpiName: text("kpi_name").notNull(), // OEE, Throughput, Quality, Schedule_Adherence, Cost_Per_Unit, etc.
+  kpiType: text("kpi_type").notNull(), // percentage, rate, currency, time, count
+  targetValue: numeric("target_value", { precision: 15, scale: 5 }).notNull(),
+  unitOfMeasure: text("unit_of_measure"), // %, units/hr, $, minutes, etc.
+  weight: numeric("weight", { precision: 5, scale: 2 }).notNull().default("1.0"), // Relative importance (0.1 to 10.0)
+  isActive: boolean("is_active").default(true),
+  description: text("description"),
+  // Performance thresholds
+  excellentThreshold: numeric("excellent_threshold", { precision: 15, scale: 5 }), // 95%+ of target
+  goodThreshold: numeric("good_threshold", { precision: 15, scale: 5 }), // 90%+ of target
+  warningThreshold: numeric("warning_threshold", { precision: 15, scale: 5 }), // 80%+ of target
+  // Calculation settings
+  calculationMethod: text("calculation_method").default("direct"), // direct, rolling_average, cumulative
+  rollingPeriodDays: integer("rolling_period_days").default(7),
+  dataSource: text("data_source"), // table/field reference for calculation
+  dataSourceQuery: text("data_source_query"), // SQL query for complex calculations
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  plantKpiIdx: index().on(table.plantId, table.kpiName),
+  uniquePlantKpi: unique().on(table.plantId, table.kpiName),
+}));
+
+// Plant KPI Performance History - Actual performance data over time
+export const plantKpiPerformance = pgTable("plant_kpi_performance", {
+  id: serial("id").primaryKey(),
+  plantKpiTargetId: integer("plant_kpi_target_id").references(() => plantKpiTargets.id).notNull(),
+  measurementDate: timestamp("measurement_date").notNull(),
+  actualValue: numeric("actual_value", { precision: 15, scale: 5 }).notNull(),
+  targetValue: numeric("target_value", { precision: 15, scale: 5 }).notNull(),
+  performanceRatio: numeric("performance_ratio", { precision: 5, scale: 4 }), // actual/target
+  performanceGrade: text("performance_grade"), // excellent, good, warning, critical
+  dataSource: text("data_source"), // How this measurement was obtained
+  calculationDetails: jsonb("calculation_details").$type<{
+    baseData?: any;
+    calculationMethod?: string;
+    aggregationPeriod?: string;
+    excludedData?: any;
+    notes?: string;
+  }>(),
+  isCalculated: boolean("is_calculated").default(true), // vs manually entered
+  validatedBy: integer("validated_by").references(() => users.id),
+  validatedAt: timestamp("validated_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  measurementDateIdx: index().on(table.measurementDate),
+  kpiTargetDateIdx: index().on(table.plantKpiTargetId, table.measurementDate),
+}));
+
+// Autonomous Optimization Configuration
+export const autonomousOptimization = pgTable("autonomous_optimization", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  isEnabled: boolean("is_enabled").default(false),
+  
+  // Optimization objectives
+  optimizationObjective: text("optimization_objective").notNull().default("weighted_kpi"), // weighted_kpi, single_kpi, multi_objective
+  targetKpiIds: jsonb("target_kpi_ids").$type<number[]>().default([]), // References to plantKpiTargets
+  
+  // Algorithm configuration
+  allowedAlgorithms: jsonb("allowed_algorithms").$type<string[]>().default(['ASAP', 'ALAP', 'CRITICAL_PATH', 'LEVEL_RESOURCES', 'DRUM_TOC']),
+  currentAlgorithm: text("current_algorithm").default("ASAP"),
+  autoAlgorithmSelection: boolean("auto_algorithm_selection").default(true),
+  
+  // Parameter tuning settings
+  enableParameterTuning: boolean("enable_parameter_tuning").default(true),
+  tunableParameters: jsonb("tunable_parameters").$type<{
+    [algorithmName: string]: {
+      [parameterName: string]: {
+        currentValue: number;
+        minValue: number;
+        maxValue: number;
+        stepSize: number;
+        autoTune: boolean;
+      };
+    };
+  }>().default({}),
+  
+  // Learning and adaptation
+  learningMode: text("learning_mode").default("active"), // active, passive, disabled
+  performanceThreshold: numeric("performance_threshold", { precision: 5, scale: 2 }).default("0.90"), // When to trigger optimization
+  evaluationPeriodMinutes: integer("evaluation_period_minutes").default(60), // How often to evaluate performance
+  adaptationSensitivity: text("adaptation_sensitivity").default("medium"), // low, medium, high
+  
+  // Constraints and safety
+  maxChangesPerDay: integer("max_changes_per_day").default(5),
+  requiredApproval: boolean("required_approval").default(true),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  
+  // Results tracking
+  totalOptimizations: integer("total_optimizations").default(0),
+  successfulOptimizations: integer("successful_optimizations").default(0),
+  lastOptimizationAt: timestamp("last_optimization_at"),
+  lastPerformanceScore: numeric("last_performance_score", { precision: 5, scale: 4 }),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  plantIdx: index().on(table.plantId),
+  enabledIdx: index().on(table.isEnabled),
+}));
+
+// Optimization History - Track all optimization attempts and results
+export const optimizationHistory = pgTable("optimization_history", {
+  id: serial("id").primaryKey(),
+  autonomousOptimizationId: integer("autonomous_optimization_id").references(() => autonomousOptimization.id).notNull(),
+  optimizationType: text("optimization_type").notNull(), // algorithm_change, parameter_tuning, schedule_adjustment
+  
+  // What was changed
+  previousConfiguration: jsonb("previous_configuration").$type<{
+    algorithm?: string;
+    parameters?: any;
+    scheduleState?: any;
+  }>(),
+  newConfiguration: jsonb("new_configuration").$type<{
+    algorithm?: string;
+    parameters?: any;
+    scheduleState?: any;
+  }>(),
+  
+  // Why the change was made
+  triggerReason: text("trigger_reason"), // poor_performance, scheduled_evaluation, manual_trigger
+  performanceBeforeOptimization: jsonb("performance_before_optimization").$type<{
+    kpiScores: Array<{ kpiId: number; value: number; target: number; ratio: number }>;
+    weightedScore: number;
+    timestamp: string;
+  }>(),
+  
+  // Results
+  optimizationStatus: text("optimization_status").default("pending"), // pending, running, completed, failed, rolled_back
+  performanceAfterOptimization: jsonb("performance_after_optimization").$type<{
+    kpiScores: Array<{ kpiId: number; value: number; target: number; ratio: number }>;
+    weightedScore: number;
+    timestamp: string;
+  }>(),
+  performanceImprovement: numeric("performance_improvement", { precision: 5, scale: 4 }), // positive = improvement
+  
+  // Execution details
+  executionStartedAt: timestamp("execution_started_at"),
+  executionCompletedAt: timestamp("execution_completed_at"),
+  executionDurationMinutes: integer("execution_duration_minutes"),
+  errorMessage: text("error_message"),
+  
+  // Approval workflow
+  requiresApproval: boolean("requires_approval").default(false),
+  approvalStatus: text("approval_status").default("auto_approved"), // pending, approved, rejected, auto_approved
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  rejectionReason: text("rejection_reason"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+}, (table) => ({
+  optimizationIdIdx: index().on(table.autonomousOptimizationId),
+  statusIdx: index().on(table.optimizationStatus),
+  createdAtIdx: index().on(table.createdAt),
+}));
+
 // Alert schemas for insert/select operations
 export const insertAlertSchema = createInsertSchema(alerts, {
   severity: z.enum(['critical', 'high', 'medium', 'low', 'info']),
@@ -2856,6 +3022,37 @@ export type SystemUser = typeof systemUsers.$inferSelect;
 
 export type InsertSystemHealth = z.infer<typeof insertSystemHealthSchema>;
 export type SystemHealth = typeof systemHealth.$inferSelect;
+
+// KPI and Autonomous Optimization Types
+export const insertPlantKpiTargetSchema = createInsertSchema(plantKpiTargets, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+export type InsertPlantKpiTarget = z.infer<typeof insertPlantKpiTargetSchema>;
+export type PlantKpiTarget = typeof plantKpiTargets.$inferSelect;
+
+export const insertPlantKpiPerformanceSchema = createInsertSchema(plantKpiPerformance, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+});
+export type InsertPlantKpiPerformance = z.infer<typeof insertPlantKpiPerformanceSchema>;
+export type PlantKpiPerformance = typeof plantKpiPerformance.$inferSelect;
+
+export const insertAutonomousOptimizationSchema = createInsertSchema(autonomousOptimization, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+export type InsertAutonomousOptimization = z.infer<typeof insertAutonomousOptimizationSchema>;
+export type AutonomousOptimization = typeof autonomousOptimization.$inferSelect;
+
+export const insertOptimizationHistorySchema = createInsertSchema(optimizationHistory, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+});
+export type InsertOptimizationHistory = z.infer<typeof insertOptimizationHistorySchema>;
+export type OptimizationHistory = typeof optimizationHistory.$inferSelect;
 
 export type InsertSystemEnvironment = z.infer<typeof insertSystemEnvironmentSchema>;
 export type SystemEnvironment = typeof systemEnvironments.$inferSelect;

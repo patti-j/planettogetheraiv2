@@ -17,6 +17,7 @@ Note on concurrent work:
 - If continuing previous work, briefly mention what was done before
 
 ## Recent Major Changes (August 2025)
+- **Control Tower KPI & Autonomous Optimization Enhancement** (August 28, 2025): Implemented comprehensive KPI target management system with weighted performance tracking, real-time performance visualization, and autonomous optimization configuration. Added ability to create, edit, and monitor multiple KPI targets per plant with customizable thresholds (excellent/good/warning/critical), performance history tracking over time, and autonomous algorithm selection with parameter tuning capabilities. Includes complete form interfaces for KPI target management and optimization configuration with support for multiple algorithms (ASAP, ALAP, Critical Path, Resource Leveling, Drum/TOC).
 - **Homepage Authentication Routing Fixed** (August 27, 2025): Resolved critical routing issue where authenticated users visiting homepage (/) were seeing WebsiteApp instead of ApplicationApp. Updated App.tsx authentication logic to properly show full application interface with complete navigation menu for authenticated users.
 - **AI Insights Dashboard**: Created comprehensive dedicated AI insights page with advanced filtering, search, statistics dashboard, and detailed insight cards replacing inline Max panel insights
 - **Max AI Panel Enhancement**: Streamlined Max AI panel by removing insights tab and adding navigation button to dedicated AI Insights page
@@ -30,6 +31,7 @@ Note on concurrent work:
 - **Route Security**: Fixed critical routing issue by adding /production-scheduler-js to publicPaths array
 - **PlanetTogether Migration**: Completed v13-14 migration with all branding and authentication issues resolved
 - **Design Consistency**: All AI-related features now use consistent Wand2 icon throughout navigation panels, dialogs, and interface elements
+- **Global Control Tower Advanced Features**: Enhanced with comprehensive KPI target management, weighted performance tracking, autonomous optimization configuration, performance visualization charts, and real-time plant monitoring with automated algorithm selection and parameter tuning capabilities
 
 ## System Architecture
 
