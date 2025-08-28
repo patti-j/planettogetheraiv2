@@ -105,8 +105,8 @@ export class GanttConfigService {
         field: 'name', 
         width: 250,
         editor: false,
-        cellCls: 'resource-cell',
         renderer: ({ record, value }: any) => {
+          if (!record || !record.type || !value) return value || '';
           const iconCls = this.getResourceIcon(record.type);
           return `<i class="${iconCls}"></i> ${value}`;
         }
@@ -130,6 +130,7 @@ export class GanttConfigService {
         align: 'center',
         editor: false,
         renderer: ({ value }: any) => {
+          if (value === undefined || value === null) return '';
           const cls = value > 80 ? 'capacity-high' : value > 50 ? 'capacity-medium' : 'capacity-low';
           return `<span class="${cls}">${value}%</span>`;
         }
@@ -140,6 +141,7 @@ export class GanttConfigService {
         width: 100,
         editor: false,
         renderer: ({ record }: any) => {
+          if (!record) return '';
           const status = record.isBottleneck ? 'Bottleneck' : 'Available';
           const cls = record.isBottleneck ? 'status-bottleneck' : 'status-available';
           return `<span class="${cls}">${status}</span>`;
