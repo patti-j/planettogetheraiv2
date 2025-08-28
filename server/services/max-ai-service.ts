@@ -739,8 +739,9 @@ Available actions you can take:
 1. FETCH_DATA - if they want specific information from the system
 2. NAVIGATE - if they want to go to a specific page/feature  
 3. ANALYZE - if they want analysis of current data
-4. HELP - if they need guidance or have questions
-5. CHAT - for general conversation
+4. CREATE - if they want to create charts, widgets, or content
+5. HELP - if they need guidance or have questions
+6. CHAT - for general conversation
 
 Manufacturing system capabilities:
 - Production data: jobs, operations, schedules, resources
@@ -751,7 +752,7 @@ Manufacturing system capabilities:
 
 Respond with JSON:
 {
-  "intent": "FETCH_DATA|NAVIGATE|ANALYZE|HELP|CHAT",
+  "intent": "FETCH_DATA|NAVIGATE|ANALYZE|CREATE|HELP|CHAT",
   "target": "specific endpoint or page if applicable",
   "reasoning": "brief explanation of what the user wants",
   "query_type": "what kind of information or action they're seeking"
@@ -776,6 +777,8 @@ Respond with JSON:
         return await this.handleNavigationIntent(query, intent, context);
       } else if (intent.intent === 'ANALYZE') {
         return await this.handleAnalysisIntent(query, intent, context);
+      } else if (intent.intent === 'CREATE') {
+        return await this.handleCreateIntent(query, intent, context);
       } else {
         // Let the main AI response handle HELP and CHAT
         return null;
@@ -1424,6 +1427,104 @@ Provide analysis and recommendations.`
     }
     
     return null;
+  }
+
+  private async handleCreateIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
+    try {
+      // Check if this is a chart creation request
+      const isChartRequest = query.toLowerCase().includes('chart') || 
+                           query.toLowerCase().includes('pie') || 
+                           query.toLowerCase().includes('bar') || 
+                           query.toLowerCase().includes('line') ||
+                           query.toLowerCase().includes('graph');
+
+      if (isChartRequest && context.currentPage === '/canvas') {
+        // Import storage to create canvas widget
+        const { storage } = await import('../storage');
+        
+        // Use AI to determine chart type and data source
+        const chartResponse = await openai.chat.completions.create({
+          model: 'gpt-4o',
+          messages: [
+            {
+              role: 'system',
+              content: `You are a chart creation assistant. Based on the user's request, determine what type of chart to create and what data it should show.
+
+Respond in JSON format with:
+{
+  "chartType": "pie" | "bar" | "line" | "gauge",
+  "title": "Chart title",
+  "description": "Brief description of what the chart shows",
+  "dataSource": "jobs" | "operations" | "resources" | "production" | "quality"
+}
+
+For job-related requests, use "jobs" as dataSource and provide appropriate titles.`
+            },
+            {
+              role: 'user',
+              content: query
+            }
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.3,
+          max_tokens: 200
+        });
+
+        const chartConfig = JSON.parse(chartResponse.choices[0].message.content || '{}');
+        
+        // Create the canvas widget
+        const widgetData = {
+          title: chartConfig.title || 'AI Generated Chart',
+          targetPlatform: 'both',
+          widgetType: 'chart',
+          widgetSubtype: chartConfig.chartType || 'pie',
+          data: {
+            template: chartConfig.dataSource || 'jobs',
+            description: chartConfig.description || 'AI generated chart visualization'
+          },
+          configuration: {
+            size: 'medium',
+            chartType: chartConfig.chartType || 'pie',
+            showLegend: true,
+            colorScheme: 'multi',
+            visualization: chartConfig.chartType || 'pie'
+          },
+          position: null,
+          isVisible: true,
+          createdByMax: true,
+          isSystemWidget: false,
+          sessionId: `max-ai-${Date.now()}`,
+          userId: context.userId || null,
+          plantId: null,
+          metadata: { createdByMaxAI: true, userQuery: query }
+        };
+
+        const widget = await storage.createCanvasWidget(widgetData);
+        
+        return {
+          content: `I've created a ${chartConfig.chartType || 'pie'} chart showing ${chartConfig.description || 'the requested data'} in your canvas!`,
+          action: {
+            type: 'navigate',
+            target: '/canvas'
+          }
+        };
+      }
+      
+      return {
+        content: `I'd be happy to help you create something! Could you specify what you'd like me to create? For charts, try asking while you're on the canvas page.`,
+        action: {
+          type: 'navigate',
+          target: '/canvas'
+        }
+      };
+      
+    } catch (error) {
+      console.error('Error handling create intent:', error);
+      return {
+        content: 'I encountered an error while trying to create that for you. Please try again.',
+        error: true
+      };
+    }
   }
 
   // Enrich user query with production context
