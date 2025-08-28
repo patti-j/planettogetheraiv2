@@ -150,17 +150,21 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
       try {
-        const response = await apiRequest("POST", "/api/auth/login", credentials);
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(credentials),
+          credentials: "include",
+        });
         
-        // Parse response content
-        const responseText = await response.text();
-        
-        let userData;
-        try {
-          userData = JSON.parse(responseText);
-        } catch (parseError) {
-          throw new Error(`Invalid JSON response: ${parseError.message}`);
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`${response.status}: ${errorText}`);
         }
+        
+        const userData = await response.json();
         
         // Store token in localStorage if provided
         if (userData.token) {
