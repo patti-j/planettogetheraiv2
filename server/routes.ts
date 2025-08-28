@@ -1743,11 +1743,13 @@ Rules:
       // Update last login
       await storage.updateUserLastLogin(user.id);
       
-      // Generate a simple token for token-based authentication
+      // Generate a simple token for token-based authentication with 24-hour expiration
       console.log("=== LOGIN SUCCESS ===");
-      const token = `user_${user.id}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
+      const token = `user_${user.id}_${expiresAt}_${Math.random().toString(36).substr(2, 9)}`;
       
       console.log("Generated token:", token);
+      console.log("Token expires at:", new Date(expiresAt).toISOString());
       
       // Return user data with token (no session dependency)
       const { passwordHash, ...userData } = user;
@@ -1832,12 +1834,17 @@ Rules:
             console.log("Demo token userId:", userId);
           }
         }
-        // Extract user ID from token (simple format: user_ID_timestamp_random)
+        // Extract user ID from token (format: user_ID_expiresAt_random)
         else if (token.startsWith('user_')) {
           const tokenParts = token.split('_');
-          if (tokenParts.length >= 2) {
+          if (tokenParts.length >= 3) {
+            const expiresAt = parseInt(tokenParts[2]);
+            if (Date.now() > expiresAt) {
+              console.log("=== TOKEN EXPIRED ===", token, "expired at:", new Date(expiresAt).toISOString());
+              return res.status(401).json({ message: "Token has expired" });
+            }
             userId = parseInt(tokenParts[1]);
-            console.log("Token userId:", userId);
+            console.log("Token userId:", userId, "expires:", new Date(expiresAt).toISOString());
           }
         }
       }

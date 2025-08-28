@@ -13,10 +13,14 @@ export function isAuthenticated(req: any, res: any, next: any) {
         userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
       }
     }
-    // Extract user ID from regular token (format: user_ID_timestamp_random)
+    // Extract user ID from regular token (format: user_ID_expiresAt_random)
     else if (token.startsWith('user_')) {
       const tokenParts = token.split('_');
-      if (tokenParts.length >= 2) {
+      if (tokenParts.length >= 3) {
+        const expiresAt = parseInt(tokenParts[2]);
+        if (Date.now() > expiresAt) {
+          return res.status(401).json({ message: "Token has expired" });
+        }
         userId = parseInt(tokenParts[1]);
       }
     }

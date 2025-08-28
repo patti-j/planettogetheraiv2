@@ -116,7 +116,8 @@ export function useAuth() {
     queryKey: ["/api/auth/me"],
     retry: false,
     retryOnMount: false,
-    staleTime: 0, // Always refetch to get fresh role data
+    staleTime: 1000 * 60 * 30, // Keep auth data fresh for 30 minutes
+    gcTime: 1000 * 60 * 60, // Cache for 1 hour
     refetchOnWindowFocus: false, // Disable to prevent infinite loops
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
@@ -124,7 +125,18 @@ export function useAuth() {
       const token = localStorage.getItem('authToken');
       const headers: HeadersInit = {};
       
-      if (token) {
+      // Check if token is expired before making request
+      if (token && token.startsWith('user_')) {
+        const tokenParts = token.split('_');
+        if (tokenParts.length >= 3) {
+          const expiresAt = parseInt(tokenParts[2]);
+          if (Date.now() > expiresAt) {
+            // Token is expired, clear it
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            return null;
+          }
+        }
         headers.Authorization = `Bearer ${token}`;
       }
       
@@ -134,7 +146,9 @@ export function useAuth() {
       });
 
       if (res.status === 401) {
-        // Return null for unauthenticated users instead of throwing
+        // Clear expired tokens on 401 response
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
         return null;
       }
 
