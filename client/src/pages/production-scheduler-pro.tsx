@@ -296,7 +296,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
       {/* Toolbar */}
       <div className="bg-white border-b px-4 py-2">
         <div className="flex items-center justify-between">
@@ -392,8 +392,9 @@ const ProductionSchedulerProV2: React.FC = () => {
       </div>
 
       {/* Scheduler Component */}
-      <div className="flex-1 relative">
-        <BryntumSchedulerPro
+      <div className="flex-1 relative overflow-hidden flex flex-col" style={{ minHeight: 0 }}>
+        <div className="flex-1 min-h-0">
+          <BryntumSchedulerPro
           ref={schedulerRef}
           {...schedulerConfig}
           project={schedulerData.project}
@@ -420,11 +421,12 @@ const ProductionSchedulerProV2: React.FC = () => {
               }
             }
           }}
-        />
+          />
+        </div>
       </div>
 
       {/* Status Bar */}
-      <div className="bg-white border-t px-4 py-2">
+      <div className="bg-white border-t px-4 py-2 flex-shrink-0">
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center gap-4">
             <span>Resources: {resourceCount}</span>

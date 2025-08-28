@@ -331,8 +331,9 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   }
 
   return (
-    <div className="h-full w-full" style={{ minHeight: '600px', height: '700px', overflow: 'hidden' }}>
-      <BryntumSchedulerPro
+    <div className="h-full w-full flex flex-col" style={{ minHeight: 0, overflow: 'hidden' }}>
+      <div className="flex-1 min-h-0">
+        <BryntumSchedulerPro
         ref={schedulerRef}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
@@ -616,7 +617,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             unscheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'unscheduled').length
           });
         }}
-      />
+        />
+      </div>
     </div>
   );
 });
