@@ -3376,6 +3376,89 @@ Rules:
     }
   });
 
+  // Operation control endpoint for start/pause/finish/hold actions
+  app.post("/api/operations/:id/control", async (req, res) => {
+    try {
+      const operationId = parseInt(req.params.id);
+      const { action, notes, timestamp, operatorId, operatorName } = req.body;
+      
+      console.log(`Operation control action: ${action} for operation ${operationId}`);
+      
+      // Validate action
+      const validActions = ['start', 'pause', 'finish', 'hold'];
+      if (!validActions.includes(action)) {
+        return res.status(400).json({ message: "Invalid action. Must be start, pause, finish, or hold" });
+      }
+
+      // Get the current operation
+      const operation = await storage.getDiscreteOperation(operationId);
+      if (!operation) {
+        return res.status(404).json({ message: "Operation not found" });
+      }
+
+      // Prepare update data based on action
+      const updateData: any = {
+        lastModifiedBy: operatorName || 'System',
+        lastModifiedAt: new Date(timestamp || new Date())
+      };
+
+      // Set status and timing based on action
+      switch (action) {
+        case 'start':
+          updateData.status = 'in_progress';
+          updateData.startTime = new Date(timestamp || new Date());
+          // Clear end time if restarting
+          updateData.endTime = null;
+          break;
+        case 'pause':
+          updateData.status = 'paused';
+          // Keep start time, don't set end time for pause
+          break;
+        case 'finish':
+          updateData.status = 'completed';
+          updateData.endTime = new Date(timestamp || new Date());
+          // Ensure we have a start time
+          if (!operation.startTime) {
+            updateData.startTime = updateData.endTime;
+          }
+          break;
+        case 'hold':
+          updateData.status = 'on_hold';
+          // Keep start time, don't set end time for hold
+          break;
+      }
+
+      // Update the operation
+      const updatedOperation = await storage.updateDiscreteOperation(operationId, updateData);
+      if (!updatedOperation) {
+        return res.status(500).json({ message: "Failed to update operation" });
+      }
+
+      // Log the action for audit trail
+      console.log(`Operation ${operationId} ${action} by ${operatorName} at ${timestamp}`);
+      if (notes) {
+        console.log(`Notes: ${notes}`);
+      }
+
+      // Return success response with updated operation
+      res.json({
+        success: true,
+        message: `Operation ${action} successful`,
+        operation: updatedOperation,
+        action: {
+          type: action,
+          timestamp: timestamp || new Date(),
+          operator: operatorName,
+          notes: notes || null
+        }
+      });
+
+    } catch (error) {
+      console.error('Operation control error:', error);
+      res.status(500).json({ message: "Failed to control operation", error: error.message });
+    }
+  });
+
   // Reschedule operation endpoint for drag-and-drop
   app.put("/api/operations/:id/reschedule", async (req, res) => {
     try {

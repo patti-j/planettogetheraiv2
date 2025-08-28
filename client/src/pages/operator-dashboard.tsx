@@ -113,6 +113,12 @@ export default function OperatorDashboard() {
   const [expandedOperation, setExpandedOperation] = useState<number | null>(null);
   const [currentOperator] = useState("John Smith"); // In real app, this would come from auth
   
+  // Operation control states
+  const [operationControlDialogOpen, setOperationControlDialogOpen] = useState(false);
+  const [controlAction, setControlAction] = useState<"start" | "pause" | "finish" | "hold">("start");
+  const [controlNotes, setControlNotes] = useState("");
+  const [controllingOperation, setControllingOperation] = useState<OperatorOperation | null>(null);
+  
   // Time tracking states
   const [timeTrackingDialogOpen, setTimeTrackingDialogOpen] = useState(false);
   const [selectedTeamMembers, setSelectedTeamMembers] = useState<number[]>([]);
@@ -359,6 +365,45 @@ export default function OperatorDashboard() {
     },
   });
 
+  // Operation control mutation
+  const operationControlMutation = useMutation({
+    mutationFn: async ({ operationId, action, notes }: { operationId: number; action: string; notes?: string }) => {
+      const response = await apiRequest("POST", `/api/operations/${operationId}/control`, {
+        action,
+        notes,
+        timestamp: new Date().toISOString(),
+        operatorId: currentUser?.id,
+        operatorName: currentUser?.username || currentOperator
+      });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const actionMessages = {
+        start: "Operation started successfully",
+        pause: "Operation paused",
+        finish: "Operation completed",
+        hold: "Operation put on hold"
+      };
+      
+      toast({
+        title: "Operation Updated",
+        description: actionMessages[variables.action as keyof typeof actionMessages] || "Operation status updated",
+      });
+      
+      setOperationControlDialogOpen(false);
+      setControlNotes("");
+      setControllingOperation(null);
+      queryClient.invalidateQueries({ queryKey: ["/api/operations"] });
+    },
+    onError: () => {
+      toast({
+        title: "Action Failed",
+        description: "Failed to update operation. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Production report mutation
   const submitProductionReportMutation = useMutation({
     mutationFn: async (productionData: {
@@ -416,14 +461,78 @@ export default function OperatorDashboard() {
     }
   };
 
-  // Handle operation start
-  const handleStartOperation = (operation: OperatorOperation) => {
-    updateOperationMutation.mutate({ id: operation.id, status: "in_progress" });
+  // Handle operation control actions
+  const handleOperationControl = (operation: OperatorOperation, action: "start" | "pause" | "finish" | "hold") => {
+    setControllingOperation(operation);
+    setControlAction(action);
+    setOperationControlDialogOpen(true);
   };
 
-  // Handle operation completion
+  // Submit operation control action
+  const handleSubmitOperationControl = () => {
+    if (!controllingOperation) return;
+    
+    operationControlMutation.mutate({
+      operationId: controllingOperation.id,
+      action: controlAction,
+      notes: controlNotes
+    });
+  };
+
+  // Get available actions for operation based on status
+  const getAvailableActions = (status: string) => {
+    switch (status) {
+      case "pending":
+        return ["start"];
+      case "in_progress":
+        return ["pause", "finish", "hold"];
+      case "paused":
+        return ["start", "finish", "hold"];
+      case "on_hold":
+        return ["start"];
+      case "completed":
+        return [];
+      default:
+        return ["start"];
+    }
+  };
+
+  // Get operation timing display
+  const getOperationTiming = (operation: OperatorOperation) => {
+    const now = new Date();
+    const startTime = operation.startTime ? new Date(operation.startTime) : null;
+    const endTime = operation.endTime ? new Date(operation.endTime) : null;
+    
+    if (operation.status === "completed" && startTime && endTime) {
+      const duration = Math.floor((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      return {
+        started: startTime.toLocaleTimeString(),
+        finished: endTime.toLocaleTimeString(),
+        duration: `${duration} min`
+      };
+    } else if (operation.status === "in_progress" && startTime) {
+      const elapsed = Math.floor((now.getTime() - startTime.getTime()) / (1000 * 60));
+      return {
+        started: startTime.toLocaleTimeString(),
+        elapsed: `${elapsed} min`
+      };
+    } else if (operation.status === "paused" && startTime) {
+      return {
+        started: startTime.toLocaleTimeString(),
+        status: "Paused"
+      };
+    }
+    return {};
+  };
+
+  // Handle operation start (legacy - kept for compatibility)
+  const handleStartOperation = (operation: OperatorOperation) => {
+    handleOperationControl(operation, "start");
+  };
+
+  // Handle operation completion (legacy - kept for compatibility) 
   const handleCompleteOperation = (operation: OperatorOperation) => {
-    updateOperationMutation.mutate({ id: operation.id, status: "completed" });
+    handleOperationControl(operation, "finish");
   };
 
   // Handle status report submission
@@ -712,87 +821,139 @@ export default function OperatorDashboard() {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex flex-wrap gap-2">
-                  {operation.status === "pending" && (
+                {/* Operation Timing Information */}
+                {(() => {
+                  const timing = getOperationTiming(operation);
+                  return Object.keys(timing).length > 0 && (
+                    <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Timer className="w-4 h-4 text-blue-600" />
+                        <h4 className="font-medium text-blue-900">Operation Timing</h4>
+                      </div>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                        {timing.started && (
+                          <div>
+                            <p className="text-gray-600">Started</p>
+                            <p className="font-medium text-blue-900">{timing.started}</p>
+                          </div>
+                        )}
+                        {timing.finished && (
+                          <div>
+                            <p className="text-gray-600">Finished</p>
+                            <p className="font-medium text-blue-900">{timing.finished}</p>
+                          </div>
+                        )}
+                        {timing.duration && (
+                          <div>
+                            <p className="text-gray-600">Total Duration</p>
+                            <p className="font-medium text-blue-900">{timing.duration}</p>
+                          </div>
+                        )}
+                        {timing.elapsed && (
+                          <div>
+                            <p className="text-gray-600">Elapsed Time</p>
+                            <p className="font-medium text-blue-900">{timing.elapsed}</p>
+                          </div>
+                        )}
+                        {timing.status && (
+                          <div>
+                            <p className="text-gray-600">Status</p>
+                            <p className="font-medium text-blue-900">{timing.status}</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                {/* Operation Control Buttons */}
+                <div className="mb-4">
+                  <h4 className="font-medium mb-2 text-gray-700">Operation Control</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {getAvailableActions(operation.status).map((action) => (
+                      <Button
+                        key={action}
+                        onClick={() => handleOperationControl(operation, action as any)}
+                        disabled={operationControlMutation.isPending}
+                        variant={action === "start" ? "default" : action === "finish" ? "default" : "outline"}
+                        className={`flex items-center gap-2 ${
+                          action === "start" ? "bg-green-600 hover:bg-green-700" :
+                          action === "pause" ? "bg-orange-600 hover:bg-orange-700 text-white" :
+                          action === "finish" ? "bg-blue-600 hover:bg-blue-700" :
+                          action === "hold" ? "bg-red-600 hover:bg-red-700 text-white" : ""
+                        }`}
+                      >
+                        {action === "start" && <Play className="w-4 h-4" />}
+                        {action === "pause" && <Pause className="w-4 h-4" />}
+                        {action === "finish" && <CheckCircle className="w-4 h-4" />}
+                        {action === "hold" && <XCircle className="w-4 h-4" />}
+                        {action.charAt(0).toUpperCase() + action.slice(1)}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Additional Action Buttons */}
+                <div>
+                  <h4 className="font-medium mb-2 text-gray-700">Additional Actions</h4>
+                  <div className="flex flex-wrap gap-2">
                     <Button
-                      onClick={() => handleStartOperation(operation)}
-                      disabled={updateOperationMutation.isPending}
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOperation(operation);
+                        setReportType("progress");
+                        setReportDialogOpen(true);
+                      }}
                       className="flex items-center gap-2"
                     >
-                      <Play className="w-4 h-4" />
-                      Start Operation
+                      <BarChart3 className="w-4 h-4" />
+                      Report Progress
                     </Button>
-                  )}
-                  
-                  {operation.status === "in_progress" && (
-                    <>
-                      <Button
-                        onClick={() => handleCompleteOperation(operation)}
-                        disabled={updateOperationMutation.isPending}
-                        className="flex items-center gap-2"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Mark Complete
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedOperation(operation);
-                          setReportType("progress");
-                          setReportDialogOpen(true);
-                        }}
-                        className="flex items-center gap-2"
-                      >
-                        <BarChart3 className="w-4 h-4" />
-                        Report Progress
-                      </Button>
-                    </>
-                  )}
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedOperation(operation);
-                      setReportType("issue");
-                      setReportDialogOpen(true);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <AlertTriangle className="w-4 h-4" />
-                    Report Issue
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => {
-                      setSelectedOperation(operation);
-                      setReportType("quality");
-                      setReportDialogOpen(true);
-                    }}
-                    className="flex items-center gap-2"
-                  >
-                    <Flag className="w-4 h-4" />
-                    Quality Report
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => handleClockIn(operation)}
-                    className="flex items-center gap-2"
-                  >
-                    <Clock className="w-4 h-4" />
-                    Clock In
-                  </Button>
-                  
-                  <Button
-                    variant="outline"
-                    onClick={() => handleProductionReport(operation)}
-                    className="flex items-center gap-2"
-                  >
-                    <BarChart3 className="w-4 h-4" />
-                    Production Report
-                  </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOperation(operation);
+                        setReportType("issue");
+                        setReportDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                      Report Issue
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setSelectedOperation(operation);
+                        setReportType("quality");
+                        setReportDialogOpen(true);
+                      }}
+                      className="flex items-center gap-2"
+                    >
+                      <Flag className="w-4 h-4" />
+                      Quality Report
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => handleClockIn(operation)}
+                      className="flex items-center gap-2"
+                    >
+                      <Clock className="w-4 h-4" />
+                      Clock In
+                    </Button>
+                    
+                    <Button
+                      variant="outline"
+                      onClick={() => handleProductionReport(operation)}
+                      className="flex items-center gap-2"
+                    >
+                      <BarChart3 className="w-4 h-4" />
+                      Production Report
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -1294,6 +1455,131 @@ export default function OperatorDashboard() {
                   <>
                     <AlertTriangle className="w-4 h-4 mr-2" />
                     Report Problem
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Operation Control Dialog */}
+      <Dialog open={operationControlDialogOpen} onOpenChange={setOperationControlDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {controlAction === "start" && <Play className="w-5 h-5 text-green-600" />}
+              {controlAction === "pause" && <Pause className="w-5 h-5 text-orange-600" />}
+              {controlAction === "finish" && <CheckCircle className="w-5 h-5 text-blue-600" />}
+              {controlAction === "hold" && <XCircle className="w-5 h-5 text-red-600" />}
+              {controlAction.charAt(0).toUpperCase() + controlAction.slice(1)} Operation
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {controllingOperation && (
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="font-medium text-gray-900 mb-2">{controllingOperation.name}</h4>
+                <p className="text-sm text-gray-600 mb-1">Job: {controllingOperation.jobName}</p>
+                <p className="text-sm text-gray-600 mb-1">Resource: {controllingOperation.resourceName}</p>
+                <p className="text-sm text-gray-600">Current Status: 
+                  <Badge className={`ml-2 ${getStatusColor(controllingOperation.status)}`}>
+                    {controllingOperation.status.replace("_", " ")}
+                  </Badge>
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Action Confirmation
+                </label>
+                <div className={`p-3 rounded-lg border-2 ${
+                  controlAction === "start" ? "border-green-200 bg-green-50" :
+                  controlAction === "pause" ? "border-orange-200 bg-orange-50" :
+                  controlAction === "finish" ? "border-blue-200 bg-blue-50" :
+                  "border-red-200 bg-red-50"
+                }`}>
+                  <p className={`text-sm font-medium ${
+                    controlAction === "start" ? "text-green-800" :
+                    controlAction === "pause" ? "text-orange-800" :
+                    controlAction === "finish" ? "text-blue-800" :
+                    "text-red-800"
+                  }`}>
+                    {controlAction === "start" && "This will start the operation and begin timing tracking."}
+                    {controlAction === "pause" && "This will pause the operation and stop timing tracking."}
+                    {controlAction === "finish" && "This will mark the operation as completed and stop timing tracking."}
+                    {controlAction === "hold" && "This will put the operation on hold due to external factors."}
+                  </p>
+                </div>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Notes (Optional)
+                </label>
+                <Textarea
+                  placeholder={`Add any notes about ${controlAction === "finish" ? "completion" : controlAction === "hold" ? "the hold reason" : `${controlAction}ing`} this operation...`}
+                  value={controlNotes}
+                  onChange={(e) => setControlNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              {controlAction === "finish" && (
+                <Alert className="border-blue-200 bg-blue-50">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <AlertDescription className="text-blue-800">
+                    <strong>Operation Completion:</strong> This will mark the operation as finished. 
+                    Make sure all work is complete and quality checks are satisfied.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
+              {controlAction === "hold" && (
+                <Alert className="border-red-200 bg-red-50">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                  <AlertDescription className="text-red-800">
+                    <strong>Operation Hold:</strong> This will temporarily stop the operation. 
+                    Please specify the reason in the notes section.
+                  </AlertDescription>
+                </Alert>
+              )}
+            </div>
+            
+            <div className="flex gap-2 justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setOperationControlDialogOpen(false);
+                  setControlNotes("");
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSubmitOperationControl}
+                disabled={operationControlMutation.isPending}
+                className={
+                  controlAction === "start" ? "bg-green-600 hover:bg-green-700" :
+                  controlAction === "pause" ? "bg-orange-600 hover:bg-orange-700" :
+                  controlAction === "finish" ? "bg-blue-600 hover:bg-blue-700" :
+                  "bg-red-600 hover:bg-red-700"
+                }
+              >
+                {operationControlMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    {controlAction === "start" && <Play className="w-4 h-4 mr-2" />}
+                    {controlAction === "pause" && <Pause className="w-4 h-4 mr-2" />}
+                    {controlAction === "finish" && <CheckCircle className="w-4 h-4 mr-2" />}
+                    {controlAction === "hold" && <XCircle className="w-4 h-4 mr-2" />}
+                    {controlAction.charAt(0).toUpperCase() + controlAction.slice(1)} Operation
                   </>
                 )}
               </Button>
