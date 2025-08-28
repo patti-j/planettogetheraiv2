@@ -105,12 +105,18 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
         duration: 1500,
       });
       
-      // Clear all cached queries
-      queryClient.clear();
+      // Only invalidate role-related and auth queries, preserve other app data
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+      await queryClient.invalidateQueries({ 
+        predicate: query => 
+          query.queryKey[0]?.toString().includes("assigned-roles") ||
+          query.queryKey[0]?.toString().includes("current-role") ||
+          query.queryKey[0]?.toString().includes("users")
+      });
       
-      // Reload the page after a short delay
+      // Reload the page after a short delay to refresh UI with new role
       setTimeout(() => {
-        window.location.href = '/';
+        window.location.href = '/dashboard';
       }, 800);
     },
     onError: (error: any) => {
