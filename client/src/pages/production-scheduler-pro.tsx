@@ -132,27 +132,49 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
+  // Set initial zoom level after scheduler is ready
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const scheduler = schedulerRef.current;
+      if (scheduler && scheduler.widget) {
+        scheduler.widget.zoomLevel = 10; // Set initial zoom like HTML version
+        console.log('Initial zoom level set to 10');
+      }
+    }, 500); // Wait for scheduler to be fully initialized
+    
+    return () => clearTimeout(timer);
+  }, [schedulerData]);
+
   // Toolbar actions
   const handleZoomIn = () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
+    const scheduler = schedulerRef.current;
+    if (scheduler && scheduler.widget) {
       // Direct zoom control like in HTML version
-      scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
+      scheduler.widget.zoomLevel = Math.min((scheduler.widget.zoomLevel || 10) + 2, 20);
+      console.log('Zoomed in to level:', scheduler.widget.zoomLevel);
+    } else {
+      console.log('Scheduler not ready for zoom in');
     }
   };
 
   const handleZoomOut = () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
+    const scheduler = schedulerRef.current;
+    if (scheduler && scheduler.widget) {
       // Direct zoom control like in HTML version
-      scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
+      scheduler.widget.zoomLevel = Math.max((scheduler.widget.zoomLevel || 10) - 2, 0);
+      console.log('Zoomed out to level:', scheduler.widget.zoomLevel);
+    } else {
+      console.log('Scheduler not ready for zoom out');
     }
   };
 
   const handleZoomToFit = () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (scheduler) {
-      scheduler.zoomToFit();
+    const scheduler = schedulerRef.current;
+    if (scheduler && scheduler.widget) {
+      scheduler.widget.zoomToFit();
+      console.log('Zoomed to fit');
+    } else {
+      console.log('Scheduler not ready for zoom to fit');
     }
   };
 
