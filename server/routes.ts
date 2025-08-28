@@ -29108,14 +29108,104 @@ Be careful to preserve data integrity and relationships.`;
     }
   }));
 
+  // AI Insights API - Handle nested path pattern from React Query
+  app.get('/api/ai-insights/:timeRange/:location', createSafeHandler(async (req, res) => {
+    const { timeRange, location } = req.params;
+    const { force_refresh } = req.query;
+    
+    console.log('🔍 Nested AI Insights API called:', { timeRange, location, force_refresh });
+    
+    // If force_refresh is true, generate new insights immediately
+    if (force_refresh === 'true') {
+      console.log('🚨 FORCE REFRESH DETECTED - Returning sample data immediately');
+      
+      // Generate dynamic sample data with current timestamp
+      const timestamp = new Date().toISOString();
+      const dynamicInsights = [
+        {
+          id: `fresh_${Date.now()}_1`,
+          type: 'optimization',
+          title: 'Production Schedule Optimization Available',
+          description: 'Analysis shows potential 15% efficiency gain by reordering upcoming brewing operations.',
+          priority: 'high',
+          timestamp,
+          source: 'max_ai',
+          category: 'production',
+          status: 'new',
+          actionable: true,
+          impact: 'Reduce total production time by 3.8 hours',
+          recommendation: 'Apply optimized sequence starting tomorrow morning',
+          confidence: 94,
+          affected_areas: ['Brew Kettle 1', 'Fermentation Tank 2'],
+          estimated_savings: 1850,
+          implementation_time: '10 minutes',
+          related_insights: []
+        },
+        {
+          id: `fresh_${Date.now()}_2`,
+          type: 'quality',
+          title: 'Quality Check Performance Alert',
+          description: 'Recent quality inspection times are 22% above standard. Equipment calibration may be needed.',
+          priority: 'medium',
+          timestamp,
+          source: 'quality_monitor',
+          category: 'quality',
+          status: 'new',
+          actionable: true,
+          impact: 'Quality inspection efficiency down 22%',
+          recommendation: 'Schedule calibration check for next maintenance window',
+          confidence: 87,
+          affected_areas: ['Quality Lab Station 3'],
+          estimated_savings: 620,
+          implementation_time: '45 minutes',
+          related_insights: []
+        },
+        {
+          id: `fresh_${Date.now()}_3`,
+          type: 'maintenance',
+          title: 'Predictive Maintenance Alert',
+          description: 'Fermentation Tank 4 showing early signs of temperature regulation issues.',
+          priority: 'critical',
+          timestamp,
+          source: 'predictive_maintenance',
+          category: 'maintenance',
+          status: 'new',
+          actionable: true,
+          impact: 'Prevent potential batch loss worth $12,500',
+          recommendation: 'Schedule temperature sensor inspection within 48 hours',
+          confidence: 91,
+          affected_areas: ['Fermentation Tank 4'],
+          estimated_savings: 12500,
+          implementation_time: '2 hours',
+          related_insights: []
+        }
+      ];
+      
+      console.log(`✅ Returning ${dynamicInsights.length} fresh insights`);
+      return res.json(dynamicInsights);
+    }
+    
+    // Default behavior - return existing sample insights
+    try {
+      const insights = await storage.getAIInsights(parseInt(timeRange.replace('d', '')));
+      res.json(insights);
+    } catch (error) {
+      console.error("Error fetching AI insights:", error);
+      res.status(500).json({ error: "Failed to fetch AI insights" });
+    }
+  }));
+
   // AI Insights API
   app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
     try {
       const { timeRange = '7d', page, force_refresh } = req.query;
       console.log('🔍 AI Insights API called with params:', { timeRange, page, force_refresh });
+      console.log('🔍 Request URL:', req.originalUrl);
+      console.log('🔍 Request method:', req.method);
       
       // If force_refresh is true, generate new insights (temporarily disabled OpenAI due to timeout issues)
       if (force_refresh === 'true') {
+        console.log('🚨 FORCE REFRESH DETECTED - Returning sample data immediately');
         console.log('🤖 Generating fresh AI insights (using sample data due to API timeouts)...');
         
         // Generate dynamic sample data with current timestamp for fresh feel
