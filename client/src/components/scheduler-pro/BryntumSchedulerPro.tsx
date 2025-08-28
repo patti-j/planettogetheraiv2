@@ -118,26 +118,26 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         name: `${op.jobName}: ${op.operationName}`,
         startDate: startDate,
         endDate: endDate,
-        // Jim's corrections: Include assignment type and scheduling info
-        assignmentType: op.assignmentType || 'unscheduled',
-        isActuallyScheduled: op.isActuallyScheduled || false,
-        resourceBlockId: op.resourceBlockId,
-        // Visual indicators for different assignment types
-        eventStyle: op.isLocked ? 'locked' : 'normal',
+        // Bryntum-supported properties only
         eventColor: getOperationColor(op),
-        // Additional operation data
-        jobId: op.jobId,
-        operationId: op.operationId,
-        priority: op.priority,
-        status: op.status,
-        setupStart: op.setupStart,
-        setupEnd: op.setupEnd,
-        runStart: op.runStart,
-        runEnd: op.runEnd,
-        postProcessingStart: op.postProcessingStart,
-        postProcessingEnd: op.postProcessingEnd,
         // Lock scheduled operations to prevent accidental moves
-        readOnly: op.isLocked || false
+        readOnly: op.isLocked || false,
+        // Store custom data in a data object that Bryntum won't process
+        data: {
+          assignmentType: op.assignmentType || 'unscheduled',
+          isActuallyScheduled: op.isActuallyScheduled || false,
+          resourceBlockId: op.resourceBlockId,
+          jobId: op.jobId,
+          operationId: op.operationId,
+          priority: op.priority,
+          status: op.status,
+          setupStart: op.setupStart,
+          setupEnd: op.setupEnd,
+          runStart: op.runStart,
+          runEnd: op.runEnd,
+          postProcessingStart: op.postProcessingStart,
+          postProcessingEnd: op.postProcessingEnd
+        }
       };
     }).filter(Boolean); // Remove null entries from invalid dates
     

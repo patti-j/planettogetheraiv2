@@ -58,12 +58,7 @@ export class GanttDataService {
         startDate: new Date(baseDate),
         endDate: new Date(baseDate.getTime() + 4 * 60 * 60 * 1000),
         percentDone: 75,
-        eventColor: 'blue',
-        segments: [
-          { id: 's1', type: 'setup', duration: 0.5, percentComplete: 100 },
-          { id: 's2', type: 'run', duration: 3, percentComplete: 80 },
-          { id: 's3', type: 'teardown', duration: 0.5, percentComplete: 20 }
-        ]
+        eventColor: 'blue'
       },
       {
         id: 'e2',
