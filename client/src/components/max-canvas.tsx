@@ -573,6 +573,8 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
 };
 
 const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
+  console.log('ChartWidget received data:', data);
+  
   const chartType = data?.chartType || 'bar';
   let chartData = data?.data || data || [];
   const title = data?.title || 'Production Chart';
@@ -580,8 +582,17 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   // Color scheme for charts
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
 
-  // Generate sample data if using template reference
+  // Debug the template check
+  console.log('Template check:', {
+    'data?.template': data?.template,
+    'chartData': chartData,
+    'isArray': Array.isArray(chartData),
+    'length': Array.isArray(chartData) ? chartData.length : 'not array'
+  });
+
+  // Generate sample data if using template reference or no data
   if (data?.template === 'jobs' || (!chartData || (Array.isArray(chartData) && chartData.length === 0))) {
+    console.log('Using sample data because template is "jobs" or no chart data');
     chartData = [
       { name: 'Manufacturing', value: 35 },
       { name: 'Quality Control', value: 25 },
@@ -589,6 +600,7 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
       { name: 'Maintenance', value: 15 },
       { name: 'R&D', value: 5 }
     ];
+    console.log('Generated sample chartData:', chartData);
   }
 
   // Check if we still have no valid chart data
