@@ -41,20 +41,12 @@ export function AssignedRoleSwitcher({ userId, currentRole }: AssignedRoleSwitch
   const { data: assignedRoles = [] } = useQuery({
     queryKey: [`/api/users/${userId}/assigned-roles`],
     enabled: !!userId,
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/users/${userId}/assigned-roles`);
-      return await response.json();
-    },
   });
 
   // Get current role
   const { data: currentRoleData } = useQuery({
     queryKey: [`/api/users/${userId}/current-role`],
     enabled: !!userId,
-    queryFn: async () => {
-      const response = await apiRequest('GET', `/api/users/${userId}/current-role`);
-      return await response.json();
-    },
   });
 
   // Switch role mutation

@@ -184,13 +184,28 @@ export function useAuth() {
         
         console.log(`Login successful, redirecting to ${redirectPath} (mobile: ${isMobile})`);
         
-        // Immediately invalidate the auth query to refetch user data
+        // First invalidate and refetch auth data to ensure proper authentication
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
+        
+        // Then also prefetch user role and workspace data for smoother loading
+        if (data.user && data.user.id) {
+          await Promise.all([
+            queryClient.prefetchQuery({ 
+              queryKey: [`/api/users/${data.user.id}/assigned-roles`] 
+            }),
+            queryClient.prefetchQuery({ 
+              queryKey: [`/api/users/${data.user.id}/current-role`] 
+            })
+          ]);
+        }
         
         // Add a small delay to ensure state is properly updated
         setTimeout(() => {
+          if (isMobile) {
+            console.log("Desktop login successful, redirecting to /dashboard");
+          }
           window.location.href = redirectPath;
-        }, 100);
+        }, 150);
       } catch (error) {
         console.error("Post-login processing error:", error);
         // Even if invalidation fails, still redirect based on device type
@@ -198,7 +213,7 @@ export function useAuth() {
         const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
         setTimeout(() => {
           window.location.href = redirectPath;
-        }, 100);
+        }, 150);
       }
     },
     onError: (error) => {
@@ -215,11 +230,18 @@ export function useAuth() {
       const currentToken = localStorage.getItem('authToken');
       console.log("✓ Current token for logout:", currentToken);
       
-      // IMMEDIATELY clear authentication state to prevent any re-auth
+      // Clear only authentication-related queries, preserve other app data
       queryClient.setQueryData(["/api/auth/me"], null);
-      queryClient.setQueryData(["/api/auth/me"], undefined);
       queryClient.cancelQueries();
-      queryClient.clear();
+      
+      // Only invalidate auth-related queries instead of clearing everything
+      queryClient.removeQueries({ queryKey: ["/api/auth/me"] });
+      queryClient.removeQueries({ predicate: query => 
+        query.queryKey[0]?.toString().includes("/api/auth") ||
+        query.queryKey[0]?.toString().includes("/api/users") ||
+        query.queryKey[0]?.toString().includes("assigned-roles") ||
+        query.queryKey[0]?.toString().includes("current-role")
+      });
       
       // Send logout request FIRST before clearing localStorage
       try {
