@@ -118,12 +118,14 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     return () => document.removeEventListener('keydown', handleKeydown);
   }, [isOpen, onClose, currentIndex, allItems.length]);
 
-  // Auto-focus search input when menu opens
+  // Auto-focus search input when menu opens and select existing text
   useEffect(() => {
     if (isOpen && searchInputRef.current) {
       // Use a small delay to ensure the menu animation has started
       const timer = setTimeout(() => {
         searchInputRef.current?.focus();
+        // Select all existing text so user can immediately start typing
+        searchInputRef.current?.select();
       }, 150);
       return () => clearTimeout(timer);
     }

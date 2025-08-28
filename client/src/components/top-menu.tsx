@@ -64,6 +64,8 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
   const [useCardLayout, setUseCardLayout] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
   const menuContentRef = React.useRef<HTMLDivElement>(null);
+  const mobileSearchRef = React.useRef<HTMLInputElement>(null);
+  const desktopSearchRef = React.useRef<HTMLInputElement>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
   const { isMaxOpen, setMaxOpen } = useMaxDock();
@@ -83,6 +85,24 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
       return () => {
         document.body.style.overflow = originalOverflow;
       };
+    }
+  }, [menuOpen]);
+
+  // Auto-select search text when menu opens
+  useEffect(() => {
+    if (menuOpen) {
+      // Use a small delay to ensure the menu has opened
+      const timer = setTimeout(() => {
+        // Focus and select text in the appropriate search input
+        if (window.innerWidth < 640 && mobileSearchRef.current) {
+          mobileSearchRef.current.focus();
+          mobileSearchRef.current.select();
+        } else if (desktopSearchRef.current) {
+          desktopSearchRef.current.focus();
+          desktopSearchRef.current.select();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
     }
   }, [menuOpen]);
 
@@ -552,6 +572,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
+                    ref={mobileSearchRef}
                     type="text"
                     placeholder="Search"
                     value={searchFilter}
@@ -589,6 +610,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 <div className="relative w-full max-w-md">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                   <Input
+                    ref={desktopSearchRef}
                     type="text"
                     placeholder="Search menu items..."
                     value={searchFilter}
