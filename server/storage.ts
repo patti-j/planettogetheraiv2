@@ -17551,6 +17551,92 @@ export class DatabaseStorage implements IStorage {
       recentUsage
     };
   }
+
+  // AI Insights Implementation
+  async getAIInsights(days = 7): Promise<any[]> {
+    const timestamp = new Date().toISOString();
+    const baseTime = Date.now();
+    
+    // Return sample insights for the AI Insights page
+    return [
+      {
+        id: `insight_${baseTime}_1`,
+        type: 'optimization',
+        title: 'Brewing Sequence Optimization Opportunity',
+        description: 'Current scheduling leaves 2.3 hours of idle time on Brew Kettle 2. Optimizing sequence could improve throughput by 12%.',
+        priority: 'high',
+        timestamp,
+        source: 'scheduling_optimizer',
+        category: 'production',
+        status: 'new',
+        actionable: true,
+        impact: 'Increase daily production by 480 liters',
+        recommendation: 'Reschedule Pale Ale brewing to start 2 hours earlier',
+        confidence: 89,
+        affected_areas: ['Brew Kettle 2', 'Fermentation Tank 1'],
+        estimated_savings: 1200,
+        implementation_time: '15 minutes',
+        related_insights: []
+      },
+      {
+        id: `insight_${baseTime}_2`,
+        type: 'quality',
+        title: 'Temperature Variance Alert',
+        description: 'Fermentation temperatures in Tank 3 showing 0.8°C variance from optimal range, potentially affecting flavor profile.',
+        priority: 'medium',
+        timestamp,
+        source: 'quality_monitor',
+        category: 'quality',
+        status: 'new',
+        actionable: true,
+        impact: 'Prevent potential batch quality issues',
+        recommendation: 'Calibrate temperature sensors and check insulation',
+        confidence: 92,
+        affected_areas: ['Fermentation Tank 3'],
+        estimated_savings: 850,
+        implementation_time: '45 minutes',
+        related_insights: []
+      },
+      {
+        id: `insight_${baseTime}_3`,
+        type: 'maintenance',
+        title: 'Pump Performance Degradation',
+        description: 'Transfer Pump P-102 showing 15% decrease in flow rate over past week. Preventive maintenance recommended.',
+        priority: 'medium',
+        timestamp,
+        source: 'predictive_maintenance',
+        category: 'maintenance',
+        status: 'new',
+        actionable: true,
+        impact: 'Prevent unplanned downtime',
+        recommendation: 'Schedule pump inspection during next maintenance window',
+        confidence: 87,
+        affected_areas: ['Transfer Pump P-102'],
+        estimated_savings: 3200,
+        implementation_time: '2 hours',
+        related_insights: []
+      },
+      {
+        id: `insight_${baseTime}_4`,
+        type: 'inventory',
+        title: 'Raw Material Stock Optimization',
+        description: 'Hops inventory shows opportunity to reduce carrying costs while maintaining production schedule.',
+        priority: 'low',
+        timestamp,
+        source: 'inventory_optimizer',
+        category: 'supply_chain',
+        status: 'new',
+        actionable: true,
+        impact: 'Reduce inventory carrying costs',
+        recommendation: 'Adjust next hops delivery by 3 days',
+        confidence: 76,
+        affected_areas: ['Raw Materials Warehouse'],
+        estimated_savings: 420,
+        implementation_time: '10 minutes',
+        related_insights: []
+      }
+    ];
+  }
 }
 
 export const storage = new DatabaseStorage();
