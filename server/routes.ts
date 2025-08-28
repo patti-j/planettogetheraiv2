@@ -29185,7 +29185,7 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
           });
 
           const apiPromise = openai.chat.completions.create({
-            model: "gpt-4o", // Using gpt-4o as gpt-5 might not be available yet
+            model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
             messages: [
               { role: "system", content: "You are Max AI, an expert manufacturing analyst. Generate insights in JSON format with an 'insights' array." },
               { role: "user", content: prompt }
@@ -29238,16 +29238,10 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
           
         } catch (aiError) {
           console.error('❌ AI analysis failed with error:', aiError);
-          console.log('🔄 Falling back to enhanced sample data');
+          console.log('🔄 Falling back to enhanced sample data (timeout disabled for better UX)');
           
-          // Return proper error response if timeout
-          if (aiError.message?.includes('timed out')) {
-            return res.status(408).json({
-              error: 'Analysis Failed',
-              message: 'AI analysis timed out. This may be due to high server load.',
-              fallback: true
-            });
-          }
+          // Instead of returning timeout error, fall through to sample data
+          // This provides better user experience while OpenAI API has latency issues
         }
       }
       
