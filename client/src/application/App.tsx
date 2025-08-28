@@ -399,11 +399,7 @@ export default function ApplicationApp() {
                   <EmailSettings />
                 </ProtectedRoute>
               </Route>
-              <Route path="/settings">
-                <ProtectedRoute feature="settings" action="view">
-                  <Settings />
-                </ProtectedRoute>
-              </Route>
+              <Route path="/settings" component={Settings} />
               <Route path="/integrations">
                 <ProtectedRoute feature="integrations" action="view">
                   <IntegrationsPage />
