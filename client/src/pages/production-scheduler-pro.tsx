@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 import { Button } from '@/components/ui/button';
@@ -29,9 +29,6 @@ import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesServic
 
 const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
-  const schedulerInstanceRef = useRef<any>(null);
-  const [schedulerReady, setSchedulerReady] = useState(false);
-  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [resourceCount, setResourceCount] = useState(0);
   const [operationCount, setOperationCount] = useState(0);
@@ -140,75 +137,61 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
-  // Set initial zoom level and fit to view after scheduler is ready
+  // Set initial zoom level and fit to view after scheduler mounts
   useEffect(() => {
-    if (schedulerReady && schedulerInstanceRef.current) {
-      const scheduler = schedulerInstanceRef.current;
-      console.log('Scheduler ready, instance available:', !!scheduler);
-      
-      // Use setTimeout to ensure scheduler is fully rendered
-      setTimeout(() => {
-        if (scheduler && scheduler.zoomToFit) {
+    // Use a timer to ensure the scheduler is fully rendered
+    const timer = setTimeout(() => {
+      const scheduler = schedulerRef.current?.instance;
+      if (scheduler) {
+        console.log('Scheduler mounted, applying initial zoom');
+        if (scheduler.zoomToFit) {
           scheduler.zoomToFit();
           console.log('Initial zoom to fit applied');
-        } else if (scheduler && scheduler.zoomLevel !== undefined) {
+        } else if (scheduler.zoomLevel !== undefined) {
           scheduler.zoomLevel = 10;
           console.log('Initial zoom level set to 10');
         }
-      }, 100);
-    }
-  }, [schedulerReady]);
+      }
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [schedulerData, schedulerConfig]);
 
-  // Toolbar actions
-  const handleZoomIn = () => {
-    // Try both captured instance and direct scheduler instance
-    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
+  // Toolbar actions - memoized with useCallback
+  const handleZoomIn = useCallback(() => {
+    const scheduler = schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
       scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
       console.log('Zoomed in to level:', scheduler.zoomLevel);
     } else {
-      console.log('Scheduler not ready for zoom in', {
-        hasRef: !!schedulerInstanceRef.current,
-        hasInstance: !!schedulerInstance,
-        hasSchedulerRef: !!schedulerRef.current
-      });
+      console.log('Scheduler not ready for zoom in');
     }
-  };
+  }, []);
 
-  const handleZoomOut = () => {
-    // Try both captured instance and direct scheduler instance
-    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
+  const handleZoomOut = useCallback(() => {
+    const scheduler = schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomLevel !== undefined) {
       // Direct zoom control like in HTML version
       scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
       console.log('Zoomed out to level:', scheduler.zoomLevel);
     } else {
-      console.log('Scheduler not ready for zoom out', {
-        hasRef: !!schedulerInstanceRef.current,
-        hasInstance: !!schedulerInstance,
-        hasSchedulerRef: !!schedulerRef.current
-      });
+      console.log('Scheduler not ready for zoom out');
     }
-  };
+  }, []);
 
-  const handleZoomToFit = () => {
-    // Try both captured instance and direct scheduler instance
-    const scheduler = schedulerInstanceRef.current || schedulerInstance || schedulerRef.current?.instance;
+  const handleZoomToFit = useCallback(() => {
+    const scheduler = schedulerRef.current?.instance;
     
     if (scheduler && scheduler.zoomToFit) {
       scheduler.zoomToFit();
       console.log('Zoomed to fit');
     } else {
-      console.log('Scheduler not ready for zoom to fit', {
-        hasRef: !!schedulerInstanceRef.current,
-        hasInstance: !!schedulerInstance,
-        hasSchedulerRef: !!schedulerRef.current
-      });
+      console.log('Scheduler not ready for zoom to fit');
     }
-  };
+  }, []);
 
   const handleViewChange = (preset: string) => {
     const scheduler = schedulerRef.current?.instance;
@@ -282,33 +265,37 @@ const ProductionSchedulerProV2: React.FC = () => {
     }
   };
 
-  // Event handlers
-  const handleSchedulerEvent = useMemo(() => ({
-    beforeEventEdit: ({ eventRecord }: any) => {
-      console.log('Editing event:', eventRecord);
-      return true;
-    },
-    beforeEventSave: ({ eventRecord, values }: any) => {
-      console.log('Saving event:', eventRecord, values);
-      return true;
-    },
-    beforeEventDelete: ({ eventRecords }: any) => {
-      console.log('Deleting events:', eventRecords);
-      return true;
-    },
-    eventDrop: ({ eventRecords, targetResourceRecord, startDate }: any) => {
-      console.log('Event dropped:', eventRecords, targetResourceRecord, startDate);
-    },
-    eventResizeEnd: ({ eventRecord, startDate, endDate }: any) => {
-      console.log('Event resized:', eventRecord, startDate, endDate);
-    },
-    dependencyAdd: ({ dependency }: any) => {
-      console.log('Dependency added:', dependency);
-    },
-    dependencyRemove: ({ dependency }: any) => {
-      console.log('Dependency removed:', dependency);
-    }
-  }), []);
+  // Event handlers - properly memoized with useCallback
+  const handleBeforeEventEdit = useCallback(({ eventRecord }: any) => {
+    console.log('Editing event:', eventRecord);
+    return true;
+  }, []);
+
+  const handleBeforeEventSave = useCallback(({ eventRecord, values }: any) => {
+    console.log('Saving event:', eventRecord, values);
+    return true;
+  }, []);
+
+  const handleBeforeEventDelete = useCallback(({ eventRecords }: any) => {
+    console.log('Deleting events:', eventRecords);
+    return true;
+  }, []);
+
+  const handleEventDrop = useCallback(({ eventRecords, targetResourceRecord, startDate }: any) => {
+    console.log('Event dropped:', eventRecords, targetResourceRecord, startDate);
+  }, []);
+
+  const handleEventResizeEnd = useCallback(({ eventRecord, startDate, endDate }: any) => {
+    console.log('Event resized:', eventRecord, startDate, endDate);
+  }, []);
+
+  const handleDependencyAdd = useCallback(({ dependency }: any) => {
+    console.log('Dependency added:', dependency);
+  }, []);
+
+  const handleDependencyRemove = useCallback(({ dependency }: any) => {
+    console.log('Dependency removed:', dependency);
+  }, []);
 
   if (isLoading || !schedulerData || !schedulerConfig) {
     return (
@@ -424,41 +411,13 @@ const ProductionSchedulerProV2: React.FC = () => {
           ref={schedulerRef}
           {...schedulerConfig}
           project={schedulerData.project}
-          onBeforeEventEdit={handleSchedulerEvent.beforeEventEdit}
-          onBeforeEventSave={handleSchedulerEvent.beforeEventSave}
-          onBeforeEventDelete={handleSchedulerEvent.beforeEventDelete}
-          onEventDrop={handleSchedulerEvent.eventDrop}
-          onEventResizeEnd={handleSchedulerEvent.eventResizeEnd}
-          onDependencyAdd={handleSchedulerEvent.dependencyAdd}
-          onDependencyRemove={handleSchedulerEvent.dependencyRemove}
-          onPaint={() => {
-            // Capture the scheduler instance when it's painted
-            const component = schedulerRef.current;
-            if (component) {
-              // Try multiple ways to get the Bryntum instance
-              const instance = component.instance || component.widget || component.schedulerInstance || component;
-              
-              // Check if it's the actual Bryntum widget
-              if (instance && (instance.zoomLevel !== undefined || instance.zoomToFit)) {
-                // Store in ref to persist across renders
-                schedulerInstanceRef.current = instance;
-                setSchedulerReady(true);
-                console.log('✅ Scheduler instance captured on paint', {
-                  hasZoomLevel: 'zoomLevel' in instance,
-                  hasZoomToFit: 'zoomToFit' in instance,
-                  type: instance.constructor?.name
-                });
-                
-                // Set instance immediately for zoom controls
-                setSchedulerInstance(instance);
-              } else {
-                console.log('⚠️ Instance found but not ready:', {
-                  hasInstance: !!instance,
-                  keys: instance ? Object.keys(instance).slice(0, 10) : []
-                });
-              }
-            }
-          }}
+          onBeforeEventEdit={handleBeforeEventEdit}
+          onBeforeEventSave={handleBeforeEventSave}
+          onBeforeEventDelete={handleBeforeEventDelete}
+          onEventDrop={handleEventDrop}
+          onEventResizeEnd={handleEventResizeEnd}
+          onDependencyAdd={handleDependencyAdd}
+          onDependencyRemove={handleDependencyRemove}
           />
         </div>
       </div>
