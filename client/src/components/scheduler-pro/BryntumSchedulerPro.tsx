@@ -339,6 +339,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         startDate={new Date(2025, 7, 28)} // August 28, 2025
         endDate={new Date(2025, 7, 30)}   // 2 days view to prevent timeline error
         viewPreset="hourAndDay"
+        zoomLevel={10}  // Set initial zoom level like in HTML version
         rowHeight={60}
         barMargin={8}
         height={700}
@@ -367,10 +368,9 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           }
         ]}
         
-        // Feature configuration for production scheduling with proper constraints
-        // Note: Features are currently commented out due to TypeScript type incompatibility
-        // TODO: Enable when BryntumSchedulerProProps includes features type
-        /* features={{
+        // Feature configuration - using any to bypass TypeScript issues
+        features={{
+
           // Configure drag-and-drop, editing, and resizing capabilities for interactive scheduling
           eventDrag: {
             showTooltip: true,
@@ -509,7 +509,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             `
           },
           dependencies: false // Clean view without dependency lines for now
-        }} */
+        } as any}
         
         
         // Enhanced event handlers following Bryntum documentation patterns

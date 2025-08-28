@@ -77,6 +77,7 @@ const ProductionSchedulerProV2: React.FC = () => {
           startDate: new Date(2025, 7, 28),
           endDate: new Date(2025, 7, 30),
           viewPreset: 'weekAndDayLetter',
+          zoomLevel: 10,  // Set initial zoom level like in HTML version
           rowHeight: 50,
           barMargin: 5,
           columns: config.columns,
@@ -135,20 +136,16 @@ const ProductionSchedulerProV2: React.FC = () => {
   const handleZoomIn = () => {
     const scheduler = schedulerRef.current?.instance;
     if (scheduler) {
-      const newZoom = configService.zoomIn();
-      if (newZoom) {
-        scheduler.viewPreset = newZoom.preset;
-      }
+      // Direct zoom control like in HTML version
+      scheduler.zoomLevel = Math.min((scheduler.zoomLevel || 10) + 2, 20);
     }
   };
 
   const handleZoomOut = () => {
     const scheduler = schedulerRef.current?.instance;
     if (scheduler) {
-      const newZoom = configService.zoomOut();
-      if (newZoom) {
-        scheduler.viewPreset = newZoom.preset;
-      }
+      // Direct zoom control like in HTML version
+      scheduler.zoomLevel = Math.max((scheduler.zoomLevel || 10) - 2, 0);
     }
   };
 
