@@ -16081,16 +16081,25 @@ Create a natural, conversational voice script that explains this feature to some
   // Unplanned Downtime API endpoints
   app.post("/api/unplanned-downtime", async (req, res) => {
     try {
+      console.log("Unplanned downtime request body:", JSON.stringify(req.body, null, 2));
+      
       const validation = insertUnplannedDowntimeSchema.safeParse(req.body);
       if (!validation.success) {
-        return res.status(400).json({ error: "Invalid unplanned downtime data", details: validation.error.errors });
+        console.log("Validation errors:", JSON.stringify(validation.error.errors, null, 2));
+        return res.status(400).json({ 
+          error: "Invalid unplanned downtime data", 
+          details: validation.error.errors,
+          receivedData: req.body
+        });
       }
 
+      console.log("Creating unplanned downtime with validated data:", JSON.stringify(validation.data, null, 2));
       const unplannedDowntime = await storage.createUnplannedDowntime(validation.data);
+      console.log("Successfully created unplanned downtime:", unplannedDowntime.id);
       res.status(201).json(unplannedDowntime);
     } catch (error) {
       console.error("Error creating unplanned downtime:", error);
-      res.status(500).json({ error: "Failed to create unplanned downtime report" });
+      res.status(500).json({ error: "Failed to create unplanned downtime report", details: error.message });
     }
   });
 
