@@ -54,6 +54,7 @@ import ProductionPlanning from "@/pages/production-planning";
 import ScheduleSequences from "@/pages/schedule-sequences";
 import ShiftManagement from "@/pages/shift-management";
 import TimeTracking from "@/pages/time-tracking";
+import ProductionScheduler from "@/pages/production-scheduler";
 
 // Additional page imports for missing routes
 import AutonomousOptimization from "@/pages/autonomous-optimization";
@@ -186,6 +187,11 @@ export default function ApplicationApp() {
               <Route path="/production-schedule-simple">
                 <ProtectedRoute feature="schedule" action="view">
                   <ProductionScheduleSimple />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/production-scheduler">
+                <ProtectedRoute feature="schedule" action="view">
+                  <ProductionScheduler />
                 </ProtectedRoute>
               </Route>
               <Route path="/master-production-schedule">
