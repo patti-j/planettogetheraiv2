@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Menu, X } from "lucide-react";
 import { useLocation } from "wouter";
+import { Logo } from "@/components/logo";
 const WebsiteHeader: React.FC = () => {
   const [, setLocation] = useLocation();
   const [isOpen, setIsOpen] = useState(false);
@@ -44,12 +45,9 @@ const WebsiteHeader: React.FC = () => {
           <div className="flex items-center">
             <button
               onClick={() => setLocation("/")}
-              className="flex items-center space-x-2"
+              className="flex items-center"
             >
-              <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center text-white font-bold text-sm">
-                PT
-              </div>
-              <span className="text-lg sm:text-xl font-bold text-gray-900 hidden sm:block">PlanetTogether</span>
+              <Logo size="medium" showText={true} />
             </button>
           </div>
 
