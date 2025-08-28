@@ -4,6 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { 
   Users, 
   Calendar, 
@@ -14,12 +16,22 @@ import {
   UserCheck,
   BarChart3,
   Target,
-  Wrench
+  Wrench,
+  Plus,
+  Edit,
+  Save,
+  X,
+  CheckCircle,
+  Star
 } from "lucide-react";
 
 export default function LaborPlanning() {
   const [selectedShift, setSelectedShift] = useState("day");
   const [selectedWeek, setSelectedWeek] = useState("current");
+  const [editingCell, setEditingCell] = useState<{employeeId: number, skill: string} | null>(null);
+  const [skillsMatrix, setSkillsMatrix] = useState<{[key: string]: {[key: string]: number}}>({});
+  const [newSkillName, setNewSkillName] = useState("");
+  const [showAddSkill, setShowAddSkill] = useState(false);
 
   // Mock data for labor planning
   const shiftData = {
@@ -36,13 +48,174 @@ export default function LaborPlanning() {
     { skill: "Packaging", required: 5, available: 5, gap: 0, critical: false }
   ];
 
-  const employees = [
-    { id: 1, name: "John Smith", skills: ["CNC Machining", "Quality Control"], shift: "day", availability: "available" },
-    { id: 2, name: "Sarah Johnson", skills: ["Assembly", "Packaging"], shift: "day", availability: "available" },
-    { id: 3, name: "Mike Chen", skills: ["Forklift Operation", "Assembly"], shift: "evening", availability: "requested-off" },
-    { id: 4, name: "Lisa Davis", skills: ["CNC Machining", "Assembly"], shift: "night", availability: "available" },
-    { id: 5, name: "Tom Wilson", skills: ["Quality Control", "Packaging"], shift: "day", availability: "available" }
+  // Available skills and resources that can be assigned
+  const availableSkills = [
+    "CNC Machining", "Quality Control", "Forklift Operation", "Assembly", 
+    "Packaging", "Welding", "Brewing Operations", "Fermentation", 
+    "Maintenance", "Electrical", "HVAC", "Safety Inspector", 
+    "Lean Manufacturing", "Six Sigma", "Team Leadership", "Training"
   ];
+
+  const availableResources = [
+    "Brew Kettle 1", "Brew Kettle 2", "Fermentation Tank 1", "Fermentation Tank 2",
+    "Packaging Line A", "Packaging Line B", "CNC Machine 1", "CNC Machine 2",
+    "Quality Lab", "Forklift 1", "Forklift 2", "Welding Station", 
+    "Assembly Station 1", "Assembly Station 2", "Maintenance Workshop"
+  ];
+
+  const employees = [
+    { 
+      id: 1, 
+      name: "John Smith", 
+      department: "Production",
+      skills: ["CNC Machining", "Quality Control"], 
+      shift: "day", 
+      availability: "available",
+      yearsExperience: 8,
+      certifications: ["ISO 9001", "CNC Programming"]
+    },
+    { 
+      id: 2, 
+      name: "Sarah Johnson", 
+      department: "Production",
+      skills: ["Assembly", "Packaging"], 
+      shift: "day", 
+      availability: "available",
+      yearsExperience: 5,
+      certifications: ["Lean Six Sigma Yellow Belt"]
+    },
+    { 
+      id: 3, 
+      name: "Mike Chen", 
+      department: "Logistics",
+      skills: ["Forklift Operation", "Assembly"], 
+      shift: "evening", 
+      availability: "requested-off",
+      yearsExperience: 12,
+      certifications: ["Forklift License", "Safety Training"]
+    },
+    { 
+      id: 4, 
+      name: "Lisa Davis", 
+      department: "Production",
+      skills: ["CNC Machining", "Assembly"], 
+      shift: "night", 
+      availability: "available",
+      yearsExperience: 6,
+      certifications: ["CNC Programming", "Quality Control"]
+    },
+    { 
+      id: 5, 
+      name: "Tom Wilson", 
+      department: "Quality",
+      skills: ["Quality Control", "Packaging"], 
+      shift: "day", 
+      availability: "available",
+      yearsExperience: 15,
+      certifications: ["ISO 9001", "Lean Six Sigma Green Belt"]
+    },
+    { 
+      id: 6, 
+      name: "Maria Rodriguez", 
+      department: "Brewing",
+      skills: ["Brewing Operations", "Fermentation"], 
+      shift: "day", 
+      availability: "available",
+      yearsExperience: 10,
+      certifications: ["Master Brewer", "Quality Control"]
+    },
+    { 
+      id: 7, 
+      name: "James Taylor", 
+      department: "Maintenance",
+      skills: ["Maintenance", "Electrical"], 
+      shift: "evening", 
+      availability: "available",
+      yearsExperience: 18,
+      certifications: ["Electrical License", "HVAC Certification"]
+    },
+    { 
+      id: 8, 
+      name: "Anna Kim", 
+      department: "Production",
+      skills: ["Assembly", "Team Leadership"], 
+      shift: "day", 
+      availability: "available",
+      yearsExperience: 9,
+      certifications: ["Lean Manufacturing", "Leadership Training"]
+    }
+  ];
+
+  // Initialize skills matrix with sample data
+  const initialSkillsMatrix = employees.reduce((matrix, employee) => {
+    matrix[employee.id] = {};
+    [...availableSkills, ...availableResources].forEach(skill => {
+      // Set proficiency levels based on employee skills (1-5 scale)
+      if (employee.skills.includes(skill)) {
+        matrix[employee.id][skill] = employee.yearsExperience > 10 ? 5 : 
+                                     employee.yearsExperience > 5 ? 4 : 3;
+      } else {
+        matrix[employee.id][skill] = 0; // No proficiency
+      }
+    });
+    return matrix;
+  }, {} as {[key: string]: {[key: string]: number}});
+
+  // Use initialized matrix if skillsMatrix state is empty
+  const currentSkillsMatrix = Object.keys(skillsMatrix).length === 0 ? initialSkillsMatrix : skillsMatrix;
+
+  // Helper functions for skills matrix
+  const getProficiencyLabel = (level: number) => {
+    switch (level) {
+      case 0: return "None";
+      case 1: return "Beginner";
+      case 2: return "Basic";
+      case 3: return "Intermediate";
+      case 4: return "Advanced";
+      case 5: return "Expert";
+      default: return "None";
+    }
+  };
+
+  const getProficiencyColor = (level: number) => {
+    switch (level) {
+      case 0: return "bg-gray-100 text-gray-600";
+      case 1: return "bg-red-100 text-red-700";
+      case 2: return "bg-orange-100 text-orange-700";
+      case 3: return "bg-yellow-100 text-yellow-700";
+      case 4: return "bg-blue-100 text-blue-700";
+      case 5: return "bg-green-100 text-green-700";
+      default: return "bg-gray-100 text-gray-600";
+    }
+  };
+
+  const updateSkillProficiency = (employeeId: number, skill: string, level: number) => {
+    setSkillsMatrix(prev => ({
+      ...prev,
+      [employeeId]: {
+        ...prev[employeeId],
+        [skill]: level
+      }
+    }));
+    setEditingCell(null);
+  };
+
+  const addNewSkill = () => {
+    if (newSkillName.trim()) {
+      availableSkills.push(newSkillName.trim());
+      employees.forEach(employee => {
+        setSkillsMatrix(prev => ({
+          ...prev,
+          [employee.id]: {
+            ...prev[employee.id],
+            [newSkillName.trim()]: 0
+          }
+        }));
+      });
+      setNewSkillName("");
+      setShowAddSkill(false);
+    }
+  };
 
   return (
     <div className="p-6 space-y-6">
@@ -167,40 +340,231 @@ export default function LaborPlanning() {
         <TabsContent value="skills-matrix" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <Wrench className="h-5 w-5 mr-2" />
-                Skills Gap Analysis
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <Wrench className="h-5 w-5 mr-2" />
+                  Skills & Resource Capability Matrix
+                </div>
+                <div className="flex gap-2">
+                  {showAddSkill ? (
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="New skill name"
+                        value={newSkillName}
+                        onChange={(e) => setNewSkillName(e.target.value)}
+                        className="w-40"
+                        onKeyPress={(e) => e.key === 'Enter' && addNewSkill()}
+                      />
+                      <Button size="sm" onClick={addNewSkill}>
+                        <Save className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={() => setShowAddSkill(false)}>
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button size="sm" onClick={() => setShowAddSkill(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Add Skill
+                    </Button>
+                  )}
+                </div>
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {skillsGaps.map((skill, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3">
-                        <h3 className="font-medium">{skill.skill}</h3>
-                        {skill.critical && (
-                          <Badge variant="destructive" className="text-xs">
-                            Critical
-                          </Badge>
-                        )}
-                      </div>
-                      <div className="mt-2 space-y-1">
-                        <div className="flex justify-between text-sm">
-                          <span>Required: {skill.required}</span>
-                          <span>Available: {skill.available}</span>
-                          <span className={skill.gap > 0 ? "text-red-600" : "text-green-600"}>
-                            Gap: {skill.gap > 0 ? `+${skill.gap}` : skill.gap}
-                          </span>
-                        </div>
-                        <Progress 
-                          value={(skill.available / skill.required) * 100} 
-                          className="w-full"
-                        />
-                      </div>
+                {/* Legend */}
+                <div className="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                  <span className="text-sm font-medium">Proficiency Levels:</span>
+                  {[0, 1, 2, 3, 4, 5].map(level => (
+                    <Badge key={level} className={`text-xs ${getProficiencyColor(level)}`}>
+                      {level}: {getProficiencyLabel(level)}
+                    </Badge>
+                  ))}
+                </div>
+
+                {/* Skills Section */}
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <Star className="h-5 w-5 mr-2 text-blue-500" />
+                      Skills Matrix
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-200">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="border border-gray-200 p-3 text-left font-medium">Employee</th>
+                            <th className="border border-gray-200 p-2 text-center font-medium">Dept</th>
+                            {availableSkills.map((skill) => (
+                              <th key={skill} className="border border-gray-200 p-2 text-center font-medium text-xs min-w-[80px]" style={{writingMode: 'vertical-rl', textOrientation: 'mixed'}}>
+                                {skill}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {employees.map((employee) => (
+                            <tr key={employee.id} className="hover:bg-gray-50">
+                              <td className="border border-gray-200 p-3">
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="font-medium">{employee.name}</div>
+                                    <div className="text-xs text-gray-500">{employee.yearsExperience}yr exp • {employee.shift}</div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="border border-gray-200 p-2 text-center text-xs">
+                                <Badge variant="outline" className="text-xs">
+                                  {employee.department}
+                                </Badge>
+                              </td>
+                              {availableSkills.map((skill) => {
+                                const proficiency = currentSkillsMatrix[employee.id]?.[skill] || 0;
+                                const isEditing = editingCell?.employeeId === employee.id && editingCell?.skill === skill;
+                                
+                                return (
+                                  <td key={skill} className="border border-gray-200 p-1">
+                                    {isEditing ? (
+                                      <Select
+                                        value={proficiency.toString()}
+                                        onValueChange={(value) => updateSkillProficiency(employee.id, skill, parseInt(value))}
+                                      >
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {[0, 1, 2, 3, 4, 5].map(level => (
+                                            <SelectItem key={level} value={level.toString()}>
+                                              {level}: {getProficiencyLabel(level)}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <button
+                                        className={`w-full h-8 text-xs rounded px-1 hover:opacity-80 transition-opacity ${getProficiencyColor(proficiency)}`}
+                                        onClick={() => setEditingCell({ employeeId: employee.id, skill })}
+                                      >
+                                        {proficiency}
+                                      </button>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                     </div>
                   </div>
-                ))}
+
+                  {/* Resources Section */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-3 flex items-center">
+                      <Settings className="h-5 w-5 mr-2 text-green-500" />
+                      Resource Capability Matrix
+                    </h3>
+                    <div className="overflow-x-auto">
+                      <table className="w-full border-collapse border border-gray-200">
+                        <thead>
+                          <tr className="bg-gray-50">
+                            <th className="border border-gray-200 p-3 text-left font-medium">Employee</th>
+                            <th className="border border-gray-200 p-2 text-center font-medium">Dept</th>
+                            {availableResources.map((resource) => (
+                              <th key={resource} className="border border-gray-200 p-2 text-center font-medium text-xs min-w-[80px]" style={{writingMode: 'vertical-rl', textOrientation: 'mixed'}}>
+                                {resource}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {employees.map((employee) => (
+                            <tr key={employee.id} className="hover:bg-gray-50">
+                              <td className="border border-gray-200 p-3">
+                                <div className="flex items-center gap-2">
+                                  <div>
+                                    <div className="font-medium">{employee.name}</div>
+                                    <div className="text-xs text-gray-500">
+                                      {employee.certifications.slice(0, 2).join(', ')}
+                                      {employee.certifications.length > 2 && '...'}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="border border-gray-200 p-2 text-center text-xs">
+                                <Badge variant="outline" className="text-xs">
+                                  {employee.department}
+                                </Badge>
+                              </td>
+                              {availableResources.map((resource) => {
+                                const proficiency = currentSkillsMatrix[employee.id]?.[resource] || 0;
+                                const isEditing = editingCell?.employeeId === employee.id && editingCell?.skill === resource;
+                                
+                                return (
+                                  <td key={resource} className="border border-gray-200 p-1">
+                                    {isEditing ? (
+                                      <Select
+                                        value={proficiency.toString()}
+                                        onValueChange={(value) => updateSkillProficiency(employee.id, resource, parseInt(value))}
+                                      >
+                                        <SelectTrigger className="w-full h-8 text-xs">
+                                          <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                          {[0, 1, 2, 3, 4, 5].map(level => (
+                                            <SelectItem key={level} value={level.toString()}>
+                                              {level}: {getProficiencyLabel(level)}
+                                            </SelectItem>
+                                          ))}
+                                        </SelectContent>
+                                      </Select>
+                                    ) : (
+                                      <button
+                                        className={`w-full h-8 text-xs rounded px-1 hover:opacity-80 transition-opacity ${getProficiencyColor(proficiency)}`}
+                                        onClick={() => setEditingCell({ employeeId: employee.id, skill: resource })}
+                                      >
+                                        {proficiency}
+                                      </button>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Skills Gap Summary */}
+                <div className="mt-6 p-4 bg-yellow-50 rounded-lg">
+                  <h4 className="font-medium mb-3 flex items-center">
+                    <AlertTriangle className="h-5 w-5 mr-2 text-yellow-600" />
+                    Skills Gap Analysis
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {skillsGaps.map((skill, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-white rounded border">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{skill.skill}</span>
+                            {skill.critical && (
+                              <Badge variant="destructive" className="text-xs">Critical</Badge>
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-600">
+                            Required: {skill.required} | Available: {skill.available}
+                          </div>
+                          <div className={`text-sm font-medium ${skill.gap > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            Gap: {skill.gap > 0 ? `+${skill.gap}` : 'Met'}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </CardContent>
           </Card>
