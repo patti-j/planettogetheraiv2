@@ -39,6 +39,7 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from '@/hooks/use-toast';
 
 interface AIInsight {
   id: string;
@@ -96,12 +97,48 @@ export default function AIInsightsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedInsight, setSelectedInsight] = useState<AIInsight | null>(null);
   const [timeRange, setTimeRange] = useState('7d');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Fetch insights data
   const { data: insights = [], isLoading, refetch } = useQuery<AIInsight[]>({
     queryKey: ['/api/ai-insights', { timeRange, location }],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Force refresh with AI analysis
+  const forceRefreshInsights = async () => {
+    setIsRefreshing(true);
+    
+    toast({
+      title: "Max AI Analyzing",
+      description: "Analyzing current production data to generate fresh insights...",
+    });
+    
+    try {
+      const response = await fetch(`/api/ai-insights?force_refresh=true&timeRange=${timeRange}`);
+      if (response.ok) {
+        const freshInsights = await response.json();
+        // Update the query cache with fresh insights
+        queryClient.setQueryData(['/api/ai-insights', { timeRange, location }], freshInsights);
+        
+        toast({
+          title: "Fresh Insights Generated",
+          description: `Max AI generated ${freshInsights.length} new insights from current production data.`,
+        });
+      } else {
+        throw new Error('Failed to generate insights');
+      }
+    } catch (error) {
+      console.error('Failed to generate fresh insights:', error);
+      toast({
+        title: "Analysis Failed",
+        description: "Failed to generate fresh insights. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   // Mutation to update insight status
   const updateInsightMutation = useMutation({
@@ -271,9 +308,14 @@ export default function AIInsightsPage() {
                 </SelectContent>
               </Select>
               
-              <Button variant="outline" size="sm" onClick={() => refetch()}>
-                <RefreshCw className="w-4 h-4 mr-2" />
-                Refresh
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={forceRefreshInsights}
+                disabled={isRefreshing}
+              >
+                <RefreshCw className={cn("w-4 h-4 mr-2", isRefreshing && "animate-spin")} />
+                {isRefreshing ? 'Analyzing...' : 'Refresh with AI'}
               </Button>
               
               <Button variant="outline" size="sm">

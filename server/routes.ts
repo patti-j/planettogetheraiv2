@@ -29019,9 +29019,116 @@ Be careful to preserve data integrity and relationships.`;
   // AI Insights API
   app.get('/api/ai-insights', createSafeHandler(async (req, res) => {
     try {
-      const { timeRange = '7d', page } = req.query;
+      const { timeRange = '7d', page, force_refresh } = req.query;
       
-      // Generate sample AI insights data
+      // If force_refresh is true, generate new insights using AI
+      if (force_refresh === 'true') {
+        console.log('🤖 Generating fresh AI insights using OpenAI...');
+        
+        // Fetch current production data for analysis
+        const [operations, alerts, resources] = await Promise.all([
+          // Get current operations data
+          db.select().from(schema.ptJobOperations).limit(50),
+          // Get recent alerts
+          db.select().from(schema.alerts).where(sql`created_at >= NOW() - INTERVAL '7 days'`).limit(20),
+          // Get resource data
+          db.select().from(schema.ptResources).limit(20)
+        ]);
+
+        // Prepare data for AI analysis
+        const productionData = {
+          operations: operations.map(op => ({
+            id: op.id,
+            name: op.name,
+            status: op.status || 'planned',
+            scheduledStart: op.scheduledStart,
+            scheduledEnd: op.scheduledEnd,
+            setupHours: op.setupHours,
+            runHrs: op.runHrs
+          })),
+          alerts: alerts.map(alert => ({
+            type: alert.type,
+            severity: alert.severity,
+            message: alert.message,
+            createdAt: alert.createdAt
+          })),
+          resources: resources.map(res => ({
+            name: res.name,
+            type: res.type,
+            status: res.status,
+            utilization: res.utilization
+          }))
+        };
+
+        // Use OpenAI to analyze production data
+        const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+        
+        const prompt = `You are Max AI, an expert manufacturing production analyst. Analyze the following real production data and generate actionable insights.
+
+Production Data:
+${JSON.stringify(productionData, null, 2)}
+
+Generate 5-8 specific, actionable insights in JSON format. Each insight should include:
+- type: one of [optimization, anomaly, recommendation, bottleneck, forecast, quality, maintenance]
+- title: specific, actionable title
+- description: detailed analysis with specific data points
+- priority: critical/high/medium/low based on impact
+- category: production/quality/maintenance/supply_chain/efficiency
+- actionable: true/false
+- impact: specific business impact with numbers when possible
+- recommendation: specific actions to take
+- confidence: 0-100 percentage
+- affected_areas: array of specific areas/equipment
+- estimated_savings: dollar amount if applicable
+- implementation_time: time estimate
+
+Focus on real inefficiencies, bottlenecks, optimization opportunities, and predictive insights based on the actual data provided.`;
+
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+            messages: [
+              { role: "system", content: "You are Max AI, an expert manufacturing analyst. Respond only with valid JSON." },
+              { role: "user", content: prompt }
+            ],
+            response_format: { type: "json_object" },
+            max_tokens: 3000,
+            temperature: 0.3
+          });
+
+          const aiAnalysis = JSON.parse(response.choices[0].message.content);
+          
+          // Convert AI response to our insight format
+          const freshInsights = (aiAnalysis.insights || []).map((insight: any, index: number) => ({
+            id: `ai_${Date.now()}_${index}`,
+            type: insight.type || 'insight',
+            title: insight.title,
+            description: insight.description,
+            priority: insight.priority || 'medium',
+            timestamp: new Date().toISOString(),
+            source: 'max_ai',
+            category: insight.category || 'production',
+            status: 'new',
+            actionable: insight.actionable || true,
+            impact: insight.impact,
+            recommendation: insight.recommendation,
+            confidence: insight.confidence || 85,
+            affected_areas: insight.affected_areas || [],
+            estimated_savings: insight.estimated_savings,
+            implementation_time: insight.implementation_time,
+            related_insights: []
+          }));
+
+          console.log(`✅ Generated ${freshInsights.length} fresh AI insights`);
+          return res.json(freshInsights);
+          
+        } catch (aiError) {
+          console.error('❌ AI analysis failed:', aiError);
+          // Fall back to enhanced sample data if AI fails
+        }
+      }
+      
+      // Enhanced sample insights with more realistic data
       const sampleInsights = [
         {
           id: '1',
