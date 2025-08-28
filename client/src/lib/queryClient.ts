@@ -8,28 +8,23 @@ async function throwIfResNotOk(res: Response) {
 }
 
 export async function apiRequest(
+  method: string,
   url: string,
-  options?: {
-    method?: string;
-    body?: string;
-    headers?: HeadersInit;
-  }
+  body?: any
 ): Promise<Response> {
-  const method = options?.method || 'GET';
-  
   // Validate HTTP method before making request
   const validMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
   if (!validMethods.includes(method.toUpperCase())) {
     console.error('INVALID HTTP METHOD DETECTED:', method);
     console.error('URL:', url);
-    console.error('Options:', options);
+    console.error('Body:', body);
     console.error('Stack trace:', new Error().stack);
     throw new Error(`Invalid HTTP method: ${method}. Valid methods are: ${validMethods.join(', ')}`);
   }
 
   const token = localStorage.getItem('authToken');
   const headers: HeadersInit = {
-    ...options?.headers,
+    'Content-Type': 'application/json',
   };
   
   if (token) {
@@ -40,7 +35,7 @@ export async function apiRequest(
     const res = await fetch(url, {
       method: method.toUpperCase(),
       headers,
-      body: options?.body,
+      body: body ? JSON.stringify(body) : undefined,
       credentials: "include",
     });
 

@@ -218,7 +218,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           // Add delay to ensure user is fully authenticated
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
+          const response = await fetch(`/api/user-preferences/${user.id}`, {
+            headers: {
+              'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            },
+            credentials: 'include',
+          });
           
           // Check if response is OK and contains JSON
           if (!response.ok) {
@@ -430,8 +435,18 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       setLastSaveTime(now);
       
       // First get current preferences to merge
-      const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-      const currentPreferences = await response.json();
+      const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+        },
+        credentials: 'include',
+      });
+      
+      if (!getResponse.ok) {
+        throw new Error(`Failed to get preferences: ${getResponse.status}`);
+      }
+      
+      const currentPreferences = await getResponse.json();
       
       // Merge recent pages with existing dashboard layout
       const updatedDashboardLayout = {
@@ -440,9 +455,21 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       };
       
       // Save to user preferences with merged data
-      await apiRequest('PUT', `/api/user-preferences`, {
-        dashboardLayout: updatedDashboardLayout
+      const putResponse = await fetch('/api/user-preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          dashboardLayout: updatedDashboardLayout
+        }),
       });
+      
+      if (!putResponse.ok) {
+        throw new Error(`Failed to save preferences: ${putResponse.status}`);
+      }
       
       // Clear any pending save since we just saved
       setPendingSave(null);
@@ -477,8 +504,18 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     if (isAuthenticated && user?.id) {
       try {
         // First get current preferences to merge
-        const response = await apiRequest('GET', `/api/user-preferences/${user.id}`);
-        const currentPreferences = await response.json();
+        const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+          headers: {
+            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          },
+          credentials: 'include',
+        });
+        
+        if (!getResponse.ok) {
+          throw new Error(`Failed to get preferences: ${getResponse.status}`);
+        }
+        
+        const currentPreferences = await getResponse.json();
         
         // Merge empty recent pages with existing dashboard layout
         const updatedDashboardLayout = {
@@ -487,9 +524,21 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         };
         
         // Clear from user preferences with merged data
-        await apiRequest('PUT', `/api/user-preferences`, {
-          dashboardLayout: updatedDashboardLayout
+        const putResponse = await fetch('/api/user-preferences', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            dashboardLayout: updatedDashboardLayout
+          }),
         });
+        
+        if (!putResponse.ok) {
+          throw new Error(`Failed to clear preferences: ${putResponse.status}`);
+        }
       } catch (error) {
         console.warn('Failed to clear recent pages from database:', error);
       }
