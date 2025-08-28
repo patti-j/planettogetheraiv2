@@ -30003,23 +30003,25 @@ Be careful to preserve data integrity and relationships.`;
         }
       ];
 
-      // Filter by priority if specified
-      const filteredRecommendations = priority 
-        ? scheduleRecommendations.filter(rec => rec.priority === priority)
-        : scheduleRecommendations;
-
-      res.json({
-        recommendations: filteredRecommendations,
-        summary: {
-          total_recommendations: filteredRecommendations.length,
-          total_savings: filteredRecommendations.reduce((sum, rec) => sum + (rec.cost_savings || 0), 0),
-          implementation_time: filteredRecommendations.reduce((sum, rec) => {
-            const time = rec.implementation_time.match(/(\d+)/);
-            return sum + (time ? parseInt(time[1]) : 0);
-          }, 0) + ' minutes total',
-          high_priority_count: filteredRecommendations.filter(rec => rec.priority === 'critical' || rec.priority === 'high').length
+      // Try to get insights from storage first
+      try {
+        const daysParam = typeof daysToFetch === 'string' ? parseInt(daysToFetch) : daysToFetch;
+        console.log('📊 Fetching insights from storage for days:', daysParam);
+        const storageInsights = await storage.getAIInsights(daysParam);
+        
+        if (storageInsights && storageInsights.length > 0) {
+          console.log(`✅ Returning ${storageInsights.length} AI insights from storage`);
+          console.log('📊 First insight:', storageInsights[0]?.title);
+          return res.json(storageInsights);
         }
-      });
+      } catch (storageError) {
+        console.log('⚠️ Storage method not available or error:', storageError.message);
+      }
+      
+      // Fallback to sample insights if storage method fails
+      console.log(`✅ Returning ${sampleInsights.length} AI insights (fallback)`);
+      console.log('📊 Sample insight types:', sampleInsights.map(i => i.type).join(', '));
+      res.json(sampleInsights);
     } catch (error) {
       console.error("Error fetching AI schedule recommendations:", error);
       res.status(500).json({ error: "Failed to fetch schedule recommendations" });
