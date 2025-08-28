@@ -60,6 +60,7 @@ const iconMap = {
 const defaultHeaderItemsByRole = {
   'Administrator': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics' },
     { id: 'systems', label: 'Systems', icon: 'Database', href: '/systems-management-dashboard' },
@@ -69,6 +70,7 @@ const defaultHeaderItemsByRole = {
   ],
   'Production Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
@@ -78,6 +80,7 @@ const defaultHeaderItemsByRole = {
   ],
   'Plant Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'kpi', label: 'KPIs', icon: 'TrendingUp', href: '/smart-kpi-tracking' },
     { id: 'optimization', label: 'Optimize', icon: 'Sparkles', href: '/optimization-studio' },
     { id: 'business-goals', label: 'Goals', icon: 'Target', href: '/business-goals' },
@@ -96,6 +99,7 @@ const defaultHeaderItemsByRole = {
   ],
   'Quality Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'quality', label: 'Quality', icon: 'Shield', href: '/quality-control' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
@@ -104,6 +108,7 @@ const defaultHeaderItemsByRole = {
   ],
   'Maintenance Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'maintenance', label: 'Maintenance', icon: 'Settings', href: '/maintenance' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
@@ -112,6 +117,7 @@ const defaultHeaderItemsByRole = {
   ],
   'Supply Chain Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
     { id: 'inventory', label: 'Inventory', icon: 'Package', href: '/inventory-optimization' },
     { id: 'demand', label: 'Demand', icon: 'Brain', href: '/demand-planning' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports' },
@@ -147,6 +153,7 @@ const generateAvailableItems = (): HeaderItem[] => {
     { id: 'notifications', label: 'Notifications', icon: 'Bell', action: 'notifications', type: 'action' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts', type: 'action' },
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', type: 'action' },
+    { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', type: 'action' },
   ];
 
   // Widget items with enhanced configuration
@@ -417,6 +424,17 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           userId={user?.id || 0}
           variant="header" 
           showIcon={true}
+        />
+      );
+    }
+
+    // Special handling for role switcher
+    if (item.action === 'role-switcher') {
+      return (
+        <AssignedRoleSwitcher 
+          key={item.id}
+          userId={user?.id || 0}
+          variant="compact"
         />
       );
     }
