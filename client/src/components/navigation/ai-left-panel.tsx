@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +39,7 @@ interface AILeftPanelProps {
 }
 
 export function AILeftPanel({ onClose }: AILeftPanelProps) {
+  const [, navigate] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
@@ -923,6 +924,15 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
+                      <Button 
+                        variant="default" 
+                        size="sm" 
+                        className="w-full justify-start bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                        onClick={() => navigate('/ai-scenario-creator')}
+                      >
+                        <Layers className="w-3 h-3 mr-2" />
+                        Open Scenario Creator
+                      </Button>
                       <Button variant="outline" size="sm" className="w-full justify-start">
                         <Activity className="w-3 h-3 mr-2" />
                         Add Rush Order Impact
