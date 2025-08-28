@@ -115,24 +115,47 @@ export default function AIInsightsPage() {
     });
     
     try {
-      const response = await fetch(`/api/ai-insights?force_refresh=true&timeRange=${timeRange}`);
+      // Add timeout to the fetch request
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+      
+      const response = await fetch(`/api/ai-insights?force_refresh=true&timeRange=${timeRange}`, {
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      
       if (response.ok) {
         const freshInsights = await response.json();
-        // Update the query cache with fresh insights
-        queryClient.setQueryData(['/api/ai-insights', timeRange, location], freshInsights);
+        console.log('Received fresh insights:', freshInsights.length);
         
-        toast({
-          title: "Fresh Insights Generated",
-          description: `Max AI generated ${freshInsights.length} new insights from current production data.`,
-        });
+        // Validate that we have actual insights
+        if (Array.isArray(freshInsights) && freshInsights.length > 0) {
+          // Update the query cache with fresh insights
+          queryClient.setQueryData(['/api/ai-insights', timeRange, location], freshInsights);
+          
+          toast({
+            title: "Fresh Insights Generated",
+            description: `Max AI analyzed your production data and generated ${freshInsights.length} actionable insights.`,
+          });
+        } else {
+          throw new Error('No insights returned from AI analysis');
+        }
       } else {
-        throw new Error('Failed to generate insights');
+        const errorText = await response.text();
+        throw new Error(`Server error: ${response.status} - ${errorText}`);
       }
     } catch (error) {
       console.error('Failed to generate fresh insights:', error);
+      
+      let errorMessage = "Failed to generate fresh insights. Please try again.";
+      if (error.name === 'AbortError') {
+        errorMessage = "AI analysis timed out. This may be due to high server load.";
+      }
+      
       toast({
         title: "Analysis Failed",
-        description: "Failed to generate fresh insights. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

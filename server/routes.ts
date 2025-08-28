@@ -29085,10 +29085,11 @@ Generate 5-8 specific, actionable insights in JSON format. Each insight should i
 Focus on real inefficiencies, bottlenecks, optimization opportunities, and predictive insights based on the actual data provided.`;
 
         try {
+          console.log('🚀 Making OpenAI API request for AI insights...');
           const response = await openai.chat.completions.create({
-            model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+            model: "gpt-4o", // Using gpt-4o as gpt-5 might not be available yet
             messages: [
-              { role: "system", content: "You are Max AI, an expert manufacturing analyst. Respond only with valid JSON." },
+              { role: "system", content: "You are Max AI, an expert manufacturing analyst. Generate insights in JSON format with an 'insights' array." },
               { role: "user", content: prompt }
             ],
             response_format: { type: "json_object" },
@@ -29096,20 +29097,27 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
             temperature: 0.3
           });
 
-          const aiAnalysis = JSON.parse(response.choices[0].message.content);
+          console.log('📝 OpenAI response received, parsing content...');
+          const aiContent = response.choices[0].message.content;
+          console.log('Raw AI content:', aiContent?.substring(0, 200) + '...');
+          
+          const aiAnalysis = JSON.parse(aiContent);
+          console.log('Parsed AI analysis keys:', Object.keys(aiAnalysis));
+          console.log('Number of insights found:', aiAnalysis.insights?.length || 0);
           
           // Convert AI response to our insight format
-          const freshInsights = (aiAnalysis.insights || []).map((insight: any, index: number) => ({
+          const insightsList = aiAnalysis.insights || [];
+          const freshInsights = insightsList.map((insight: any, index: number) => ({
             id: `ai_${Date.now()}_${index}`,
             type: insight.type || 'insight',
-            title: insight.title,
-            description: insight.description,
+            title: insight.title || `AI Insight #${index + 1}`,
+            description: insight.description || 'No description provided',
             priority: insight.priority || 'medium',
             timestamp: new Date().toISOString(),
             source: 'max_ai',
             category: insight.category || 'production',
             status: 'new',
-            actionable: insight.actionable || true,
+            actionable: insight.actionable !== false,
             impact: insight.impact,
             recommendation: insight.recommendation,
             confidence: insight.confidence || 85,
@@ -29119,12 +29127,18 @@ Focus on real inefficiencies, bottlenecks, optimization opportunities, and predi
             related_insights: []
           }));
 
-          console.log(`✅ Generated ${freshInsights.length} fresh AI insights`);
-          return res.json(freshInsights);
+          console.log(`✅ Successfully generated ${freshInsights.length} fresh AI insights`);
+          
+          // Ensure we have insights before returning
+          if (freshInsights.length > 0) {
+            return res.json(freshInsights);
+          } else {
+            console.log('⚠️  No insights generated, falling back to sample data');
+          }
           
         } catch (aiError) {
-          console.error('❌ AI analysis failed:', aiError);
-          // Fall back to enhanced sample data if AI fails
+          console.error('❌ AI analysis failed with error:', aiError);
+          console.log('🔄 Falling back to enhanced sample data');
         }
       }
       
