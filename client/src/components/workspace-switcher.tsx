@@ -73,7 +73,7 @@ export function WorkspaceSwitcher({
     queryKey: [`/api/users/${userId}/assigned-roles`],
     enabled: !!userId,
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/users/${userId}/assigned-roles`);
+      const response = await apiRequest(`/api/users/${userId}/assigned-roles`);
       return await response.json();
     },
   });
@@ -83,7 +83,7 @@ export function WorkspaceSwitcher({
     queryKey: [`/api/users/${userId}/current-role`],
     enabled: !!userId,
     queryFn: async () => {
-      const response = await apiRequest('GET', `/api/users/${userId}/current-role`);
+      const response = await apiRequest(`/api/users/${userId}/current-role`);
       return await response.json();
     },
   });
@@ -91,7 +91,11 @@ export function WorkspaceSwitcher({
   // Switch role mutation
   const switchRoleMutation = useMutation({
     mutationFn: ({ roleId }: { roleId: number }) => 
-      apiRequest('POST', `/api/users/${userId}/switch-role`, { roleId }),
+      apiRequest(`/api/users/${userId}/switch-role`, {
+        method: 'POST',
+        body: JSON.stringify({ roleId }),
+        headers: { 'Content-Type': 'application/json' }
+      }),
     onSuccess: async (_, variables) => {
       setIsLoading(false);
       
