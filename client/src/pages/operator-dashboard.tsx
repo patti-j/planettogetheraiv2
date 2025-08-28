@@ -119,6 +119,21 @@ export default function OperatorDashboard() {
   const [clockingMode, setClockingMode] = useState<"individual" | "team">("individual");
   const [productionReportDialogOpen, setProductionReportDialogOpen] = useState(false);
   const [teamName, setTeamName] = useState<string>("");
+
+  // Equipment problem reporting states
+  const [equipmentProblemDialogOpen, setEquipmentProblemDialogOpen] = useState(false);
+  const [equipmentProblem, setEquipmentProblem] = useState({
+    resourceId: null as number | null,
+    downtimeType: "mechanical",
+    severity: "medium",
+    title: "",
+    description: "",
+    priority: "medium",
+    estimatedDowntime: "",
+    impactedOperations: "",
+    partsRequired: ""
+  });
+
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { isMaxOpen } = useMaxDock();
@@ -298,6 +313,52 @@ export default function OperatorDashboard() {
     },
   });
 
+  // Equipment problem report mutation
+  const submitEquipmentProblemMutation = useMutation({
+    mutationFn: async (problemData: typeof equipmentProblem) => {
+      const response = await apiRequest("POST", "/api/unplanned-downtime", {
+        resourceId: problemData.resourceId,
+        downtimeType: problemData.downtimeType,
+        severity: problemData.severity,
+        title: problemData.title,
+        description: problemData.description,
+        priority: problemData.priority,
+        estimatedDowntime: problemData.estimatedDowntime ? parseInt(problemData.estimatedDowntime) : null,
+        impactedOperations: problemData.impactedOperations,
+        partsRequired: problemData.partsRequired,
+        reportedBy: currentUser?.id,
+        startTime: new Date().toISOString(),
+        plantId: 1 // Assume main plant for now
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Equipment Problem Reported",
+        description: "Your equipment problem report has been submitted successfully.",
+      });
+      setEquipmentProblemDialogOpen(false);
+      setEquipmentProblem({
+        resourceId: null,
+        downtimeType: "mechanical",
+        severity: "medium",
+        title: "",
+        description: "",
+        priority: "medium",
+        estimatedDowntime: "",
+        impactedOperations: "",
+        partsRequired: ""
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Report Failed",
+        description: "Failed to submit equipment problem report. Please try again.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Production report mutation
   const submitProductionReportMutation = useMutation({
     mutationFn: async (productionData: {
@@ -449,11 +510,24 @@ export default function OperatorDashboard() {
                 </h1>
                 <p className="text-xs text-gray-600 hidden md:block">Review upcoming operations and report status</p>
               </div>
-              {/* Operator info - very compact on mobile */}
-              <div className="flex items-center gap-1 text-xs text-gray-600">
-                <User className="w-3 h-3" />
-                <span className="hidden sm:inline">{currentOperator}</span>
-                <span className="sm:hidden">{currentOperator.split(' ')[0]}</span>
+              <div className="flex items-center gap-2">
+                {/* Equipment Problem Button */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setEquipmentProblemDialogOpen(true)}
+                  className="flex items-center gap-1 text-red-600 border-red-200 hover:bg-red-50"
+                >
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="hidden sm:inline">Report Equipment Problem</span>
+                  <span className="sm:hidden">Report Problem</span>
+                </Button>
+                {/* Operator info - very compact on mobile */}
+                <div className="flex items-center gap-1 text-xs text-gray-600">
+                  <User className="w-3 h-3" />
+                  <span className="hidden sm:inline">{currentOperator}</span>
+                  <span className="sm:hidden">{currentOperator.split(' ')[0]}</span>
+                </div>
               </div>
             </div>
           </div>
@@ -984,6 +1058,242 @@ export default function OperatorDashboard() {
                   <>
                     <Send className="w-4 h-4 mr-2" />
                     Submit Report
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Equipment Problem Report Dialog */}
+      <Dialog open={equipmentProblemDialogOpen} onOpenChange={setEquipmentProblemDialogOpen}>
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <AlertTriangle className="w-5 h-5" />
+              Report Equipment Problem
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {/* Equipment Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Equipment/Resource *
+                </label>
+                <Select 
+                  value={equipmentProblem.resourceId?.toString() || ""} 
+                  onValueChange={(value) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    resourceId: parseInt(value)
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select equipment" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {resources.map((resource) => (
+                      <SelectItem key={resource.id} value={resource.id.toString()}>
+                        {resource.name} ({resource.type})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Problem Type
+                </label>
+                <Select 
+                  value={equipmentProblem.downtimeType} 
+                  onValueChange={(value) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    downtimeType: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="mechanical">Mechanical Issue</SelectItem>
+                    <SelectItem value="electrical">Electrical Issue</SelectItem>
+                    <SelectItem value="software">Software/Control Issue</SelectItem>
+                    <SelectItem value="maintenance">Maintenance Required</SelectItem>
+                    <SelectItem value="safety">Safety Concern</SelectItem>
+                    <SelectItem value="quality">Quality Issue</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Severity and Priority */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Severity
+                </label>
+                <Select 
+                  value={equipmentProblem.severity} 
+                  onValueChange={(value) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    severity: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="critical">Critical - Production Stopped</SelectItem>
+                    <SelectItem value="high">High - Reduced Performance</SelectItem>
+                    <SelectItem value="medium">Medium - Minor Impact</SelectItem>
+                    <SelectItem value="low">Low - Preventive</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Priority
+                </label>
+                <Select 
+                  value={equipmentProblem.priority} 
+                  onValueChange={(value) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    priority: value
+                  })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="urgent">Urgent - Fix Immediately</SelectItem>
+                    <SelectItem value="high">High - Fix Today</SelectItem>
+                    <SelectItem value="medium">Medium - Fix This Week</SelectItem>
+                    <SelectItem value="low">Low - Schedule When Available</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Problem Title */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Problem Title *
+              </label>
+              <Input
+                placeholder="Brief summary of the equipment problem"
+                value={equipmentProblem.title}
+                onChange={(e) => setEquipmentProblem({
+                  ...equipmentProblem, 
+                  title: e.target.value
+                })}
+              />
+            </div>
+
+            {/* Problem Description */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Detailed Description *
+              </label>
+              <Textarea
+                placeholder="Describe what happened, symptoms observed, when it started, what was happening at the time..."
+                value={equipmentProblem.description}
+                onChange={(e) => setEquipmentProblem({
+                  ...equipmentProblem, 
+                  description: e.target.value
+                })}
+                rows={4}
+              />
+            </div>
+
+            {/* Additional Information */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Estimated Downtime (minutes)
+                </label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 30"
+                  value={equipmentProblem.estimatedDowntime}
+                  onChange={(e) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    estimatedDowntime: e.target.value
+                  })}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Parts Required
+                </label>
+                <Input
+                  placeholder="List any parts needed for repair"
+                  value={equipmentProblem.partsRequired}
+                  onChange={(e) => setEquipmentProblem({
+                    ...equipmentProblem, 
+                    partsRequired: e.target.value
+                  })}
+                />
+              </div>
+            </div>
+
+            {/* Impacted Operations */}
+            <div>
+              <label className="text-sm font-medium text-gray-700 mb-2 block">
+                Impacted Operations/Jobs
+              </label>
+              <Textarea
+                placeholder="List operations or jobs that are affected by this equipment problem..."
+                value={equipmentProblem.impactedOperations}
+                onChange={(e) => setEquipmentProblem({
+                  ...equipmentProblem, 
+                  impactedOperations: e.target.value
+                })}
+                rows={2}
+              />
+            </div>
+
+            {/* Safety Warning */}
+            {equipmentProblem.severity === 'critical' && (
+              <Alert className="border-red-200 bg-red-50">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertDescription className="text-red-800">
+                  <strong>Critical Issue Reported:</strong> This problem will be escalated immediately to maintenance and management teams. 
+                  If there is immediate safety danger, stop all operations and contact your supervisor immediately.
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <div className="flex gap-2 justify-end pt-4">
+              <Button
+                variant="outline"
+                onClick={() => setEquipmentProblemDialogOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={() => submitEquipmentProblemMutation.mutate(equipmentProblem)}
+                disabled={
+                  !equipmentProblem.resourceId || 
+                  !equipmentProblem.title.trim() || 
+                  !equipmentProblem.description.trim() ||
+                  submitEquipmentProblemMutation.isPending
+                }
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {submitEquipmentProblemMutation.isPending ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                    Reporting...
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Report Problem
                   </>
                 )}
               </Button>

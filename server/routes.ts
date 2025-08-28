@@ -15994,6 +15994,32 @@ Create a natural, conversational voice script that explains this feature to some
     }
   });
 
+  // Unplanned Downtime API endpoints
+  app.post("/api/unplanned-downtime", async (req, res) => {
+    try {
+      const validation = insertUnplannedDowntimeSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ error: "Invalid unplanned downtime data", details: validation.error.errors });
+      }
+
+      const unplannedDowntime = await storage.createUnplannedDowntime(validation.data);
+      res.status(201).json(unplannedDowntime);
+    } catch (error) {
+      console.error("Error creating unplanned downtime:", error);
+      res.status(500).json({ error: "Failed to create unplanned downtime report" });
+    }
+  });
+
+  app.get("/api/unplanned-downtime", async (req, res) => {
+    try {
+      const unplannedDowntimes = await storage.getUnplannedDowntimes();
+      res.json(unplannedDowntimes);
+    } catch (error) {
+      console.error("Error fetching unplanned downtime records:", error);
+      res.status(500).json({ error: "Failed to fetch unplanned downtime records" });
+    }
+  });
+
   // Disruption Actions
   app.get("/api/disruption-actions", async (req, res) => {
     try {
