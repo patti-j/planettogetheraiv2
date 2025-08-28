@@ -28,6 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { cn } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
 
@@ -527,31 +528,56 @@ export default function AIInsightsPage() {
                 {/* Action Buttons */}
                 {insight.status === 'new' && insight.actionable && (
                   <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="grid grid-cols-3 gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => ignoreRecommendation(insight.id)}
-                        className="h-6 px-1 text-[10px] py-0"
-                      >
-                        <X className="h-2 w-2" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => markInProgress(insight.id)}
-                        className="h-6 px-1 text-[10px] py-0"
-                      >
-                        <Play className="h-2 w-2" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => applyRecommendation(insight.id)}
-                        className="h-6 px-1 text-[10px] bg-green-600 hover:bg-green-700 text-white py-0"
-                      >
-                        <Check className="h-2 w-2" />
-                      </Button>
-                    </div>
+                    <TooltipProvider>
+                      <div className="grid grid-cols-3 gap-1">
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => ignoreRecommendation(insight.id)}
+                              className="h-6 px-1 text-[10px] py-0"
+                            >
+                              <X className="h-2 w-2" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Ignore this recommendation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => markInProgress(insight.id)}
+                              className="h-6 px-1 text-[10px] py-0"
+                            >
+                              <Play className="h-2 w-2" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Mark as in progress</p>
+                          </TooltipContent>
+                        </Tooltip>
+                        
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              onClick={() => applyRecommendation(insight.id)}
+                              className="h-6 px-1 text-[10px] bg-green-600 hover:bg-green-700 text-white py-0"
+                            >
+                              <Check className="h-2 w-2" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Apply recommendation</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </div>
+                    </TooltipProvider>
                   </div>
                 )}
 
