@@ -172,7 +172,7 @@ export function WorkspaceSwitcher({
 
   const isCompact = variant === 'compact';
 
-  // Always show dropdown if user has any assigned roles
+  // Always show dropdown if user has multiple assigned roles, or show static if single role
   if (assignedRoles.length === 0) {
     // Only show static display if user has no roles at all
     return (
@@ -181,6 +181,23 @@ export function WorkspaceSwitcher({
         <span className={`font-medium text-foreground ${isCompact ? 'text-sm' : ''}`}>
           No Workspace
         </span>
+      </div>
+    );
+  }
+
+  // Show static display for single role (no switching needed)
+  if (assignedRoles.length === 1) {
+    return (
+      <div className={`flex items-center gap-2 ${isCompact ? 'px-2 py-1' : 'px-3 py-2'}`}>
+        {showIcon && <Building2 className={`${isCompact ? 'w-4 h-4' : 'w-5 h-5'} text-muted-foreground`} />}
+        <div className={`flex flex-col items-start ${isCompact ? 'text-xs' : 'text-sm'}`}>
+          {!isCompact && (
+            <span className="text-xs text-muted-foreground leading-tight">Workspace</span>
+          )}
+          <span className="font-medium leading-tight">
+            {currentWorkspace}
+          </span>
+        </div>
       </div>
     );
   }
