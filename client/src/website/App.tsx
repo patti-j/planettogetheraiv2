@@ -103,10 +103,11 @@ export default function WebsiteApp() {
           </Route>
           
           <Route path="/">
-            {/* Redirect to login if not authenticated */}
-            <WebsiteLayout>
-              <MarketingHome />
-            </WebsiteLayout>
+            {() => {
+              // Redirect root path to login page
+              window.location.href = '/login';
+              return null;
+            }}
           </Route>
           
           {/* Default fallback */}
