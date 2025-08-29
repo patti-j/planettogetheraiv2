@@ -3108,7 +3108,7 @@ Rules:
           // Notes
           notes: row.notes,
           // Data source
-          dataSource: 'pt_import',
+          dataSource: 'pt_publish',
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };

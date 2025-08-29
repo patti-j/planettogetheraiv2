@@ -9279,6 +9279,15 @@ export const transferOrderLines = pgTable("transfer_order_lines", {
   transferOrderLineIdx: unique().on(table.transferOrderId, table.lineNumber),
 }));
 
+// Bills of Material - main BOM table
+export const billsOfMaterial = pgTable("bills_of_material", {
+  id: serial("id").primaryKey(),
+  parentItemId: integer("parent_item_id").references(() => items.id).notNull(),
+  version: text("version").notNull().default("1"),
+  effectiveDate: timestamp("effective_date").notNull(),
+  expirationDate: timestamp("expiration_date"),
+  isActive: boolean("is_active").default(true),
+});
 
 // BOM line items - components needed
 export const bomLines = pgTable("bom_lines", {
