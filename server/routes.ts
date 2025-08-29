@@ -23072,6 +23072,8 @@ Response must be valid JSON:
   });
 
   // Production Versions Management
+  // COMMENTED OUT: Production Version routes - productionVersions table not defined
+  /*
   app.get("/api/production-versions", async (req, res) => {
     try {
       const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
@@ -23156,6 +23158,7 @@ Response must be valid JSON:
       res.status(500).json({ error: "Failed to delete production version" });
     }
   });
+  */
 
   // Vendor Management
   app.get("/api/vendors", async (req, res) => {

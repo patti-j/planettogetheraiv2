@@ -5186,7 +5186,8 @@ export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 // Junction table linking production versions, discrete operation phases, and BOM product outputs
 export const productionVersionPhaseBomProductOutputs = pgTable("production_version_phase_bom_product_outputs", {
   id: serial("id").primaryKey(),
-  productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
+  // COMMENTED OUT: productionVersions table not defined
+  // productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
   // discreteOperationPhaseId: integer("discrete_operation_phase_id"), // TODO: Add reference when discreteOperationPhases table is defined
   bomProductOutputId: integer("bom_product_output_id").references(() => bomProductOutputs.id, { onDelete: "cascade" }).notNull(),
   phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
@@ -5213,7 +5214,8 @@ export const productionVersionPhaseBomProductOutputs = pgTable("production_versi
 // Junction table linking production versions, recipe phases, and recipe product outputs
 export const productionVersionPhaseRecipeProductOutputs = pgTable("production_version_phase_recipe_product_outputs", {
   id: serial("id").primaryKey(),
-  productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
+  // COMMENTED OUT: productionVersions table not defined
+  // productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
   recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id, { onDelete: "cascade" }).notNull(),
   // recipeProductOutputId: integer("recipe_product_output_id").references(() => recipeProductOutputs.id, { onDelete: "cascade" }).notNull(),
   phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
@@ -8625,7 +8627,8 @@ export const formulationDetails = pgTable("formulation_details", {
 // Junction table linking formulation details to specific recipe phases within production versions
 export const productionVersionPhaseFormulationDetails = pgTable("production_version_phase_formulation_details", {
   id: serial("id").primaryKey(),
-  productionVersionId: integer("production_version_id").notNull().references(() => productionVersions.id, { onDelete: "cascade" }),
+  // COMMENTED OUT: productionVersions table not defined
+  // productionVersionId: integer("production_version_id").notNull().references(() => productionVersions.id, { onDelete: "cascade" }),
   recipePhaseId: integer("recipe_phase_id").notNull().references(() => recipePhases.id, { onDelete: "cascade" }),
   formulationDetailId: integer("formulation_detail_id").notNull().references(() => formulationDetails.id, { onDelete: "cascade" }),
   phaseSpecificValue: text("phase_specific_value"), // Override value for this specific phase
@@ -8707,8 +8710,8 @@ export const formulations = pgTable("formulations", {
   organicCertified: boolean("organic_certified").default(false),
   gmoFree: boolean("gmo_free").default(false),
   
-  // Production version linkage for process manufacturing
-  productionVersionId: integer("production_version_id").references(() => productionVersions.id),
+  // Production version linkage for process manufacturing - COMMENTED OUT: productionVersions table not defined
+  // productionVersionId: integer("production_version_id").references(() => productionVersions.id),
   
   // Sourcing and supply
   preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),

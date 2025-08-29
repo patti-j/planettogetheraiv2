@@ -13729,7 +13729,8 @@ export class DatabaseStorage implements IStorage {
     return await db.select().from(routings);
   }
 
-  // Production Versions
+  // COMMENTED OUT: Production Versions - productionVersions table and types not defined
+  /*
   async getProductionVersions(plantId?: number): Promise<ProductionVersion[]> {
     const conditions: any[] = [];
     if (plantId) {
@@ -13774,6 +13775,7 @@ export class DatabaseStorage implements IStorage {
     const result = await db.delete(productionVersions).where(eq(productionVersions.id, id));
     return result.rowCount > 0;
   }
+  */
 
   // Vendors
   async getVendors(): Promise<Vendor[]> {
