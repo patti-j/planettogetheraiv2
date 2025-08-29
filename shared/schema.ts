@@ -9848,15 +9848,15 @@ export const insertUserSecretSchema = createInsertSchema(userSecrets, {
 export type UserSecret = typeof userSecrets.$inferSelect;
 export type InsertUserSecret = z.infer<typeof insertUserSecretSchema>;
 
-// Production Version Schema
-export const insertProductionVersionSchema = createInsertSchema(productionVersions, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// Production Version Schema - COMMENTED OUT: productionVersions table not defined
+// export const insertProductionVersionSchema = createInsertSchema(productionVersions, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export type ProductionVersion = typeof productionVersions.$inferSelect;
-export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
+// export type ProductionVersion = typeof productionVersions.$inferSelect;
+// export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
 
 // Resource Requirements Insert Schemas
 export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements, { 
