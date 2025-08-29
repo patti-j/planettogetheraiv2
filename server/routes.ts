@@ -8,8 +8,8 @@ import { sql, eq, and } from "drizzle-orm";
 import { z } from "zod";
 import { createSafeHandler, errorMiddleware, ValidationError, DatabaseError, NotFoundError, AuthenticationError } from "./error-handler";
 import { 
-  insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema, insertPlannedOrderSchema, 
-  insertDependencySchema, insertResourceViewSchema,
+  insertPlantSchema, insertCapabilitySchema, insertResourceSchema, insertProductionOrderSchema,
+  insertResourceViewSchema,
   insertCustomTextLabelSchema, insertKanbanConfigSchema, insertReportConfigSchema,
   insertDashboardConfigSchema, insertScheduleScenarioSchema, insertScenarioOperationSchema,
   insertScenarioEvaluationSchema, insertScenarioDiscussionSchema,

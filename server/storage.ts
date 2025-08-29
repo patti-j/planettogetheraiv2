@@ -1,7 +1,7 @@
 import { 
-  plants, capabilities, resources, plantResources, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
+  plants, capabilities, resources, plantResources, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
-  recipes, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  recipes, vendors, customers, salesOrders, productionVersion, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -12,7 +12,7 @@ import {
   alerts,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
+  type Plant, type Capability, type Resource, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
   type ProductionOrder, type InsertProductionOrder,
   type Recipe, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
@@ -25,8 +25,8 @@ import {
   type Alert,
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
-  type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertPlannedOrder, 
-  type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
+  type InsertPlant, type InsertCapability, type InsertResource,
+  type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertProductionVersionPhaseBomProductOutput, type InsertProductionVersionPhaseRecipeProductOutput, type InsertBomProductOutput,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
@@ -148,7 +148,7 @@ import {
   schedulingHistory, schedulingResults, algorithmPerformance,
   type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
-  resourceRequirements, resourceRequirementAssignments, resourceRequirementBlocks,
+  resourceRequirementBlocks,
   type ResourceRequirement, type ResourceRequirementAssignment, type ResourceRequirementBlock,
   alerts, alertComments, alertTemplates, alertTrainingData, alertSubscriptions,
   type Alert, type InsertAlert, type AlertComment, type InsertAlertComment,
@@ -446,11 +446,11 @@ export interface IStorage {
     optimizationNotes?: string;
   }): Promise<Operation | undefined>;
   
-  // Dependencies
-  getDependencies(): Promise<Dependency[]>;
-  getDependenciesByOperationId(operationId: number): Promise<Dependency[]>;
-  createDependency(dependency: InsertDependency): Promise<Dependency>;
-  deleteDependency(id: number): Promise<boolean>;
+  // Dependencies - removed as we're using PT tables now
+  // getDependencies(): Promise<Dependency[]>;
+  // getDependenciesByOperationId(operationId: number): Promise<Dependency[]>;
+  // createDependency(dependency: InsertDependency): Promise<Dependency>;
+  // deleteDependency(id: number): Promise<boolean>;
   
   // Resource Requirements
   getResourceRequirements(): Promise<ResourceRequirement[]>;
@@ -2171,14 +2171,14 @@ export class MemStorage implements Partial<IStorage> {
   private jobs: Map<number, ProductionOrder> = new Map();
   // Note: DiscreteOperation type no longer exists - using PT tables instead
   // private operations: Map<number, DiscreteOperation> = new Map();
-  private dependencies: Map<number, Dependency> = new Map();
+  // private dependencies: Map<number, Dependency> = new Map();
   private resourceViews: Map<number, ResourceView> = new Map();
   
   private currentCapabilityId = 1;
   private currentResourceId = 1;
   private currentJobId = 1;
   private currentOperationId = 1;
-  private currentDependencyId = 1;
+  // private currentDependencyId = 1;
   private currentResourceViewId = 1;
 
   constructor() {
@@ -2492,28 +2492,28 @@ export class MemStorage implements Partial<IStorage> {
     return result.rowCount > 0;
   }
 
-  // Dependencies
-  async getDependencies(): Promise<Dependency[]> {
-    return await db.select().from(dependencies);
-  }
+  // Dependencies - removed as we're using PT tables now
+  // async getDependencies(): Promise<Dependency[]> {
+  //   return await db.select().from(dependencies);
+  // }
 
-  async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
-    return await db.select().from(dependencies)
-      .where(or(
-        eq(dependencies.fromDiscreteOperationId, operationId),
-        eq(dependencies.toDiscreteOperationId, operationId)
-      ));
-  }
+  // async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
+  //   return await db.select().from(dependencies)
+  //     .where(or(
+  //       eq(dependencies.fromDiscreteOperationId, operationId),
+  //       eq(dependencies.toDiscreteOperationId, operationId)
+  //     ));
+  // }
 
-  async createDependency(dependency: InsertDependency): Promise<Dependency> {
-    const [newDependency] = await db.insert(dependencies).values(dependency).returning();
-    return newDependency;
-  }
+  // async createDependency(dependency: InsertDependency): Promise<Dependency> {
+  //   const [newDependency] = await db.insert(dependencies).values(dependency).returning();
+  //   return newDependency;
+  // }
 
-  async deleteDependency(id: number): Promise<boolean> {
-    const result = await db.delete(dependencies).where(eq(dependencies.id, id));
-    return result.rowCount > 0;
-  }
+  // async deleteDependency(id: number): Promise<boolean> {
+  //   const result = await db.delete(dependencies).where(eq(dependencies.id, id));
+  //   return result.rowCount > 0;
+  // }
 
   async getResourceViews(): Promise<ResourceView[]> {
     return await db.select().from(resourceViews);
@@ -4032,28 +4032,29 @@ export class DatabaseStorage implements IStorage {
     return undefined;
   }
 
-  async getDependencies(): Promise<Dependency[]> {
-    return await db.select().from(dependencies);
-  }
+  // Dependencies - removed as we're using PT tables now
+  // async getDependencies(): Promise<Dependency[]> {
+  //   return await db.select().from(dependencies);
+  // }
 
-  async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
-    return await db.select().from(dependencies).where(
-      eq(dependencies.fromOperationId, operationId)
-    );
-  }
+  // async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
+  //   return await db.select().from(dependencies).where(
+  //     eq(dependencies.fromOperationId, operationId)
+  //   );
+  // }
 
-  async createDependency(dependency: InsertDependency): Promise<Dependency> {
-    const [newDependency] = await db
-      .insert(dependencies)
-      .values(dependency)
-      .returning();
-    return newDependency;
-  }
+  // async createDependency(dependency: InsertDependency): Promise<Dependency> {
+  //   const [newDependency] = await db
+  //     .insert(dependencies)
+  //     .values(dependency)
+  //     .returning();
+  //   return newDependency;
+  // }
 
-  async deleteDependency(id: number): Promise<boolean> {
-    const result = await db.delete(dependencies).where(eq(dependencies.id, id));
-    return (result.rowCount || 0) > 0;
-  }
+  // async deleteDependency(id: number): Promise<boolean> {
+  //   const result = await db.delete(dependencies).where(eq(dependencies.id, id));
+  //   return (result.rowCount || 0) > 0;
+  // }
 
   // Resource Requirements methods
   async getResourceRequirements(): Promise<ResourceRequirement[]> {
