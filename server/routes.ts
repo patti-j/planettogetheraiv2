@@ -26550,9 +26550,17 @@ Generate a complete ${targetType} configuration that matches the user's requirem
   // Bulk AI data generation for all tables
   app.post('/api/master-data/bulk-generate', requireAuth, async (req, res) => {
     try {
-      const { recordsPerTable = 15, companyInfo, replaceExisting = false } = req.body;
+      const { recordCounts = {}, companyInfo, replaceExisting = false } = req.body;
       
-      console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
+      // Default record counts if not provided (for backward compatibility)
+      const defaultCounts = {
+        items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, 
+        jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10
+      };
+      const finalRecordCounts = { ...defaultCounts, ...recordCounts };
+      
+      const totalRecords = Object.values(finalRecordCounts).reduce((a: number, b: number) => a + b, 0);
+      console.log(`[AI Bulk Generate] Creating ${totalRecords} total records across all tables`);
       
       // Delete existing data if replace option is selected
       if (replaceExisting) {
@@ -26633,10 +26641,11 @@ Generate a complete ${targetType} configuration that matches the user's requirem
             recipes: "REQUIRED: recipeName (string), recipeNumber (string), status (string - use 'Active')"
           }[entityType] || "Include all required fields as specified";
 
+          const recordCount = finalRecordCounts[entityType] || 10;
           const companyContext = companyInfo ? `\n\nCOMPANY CONTEXT: ${companyInfo}\nGenerate data relevant to this specific company/industry.` : '';
-          const systemPrompt = `You are a manufacturing data expert. Generate ${recordsPerTable} diverse, realistic ${contextDescription} for a comprehensive manufacturing system.${companyContext} Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9. Create varied, realistic business data covering different categories, types, and use cases.`;
+          const systemPrompt = `You are a manufacturing data expert. Generate ${recordCount} diverse, realistic ${contextDescription} for a comprehensive manufacturing system.${companyContext} Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9. Create varied, realistic business data covering different categories, types, and use cases.`;
           
-          const userPrompt = `Generate ${recordsPerTable} comprehensive ${entityType} records for a manufacturing company. 
+          const userPrompt = `Generate ${recordCount} comprehensive ${entityType} records for a manufacturing company. 
 
 ${requiredFieldsPrompt}
 

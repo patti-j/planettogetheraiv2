@@ -38,6 +38,8 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 interface EditableCell {
   rowId: number;
@@ -1049,6 +1051,19 @@ function HierarchicalDataTable({
 export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('items');
+
+  // Dataset size presets
+  const datasetSizePresets = {
+    small: { items: 5, customers: 3, vendors: 3, capabilities: 5, workCenters: 3, jobs: 5, recipes: 3, routings: 3, billsOfMaterial: 5 },
+    medium: { items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10 },
+    large: { items: 50, customers: 25, vendors: 20, capabilities: 30, workCenters: 15, jobs: 40, recipes: 25, routings: 20, billsOfMaterial: 35 }
+  };
+
+  // Update record counts when dataset size changes
+  const handleDatasetSizeChange = (size: 'small' | 'medium' | 'large') => {
+    setDatasetSize(size);
+    setRecordCounts(datasetSizePresets[size]);
+  };
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -1056,6 +1071,19 @@ export default function MasterDataPage() {
   const [selectedJobForPath, setSelectedJobForPath] = useState<{ id: number; description: string } | null>(null);
   const [companyInfo, setCompanyInfo] = useState('');
   const [replaceExisting, setReplaceExisting] = useState(false);
+  const [datasetSize, setDatasetSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [recordCounts, setRecordCounts] = useState({
+    items: 15,
+    customers: 15, 
+    vendors: 15,
+    capabilities: 15,
+    workCenters: 15,
+    jobs: 15,
+    recipes: 15,
+    routings: 15,
+    billsOfMaterial: 15
+  });
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -1340,7 +1368,7 @@ export default function MasterDataPage() {
     setAiProcessing(true);
     try {
       const response = await apiRequest('POST', '/api/master-data/bulk-generate', {
-        recordsPerTable: 15,
+        recordCounts: recordCounts,
         companyInfo: companyInfo.trim() || undefined,
         replaceExisting: replaceExisting
       });
@@ -1531,6 +1559,69 @@ export default function MasterDataPage() {
               <p className="text-sm text-muted-foreground">
                 Generate comprehensive sample data for all entity types based on your industry and company details.
               </p>
+              
+              {/* Dataset Size Selection */}
+              <div className="space-y-3">
+                <label className="text-sm font-medium">Dataset Size</label>
+                <RadioGroup 
+                  value={datasetSize} 
+                  onValueChange={handleDatasetSizeChange}
+                  className="flex flex-row space-x-6"
+                >
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="small" id="small" />
+                    <Label htmlFor="small" className="text-sm">Small (3-5 records each)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="medium" id="medium" />
+                    <Label htmlFor="medium" className="text-sm">Medium (8-15 records each)</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="large" id="large" />
+                    <Label htmlFor="large" className="text-sm">Large (20-50 records each)</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+
+              {/* Advanced Options */}
+              <div className="space-y-3">
+                <Button
+                  type="button"
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowAdvanced(!showAdvanced)}
+                  className="p-0 h-auto text-sm text-blue-600 hover:text-blue-700"
+                >
+                  {showAdvanced ? 'Hide' : 'Show'} Advanced Options
+                </Button>
+                
+                {showAdvanced && (
+                  <div className="grid grid-cols-2 gap-3 p-4 border rounded-lg bg-muted/50">
+                    <div className="col-span-2 text-xs text-muted-foreground mb-2">
+                      Customize the exact number of records to generate for each entity type:
+                    </div>
+                    {Object.entries(recordCounts).map(([entityType, count]) => (
+                      <div key={entityType} className="flex items-center justify-between">
+                        <label className="text-xs font-medium capitalize">
+                          {entityType.replace(/([A-Z])/g, ' $1').trim()}:
+                        </label>
+                        <Input
+                          type="number"
+                          min="0"
+                          max="100"
+                          value={count}
+                          onChange={(e) => setRecordCounts(prev => ({
+                            ...prev,
+                            [entityType]: Math.max(0, parseInt(e.target.value) || 0)
+                          }))}
+                          className="w-16 h-7 text-xs"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Company/Industry Information (Optional)</label>
                 <Textarea
@@ -1561,7 +1652,9 @@ export default function MasterDataPage() {
               >
                 <Sparkles className="h-4 w-4 mr-2" />
                 Generate Sample Data for All Tables
-                <span className="ml-2 text-xs opacity-75">(15 records each)</span>
+                <span className="ml-2 text-xs opacity-75">
+                  ({Object.values(recordCounts).reduce((a, b) => a + b, 0)} total records)
+                </span>
               </Button>
             </div>
 
