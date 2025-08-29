@@ -4495,39 +4495,39 @@ export const insertRecipeSchema = createInsertSchema(recipes, {
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertRecipeOperationSchema = createInsertSchema(recipeOperations, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// export const insertRecipeOperationSchema = createInsertSchema(recipeOperations, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export const insertRecipePhaseSchema = createInsertSchema(recipePhases, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// export const insertRecipePhaseSchema = createInsertSchema(recipePhases, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export const insertRecipePhaseRelationshipSchema = createInsertSchema(recipePhaseRelationships, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// export const insertRecipePhaseRelationshipSchema = createInsertSchema(recipePhaseRelationships, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// export const insertRecipeOperationRelationshipSchema = createInsertSchema(recipeOperationRelationships, { 
+//   id: undefined,
+//   createdAt: undefined,
+// });
 
-export const insertRecipeMaterialAssignmentSchema = createInsertSchema(recipeMaterialAssignments, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// export const insertRecipeMaterialAssignmentSchema = createInsertSchema(recipeMaterialAssignments, { 
+//   id: undefined,
+//   createdAt: undefined,
+// });
 
-export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 */
 
 
