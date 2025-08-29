@@ -826,24 +826,34 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities).omit({ id: true });
+export const insertCapabilitySchema = createInsertSchema(capabilities, {
+  id: z.number().optional(),
+});
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
-export const insertResourceSchema = createInsertSchema(resources).omit({ id: true });
+export const insertResourceSchema = createInsertSchema(resources, {
+  id: z.number().optional(),
+});
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
 // Commented out - plantResources table aliased to PT tables
 // export const insertPlantResourceSchema = createInsertSchema(plantResources, {}).omit({ id: true, createdAt: true });
 // export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({ id: true, createdAt: true });
+export const insertProductionOrderSchema = createInsertSchema(productionOrders, {
+  id: z.number().optional(),
+});
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
 // Commented out - plannedOrders table not available
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ id: true, createdAt: true, undoneAt: true });
+export const insertAgentActionSchema = createInsertSchema(agentActions, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  undoneAt: z.date().optional(),
+});
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
 // Commented out - plannedOrderProductionOrders table not available
@@ -855,33 +865,39 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
-
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
-
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {}).omit({ id: true });
-
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {}).omit({ id: true });
-
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {
+  id: z.number().optional(),
 });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
+  id: z.number().optional(),
+});
+
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
+  id: z.number().optional(),
+});
+
+export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
+  id: z.number().optional(),
+});
+
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
+});
+
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
   isArchived: z.boolean().optional(),
 });
 
-export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
   scheduledStartTime: z.union([z.string().datetime(), z.date()]),
   scheduledEndTime: z.union([z.string().datetime(), z.date()]),
 });
@@ -2297,7 +2313,7 @@ export type ProductionOrder = typeof productionOrders.$inferSelect;
 
 
 
-export type InsertDependency = z.infer<typeof insertDependencySchema>;
+// export type InsertDependency = z.infer<typeof insertDependencySchema>;
 // export type Dependency = typeof dependencies.$inferSelect;
 
 export type InsertResourceView = z.infer<typeof insertResourceViewSchema>;
