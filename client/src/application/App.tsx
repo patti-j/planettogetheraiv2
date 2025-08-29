@@ -183,6 +183,11 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
+              <Route path="/production-schedule">
+                <ProtectedRoute feature="schedule" action="view">
+                  <ProductionScheduleSimple />
+                </ProtectedRoute>
+              </Route>
               <Route path="/production-schedule-simple">
                 <ProtectedRoute feature="schedule" action="view">
                   <ProductionScheduleSimple />

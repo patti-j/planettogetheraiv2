@@ -1,14 +1,14 @@
 import React from 'react';
 import { useLocation } from 'wouter';
 
-// This page is deprecated - using production schedule as main landing
-// Redirecting to production schedule
+// This page is deprecated - redirecting to dashboard/homepage
+// Users should land on the main dashboard after login
 export default function DesktopHome() {
   const [, setLocation] = useLocation();
   
-  // Immediately redirect to production schedule
+  // Immediately redirect to dashboard/homepage
   React.useEffect(() => {
-    setLocation('/production-schedule');
+    setLocation('/dashboard');
   }, [setLocation]);
   
   return null;
