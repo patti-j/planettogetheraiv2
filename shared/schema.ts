@@ -644,7 +644,7 @@ export const productionVersions = pgTable("production_versions", {
   routingId: integer("routing_id").references(() => routings.id), // For discrete manufacturing
   
   // Link to Bill of Materials for discrete manufacturing material requirements
-  bomId: integer("bom_id").references(() => billsOfMaterial.id), // For discrete manufacturing
+  bomId: integer("bom_id").references(() => materialRequirements.id), // For discrete manufacturing
   
   // Routing information - links operations to material consumption
   routingOperations: jsonb("routing_operations").$type<Array<{
@@ -9283,7 +9283,7 @@ export const transferOrderLines = pgTable("transfer_order_lines", {
 // BOM line items - components needed
 export const bomLines = pgTable("bom_lines", {
   id: serial("id").primaryKey(),
-  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  bomId: integer("bom_id").references(() => materialRequirements.id).notNull(),
   lineNumber: integer("line_number").notNull(),
   componentItemId: integer("component_item_id").references(() => items.id).notNull(),
   quantity: integer("quantity").notNull(), // quantity needed per parent
@@ -9300,7 +9300,7 @@ export const bomLines = pgTable("bom_lines", {
 // BOM Material Requirements - detailed material requirements for each BOM
 export const bomMaterialRequirements = pgTable("bom_material_requirements", {
   id: serial("id").primaryKey(),
-  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  bomId: integer("bom_id").references(() => materialRequirements.id).notNull(),
   materialId: integer("material_id").references(() => items.id).notNull(), // Reference to material/item
   requiredQuantity: numeric("required_quantity", { precision: 10, scale: 4 }).notNull(),
   unitOfMeasure: text("unit_of_measure").notNull(),
@@ -9317,7 +9317,7 @@ export const bomMaterialRequirements = pgTable("bom_material_requirements", {
 // BOM Product Outputs - what products are produced by each BOM
 export const bomProductOutputs = pgTable("bom_product_outputs", {
   id: serial("id").primaryKey(),
-  bomId: integer("bom_id").references(() => billsOfMaterial.id).notNull(),
+  bomId: integer("bom_id").references(() => materialRequirements.id).notNull(),
   productId: integer("product_id").references(() => items.id).notNull(), // Reference to output product/item
   stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for output tracking
   outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
@@ -9336,7 +9336,7 @@ export const bomProductOutputs = pgTable("bom_product_outputs", {
 export const materialRequirements = pgTable("material_requirements", {
   id: serial("id").primaryKey(),
   formulationId: integer("formulation_id").references(() => formulations.id),
-  bomId: integer("bom_id").references(() => billsOfMaterial.id), // New relationship to bills of material
+  bomId: integer("bom_id").references(() => materialRequirements.id), // New relationship to bills of material
   itemId: integer("item_id").references(() => items.id), // Link to item master for inventory management
   stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for material tracking
   requirementName: text("requirement_name").notNull(),
