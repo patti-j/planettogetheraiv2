@@ -4551,23 +4551,24 @@ export const insertCustomerSchema = createInsertSchema(customers, {
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 
-export type RecipeOperation = typeof recipeOperations.$inferSelect;
-export type InsertRecipeOperation = z.infer<typeof insertRecipeOperationSchema>;
+// Commented out - using PT tables instead
+// export type RecipeOperation = typeof recipeOperations.$inferSelect;
+// export type InsertRecipeOperation = z.infer<typeof insertRecipeOperationSchema>;
 
 // export type RecipePhase = typeof recipePhases.$inferSelect;
-export type InsertRecipePhase = z.infer<typeof insertRecipePhaseSchema>;
+// export type InsertRecipePhase = z.infer<typeof insertRecipePhaseSchema>;
 
-export type RecipePhaseRelationship = typeof recipePhaseRelationships.$inferSelect;
-export type InsertRecipePhaseRelationship = z.infer<typeof insertRecipePhaseRelationshipSchema>;
+// export type RecipePhaseRelationship = typeof recipePhaseRelationships.$inferSelect;
+// export type InsertRecipePhaseRelationship = z.infer<typeof insertRecipePhaseRelationshipSchema>;
 
-export type RecipeOperationRelationship = typeof recipeOperationRelationships.$inferSelect;
-export type InsertRecipeOperationRelationship = z.infer<typeof insertRecipeOperationRelationshipSchema>;
+// export type RecipeOperationRelationship = typeof recipeOperationRelationships.$inferSelect;
+// export type InsertRecipeOperationRelationship = z.infer<typeof insertRecipeOperationRelationshipSchema>;
 
-export type RecipeMaterialAssignment = typeof recipeMaterialAssignments.$inferSelect;
-export type InsertRecipeMaterialAssignment = z.infer<typeof insertRecipeMaterialAssignmentSchema>;
+// export type RecipeMaterialAssignment = typeof recipeMaterialAssignments.$inferSelect;
+// export type InsertRecipeMaterialAssignment = z.infer<typeof insertRecipeMaterialAssignmentSchema>;
 
-export type RecipeFormula = typeof recipeFormulas.$inferSelect;
-export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
+// export type RecipeFormula = typeof recipeFormulas.$inferSelect;
+// export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
 */
 
 
