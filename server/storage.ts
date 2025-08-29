@@ -1,7 +1,7 @@
 import { 
   plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
-  recipes, recipePhases, recipeFormulas, recipeProductOutputs, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  recipes, recipePhases, recipeFormulas, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -27,7 +27,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertPlannedOrder, 
   type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipe, type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeProductOutput, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
+  type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeProductOutput, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertProductionVersionPhaseBomProductOutput, type InsertProductionVersionPhaseRecipeProductOutput, type InsertBomProductOutput,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -8579,13 +8579,20 @@ export class DatabaseStorage implements IStorage {
     try {
       const tableMap: Record<string, any> = {
         'stockItems': stockItems,
-        'resources': resources,
+        'items': stockItems,
+        'resources': resources, 
         'customers': customers,
-        'suppliers': suppliers,
+        'vendors': vendors,
+        'suppliers': vendors,
+        'capabilities': capabilities,
         'workCenters': workCenters,
         'routings': routings,
         'billsOfMaterial': billsOfMaterial,
-        'recipes': recipes
+        'recipes': recipes,
+        'sales-orders': salesOrders,
+        'salesOrders': salesOrders,
+        'jobs': ptJobs,
+        'ptJobs': ptJobs
       };
 
       const table = tableMap[tableName];

@@ -180,113 +180,6 @@ export const plannedOrderProductionOrders = pgTable("planned_order_production_or
   uniquePlannedProductionOrder: unique().on(table.plannedOrderId, table.productionOrderId),
 }));
 
-// SAP S/4HANA Process Industries Master Recipes - Header level (equivalent of routing for process manufacturing)
-export const recipes = pgTable("recipes", {
-  id: serial("id").primaryKey(),
-  recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
-  recipeName: text("recipe_name").notNull(),
-  productItemNumber: text("product_item_number").notNull(), // Finished or intermediate product the recipe is for
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  recipeVersion: text("recipe_version").notNull().default("1.0"),
-  recipeType: text("recipe_type").notNull().default("master"), // master, pilot, trial, development
-  status: text("status").notNull().default("created"), // created, released_for_planning, released_for_execution, obsolete
-  batchSize: numeric("batch_size", { precision: 15, scale: 5 }), // Standard batch size the recipe is designed for
-  batchUnit: text("batch_unit"), // Base unit of measure
-  effectiveDate: timestamp("effective_date"), // When recipe becomes valid
-  endDate: timestamp("end_date"), // When recipe expires (null = unlimited)
-  
-  // Process Manufacturing specific attributes
-  yieldFactor: integer("yield_factor"), // yield factor
-  scaleMinimum: integer("scale_minimum"), // minimum scale percentage
-  scaleMaximum: integer("scale_maximum"), // maximum scale percentage
-  totalCycleTime: integer("total_cycle_time"), // total time in minutes
-  
-  // Recipe documentation
-  description: text("description"),
-  processNotes: text("process_notes"),
-  safetyNotes: text("safety_notes"),
-  
-  // Quality and environmental specifications
-  qualitySpecifications: jsonb("quality_specifications"),
-  environmentalImpact: jsonb("environmental_impact"),
-  costData: jsonb("cost_data"),
-  environmentalConditions: jsonb("environmental_conditions"),
-  
-  // Audit fields
-  createdBy: text("created_by"),
-  approvedBy: text("approved_by"),
-  approvedDate: timestamp("approved_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  materialPlantIdx: unique().on(table.productItemNumber, table.plantId, table.recipeVersion),
-}));
-
-// Recipe Product Outputs - define products produced by recipes (primary, co-products, by-products)
-export const recipeProductOutputs = pgTable("recipe_product_outputs", {
-  id: serial("id").primaryKey(),
-  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
-  productId: integer("product_id").notNull(), // Will be FK to items.id when items table is moved up  
-  stockId: integer("stock_id"), // Will be FK to stocks.id when stocks table is moved up
-  outputQuantity: numeric("output_quantity", { precision: 10, scale: 4 }).notNull(),
-  unitOfMeasure: text("unit_of_measure").notNull(),
-  productType: text("product_type").notNull().default("primary"), // primary, co_product, by_product
-  yieldPercentage: numeric("yield_percentage", { precision: 5, scale: 2 }).default("100"), // Expected yield %
-  qualityGrade: text("quality_grade"), // Grade or quality classification
-  isPrimary: boolean("is_primary").default(false), // True for the main output product
-  sortOrder: integer("sort_order").default(1), // Display order
-  
-  // Process manufacturing specific attributes
-  concentrationPercentage: numeric("concentration_percentage", { precision: 5, scale: 2 }), // % purity/concentration
-  densityValue: numeric("density_value", { precision: 8, scale: 4 }), // kg/L, g/mL
-  viscosityValue: numeric("viscosity_value", { precision: 8, scale: 2 }), // cP (centipoise)
-  phValue: numeric("ph_value", { precision: 3, scale: 1 }), // pH level
-  temperatureStability: jsonb("temperature_stability").$type<{
-    min_temp: number;
-    max_temp: number;
-    unit: string;
-  }>(),
-  
-  // Storage and handling requirements
-  storageConditions: jsonb("storage_conditions").$type<{
-    temperature_range: { min: number; max: number; unit: string };
-    humidity_range: { min: number; max: number };
-    light_sensitivity: boolean;
-    atmosphere_requirements: string; // nitrogen, inert, normal
-    special_handling: string[];
-  }>(),
-  
-  // Quality specifications
-  qualitySpecifications: jsonb("quality_specifications").$type<{
-    appearance: string;
-    color: string;
-    odor: string;
-    purity_min: number;
-    moisture_max: number;
-    ash_content_max: number;
-    heavy_metals_max: number;
-    microbiological_limits: {
-      total_plate_count: number;
-      yeast_mold: number;
-      e_coli: string; // "absent" or number
-      salmonella: string; // "absent" or number
-    };
-  }>(),
-  
-  // Economic and business data
-  standardCost: numeric("standard_cost", { precision: 10, scale: 2 }), // Cost per unit
-  marketValue: numeric("market_value", { precision: 10, scale: 2 }), // Market value per unit  
-  isWaste: boolean("is_waste").default(false), // True if this is waste/disposal
-  disposalMethod: text("disposal_method"), // If waste, how to dispose
-  
-  // Notes and documentation
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  recipeProductIdx: unique().on(table.recipeId, table.productId),
-}));
-
 // Recipe Operations - define individual processing steps (like operations in discrete manufacturing routing)
 export const recipeOperations = pgTable("recipe_operations", {
   id: serial("id").primaryKey(),
@@ -9317,30 +9210,6 @@ export const transferOrderLines = pgTable("transfer_order_lines", {
   transferOrderLineIdx: unique().on(table.transferOrderId, table.lineNumber),
 }));
 
-// Bills of Material - recipe/formula for making items
-export const billsOfMaterial = pgTable("bills_of_material", {
-  id: serial("id").primaryKey(),
-  parentItemId: integer("parent_item_id").references(() => items.id).notNull(),
-  revision: text("revision").notNull().default("1"),
-  description: text("description"),
-  effectiveDate: timestamp("effective_date").notNull(),
-  obsoleteDate: timestamp("obsolete_date"), // Changed from expiredDate to obsoleteDate for change management
-  bomType: text("bom_type").notNull().default("production"), // production, engineering, costing
-  standardQuantity: integer("standard_quantity").notNull().default(1), // quantity this BOM produces
-  scrapFactor: numeric("scrap_factor", { precision: 5, scale: 2 }).default("0"), // Scrap factor for the BOM
-  yieldFactor: numeric("yield_factor", { precision: 5, scale: 2 }).default("100"), // Yield factor for each component
-  alternateItems: jsonb("alternate_items").$type<{
-    itemId?: number;
-    substitutionRatio?: number;
-    preferenceLevel?: number;
-    conditions?: string[];
-  }[]>().default([]), // Alternate item substitutions
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  parentItemRevisionIdx: unique().on(table.parentItemId, table.revision),
-}));
 
 // BOM line items - components needed
 export const bomLines = pgTable("bom_lines", {
@@ -9567,22 +9436,6 @@ export const formulations = pgTable("formulations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Routings - sequence of operations to make items
-export const routings = pgTable("routings", {
-  id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  revision: text("revision").notNull().default("1"),
-  description: text("description"),
-  effectiveDate: timestamp("effective_date").notNull(),
-  expiredDate: timestamp("expired_date"),
-  routingType: text("routing_type").notNull().default("production"), // production, alternate, engineering
-  standardQuantity: integer("standard_quantity").notNull().default(1), // lot size this routing is based on
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  itemRevisionIdx: unique().on(table.itemId, table.revision),
-}));
 
 // Routing operations - steps in the routing
 export const routingOperations = pgTable("routing_operations", {

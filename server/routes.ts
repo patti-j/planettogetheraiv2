@@ -26569,12 +26569,15 @@ Generate a complete ${targetType} configuration that matches the user's requirem
           // Delete in reverse order to handle foreign key constraints
           await storage.deleteAllRecords('billsOfMaterial');
           await storage.deleteAllRecords('routings');
-          await storage.deleteAllRecords('workCenters');
-          await storage.deleteAllRecords('suppliers');
-          await storage.deleteAllRecords('customers');
-          await storage.deleteAllRecords('stockItems');
-          await storage.deleteAllRecords('resources');
           await storage.deleteAllRecords('recipes');
+          await storage.deleteAllRecords('jobs');
+          await storage.deleteAllRecords('sales-orders');
+          await storage.deleteAllRecords('workCenters');
+          await storage.deleteAllRecords('capabilities');
+          await storage.deleteAllRecords('vendors');
+          await storage.deleteAllRecords('customers');
+          await storage.deleteAllRecords('items');
+          await storage.deleteAllRecords('resources');
           console.log(`[AI Bulk Generate] Successfully deleted all existing master data`);
         } catch (error) {
           console.error(`[AI Bulk Generate] Error deleting existing data:`, error);
@@ -26700,6 +26703,43 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
                     // Add validation and fallback values for required fields
                     const validatedData = { ...suggestion.data };
                     
+                    // Helper function to convert priority strings to numbers
+                    const convertPriority = (priority: string | number): number => {
+                      if (typeof priority === 'number') return priority;
+                      const priorityMap: Record<string, number> = {
+                        'high': 1, 'urgent': 1, 'critical': 1,
+                        'medium': 2, 'normal': 2,
+                        'low': 3, 'minor': 3
+                      };
+                      return priorityMap[priority?.toLowerCase()] || 2;
+                    };
+
+                    // Helper function to ensure dates are properly formatted
+                    const ensureDate = (dateValue: any): string | undefined => {
+                      if (!dateValue) return undefined;
+                      if (typeof dateValue === 'string') {
+                        try {
+                          return new Date(dateValue).toISOString();
+                        } catch {
+                          return undefined;
+                        }
+                      }
+                      if (dateValue instanceof Date) return dateValue.toISOString();
+                      return undefined;
+                    };
+
+                    // Convert priority fields to numbers if they're strings
+                    if (validatedData.priority && typeof validatedData.priority === 'string') {
+                      validatedData.priority = convertPriority(validatedData.priority);
+                    }
+
+                    // Convert date fields properly
+                    ['orderDate', 'requestedDate', 'promisedDate', 'shippedDate', 'needDate', 'scheduledStartDate', 'scheduledEndDate', 'publishDate', 'publish_date', 'releaseDate', 'dueDate'].forEach(dateField => {
+                      if (validatedData[dateField]) {
+                        validatedData[dateField] = ensureDate(validatedData[dateField]);
+                      }
+                    });
+
                     // Entity-specific required field validation
                     switch (entityType) {
                       case 'stockItems':
@@ -26742,14 +26782,14 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
                       case 'jobs':
                         if (!validatedData.name) validatedData.name = `Job ${Date.now()}`;
                         if (!validatedData.description) validatedData.description = 'Generated production job';
-                        if (!validatedData.priority) validatedData.priority = 'medium';
+                        if (!validatedData.priority) validatedData.priority = 2; // Default to medium (2)
                         if (!validatedData.status) validatedData.status = 'planned';
                         break;
                       case 'sales-orders':
                         if (!validatedData.orderNumber) validatedData.orderNumber = `SO-${Date.now()}`;
                         if (!validatedData.customerId) validatedData.customerId = 1; // Default customer ID
-                        if (!validatedData.orderDate) validatedData.orderDate = new Date().toISOString();
-                        if (!validatedData.requestedDate) validatedData.requestedDate = new Date().toISOString();
+                        if (!validatedData.orderDate) validatedData.orderDate = ensureDate(new Date());
+                        if (!validatedData.requestedDate) validatedData.requestedDate = ensureDate(new Date());
                         if (!validatedData.siteId) validatedData.siteId = 1; // Default site ID
                         if (!validatedData.status) validatedData.status = 'open';
                         break;
@@ -26757,7 +26797,7 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
                       case 'job-templates':
                         if (!validatedData.name) validatedData.name = `MO ${Date.now()}`;
                         if (!validatedData.description) validatedData.description = 'Generated manufacturing order';
-                        if (!validatedData.publish_date) validatedData.publish_date = new Date().toISOString();
+                        if (!validatedData.publish_date) validatedData.publish_date = ensureDate(new Date());
                         break;
                       case 'recipes':
                         if (!validatedData.recipeName) validatedData.recipeName = `Recipe ${Date.now()}`;

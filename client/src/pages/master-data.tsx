@@ -1054,9 +1054,9 @@ export default function MasterDataPage() {
 
   // Dataset size presets
   const datasetSizePresets = {
-    small: { items: 5, customers: 3, vendors: 3, capabilities: 5, workCenters: 3, jobs: 5, recipes: 3, routings: 3, billsOfMaterial: 5 },
-    medium: { items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10 },
-    large: { items: 50, customers: 25, vendors: 20, capabilities: 30, workCenters: 15, jobs: 40, recipes: 25, routings: 20, billsOfMaterial: 35 }
+    small: { items: 5, customers: 3, vendors: 3, capabilities: 5, workCenters: 3, jobs: 5, recipes: 3, routings: 3, billsOfMaterial: 5, warehouses: 3 },
+    medium: { items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10, warehouses: 6 },
+    large: { items: 50, customers: 25, vendors: 20, capabilities: 30, workCenters: 15, jobs: 40, recipes: 25, routings: 20, billsOfMaterial: 35, warehouses: 12 }
   };
 
   // Update record counts when dataset size changes
@@ -1082,7 +1082,8 @@ export default function MasterDataPage() {
     jobs: 15,
     recipes: 15,
     routings: 15,
-    billsOfMaterial: 15
+    billsOfMaterial: 15,
+    warehouses: 15
   });
 
   // Define columns for each entity type
@@ -1213,6 +1214,16 @@ export default function MasterDataPage() {
       { key: 'address', label: 'Address', editable: true },
       { key: 'paymentTerms', label: 'Payment Terms', editable: true },
       { key: 'isActive', label: 'Active', editable: true, type: 'boolean' }
+    ],
+    warehouses: [
+      { key: 'name', label: 'Name', editable: true, required: true },
+      { key: 'description', label: 'Description', editable: true },
+      { key: 'externalId', label: 'External ID', editable: true },
+      { key: 'nbrOfDocks', label: 'Number of Docks', editable: true, type: 'number' },
+      { key: 'storageCapacity', label: 'Storage Capacity', editable: true, type: 'number' },
+      { key: 'annualPercentageRate', label: 'Annual Rate %', editable: true, type: 'number' },
+      { key: 'tankWarehouse', label: 'Tank Warehouse', editable: true, type: 'boolean' },
+      { key: 'notes', label: 'Notes', editable: true }
     ]
   };
 
@@ -1227,7 +1238,8 @@ export default function MasterDataPage() {
     plants: '/api/plants',
     users: '/api/users',
     customers: '/api/customers',
-    vendors: '/api/vendors'
+    vendors: '/api/vendors',
+    warehouses: '/api/warehouses'
   };
 
   // Data queries
@@ -1444,6 +1456,7 @@ export default function MasterDataPage() {
                 <TabsTrigger value="users" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Users</TabsTrigger>
                 <TabsTrigger value="customers" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Customers</TabsTrigger>
                 <TabsTrigger value="vendors" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Vendors</TabsTrigger>
+                <TabsTrigger value="warehouses" className="whitespace-nowrap flex-shrink-0 text-xs sm:text-sm px-2 sm:px-3">Warehouses</TabsTrigger>
               </TabsList>
             </div>
 
