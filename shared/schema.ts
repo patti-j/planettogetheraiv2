@@ -8067,38 +8067,38 @@ export const recipeOperationsRelations = relations(recipeOperations, ({ one, man
 
 
 
-// Resource Requirements relations
-export const resourceRequirementsRelations = relations(resourceRequirements, ({ one, many }) => ({
-  // Recipe phase relationship (many-to-one)
-  recipePhase: one(recipePhases, {
-    fields: [resourceRequirements.recipePhaseId],
-    references: [recipePhases.id],
-  }),
-  // Discrete operation phase relationship (many-to-one)
-  discreteOperationPhase: one(discreteOperationPhases, {
-    fields: [resourceRequirements.discreteOperationPhaseId],
-    references: [discreteOperationPhases.id],
-  }),
-  // Default resource relationship
-  defaultResource: one(resources, {
-    fields: [resourceRequirements.defaultResourceId],
-    references: [resources.id],
-  }),
-  // Assignment relationships
-  assignments: many(resourceRequirementAssignments),
-}));
+// Resource Requirements relations - COMMENTED OUT: Tables not defined
+// export const resourceRequirementsRelations = relations(resourceRequirements, ({ one, many }) => ({
+//   // Recipe phase relationship (many-to-one)
+//   recipePhase: one(recipePhases, {
+//     fields: [resourceRequirements.recipePhaseId],
+//     references: [recipePhases.id],
+//   }),
+//   // Discrete operation phase relationship (many-to-one)
+//   discreteOperationPhase: one(discreteOperationPhases, {
+//     fields: [resourceRequirements.discreteOperationPhaseId],
+//     references: [discreteOperationPhases.id],
+//   }),
+//   // Default resource relationship
+//   defaultResource: one(resources, {
+//     fields: [resourceRequirements.defaultResourceId],
+//     references: [resources.id],
+//   }),
+//   // Assignment relationships
+//   assignments: many(resourceRequirementAssignments),
+// }));
 
-// Resource Requirement Assignments relations
-export const resourceRequirementAssignmentsRelations = relations(resourceRequirementAssignments, ({ one }) => ({
-  requirement: one(resourceRequirements, {
-    fields: [resourceRequirementAssignments.requirementId],
-    references: [resourceRequirements.id],
-  }),
-  assignedResource: one(resources, {
-    fields: [resourceRequirementAssignments.assignedResourceId],
-    references: [resources.id],
-  }),
-}));
+// Resource Requirement Assignments relations - COMMENTED OUT: Tables not defined
+// export const resourceRequirementAssignmentsRelations = relations(resourceRequirementAssignments, ({ one }) => ({
+//   requirement: one(resourceRequirements, {
+//     fields: [resourceRequirementAssignments.requirementId],
+//     references: [resourceRequirements.id],
+//   }),
+//   assignedResource: one(resources, {
+//     fields: [resourceRequirementAssignments.assignedResourceId],
+//     references: [resources.id],
+//   }),
+// }));
 
 // ===== COMPREHENSIVE ERP MANUFACTURING DATA STRUCTURES =====
 
@@ -9389,142 +9389,145 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
     fields: [productionOrders.customerId],
     references: [customers.id],
   }),
-  productionVersion: one(productionVersions, {
-    fields: [productionOrders.productionVersionId],
-    references: [productionVersions.id],
-  }),
+  // COMMENTED OUT: productionVersions table not defined
+  // productionVersion: one(productionVersions, {
+  //   fields: [productionOrders.productionVersionId],
+  //   references: [productionVersions.id],
+  // }),
   // Relations to PT Job Operations
   ptJobOperations: many(ptJobOperations),
   // Many-to-many relationship with planned orders via junction table
   plannedOrderLinks: many(plannedOrderProductionOrders),
 }));
 
-export const productionVersionsRelations = relations(productionVersions, ({ one, many }) => ({
-  plant: one(plants, {
-    fields: [productionVersions.plantId],
-    references: [plants.id],
-  }),
-  recipe: one(recipes, {
-    fields: [productionVersions.recipeId],
-    references: [recipes.id],
-  }),
-  routing: one(routings, {
-    fields: [productionVersions.routingId],
-    references: [routings.id],
-  }),
-  bom: one(billsOfMaterial, {
-    fields: [productionVersions.bomId],
-    references: [billsOfMaterial.id],
-  }),
-  productionOrders: many(productionOrders),
-  plannedOrders: many(plannedOrders),
-  formulations: many(formulations), // One-to-many: one production version can have many formulations
-  phaseFormulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
-  phaseMaterialRequirementAssignments: many(productionVersionPhaseMaterialRequirements), // Junction table for phase-specific material requirements
-  phaseBomProductOutputAssignments: many(productionVersionPhaseBomProductOutputs), // Junction table for discrete phase-specific product outputs
-  phaseRecipeProductOutputAssignments: many(productionVersionPhaseRecipeProductOutputs), // Junction table for process phase-specific product outputs
-}));
+// COMMENTED OUT: productionVersions table not defined
+// export const productionVersionsRelations = relations(productionVersions, ({ one, many }) => ({
+//   plant: one(plants, {
+//     fields: [productionVersions.plantId],
+//     references: [plants.id],
+//   }),
+//   recipe: one(recipes, {
+//     fields: [productionVersions.recipeId],
+//     references: [recipes.id],
+//   }),
+//   routing: one(routings, {
+//     fields: [productionVersions.routingId],
+//     references: [routings.id],
+//   }),
+//   bom: one(billsOfMaterial, {
+//     fields: [productionVersions.bomId],
+//     references: [billsOfMaterial.id],
+//   }),
+//   productionOrders: many(productionOrders),
+//   plannedOrders: many(plannedOrders),
+//   formulations: many(formulations), // One-to-many: one production version can have many formulations
+//   phaseFormulationDetailAssignments: many(productionVersionPhaseFormulationDetails), // Junction table for phase-specific formulation details
+//   phaseMaterialRequirementAssignments: many(productionVersionPhaseMaterialRequirements), // Junction table for phase-specific material requirements
+//   phaseBomProductOutputAssignments: many(productionVersionPhaseBomProductOutputs), // Junction table for discrete phase-specific product outputs
+//   phaseRecipeProductOutputAssignments: many(productionVersionPhaseRecipeProductOutputs), // Junction table for process phase-specific product outputs
+// }));
 
-export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
-  plant: one(plants, {
-    fields: [plannedOrders.plantId],
-    references: [plants.id],
-  }),
-  productionVersion: one(productionVersions, {
-    fields: [plannedOrders.productionVersionId],
-    references: [productionVersions.id],
-  }),
-  item: one(items, {
-    fields: [plannedOrders.itemId],
-    references: [items.id],
-  }),
-  // Many-to-many relationship with production orders via junction table
-  productionOrderLinks: many(plannedOrderProductionOrders),
-}));
+// COMMENTED OUT: plannedOrders table not defined
+// export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
+//   plant: one(plants, {
+//     fields: [plannedOrders.plantId],
+//     references: [plants.id],
+//   }),
+//   productionVersion: one(productionVersions, {
+//     fields: [plannedOrders.productionVersionId],
+//     references: [productionVersions.id],
+//   }),
+//   item: one(items, {
+//     fields: [plannedOrders.itemId],
+//     references: [items.id],
+//   }),
+//   // Many-to-many relationship with production orders via junction table
+//   productionOrderLinks: many(plannedOrderProductionOrders),
+// });
 
-// Junction table relations for many-to-many relationship
-export const plannedOrderProductionOrdersRelations = relations(plannedOrderProductionOrders, ({ one }) => ({
-  plannedOrder: one(plannedOrders, {
-    fields: [plannedOrderProductionOrders.plannedOrderId],
-    references: [plannedOrders.id],
-  }),
-  productionOrder: one(productionOrders, {
-    fields: [plannedOrderProductionOrders.productionOrderId],
-    references: [productionOrders.id],
-  }),
-  convertedBy: one(users, {
-    fields: [plannedOrderProductionOrders.convertedBy],
-    references: [users.id],
-  }),
-}));
+// Junction table relations for many-to-many relationship - COMMENTED OUT: Tables not defined
+// export const plannedOrderProductionOrdersRelations = relations(plannedOrderProductionOrders, ({ one }) => ({
+//   plannedOrder: one(plannedOrders, {
+//     fields: [plannedOrderProductionOrders.plannedOrderId],
+//     references: [plannedOrders.id],
+//   }),
+//   productionOrder: one(productionOrders, {
+//     fields: [plannedOrderProductionOrders.productionOrderId],
+//     references: [productionOrders.id],
+//   }),
+//   convertedBy: one(users, {
+//     fields: [plannedOrderProductionOrders.convertedBy],
+//     references: [users.id],
+//   }),
+// });
 
-// Relations for material requirements
-export const materialRequirementsRelations = relations(materialRequirements, ({ one, many }) => ({
-  formulation: one(formulations, {
-    fields: [materialRequirements.formulationId],
-    references: [formulations.id],
-  }),
-  billOfMaterial: one(billsOfMaterial, {
-    fields: [materialRequirements.bomId],
-    references: [billsOfMaterial.id],
-  }),
-  item: one(items, {
-    fields: [materialRequirements.itemId],
-    references: [items.id],
-  }),
-  stock: one(stocks, {
-    fields: [materialRequirements.stockId],
-    references: [stocks.id],
-  }),
-}));
+// Relations for material requirements - COMMENTED OUT: Tables not defined
+// export const materialRequirementsRelations = relations(materialRequirements, ({ one, many }) => ({
+//   formulation: one(formulations, {
+//     fields: [materialRequirements.formulationId],
+//     references: [formulations.id],
+//   }),
+//   billOfMaterial: one(billsOfMaterial, {
+//     fields: [materialRequirements.bomId],
+//     references: [billsOfMaterial.id],
+//   }),
+//   item: one(items, {
+//     fields: [materialRequirements.itemId],
+//     references: [items.id],
+//   }),
+//   stock: one(stocks, {
+//     fields: [materialRequirements.stockId],
+//     references: [stocks.id],
+//   }),
+// });
 
-// Relations for formulations
-export const formulationsRelations = relations(formulations, ({ one, many }) => ({
-  productionVersion: one(productionVersions, {
-    fields: [formulations.productionVersionId],
-    references: [productionVersions.id],
-  }),
-  preferredVendor: one(vendors, {
-    fields: [formulations.preferredVendorId],
-    references: [vendors.id],
-  }),
-  materialRequirements: many(materialRequirements), // One-to-many: one formulation can have many material requirements
-  formulationDetails: many(formulationDetails), // One-to-many: one formulation can have many formulation details
-}));
+// Relations for formulations - COMMENTED OUT: Tables not defined
+// export const formulationsRelations = relations(formulations, ({ one, many }) => ({
+//   productionVersion: one(productionVersions, {
+//     fields: [formulations.productionVersionId],
+//     references: [productionVersions.id],
+//   }),
+//   preferredVendor: one(vendors, {
+//     fields: [formulations.preferredVendorId],
+//     references: [vendors.id],
+//   }),
+//   materialRequirements: many(materialRequirements), // One-to-many: one formulation can have many material requirements
+//   formulationDetails: many(formulationDetails), // One-to-many: one formulation can have many formulation details
+// }));
 
-// Relations for formulation details
-export const formulationDetailsRelations = relations(formulationDetails, ({ one, many }) => ({
-  formulation: one(formulations, {
-    fields: [formulationDetails.formulationId],
-    references: [formulations.id],
-  }),
-  item: one(items, {
-    fields: [formulationDetails.itemId],
-    references: [items.id],
-  }),
-  phaseAssignments: many(productionVersionPhaseFormulationDetails), // Many-to-many: one formulation detail can be assigned to many phases
-}));
+// Relations for formulation details - COMMENTED OUT: Tables not defined
+// export const formulationDetailsRelations = relations(formulationDetails, ({ one, many }) => ({
+//   formulation: one(formulations, {
+//     fields: [formulationDetails.formulationId],
+//     references: [formulations.id],
+//   }),
+//   item: one(items, {
+//     fields: [formulationDetails.itemId],
+//     references: [items.id],
+//   }),
+//   phaseAssignments: many(productionVersionPhaseFormulationDetails), // Many-to-many: one formulation detail can be assigned to many phases
+// }));
 
-// Relations for production version phase formulation details junction table
-export const productionVersionPhaseFormulationDetailsRelations = relations(productionVersionPhaseFormulationDetails, ({ one }) => ({
-  productionVersion: one(productionVersions, {
-    fields: [productionVersionPhaseFormulationDetails.productionVersionId],
-    references: [productionVersions.id],
-  }),
-  recipePhase: one(recipePhases, {
-    fields: [productionVersionPhaseFormulationDetails.recipePhaseId],
-    references: [recipePhases.id],
-  }),
-  formulationDetail: one(formulationDetails, {
-    fields: [productionVersionPhaseFormulationDetails.formulationDetailId],
-    references: [formulationDetails.id],
-  }),
-}));
+// Relations for production version phase formulation details junction table - COMMENTED OUT: Tables not defined
+// export const productionVersionPhaseFormulationDetailsRelations = relations(productionVersionPhaseFormulationDetails, ({ one }) => ({
+//   productionVersion: one(productionVersions, {
+//     fields: [productionVersionPhaseFormulationDetails.productionVersionId],
+//     references: [productionVersions.id],
+//   }),
+//   recipePhase: one(recipePhases, {
+//     fields: [productionVersionPhaseFormulationDetails.recipePhaseId],
+//     references: [recipePhases.id],
+//   }),
+//   formulationDetail: one(formulationDetails, {
+//     fields: [productionVersionPhaseFormulationDetails.formulationDetailId],
+//     references: [formulationDetails.id],
+//   }),
+// }));
 
-// Enhanced vendor relations to include formulations
-export const vendorsRelations = relations(vendors, ({ many }) => ({
-  preferredFormulations: many(formulations),
-}));
+// Enhanced vendor relations to include formulations - COMMENTED OUT: formulations table not defined
+// export const vendorsRelations = relations(vendors, ({ many }) => ({
+//   preferredFormulations: many(formulations),
+// }));
 
 
 
