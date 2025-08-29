@@ -4,47 +4,13 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
-export const plants = pgTable("plants", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  location: text("location"),
-  address: text("address"),
-  city: text("city"),
-  state: text("state"),
-  country: text("country"),
-  postalCode: text("postal_code"),
-  latitude: numeric("latitude", { precision: 10, scale: 8 }),
-  longitude: numeric("longitude", { precision: 11, scale: 8 }),
-  timezone: text("timezone").notNull().default("UTC"),
-  isActive: boolean("is_active").default(true),
-  plantType: text("plant_type").default("manufacturing"), // manufacturing, distribution, warehouse, office
-  capacity: jsonb("capacity").$type<Record<string, any>>().default({}),
-  operationalMetrics: jsonb("operational_metrics").$type<Record<string, any>>().default({}),
-  defaultAlgorithmId: integer("default_algorithm_id"), // Default optimization algorithm for this plant
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Import and re-export PT Publish tables with proper aliasing
+import * as PT from "./pt-publish-schema";
 
-export const capabilities = pgTable("capabilities", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull().unique(),
-  description: text("description"),
-});
-
-export const resources = pgTable("resources", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  type: text("type").notNull(),
-  status: text("status").notNull().default("active"),
-  capabilities: jsonb("capabilities").$type<number[]>().default([]),
-  photo: text("photo"), // Base64 encoded photo data
-  // TOC Drum designation
-  isDrum: boolean("is_drum").default(false),
-  drumDesignationDate: timestamp("drum_designation_date"),
-  drumDesignationReason: text("drum_designation_reason"),
-  drumDesignationMethod: text("drum_designation_method"), // 'manual' or 'automated'
-  // Removed plantId - now using many-to-many relationship via plantResources junction table
-  // Removed isShared and sharedPlants - now handled by multiple entries in plantResources table
-});
+// Using PT tables instead of non-PT tables
+export const plants = PT.ptPlants;
+export const capabilities = PT.ptCapabilities;
+export const resources = PT.ptResources;
 
 
 
@@ -472,43 +438,8 @@ export const vendors = pgTable("vendors", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Customers - customer information for finished products
-export const customers = pgTable("customers", {
-  id: serial("id").primaryKey(),
-  customerNumber: text("customer_number").notNull().unique(), // e.g., "CUST-001"
-  customerName: text("customer_name").notNull(),
-  customerType: text("customer_type").notNull().default("standard"), // standard, preferred, key_account, distributor
-  contactName: text("contact_name"),
-  contactEmail: text("contact_email"),
-  contactPhone: text("contact_phone"),
-  billingAddress: text("billing_address"),
-  shippingAddress: text("shipping_address"),
-  city: text("city"),
-  state: text("state"),
-  zipCode: text("zip_code"),
-  country: text("country").notNull().default("US"),
-  taxId: text("tax_id"),
-  paymentTerms: text("payment_terms").notNull().default("net30"), // net30, net60, COD, etc.
-  creditLimit: integer("credit_limit").default(0), // in cents
-  currency: text("currency").notNull().default("USD"),
-  salesRepresentative: text("sales_representative"),
-  industrySegment: text("industry_segment"), // automotive, aerospace, pharmaceutical, etc.
-  accountStatus: text("account_status").notNull().default("active"), // active, inactive, credit_hold, suspended
-  specialRequirements: jsonb("special_requirements").$type<Array<{
-    requirement_type: string;
-    description: string;
-    mandatory: boolean;
-  }>>().default([]),
-  qualityRequirements: jsonb("quality_requirements").$type<{
-    certifications_required: string[];
-    inspection_level: string; // normal, tightened, reduced
-    documentation_requirements: string[];
-  }>(),
-  shippingInstructions: text("shipping_instructions"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Using PT Customers table instead of non-PT customers table
+export const customers = PT.ptCustomers;
 
 // Recipes - Master recipes for process manufacturing (SAP S/4HANA Process Industries structure)
 export const recipes = pgTable("recipes", {
@@ -641,7 +572,7 @@ export const productionVersions = pgTable("production_versions", {
   recipeId: integer("recipe_id").references(() => recipes.id), // For process manufacturing
   
   // Link to Routing for discrete manufacturing (defines the sequence of operations)
-  routingId: integer("routing_id").references(() => routings.id), // For discrete manufacturing
+  // routingId: integer("routing_id").references(() => routings.id), // For discrete manufacturing - TODO: Use PT tables
   
   // Link to Bill of Materials for discrete manufacturing material requirements
   bomId: integer("bom_id").references(() => materialRequirements.id), // For discrete manufacturing
@@ -5840,7 +5771,7 @@ export const productionVersionPhaseRecipeProductOutputs = pgTable("production_ve
   id: serial("id").primaryKey(),
   productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
   recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id, { onDelete: "cascade" }).notNull(),
-  recipeProductOutputId: integer("recipe_product_output_id").references(() => recipeProductOutputs.id, { onDelete: "cascade" }).notNull(),
+  // recipeProductOutputId: integer("recipe_product_output_id").references(() => recipeProductOutputs.id, { onDelete: "cascade" }).notNull(),
   phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
   phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
   timingConstraints: jsonb("timing_constraints").$type<{
@@ -5907,10 +5838,10 @@ export const productionVersionPhaseRecipeProductOutputsRelations = relations(pro
     fields: [productionVersionPhaseRecipeProductOutputs.recipePhaseId],
     references: [recipePhases.id],
   }),
-  recipeProductOutput: one(recipeProductOutputs, {
-    fields: [productionVersionPhaseRecipeProductOutputs.recipeProductOutputId],
-    references: [recipeProductOutputs.id],
-  }),
+  // recipeProductOutput: one(recipeProductOutputs, {
+  //   fields: [productionVersionPhaseRecipeProductOutputs.recipeProductOutputId],
+  //   references: [recipeProductOutputs.id],
+  // }),
 }));
 
 // Onboarding schemas
@@ -8564,7 +8495,7 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
     references: [plants.id],
   }),
   operations: many(recipeOperations),
-  productOutputs: many(recipeProductOutputs),
+  // productOutputs: many(recipeProductOutputs),
   ptJobOperations: many(ptJobOperations), // One-to-many relationship with PT Job Operations
   operationRelationships: many(recipeOperationRelationships, {
     relationName: "recipeToRelationships"
@@ -8818,127 +8749,8 @@ export const sites = pgTable("sites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Items - products, components, raw materials with comprehensive supply chain management
-export const items = pgTable("items", {
-  id: serial("id").primaryKey(),
-  itemNumber: text("item_number").notNull().unique(),
-  name: text("name").notNull(),
-  description: text("description"),
-  itemType: text("item_type").notNull(), // finished_good, component, raw_material, service, packaging, tooling
-  unitOfMeasure: text("unit_of_measure").notNull().default("EA"), // EA, LBS, GAL, KG, M, L, etc.
-  alternateUnitOfMeasure: text("alternate_unit_of_measure"), // Secondary UOM for dual unit items
-  conversionFactor: decimal("conversion_factor", { precision: 10, scale: 4 }).default("1.0000"), // Conversion between primary and alternate UOM
-  
-  // Physical Properties
-  weight: integer("weight").default(0), // in grams
-  volume: integer("volume").default(0), // in cubic centimeters
-  dimensions: jsonb("dimensions").$type<{
-    length?: number; // in millimeters
-    width?: number;
-    height?: number;
-    diameter?: number;
-  }>().default({}),
-  
-  // Financial Information
-  standardCost: integer("standard_cost").default(0), // in cents
-  listPrice: integer("list_price").default(0), // in cents
-  lastCost: integer("last_cost").default(0), // in cents - most recent purchase cost
-  averageCost: integer("average_cost").default(0), // in cents - rolling average cost
-  targetMargin: integer("target_margin").default(0), // target profit margin percentage (100 = 100%)
-  
-  // ABC Classification and Analytics
-  abcClassification: text("abc_classification").default("C"), // A, B, C based on usage/value
-  xyzClassification: text("xyz_classification").default("Z"), // X, Y, Z based on demand variability
-  annualUsage: integer("annual_usage").default(0), // annual consumption quantity
-  annualValue: integer("annual_value").default(0), // annual consumption value in cents
-  demandVariability: integer("demand_variability").default(0), // coefficient of variation percentage
-  lastAnalysisDate: timestamp("last_analysis_date"), // last ABC/XYZ analysis date
-  
-  // Inventory Planning
-  leadTime: integer("lead_time").default(0), // days
-  safetyStock: integer("safety_stock").default(0),
-  reorderPoint: integer("reorder_point").default(0),
-  maximumStock: integer("maximum_stock").default(0), // maximum inventory level
-  economicOrderQuantity: integer("economic_order_quantity").default(0), // calculated EOQ
-  lotSizeRule: text("lot_size_rule").default("fixed"), // fixed, lot_for_lot, economic_order_quantity, period_order_quantity
-  lotSize: integer("lot_size").default(1),
-  minimumOrderQuantity: integer("minimum_order_quantity").default(1),
-  orderMultiple: integer("order_multiple").default(1), // must order in multiples of this quantity
-  
-  // Quality and Compliance
-  shelfLife: integer("shelf_life").default(0), // days
-  requiresLotControl: boolean("requires_lot_control").default(false),
-  requiresSerialControl: boolean("requires_serial_control").default(false),
-  requiresInspection: boolean("requires_inspection").default(false),
-  qualityGrade: text("quality_grade"), // A, B, C quality classification
-  hazardousMaterial: boolean("hazardous_material").default(false),
-  regulatoryClass: text("regulatory_class"), // pharmaceutical: API, excipient, finished_product; chemical: controlled, restricted, standard
-  unCode: text("un_code"), // UN hazardous material code
-  casNumber: text("cas_number"), // Chemical Abstracts Service registry number
-  
-  // Storage Requirements
-  storageConditions: jsonb("storage_conditions").$type<{
-    temperatureMin?: number; // Celsius
-    temperatureMax?: number;
-    humidityMin?: number; // percentage
-    humidityMax?: number;
-    lightSensitive?: boolean;
-    pressureRequirement?: string;
-    specialHandling?: string[];
-  }>().default({}),
-  
-  // Procurement and Sourcing
-  preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),
-  sourceType: text("source_type").default("purchase"), // purchase, make, transfer, consignment
-  buyerCode: text("buyer_code"), // responsible purchaser identifier
-  sourcingStrategy: text("sourcing_strategy").default("single"), // single, dual, multiple
-  makeVsBuyDecision: text("make_vs_buy_decision").default("buy"), // make, buy, both
-  
-  // Product Lifecycle Management
-  lifecycleStage: text("lifecycle_stage").default("active"), // development, introduction, growth, maturity, decline, obsolete
-  phaseOutDate: timestamp("phase_out_date"), // planned obsolescence date
-  replacementItemId: integer("replacement_item_id").references((): any => items.id), // superseding item
-  revisionLevel: text("revision_level").default("A"), // engineering change revision
-  releaseDate: timestamp("release_date"), // when item was released for production
-  
-  // Manufacturing Planning
-  planningMethod: text("planning_method").default("mrp"), // mrp, kanban, reorder_point, manual
-  planningHorizon: integer("planning_horizon").default(30), // days
-  consumptionMethod: text("consumption_method").default("forward"), // forward, backward
-  backflushFlag: boolean("backflush_flag").default(false), // auto-consume in manufacturing
-  phantomFlag: boolean("phantom_flag").default(false), // pass-through component
-  criticalComponent: boolean("critical_component").default(false),
-  
-  // Additional Classifications
-  productFamily: text("product_family"), // product grouping for planning
-  plannerCode: text("planner_code"), // responsible planner identifier
-  commodityCode: text("commodity_code"), // procurement commodity classification  
-  htsCode: text("hts_code"), // Harmonized Tariff Schedule code for international trade
-  countryOfOrigin: text("country_of_origin"), // manufacturing origin country
-  
-  // Tracking and Audit
-  createdBy: integer("created_by").references(() => users.id),
-  lastModifiedBy: integer("last_modified_by").references(() => users.id),
-  lastModifiedDate: timestamp("last_modified_date").defaultNow(),
-  lastCountDate: timestamp("last_count_date"), // last physical inventory count
-  lastUsageDate: timestamp("last_usage_date"), // last transaction date
-  
-  // System Fields
-  isActive: boolean("is_active").default(true),
-  isBlocked: boolean("is_blocked").default(false), // temporarily blocked from transactions
-  blockReason: text("block_reason"), // reason for blocking
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  // Performance indexes for common queries
-  itemTypeIdx: index("items_item_type_idx").on(table.itemType),
-  abcClassificationIdx: index("items_abc_classification_idx").on(table.abcClassification),
-  lifecycleStageIdx: index("items_lifecycle_stage_idx").on(table.lifecycleStage),
-  preferredVendorIdx: index("items_preferred_vendor_idx").on(table.preferredVendorId),
-  plannerCodeIdx: index("items_planner_code_idx").on(table.plannerCode),
-  commodityCodeIdx: index("items_commodity_code_idx").on(table.commodityCode),
-  activeItemsIdx: index("items_active_idx").on(table.isActive),
-}));
+// Using PT Items table instead of non-PT items table
+export const items = PT.ptItems;
 
 // Storage Locations - warehouses and storage areas within plants
 export const storageLocations = pgTable("storage_locations", {
@@ -8961,25 +8773,8 @@ export const storageLocations = pgTable("storage_locations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Inventory - current stock levels
-export const inventory = pgTable("inventory", {
-  id: serial("id").primaryKey(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
-  location: text("location"), // bin, shelf, etc.
-  onHandQuantity: integer("on_hand_quantity").notNull().default(0),
-  allocatedQuantity: integer("allocated_quantity").notNull().default(0),
-  availableQuantity: integer("available_quantity").notNull().default(0),
-  onOrderQuantity: integer("on_order_quantity").notNull().default(0),
-  reservedQuantity: integer("reserved_quantity").notNull().default(0),
-  averageCost: integer("average_cost").default(0), // in cents
-  lastCountDate: timestamp("last_count_date"),
-  lastMovementDate: timestamp("last_movement_date"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  itemStorageLocationIdx: unique().on(table.itemId, table.storageLocationId),
-}));
+// Using PT Inventories table instead of non-PT inventory table
+export const inventory = PT.ptInventories;
 
 // Inventory lots for lot-controlled items
 export const inventoryLots = pgTable("inventory_lots", {
@@ -9669,7 +9464,7 @@ export const itemsRelations = relations(items, ({ many }) => ({
   billsOfMaterial: many(billsOfMaterial),
   bomLines: many(bomLines),
   bomProductOutputs: many(bomProductOutputs), // BOM outputs for discrete manufacturing
-  recipeProductOutputs: many(recipeProductOutputs), // Recipe outputs for process manufacturing
+  // recipeProductOutputs: many(recipeProductOutputs), // Recipe outputs for process manufacturing
   materialRequirements: many(materialRequirements), // Link to material requirements for inventory management
   formulationDetails: many(formulationDetails), // Link to formulation details for standardized specifications
   routings: many(routings),
@@ -9764,7 +9559,7 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
   purchaseOrderLines: many(purchaseOrderLines),
   demandForecasts: many(demandForecasts),
   bomProductOutputs: many(bomProductOutputs),
-  recipeProductOutputs: many(recipeProductOutputs),
+  // recipeProductOutputs: many(recipeProductOutputs),
   materialRequirements: many(materialRequirements),
   transferOrderLines: many(transferOrderLines),
 }));
@@ -9872,41 +9667,41 @@ export const bomProductOutputsRelations = relations(bomProductOutputs, ({ one })
   }),
 }));
 
-export const recipeProductOutputsRelations = relations(recipeProductOutputs, ({ one }) => ({
-  recipe: one(recipes, {
-    fields: [recipeProductOutputs.recipeId],
-    references: [recipes.id],
-  }),
-  product: one(items, {
-    fields: [recipeProductOutputs.productId],
-    references: [items.id],
-  }),
-  stock: one(stocks, {
-    fields: [recipeProductOutputs.stockId],
-    references: [stocks.id],
-  }),
-}));
+// export const recipeProductOutputsRelations = relations(recipeProductOutputs, ({ one }) => ({
+//   recipe: one(recipes, {
+//     fields: [recipeProductOutputs.recipeId],
+//     references: [recipes.id],
+//   }),
+//   product: one(items, {
+//     fields: [recipeProductOutputs.productId],
+//     references: [items.id],
+//   }),
+//   stock: one(stocks, {
+//     fields: [recipeProductOutputs.stockId],
+//     references: [stocks.id],
+//   }),
+// }));
 
-export const routingsRelations = relations(routings, ({ one, many }) => ({
-  item: one(items, {
-    fields: [routings.itemId],
-    references: [items.id],
-  }),
-  operations: many(routingOperations),
-  ptJobOperations: many(ptJobOperations),
-  productionVersions: many(productionVersions),
-}));
+// export const routingsRelations = relations(routings, ({ one, many }) => ({
+//   item: one(items, {
+//     fields: [routings.itemId],
+//     references: [items.id],
+//   }),
+//   operations: many(routingOperations),
+//   ptJobOperations: many(ptJobOperations),
+//   productionVersions: many(productionVersions),
+// }));
 
-export const routingOperationsRelations = relations(routingOperations, ({ one }) => ({
-  routing: one(routings, {
-    fields: [routingOperations.routingId],
-    references: [routings.id],
-  }),
-  workCenter: one(workCenters, {
-    fields: [routingOperations.workCenterId],
-    references: [workCenters.id],
-  }),
-}));
+// export const routingOperationsRelations = relations(routingOperations, ({ one }) => ({
+//   routing: one(routings, {
+//     fields: [routingOperations.routingId],
+//     references: [routings.id],
+//   }),
+//   workCenter: one(workCenters, {
+//     fields: [routingOperations.workCenterId],
+//     references: [workCenters.id],
+//   }),
+// }));
 
 export const forecastsRelations = relations(forecasts, ({ one }) => ({
   item: one(items, {
@@ -10476,20 +10271,20 @@ export const insertBomProductOutputSchema = createInsertSchema(bomProductOutputs
   createdAt: undefined,
 });
 
-export const insertRecipeProductOutputSchema = createInsertSchema(recipeProductOutputs, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// export const insertRecipeProductOutputSchema = createInsertSchema(recipeProductOutputs, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export const insertRoutingSchema = createInsertSchema(routings, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
-  effectiveDate: z.union([z.string().datetime(), z.date()]),
-  expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// export const insertRoutingSchema = createInsertSchema(routings, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// }, {
+//   effectiveDate: z.union([z.string().datetime(), z.date()]),
+//   expiredDate: z.union([z.string().datetime(), z.date()]).optional(),
+// });
 
 export const insertRoutingOperationSchema = createInsertSchema(routingOperations, { 
   id: undefined,
@@ -10580,11 +10375,11 @@ export type InsertBomMaterialRequirement = z.infer<typeof insertBomMaterialRequi
 export type BomProductOutput = typeof bomProductOutputs.$inferSelect;
 export type InsertBomProductOutput = z.infer<typeof insertBomProductOutputSchema>;
 
-export type RecipeProductOutput = typeof recipeProductOutputs.$inferSelect;
-export type InsertRecipeProductOutput = z.infer<typeof insertRecipeProductOutputSchema>;
+// export type RecipeProductOutput = typeof recipeProductOutputs.$inferSelect;
+// export type InsertRecipeProductOutput = z.infer<typeof insertRecipeProductOutputSchema>;
 
-export type Routing = typeof routings.$inferSelect;
-export type InsertRouting = z.infer<typeof insertRoutingSchema>;
+// export type Routing = typeof routings.$inferSelect;
+// export type InsertRouting = z.infer<typeof insertRoutingSchema>;
 
 export type RoutingOperation = typeof routingOperations.$inferSelect;
 export type InsertRoutingOperation = z.infer<typeof insertRoutingOperationSchema>;
