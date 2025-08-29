@@ -1541,7 +1541,7 @@ export default function MasterDataPage() {
             {aiProcessing && (
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <RefreshCw className="h-4 w-4 animate-spin" />
-                AI is analyzing your {activeTab} data and generating suggestions...
+                AI is working on your {activeTab} request...
               </div>
             )}
 

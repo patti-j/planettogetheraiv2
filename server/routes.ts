@@ -26464,8 +26464,14 @@ Generate a complete ${targetType} configuration that matches the user's requirem
 
       switch (operation) {
         case 'generate':
-          systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0. Generate as many records as requested, aim for 10-20 diverse records if no specific quantity is mentioned.`;
-          userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate diverse, realistic ${entityType} records that fit the manufacturing context. Create varied examples with different categories, types, and realistic business data. Ensure each record has unique, meaningful values and follows manufacturing industry standards.`;
+          // If there's little to no existing data, ask for industry/company input
+          if (!currentData || currentData.length === 0) {
+            systemPrompt = `You are a helpful AI assistant for manufacturing master data setup. Instead of generating data, ask the user to provide information about their industry, company, or business to generate relevant master data. Return a JSON object with a "suggestions" array containing a single object with: operation: "request_input", explanation: "Request for industry/company information", confidence: 1.0.`;
+            userPrompt = `The user wants to generate ${entityType} data but there's no existing data to work with. Ask them to provide details about their industry, company type, products they manufacture, or website so you can generate relevant ${entityType} data for their specific business context.`;
+          } else {
+            systemPrompt = `You are a manufacturing data expert. Generate realistic ${contextDescription} based on the user's request. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {record data}, explanation: "brief explanation", confidence: 0.8-1.0. Generate as many records as requested, aim for 10-20 diverse records if no specific quantity is mentioned.`;
+            userPrompt = `Current ${entityType} data sample: ${JSON.stringify(currentDataSample, null, 2)}\n\nUser request: ${prompt}\n\nGenerate diverse, realistic ${entityType} records that fit the manufacturing context. Create varied examples with different categories, types, and realistic business data. Ensure each record has unique, meaningful values and follows manufacturing industry standards.`;
+          }
           break;
           
         case 'improve':
@@ -26711,9 +26717,11 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
                         break;
                       case 'sales-orders':
                         if (!validatedData.orderNumber) validatedData.orderNumber = `SO-${Date.now()}`;
-                        if (!validatedData.customerName) validatedData.customerName = `Customer ${Date.now()}`;
-                        if (!validatedData.totalAmount) validatedData.totalAmount = 1000.00;
-                        if (!validatedData.status) validatedData.status = 'pending';
+                        if (!validatedData.customerId) validatedData.customerId = 1; // Default customer ID
+                        if (!validatedData.orderDate) validatedData.orderDate = new Date().toISOString();
+                        if (!validatedData.requestedDate) validatedData.requestedDate = new Date().toISOString();
+                        if (!validatedData.siteId) validatedData.siteId = 1; // Default site ID
+                        if (!validatedData.status) validatedData.status = 'open';
                         break;
                       case 'manufacturing-orders':
                       case 'job-templates':
