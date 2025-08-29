@@ -1781,7 +1781,8 @@ export interface IStorage {
   deleteAlgorithmPerformance(id: number): Promise<boolean>;
   getAlgorithmPerformanceTrends(algorithmName: string, plantId?: number, months?: number): Promise<AlgorithmPerformance[]>;
 
-  // Recipe Management
+  // Recipe Management - Commented out, replaced with PT Publish tables
+  /*
   getRecipes(plantId?: number): Promise<Recipe[]>;
   getRecipe(id: number): Promise<Recipe | undefined>;
   getRecipeByNumber(recipeNumber: string): Promise<Recipe | undefined>;
@@ -1825,6 +1826,7 @@ export interface IStorage {
   createRecipeEquipment(equipment: InsertRecipeEquipment): Promise<RecipeEquipment>;
   updateRecipeEquipment(id: number, equipment: Partial<InsertRecipeEquipment>): Promise<RecipeEquipment | undefined>;
   deleteRecipeEquipment(id: number): Promise<boolean>;
+  */
 
   // Production Versions
   getProductionVersions(plantId?: number): Promise<ProductionVersion[]>;
@@ -1834,12 +1836,14 @@ export interface IStorage {
   updateProductionVersion(id: number, version: Partial<InsertProductionVersion>): Promise<ProductionVersion | undefined>;
   deleteProductionVersion(id: number): Promise<boolean>;
 
-  // Vendors
+  // Vendors - Commented out, replaced with PT Publish tables
+  /*
   getVendors(): Promise<Vendor[]>;
   getVendor(id: number): Promise<Vendor | undefined>;
   createVendor(vendor: InsertVendor): Promise<Vendor>;
   updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
+  */
 
   // Formulations
   getFormulations(): Promise<Formulation[]>;

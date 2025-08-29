@@ -4483,6 +4483,8 @@ export type OptimizationRecommendation = typeof optimizationRecommendations.$inf
 export type InsertOptimizationRecommendation = z.infer<typeof insertOptimizationRecommendationSchema>;
 
 // Recipe Insert Schemas - SAP S/4HANA Process Industries Structure
+// Commented out - replaced with PT Publish tables
+/*
 export const insertRecipeSchema = createInsertSchema(recipes, { 
   id: undefined,
   createdAt: undefined,
@@ -4526,6 +4528,7 @@ export const insertRecipeFormulaSchema = createInsertSchema(recipeFormulas, {
   createdAt: undefined,
   updatedAt: undefined,
 });
+*/
 
 
 
@@ -4543,6 +4546,8 @@ export const insertCustomerSchema = createInsertSchema(customers, {
 });
 
 // Recipe Types - SAP S/4HANA Process Industries Structure
+// Recipe-related types - Commented out, replaced with PT Publish tables
+/*
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 
@@ -4563,6 +4568,7 @@ export type InsertRecipeMaterialAssignment = z.infer<typeof insertRecipeMaterial
 
 export type RecipeFormula = typeof recipeFormulas.$inferSelect;
 export type InsertRecipeFormula = z.infer<typeof insertRecipeFormulaSchema>;
+*/
 
 
 
