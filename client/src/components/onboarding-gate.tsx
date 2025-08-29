@@ -39,7 +39,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     enabled: !!user && (location !== '/onboarding' && !location.startsWith('/onboarding?'))
   }) as { data: OnboardingData | undefined, isLoading: boolean };
 
-  // Check if user needs to complete onboarding
+  // Check if user should see onboarding on first login (but don't force it)
   useEffect(() => {
     if (authLoading || onboardingLoading) {
       return; // Still loading, don't make decisions yet
@@ -50,42 +50,15 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
       return; // Not authenticated, no onboarding required
     }
 
-    // If user is taking a tour, allow bypass
-    if (isTourActive) {
-      setShouldEnforceOnboarding(false);
-      return;
-    }
-
-    // Allow access to onboarding pages themselves
-    if (location === '/onboarding' || location.startsWith('/onboarding?')) {
-      setShouldEnforceOnboarding(false);
-      return;
-    }
-
-    // Allow access to authentication pages
-    if (location === '/login' || location === '/logout') {
-      setShouldEnforceOnboarding(false);
-      return;
-    }
-
-    // Check if user has completed initial onboarding
-    if (!onboardingData) {
-      // No onboarding data exists - this is a new user
+    // Never enforce onboarding - users can always navigate freely
+    // Only redirect new users to onboarding on first login if they're on the dashboard
+    if (!onboardingData && (location === '/' || location === '/dashboard')) {
+      // No onboarding data exists and user is on main page - redirect to onboarding once
       setShouldEnforceOnboarding(true);
       return;
     }
 
-    // Check if minimum required steps are completed
-    const hasCompanyInfo = onboardingData.companyName && onboardingData.industry;
-    const hasSelectedFeatures = onboardingData.selectedFeatures && onboardingData.selectedFeatures.length > 0;
-    
-    if (!hasCompanyInfo || !hasSelectedFeatures) {
-      // User hasn't completed minimum setup
-      setShouldEnforceOnboarding(true);
-      return;
-    }
-
-    // User has completed minimum onboarding, allow access
+    // For all other cases, allow free navigation
     setShouldEnforceOnboarding(false);
   }, [user, onboardingData, isTourActive, location, authLoading, onboardingLoading]);
 
