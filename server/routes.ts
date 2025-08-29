@@ -26550,9 +26550,29 @@ Generate a complete ${targetType} configuration that matches the user's requirem
   // Bulk AI data generation for all tables
   app.post('/api/master-data/bulk-generate', requireAuth, async (req, res) => {
     try {
-      const { recordsPerTable = 15, companyInfo } = req.body;
+      const { recordsPerTable = 15, companyInfo, replaceExisting = false } = req.body;
       
       console.log(`[AI Bulk Generate] Creating ${recordsPerTable} records per table`);
+      
+      // Delete existing data if replace option is selected
+      if (replaceExisting) {
+        console.log(`[AI Bulk Generate] Deleting existing master data before generating new data`);
+        try {
+          // Delete in reverse order to handle foreign key constraints
+          await storage.deleteAllRecords('billsOfMaterial');
+          await storage.deleteAllRecords('routings');
+          await storage.deleteAllRecords('workCenters');
+          await storage.deleteAllRecords('suppliers');
+          await storage.deleteAllRecords('customers');
+          await storage.deleteAllRecords('stockItems');
+          await storage.deleteAllRecords('resources');
+          await storage.deleteAllRecords('recipes');
+          console.log(`[AI Bulk Generate] Successfully deleted all existing master data`);
+        } catch (error) {
+          console.error(`[AI Bulk Generate] Error deleting existing data:`, error);
+          // Continue with generation even if deletion fails
+        }
+      }
       
       const entityTypes = [
         'items', 

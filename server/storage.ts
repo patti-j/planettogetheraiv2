@@ -352,6 +352,9 @@ export interface IStorage {
   updatePlant(id: number, plant: Partial<InsertPlant>): Promise<Plant | undefined>;
   deletePlant(id: number): Promise<boolean>;
   
+  // Bulk operations
+  deleteAllRecords(tableName: string): Promise<boolean>;
+  
   // Departments
   getDepartments(): Promise<Department[]>;
 
@@ -8570,6 +8573,34 @@ export class DatabaseStorage implements IStorage {
   async deletePlant(id: number): Promise<boolean> {
     const result = await db.delete(plants).where(eq(plants.id, id));
     return result.rowCount! > 0;
+  }
+
+  async deleteAllRecords(tableName: string): Promise<boolean> {
+    try {
+      const tableMap: Record<string, any> = {
+        'stockItems': stockItems,
+        'resources': resources,
+        'customers': customers,
+        'suppliers': suppliers,
+        'workCenters': workCenters,
+        'routings': routings,
+        'billsOfMaterial': billsOfMaterial,
+        'recipes': recipes
+      };
+
+      const table = tableMap[tableName];
+      if (!table) {
+        console.warn(`[deleteAllRecords] Unknown table: ${tableName}`);
+        return false;
+      }
+
+      const result = await db.delete(table);
+      console.log(`[deleteAllRecords] Deleted all records from ${tableName}, count: ${result.rowCount}`);
+      return true;
+    } catch (error) {
+      console.error(`[deleteAllRecords] Error deleting records from ${tableName}:`, error);
+      return false;
+    }
   }
 
   // Extension Studio Implementation

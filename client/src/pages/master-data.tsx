@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 interface EditableCell {
   rowId: number;
@@ -1054,6 +1055,7 @@ export default function MasterDataPage() {
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [selectedJobForPath, setSelectedJobForPath] = useState<{ id: number; description: string } | null>(null);
   const [companyInfo, setCompanyInfo] = useState('');
+  const [replaceExisting, setReplaceExisting] = useState(false);
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -1339,7 +1341,8 @@ export default function MasterDataPage() {
     try {
       const response = await apiRequest('POST', '/api/master-data/bulk-generate', {
         recordsPerTable: 15,
-        companyInfo: companyInfo.trim() || undefined
+        companyInfo: companyInfo.trim() || undefined,
+        replaceExisting: replaceExisting
       });
       
       const result = await response.json();
@@ -1536,6 +1539,19 @@ export default function MasterDataPage() {
                   onChange={(e) => setCompanyInfo(e.target.value)}
                   rows={3}
                 />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="replace-existing"
+                  checked={replaceExisting}
+                  onCheckedChange={(checked) => setReplaceExisting(checked === true)}
+                />
+                <label 
+                  htmlFor="replace-existing" 
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                >
+                  Replace existing data (delete all current master data first)
+                </label>
               </div>
               <Button 
                 onClick={handleBulkGenerate}
