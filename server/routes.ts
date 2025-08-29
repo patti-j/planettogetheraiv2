@@ -26588,14 +26588,39 @@ Generate a complete ${targetType} configuration that matches the user's requirem
             recipes: "formulation recipes for chemical/pharmaceutical products with ingredients, quantities, process parameters, and quality specifications"
           }[entityType] || "comprehensive data records";
 
+          // Define required fields per entity type to ensure constraint compliance
+          const requiredFieldsPrompt = {
+            items: "REQUIRED: name (string), description (string), price (number)",
+            customers: "REQUIRED: name (string), email (string), phone (string)",
+            vendors: "REQUIRED: name (string), contactEmail (string), contactPhone (string)",
+            capabilities: "REQUIRED: name (string), description (string)",
+            resources: "REQUIRED: name (string), type (string), status (string - use 'active')",
+            plants: "REQUIRED: name (string), timezone (string - use 'UTC')",
+            workCenters: "REQUIRED: name (string), description (string)",
+            stockItems: "REQUIRED: name (string), description (string), category (string)",
+            jobs: "REQUIRED: name (string), description (string), priority (string - use 'medium'), status (string - use 'planned')",
+            'sales-orders': "REQUIRED: orderNumber (string), customerName (string), totalAmount (number), status (string - use 'pending')",
+            'manufacturing-orders': "REQUIRED: name (string), description (string), publish_date (ISO date string - use current date)",
+            'job-templates': "REQUIRED: name (string), description (string), publish_date (ISO date string - use current date)",
+            billsOfMaterial: "REQUIRED: bomNumber (string), parentItemId (number), description (string)",
+            routings: "REQUIRED: routingNumber (string), name (string), description (string)",
+            recipes: "REQUIRED: recipeName (string), recipeNumber (string), status (string - use 'Active')"
+          }[entityType] || "Include all required fields as specified";
+
           const systemPrompt = `You are a manufacturing data expert. Generate ${recordsPerTable} diverse, realistic ${contextDescription} for a comprehensive manufacturing system. Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9. Create varied, realistic business data covering different categories, types, and use cases.`;
           
-          const userPrompt = `Generate ${recordsPerTable} comprehensive ${entityType} records for a manufacturing company. Include diverse examples:
+          const userPrompt = `Generate ${recordsPerTable} comprehensive ${entityType} records for a manufacturing company. 
+
+${requiredFieldsPrompt}
+
+Include diverse examples:
 - Different categories, types, and classifications
 - Realistic names, codes, and descriptions  
 - Proper manufacturing industry values
 - Varied priorities, statuses, and attributes
 - Logical relationships between data
+
+CRITICAL: Always include all required fields with valid non-null values. Use current date (${new Date().toISOString()}) for date fields. Use realistic manufacturing industry names and values.
 
 Create complete, ready-to-use sample data that represents real manufacturing scenarios.`;
 
@@ -26636,9 +26661,86 @@ Create complete, ready-to-use sample data that represents real manufacturing sce
                   // Use proper Drizzle insert syntax
                   const tableSchema = masterDataTables[entityType as keyof typeof masterDataTables];
                   if (tableSchema) {
-                    await db.insert(tableSchema).values(suggestion.data);
+                    // Add validation and fallback values for required fields
+                    const validatedData = { ...suggestion.data };
+                    
+                    // Entity-specific required field validation
+                    switch (entityType) {
+                      case 'stockItems':
+                        if (!validatedData.name) validatedData.name = `Stock Item ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated stock item';
+                        if (!validatedData.category) validatedData.category = 'General';
+                        break;
+                      case 'customers':
+                        if (!validatedData.name) validatedData.name = `Customer ${Date.now()}`;
+                        if (!validatedData.email) validatedData.email = `customer${Date.now()}@example.com`;
+                        if (!validatedData.phone) validatedData.phone = '555-0100';
+                        break;
+                      case 'vendors':
+                        if (!validatedData.name) validatedData.name = `Vendor ${Date.now()}`;
+                        if (!validatedData.contactEmail) validatedData.contactEmail = `vendor${Date.now()}@example.com`;
+                        if (!validatedData.contactPhone) validatedData.contactPhone = '555-0200';
+                        break;
+                      case 'items':
+                        if (!validatedData.name) validatedData.name = `Item ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated manufacturing item';
+                        if (!validatedData.price) validatedData.price = 10.00;
+                        break;
+                      case 'plants':
+                        if (!validatedData.name) validatedData.name = `Plant ${Date.now()}`;
+                        if (!validatedData.timezone) validatedData.timezone = 'UTC';
+                        break;
+                      case 'resources':
+                        if (!validatedData.name) validatedData.name = `Resource ${Date.now()}`;
+                        if (!validatedData.type) validatedData.type = 'Equipment';
+                        if (!validatedData.status) validatedData.status = 'active';
+                        break;
+                      case 'capabilities':
+                        if (!validatedData.name) validatedData.name = `Capability ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated manufacturing capability';
+                        break;
+                      case 'workCenters':
+                        if (!validatedData.name) validatedData.name = `Work Center ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated work center';
+                        break;
+                      case 'jobs':
+                        if (!validatedData.name) validatedData.name = `Job ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated production job';
+                        if (!validatedData.priority) validatedData.priority = 'medium';
+                        if (!validatedData.status) validatedData.status = 'planned';
+                        break;
+                      case 'sales-orders':
+                        if (!validatedData.orderNumber) validatedData.orderNumber = `SO-${Date.now()}`;
+                        if (!validatedData.customerName) validatedData.customerName = `Customer ${Date.now()}`;
+                        if (!validatedData.totalAmount) validatedData.totalAmount = 1000.00;
+                        if (!validatedData.status) validatedData.status = 'pending';
+                        break;
+                      case 'manufacturing-orders':
+                      case 'job-templates':
+                        if (!validatedData.name) validatedData.name = `MO ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated manufacturing order';
+                        if (!validatedData.publish_date) validatedData.publish_date = new Date().toISOString();
+                        break;
+                      case 'recipes':
+                        if (!validatedData.recipeName) validatedData.recipeName = `Recipe ${Date.now()}`;
+                        if (!validatedData.recipeNumber) validatedData.recipeNumber = `R-${Date.now()}`;
+                        if (!validatedData.status) validatedData.status = 'Active';
+                        break;
+                      case 'billsOfMaterial':
+                        if (!validatedData.bomNumber) validatedData.bomNumber = `BOM-${Date.now()}`;
+                        if (!validatedData.parentItemId) validatedData.parentItemId = 1;
+                        if (!validatedData.description) validatedData.description = 'Generated BOM';
+                        break;
+                      case 'routings':
+                        if (!validatedData.routingNumber) validatedData.routingNumber = `RT-${Date.now()}`;
+                        if (!validatedData.name) validatedData.name = `Routing ${Date.now()}`;
+                        if (!validatedData.description) validatedData.description = 'Generated routing';
+                        break;
+                    }
+                    
+                    await db.insert(tableSchema).values(validatedData);
                     savedCount++;
-                    console.log(`[AI Bulk Generate] Successfully saved ${entityType} record: ${suggestion.data.name || suggestion.data.orderNumber || suggestion.data.id || 'unnamed'}`);
+                    console.log(`[AI Bulk Generate] Successfully saved ${entityType} record: ${validatedData.name || validatedData.orderNumber || validatedData.recipeName || validatedData.bomNumber || validatedData.id || 'unnamed'}`);
                   }
                 } catch (error) {
                   console.error(`[AI Bulk Generate] Failed to save ${entityType} record:`, error.message);
