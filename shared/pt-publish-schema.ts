@@ -1078,7 +1078,7 @@ export const ptInventoriesRelations = relations(ptInventories, ({ one }) => ({
 // Lot Relations
 export const ptLotsRelations = relations(ptLots, ({ one }) => ({
   item: one(ptItems, {
-    fields: [ptLots.itemId],
+    fields: [ptLots.item_id],
     references: [ptItems.itemId],
   }),
 }));
@@ -1086,7 +1086,7 @@ export const ptLotsRelations = relations(ptLots, ({ one }) => ({
 // Job Relations
 export const ptJobsRelations = relations(ptJobs, ({ one, many }) => ({
   manufacturingOrder: one(ptManufacturingOrders, {
-    fields: [ptJobs.manufacturingOrderId],
+    fields: [ptJobs.manufacturing_order_id],
     references: [ptManufacturingOrders.manufacturingOrderId],
   }),
   operations: many(ptJobOperations),
@@ -1119,7 +1119,7 @@ export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => 
     references: [ptJobOperations.operationId],
   }),
   resource: one(ptResources, {
-    fields: [ptJobActivities.resourceId],
+    fields: [ptJobActivities.resource_id],
     references: [ptResources.resourceId],
   }),
 }));
@@ -1131,7 +1131,7 @@ export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
     references: [ptJobs.jobId],
   }),
   item: one(ptItems, {
-    fields: [ptJobMaterials.itemId],
+    fields: [ptJobMaterials.item_id],
     references: [ptItems.itemId],
   }),
 }));
@@ -1144,7 +1144,7 @@ export const ptCustomersRelations = relations(ptCustomers, ({ many }) => ({
 // Sales Order Relations
 export const ptSalesOrdersRelations = relations(ptSalesOrders, ({ one, many }) => ({
   customer: one(ptCustomers, {
-    fields: [ptSalesOrders.customerId],
+    fields: [ptSalesOrders.customer],
     references: [ptCustomers.customerId],
   }),
   salesOrderLines: many(ptSalesOrderLines),

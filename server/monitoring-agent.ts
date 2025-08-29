@@ -351,7 +351,6 @@ export class SystemMonitoringAgent {
       }
 
       await db.insert(alerts).values({
-        title: `System Alert: ${alertData.type}`,
         description: alertData.message,
         severity: alertData.severity,
         status: 'active',
