@@ -3475,8 +3475,7 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Using PT Departments table instead of departments
-export const departments = PT.ptDepartments;
+// departments is already exported from PT tables above (line 15)
 
 // User Authority Management - Link users to their areas of responsibility
 export const userAuthorities = pgTable("user_authorities", {
