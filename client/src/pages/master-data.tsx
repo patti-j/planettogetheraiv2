@@ -1053,6 +1053,7 @@ export default function MasterDataPage() {
   const [aiProcessing, setAiProcessing] = useState(false);
   const [aiSuggestions, setAiSuggestions] = useState<any[]>([]);
   const [selectedJobForPath, setSelectedJobForPath] = useState<{ id: number; description: string } | null>(null);
+  const [companyInfo, setCompanyInfo] = useState('');
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -1337,7 +1338,8 @@ export default function MasterDataPage() {
     setAiProcessing(true);
     try {
       const response = await apiRequest('POST', '/api/master-data/bulk-generate', {
-        recordsPerTable: 15
+        recordsPerTable: 15,
+        companyInfo: companyInfo.trim() || undefined
       });
       
       const result = await response.json();
@@ -1455,7 +1457,7 @@ export default function MasterDataPage() {
               AI Master Data Assistant
             </DialogTitle>
             <DialogDescription>
-              Get AI-powered help with your {activeTab.replace('-', ' ')} data - generate new entries, improve existing data, or get suggestions for better data management.
+              Get AI-powered help with your master data - generate new entries, improve existing data, or get suggestions for better data management across all entity types.
             </DialogDescription>
           </DialogHeader>
 
@@ -1524,8 +1526,17 @@ export default function MasterDataPage() {
                 <h4 className="font-medium text-sm">Quick Setup</h4>
               </div>
               <p className="text-sm text-muted-foreground">
-                Generate comprehensive sample data for all entity types at once to quickly populate your master data tables.
+                Generate comprehensive sample data for all entity types based on your industry and company details.
               </p>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Company/Industry Information (Optional)</label>
+                <Textarea
+                  placeholder="Tell us about your company, industry, products you manufacture, or website URL so we can generate relevant sample data. For example: 'Automotive parts manufacturer' or 'Food processing company making beverages' or 'www.mycompany.com'"
+                  value={companyInfo}
+                  onChange={(e) => setCompanyInfo(e.target.value)}
+                  rows={3}
+                />
+              </div>
               <Button 
                 onClick={handleBulkGenerate}
                 disabled={aiProcessing}
