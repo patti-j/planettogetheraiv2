@@ -14,57 +14,8 @@ export const resources = PT.ptResources;
 
 
 
-// Junction table for many-to-many relationship between plants and resources
-export const plantResources = pgTable("plant_resources", {
-  id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  resourceId: integer("resource_id").references(() => resources.id).notNull(),
-  isPrimary: boolean("is_primary").default(true), // Indicates if this is the primary plant for this resource
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  plantResourceUnique: unique().on(table.plantId, table.resourceId),
-}));
-
 // Using PT ManufacturingOrders table instead of productionOrders
 export const productionOrders = PT.ptManufacturingOrders;
-
-// Planned Orders - preliminary orders from MRP planning before becoming production orders
-export const plannedOrders = pgTable("planned_orders", {
-  id: serial("id").primaryKey(),
-  plannedOrderNumber: text("planned_order_number").notNull().unique(), // e.g., "PLN-2025-001"
-  itemId: integer("item_id").notNull(), // Will be converted to foreign key later when items table is defined
-  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull(),
-  requiredDate: timestamp("required_date").notNull(), // When needed
-  plannedStartDate: timestamp("planned_start_date"),
-  plannedEndDate: timestamp("planned_end_date"),
-  orderType: text("order_type").notNull().default("production"), // production, purchase, transfer
-  source: text("source").notNull().default("mrp"), // mrp, manual, forecast
-  status: text("status").notNull().default("firm"), // firm, released_to_production, cancelled
-  priority: text("priority").notNull().default("medium"),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  salesOrderId: integer("sales_order_id"), // Will be converted to foreign key later when salesOrders table is defined
-  productionVersionId: integer("production_version_id"), // Will be converted to foreign key later when productionVersions table is defined
-  createdAt: timestamp("created_at").defaultNow(),
-  // Removed productionOrderId foreign key - now handled via many-to-many junction table
-});
-
-// Many-to-Many Junction Table: Planned Orders ↔ Production Orders
-// Supports consolidation (multiple planned orders → 1 production order) and splitting (1 planned order → multiple production orders)
-export const plannedOrderProductionOrders = pgTable("planned_order_production_orders", {
-  id: serial("id").primaryKey(),
-  plannedOrderId: integer("planned_order_id").references(() => plannedOrders.id).notNull(),
-  productionOrderId: integer("production_order_id").references(() => productionOrders.id).notNull(),
-  conversionType: text("conversion_type").notNull(), // "consolidation", "split", "one_to_one"
-  plannedQuantity: numeric("planned_quantity", { precision: 15, scale: 5 }).notNull(), // Quantity from planned order allocated to this production order
-  convertedQuantity: numeric("converted_quantity", { precision: 15, scale: 5 }).notNull(), // Actual quantity converted
-  conversionRatio: numeric("conversion_ratio", { precision: 8, scale: 4 }).notNull().default("1.0000"), // plannedQuantity/totalPlannedQuantity for this production order
-  notes: text("notes"), // Reason for consolidation/split
-  convertedAt: timestamp("converted_at").defaultNow(),
-  convertedBy: integer("converted_by"), // Will be FK to users.id when users table is moved up
-}, (table) => ({
-  // Ensure each planned order can only be converted to a production order once with the same conversion details
-  uniquePlannedProductionOrder: unique().on(table.plannedOrderId, table.productionOrderId),
-}));
 
 // Using PT JobOperations table instead of recipeOperations
 export const recipeOperations = PT.ptJobOperations;
@@ -1225,34 +1176,37 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities, {}).omit({ id: true });
+export const insertCapabilitySchema = createInsertSchema(capabilities).omit({ id: true });
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 
-export const insertResourceSchema = createInsertSchema(resources, {}).omit({ id: true });
+export const insertResourceSchema = createInsertSchema(resources).omit({ id: true });
 export type InsertResource = z.infer<typeof insertResourceSchema>;
 
-export const insertPlantResourceSchema = createInsertSchema(plantResources, {}).omit({ id: true, createdAt: true });
-export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
+// Commented out - plantResources table aliased to PT tables
+// export const insertPlantResourceSchema = createInsertSchema(plantResources, {}).omit({ id: true, createdAt: true });
+// export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders, {}).omit({ id: true, createdAt: true });
+export const insertProductionOrderSchema = createInsertSchema(productionOrders).omit({ id: true, createdAt: true });
 export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
 
-export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
-export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
+// Commented out - plannedOrders table not available
+// export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
+// export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {}).omit({ id: true, createdAt: true, undoneAt: true });
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ id: true, createdAt: true, undoneAt: true });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
+// Commented out - plannedOrderProductionOrders table not available
 // Junction table insert schema for many-to-many relationship
-export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {}).omit({ id: true, convertedAt: true });
+// export const insertPlannedOrderProductionOrderSchema = createInsertSchema(plannedOrderProductionOrders, {}).omit({ id: true, convertedAt: true });
 
 // Insert schemas for both operation types
 
-export const insertDependencySchema = createInsertSchema(dependencies, {}).omit({ id: true });
+export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {}).omit({ id: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {}).omit({ id: true });
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
 export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {}).omit({ id: true });
 
@@ -2680,13 +2634,15 @@ export const presentationProjects = pgTable("presentation_projects", {
 // Types already defined above - removing duplicates
 export type Capability = typeof capabilities.$inferSelect;
 export type Resource = typeof resources.$inferSelect;
-export type PlantResource = typeof plantResources.$inferSelect;
+// PlantResource now uses PT tables
+// export type PlantResource = typeof plantResources.$inferSelect;
 export type ProductionOrder = typeof productionOrders.$inferSelect;
-export type PlannedOrder = typeof plannedOrders.$inferSelect;
+// PlannedOrder now uses PT tables
+// export type PlannedOrder = typeof plannedOrders.$inferSelect;
 
-// Junction table types for many-to-many relationship
-export type PlannedOrderProductionOrder = typeof plannedOrderProductionOrders.$inferSelect;
-export type InsertPlannedOrderProductionOrder = z.infer<typeof insertPlannedOrderProductionOrderSchema>;
+// Junction table types for many-to-many relationship - commented out as tables don't exist
+// export type PlannedOrderProductionOrder = typeof plannedOrderProductionOrders.$inferSelect;
+// export type InsertPlannedOrderProductionOrder = z.infer<typeof insertPlannedOrderProductionOrderSchema>;
 
 
 
