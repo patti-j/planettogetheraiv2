@@ -1,6 +1,7 @@
 import { pgTable, text, bigint, numeric, timestamp, boolean, integer, varchar, serial } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
+import { relations } from "drizzle-orm";
 
 // ============================================
 // Core Master Data Tables
@@ -983,6 +984,235 @@ export const ptSystemData = pgTable("pt_system_data", {
   prepareData: boolean("prepare_data"),
   clearCustomTables: boolean("clear_custom_tables"),
 });
+
+// ============================================
+// Table Relations (using numeric PT IDs for efficient joins)
+// ============================================
+
+// Plant Relations
+export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
+  departments: many(ptDepartments),
+  resources: many(ptResources),
+  plantWarehouses: many(ptPlantWarehouses),
+}));
+
+// Department Relations
+export const ptDepartmentsRelations = relations(ptDepartments, ({ one, many }) => ({
+  plant: one(ptPlants, {
+    fields: [ptDepartments.plantId],
+    references: [ptPlants.plantId],
+  }),
+  resources: many(ptResources),
+}));
+
+// Resource Relations
+export const ptResourcesRelations = relations(ptResources, ({ one, many }) => ({
+  plant: one(ptPlants, {
+    fields: [ptResources.plantId],
+    references: [ptPlants.plantId],
+  }),
+  department: one(ptDepartments, {
+    fields: [ptResources.departmentId],
+    references: [ptDepartments.departmentId],
+  }),
+  resourceCapabilities: many(ptResourceCapabilities),
+  jobActivities: many(ptJobActivities),
+  capacityIntervalAssignments: many(ptCapacityIntervalResourceAssignments),
+}));
+
+// Resource Capability Relations
+export const ptResourceCapabilitiesRelations = relations(ptResourceCapabilities, ({ one }) => ({
+  resource: one(ptResources, {
+    fields: [ptResourceCapabilities.resourceId],
+    references: [ptResources.resourceId],
+  }),
+  capability: one(ptCapabilities, {
+    fields: [ptResourceCapabilities.capabilityId],
+    references: [ptCapabilities.capabilityId],
+  }),
+}));
+
+// Capability Relations
+export const ptCapabilitiesRelations = relations(ptCapabilities, ({ many }) => ({
+  resourceCapabilities: many(ptResourceCapabilities),
+}));
+
+// Item Relations
+export const ptItemsRelations = relations(ptItems, ({ many }) => ({
+  inventories: many(ptInventories),
+  lots: many(ptLots),
+  jobMaterials: many(ptJobMaterials),
+  salesOrderLines: many(ptSalesOrderLines),
+}));
+
+// Warehouse Relations
+export const ptWarehousesRelations = relations(ptWarehouses, ({ many }) => ({
+  plantWarehouses: many(ptPlantWarehouses),
+  inventories: many(ptInventories),
+}));
+
+// Plant Warehouse Relations
+export const ptPlantWarehousesRelations = relations(ptPlantWarehouses, ({ one }) => ({
+  plant: one(ptPlants, {
+    fields: [ptPlantWarehouses.plantId],
+    references: [ptPlants.plantId],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptPlantWarehouses.warehouseId],
+    references: [ptWarehouses.warehouseId],
+  }),
+}));
+
+// Inventory Relations
+export const ptInventoriesRelations = relations(ptInventories, ({ one }) => ({
+  item: one(ptItems, {
+    fields: [ptInventories.itemId],
+    references: [ptItems.itemId],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptInventories.warehouseId],
+    references: [ptWarehouses.warehouseId],
+  }),
+}));
+
+// Lot Relations
+export const ptLotsRelations = relations(ptLots, ({ one }) => ({
+  item: one(ptItems, {
+    fields: [ptLots.itemId],
+    references: [ptItems.itemId],
+  }),
+}));
+
+// Job Relations
+export const ptJobsRelations = relations(ptJobs, ({ one, many }) => ({
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobs.manufacturingOrderId],
+    references: [ptManufacturingOrders.manufacturingOrderId],
+  }),
+  operations: many(ptJobOperations),
+  materials: many(ptJobMaterials),
+}));
+
+// Manufacturing Order Relations
+export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
+  jobs: many(ptJobs),
+  operations: many(ptJobOperations),
+}));
+
+// Job Operation Relations
+export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobOperations.jobId],
+    references: [ptJobs.jobId],
+  }),
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobOperations.manufacturingOrderId],
+    references: [ptManufacturingOrders.manufacturingOrderId],
+  }),
+  activities: many(ptJobActivities),
+}));
+
+// Job Activity Relations
+export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobActivities.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  resource: one(ptResources, {
+    fields: [ptJobActivities.resourceId],
+    references: [ptResources.resourceId],
+  }),
+}));
+
+// Job Material Relations
+export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobMaterials.jobId],
+    references: [ptJobs.jobId],
+  }),
+  item: one(ptItems, {
+    fields: [ptJobMaterials.itemId],
+    references: [ptItems.itemId],
+  }),
+}));
+
+// Customer Relations
+export const ptCustomersRelations = relations(ptCustomers, ({ many }) => ({
+  salesOrders: many(ptSalesOrders),
+}));
+
+// Sales Order Relations
+export const ptSalesOrdersRelations = relations(ptSalesOrders, ({ one, many }) => ({
+  customer: one(ptCustomers, {
+    fields: [ptSalesOrders.customerId],
+    references: [ptCustomers.customerId],
+  }),
+  salesOrderLines: many(ptSalesOrderLines),
+}));
+
+// Sales Order Line Relations
+export const ptSalesOrderLinesRelations = relations(ptSalesOrderLines, ({ one, many }) => ({
+  salesOrder: one(ptSalesOrders, {
+    fields: [ptSalesOrderLines.salesOrderId],
+    references: [ptSalesOrders.salesOrderId],
+  }),
+  item: one(ptItems, {
+    fields: [ptSalesOrderLines.itemId],
+    references: [ptItems.itemId],
+  }),
+  distributions: many(ptSalesOrderLineDistributions),
+}));
+
+// Sales Order Line Distribution Relations
+export const ptSalesOrderLineDistributionsRelations = relations(ptSalesOrderLineDistributions, ({ one }) => ({
+  salesOrderLine: one(ptSalesOrderLines, {
+    fields: [ptSalesOrderLineDistributions.salesOrderLineId],
+    references: [ptSalesOrderLines.salesOrderLineId],
+  }),
+}));
+
+// Forecast Relations
+export const ptForecastsRelations = relations(ptForecasts, ({ many }) => ({
+  forecastShipments: many(ptForecastShipments),
+}));
+
+// Forecast Shipment Relations
+export const ptForecastShipmentsRelations = relations(ptForecastShipments, ({ one }) => ({
+  forecast: one(ptForecasts, {
+    fields: [ptForecastShipments.forecastId],
+    references: [ptForecasts.forecastId],
+  }),
+}));
+
+// Transfer Order Relations
+export const ptTransferOrdersRelations = relations(ptTransferOrders, ({ many }) => ({
+  distributions: many(ptTransferOrderDistributions),
+}));
+
+// Transfer Order Distribution Relations
+export const ptTransferOrderDistributionsRelations = relations(ptTransferOrderDistributions, ({ one }) => ({
+  transferOrder: one(ptTransferOrders, {
+    fields: [ptTransferOrderDistributions.transferOrderId],
+    references: [ptTransferOrders.transferOrderId],
+  }),
+}));
+
+// Capacity Interval Relations
+export const ptCapacityIntervalsRelations = relations(ptCapacityIntervals, ({ many }) => ({
+  resourceAssignments: many(ptCapacityIntervalResourceAssignments),
+}));
+
+// Capacity Interval Resource Assignment Relations
+export const ptCapacityIntervalResourceAssignmentsRelations = relations(ptCapacityIntervalResourceAssignments, ({ one }) => ({
+  capacityInterval: one(ptCapacityIntervals, {
+    fields: [ptCapacityIntervalResourceAssignments.capacityIntervalId],
+    references: [ptCapacityIntervals.capacityIntervalId],
+  }),
+  resource: one(ptResources, {
+    fields: [ptCapacityIntervalResourceAssignments.resourceId],
+    references: [ptResources.resourceId],
+  }),
+}));
 
 // ============================================
 // Export Insert Schemas and Types
