@@ -1,5 +1,5 @@
 import { 
-  plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
+  plants, capabilities, resources, plantResources, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
   recipes, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
@@ -12,7 +12,7 @@ import {
   alerts,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
-  type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
+  type Plant, type Capability, type Resource, type PlantResource, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
   type ProductionOrder, type InsertProductionOrder,
   type Recipe, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,

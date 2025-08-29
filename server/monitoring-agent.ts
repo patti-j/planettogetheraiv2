@@ -150,7 +150,7 @@ export class SystemMonitoringAgent {
 
   private async collectSystemMetrics(): Promise<SystemMetrics> {
     try {
-      // Get total plants count (PT plants don't have isActive field)
+      // Get total plants count (PT plants don't have isActive field by default)
       const activePlantsResult = await db
         .select({ count: sql`count(*)`.mapWith(Number) })
         .from(plants);

@@ -24,6 +24,7 @@ export const ptPlants = pgTable("pt_plants", {
   dailyOperatingExpense: numeric("daily_operating_expense"),
   investedCapital: numeric("invested_capital"),
   annualPercentageRate: numeric("annual_percentage_rate"),
+  isActive: boolean("is_active").default(true), // Added for monitoring agent compatibility
 });
 
 export const ptDepartments = pgTable("pt_departments", {

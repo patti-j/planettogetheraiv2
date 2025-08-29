@@ -21,7 +21,8 @@ export const productionOrders = PT.ptManufacturingOrders;
 export const recipeOperations = PT.ptJobOperations;
 
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
-export const recipePhases = pgTable("recipe_phases", {
+// REMOVED: Using PT tables instead
+/*export const recipePhases = pgTable("recipe_phases", {
   id: serial("id").primaryKey(),
   operationId: integer("operation_id").references(() => recipeOperations.id).notNull(), // Which operation this phase belongs to
 
@@ -87,7 +88,7 @@ export const recipePhases = pgTable("recipe_phases", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   operationPhaseIdx: unique().on(table.operationId, table.phaseNumber),
-}));
+}));*/
 
 // Recipe Phase Relationships - defines sequence and dependencies between recipe phases
 export const recipePhaseRelationships = pgTable("recipe_phase_relationships", {
