@@ -11,6 +11,8 @@ import * as PT from "./pt-publish-schema";
 export const plants = PT.ptPlants;
 export const capabilities = PT.ptCapabilities;
 export const resources = PT.ptResources;
+export const plantResources = PT.ptResourceCapabilities; // Using PT ResourceCapabilities table
+export const departments = PT.ptDepartments;
 
 
 
@@ -850,7 +852,8 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
 // Insert schemas for both operation types
 
-export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
+// Dependencies table not available in PT schema - removed
+// export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
 export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
 
@@ -2295,7 +2298,7 @@ export type ProductionOrder = typeof productionOrders.$inferSelect;
 
 
 export type InsertDependency = z.infer<typeof insertDependencySchema>;
-export type Dependency = typeof dependencies.$inferSelect;
+// export type Dependency = typeof dependencies.$inferSelect;
 
 export type InsertResourceView = z.infer<typeof insertResourceViewSchema>;
 export type ResourceView = typeof resourceViews.$inferSelect;
