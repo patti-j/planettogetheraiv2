@@ -59,9 +59,9 @@ import {
   insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
   insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
   insertFieldCommentSchema,
-  // Memory Book Schemas
-  insertMemoryBookSchema, insertMemoryBookEntrySchema, insertMemoryBookCollaboratorSchema,
-  insertMemoryBookEntryHistorySchema, insertMemoryBookUsageSchema,
+  // Memory and Playbook Schemas
+  insertAIMemorySchema, insertPlaybookSchema, insertPlaybookCollaboratorSchema,
+  insertPlaybookHistorySchema, insertPlaybookUsageSchema,
   // Constraints Management Schemas
   insertConstraintCategorySchema, insertConstraintSchema, insertConstraintViolationSchema, insertConstraintExceptionSchema,
   // Buffer Management Schemas
@@ -88,9 +88,9 @@ import {
 
 // Import PT Publish schemas
 import {
-  insertPtPublishJobsSchema, insertPtPublishManufacturingOrdersSchema, 
-  insertPtPublishJobOperationsSchema, insertPtPublishResourcesSchema, 
-  insertPtPublishJobActivitiesSchema
+  insertPtJobsSchema, insertPtManufacturingOrdersSchema, 
+  insertPtJobOperationsSchema, insertPtResourcesSchema, 
+  insertPtJobActivitiesSchema
 } from "@shared/pt-publish-schema";
 
 import { processAICommand, processShiftAIRequest, processShiftAssignmentAIRequest, transcribeAudio, processDesignStudioAIRequest } from "./ai-agent";
