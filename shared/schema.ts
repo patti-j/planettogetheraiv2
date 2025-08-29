@@ -510,6 +510,75 @@ export const customers = pgTable("customers", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Recipes - Master recipes for process manufacturing (SAP S/4HANA Process Industries structure)
+export const recipes = pgTable("recipes", {
+  id: serial("id").primaryKey(),
+  recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
+  recipeName: text("recipe_name").notNull(),
+  recipeType: text("recipe_type").notNull().default("standard"), // standard, trial, development
+  version: text("version").notNull().default("1.0"),
+  status: text("status").notNull().default("draft"), // draft, approved, released, obsolete
+  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  
+  // Validity period
+  validityDateFrom: timestamp("validity_date_from").notNull(),
+  validityDateTo: timestamp("validity_date_to"),
+  
+  // Base quantities for scaling
+  baseQuantity: numeric("base_quantity", { precision: 15, scale: 5 }).notNull().default("1"),
+  baseUnit: text("base_unit").notNull().default("kg"),
+  
+  // Approval workflow
+  approvedBy: integer("approved_by"), // Will be FK to users.id when users table is defined
+  approvedDate: timestamp("approved_date"),
+  approvalComments: text("approval_comments"),
+  
+  // Recipe metadata
+  description: text("description"),
+  purpose: text("purpose"), // What this recipe is for
+  targetYield: numeric("target_yield", { precision: 5, scale: 2 }).default("100"), // Expected yield percentage
+  batchSize: numeric("batch_size", { precision: 15, scale: 5 }).default("1000"), // Standard batch size
+  scalable: boolean("scalable").default(true), // Can this recipe be scaled up/down
+  
+  // Process conditions
+  operatingTemperatureMin: integer("operating_temperature_min"), // Celsius
+  operatingTemperatureMax: integer("operating_temperature_max"), // Celsius
+  operatingPressureMin: integer("operating_pressure_min"), // kPa
+  operatingPressureMax: integer("operating_pressure_max"), // kPa
+  atmosphereRequired: text("atmosphere_required"), // air, nitrogen, vacuum, etc.
+  
+  // Safety and compliance
+  hazardousProcess: boolean("hazardous_process").default(false),
+  safetyRequirements: text("safety_requirements"),
+  regulatoryRequirements: jsonb("regulatory_requirements").$type<Array<{
+    regulation: string;
+    requirement: string;
+    compliance_status: string;
+  }>>().default([]),
+  
+  // Quality specifications
+  qualitySpecs: jsonb("quality_specs").$type<{
+    critical_parameters: Array<{
+      parameter: string;
+      target_value: number;
+      tolerance: number;
+      unit: string;
+      test_method: string;
+    }>;
+    acceptance_criteria: string;
+    sampling_plan: string;
+  }>(),
+  
+  // Documentation
+  notes: text("notes"),
+  developmentNotes: text("development_notes"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+}, (table) => ({
+  recipeNumberVersionUnique: unique().on(table.recipeNumber, table.version),
+}));
+
 // Recipe Formulas - input materials with quantities (like a BOM for recipes)
 export const recipeFormulas = pgTable("recipe_formulas", {
   id: serial("id").primaryKey(),
