@@ -7941,9 +7941,9 @@ export const recipesRelations = relations(recipes, ({ one, many }) => ({
   operations: many(recipeOperations),
   // productOutputs: many(recipeProductOutputs),
   ptJobOperations: many(ptJobOperations), // One-to-many relationship with PT Job Operations
-  operationRelationships: many(recipeOperationRelationships, {
-    relationName: "recipeToRelationships"
-  }),
+  // operationRelationships: many(recipeOperationRelationships, {
+  //   relationName: "recipeToRelationships"
+  // }),
   materialAssignments: many(recipeMaterialAssignments),
   formulas: many(recipeFormulas),
 }));
@@ -7959,12 +7959,12 @@ export const recipeOperationsRelations = relations(recipeOperations, ({ one, man
   }),
   // phases: many(recipePhases),
   materialAssignments: many(recipeMaterialAssignments),
-  predecessorRelationships: many(recipeOperationRelationships, {
-    relationName: "predecessorOperation"
-  }),
-  successorRelationships: many(recipeOperationRelationships, {
-    relationName: "successorOperation"
-  }),
+  // predecessorRelationships: many(recipeOperationRelationships, {
+  //   relationName: "predecessorOperation"
+  // }),
+  // successorRelationships: many(recipeOperationRelationships, {
+  //   relationName: "successorOperation"
+  // }),
 }));
 
 // export const recipePhasesRelations = relations(recipePhases, ({ one, many }) => ({
@@ -8011,31 +8011,31 @@ export const recipeOperationsRelations = relations(recipeOperations, ({ one, man
 //   }),
 // }));
 
-export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
-  recipe: one(recipes, {
-    fields: [recipeOperationRelationships.recipeId],
-    references: [recipes.id],
-    relationName: "recipeToRelationships"
-  }),
-  predecessorOperation: one(recipeOperations, {
-    fields: [recipeOperationRelationships.predecessorOperationId],
-    references: [recipeOperations.id],
-    relationName: "predecessorOperation"
-  }),
-  successorOperation: one(recipeOperations, {
-    fields: [recipeOperationRelationships.successorOperationId],
-    references: [recipeOperations.id],
-    relationName: "successorOperation"
-  }),
-  // predecessorPhase: one(recipePhases, {
-  //   fields: [recipeOperationRelationships.predecessorPhaseId],
-  //   references: [recipePhases.id],
-  // }),
-  // successorPhase: one(recipePhases, {
-  //   fields: [recipeOperationRelationships.successorPhaseId],
-  //   references: [recipePhases.id],
-  // }),
-}));
+// export const recipeOperationRelationshipsRelations = relations(recipeOperationRelationships, ({ one }) => ({
+//   recipe: one(recipes, {
+//     fields: [recipeOperationRelationships.recipeId],
+//     references: [recipes.id],
+//     relationName: "recipeToRelationships"
+//   }),
+//   predecessorOperation: one(recipeOperations, {
+//     fields: [recipeOperationRelationships.predecessorOperationId],
+//     references: [recipeOperations.id],
+//     relationName: "predecessorOperation"
+//   }),
+//   successorOperation: one(recipeOperations, {
+//     fields: [recipeOperationRelationships.successorOperationId],
+//     references: [recipeOperations.id],
+//     relationName: "successorOperation"
+//   }),
+//   // predecessorPhase: one(recipePhases, {
+//   //   fields: [recipeOperationRelationships.predecessorPhaseId],
+//   //   references: [recipePhases.id],
+//   // }),
+//   // successorPhase: one(recipePhases, {
+//   //   fields: [recipeOperationRelationships.successorPhaseId],
+//   //   references: [recipePhases.id],
+//   // }),
+// }));
 
 export const recipeMaterialAssignmentsRelations = relations(recipeMaterialAssignments, ({ one }) => ({
   recipe: one(recipes, {
