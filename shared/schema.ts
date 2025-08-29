@@ -9861,31 +9861,31 @@ export type InsertUserSecret = z.infer<typeof insertUserSecretSchema>;
 // export type ProductionVersion = typeof productionVersions.$inferSelect;
 // export type InsertProductionVersion = z.infer<typeof insertProductionVersionSchema>;
 
-// Resource Requirements Insert Schemas
-export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// Resource Requirements Insert Schemas - COMMENTED OUT: resourceRequirements and resourceRequirementAssignments tables not defined
+// export const insertResourceRequirementSchema = createInsertSchema(resourceRequirements, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// });
 
-export const insertResourceRequirementAssignmentSchema = createInsertSchema(resourceRequirementAssignments, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
-  plannedStartTime: z.union([z.string().datetime(), z.date()]).optional(),
-  plannedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
-  actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
-  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// export const insertResourceRequirementAssignmentSchema = createInsertSchema(resourceRequirementAssignments, { 
+//   id: undefined,
+//   createdAt: undefined,
+//   updatedAt: undefined,
+// }, {
+//   plannedStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+//   plannedEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+//   actualStartTime: z.union([z.string().datetime(), z.date()]).optional(),
+//   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+// });
 
 
 
-// Resource Requirements Types
-export type ResourceRequirement = typeof resourceRequirements.$inferSelect;
-export type InsertResourceRequirement = z.infer<typeof insertResourceRequirementSchema>;
-export type ResourceRequirementAssignment = typeof resourceRequirementAssignments.$inferSelect;
-export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
+// Resource Requirements Types - COMMENTED OUT: Tables not defined
+// export type ResourceRequirement = typeof resourceRequirements.$inferSelect;
+// export type InsertResourceRequirement = z.infer<typeof insertResourceRequirementSchema>;
+// export type ResourceRequirementAssignment = typeof resourceRequirementAssignments.$inferSelect;
+// export type InsertResourceRequirementAssignment = z.infer<typeof insertResourceRequirementAssignmentSchema>;
 
 
 // Formulations Insert Schema and Types
