@@ -25,88 +25,8 @@ export const plantResources = pgTable("plant_resources", {
   plantResourceUnique: unique().on(table.plantId, table.resourceId),
 }));
 
-// Production Orders (formerly jobs) - firm manufacturing orders ready for execution
-export const productionOrders = pgTable("production_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: text("order_number").notNull().unique(), // e.g., "PO-2025-001"
-  name: text("name").notNull(),
-  description: text("description"),
-  customerId: integer("customer_id"), // Will be converted to foreign key later when customers table is defined
-  parentOrderId: integer("parent_order_id"), // Will be converted to foreign key later to avoid circular reference
-  orderCategory: text("order_category").notNull().default("normal"), // normal, rework, prototype, sample
-  priority: text("priority").notNull().default("medium"),
-  status: text("status").notNull().default("released"), // released, in_progress, completed, cancelled
-  quantity: numeric("quantity", { precision: 15, scale: 5 }).notNull().default("1"),
-  dueDate: timestamp("due_date"),
-  actualStartDate: timestamp("actual_start_date"),
-  actualEndDate: timestamp("actual_end_date"),
-  itemNumber: text("item_number"), // Reference to items table
-  salesOrderId: integer("sales_order_id"), // Will be converted to foreign key later when salesOrders table is defined
-  productionVersionId: integer("production_version_id"), // Will be converted to foreign key later when productionVersions table is defined
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  
-  // WIP tracking and actual cost capture
-  wipValue: numeric("wip_value", { precision: 15, scale: 2 }).default("0"),
-  actualLaborHours: numeric("actual_labor_hours", { precision: 10, scale: 2 }).default("0"),
-  actualMaterialCost: numeric("actual_material_cost", { precision: 15, scale: 2 }).default("0"),
-  actualOverheadCost: numeric("actual_overhead_cost", { precision: 15, scale: 2 }).default("0"),
-  standardCost: numeric("standard_cost", { precision: 15, scale: 2 }).default("0"),
-  costVariance: numeric("cost_variance", { precision: 15, scale: 2 }).default("0"),
-  laborRateVariance: numeric("labor_rate_variance", { precision: 15, scale: 2 }).default("0"),
-  materialPriceVariance: numeric("material_price_variance", { precision: 15, scale: 2 }).default("0"),
-  
-  // Yield, scrap, and quality tracking
-  yieldQuantity: numeric("yield_quantity", { precision: 15, scale: 5 }).default("0"),
-  scrapQuantity: numeric("scrap_quantity", { precision: 15, scale: 5 }).default("0"),
-  reworkQuantity: numeric("rework_quantity", { precision: 15, scale: 5 }).default("0"),
-  goodQuantity: numeric("good_quantity", { precision: 15, scale: 5 }).default("0"),
-  yieldPercentage: numeric("yield_percentage", { precision: 5, scale: 2 }).default("0"),
-  scrapPercentage: numeric("scrap_percentage", { precision: 5, scale: 2 }).default("0"),
-  reworkPercentage: numeric("rework_percentage", { precision: 5, scale: 2 }).default("0"),
-  qualityGrade: text("quality_grade").default("A"),
-  
-  // Detailed timing information
-  setupTimePlanned: numeric("setup_time_planned", { precision: 8, scale: 2 }).default("0"),
-  setupTimeActual: numeric("setup_time_actual", { precision: 8, scale: 2 }).default("0"),
-  runTimePlanned: numeric("run_time_planned", { precision: 10, scale: 2 }).default("0"),
-  runTimeActual: numeric("run_time_actual", { precision: 10, scale: 2 }).default("0"),
-  cleanupTimePlanned: numeric("cleanup_time_planned", { precision: 8, scale: 2 }).default("0"),
-  cleanupTimeActual: numeric("cleanup_time_actual", { precision: 8, scale: 2 }).default("0"),
-  totalTimePlanned: numeric("total_time_planned", { precision: 10, scale: 2 }).default("0"),
-  totalTimeActual: numeric("total_time_actual", { precision: 10, scale: 2 }).default("0"),
-  
-  // Traceability and batch information
-  batchNumber: text("batch_number"),
-  lotNumber: text("lot_number"),
-  campaignNumber: text("campaign_number"),
-  productionLine: text("production_line"),
-  shiftNumber: text("shift_number"),
-  operatorId: integer("operator_id"), // Will be FK to users.id when users table is defined
-  supervisorId: integer("supervisor_id"), // Will be FK to users.id when users table is defined
-  equipmentUsed: jsonb("equipment_used").$type<string[]>().default([]),
-  
-  // Production tracking
-  completionPercentage: numeric("completion_percentage", { precision: 5, scale: 2 }).default("0"),
-  lastOperationCompletedId: integer("last_operation_completed_id"), // Will be FK to discrete_operations.id when table is defined
-  nextOperationDueId: integer("next_operation_due_id"), // Will be FK to discrete_operations.id when table is defined
-  bottleneckResourceId: integer("bottleneck_resource_id").references(() => resources.id), // Also converting bottleneck from text to FK
-  downtimeMinutes: numeric("downtime_minutes", { precision: 8, scale: 2 }).default("0"),
-  efficiencyPercentage: numeric("efficiency_percentage", { precision: 5, scale: 2 }).default("100"),
-  oeePercentage: numeric("oee_percentage", { precision: 5, scale: 2 }).default("0"), // Overall Equipment Effectiveness
-  firstPassYield: numeric("first_pass_yield", { precision: 5, scale: 2 }).default("0"),
-  
-  // Quality and compliance tracking
-  inspectionStatus: text("inspection_status").default("pending"), // pending, in_progress, passed, failed, conditional
-  certificateOfAnalysis: jsonb("certificate_of_analysis").$type<Record<string, any>>().default({}),
-  deviationReports: text("deviation_reports").array(),
-  correctiveActions: text("corrective_actions").array(),
-  batchRecordComplete: boolean("batch_record_complete").default(false),
-  releaseApproved: boolean("release_approved").default(false),
-  releaseApprovedBy: integer("release_approved_by"), // Will be FK to users.id when users table is defined
-  releaseDate: timestamp("release_date"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Using PT ManufacturingOrders table instead of productionOrders
+export const productionOrders = PT.ptManufacturingOrders;
 
 // Planned Orders - preliminary orders from MRP planning before becoming production orders
 export const plannedOrders = pgTable("planned_orders", {
@@ -146,46 +66,8 @@ export const plannedOrderProductionOrders = pgTable("planned_order_production_or
   uniquePlannedProductionOrder: unique().on(table.plannedOrderId, table.productionOrderId),
 }));
 
-// Recipe Operations - define individual processing steps (like operations in discrete manufacturing routing)
-export const recipeOperations = pgTable("recipe_operations", {
-  id: serial("id").primaryKey(),
-  recipeId: integer("recipe_id").references(() => recipes.id).notNull(),
-  operationNumber: text("operation_number").notNull(), // e.g., "0010", "0020"
-  operationName: text("operation_name").notNull(), // e.g., "Mixing", "Heating", "Filling"
-  workCenterId: integer("work_center_id").references(() => workCenters.id).notNull(), // Equipment or production line
-  controlKey: text("control_key").notNull().default("PP01"), // Defines scheduling, costing, confirmation behavior
-  description: text("description"),
-  
-  // Standard values for scheduling and costing
-  setupTime: integer("setup_time").default(0), // minutes
-  processingTime: integer("processing_time").notNull(), // minutes per base quantity
-  teardownTime: integer("teardown_time").default(0), // minutes
-  queueTime: integer("queue_time").default(0), // minutes
-  moveTime: integer("move_time").default(0), // minutes
-  
-  // Resource requirements (human, machine, utility)
-  laborHours: numeric("labor_hours", { precision: 8, scale: 2 }).default("0"), // Labor hours per base quantity
-  machineHours: numeric("machine_hours", { precision: 8, scale: 2 }).default("0"), // Machine hours per base quantity
-  utilityConsumption: jsonb("utility_consumption").$type<Array<{
-    utility_type: string; // steam, electricity, water, nitrogen, etc.
-    consumption_rate: number; // units per hour
-    unit: string; // kWh, m3, kg/hr, etc.
-  }>>().default([]),
-  
-  // Cost factors
-  setupCost: numeric("setup_cost", { precision: 10, scale: 2 }).default("0"),
-  processingCost: numeric("processing_cost", { precision: 10, scale: 2 }).default("0"),
-  
-  // Process control and safety
-  criticalOperation: boolean("critical_operation").default(false), // Requires special attention
-  safetyRequirements: text("safety_requirements"),
-  requiredCapabilities: jsonb("required_capabilities").$type<number[]>().default([]), // Required worker/equipment capabilities
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  recipeOperationIdx: unique().on(table.recipeId, table.operationNumber),
-}));
+// Using PT JobOperations table instead of recipeOperations
+export const recipeOperations = PT.ptJobOperations;
 
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 export const recipePhases = pgTable("recipe_phases", {
@@ -441,74 +323,8 @@ export const vendors = pgTable("vendors", {
 // Using PT Customers table instead of non-PT customers table
 export const customers = PT.ptCustomers;
 
-// Recipes - Master recipes for process manufacturing (SAP S/4HANA Process Industries structure)
-export const recipes = pgTable("recipes", {
-  id: serial("id").primaryKey(),
-  recipeNumber: text("recipe_number").notNull().unique(), // e.g., "RCP-001"
-  recipeName: text("recipe_name").notNull(),
-  recipeType: text("recipe_type").notNull().default("standard"), // standard, trial, development
-  version: text("version").notNull().default("1.0"),
-  status: text("status").notNull().default("draft"), // draft, approved, released, obsolete
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  
-  // Validity period
-  validityDateFrom: timestamp("validity_date_from").notNull(),
-  validityDateTo: timestamp("validity_date_to"),
-  
-  // Base quantities for scaling
-  baseQuantity: numeric("base_quantity", { precision: 15, scale: 5 }).notNull().default("1"),
-  baseUnit: text("base_unit").notNull().default("kg"),
-  
-  // Approval workflow
-  approvedBy: integer("approved_by"), // Will be FK to users.id when users table is defined
-  approvedDate: timestamp("approved_date"),
-  approvalComments: text("approval_comments"),
-  
-  // Recipe metadata
-  description: text("description"),
-  purpose: text("purpose"), // What this recipe is for
-  targetYield: numeric("target_yield", { precision: 5, scale: 2 }).default("100"), // Expected yield percentage
-  batchSize: numeric("batch_size", { precision: 15, scale: 5 }).default("1000"), // Standard batch size
-  scalable: boolean("scalable").default(true), // Can this recipe be scaled up/down
-  
-  // Process conditions
-  operatingTemperatureMin: integer("operating_temperature_min"), // Celsius
-  operatingTemperatureMax: integer("operating_temperature_max"), // Celsius
-  operatingPressureMin: integer("operating_pressure_min"), // kPa
-  operatingPressureMax: integer("operating_pressure_max"), // kPa
-  atmosphereRequired: text("atmosphere_required"), // air, nitrogen, vacuum, etc.
-  
-  // Safety and compliance
-  hazardousProcess: boolean("hazardous_process").default(false),
-  safetyRequirements: text("safety_requirements"),
-  regulatoryRequirements: jsonb("regulatory_requirements").$type<Array<{
-    regulation: string;
-    requirement: string;
-    compliance_status: string;
-  }>>().default([]),
-  
-  // Quality specifications
-  qualitySpecs: jsonb("quality_specs").$type<{
-    critical_parameters: Array<{
-      parameter: string;
-      target_value: number;
-      tolerance: number;
-      unit: string;
-      test_method: string;
-    }>;
-    acceptance_criteria: string;
-    sampling_plan: string;
-  }>(),
-  
-  // Documentation
-  notes: text("notes"),
-  developmentNotes: text("development_notes"),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  recipeNumberVersionUnique: unique().on(table.recipeNumber, table.version),
-}));
+// Using PT JobMaterials table instead of recipes (BOM in PT)
+export const recipes = PT.ptJobMaterials;
 
 // Recipe Formulas - input materials with quantities (like a BOM for recipes)
 export const recipeFormulas = pgTable("recipe_formulas", {
@@ -4052,20 +3868,8 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Departments table for organizational structure
-export const departments = pgTable("departments", {
-  id: serial("id").primaryKey(),
-  name: varchar("name", { length: 100 }).notNull(),
-  description: text("description"),
-  parentDepartmentId: integer("parent_department_id"),
-  plantId: integer("plant_id").references(() => plants.id),
-  managerUserId: integer("manager_user_id").references(() => users.id),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniquePlantDept: unique().on(table.name, table.plantId),
-}));
+// Using PT Departments table instead of departments
+export const departments = PT.ptDepartments;
 
 // User Authority Management - Link users to their areas of responsibility
 export const userAuthorities = pgTable("user_authorities", {
@@ -8660,24 +8464,8 @@ export const resourceRequirementAssignmentsRelations = relations(resourceRequire
 
 // NOTE: departments table is already defined earlier in the schema
 
-// Work centers - physical or logical groupings where work is performed
-export const workCenters = pgTable("work_centers", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  description: text("description"),
-  code: text("code").notNull().unique(),
-  departmentId: integer("department_id").references(() => departments.id).notNull(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
-  capacity: integer("capacity").notNull().default(1), // units per hour
-  efficiency: integer("efficiency").notNull().default(100), // percentage
-  costPerHour: integer("cost_per_hour").default(0), // in cents
-  setupTime: integer("setup_time").default(0), // minutes
-  teardownTime: integer("teardown_time").default(0), // minutes
-  queueTime: integer("queue_time").default(0), // minutes
-  moveTime: integer("move_time").default(0), // minutes
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Using PT Departments table instead of workCenters
+export const workCenters = PT.ptDepartments;
 
 // Many-to-many junction table: Work Centers ↔ Resources
 export const workCenterResources = pgTable("work_center_resources", {

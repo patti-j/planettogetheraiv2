@@ -1,7 +1,7 @@
 import { 
   plants, capabilities, resources, plantResources, plannedOrders, dependencies, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
-  recipes, recipePhases, recipeFormulas, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
+  recipes, vendors, customers, salesOrders, productionVersions, formulations, formulationDetails, productionVersionPhaseFormulationDetails, materialRequirements,
   productionVersionPhaseBomProductOutputs, productionVersionPhaseRecipeProductOutputs, bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -14,7 +14,7 @@ import {
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type PlantResource, type PlannedOrder, type Dependency, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
   type ProductionOrder, type InsertProductionOrder,
-  type Recipe, type RecipePhase, type RecipeFormula, type RecipeProductOutput, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
+  type Recipe, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type ProductionVersionPhaseFormulationDetail, type MaterialRequirement,
   type ProductionVersionPhaseBomProductOutput, type ProductionVersionPhaseRecipeProductOutput, type BomProductOutput,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -27,7 +27,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource, type InsertPlantResource, type InsertPlannedOrder, 
   type InsertDependency, type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertRecipePhase, type InsertRecipeFormula, type InsertRecipeProductOutput, type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
+  type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertProductionVersionPhaseFormulationDetail, type InsertMaterialRequirement,
   type InsertProductionVersionPhaseBomProductOutput, type InsertProductionVersionPhaseRecipeProductOutput, type InsertBomProductOutput,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -177,7 +177,7 @@ import {
   
   // Missing table types that are referenced in the interface
   accountInfo, billingHistory, usageMetrics, integrationDataFlow, integrationExecutionLog, integrationDataMapping, integrationWebhook,
-  shiftCoverage, shiftUtilization, recipeEquipment,
+  shiftCoverage, shiftUtilization,
   type AccountInfo, type BillingHistory, type UsageMetrics, type IntegrationDataFlow, type IntegrationExecutionLog, type IntegrationDataMapping, type IntegrationWebhook,
   type ShiftCoverage, type ShiftUtilization, type RecipeEquipment,
   type InsertAccountInfo, type InsertBillingHistory, type InsertUsageMetrics, type InsertIntegrationDataFlow, type InsertIntegrationExecutionLog, type InsertIntegrationDataMapping, type InsertIntegrationWebhook,
