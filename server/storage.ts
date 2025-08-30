@@ -2271,7 +2271,7 @@ export class MemStorage implements Partial<IStorage> {
         currentProductSetup: null,
         currentSetupCode: null,
         currentSetupNumber: "0",
-        // resourceType: res.resourceType || null, // Property doesn't exist in PT table
+        resourceType: res.resourceType || null, // Added back as required by schema
         alwaysShowPostProcessing: false,
         attributeCodeTableName: null,
         bottleneckPercent: "0",
@@ -2528,8 +2528,8 @@ export class MemStorage implements Partial<IStorage> {
         jobId: Number(op.jobId),
         productionOrderId: Number(op.jobId),
         order: Number(op.id || 0),
-        status: op.setupRunHours === "100" ? 'completed' : 
-                op.setupRunHours && op.setupRunHours !== "0" ? 'in_progress' : 'planned',
+        status: op.setupHours === "100" ? 'completed' : 
+                op.setupHours && op.setupHours !== "0" ? 'in_progress' : 'planned',
         assignedResourceId: null, // Not available in PT operations
         startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
         endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
