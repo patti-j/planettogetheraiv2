@@ -2633,8 +2633,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getCapabilities(): Promise<Capability[]> {
-    // For now, return from local capabilities table
-    // TODO: Integrate with PT Publish capabilities when table is available
+    // Using PT Capabilities table (aliased as capabilities in schema)
     const result = await db.select().from(capabilities).orderBy(asc(capabilities.name));
     return result || [];
   }
