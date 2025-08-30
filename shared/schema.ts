@@ -22,6 +22,12 @@ export const insertCapabilitySchema = PT.insertPtCapabilitiesSchema;
 export const insertResourceSchema = PT.insertPtResourcesSchema;
 export const insertProductionOrderSchema = PT.insertPtManufacturingOrdersSchema;
 
+// Export insert types
+export type InsertPtPlant = PT.InsertPtPlant;
+export type InsertPtResource = PT.InsertPtResource;
+export type InsertPtCapability = PT.InsertPtCapability;
+export type InsertPtManufacturingOrder = PT.InsertPtManufacturingOrder;
+
 // Using PT tables instead of non-PT tables
 export const ptPlants = PT.ptPlants;
 export const capabilities = PT.ptCapabilities;
