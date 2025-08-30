@@ -835,9 +835,9 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ 
-  id: true,
-  createdAt: true
+export const insertAgentActionSchema = createInsertSchema(agentActions, {
+  id: undefined,
+  createdAt: undefined
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
@@ -850,78 +850,97 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true, createdAt: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {
+  id: undefined,
+  createdAt: undefined
+});
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
+  id: undefined
+});
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({ id: true });
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
+  id: undefined
+});
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({ id: true });
+export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
+  id: undefined
+});
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({ id: true });
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
+  id: undefined
+});
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({ id: true });
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
+  id: undefined
+});
 
 // insertResourceRequirementBlockSchema - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({ id: true });
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
+  id: undefined
+});
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({ id: true });
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
+  id: undefined
+});
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({ id: true });
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
+  id: undefined
+});
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertSystemUserSchema = createInsertSchema(systemUsers, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
 });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
-  id: true,
-  timestamp: true
+export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
+  id: undefined,
+  timestamp: undefined
 });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
 });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
 });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
-  id: true,
-  timestamp: true
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
+  id: undefined,
+  timestamp: undefined
 });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+export const insertDisruptionSchema = createInsertSchema(disruptions, {
+  id: undefined,
+  createdAt: undefined,
+  updatedAt: undefined
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
-  id: true,
-  createdAt: true
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
+  id: undefined,
+  createdAt: undefined
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
-  id: true,
-  createdAt: true
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
+  id: undefined,
+  createdAt: undefined
 });
 
 
