@@ -835,9 +835,12 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ 
+  id: true,
+  createdAt: true
+}).extend({
   createdAt: z.date().optional(),
-}).omit({ id: true });
+});
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
 // Commented out - plannedOrderProductionOrders table not available
@@ -849,7 +852,9 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {
+  id: z.number().optional(),
+}).omit({ id: true });
 
 export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
