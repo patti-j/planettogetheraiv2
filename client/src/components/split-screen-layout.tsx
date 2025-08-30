@@ -124,12 +124,23 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
               }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 setNavigationTarget('primary');
+                return false;
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
               }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
                 navigationTarget === 'primary' 
@@ -189,12 +200,23 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                e.nativeEvent.stopImmediatePropagation();
               }}
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 e.nativeEvent.stopImmediatePropagation();
                 setNavigationTarget('secondary');
+                return false;
+              }}
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
               }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
                 navigationTarget === 'secondary' 
