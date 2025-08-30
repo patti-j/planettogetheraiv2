@@ -449,7 +449,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Demo user mapping for different roles
       const demoUsers = {
         'director': { id: 'demo_director', username: 'demo_director', role: 'Director' },
-
+        'user': { id: 'demo_user', username: 'demo_user', role: 'User' },
+        'demo_user': { id: 'demo_user', username: 'demo_user', role: 'User' },
         'production-scheduler': { id: 'demo_scheduler', username: 'demo_scheduler', role: 'Production Scheduler' },
         'it-administrator': { id: 'demo_it_admin', username: 'demo_it_admin', role: 'IT Administrator' },
         'systems-manager': { id: 'demo_systems', username: 'demo_systems_manager', role: 'Systems Manager' },
