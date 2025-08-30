@@ -155,10 +155,8 @@ export class SystemMonitoringAgent {
       
       const activePlants = activePlantsResult[0]?.count || 0;
 
-      // Get total operations count
-      const totalOperationsResult = await db
-        .select({ count: sql`count(*)`.mapWith(Number) })
-        .from(ptJobOperations);
+      // Get total operations count using raw query to match actual table name
+      const totalOperationsResult = await db.execute(sql`select count(*) from ptjoboperations`);
       
       const totalOperations = totalOperationsResult[0]?.count || 0;
 
