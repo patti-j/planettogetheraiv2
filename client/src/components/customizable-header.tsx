@@ -41,7 +41,8 @@ import {
   Settings, User, LogOut, Search, Bell, Home, Calendar, BarChart3,
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
-  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2
+  Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2,
+  MoreHorizontal, Minus, Equal, Layout
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -238,6 +239,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const [showHeaderText, setShowHeaderText] = useState<boolean>(true);
   const [tempShowHeaderText, setTempShowHeaderText] = useState<boolean>(true);
+  const [uiDensity, setUiDensity] = useState<'compressed' | 'standard' | 'comfortable'>('standard');
   const { addRecentPage } = useNavigation();
 
   // Widget state
@@ -276,6 +278,10 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     // Load header text display setting
     const showText = (preferences as any)?.dashboardLayout?.showHeaderText ?? true;
     setShowHeaderText(showText);
+    
+    // Load UI density setting
+    const density = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
+    setUiDensity(density);
   }, [preferences, currentRole]);
 
   // Save header configuration
@@ -306,6 +312,29 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
       });
     }
   });
+
+  // Save UI density
+  const saveDensityMutation = useMutation({
+    mutationFn: async (density: 'compressed' | 'standard' | 'comfortable') => {
+      const updatedPreferences = {
+        ...(preferences as any),
+        dashboardLayout: {
+          ...(preferences as any)?.dashboardLayout,
+          uiDensity: density
+        }
+      };
+      return apiRequest('PUT', '/api/user-preferences', updatedPreferences);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
+    }
+  });
+
+  // Handle density change
+  const handleDensityChange = (density: 'compressed' | 'standard' | 'comfortable') => {
+    setUiDensity(density);
+    saveDensityMutation.mutate(density);
+  };
 
   // Handle drag end for reordering and moving between lists
   const handleDragEnd = (result) => {
@@ -464,6 +493,11 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
   return (
     <>
+      {/* Apply UI density classes to the document */}
+      {typeof document !== 'undefined' && (() => {
+        document.documentElement.setAttribute('data-ui-density', uiDensity);
+        return null;
+      })()}
       <div className={cn(
         "relative flex items-center px-4 py-2 border-b bg-background",
         className
@@ -490,6 +524,47 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
         {/* Fixed right section - Critical controls always visible */}
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {/* UI Density selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2 px-3 py-2 h-9"
+              >
+                <Layout className="h-4 w-4" />
+                {showHeaderText && <span className="hidden lg:inline text-sm">
+                  {uiDensity === 'compressed' ? 'Compressed' : 
+                   uiDensity === 'comfortable' ? 'Comfortable' : 'Standard'}
+                </span>}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem 
+                onClick={() => handleDensityChange('compressed')}
+                className={cn("flex items-center gap-2", uiDensity === 'compressed' && "bg-accent")}
+              >
+                <Minus className="h-4 w-4" />
+                <span>Compressed</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDensityChange('standard')}
+                className={cn("flex items-center gap-2", uiDensity === 'standard' && "bg-accent")}
+              >
+                <Equal className="h-4 w-4" />
+                <span>Standard</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => handleDensityChange('comfortable')}
+                className={cn("flex items-center gap-2", uiDensity === 'comfortable' && "bg-accent")}
+              >
+                <Plus className="h-4 w-4" />
+                <span>Comfortable</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* Customize button */}
           <Button
             variant="ghost"
@@ -524,6 +599,49 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
               </span>
             )}
           </Button>
+
+          {/* UI Density Control */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2 px-3 py-2 h-9"
+                title="UI Density"
+              >
+                {uiDensity === 'compressed' && <Minus className="h-4 w-4" />}
+                {uiDensity === 'standard' && <Equal className="h-4 w-4" />}
+                {uiDensity === 'comfortable' && <MoreHorizontal className="h-4 w-4" />}
+                {showHeaderText && <span className="hidden lg:inline text-sm">Density</span>}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuItem
+                onClick={() => handleDensityChange('compressed')}
+                className={cn("flex items-center gap-2", uiDensity === 'compressed' && "bg-accent")}
+              >
+                <Minus className="h-4 w-4" />
+                Compressed
+                {uiDensity === 'compressed' && <span className="ml-auto text-xs">•</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDensityChange('standard')}
+                className={cn("flex items-center gap-2", uiDensity === 'standard' && "bg-accent")}
+              >
+                <Equal className="h-4 w-4" />
+                Standard
+                {uiDensity === 'standard' && <span className="ml-auto text-xs">•</span>}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleDensityChange('comfortable')}
+                className={cn("flex items-center gap-2", uiDensity === 'comfortable' && "bg-accent")}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+                Comfortable
+                {uiDensity === 'comfortable' && <span className="ml-auto text-xs">•</span>}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Theme (always visible) */}
           {headerItems.filter(item => ['theme'].includes(item.id)).map(renderHeaderItem)}

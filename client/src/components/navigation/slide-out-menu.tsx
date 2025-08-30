@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'wouter';
-import { X, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, Search, ChevronUp, ChevronDown, Pin, PinOff, List, Folder } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -18,6 +18,9 @@ interface SlideOutMenuProps {
 export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const [location, setLocation] = useLocation();
   const [searchFilter, setSearchFilter] = useState('');
+  const [isPinned, setIsPinned] = useState(false);
+  const [layoutMode, setLayoutMode] = useState<'list' | 'hierarchical'>('list');
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { hasPermission } = usePermissions();
   // Safe navigation context access with fallback
   let addRecentPage = (path: string, label: string, icon?: string) => {};
@@ -55,13 +58,23 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     // Handle external links (e.g., HTML files)
     if (item.isExternal || item.href.endsWith('.html')) {
       window.open(item.href, '_blank');
-      onClose();
+      if (!isPinned) onClose();
       return;
     }
     
     setLocation(item.href);
     addRecentPage(item.href, item.label, item.icon);
-    onClose();
+    if (!isPinned) onClose();
+  };
+
+  const toggleGroup = (groupTitle: string) => {
+    const newExpanded = new Set(expandedGroups);
+    if (newExpanded.has(groupTitle)) {
+      newExpanded.delete(groupTitle);
+    } else {
+      newExpanded.add(groupTitle);
+    }
+    setExpandedGroups(newExpanded);
   };
 
   // Navigation functions
@@ -79,10 +92,10 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
     handleItemClick(prevItem);
   };
 
-  // Close menu when clicking outside
+  // Close menu when clicking outside (only if not pinned)
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (isOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
+      if (isOpen && !isPinned && menuRef.current && !menuRef.current.contains(event.target as Node)) {
         // Check if click is on the hamburger button
         const target = event.target as HTMLElement;
         if (!target.closest('button[aria-label*="menu"]')) {
@@ -93,7 +106,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, isPinned]);
 
   // Handle keyboard navigation
   useEffect(() => {
@@ -181,29 +194,28 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold">Navigation</h2>
             <div className="flex items-center gap-1">
-              {/* Navigation Arrow Buttons */}
-              <div className="flex items-center bg-muted/50 rounded-md p-0.5">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={navigateToPrevious}
-                  disabled={allItems.length === 0}
-                  className="h-7 w-7 hover:bg-background"
-                  title="Previous page (↑)"
-                >
-                  <ChevronUp className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={navigateToNext}
-                  disabled={allItems.length === 0}
-                  className="h-7 w-7 hover:bg-background"
-                  title="Next page (↓)"
-                >
-                  <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+              {/* Layout Mode Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setLayoutMode(layoutMode === 'list' ? 'hierarchical' : 'list')}
+                className="h-8 w-8"
+                title={layoutMode === 'list' ? 'Switch to hierarchical view' : 'Switch to list view'}
+              >
+                {layoutMode === 'list' ? <Folder className="h-4 w-4" /> : <List className="h-4 w-4" />}
+              </Button>
+              
+              {/* Pin Toggle */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsPinned(!isPinned)}
+                className={cn("h-8 w-8", isPinned && "bg-accent text-accent-foreground")}
+                title={isPinned ? 'Unpin menu' : 'Pin menu open'}
+              >
+                {isPinned ? <PinOff className="h-4 w-4" /> : <Pin className="h-4 w-4" />}
+              </Button>
+              
               <Button
                 variant="ghost"
                 size="icon"
@@ -255,91 +267,146 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         {/* Menu Content */}
         <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
           <div className="py-3">
-
-
-            {/* Navigation Groups */}
-            {filteredGroups.map((group, index) => {
-              // Define subtle background based on priority
-              const priorityBg = group.priority === 'high' 
-                ? 'bg-primary/[0.02]' 
-                : group.priority === 'medium' 
-                ? 'bg-muted/30'
-                : '';
-                
-              return (
-                <div 
-                  key={group.title} 
-                  className={cn(
-                    "px-3 py-3",
-                    index < filteredGroups.length - 1 && "border-b",
-                    priorityBg
-                  )}
-                >
-                  {/* Category Heading */}
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-[11px] font-medium text-muted-foreground/70 uppercase tracking-wider">
-                      {group.title}
-                    </h3>
-                    {group.priority === 'high' && (
-                      <span className="text-[10px] text-primary/60 font-medium">FEATURED</span>
-                    )}
-                  </div>
-
-                  {/* Menu Items - Grid Layout for better visual organization */}
-                  <div className="space-y-0.5">
-                    {group.items.map((item, itemIndex) => {
-                      const Icon = item.icon;
-                      const isActive = location === item.href;
-                      
-                      // Use predefined colors from navigation config or fall back to a color palette
-                      const colors = [
-                        'text-blue-500',
-                        'text-green-500', 
-                        'text-purple-500',
-                        'text-orange-500',
-                        'text-red-500',
-                        'text-cyan-500',
-                        'text-pink-500',
-                        'text-yellow-500',
-                        'text-indigo-500',
-                        'text-emerald-500',
-                        'text-violet-500',
-                        'text-rose-500'
-                      ];
-                      const iconColor = colors[itemIndex % colors.length];
-                      
-                      return (
-                        <Button
-                          key={item.href}
-                          variant="ghost"
-                          className={cn(
-                            "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150",
-                            isActive && "bg-accent text-accent-foreground",
-                            !isActive && "hover:bg-accent/50 hover:text-foreground hover:translate-x-0.5"
+            {layoutMode === 'list' ? (
+              // List Layout - Show all items in a flat list
+              <div className="space-y-0.5 px-3">
+                {filteredGroups.flatMap(group => 
+                  group.items.map((item, globalIndex) => {
+                    const Icon = item.icon;
+                    const isActive = location === item.href;
+                    
+                    const colors = [
+                      'text-blue-500', 'text-green-500', 'text-purple-500',
+                      'text-orange-500', 'text-red-500', 'text-cyan-500',
+                      'text-pink-500', 'text-yellow-500', 'text-indigo-500',
+                      'text-emerald-500', 'text-violet-500', 'text-rose-500'
+                    ];
+                    const iconColor = colors[globalIndex % colors.length];
+                    
+                    return (
+                      <Button
+                        key={item.href}
+                        variant="ghost"
+                        className={cn(
+                          "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150",
+                          isActive && "bg-accent text-accent-foreground",
+                          !isActive && "hover:bg-accent/50 hover:text-foreground"
+                        )}
+                        onClick={() => handleItemClick(item)}
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {Icon && (
+                            <Icon className={cn(
+                              "h-4 w-4 flex-shrink-0",
+                              isActive ? "text-primary" : iconColor
+                            )} />
                           )}
-                          onClick={() => handleItemClick(item)}
-                        >
-                          <div className="flex items-center gap-2.5 flex-1">
-                            {Icon && (
-                              <Icon className={cn(
-                                "h-3.5 w-3.5 flex-shrink-0",
-                                isActive ? "text-primary" : iconColor
-                              )} />
-                            )}
-                            <span className={cn(
-                              "truncate text-sm",
-                              !isActive && "text-foreground/80"
-                            )}>
-                              {item.label}
+                          <span className={cn(
+                            "truncate text-sm",
+                            !isActive && "text-foreground/80"
+                          )}>
+                            {item.label}
+                          </span>
+                        </div>
+                      </Button>
+                    );
+                  })
+                )}
+              </div>
+            ) : (
+              // Hierarchical Layout - Show collapsible categories
+              <>
+                {filteredGroups.map((group, index) => {
+                  const isExpanded = expandedGroups.has(group.title);
+                  const priorityBg = group.priority === 'high' 
+                    ? 'bg-primary/[0.02]' 
+                    : group.priority === 'medium' 
+                    ? 'bg-muted/30'
+                    : '';
+                    
+                  return (
+                    <div 
+                      key={group.title} 
+                      className={cn(
+                        "px-3 py-2",
+                        index < filteredGroups.length - 1 && "border-b border-border/40",
+                        priorityBg
+                      )}
+                    >
+                      {/* Category Header - Clickable to expand/collapse */}
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
+                        onClick={() => toggleGroup(group.title)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Folder className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {group.title}
+                          </span>
+                          {group.priority === 'high' && (
+                            <span className="text-[10px] text-primary/60 font-medium px-1.5 py-0.5 bg-primary/10 rounded">
+                              FEATURED
                             </span>
-                          </div>
-                        </Button>
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            {group.items.length}
+                          </span>
+                        </div>
+                      </Button>
+
+                      {/* Category Items - Only shown when expanded */}
+                      {isExpanded && (
+                        <div className="mt-1 ml-3 space-y-0.5">
+                          {group.items.map((item, itemIndex) => {
+                            const Icon = item.icon;
+                            const isActive = location === item.href;
+                            
+                            const colors = [
+                              'text-blue-500', 'text-green-500', 'text-purple-500',
+                              'text-orange-500', 'text-red-500', 'text-cyan-500',
+                              'text-pink-500', 'text-yellow-500', 'text-indigo-500',
+                              'text-emerald-500', 'text-violet-500', 'text-rose-500'
+                            ];
+                            const iconColor = colors[itemIndex % colors.length];
+                            
+                            return (
+                              <Button
+                                key={item.href}
+                                variant="ghost"
+                                className={cn(
+                                  "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150 ml-3",
+                                  isActive && "bg-accent text-accent-foreground",
+                                  !isActive && "hover:bg-accent/50 hover:text-foreground"
+                                )}
+                                onClick={() => handleItemClick(item)}
+                              >
+                                <div className="flex items-center gap-2.5 flex-1">
+                                  {Icon && (
+                                    <Icon className={cn(
+                                      "h-3.5 w-3.5 flex-shrink-0",
+                                      isActive ? "text-primary" : iconColor
+                                    )} />
+                                  )}
+                                  <span className={cn(
+                                    "truncate text-sm",
+                                    !isActive && "text-foreground/80"
+                                  )}>
+                                    {item.label}
+                                  </span>
+                                </div>
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
           </div>
         </ScrollArea>
       </div>
