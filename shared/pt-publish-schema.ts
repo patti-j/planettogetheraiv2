@@ -1441,6 +1441,18 @@ export type InsertPtPlant = z.infer<typeof insertPtPlantsSchema>;
 export type InsertPtDepartment = z.infer<typeof insertPtDepartmentsSchema>;
 export type InsertPtResource = z.infer<typeof insertPtResourcesSchema>;
 export type InsertPtCapability = z.infer<typeof insertPtCapabilitiesSchema>;
+
+// Legacy type aliases for backward compatibility
+export type Plant = PtPlant;
+export type InsertPlant = InsertPtPlant;
+export type Resource = PtResource;
+export type InsertResource = InsertPtResource;
+export type Capability = PtCapability;
+export type InsertCapability = InsertPtCapability;
+export type ManufacturingOrder = PtManufacturingOrder;
+export type InsertManufacturingOrder = InsertPtManufacturingOrder;
+export type ProductionOrder = PtManufacturingOrder;
+export type InsertProductionOrder = InsertPtManufacturingOrder;
 export type InsertPtResourceCapability = z.infer<typeof insertPtResourceCapabilitiesSchema>;
 export type InsertPtItem = z.infer<typeof insertPtItemsSchema>;
 export type InsertPtWarehouse = z.infer<typeof insertPtWarehousesSchema>;

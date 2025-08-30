@@ -28,6 +28,18 @@ export type InsertPtResource = PT.InsertPtResource;
 export type InsertPtCapability = PT.InsertPtCapability;
 export type InsertPtManufacturingOrder = PT.InsertPtManufacturingOrder;
 
+// Re-export legacy types from PT for backward compatibility
+export type Plant = PT.Plant;
+export type InsertPlant = PT.InsertPlant;
+export type Resource = PT.Resource;
+export type InsertResource = PT.InsertResource;
+export type Capability = PT.Capability;
+export type InsertCapability = PT.InsertCapability;
+export type ProductionOrder = PT.ProductionOrder;
+export type InsertProductionOrder = PT.InsertProductionOrder;
+export type ManufacturingOrder = PT.ManufacturingOrder;
+export type InsertManufacturingOrder = PT.InsertManufacturingOrder;
+
 // Using PT tables instead of non-PT tables
 export const ptPlants = PT.ptPlants;
 export const capabilities = PT.ptCapabilities;
