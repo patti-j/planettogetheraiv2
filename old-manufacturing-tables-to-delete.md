@@ -81,7 +81,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 ### 10. Forecasting & Planning
 - **forecasts** → ✅ DELETED (replaced by `pt_publish_forecasts`)
 - **demand_forecasts** → replaced by PT demand planning
-- **sales_forecasts** → replaced by PT sales forecasting
+- **sales_forecasts** → ✅ DELETED (replaced by `ptforecasts`)
 - **material_requirements** → replaced by PT MRP tables
 
 ### 11. Production Support
