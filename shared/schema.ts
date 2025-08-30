@@ -837,7 +837,6 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 
 export const insertAgentActionSchema = createInsertSchema(agentActions).omit({
   id: true,
-  createdAt: true,
   undoneAt: true
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
