@@ -835,10 +835,7 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {
-  id: undefined,
-  createdAt: undefined
-});
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ id: true, createdAt: true });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
 // Commented out - plannedOrderProductionOrders table not available
@@ -850,58 +847,34 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {
-  id: undefined,
-  createdAt: undefined
-});
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true, createdAt: true });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
-  id: undefined
-});
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
-  id: undefined
-});
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({ id: true });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
-  id: undefined
-});
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({ id: true });
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
-  id: undefined
-});
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({ id: true });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
-  id: undefined
-});
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({ id: true });
 
 // insertResourceRequirementBlockSchema - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
-  id: undefined
-});
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({ id: true });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
-  id: undefined
-});
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({ id: true });
 
 export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
   id: undefined
 });
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined
-});
+export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
-  id: undefined,
-  timestamp: undefined
-});
+export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({ id: true, timestamp: true });
 
 export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
   id: undefined,
@@ -2257,6 +2230,179 @@ export const presentationProjects = pgTable("presentation_projects", {
 // Types already defined above - removing duplicates to avoid conflicts
 // export type Capability = typeof capabilities.$inferSelect;
 // export type Resource = typeof resources.$inferSelect;
+
+// Placeholder types for missing entities (to be replaced with PT equivalents)
+export type PlantResource = {
+  id: number;
+  plantId: number;
+  resourceId: number;
+  isPrimary?: boolean;
+  createdAt?: Date;
+};
+
+export type InsertPlantResource = {
+  plantId: number;
+  resourceId: number;
+  isPrimary?: boolean;
+};
+
+export type PlannedOrder = {
+  id: number;
+  name: string;
+  description?: string;
+  quantity: number;
+  dueDate: Date;
+  status: string;
+  createdAt?: Date;
+};
+
+export type InsertPlannedOrder = {
+  name: string;
+  description?: string;
+  quantity: number;
+  dueDate: Date;
+  status: string;
+};
+
+export type ResourceRequirement = {
+  id: number;
+  name: string;
+  description?: string;
+  resourceType: string;
+  quantity: number;
+};
+
+export type InsertResourceRequirement = {
+  name: string;
+  description?: string;
+  resourceType: string;
+  quantity: number;
+};
+
+export type ResourceRequirementAssignment = {
+  id: number;
+  resourceRequirementId: number;
+  resourceId: number;
+  quantity: number;
+  assignedAt: Date;
+};
+
+export type InsertResourceRequirementAssignment = {
+  resourceRequirementId: number;
+  resourceId: number;
+  quantity: number;
+};
+
+export type ProductionVersion = {
+  id: number;
+  name: string;
+  version: string;
+  description?: string;
+  isActive: boolean;
+};
+
+export type InsertProductionVersion = {
+  name: string;
+  version: string;
+  description?: string;
+  isActive?: boolean;
+};
+
+export type ProductionVersionPhaseFormulationDetail = {
+  id: number;
+  productionVersionId: number;
+  phaseId: number;
+  formulationDetails: any;
+};
+
+export type InsertProductionVersionPhaseFormulationDetail = {
+  productionVersionId: number;
+  phaseId: number;
+  formulationDetails: any;
+};
+
+export type ProductionVersionPhaseRecipeProductOutput = {
+  id: number;
+  productionVersionId: number;
+  phaseId: number;
+  recipeId: number;
+  outputDetails: any;
+};
+
+export type InsertProductionVersionPhaseRecipeProductOutput = {
+  productionVersionId: number;
+  phaseId: number;
+  recipeId: number;
+  outputDetails: any;
+};
+
+export type MemoryBook = {
+  id: number;
+  name: string;
+  description?: string;
+  createdBy: number;
+  createdAt: Date;
+};
+
+export type InsertMemoryBook = {
+  name: string;
+  description?: string;
+  createdBy: number;
+};
+
+export type MemoryBookEntry = {
+  id: number;
+  memoryBookId: number;
+  title: string;
+  content: string;
+  createdAt: Date;
+};
+
+export type InsertMemoryBookEntry = {
+  memoryBookId: number;
+  title: string;
+  content: string;
+};
+
+export type MemoryBookCollaborator = {
+  id: number;
+  memoryBookId: number;
+  userId: number;
+  role: string;
+};
+
+export type InsertMemoryBookCollaborator = {
+  memoryBookId: number;
+  userId: number;
+  role: string;
+};
+
+export type MemoryBookEntryHistory = {
+  id: number;
+  entryId: number;
+  content: string;
+  modifiedBy: number;
+  modifiedAt: Date;
+};
+
+export type InsertMemoryBookEntryHistory = {
+  entryId: number;
+  content: string;
+  modifiedBy: number;
+};
+
+export type MemoryBookUsage = {
+  id: number;
+  memoryBookId: number;
+  userId: number;
+  accessedAt: Date;
+};
+
+export type InsertMemoryBookUsage = {
+  memoryBookId: number;
+  userId: number;
+};
+
 // PlantResource now uses PT tables
 // export type PlantResource = typeof plantResources.$inferSelect;
 // export type ProductionOrder = typeof productionOrders.$inferSelect;

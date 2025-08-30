@@ -2580,48 +2580,48 @@ export class DatabaseStorage implements IStorage {
   // Plants
   async getPlants(): Promise<Plant[]> {
     const result = await db.select({
-      id: plants.id,
-      name: plants.name,
+      id: ptPlants.id,
+      name: ptPlants.name,
       location: sql<string>`CASE 
-        WHEN ${plants.city} IS NOT NULL AND ${plants.state} IS NOT NULL THEN CONCAT(${plants.city}, ', ', ${plants.state})
-        WHEN ${plants.city} IS NOT NULL THEN ${plants.city}
-        WHEN ${plants.country} IS NOT NULL THEN ${plants.country}
+        WHEN ${ptPlants.city} IS NOT NULL AND ${ptPlants.state} IS NOT NULL THEN CONCAT(${ptPlants.city}, ', ', ${ptPlants.state})
+        WHEN ${ptPlants.city} IS NOT NULL THEN ${ptPlants.city}
+        WHEN ${ptPlants.country} IS NOT NULL THEN ${ptPlants.country}
         ELSE 'Location not specified'
       END`,
-      address: plants.address,
-      city: plants.city,
-      state: plants.state,
-      country: plants.country,
-      postalCode: plants.postalCode,
-      latitude: plants.latitude,
-      longitude: plants.longitude,
-      timezone: plants.timezone,
-      isActive: plants.isActive,
-      plantType: plants.plantType,
-      capacity: plants.capacity,
-      operationalMetrics: plants.operationalMetrics
-    }).from(plants).orderBy(asc(plants.name));
+      address: ptPlants.address,
+      city: ptPlants.city,
+      state: ptPlants.state,
+      country: ptPlants.country,
+      postalCode: ptPlants.postalCode,
+      latitude: ptPlants.latitude,
+      longitude: ptPlants.longitude,
+      timezone: ptPlants.timezone,
+      isActive: ptPlants.isActive,
+      plantType: ptPlants.plantType,
+      capacity: ptPlants.capacity,
+      operationalMetrics: ptPlants.operationalMetrics
+    }).from(ptPlants).orderBy(asc(ptPlants.name));
     
     return result;
   }
 
   async getPlant(id: number): Promise<Plant | undefined> {
-    const result = await db.select().from(plants).where(eq(plants.id, id)).limit(1);
+    const result = await db.select().from(ptPlants).where(eq(ptPlants.id, id)).limit(1);
     return result[0];
   }
 
   async createPlant(plant: InsertPlant): Promise<Plant> {
-    const result = await db.insert(plants).values(plant).returning();
+    const result = await db.insert(ptPlants).values(plant).returning();
     return result[0];
   }
 
   async updatePlant(id: number, plant: Partial<InsertPlant>): Promise<Plant | undefined> {
-    const result = await db.update(plants).set(plant).where(eq(plants.id, id)).returning();
+    const result = await db.update(ptPlants).set(plant).where(eq(ptPlants.id, id)).returning();
     return result[0];
   }
 
   async deletePlant(id: number): Promise<boolean> {
-    const result = await db.delete(plants).where(eq(plants.id, id));
+    const result = await db.delete(ptPlants).where(eq(ptPlants.id, id));
     return (result.rowCount || 0) > 0;
   }
 
