@@ -74,24 +74,26 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         />
       )}
 
-      {/* Slide-out Menu - hide when pinned */}
-      {!isPinned && (
-        <div
-          ref={menuRef}
-          className={cn(
-            "fixed right-0 top-0 h-full bg-background border-l shadow-xl z-50",
-            "transition-transform duration-300 ease-in-out",
-            "w-80",
-            isOpen ? "translate-x-0" : "translate-x-full"
-          )}
-        >
-          <NavigationMenuContent 
-            isPinned={isPinned}
-            onTogglePin={handleTogglePin}
-            onClose={onClose}
-          />
-        </div>
-      )}
+      {/* Slide-out Menu */}
+      <div
+        ref={menuRef}
+        className={cn(
+          "fixed right-0 top-0 h-full bg-background border-l shadow-xl z-50",
+          "w-80",
+          isPinned 
+            ? "translate-x-0" // Always visible when pinned
+            : cn(
+                "transition-transform duration-300 ease-in-out",
+                isOpen ? "translate-x-0" : "translate-x-full"
+              )
+        )}
+      >
+        <NavigationMenuContent 
+          isPinned={isPinned}
+          onTogglePin={handleTogglePin}
+          onClose={onClose}
+        />
+      </div>
     </>
   );
 }
