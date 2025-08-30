@@ -1065,42 +1065,6 @@ export default function ControlTower() {
   );
 }
 
-function KpiTargetForm({ 
-  kpi, 
-  plants, 
-  onSave, 
-  isLoading 
-}: {
-  kpi: PlantKpiTarget | null;
-  plants: Plant[];
-  onSave: (data: Partial<PlantKpiTarget>) => void;
-  isLoading: boolean;
-}) {
-  const [formData, setFormData] = useState({
-    plantId: kpi?.plantId || '',
-    kpiName: kpi?.kpiName || '',
-    kpiType: kpi?.kpiType || 'percentage',
-    targetValue: kpi?.targetValue || '',
-    unitOfMeasure: kpi?.unitOfMeasure || '',
-    weight: kpi?.weight || 1.0,
-    description: kpi?.description || '',
-    excellentThreshold: kpi?.excellentThreshold || '',
-    goodThreshold: kpi?.goodThreshold || '',
-    warningThreshold: kpi?.warningThreshold || '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave({
-      ...formData,
-      plantId: parseInt(formData.plantId.toString()),
-      targetValue: parseFloat(formData.targetValue.toString()),
-      weight: parseFloat(formData.weight.toString()),
-      excellentThreshold: formData.excellentThreshold ? parseFloat(formData.excellentThreshold.toString()) : null,
-      goodThreshold: formData.goodThreshold ? parseFloat(formData.goodThreshold.toString()) : null,
-      warningThreshold: formData.warningThreshold ? parseFloat(formData.warningThreshold.toString()) : null,
-    });
-  };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">

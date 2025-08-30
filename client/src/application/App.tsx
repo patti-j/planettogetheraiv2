@@ -7,6 +7,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MobileLayout } from "@/components/navigation/mobile-layout";
 import { DesktopLayout } from "@/components/navigation/desktop-layout";
 import { HintSystem } from "@/components/HintBubble";
+import { SplitScreenLayout } from "@/components/split-screen-layout";
 
 // Application Pages
 import Dashboard from "@/pages/dashboard";
@@ -125,7 +126,8 @@ export default function ApplicationApp() {
         <Layout>
           <HintSystem />
           <OnboardingGate>
-            <Switch>
+            <SplitScreenLayout>
+              <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
@@ -430,7 +432,8 @@ export default function ApplicationApp() {
                   return null;
                 }}
               </Route>
-            </Switch>
+              </Switch>
+            </SplitScreenLayout>
           </OnboardingGate>
         </Layout>
         <Toaster />

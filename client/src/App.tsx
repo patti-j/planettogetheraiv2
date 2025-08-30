@@ -9,6 +9,7 @@ import { NavigationProvider } from "@/contexts/NavigationContext";
 import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
+import { SplitScreenProvider } from "@/contexts/SplitScreenContext";
 import { Switch, Route } from "wouter";
 
 // Separate Apps
@@ -178,7 +179,8 @@ export default function App() {
             <NavigationProvider>
               <FullScreenProvider>
                 <LayoutDensityProvider>
-                  <ViewModeProvider>
+                  <SplitScreenProvider>
+                    <ViewModeProvider>
                     {/* Portal Routes - Always accessible, independent of main app auth */}
                     {isPortalRoute ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">
@@ -204,7 +206,8 @@ export default function App() {
                       // Authenticated users on non-public paths see the Application
                       <ApplicationApp />
                     )}
-                  </ViewModeProvider>
+                    </ViewModeProvider>
+                  </SplitScreenProvider>
                 </LayoutDensityProvider>
               </FullScreenProvider>
             </NavigationProvider>

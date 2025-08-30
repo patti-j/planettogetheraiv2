@@ -26,6 +26,7 @@ import { toast } from '@/hooks/use-toast';
 import { apiRequest } from '@/lib/queryClient';
 import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
@@ -42,7 +43,7 @@ import {
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
   Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2,
-  MoreHorizontal, Minus, Equal, Layout, Menu
+  MoreHorizontal, Minus, Equal, Layout, Menu, SplitSquareHorizontal, SplitSquareVertical, Square
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -241,6 +242,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [tempShowHeaderText, setTempShowHeaderText] = useState<boolean>(true);
   const [uiDensity, setUiDensity] = useState<'compact' | 'compressed' | 'standard' | 'comfortable'>('standard');
   const { addRecentPage } = useNavigation();
+  const { splitMode, setSplitMode } = useSplitScreen();
 
   // Widget state
   const [selectedWidget, setSelectedWidget] = useState<{ type: string; title: string } | null>(null);
@@ -524,6 +526,50 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
         {/* Fixed right section - Critical controls always visible */}
         <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+          {/* Split Screen selector */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="flex items-center gap-2 px-3 py-2 h-9"
+                title="Split Screen"
+              >
+                {splitMode === 'horizontal' && <SplitSquareHorizontal className="h-4 w-4" />}
+                {splitMode === 'vertical' && <SplitSquareVertical className="h-4 w-4" />}
+                {splitMode === 'none' && <Square className="h-4 w-4" />}
+                {showHeaderText && <span className="hidden lg:inline text-sm">
+                  {splitMode === 'horizontal' ? 'Horizontal' : 
+                   splitMode === 'vertical' ? 'Vertical' : 'Single'}
+                </span>}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem 
+                onClick={() => setSplitMode('none')}
+                className={cn("flex items-center gap-2", splitMode === 'none' && "bg-accent")}
+              >
+                <Square className="h-4 w-4" />
+                <span>Single</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSplitMode('horizontal')}
+                className={cn("flex items-center gap-2", splitMode === 'horizontal' && "bg-accent")}
+              >
+                <SplitSquareHorizontal className="h-4 w-4" />
+                <span>Horizontal</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => setSplitMode('vertical')}
+                className={cn("flex items-center gap-2", splitMode === 'vertical' && "bg-accent")}
+              >
+                <SplitSquareVertical className="h-4 w-4" />
+                <span>Vertical</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {/* UI Density selector */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
