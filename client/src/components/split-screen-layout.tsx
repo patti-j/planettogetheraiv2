@@ -43,6 +43,25 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
 
+  // Add event listeners for dragging
+  React.useEffect(() => {
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging]);
+
+  // Update primary page to current location
+  React.useEffect(() => {
+    if (location !== primaryPage) {
+      setPrimaryPage(location);
+    }
+  }, [location, primaryPage, setPrimaryPage]);
+
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
     return <>{children}</>;
@@ -73,24 +92,6 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const handleMouseUp = () => {
     setIsDragging(false);
   };
-
-  React.useEffect(() => {
-    if (isDragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        document.removeEventListener('mousemove', handleMouseMove);
-        document.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging]);
-
-  // Update primary page to current location
-  React.useEffect(() => {
-    if (location !== primaryPage) {
-      setPrimaryPage(location);
-    }
-  }, [location, primaryPage, setPrimaryPage]);
 
   return (
     <div className={cn(
