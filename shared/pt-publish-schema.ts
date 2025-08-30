@@ -1046,6 +1046,115 @@ export const ptSystemData = pgTable("pt_system_data", {
   clearCustomTables: boolean("clear_custom_tables"),
 });
 
+
+export const ptJobProducts = pgTable("pt_job_products", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id").notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  productId: bigint("product_id", { mode: "number" }).notNull(),
+  totalOutputQty: numeric("total_output_qty"),
+  completedQty: numeric("completed_qty"),
+  itemId: bigint("item_id", { mode: "number" }),
+  warehouseId: bigint("warehouse_id", { mode: "number" }),
+  externalId: text("external_id"),
+  inventoryAvailableTiming: text("inventory_available_timing"),
+  storeInTank: boolean("store_in_tank"),
+  setWarehouseDuringMrp: boolean("set_warehouse_during_mrp"),
+  materialPostProcessingHrs: numeric("material_post_processing_hrs"),
+  fixedQty: boolean("fixed_qty"),
+  lotCode: text("lot_code"),
+});
+
+export const ptJobOperationAttributes = pgTable("pt_job_operation_attributes", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id"),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  attributeExternalId: text("attribute_external_id"),
+  code: text("code"),
+  number: numeric("number"),
+  cost: numeric("cost"),
+  durationHrs: numeric("duration_hrs"),
+  colorCode: text("color_code"),
+});
+
+export const ptAttributes = pgTable("pt_attributes", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id").notNull(),
+  attributeId: bigint("attribute_id", { mode: "number" }).notNull(),
+  name: text("name"),
+  description: text("description"),
+  notes: text("notes"),
+  externalId: text("external_id"),
+  attributeType: text("attribute_type"), // Note: This was USER-DEFINED type in DB, using text for compatibility
+  cost: numeric("cost"),
+  durationHrs: numeric("duration_hrs"),
+  code: text("code"),
+  number: numeric("number"),
+  colorCode: text("color_code"),
+});
+
+
+export const ptJobPaths = pgTable("pt_job_paths", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  pathId: bigint("path_id", { mode: "number" }).notNull(),
+  externalId: text("external_id"),
+  name: text("name"),
+  preference: integer("preference"),
+  autoUse: text("auto_use"),
+  autoUsePathReleaseOffsetDays: numeric("auto_use_path_release_offset_days"),
+});
+
+export const ptJobPathNodes = pgTable("pt_job_path_nodes", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  pathId: bigint("path_id", { mode: "number" }).notNull(),
+  predecessorOperationId: bigint("predecessor_operation_id", { mode: "number" }),
+  successorOperationId: bigint("successor_operation_id", { mode: "number" }),
+  usageQtyPerCycle: numeric("usage_qty_per_cycle"),
+  maxDelayHrs: numeric("max_delay_hrs"),
+  transferHrs: numeric("transfer_hrs"),
+  overlapType: text("overlap_type"), // Note: USER-DEFINED type in DB, using text for compatibility
+  overlapTransferHrs: numeric("overlap_transfer_hrs"),
+  overlapPercentComplete: numeric("overlap_percent_complete"),
+  allowManualConnectorViolation: boolean("allow_manual_connector_violation"),
+  transferDuringPredecessorOnlineTime: boolean("transfer_during_predecessor_online_time"),
+  transferStart: text("transfer_start"),
+  transferEnd: text("transfer_end"),
+  overlapSetups: boolean("overlap_setups"),
+});
+
+export const ptJobMaterialSupplyingActivities = pgTable("pt_job_material_supplying_activities", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  materialRequirementId: bigint("material_requirement_id", { mode: "number" }).notNull(),
+  activityId: bigint("activity_id", { mode: "number" }).notNull(),
+  supplyingJobId: bigint("supplying_job_id", { mode: "number" }),
+  supplyingManufacturingOrderId: bigint("supplying_manufacturing_order_id", { mode: "number" }),
+  supplyingOperationId: bigint("supplying_operation_id", { mode: "number" }),
+  supplyingActivityId: bigint("supplying_activity_id", { mode: "number" }),
+  suppliedQty: numeric("supplied_qty"),
+  supplyBomLevel: integer("supply_bom_level"),
+});
+
+
 // ============================================
 // Table Relations (using numeric PT IDs for efficient joins)
 // ============================================
@@ -1137,18 +1246,14 @@ export const ptInventoriesRelations = relations(ptInventories, ({ one }) => ({
 
 // Lot Relations
 export const ptLotsRelations = relations(ptLots, ({ one }) => ({
-  item: one(ptItems, {
-    fields: [ptLots.item_id],
-    references: [ptItems.itemId],
+  inventory: one(ptInventories, {
+    fields: [ptLots.inventoryId],
+    references: [ptInventories.inventoryId],
   }),
 }));
 
 // Job Relations
-export const ptJobsRelations = relations(ptJobs, ({ one, many }) => ({
-  manufacturingOrder: one(ptManufacturingOrders, {
-    fields: [ptJobs.manufacturing_order_id],
-    references: [ptManufacturingOrders.manufacturingOrderId],
-  }),
+export const ptJobsRelations = relations(ptJobs, ({ many }) => ({
   operations: many(ptJobOperations),
   materials: many(ptJobMaterials),
 }));
@@ -1185,10 +1290,6 @@ export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
   job: one(ptJobs, {
     fields: [ptJobMaterials.jobId],
     references: [ptJobs.jobId],
-  }),
-  item: one(ptItems, {
-    fields: [ptJobMaterials.item_id],
-    references: [ptItems.itemId],
   }),
 }));
 
