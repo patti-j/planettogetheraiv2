@@ -101,6 +101,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **sites** → ✅ DELETED (replaced by `ptwarehouses`)
 - **storage_locations** → ✅ DELETED (replaced by `ptwarehouses`)
 - **transfer_orders** → ✅ DELETED (replaced by `pttransferorders`)
+- **transfer_order_lines** → ✅ DELETED (replaced by `pttransferorderdistributions`)
 - **sales_order_lines** → ✅ DELETED (replaced by `ptsalesorderlines`)
 - **sales_order_line_distributions** → ✅ DELETED (replaced by `ptsalesorderlinedistributions`)
 - **purchase_order_lines** → ✅ DELETED (replaced by `ptpurchasestostock`)
