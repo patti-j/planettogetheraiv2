@@ -63,6 +63,33 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
   const [searchFilter, setSearchFilter] = useState("");
   const [useCardLayout, setUseCardLayout] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set());
+  
+  // Check if navigation is pinned to show/hide menu button
+  const [isNavigationPinned, setIsNavigationPinned] = useState(() => {
+    try {
+      return localStorage.getItem('navigationMenuPinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  // Listen for navigation pinned state changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const pinned = localStorage.getItem('navigationMenuPinned') === 'true';
+        setIsNavigationPinned(pinned);
+      } catch {
+        // Ignore errors
+      }
+    };
+    
+    const interval = setInterval(handleStorageChange, 200);
+    
+    return () => {
+      clearInterval(interval);
+    };
+  }, []);
   const menuContentRef = React.useRef<HTMLDivElement>(null);
   const mobileSearchRef = React.useRef<HTMLInputElement>(null);
   const desktopSearchRef = React.useRef<HTMLInputElement>(null);
@@ -533,6 +560,20 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 {/* User Profile Section */}
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
+                    {/* Navigation toggle - desktop header - only show when nav handler exists and navigation is not pinned */}
+                    {onToggleNavPanel && !isNavigationPinned && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onToggleNavPanel}
+                        className="flex items-center gap-2 bg-background hover:bg-accent border-border shadow-sm"
+                        title="Open navigation menu"
+                      >
+                        <Menu className="h-4 w-4" />
+                        <span className="text-sm">Menu</span>
+                      </Button>
+                    )}
+                    
                     <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                   </div>
                   <div className="flex items-center space-x-2">
