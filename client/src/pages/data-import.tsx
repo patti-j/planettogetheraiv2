@@ -107,20 +107,20 @@ function DataImport() {
     'production-scheduling': ['plants', 'resources', 'capabilities', 'productionOrders', 'discreteOperations', 'processOperations', 'workCenters', 'routings'],
     'theory-of-constraints': ['resources', 'discreteOperations', 'processOperations', 'productionOrders'],
     'capacity-planning': ['resources', 'capabilities', 'plants', 'productionOrders', 'plannedOrders', 'discreteOperations', 'processOperations', 'workCenters', 'forecasts'],
-    'inventory-optimization': ['items', 'storageLocations', 'inventory', 'inventoryLots', 'plants'],
+    'inventory-optimization': ['items', 'inventory', 'inventoryLots', 'plants'], // storageLocations removed - replaced by ptwarehouses
     'production-planning': ['productionOrders', 'plannedOrders', 'resources', 'plants', 'discreteOperations', 'processOperations', 'workCenters'],
     'maintenance-management': ['resources', 'plants', 'users', 'employees', 'workCenters'],
     'ai-optimization': ['productionOrders', 'plannedOrders', 'resources', 'discreteOperations', 'processOperations', 'capabilities'],
     'resource-management': ['plants', 'resources', 'capabilities', 'workCenters', 'employees', 'plantResources'],
     'job-management': ['productionOrders', 'plannedOrders', 'resources', 'plants', 'discreteOperations', 'processOperations', 'workCenters'],
     'quality-management': ['resources', 'plants', 'productionOrders', 'discreteOperations', 'processOperations', 'employees', 'qualityTests', 'inspectionPlans', 'certificates'],
-    'procurement': ['vendors', 'purchaseOrders', 'items', 'plants', 'storageLocations'],
+    'procurement': ['vendors', 'purchaseOrders', 'items', 'plants'], // storageLocations removed - replaced by ptwarehouses
     'sales-orders': ['customers', 'salesOrders', 'items', 'plants'],
     'user-management': ['users', 'employees', 'departments'],
     'analytics-reporting': ['plants', 'resources', 'productionOrders', 'plannedOrders', 'discreteOperations', 'processOperations', 'forecasts'],
     'bill-of-materials': ['billsOfMaterial', 'items', 'plants', 'routings', 'recipes', 'productionVersions'],
     'demand-planning': ['forecasts', 'items', 'customers', 'salesOrders', 'plannedOrders'],
-    'transfer-management': ['transferOrders', 'storageLocations', 'inventory', 'items']
+    'transfer-management': ['inventory', 'items'] // transferOrders and storageLocations removed - replaced by PT tables
   };
 
   const [showConsolidatedDialog, setShowConsolidatedDialog] = useState(false);
@@ -276,14 +276,14 @@ function DataImport() {
       employees: 'employees',
       users: 'users',
       items: 'items',
-      storageLocations: 'storage-locations',
+      // storageLocations: DELETED - replaced by ptwarehouses
       inventory: 'inventory',
       inventoryLots: 'inventory-lots',
       vendors: 'vendors',
       customers: 'customers',
       salesOrders: 'sales-orders',
       purchaseOrders: 'purchase-orders',
-      transferOrders: 'transfer-orders',
+      // transferOrders: DELETED - replaced by pttransferorders
       billsOfMaterial: 'bills-of-material',
       routings: 'routings',
       recipes: 'recipes',
