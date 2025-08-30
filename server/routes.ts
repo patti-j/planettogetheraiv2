@@ -56,7 +56,6 @@ import {
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
-  insertResourceRequirementSchema, insertResourceRequirementAssignmentSchema,
   insertAlgorithmFeedbackSchema, insertAlgorithmFeedbackCommentSchema, insertAlgorithmFeedbackVoteSchema,
   insertFieldCommentSchema,
   // Memory and Playbook Schemas
@@ -3922,29 +3921,31 @@ Rules:
     }
   });
 
-  app.post("/api/resource-requirements", async (req, res) => {
-    try {
-      const requirement = insertResourceRequirementSchema.parse(req.body);
-      const newRequirement = await storage.createResourceRequirement(requirement);
-      res.status(201).json(newRequirement);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid resource requirement data" });
-    }
-  });
+  // COMMENTED OUT: Resource requirements table and schema not defined
+  // app.post("/api/resource-requirements", async (req, res) => {
+  //   try {
+  //     const requirement = insertResourceRequirementSchema.parse(req.body);
+  //     const newRequirement = await storage.createResourceRequirement(requirement);
+  //     res.status(201).json(newRequirement);
+  //   } catch (error) {
+  //     res.status(400).json({ message: "Invalid resource requirement data" });
+  //   }
+  // });
 
-  app.put("/api/resource-requirements/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const requirement = insertResourceRequirementSchema.partial().parse(req.body);
-      const updatedRequirement = await storage.updateResourceRequirement(id, requirement);
-      if (!updatedRequirement) {
-        return res.status(404).json({ message: "Resource requirement not found" });
-      }
-      res.json(updatedRequirement);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid resource requirement data" });
-    }
-  });
+  // COMMENTED OUT: Resource requirements table and schema not defined
+  // app.put("/api/resource-requirements/:id", async (req, res) => {
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const requirement = insertResourceRequirementSchema.partial().parse(req.body);
+  //     const updatedRequirement = await storage.updateResourceRequirement(id, requirement);
+  //     if (!updatedRequirement) {
+  //       return res.status(404).json({ message: "Resource requirement not found" });
+  //     }
+  //     res.json(updatedRequirement);
+  //   } catch (error) {
+  //     res.status(400).json({ message: "Invalid resource requirement data" });
+  //   }
+  // });
 
   app.delete("/api/resource-requirements/:id", async (req, res) => {
     try {
@@ -3989,29 +3990,31 @@ Rules:
     }
   });
 
-  app.post("/api/resource-requirement-assignments", async (req, res) => {
-    try {
-      const assignment = insertResourceRequirementAssignmentSchema.parse(req.body);
-      const newAssignment = await storage.createResourceRequirementAssignment(assignment);
-      res.status(201).json(newAssignment);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid resource requirement assignment data" });
-    }
-  });
+  // COMMENTED OUT: Resource requirement assignments table and schema not defined
+  // app.post("/api/resource-requirement-assignments", async (req, res) => {
+  //   try {
+  //     const assignment = insertResourceRequirementAssignmentSchema.parse(req.body);
+  //     const newAssignment = await storage.createResourceRequirementAssignment(assignment);
+  //     res.status(201).json(newAssignment);
+  //   } catch (error) {
+  //     res.status(400).json({ message: "Invalid resource requirement assignment data" });
+  //   }
+  // });
 
-  app.put("/api/resource-requirement-assignments/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      const assignment = insertResourceRequirementAssignmentSchema.partial().parse(req.body);
-      const updatedAssignment = await storage.updateResourceRequirementAssignment(id, assignment);
-      if (!updatedAssignment) {
-        return res.status(404).json({ message: "Resource requirement assignment not found" });
-      }
-      res.json(updatedAssignment);
-    } catch (error) {
-      res.status(400).json({ message: "Invalid resource requirement assignment data" });
-    }
-  });
+  // COMMENTED OUT: Resource requirement assignments table and schema not defined
+  // app.put("/api/resource-requirement-assignments/:id", async (req, res) => {
+  //   try {
+  //     const id = parseInt(req.params.id);
+  //     const assignment = insertResourceRequirementAssignmentSchema.partial().parse(req.body);
+  //     const updatedAssignment = await storage.updateResourceRequirementAssignment(id, assignment);
+  //     if (!updatedAssignment) {
+  //       return res.status(404).json({ message: "Resource requirement assignment not found" });
+  //     }
+  //     res.json(updatedAssignment);
+  //   } catch (error) {
+  //     res.status(400).json({ message: "Invalid resource requirement assignment data" });
+  //   }
+  // });
 
   app.delete("/api/resource-requirement-assignments/:id", async (req, res) => {
     try {
