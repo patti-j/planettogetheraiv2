@@ -39,7 +39,7 @@ function PageRenderer({ path }: { path: string }) {
 }
 
 export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
-  const { splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage, splitRatio, setSplitRatio } = useSplitScreen();
+  const { splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage, splitRatio, setSplitRatio, navigationTarget, setNavigationTarget } = useSplitScreen();
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
 
@@ -55,12 +55,21 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
   }, [isDragging]);
 
-  // Update primary page to current location
+  // Update target pane based on navigation target setting
   React.useEffect(() => {
-    if (location !== primaryPage) {
-      setPrimaryPage(location);
+    if (splitMode !== 'none') {
+      if (navigationTarget === 'primary' && location !== primaryPage) {
+        setPrimaryPage(location);
+      } else if (navigationTarget === 'secondary' && location !== secondaryPage) {
+        setSecondaryPage(location);
+      }
+    } else {
+      // In single pane mode, always update the primary page
+      if (location !== primaryPage) {
+        setPrimaryPage(location);
+      }
     }
-  }, [location, primaryPage, setPrimaryPage]);
+  }, [location, splitMode, navigationTarget, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage]);
 
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
@@ -106,8 +115,21 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         }}
       >
         <div className="absolute top-2 right-2 z-10">
-          <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground">
-            Primary: {availablePages.find(p => p.path === primaryPage)?.label || primaryPage}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground">
+              Primary: {availablePages.find(p => p.path === primaryPage)?.label || primaryPage}
+            </div>
+            <button
+              onClick={() => setNavigationTarget('primary')}
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
+                navigationTarget === 'primary' 
+                  ? 'bg-blue-500 border-blue-500 text-white' 
+                  : 'bg-background/80 border-muted-foreground/40 text-muted-foreground hover:border-blue-400'
+              }`}
+              title="Click to make this pane receive navigation updates"
+            >
+              1
+            </button>
           </div>
         </div>
         <div className="h-full overflow-auto">
@@ -152,6 +174,17 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
                 </option>
               ))}
             </select>
+            <button
+              onClick={() => setNavigationTarget('secondary')}
+              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
+                navigationTarget === 'secondary' 
+                  ? 'bg-blue-500 border-blue-500 text-white' 
+                  : 'bg-background/80 border-muted-foreground/40 text-muted-foreground hover:border-blue-400'
+              }`}
+              title="Click to make this pane receive navigation updates"
+            >
+              2
+            </button>
           </div>
         </div>
         <div className="h-full overflow-auto pt-10">

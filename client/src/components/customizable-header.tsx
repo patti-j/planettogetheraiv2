@@ -538,10 +538,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                 {splitMode === 'horizontal' && <SplitSquareHorizontal className="h-4 w-4" />}
                 {splitMode === 'vertical' && <SplitSquareVertical className="h-4 w-4" />}
                 {splitMode === 'none' && <Square className="h-4 w-4" />}
-                {showHeaderText && <span className="hidden lg:inline text-sm">
-                  {splitMode === 'horizontal' ? 'Horizontal' : 
-                   splitMode === 'vertical' ? 'Vertical' : 'Single'}
-                </span>}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
@@ -551,21 +547,18 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                 className={cn("flex items-center gap-2", splitMode === 'none' && "bg-accent")}
               >
                 <Square className="h-4 w-4" />
-                <span>Single</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setSplitMode('horizontal')}
                 className={cn("flex items-center gap-2", splitMode === 'horizontal' && "bg-accent")}
               >
                 <SplitSquareHorizontal className="h-4 w-4" />
-                <span>Horizontal</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => setSplitMode('vertical')}
                 className={cn("flex items-center gap-2", splitMode === 'vertical' && "bg-accent")}
               >
                 <SplitSquareVertical className="h-4 w-4" />
-                <span>Vertical</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

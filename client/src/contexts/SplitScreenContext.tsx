@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
 
 export type SplitMode = 'none' | 'horizontal' | 'vertical';
+export type NavigationTarget = 'primary' | 'secondary';
 
 interface SplitScreenContextType {
   splitMode: SplitMode;
@@ -11,6 +12,8 @@ interface SplitScreenContextType {
   setSecondaryPage: (page: string) => void;
   splitRatio: number;
   setSplitRatio: (ratio: number) => void;
+  navigationTarget: NavigationTarget;
+  setNavigationTarget: (target: NavigationTarget) => void;
 }
 
 const SplitScreenContext = createContext<SplitScreenContextType | undefined>(undefined);
@@ -24,6 +27,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const [primaryPage, setPrimaryPage] = useState('/dashboard');
   const [secondaryPage, setSecondaryPage] = useState('/analytics');
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for first pane
+  const [navigationTarget, setNavigationTarget] = useState<NavigationTarget>('primary');
 
   return (
     <SplitScreenContext.Provider
@@ -36,6 +40,8 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
         setSecondaryPage,
         splitRatio,
         setSplitRatio,
+        navigationTarget,
+        setNavigationTarget,
       }}
     >
       {children}
