@@ -835,12 +835,9 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {
-  createdAt: z.date().optional(),
-}).omit({ 
-  id: true
-}).extend({
-  createdAt: z.date().optional(),
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({ 
+  id: true,
+  createdAt: true
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
@@ -853,7 +850,7 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true, createdAt: true });
 
 export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
@@ -876,58 +873,55 @@ export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluat
 export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({ id: true });
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
-  id: z.number().optional(),
-  timestamp: z.date().optional(),
+export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
+  id: true,
+  timestamp: true
 });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
-  scheduledDate: z.union([z.string().datetime(), z.date()]).optional(),
-  startedAt: z.union([z.string().datetime(), z.date()]).optional(),
-  completedAt: z.union([z.string().datetime(), z.date()]).optional(),
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
-  id: z.number().optional(),
-  timestamp: z.date().optional(),
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
+  id: true,
+  timestamp: true
 });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
+  id: true,
+  createdAt: true
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
+  id: true,
+  createdAt: true
 });
 
 
@@ -2299,32 +2293,32 @@ export type InsertSystemHealth = z.infer<typeof insertSystemHealthSchema>;
 export type SystemHealth = typeof systemHealth.$inferSelect;
 
 // KPI and Autonomous Optimization Types
-export const insertPlantKpiTargetSchema = createInsertSchema(plantKpiTargets, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertPlantKpiTargetSchema = createInsertSchema(plantKpiTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 export type InsertPlantKpiTarget = z.infer<typeof insertPlantKpiTargetSchema>;
 export type PlantKpiTarget = typeof plantKpiTargets.$inferSelect;
 
-export const insertPlantKpiPerformanceSchema = createInsertSchema(plantKpiPerformance, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertPlantKpiPerformanceSchema = createInsertSchema(plantKpiPerformance).omit({
+  id: true,
+  createdAt: true
 });
 export type InsertPlantKpiPerformance = z.infer<typeof insertPlantKpiPerformanceSchema>;
 export type PlantKpiPerformance = typeof plantKpiPerformance.$inferSelect;
 
-export const insertAutonomousOptimizationSchema = createInsertSchema(autonomousOptimization, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertAutonomousOptimizationSchema = createInsertSchema(autonomousOptimization).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 export type InsertAutonomousOptimization = z.infer<typeof insertAutonomousOptimizationSchema>;
 export type AutonomousOptimization = typeof autonomousOptimization.$inferSelect;
 
-export const insertOptimizationHistorySchema = createInsertSchema(optimizationHistory, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertOptimizationHistorySchema = createInsertSchema(optimizationHistory).omit({
+  id: true,
+  createdAt: true
 });
 export type InsertOptimizationHistory = z.infer<typeof insertOptimizationHistorySchema>;
 export type OptimizationHistory = typeof optimizationHistory.$inferSelect;
