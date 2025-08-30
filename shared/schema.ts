@@ -29,17 +29,15 @@ export const resources = PT.ptResources;
 export const plantResources = PT.ptResourceCapabilities; // Using PT ResourceCapabilities table
 export const departments = PT.ptDepartments;
 
-// Re-export PT tables with their actual names
-export const ptJobOperations = PT.ptJobOperations;
-export const ptManufacturingOrders = PT.ptManufacturingOrders;
-
-
-
 // Using PT ManufacturingOrders table instead of productionOrders
 export const productionOrders = PT.ptManufacturingOrders;
 
 // Using PT JobOperations table instead of recipeOperations
 export const recipeOperations = PT.ptJobOperations;
+
+// Re-export PT tables with their actual names
+export const ptJobOperations = PT.ptJobOperations;
+export const ptManufacturingOrders = PT.ptManufacturingOrders;
 
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 // REMOVED: Using PT tables instead
