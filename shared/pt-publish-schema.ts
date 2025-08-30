@@ -7,8 +7,37 @@ import { relations } from "drizzle-orm";
 // Core Master Data Tables
 // ============================================
 
+export const ptPlants = pgTable("ptplants", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  plantId: bigint("plant_id", { mode: "number" }).notNull(),
+  name: text("name"),
+  description: text("description"),
+  notes: text("notes"),
+  bottleneckThreshold: numeric("bottleneck_threshold"),
+  heavyLoadThreshold: numeric("heavy_load_threshold"),
+  externalId: text("external_id"),
+  departmentCount: integer("department_count"),
+  stableDays: numeric("stable_days"),
+  dailyOperatingExpense: numeric("daily_operating_expense"),
+  investedCapital: numeric("invested_capital"),
+  annualPercentageRate: numeric("annual_percentage_rate"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  postalCode: text("postal_code"),
+  timezone: text("timezone").default("UTC"),
+  latitude: numeric("latitude"),
+  longitude: numeric("longitude"),
+  plantType: text("plant_type").default("manufacturing"),
+  isActive: boolean("is_active").default(true),
+  capacity: text("capacity"), // jsonb stored as text for compatibility
+  operationalMetrics: text("operational_metrics"), // jsonb stored as text for compatibility
+});
 
-export const ptDepartments = pgTable("pt_departments", {
+export const ptDepartments = pgTable("ptdepartments", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -24,7 +53,7 @@ export const ptDepartments = pgTable("pt_departments", {
   departmentFrozenSpanDays: numeric("department_frozen_span_days"),
 });
 
-export const ptResources = pgTable("pt_resources", {
+export const ptResources = pgTable("ptresources", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -105,7 +134,7 @@ export const ptResources = pgTable("pt_resources", {
   maxVolume: numeric("max_volume"),
 });
 
-export const ptCapabilities = pgTable("pt_capabilities", {
+export const ptCapabilities = pgTable("ptcapabilities", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -116,7 +145,7 @@ export const ptCapabilities = pgTable("pt_capabilities", {
   externalId: text("external_id"),
 });
 
-export const ptResourceCapabilities = pgTable("pt_resource_capabilities", {
+export const ptResourceCapabilities = pgTable("ptresourcecapabilities", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -130,7 +159,7 @@ export const ptResourceCapabilities = pgTable("pt_resource_capabilities", {
 // Item and Inventory Tables
 // ============================================
 
-export const ptItems = pgTable("pt_items", {
+export const ptItems = pgTable("ptitems", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -157,7 +186,7 @@ export const ptItems = pgTable("pt_items", {
   cost: numeric("cost"),
 });
 
-export const ptWarehouses = pgTable("pt_warehouses", {
+export const ptWarehouses = pgTable("ptwarehouses", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -173,7 +202,7 @@ export const ptWarehouses = pgTable("pt_warehouses", {
   tankWarehouse: boolean("tank_warehouse"),
 });
 
-export const ptPlantWarehouses = pgTable("pt_plant_warehouses", {
+export const ptPlantWarehouses = pgTable("ptplantwarehouses", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -181,7 +210,7 @@ export const ptPlantWarehouses = pgTable("pt_plant_warehouses", {
   warehouseId: bigint("warehouse_id", { mode: "number" }).notNull(),
 });
 
-export const ptInventories = pgTable("pt_inventories", {
+export const ptInventories = pgTable("ptinventories", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -209,7 +238,7 @@ export const ptInventories = pgTable("pt_inventories", {
   materialAllocation: text("material_allocation"),
 });
 
-export const ptLots = pgTable("pt_lots", {
+export const ptLots = pgTable("ptlots", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -228,7 +257,7 @@ export const ptLots = pgTable("pt_lots", {
 // Job and Manufacturing Order Tables
 // ============================================
 
-export const ptJobs = pgTable("pt_jobs", {
+export const ptJobs = pgTable("ptjobs", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
