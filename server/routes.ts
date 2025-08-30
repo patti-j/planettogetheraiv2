@@ -240,10 +240,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createCompanyOnboarding({
         companyName: companyName,
         industry: "trial",
-        completedSteps: ["welcome", "company", "features"],
-        currentStep: "completed",
-        teamMembers: 1,
-        isCompleted: true,
         createdBy: trialUser.id
       });
 

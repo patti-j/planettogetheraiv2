@@ -2271,7 +2271,7 @@ export class MemStorage implements Partial<IStorage> {
         currentProductSetup: null,
         currentSetupCode: null,
         currentSetupNumber: "0",
-        resourceType: res.resourceType || null, // Added back as required by schema
+        resourceType: res.resourceType || null,
         alwaysShowPostProcessing: false,
         attributeCodeTableName: null,
         bottleneckPercent: "0",
@@ -2629,7 +2629,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 }
 
-export class DatabaseStorage implements IStorage {
+export class DatabaseStorage {
   // Cache for database schema to avoid repeated expensive queries
   private schemaCache: { data: any[]; timestamp: number } | null = null;
   private readonly SCHEMA_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
