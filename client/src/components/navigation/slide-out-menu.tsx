@@ -268,50 +268,86 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
           <div className="py-3">
             {layoutMode === 'list' ? (
-              // List Layout - Show all items in a flat list
-              <div className="space-y-0.5 px-3">
-                {filteredGroups.flatMap(group => 
-                  group.items.map((item, globalIndex) => {
-                    const Icon = item.icon;
-                    const isActive = location === item.href;
+              // List Layout - Show items grouped by category with headers
+              <div className="px-3">
+                {filteredGroups.map((group, groupIndex) => {
+                  const priorityBg = group.priority === 'high' 
+                    ? 'bg-primary/[0.02]' 
+                    : group.priority === 'medium' 
+                    ? 'bg-muted/30'
+                    : '';
                     
-                    const colors = [
-                      'text-blue-500', 'text-green-500', 'text-purple-500',
-                      'text-orange-500', 'text-red-500', 'text-cyan-500',
-                      'text-pink-500', 'text-yellow-500', 'text-indigo-500',
-                      'text-emerald-500', 'text-violet-500', 'text-rose-500'
-                    ];
-                    const iconColor = colors[globalIndex % colors.length];
-                    
-                    return (
-                      <Button
-                        key={item.href}
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150",
-                          isActive && "bg-accent text-accent-foreground",
-                          !isActive && "hover:bg-accent/50 hover:text-foreground"
-                        )}
-                        onClick={() => handleItemClick(item)}
-                      >
-                        <div className="flex items-center gap-3 flex-1">
-                          {Icon && (
-                            <Icon className={cn(
-                              "h-4 w-4 flex-shrink-0",
-                              isActive ? "text-primary" : iconColor
-                            )} />
-                          )}
-                          <span className={cn(
-                            "truncate text-sm",
-                            !isActive && "text-foreground/80"
-                          )}>
-                            {item.label}
+                  return (
+                    <div 
+                      key={group.title}
+                      className={cn(
+                        "mb-4",
+                        groupIndex < filteredGroups.length - 1 && "border-b border-border/20 pb-4",
+                        priorityBg && "rounded-lg p-2 -mx-2"
+                      )}
+                    >
+                      {/* Category Header - Non-clickable in list view */}
+                      <div className="flex items-center gap-2 px-2 py-1 mb-2">
+                        <Folder className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm font-medium text-foreground/70">
+                          {group.title}
+                        </span>
+                        {group.priority === 'high' && (
+                          <span className="text-[10px] text-primary/60 font-medium px-1.5 py-0.5 bg-primary/10 rounded">
+                            FEATURED
                           </span>
-                        </div>
-                      </Button>
-                    );
-                  })
-                )}
+                        )}
+                        <span className="text-xs text-muted-foreground ml-auto">
+                          {group.items.length}
+                        </span>
+                      </div>
+
+                      {/* Category Items */}
+                      <div className="space-y-0.5">
+                        {group.items.map((item, itemIndex) => {
+                          const Icon = item.icon;
+                          const isActive = location === item.href;
+                          
+                          const colors = [
+                            'text-blue-500', 'text-green-500', 'text-purple-500',
+                            'text-orange-500', 'text-red-500', 'text-cyan-500',
+                            'text-pink-500', 'text-yellow-500', 'text-indigo-500',
+                            'text-emerald-500', 'text-violet-500', 'text-rose-500'
+                          ];
+                          const iconColor = colors[itemIndex % colors.length];
+                          
+                          return (
+                            <Button
+                              key={item.href}
+                              variant="ghost"
+                              className={cn(
+                                "w-full justify-start text-left h-9 px-3 font-normal transition-all duration-150",
+                                isActive && "bg-accent text-accent-foreground",
+                                !isActive && "hover:bg-accent/50 hover:text-foreground"
+                              )}
+                              onClick={() => handleItemClick(item)}
+                            >
+                              <div className="flex items-center gap-3 flex-1">
+                                {Icon && (
+                                  <Icon className={cn(
+                                    "h-4 w-4 flex-shrink-0",
+                                    isActive ? "text-primary" : iconColor
+                                  )} />
+                                )}
+                                <span className={cn(
+                                  "truncate text-sm",
+                                  !isActive && "text-foreground/80"
+                                )}>
+                                  {item.label}
+                                </span>
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               // Hierarchical Layout - Show collapsible categories
