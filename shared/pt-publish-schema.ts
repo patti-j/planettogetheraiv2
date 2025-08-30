@@ -1189,10 +1189,6 @@ export const ptWarehousesRelations = relations(ptWarehouses, ({ many }) => ({
 
 // Plant Warehouse Relations
 export const ptPlantWarehousesRelations = relations(ptPlantWarehouses, ({ one }) => ({
-  plant: one(ptPlants, {
-    fields: [ptPlantWarehouses.plantId],
-    references: [ptPlants.plantId],
-  }),
   warehouse: one(ptWarehouses, {
     fields: [ptPlantWarehouses.warehouseId],
     references: [ptWarehouses.warehouseId],
@@ -1342,6 +1338,7 @@ export const ptCapacityIntervalResourceAssignmentsRelations = relations(ptCapaci
 // Export Insert Schemas and Types
 // ============================================
 
+export const insertPtPlantsSchema = createInsertSchema(ptPlants);
 export const insertPtDepartmentsSchema = createInsertSchema(ptDepartments);
 export const insertPtResourcesSchema = createInsertSchema(ptResources);
 export const insertPtCapabilitiesSchema = createInsertSchema(ptCapabilities);
@@ -1375,6 +1372,7 @@ export const insertPtProductRulesSchema = createInsertSchema(ptProductRules);
 export const insertPtSystemDataSchema = createInsertSchema(ptSystemData);
 
 // Export Select Types
+export type PtPlant = typeof ptPlants.$inferSelect;
 export type PtDepartment = typeof ptDepartments.$inferSelect;
 export type PtResource = typeof ptResources.$inferSelect;
 export type PtCapability = typeof ptCapabilities.$inferSelect;

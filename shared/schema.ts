@@ -9,17 +9,16 @@ import * as PT from "./pt-publish-schema";
 
 // Re-export PT insert schemas
 export { 
+  insertPtPlantsSchema,
   insertPtJobMaterialsSchema, 
   insertPtManufacturingOrdersSchema,
   insertPtJobOperationsSchema,
   insertPtResourcesSchema,
   insertPtCapabilitiesSchema,
-  insertPtPlantsSchema,
   insertPtDepartmentsSchema
 } from "./pt-publish-schema";
 
 // Using PT tables instead of non-PT tables
-export const plants = PT.ptPlants;
 export const capabilities = PT.ptCapabilities;
 export const resources = PT.ptResources;
 export const plantResources = PT.ptResourceCapabilities; // Using PT ResourceCapabilities table
@@ -1110,7 +1109,7 @@ export const shiftTemplates = pgTable("shift_templates", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(), // "Day Shift", "Night Shift", "Weekend", etc.
   description: text("description"),
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   shiftType: text("shift_type").notNull(), // regular, overtime, split, rotating
   startTime: text("start_time").notNull(), // HH:MM format (24-hour)
   endTime: text("end_time").notNull(), // HH:MM format (24-hour)
@@ -1177,7 +1176,7 @@ export const holidays = pgTable("holidays", {
   name: text("name").notNull(), // "New Year's Day", "Plant Maintenance Day"
   date: timestamp("date").notNull(),
   type: text("type").notNull(), // federal, state, company, plant_specific
-  plantId: integer("plant_id").references(() => plants.id), // null = all plants
+  plantId: integer("plant_id").references(() => PT.ptPlants.id), // null = all plants
   isRecurring: boolean("is_recurring").default(false), // annual holidays
   recurringType: text("recurring_type"), // "annual", "monthly", "custom"
   recurringPattern: jsonb("recurring_pattern").$type<{
@@ -1561,7 +1560,7 @@ export const cockpitTemplates = pgTable("cockpit_templates", {
 export const workspaceDashboards = pgTable("workspace_dashboards", {
   id: serial("id").primaryKey(),
   pageIdentifier: text("page_identifier").notNull(), // production-schedule, capacity-planning, etc.
-  plantId: integer("plant_id").references(() => plants.id).notNull(), // Workspace identifier via plant
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(), // Workspace identifier via plant
   name: text("name").notNull(),
   description: text("description"),
   isActive: boolean("is_active").default(true),
@@ -1625,7 +1624,7 @@ export const alerts = pgTable("alerts", {
   category: text("category"), // delay, breakdown, quality_issue, shortage, capacity, safety, performance
   
   // Entity associations
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   departmentId: integer("department_id").references(() => departments.id),
   resourceId: integer("resource_id").references(() => resources.id),
   jobId: integer("job_id").references(() => productionOrders.id),
@@ -1817,7 +1816,7 @@ export const canvasContent = pgTable("canvas_content", {
 // Plant KPI Targets - Define target KPIs for each plant with weights
 export const plantKpiTargets = pgTable("plant_kpi_targets", {
   id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   kpiName: text("kpi_name").notNull(), // OEE, Throughput, Quality, Schedule_Adherence, Cost_Per_Unit, etc.
   kpiType: text("kpi_type").notNull(), // percentage, rate, currency, time, count
   targetValue: numeric("target_value", { precision: 15, scale: 5 }).notNull(),
@@ -1873,7 +1872,7 @@ export const autonomousOptimization = pgTable("autonomous_optimization", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   isEnabled: boolean("is_enabled").default(false),
   
   // Optimization objectives
@@ -2738,7 +2737,7 @@ export const workflowTriggers = pgTable("workflow_triggers", {
   isActive: boolean("is_active").default(true),
   priority: integer("priority").default(5), // 1=highest, 10=lowest
   extensionId: integer("extension_id").references(() => extensions.id), // Optional link to extension
-  plantId: integer("plant_id").references(() => plants.id), // Trigger applies to specific plant
+  plantId: integer("plant_id").references(() => PT.ptPlants.id), // Trigger applies to specific plant
   createdBy: integer("created_by").references(() => users.id).notNull(),
   lastTriggered: timestamp("last_triggered"),
   triggerCount: integer("trigger_count").default(0),
@@ -2808,7 +2807,7 @@ export const workflows = pgTable("workflows", {
   triggerId: integer("trigger_id").references(() => workflowTriggers.id).notNull(),
   priority: integer("priority").default(5), // 1=highest, 10=lowest
   timeout: integer("timeout").default(300), // seconds before workflow times out
-  plantId: integer("plant_id").references(() => plants.id), // Workflow applies to specific plant
+  plantId: integer("plant_id").references(() => PT.ptPlants.id), // Workflow applies to specific plant
   extensionId: integer("extension_id").references(() => extensions.id), // Links to Extension Studio extension
   createdBy: integer("created_by").references(() => users.id).notNull(),
   approvedBy: integer("approved_by").references(() => users.id), // Required approval for certain workflows
@@ -2967,7 +2966,7 @@ export const algorithmVersions = pgTable("algorithm_versions", {
 
 export const plantAlgorithmDeployments = pgTable("plant_algorithm_deployments", {
   id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   algorithmVersionId: integer("algorithm_version_id").references(() => algorithmVersions.id).notNull(),
   deploymentStatus: text("deployment_status").notNull().default("pending"), // pending, approved, deployed, testing, rejected, retired
   approvalLevel: text("approval_level").notNull().default("plant_manager"), // plant_manager, regional_director, corporate, emergency
@@ -3064,7 +3063,7 @@ export const algorithmApprovalWorkflows = pgTable("algorithm_approval_workflows"
 
 export const algorithmUsageLogs = pgTable("algorithm_usage_logs", {
   id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   algorithmVersionId: integer("algorithm_version_id").references(() => algorithmVersions.id).notNull(),
   userId: integer("user_id").references(() => users.id),
   executionId: text("execution_id").notNull(), // Unique identifier for this run
@@ -3165,9 +3164,9 @@ export const algorithmVersionsRelations = relations(algorithmVersions, ({ many, 
 }));
 
 export const plantAlgorithmDeploymentsRelations = relations(plantAlgorithmDeployments, ({ one, many }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [plantAlgorithmDeployments.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   algorithmVersion: one(algorithmVersions, {
     fields: [plantAlgorithmDeployments.algorithmVersionId],
@@ -3197,9 +3196,9 @@ export const algorithmApprovalWorkflowsRelations = relations(algorithmApprovalWo
 }));
 
 export const algorithmUsageLogsRelations = relations(algorithmUsageLogs, ({ one }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [algorithmUsageLogs.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   algorithmVersion: one(algorithmVersions, {
     fields: [algorithmUsageLogs.algorithmVersionId],
@@ -3212,9 +3211,9 @@ export const algorithmUsageLogsRelations = relations(algorithmUsageLogs, ({ one 
 }));
 
 export const plantOptimizationSettingsRelations = relations(plantOptimizationSettings, ({ one }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [plantOptimizationSettings.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   updatedByUser: one(users, {
     fields: [plantOptimizationSettings.updatedBy],
@@ -3484,7 +3483,7 @@ export const aiScheduleRecommendations = pgTable("ai_schedule_recommendations", 
   // Scope of recommendation
   scopeType: varchar("scope_type", { length: 50 }).notNull(), // 'global', 'plant', 'department', 'resource', 'job'
   scopeId: integer("scope_id"), // ID of the specific plant, department, resource, or job
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   departmentId: integer("department_id").references(() => departments.id),
   resourceId: integer("resource_id").references(() => resources.id),
   
@@ -5321,7 +5320,7 @@ export const schedulingHistory: any = pgTable("scheduling_history", {
   executionMode: text("execution_mode").notNull().default("production"), // production, simulation, test
   triggeredBy: integer("triggered_by").references(() => users.id).notNull(),
   triggerMethod: text("trigger_method").notNull().default("manual"), // manual, automated, scheduled, api
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   status: text("status").notNull().default("running"), // running, completed, failed, cancelled
   startTime: timestamp("start_time").defaultNow(),
   endTime: timestamp("end_time"),
@@ -5403,7 +5402,7 @@ export const algorithmPerformance = pgTable("algorithm_performance", {
   id: serial("id").primaryKey(),
   algorithmName: text("algorithm_name").notNull(),
   algorithmType: text("algorithm_type").notNull(),
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   periodStart: timestamp("period_start").notNull(),
   periodEnd: timestamp("period_end").notNull(),
   executionCount: integer("execution_count").default(0),
@@ -5583,13 +5582,13 @@ export type WorkflowMonitoring = typeof workflowMonitoring.$inferSelect;
 export type InsertWorkflowMonitoring = z.infer<typeof insertWorkflowMonitoringSchema>;
 
 // Plant Management Schemas
-export const insertPlantSchema = createInsertSchema(plants).omit({ 
+export const insertPlantSchema = createInsertSchema(PT.ptPlants).omit({ 
   id: true,
   createdAt: true,
 });
 
 // Plant Management Types
-export type Plant = typeof plants.$inferSelect;
+export type Plant = typeof PT.ptPlants.$inferSelect;
 export type InsertPlant = z.infer<typeof insertPlantSchema>;
 
 // Extension Studio Tables
@@ -5713,7 +5712,7 @@ export const algorithmFeedback = pgTable("algorithm_feedback", {
   suggestedImprovement: text("suggested_improvement"),
   
   // Context information
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   executionContext: jsonb("execution_context").$type<{
     jobCount?: number;
     resourceCount?: number;
@@ -6794,7 +6793,7 @@ export const productionPlans = pgTable("production_plans", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   planType: text("plan_type").notNull().default("weekly"), // daily, weekly, monthly, custom
   startDate: timestamp("start_date").notNull(),
   endDate: timestamp("end_date").notNull(),
@@ -7424,7 +7423,7 @@ export const unplannedDowntime = pgTable("unplanned_downtime", {
   isRecurring: boolean("is_recurring").default(false),
   lastOccurrence: timestamp("last_occurrence"),
   priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -7453,7 +7452,7 @@ export const overtimeShifts = pgTable("overtime_shifts", {
   notes: text("notes"),
   isEmergency: boolean("is_emergency").default(false),
   autoApproved: boolean("auto_approved").default(false),
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -7498,7 +7497,7 @@ export const shiftChangeRequests = pgTable("shift_change_requests", {
   estimatedCoverage: integer("estimated_coverage").default(100), // percentage coverage needed
   skillsRequired: jsonb("skills_required").$type<string[]>().default([]),
   notes: text("notes"),
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -7742,9 +7741,9 @@ export const schedulingHistoryRelations = relations(schedulingHistory, ({ one, m
     fields: [schedulingHistory.triggeredBy],
     references: [users.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [schedulingHistory.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   comparisonBaselineHistory: one(schedulingHistory, {
     fields: [schedulingHistory.comparisonBaseline],
@@ -7774,9 +7773,9 @@ export const schedulingResultsRelations = relations(schedulingResults, ({ one })
 }));
 
 export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ one }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [algorithmPerformance.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   bestPerformanceHistory: one(schedulingHistory, {
     fields: [algorithmPerformance.bestPerformanceHistoryId],
@@ -7790,9 +7789,9 @@ export const algorithmPerformanceRelations = relations(algorithmPerformance, ({ 
 
 // Recipe Relations - SAP S/4HANA Process Industries Structure
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [recipes.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   operations: many(recipeOperations),
   // productOutputs: many(recipeProductOutputs),
@@ -8491,7 +8490,7 @@ export const forecasts = pgTable("forecasts", {
 // ===== ERP RELATIONS =====
 
 // Plants Relations
-export const plantsRelations = relations(plants, ({ many }) => ({
+export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
   plantResources: many(plantResources),
   productionOrders: many(productionOrders),
   departments: many(departments),
@@ -8510,9 +8509,9 @@ export const resourcesRelations = relations(resources, ({ many }) => ({
 
 // Plant Resources Junction Table Relations
 export const plantResourcesRelations = relations(plantResources, ({ one }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [plantResources.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   resource: one(resources, {
     fields: [plantResources.resourceId],
@@ -8549,9 +8548,9 @@ export const departmentsRelations = relations(departments, ({ one, many }) => ({
     fields: [departments.parentDepartmentId],
     references: [departments.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [departments.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   workCenters: many(workCenters),
   employees: many(employees),
@@ -8563,9 +8562,9 @@ export const workCentersRelations = relations(workCenters, ({ one, many }) => ({
     fields: [workCenters.departmentId],
     references: [departments.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [workCenters.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   employees: many(employees),
   routingOperations: many(routingOperations),
@@ -8766,7 +8765,7 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
 export const masterProductionSchedule = pgTable("ptMasterProductionSchedule", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   periodType: text("period_type").notNull().default("weekly"), // daily, weekly, monthly
   planningHorizon: integer("planning_horizon").notNull().default(52), // weeks
   bucketStartDate: timestamp("bucket_start_date").notNull(),
@@ -8788,7 +8787,7 @@ export const mrpRuns = pgTable("mrp_runs", {
   id: serial("id").primaryKey(),
   runNumber: text("run_number").notNull().unique(), // e.g., "MRP-2025-001"
   description: text("description"),
-  plantId: integer("plant_id").references(() => plants.id),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id),
   runType: text("run_type").notNull().default("net_change"), // net_change, regenerative, single_level
   status: text("status").notNull().default("planning"), // planning, running, completed, failed
   planningHorizon: integer("planning_horizon").notNull().default(365), // days
@@ -8822,7 +8821,7 @@ export const mrpRequirements = pgTable("mrp_requirements", {
   id: serial("id").primaryKey(),
   mrpRunId: integer("mrp_run_id").references(() => mrpRuns.id).notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   periodStartDate: timestamp("period_start_date").notNull(),
   periodEndDate: timestamp("period_end_date").notNull(),
   
@@ -8864,7 +8863,7 @@ export const mrpActionMessages = pgTable("mrp_action_messages", {
   id: serial("id").primaryKey(),
   mrpRunId: integer("mrp_run_id").references(() => mrpRuns.id).notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   messageType: text("message_type").notNull(), // expedite, de_expedite, cancel, reschedule, release, firm
   priority: text("priority").notNull().default("medium"), // high, medium, low
   message: text("message").notNull(),
@@ -8888,7 +8887,7 @@ export const mrpActionMessages = pgTable("mrp_action_messages", {
 export const mrpPlanningParameters = pgTable("mrp_planning_parameters", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  plantId: integer("plant_id").references(() => plants.id).notNull(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull(),
   
   // Planning method
   planningMethod: text("planning_method").notNull().default("mrp"), // mrp, reorder_point, kanban, manual
@@ -8942,16 +8941,16 @@ export const masterProductionScheduleRelations = relations(masterProductionSched
     fields: [masterProductionSchedule.itemId],
     references: [items.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [masterProductionSchedule.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
 }));
 
 export const mrpRunsRelations = relations(mrpRuns, ({ one, many }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [mrpRuns.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   requirements: many(mrpRequirements),
   actionMessages: many(mrpActionMessages),
@@ -8966,9 +8965,9 @@ export const mrpRequirementsRelations = relations(mrpRequirements, ({ one }) => 
     fields: [mrpRequirements.itemId],
     references: [items.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [mrpRequirements.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
 }));
 
@@ -8981,9 +8980,9 @@ export const mrpActionMessagesRelations = relations(mrpActionMessages, ({ one })
     fields: [mrpActionMessages.itemId],
     references: [items.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [mrpActionMessages.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
 }));
 
@@ -8992,16 +8991,16 @@ export const mrpPlanningParametersRelations = relations(mrpPlanningParameters, (
     fields: [mrpPlanningParameters.itemId],
     references: [items.id],
   }),
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [mrpPlanningParameters.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
 }));
 
 export const productionOrdersRelations = relations(productionOrders, ({ one, many }) => ({
-  plant: one(plants, {
+  plant: one(ptPlants, {
     fields: [productionOrders.plantId],
-    references: [plants.id],
+    references: [ptPlants.id],
   }),
   customer: one(customers, {
     fields: [productionOrders.customerId],
@@ -9020,9 +9019,9 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
 
 // COMMENTED OUT: productionVersions table not defined
 // export const productionVersionsRelations = relations(productionVersions, ({ one, many }) => ({
-//   plant: one(plants, {
+//   plant: one(ptPlants, {
 //     fields: [productionVersions.plantId],
-//     references: [plants.id],
+//     references: [ptPlants.id],
 //   }),
 //   recipe: one(recipes, {
 //     fields: [productionVersions.recipeId],
@@ -9047,9 +9046,9 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
 
 // COMMENTED OUT: plannedOrders table not defined
 // export const plannedOrdersRelations = relations(plannedOrders, ({ one, many }) => ({
-//   plant: one(plants, {
+//   plant: one(ptPlants, {
 //     fields: [plannedOrders.plantId],
-//     references: [plants.id],
+//     references: [ptPlants.id],
 //   }),
 //   productionVersion: one(productionVersions, {
 //     fields: [plannedOrders.productionVersionId],
@@ -9492,7 +9491,7 @@ export const canvasWidgets = pgTable("canvas_widgets", {
   isSystemWidget: boolean("is_system_widget").default(false), // True if created by system and cannot be edited
   sessionId: text("session_id"), // Session identifier for grouping widgets
   userId: integer("user_id").references(() => users.id), // User who requested the widget
-  plantId: integer("plant_id").references(() => plants.id), // Plant context if applicable
+  plantId: integer("plant_id").references(() => PT.ptPlants.id), // Plant context if applicable
   metadata: jsonb("metadata").$type<Record<string, any>>().default({}), // Additional metadata
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -9724,7 +9723,7 @@ export const constraints = pgTable("constraints", {
   
   // Scope and applicability
   scope: text("scope").notNull(), // "global", "plant", "resource", "operation", "item"
-  applicableToPlantId: integer("applicable_to_plant_id").references(() => plants.id),
+  applicableToPlantId: integer("applicable_to_plant_id").references(() => ptPlants.id),
   applicableToResourceId: integer("applicable_to_resource_id").references(() => resources.id),
   applicableToItemId: integer("applicable_to_item_id").references(() => items.id),
   applicableToWorkCenterId: integer("applicable_to_work_center_id").references(() => workCenters.id),
@@ -11334,7 +11333,7 @@ export const laborShiftTemplates = pgTable('labor_shift_templates', {
   id: serial('id').primaryKey(),
   name: varchar('name', { length: 100 }).notNull(),
   code: varchar('code', { length: 20 }).notNull().unique(), // SHIFT-1, SHIFT-2, SHIFT-3
-  plantId: integer('plant_id').references(() => plants.id),
+  plantId: integer('plant_id').references(() => ptPlants.id),
   startTime: varchar('start_time', { length: 5 }).notNull(), // HH:MM format (e.g., "07:00")
   endTime: varchar('end_time', { length: 5 }).notNull(), // HH:MM format (e.g., "15:00")
   durationHours: numeric('duration_hours', { precision: 4, scale: 2 }).notNull(),
@@ -11389,7 +11388,7 @@ export const shiftAssignments = pgTable('shift_assignments', {
 // Labor Capacity Requirements - Track how much labor capacity is needed
 export const laborCapacityRequirements = pgTable('labor_capacity_requirements', {
   id: serial('id').primaryKey(),
-  plantId: integer('plant_id').references(() => plants.id),
+  plantId: integer('plant_id').references(() => ptPlants.id),
   productionOrderId: integer('production_order_id').references(() => productionOrders.id),
   resourceId: integer('resource_id').references(() => resources.id),
   workCenter: varchar('work_center', { length: 100 }),
@@ -11511,7 +11510,7 @@ export const employeeMachineCertifications = pgTable('employee_machine_certifica
 // Shift Capacity Gaps - Track gaps between required and available capacity
 export const shiftCapacityGaps = pgTable('shift_capacity_gaps', {
   id: serial('id').primaryKey(),
-  plantId: integer('plant_id').references(() => plants.id),
+  plantId: integer('plant_id').references(() => ptPlants.id),
   shiftTemplateId: integer('shift_template_id').references(() => shiftTemplates.id),
   gapDate: timestamp('gap_date').notNull(),
   workCenter: varchar('work_center', { length: 100 }),
@@ -11544,7 +11543,7 @@ export const shiftCapacityGaps = pgTable('shift_capacity_gaps', {
 // Labor Planning Optimization Runs - Track optimization algorithm executions
 export const laborPlanningOptimizations = pgTable('labor_planning_optimizations', {
   id: serial('id').primaryKey(),
-  plantId: integer('plant_id').references(() => plants.id),
+  plantId: integer('plant_id').references(() => ptPlants.id),
   optimizationName: varchar('optimization_name', { length: 100 }).notNull(),
   startDate: timestamp('start_date').notNull(),
   endDate: timestamp('end_date').notNull(),
@@ -11722,7 +11721,7 @@ export const integrations = pgTable('integrations', {
 export const integrationConnections = pgTable('integration_connections', {
   id: serial('id').primaryKey(),
   integrationId: integer('integration_id').notNull().references(() => integrations.id),
-  plantId: integer('plant_id').references(() => plants.id),
+  plantId: integer('plant_id').references(() => ptPlants.id),
   companyId: varchar('company_id', { length: 100 }), // For external companies if needed
   connectionName: varchar('connection_name', { length: 100 }).notNull(),
   environment: varchar('environment', { length: 20 }).notNull().default('production'), // production, staging, development
