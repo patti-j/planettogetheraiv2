@@ -151,12 +151,12 @@ export class SystemMonitoringAgent {
   private async collectSystemMetrics(): Promise<SystemMetrics> {
     try {
       // Get total plants count from actual database table
-      const activePlantsResult = await db.execute(sql`select count(*) from ptplants`);
+      const activePlantsResult = await db.execute(sql.raw('select count(*) from ptplants'));
       
       const activePlants = activePlantsResult[0]?.count || 0;
 
       // Get total operations count using raw query to match actual table name
-      const totalOperationsResult = await db.execute(sql`select count(*) from ptjoboperations`);
+      const totalOperationsResult = await db.execute(sql.raw('select count(*) from ptjoboperations'));
       
       const totalOperations = totalOperationsResult[0]?.count || 0;
 
