@@ -1817,6 +1817,18 @@ Rules:
       let userId: string | number | undefined = req.session?.userId;
       let isDemo = (req.session as any)?.isDemo;
       
+      // Temporary: Auto-login as demo user if no session exists for development
+      if (!userId && !req.headers.authorization) {
+        console.log("=== AUTO DEMO LOGIN FOR DEVELOPMENT ===");
+        userId = 'demo_user';
+        isDemo = true;
+        // Set up session for subsequent requests
+        if (req.session) {
+          (req.session as any).userId = 'demo_user';
+          (req.session as any).isDemo = true;
+        }
+      }
+      
       // Check for token in Authorization header if session fails
       if (!userId && req.headers.authorization) {
         const token = req.headers.authorization.replace('Bearer ', '');
