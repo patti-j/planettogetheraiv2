@@ -427,7 +427,7 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   drumBufferCurrentPenetrationPercent: numeric("drum_buffer_current_penetration_percent"),
 });
 
-export const ptJobOperations = pgTable("pt_job_operations", {
+export const ptJobOperations = pgTable("ptjoboperations", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),

@@ -57,6 +57,10 @@ export const recipeOperations = ptJobOperations;
 export const ptCapabilities = PT.ptCapabilities;
 export const ptMetrics = PT.ptMetrics;
 
+// Alias discrete operations to PT Job Operations for backward compatibility
+export const discreteOperations = PT.ptJobOperations;
+export const insertDiscreteOperationSchema = PT.insertPtJobOperationsSchema;
+
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 // REMOVED: Using PT tables instead
 /*export const recipePhases = pgTable("recipe_phases", {
