@@ -8,6 +8,36 @@ import { relations } from "drizzle-orm";
 // ============================================
 
 
+export const ptPlants = pgTable("ptplants", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  plantId: bigint("plant_id", { mode: "number" }).notNull(),
+  name: text("name"),
+  description: text("description"),
+  notes: text("notes"),
+  bottleneckThreshold: numeric("bottleneck_threshold"),
+  heavyLoadThreshold: numeric("heavy_load_threshold"),
+  externalId: text("external_id"),
+  departmentCount: integer("department_count"),
+  stableDays: numeric("stable_days"),
+  dailyOperatingExpense: numeric("daily_operating_expense"),
+  investedCapital: numeric("invested_capital"),
+  annualPercentageRate: numeric("annual_percentage_rate"),
+  address: text("address"),
+  city: text("city"),
+  state: text("state"),
+  country: text("country"),
+  postalCode: text("postal_code"),
+  timezone: text("timezone").default("UTC"),
+  latitude: numeric("latitude"),
+  longitude: numeric("longitude"),
+  plantType: text("plant_type").default("manufacturing"),
+  isActive: boolean("is_active").default(true),
+  capacity: jsonb("capacity").default(sql`'{}'::jsonb`),
+  operationalMetrics: jsonb("operational_metrics").default(sql`'{}'::jsonb`),
+});
+
 export const ptDepartments = pgTable("ptdepartments", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
@@ -1338,7 +1368,7 @@ export const ptCapacityIntervalResourceAssignmentsRelations = relations(ptCapaci
 // Export Insert Schemas and Types
 // ============================================
 
-// export const insertPtPlantsSchema = createInsertSchema(ptPlants); // TODO: Add ptPlants definition first
+export const insertPtPlantsSchema = createInsertSchema(ptPlants);
 export const insertPtDepartmentsSchema = createInsertSchema(ptDepartments);
 export const insertPtResourcesSchema = createInsertSchema(ptResources);
 export const insertPtCapabilitiesSchema = createInsertSchema(ptCapabilities);
@@ -1372,6 +1402,7 @@ export const insertPtProductRulesSchema = createInsertSchema(ptProductRules);
 export const insertPtSystemDataSchema = createInsertSchema(ptSystemData);
 
 // Export Select Types
+export type PtPlant = typeof ptPlants.$inferSelect;
 export type PtDepartment = typeof ptDepartments.$inferSelect;
 export type PtResource = typeof ptResources.$inferSelect;
 export type PtCapability = typeof ptCapabilities.$inferSelect;
@@ -1405,6 +1436,7 @@ export type PtProductRule = typeof ptProductRules.$inferSelect;
 export type PtSystemData = typeof ptSystemData.$inferSelect;
 
 // Export Insert Types
+export type InsertPtPlant = z.infer<typeof insertPtPlantsSchema>;
 export type InsertPtDepartment = z.infer<typeof insertPtDepartmentsSchema>;
 export type InsertPtResource = z.infer<typeof insertPtResourcesSchema>;
 export type InsertPtCapability = z.infer<typeof insertPtCapabilitiesSchema>;
