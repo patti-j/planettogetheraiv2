@@ -220,7 +220,7 @@ export default function TableFieldViewer() {
     'plant_resources', 'work_center_resources', 'department_resources',
     'production_version_phase_material_requirements', 'production_version_phase_bom_product_outputs',
     'production_version_phase_formulation_details', 'discrete_operation_phase_resource_requirements',
-    'discrete_operation_phase_relationships', 'recipe_phase_relationships',
+    'recipe_phase_relationships',
     'sales_order_line_distributions' // Has minimal business data beyond joins
   ];
 

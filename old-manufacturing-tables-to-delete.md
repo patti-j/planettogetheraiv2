@@ -22,7 +22,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 ### 3. Operation Types
 - **discrete_operations** → replaced by `pt_publish_job_activities`
 - **discrete_operation_phases** → replaced by PT activity phases
-- **discrete_operation_phase_relationships** → replaced by PT relationships
+- **discrete_operation_phase_relationships** → ✅ DELETED (replaced by PT relationships)
 - **discrete_operation_phase_resource_requirements** → replaced by PT resource requirements
 - **process_operations** → replaced by `pt_publish_job_activities` with activity_type
 - **operation_status_reports** → replaced by PT status tracking

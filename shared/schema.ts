@@ -8076,11 +8076,7 @@ export const recipeOperationsRelations = relations(recipeOperations, ({ one, man
 //     fields: [resourceRequirements.recipePhaseId],
 //     references: [recipePhases.id],
 //   }),
-//   // Discrete operation phase relationship (many-to-one)
-//   discreteOperationPhase: one(discreteOperationPhases, {
-//     fields: [resourceRequirements.discreteOperationPhaseId],
-//     references: [discreteOperationPhases.id],
-//   }),
+//   // Removed: discreteOperationPhase relationship (table deleted)
 //   // Default resource relationship
 //   defaultResource: one(resources, {
 //     fields: [resourceRequirements.defaultResourceId],
