@@ -862,85 +862,80 @@ export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
-  id: true,
-}).extend({
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
+  id: z.number().optional(),
   startTime: z.union([z.string().datetime(), z.date()]).optional(),
   endTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
-  id: true,
-  createdAt: true,
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
 });
 
 // Systems Management Insert Schemas
-export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemUserSchema = createInsertSchema(systemUsers, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({
-  id: true,
-  timestamp: true,
+export const insertSystemHealthSchema = createInsertSchema(systemHealth, {
+  id: z.number().optional(),
+  timestamp: z.date().optional(),
 });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
   scheduledDate: z.union([z.string().datetime(), z.date()]).optional(),
   startedAt: z.union([z.string().datetime(), z.date()]).optional(),
   completedAt: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({
-  id: true,
-  timestamp: true,
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
+  id: z.number().optional(),
+  timestamp: z.date().optional(),
 });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true,
-}).extend({
+export const insertDisruptionSchema = createInsertSchema(disruptions, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
   startTime: z.union([z.string().datetime(), z.date()]),
   actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
   scheduledTime: z.union([z.string().datetime(), z.date()]).optional(),
   completedTime: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
-  id: true,
-  createdAt: true,
-}).extend({
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
+  id: z.number().optional(),
+  createdAt: z.date().optional(),
   expectedResponse: z.union([z.string().datetime(), z.date()]).optional(),
   actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
 });
