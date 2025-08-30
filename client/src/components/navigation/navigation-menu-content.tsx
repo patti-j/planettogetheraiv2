@@ -179,17 +179,6 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
           </Button>
         </div>
         
-        {/* Current Page Indicator */}
-        {currentIndex >= 0 && allItems.length > 0 && (
-          <div className="text-xs text-muted-foreground mb-3 flex items-center justify-between">
-            <span>
-              Page {currentIndex + 1} of {allItems.length}
-            </span>
-            <span className="text-primary font-medium">
-              {allItems[currentIndex]?.label}
-            </span>
-          </div>
-        )}
 
         {/* Search */}
         <div className="relative">
