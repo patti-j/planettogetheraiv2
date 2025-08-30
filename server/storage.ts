@@ -2598,10 +2598,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createResourceView(resourceView: InsertResourceView): Promise<ResourceView> {
-    const [newResourceView] = await db.insert(resourceViews).values({
-      ...resourceView,
-      createdAt: new Date()
-    }).returning();
+    const [newResourceView] = await db.insert(resourceViews).values(resourceView).returning();
     return newResourceView;
   }
 
