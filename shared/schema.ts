@@ -813,10 +813,9 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  undoneAt: z.date().optional(),
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({
+  id: true,
+  createdAt: true,
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
@@ -829,20 +828,20 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {
-  id: z.number().optional(),
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
+  id: true,
 });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
-  id: z.number().optional(),
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({
+  id: true,
 });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
-  id: z.number().optional(),
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
+  id: true,
 });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
-  id: z.number().optional(),
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
+  id: true,
 });
 
 export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
@@ -918,26 +917,20 @@ export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
 });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
-  startTime: z.union([z.string().datetime(), z.date()]),
-  actualEndTime: z.union([z.string().datetime(), z.date()]).optional(),
+export const insertDisruptionSchema = createInsertSchema(disruptions).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
 });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  scheduledTime: z.union([z.string().datetime(), z.date()]).optional(),
-  completedTime: z.union([z.string().datetime(), z.date()]).optional(),
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({
+  id: true,
+  createdAt: true,
 });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  expectedResponse: z.union([z.string().datetime(), z.date()]).optional(),
-  actualResponse: z.union([z.string().datetime(), z.date()]).optional(),
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({
+  id: true,
+  createdAt: true,
 });
 
 
