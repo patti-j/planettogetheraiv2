@@ -634,6 +634,66 @@ export const ptJobMaterials = pgTable("pt_job_materials", {
   materialAllocation: text("material_allocation"),
 });
 
+export const ptJobResources = pgTable("pt_job_resources", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  resourceRequirementId: bigint("resource_requirement_id", { mode: "number" }),
+  description: text("description"),
+  externalId: text("external_id"),
+  usageStart: text("usage_start"),
+  usageEnd: text("usage_end"),
+  attentionPercent: integer("attention_percent"),
+  isPrimary: boolean("is_primary"),
+  defaultResourceJitLimitHrs: numeric("default_resource_jit_limit_hrs"),
+  useDefaultResourceJitLimit: boolean("use_default_resource_jit_limit"),
+  defaultResourceId: bigint("default_resource_id", { mode: "number" }),
+  capacityCode: text("capacity_code"),
+});
+
+export const ptJobResourceBlocks = pgTable("pt_job_resource_blocks", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  activityId: bigint("activity_id", { mode: "number" }).notNull(),
+  blockId: bigint("block_id", { mode: "number" }).notNull(),
+  batchId: bigint("batch_id", { mode: "number" }).notNull(),
+  plantId: bigint("plant_id", { mode: "number" }).notNull(),
+  departmentId: bigint("department_id", { mode: "number" }).notNull(),
+  resourceId: bigint("resource_id", { mode: "number" }).notNull(),
+  scheduledStart: text("scheduled_start"),
+  scheduledEnd: text("scheduled_end"),
+  locked: boolean("locked"),
+  sequence: bigint("sequence", { mode: "number" }),
+  runNbr: bigint("run_nbr", { mode: "number" }),
+  resourceRequirementId: bigint("resource_requirement_id", { mode: "number" }),
+  durationHrs: numeric("duration_hrs"),
+  laborCost: numeric("labor_cost"),
+  machineCost: numeric("machine_cost"),
+  resourceRequirementIndex: integer("resource_requirement_index"),
+  scheduled: boolean("scheduled"),
+  batched: boolean("batched"),
+  scheduleId: integer("schedule_id"),
+});
+
+export const ptJobResourceCapabilities = pgTable("pt_job_resource_capabilities", {
+  id: serial("id").primaryKey(),
+  publishDate: timestamp("publish_date").notNull(),
+  instanceId: varchar("instance_id", { length: 38 }).notNull(),
+  jobId: bigint("job_id", { mode: "number" }).notNull(),
+  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
+  operationId: bigint("operation_id", { mode: "number" }).notNull(),
+  resourceRequirementId: bigint("resource_requirement_id", { mode: "number" }).notNull(),
+  capabilityId: bigint("capability_id", { mode: "number" }).notNull(),
+  capabilityExternalId: text("capability_external_id"),
+});
+
 // ============================================
 // Sales and Demand Tables
 // ============================================
