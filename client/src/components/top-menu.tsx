@@ -560,17 +560,20 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 {/* User Profile Section */}
                 <div className="flex items-center space-x-1 sm:space-x-3">
                   <div className="hidden sm:flex items-center space-x-3">
-                    {/* Navigation toggle - desktop header - only show when nav handler exists and navigation is not pinned */}
-                    {onToggleNavPanel && !isNavigationPinned && (
+                    {/* Navigation toggle - desktop header - always show for debugging */}
+                    {onToggleNavPanel && (
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={onToggleNavPanel}
-                        className="flex items-center gap-2 bg-background hover:bg-accent border-border shadow-sm"
-                        title="Open navigation menu"
+                        onClick={() => {
+                          console.log('Menu button clicked, isNavigationPinned:', isNavigationPinned);
+                          onToggleNavPanel();
+                        }}
+                        className="flex items-center gap-2 bg-primary/10 hover:bg-primary/20 border-primary/30 shadow-sm"
+                        title={`Open navigation menu (pinned: ${isNavigationPinned})`}
                       >
                         <Menu className="h-4 w-4" />
-                        <span className="text-sm">Menu</span>
+                        <span className="text-sm">Menu {isNavigationPinned ? '(Pinned)' : '(Free)'}</span>
                       </Button>
                     )}
                     
