@@ -8,15 +8,13 @@ import { relations } from "drizzle-orm";
 import * as PT from "./pt-publish-schema";
 
 // Re-export PT insert schemas
-export { 
-  insertPtPlantsSchema,
-  insertPtJobMaterialsSchema, 
-  insertPtManufacturingOrdersSchema,
-  insertPtJobOperationsSchema,
-  insertPtResourcesSchema,
-  insertPtCapabilitiesSchema,
-  insertPtDepartmentsSchema
-} from "./pt-publish-schema";
+export const insertPtPlantsSchema = PT.insertPtPlantsSchema;
+export const insertPtJobMaterialsSchema = PT.insertPtJobMaterialsSchema;
+export const insertPtManufacturingOrdersSchema = PT.insertPtManufacturingOrdersSchema;
+export const insertPtJobOperationsSchema = PT.insertPtJobOperationsSchema;
+export const insertPtResourcesSchema = PT.insertPtResourcesSchema;
+export const insertPtCapabilitiesSchema = PT.insertPtCapabilitiesSchema;
+export const insertPtDepartmentsSchema = PT.insertPtDepartmentsSchema;
 
 // Create aliases for legacy schema names
 export const insertPlantSchema = PT.insertPtPlantsSchema;
