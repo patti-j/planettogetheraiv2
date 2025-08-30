@@ -9,6 +9,7 @@ import * as PT from "./pt-publish-schema";
 
 // Re-export PT insert schemas
 export { 
+  insertPtPlantsSchema,
   insertPtJobMaterialsSchema, 
   insertPtManufacturingOrdersSchema,
   insertPtJobOperationsSchema,
@@ -18,7 +19,7 @@ export {
 } from "./pt-publish-schema";
 
 // Create aliases for legacy schema names
-// export const insertPlantSchema = PT.insertPtPlantsSchema; // TODO: Add when ptPlants is defined
+export const insertPlantSchema = PT.insertPtPlantsSchema;
 export const insertCapabilitySchema = PT.insertPtCapabilitiesSchema;
 export const insertResourceSchema = PT.insertPtResourcesSchema;
 export const insertProductionOrderSchema = PT.insertPtManufacturingOrdersSchema;
