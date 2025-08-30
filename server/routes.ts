@@ -26430,7 +26430,7 @@ Generate a complete ${targetType} configuration that matches the user's requirem
     routings: schema.routings,
     recipes: schema.recipes,
     stockItems: schema.stockItems,  // Fixed: Changed from 'stocks' to 'stockItems' to match entityTypes array
-    storageLocations: schema.storageLocations,
+    // storageLocations: DELETED - replaced by ptwarehouses
     departments: schema.departments,
     shifts: schema.shifts,
     holidays: schema.holidays,

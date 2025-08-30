@@ -1495,14 +1495,14 @@ Create authentic manufacturing data that reflects this company's operations.`;
       mappedCounts.employees = data.employees || 0;
       mappedCounts.users = data.users || 0;
       mappedCounts.items = data.items || 0;
-      mappedCounts.storageLocations = data.storage_locations || 0;
+      // mappedCounts.storageLocations: DELETED - storageLocations table was replaced by ptwarehouses
       mappedCounts.inventory = data.inventory || 0;
       mappedCounts.inventoryLots = data.inventory_lots || 0;
       mappedCounts.vendors = data.vendors || 0;
       mappedCounts.customers = data.customers || 0;
       mappedCounts.salesOrders = data.sales_orders || 0;
       mappedCounts.purchaseOrders = data.purchase_orders || 0;
-      mappedCounts.transferOrders = data.transfer_orders || 0;
+      // mappedCounts.transferOrders: DELETED - transferOrders table was replaced by pttransferorders
       mappedCounts.billsOfMaterial = data.bills_of_material || 0;
       mappedCounts.routings = data.routings || 0;
       mappedCounts.recipes = data.recipes || 0;
@@ -1531,12 +1531,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
       workCenters: 'work-centers',
       employees: 'employees',
       items: 'items',
-      storageLocations: 'storage-locations',
+      // storageLocations: DELETED - replaced by ptwarehouses
       inventory: 'inventory',
       inventoryLots: 'inventory-lots',
       salesOrders: 'sales-orders',
       purchaseOrders: 'purchase-orders',
-      transferOrders: 'transfer-orders',
+      // transferOrders: DELETED - replaced by pttransferorders
       billsOfMaterial: 'bills-of-material',
       routings: 'routings',
       recipes: 'recipes',
@@ -1560,12 +1560,12 @@ Create authentic manufacturing data that reflects this company's operations.`;
       workCenters: 'work_centers',
       employees: 'employees',
       items: 'items',
-      storageLocations: 'storage_locations',
+      // storageLocations: DELETED - replaced by ptwarehouses
       inventory: 'inventory',
       inventoryLots: 'inventory_lots',
       salesOrders: 'sales_orders',
       purchaseOrders: 'purchase_orders',
-      transferOrders: 'transfer_orders',
+      // transferOrders: DELETED - replaced by pttransferorders
       billsOfMaterial: 'bills_of_material',
       routings: 'routings',
       recipes: 'recipes',

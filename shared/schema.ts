@@ -8170,7 +8170,7 @@ export const inventoryLots = pgTable("inventory_lots", {
   id: serial("id").primaryKey(),
   lotNumber: text("lot_number").notNull(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
+  // storageLocationId: removed - storageLocations table was replaced by ptwarehouses
   quantity: integer("quantity").notNull().default(0),
   expirationDate: timestamp("expiration_date"),
   receivedDate: timestamp("received_date").notNull(),
@@ -8194,7 +8194,7 @@ export const salesOrders = pgTable("sales_orders", {
   status: text("status").notNull().default("open"), // open, confirmed, in_production, shipped, invoiced, closed, cancelled
   priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
   currency: text("currency").notNull().default("USD"),
-  siteId: integer("site_id").references(() => sites.id).notNull(),
+  // siteId: removed - sites table was replaced by ptwarehouses
   salesPerson: text("sales_person"),
   notes: text("notes"),
   
@@ -8320,7 +8320,7 @@ export const salesOrders = pgTable("sales_orders", {
 export const stocks = pgTable("stocks", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  storageLocationId: integer("storage_location_id").references(() => storageLocations.id).notNull(),
+  // storageLocationId: removed - storageLocations table was replaced by ptwarehouses
   quantityOnHand: integer("quantity_on_hand").notNull().default(0),
   quantityReserved: integer("quantity_reserved").default(0), // Reserved for sales orders
   quantityAvailable: integer("quantity_available").notNull().default(0), // On hand - reserved
@@ -8366,7 +8366,7 @@ export const purchaseOrders = pgTable("purchase_orders", {
   status: text("status").notNull().default("open"), // open, confirmed, partial_received, received, invoiced, closed, cancelled
   totalAmount: integer("total_amount").default(0), // in cents
   currency: text("currency").notNull().default("USD"),
-  siteId: integer("site_id").references(() => sites.id).notNull(),
+  // siteId: removed - sites table was replaced by ptwarehouses
   buyerName: text("buyer_name"),
   notes: text("notes"),
   terms: text("terms"), // payment terms
@@ -8642,7 +8642,7 @@ export const routingOperations = pgTable("routing_operations", {
 export const forecasts = pgTable("forecasts", {
   id: serial("id").primaryKey(),
   itemId: integer("item_id").references(() => items.id).notNull(),
-  siteId: integer("site_id").references(() => sites.id).notNull(),
+  // siteId: removed - sites table was replaced by ptwarehouses
   forecastDate: timestamp("forecast_date").notNull(),
   forecastQuantity: integer("forecast_quantity").notNull(),
   forecastType: text("forecast_type").notNull().default("demand"), // demand, supply, safety_stock
@@ -8666,7 +8666,7 @@ export const plantsRelations = relations(plants, ({ many }) => ({
   workCenters: many(workCenters),
   productionVersions: many(productionVersions),
   plannedOrders: many(plannedOrders),
-  storageLocations: many(storageLocations), // One-to-many: plants can have multiple storage locations
+  // storageLocations: DELETED - storageLocations table was replaced by ptwarehouses
 }));
 
 // Resources Relations
@@ -8823,11 +8823,8 @@ export const stocksRelations = relations(stocks, ({ one, many }) => ({
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
-  site: one(sites, {
-    fields: [purchaseOrders.siteId],
-    references: [sites.id],
-  }),
-  lines: many(purchaseOrderLines),
+  // site: DELETED - sites table was replaced by ptwarehouses
+  // lines: DELETED - purchaseOrderLines table was replaced by ptpurchasestostock
 }));
 
 // purchaseOrderLinesRelations - DELETED: purchaseOrderLines table was replaced by ptpurchasestostock
@@ -8928,10 +8925,7 @@ export const forecastsRelations = relations(forecasts, ({ one }) => ({
     fields: [forecasts.itemId],
     references: [items.id],
   }),
-  site: one(sites, {
-    fields: [forecasts.siteId],
-    references: [sites.id],
-  }),
+  // site: DELETED - sites table was replaced by ptwarehouses
 }));
 
 // ===== MRP (Material Requirements Planning) TABLES =====
@@ -9511,14 +9505,14 @@ export type InsertDepartmentResource = z.infer<typeof insertDepartmentResourceSc
 export type Employee = typeof employees.$inferSelect;
 export type InsertEmployee = z.infer<typeof insertEmployeeSchema>;
 
-export type Site = typeof sites.$inferSelect;
-export type InsertSite = z.infer<typeof insertSiteSchema>;
+// Site type - DELETED: sites table was replaced by ptwarehouses
+// InsertSite type - DELETED: insertSiteSchema was removed
 
 export type Item = typeof items.$inferSelect;
 export type InsertItem = z.infer<typeof insertItemSchema>;
 
-export type StorageLocation = typeof storageLocations.$inferSelect;
-export type InsertStorageLocation = z.infer<typeof insertStorageLocationSchema>;
+// StorageLocation type - DELETED: storageLocations table was replaced by ptwarehouses
+// InsertStorageLocation type - DELETED: insertStorageLocationSchema was removed
 
 export type Inventory = typeof inventory.$inferSelect;
 export type InsertInventory = z.infer<typeof insertInventorySchema>;
@@ -9529,11 +9523,10 @@ export type InsertInventoryLot = z.infer<typeof insertInventoryLotSchema>;
 export type SalesOrder = typeof salesOrders.$inferSelect;
 export type InsertSalesOrder = z.infer<typeof insertSalesOrderSchema>;
 
-export type SalesOrderLine = typeof salesOrderLines.$inferSelect;
-export type InsertSalesOrderLine = z.infer<typeof insertSalesOrderLineSchema>;
+// SalesOrderLine type - DELETED: salesOrderLines table was replaced by ptsalesorderlines
+// InsertSalesOrderLine type - DELETED: insertSalesOrderLineSchema was removed
 
-export type SalesOrderLineDistribution = typeof salesOrderLineDistributions.$inferSelect;
-export type InsertSalesOrderLineDistribution = z.infer<typeof insertSalesOrderLineDistributionSchema>;
+// SalesOrderLineDistribution and InsertSalesOrderLineDistribution types - DELETED: related tables/schemas were removed
 
 export type Stock = typeof stocks.$inferSelect;
 export type InsertStock = z.infer<typeof insertStockSchema>;
@@ -9541,14 +9534,13 @@ export type InsertStock = z.infer<typeof insertStockSchema>;
 export type PurchaseOrder = typeof purchaseOrders.$inferSelect;
 export type InsertPurchaseOrder = z.infer<typeof insertPurchaseOrderSchema>;
 
-export type PurchaseOrderLine = typeof purchaseOrderLines.$inferSelect;
-export type InsertPurchaseOrderLine = z.infer<typeof insertPurchaseOrderLineSchema>;
+// PurchaseOrderLine type - DELETED: purchaseOrderLines table was replaced by ptpurchasestostock
+// InsertPurchaseOrderLine type - DELETED: insertPurchaseOrderLineSchema was removed
 
-export type TransferOrder = typeof transferOrders.$inferSelect;
-export type InsertTransferOrder = z.infer<typeof insertTransferOrderSchema>;
+// TransferOrder type - DELETED: transferOrders table was replaced by pttransferorders
+// InsertTransferOrder type - DELETED: insertTransferOrderSchema was removed
 
-export type TransferOrderLine = typeof transferOrderLines.$inferSelect;
-export type InsertTransferOrderLine = z.infer<typeof insertTransferOrderLineSchema>;
+// TransferOrderLine and InsertTransferOrderLine types - DELETED: related tables/schemas were removed
 
 export type BillOfMaterial = typeof billsOfMaterial.$inferSelect;
 export type InsertBillOfMaterial = z.infer<typeof insertBillOfMaterialSchema>;
