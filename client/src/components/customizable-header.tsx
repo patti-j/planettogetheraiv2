@@ -239,7 +239,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const [showHeaderText, setShowHeaderText] = useState<boolean>(true);
   const [tempShowHeaderText, setTempShowHeaderText] = useState<boolean>(true);
-  const [uiDensity, setUiDensity] = useState<'compressed' | 'standard' | 'comfortable'>('standard');
+  const [uiDensity, setUiDensity] = useState<'compact' | 'compressed' | 'standard' | 'comfortable'>('standard');
   const { addRecentPage } = useNavigation();
 
   // Widget state
@@ -315,7 +315,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
   // Save UI density
   const saveDensityMutation = useMutation({
-    mutationFn: async (density: 'compressed' | 'standard' | 'comfortable') => {
+    mutationFn: async (density: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
       const updatedPreferences = {
         ...(preferences as any),
         dashboardLayout: {
@@ -331,7 +331,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   });
 
   // Handle density change
-  const handleDensityChange = (density: 'compressed' | 'standard' | 'comfortable') => {
+  const handleDensityChange = (density: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
     setUiDensity(density);
     saveDensityMutation.mutate(density);
   };
@@ -534,13 +534,21 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
               >
                 <Layout className="h-4 w-4" />
                 {showHeaderText && <span className="hidden lg:inline text-sm">
-                  {uiDensity === 'compressed' ? 'Compressed' : 
+                  {uiDensity === 'compact' ? 'Compact' : 
+                   uiDensity === 'compressed' ? 'Compressed' : 
                    uiDensity === 'comfortable' ? 'Comfortable' : 'Standard'}
                 </span>}
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem 
+                onClick={() => handleDensityChange('compact')}
+                className={cn("flex items-center gap-2", uiDensity === 'compact' && "bg-accent")}
+              >
+                <Minus className="h-3 w-3" />
+                <span>Compact</span>
+              </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleDensityChange('compressed')}
                 className={cn("flex items-center gap-2", uiDensity === 'compressed' && "bg-accent")}

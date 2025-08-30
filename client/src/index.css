@@ -1714,6 +1714,19 @@ div[data-radix-tooltip-content] {
 }
 
 /* UI Density Settings */
+[data-ui-density="compact"] {
+  --density-text-sm: 0.625rem; /* 10px */
+  --density-text-base: 0.6875rem; /* 11px */
+  --density-text-lg: 0.75rem; /* 12px */
+  --density-spacing-xs: 0.125rem; /* 2px */
+  --density-spacing-sm: 0.25rem; /* 4px */
+  --density-spacing-md: 0.375rem; /* 6px */
+  --density-spacing-lg: 0.5rem; /* 8px */
+  --density-height-sm: 1.5rem; /* 24px */
+  --density-height-md: 1.75rem; /* 28px */
+  --density-height-lg: 2rem; /* 32px */
+}
+
 [data-ui-density="compressed"] {
   --density-text-sm: 0.75rem; /* 12px */
   --density-text-base: 0.8125rem; /* 13px */
@@ -1772,6 +1785,12 @@ div[data-radix-tooltip-content] {
   font-size: var(--density-text-sm);
 }
 
+[data-ui-density="compact"] .btn,
+[data-ui-density="compact"] button {
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  min-height: var(--density-height-sm);
+}
+
 [data-ui-density="compressed"] .btn,
 [data-ui-density="compressed"] button {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
@@ -1791,6 +1810,15 @@ div[data-radix-tooltip-content] {
 }
 
 /* Card and component spacing */
+[data-ui-density="compact"] .card,
+[data-ui-density="compact"] .p-4 {
+  padding: var(--density-spacing-xs) !important;
+}
+
+[data-ui-density="compact"] .p-6 {
+  padding: var(--density-spacing-sm) !important;
+}
+
 [data-ui-density="compressed"] .card,
 [data-ui-density="compressed"] .p-4 {
   padding: var(--density-spacing-sm) !important;
@@ -1810,6 +1838,11 @@ div[data-radix-tooltip-content] {
 }
 
 /* Table row height adjustments */
+[data-ui-density="compact"] .table tr,
+[data-ui-density="compact"] tbody tr {
+  height: var(--density-height-sm);
+}
+
 [data-ui-density="compressed"] .table tr,
 [data-ui-density="compressed"] tbody tr {
   height: var(--density-height-sm);
@@ -1826,6 +1859,12 @@ div[data-radix-tooltip-content] {
 }
 
 /* Navigation and menu item spacing */
+[data-ui-density="compact"] .navigation-item,
+[data-ui-density="compact"] .menu-item {
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  font-size: var(--density-text-sm);
+}
+
 [data-ui-density="compressed"] .navigation-item,
 [data-ui-density="compressed"] .menu-item {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
@@ -1839,6 +1878,14 @@ div[data-radix-tooltip-content] {
 }
 
 /* Form input height adjustments */
+[data-ui-density="compact"] input,
+[data-ui-density="compact"] select,
+[data-ui-density="compact"] textarea {
+  min-height: var(--density-height-sm);
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  font-size: var(--density-text-sm);
+}
+
 [data-ui-density="compressed"] input,
 [data-ui-density="compressed"] select,
 [data-ui-density="compressed"] textarea {
