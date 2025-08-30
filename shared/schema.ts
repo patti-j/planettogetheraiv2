@@ -867,54 +867,27 @@ export const insertScenarioOperationSchema = createInsertSchema(scenarioOperatio
 
 export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({ id: true });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
-  id: undefined
-});
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({ id: true });
 
 // Systems Management Insert Schemas
 export const insertSystemUserSchema = createInsertSchema(systemUsers).omit({ id: true, createdAt: true, updatedAt: true });
 
 export const insertSystemHealthSchema = createInsertSchema(systemHealth).omit({ id: true, timestamp: true });
 
-export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined
-});
+export const insertSystemEnvironmentSchema = createInsertSchema(systemEnvironments).omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined
-});
+export const insertSystemUpgradeSchema = createInsertSchema(systemUpgrades).omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog, {
-  id: undefined,
-  timestamp: undefined
-});
+export const insertSystemAuditLogSchema = createInsertSchema(systemAuditLog).omit({ id: true, timestamp: true });
 
-export const insertSystemSettingsSchema = createInsertSchema(systemSettings, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined
-});
+export const insertSystemSettingsSchema = createInsertSchema(systemSettings).omit({ id: true, createdAt: true, updatedAt: true });
 
 // Disruption Management Insert Schemas
-export const insertDisruptionSchema = createInsertSchema(disruptions, {
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined
-});
+export const insertDisruptionSchema = createInsertSchema(disruptions).omit({ id: true, createdAt: true, updatedAt: true });
 
-export const insertDisruptionActionSchema = createInsertSchema(disruptionActions, {
-  id: undefined,
-  createdAt: undefined
-});
+export const insertDisruptionActionSchema = createInsertSchema(disruptionActions).omit({ id: true, createdAt: true });
 
-export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations, {
-  id: undefined,
-  createdAt: undefined
-});
+export const insertDisruptionEscalationSchema = createInsertSchema(disruptionEscalations).omit({ id: true, createdAt: true });
 
 
 

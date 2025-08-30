@@ -240,7 +240,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createCompanyOnboarding({
         companyName: companyName,
         industry: "trial",
-        size: "small",
         description: "Trial evaluation",
         features: ["production-scheduling"],
         completedSteps: ["welcome", "company", "features"],
@@ -1807,10 +1806,10 @@ Rules:
       console.log("Session ID:", req.sessionID);
       console.log("Authorization header:", req.headers.authorization);
       console.log("Session userId:", req.session?.userId);
-      console.log("Session isDemo:", req.session?.isDemo);
+      console.log("Session isDemo:", (req.session as any)?.isDemo);
       
       let userId = req.session?.userId;
-      let isDemo = req.session?.isDemo;
+      let isDemo = (req.session as any)?.isDemo;
       
       // Check for token in Authorization header if session fails
       if (!userId && req.headers.authorization) {

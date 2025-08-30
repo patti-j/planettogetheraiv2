@@ -24,6 +24,13 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type Plant, type InsertPlant, type ProductionOrder, type InsertProductionOrder,
   type InsertCapability, type InsertResource,
+  type PlantResource, type InsertPlantResource, type PlannedOrder, type InsertPlannedOrder,
+  type ResourceRequirement, type InsertResourceRequirement, type ResourceRequirementAssignment, type InsertResourceRequirementAssignment,
+  type ProductionVersion, type InsertProductionVersion, type ProductionVersionPhaseFormulationDetail, type InsertProductionVersionPhaseFormulationDetail,
+  type ProductionVersionPhaseRecipeProductOutput, type InsertProductionVersionPhaseRecipeProductOutput,
+  type MemoryBook, type InsertMemoryBook, type MemoryBookEntry, type InsertMemoryBookEntry,
+  type MemoryBookCollaborator, type InsertMemoryBookCollaborator, type MemoryBookEntryHistory, type InsertMemoryBookEntryHistory,
+  type MemoryBookUsage, type InsertMemoryBookUsage,
   type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
   type InsertPTVendor, type InsertCustomer, type InsertFormulation, type InsertFormulationDetail, type InsertMaterialRequirement,
   type InsertBomProductOutput,
@@ -2200,9 +2207,14 @@ export class MemStorage implements Partial<IStorage> {
 
     defaultCapabilities.forEach(cap => {
       const capability: Capability = { 
-        id: this.currentCapabilityId++, 
+        id: this.currentCapabilityId++,
+        publishDate: new Date(),
+        instanceId: "default-instance",
+        capabilityId: this.currentCapabilityId - 1,
         name: cap.name,
-        description: cap.description || null
+        description: cap.description || null,
+        notes: null,
+        externalId: null
       };
       this.capabilities.set(capability.id, capability);
     });
@@ -2219,15 +2231,75 @@ export class MemStorage implements Partial<IStorage> {
     defaultResources.forEach(res => {
       const resource: Resource = { 
         id: this.currentResourceId++, 
+        publishDate: new Date(),
+        instanceId: "default-instance",
+        plantId: 1,
+        departmentId: 1,
+        resourceId: this.currentResourceId - 1,
         name: res.name,
-        type: res.type,
-        status: res.status || "active",
-        capabilities: res.capabilities as number[],
-        photo: null,
-        isDrum: false,
-        drumDesignationDate: null,
-        drumDesignationReason: null,
-        drumDesignationMethod: null
+        description: res.type,
+        notes: null,
+        externalId: null,
+        attributesSummary: null,
+        setupHours: "0",
+        runHours: "0",
+        teardownHours: "0",
+        bottleneck: false,
+        bufferHours: "0",
+        capacityType: "finite",
+        drum: false,
+        overtimeHourlyCost: "0",
+        standardHourlyCost: "0",
+        experimentalDispatcher: null,
+        normalDispatcher: null,
+        workcenter: null,
+        canOffload: false,
+        canPreemptMaterials: false,
+        canPreemptPredecessors: false,
+        canWorkOvertime: false,
+        compatibilityGroup: null,
+        cycleEfficiencyMultiplier: "1",
+        headStartHours: "0",
+        postActivityRestHours: "0",
+        stage: 1,
+        transferHours: "0",
+        consecutiveSetupTimes: false,
+        maxSameSetupHours: "0",
+        setupEfficiencyMultiplier: "1",
+        setupIncluded: null,
+        useOperationSetupTime: false,
+        active: true,
+        sameCell: false,
+        currentProductSetup: null,
+        currentSetupCode: null,
+        currentSetupNumber: "0",
+        resourceType: res.type,
+        alwaysShowPostProcessing: false,
+        attributeCodeTableName: null,
+        bottleneckPercent: "0",
+        bufferHrs: "0",
+        cellName: null,
+        disallowDragAndDrops: false,
+        excludeFromGantts: false,
+        experimentalOptimizeRule: null,
+        ganttRowHeightFactor: 1,
+        headStartDays: "0",
+        imageFileName: null,
+        maxQty: "0",
+        maxQtyPerCycle: "0",
+        maxSameSetupHrs: "0",
+        minQty: "0",
+        minQtyPerCycle: "0",
+        nbrCapabilities: 0,
+        normalOptimizeRule: null,
+        overlappingOnlineIntervals: 0,
+        sequential: false,
+        setupCodeTableName: null,
+        setupHrs: "0",
+        shopViewUsersCount: 0,
+        transferHrs: "0",
+        workcenterExternalId: null,
+        maxVolume: "0"
       };
       this.resources.set(resource.id, resource);
     });
@@ -2445,31 +2517,31 @@ export class MemStorage implements Partial<IStorage> {
       const ptOperations = await db
         .select()
         .from(ptJobOperations)
-        .orderBy(asc(ptJobOperations.sequenceNumber));
+        .orderBy(asc(ptJobOperations.id));
       
       console.log("PT Publish operations count:", ptOperations.length);
       
       // Map PT Publish Job Operations to Operation format for backward compatibility
       const mappedOps: Operation[] = ptOperations.map(op => ({
         id: op.id,
-        name: op.name || `Operation ${op.jobOperationId}`,
+        name: op.name || `Operation ${op.operationId}`,
         description: op.description,
         duration: Number(op.setupHours || 1),
         jobId: Number(op.jobId),
         productionOrderId: Number(op.jobId),
-        order: Number(op.sequenceNumber || 0),
-        status: op.percentComplete === 100 ? 'completed' : 
-                op.percentComplete > 0 ? 'in_progress' : 'planned',
+        order: Number(op.id || 0),
+        status: op.percentCompleted === "100" ? 'completed' : 
+                op.percentCompleted && op.percentCompleted !== "0" ? 'in_progress' : 'planned',
         assignedResourceId: null, // Not available in PT operations
-        startTime: op.scheduledStartDate ? new Date(op.scheduledStartDate) : null,
-        endTime: op.scheduledEndDate ? new Date(op.scheduledEndDate) : null,
+        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
         routingId: null,
-        operationName: op.name || `Operation ${op.jobOperationId}`,
+        operationName: op.name || `Operation ${op.operationId}`,
         standardDuration: Number(op.setupHours || 1),
         actualDuration: null,
         workCenterId: null,
         priority: op.locked ? 5 : 3,
-        completionPercentage: Number(op.percentComplete || 0),
+        completionPercentage: Number(op.percentCompleted || 0),
         qualityCheckRequired: false,
         qualityStatus: null,
         notes: op.notes || null,
