@@ -2530,8 +2530,8 @@ export class MemStorage implements Partial<IStorage> {
         jobId: Number(op.jobId),
         productionOrderId: Number(op.jobId),
         order: Number(op.id || 0),
-        status: op.percentCompleted === "100" ? 'completed' : 
-                op.percentCompleted && op.percentCompleted !== "0" ? 'in_progress' : 'planned',
+        status: op.percentComplete === "100" ? 'completed' : 
+                op.percentComplete && op.percentComplete !== "0" ? 'in_progress' : 'planned',
         assignedResourceId: null, // Not available in PT operations
         startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
         endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
@@ -2541,7 +2541,7 @@ export class MemStorage implements Partial<IStorage> {
         actualDuration: null,
         workCenterId: null,
         priority: op.locked ? 5 : 3,
-        completionPercentage: Number(op.percentCompleted || 0),
+        completionPercentage: Number(op.percentComplete || 0),
         qualityCheckRequired: false,
         qualityStatus: null,
         notes: op.notes || null,
