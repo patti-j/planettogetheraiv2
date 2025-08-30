@@ -232,7 +232,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     <div className="h-screen flex flex-col">
       
       {/* Customizable desktop header - hidden in full screen */}
-      {!isFullScreen && <CustomizableHeader />}
+      {!isFullScreen && (
+        <CustomizableHeader 
+          onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+          isNavPanelOpen={isNavigationOpen}
+          isNavPanelPinned={isNavigationPinned}
+        />
+      )}
       
       {/* Main content area with AI panel on left and navigation on right */}
       <div className="flex flex-1 overflow-hidden">

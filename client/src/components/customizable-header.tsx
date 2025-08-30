@@ -42,7 +42,7 @@ import {
   Package, Factory, TrendingUp, Plus, X, GripVertical, Edit2,
   Clock, Target, AlertTriangle, MessageSquare, HelpCircle, ChevronDown,
   Bot, Sparkles, Globe, Database, Shield, Brain, Briefcase, Maximize, Minimize, Building2,
-  MoreHorizontal, Minus, Equal, Layout
+  MoreHorizontal, Minus, Equal, Layout, Menu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -223,9 +223,12 @@ interface HeaderItem {
 
 interface CustomizableHeaderProps {
   className?: string;
+  onToggleNavPanel?: () => void;
+  isNavPanelOpen?: boolean;
+  isNavPanelPinned?: boolean;
 }
 
-export function CustomizableHeader({ className }: CustomizableHeaderProps) {
+export function CustomizableHeader({ className, onToggleNavPanel, isNavPanelOpen, isNavPanelPinned }: CustomizableHeaderProps) {
   const [location, setLocation] = useLocation();
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
@@ -502,8 +505,28 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         "relative flex items-center px-4 py-2 border-b bg-background",
         className
       )}>
-        {/* Fixed left section - Logo */}
+        {/* Fixed left section - Logo and Navigation */}
         <div className="flex items-center gap-2 flex-shrink-0">
+          {/* Navigation Menu Button - only show when handler exists and navigation is not pinned */}
+          {onToggleNavPanel && !isNavPanelPinned && (
+            <>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  console.log('Navigation Menu button clicked');
+                  onToggleNavPanel();
+                }}
+                className="flex items-center gap-2 px-3 py-2 h-9 bg-primary/10 hover:bg-primary/20 border-primary/30"
+                title="Open navigation menu"
+              >
+                <Menu className="h-4 w-4" />
+                {showHeaderText && <span className="hidden lg:inline text-sm">Menu</span>}
+              </Button>
+              <div className="h-6 w-px bg-border mx-2" />
+            </>
+          )}
+          
           <Button
             variant="ghost"
             onClick={() => setLocation('/')}
