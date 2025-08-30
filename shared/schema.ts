@@ -852,9 +852,7 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {
-  id: z.number().optional(),
-}).omit({ id: true });
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({ id: true });
 
 export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({ id: true });
 
