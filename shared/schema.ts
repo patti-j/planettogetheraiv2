@@ -3092,7 +3092,7 @@ export const algorithmUsageLogs = pgTable("algorithm_usage_logs", {
 // Plant Optimization Settings for Autonomous Optimization
 export const plantOptimizationSettings = pgTable("plant_optimization_settings", {
   id: serial("id").primaryKey(),
-  plantId: integer("plant_id").references(() => plants.id).notNull().unique(),
+  plantId: integer("plant_id").references(() => PT.ptPlants.id).notNull().unique(),
   enabled: boolean("enabled").default(true),
   profile: text("profile").notNull().default("standard"), // standard, aggressive, conservative, custom
   priority: integer("priority").default(1), // 1=high, 2=medium, 3=low
