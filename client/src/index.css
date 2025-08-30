@@ -1712,3 +1712,145 @@ div[data-radix-tooltip-content] {
 .no-scrollbar::-webkit-scrollbar { 
   display: none;  /* Safari and Chrome */
 }
+
+/* UI Density Settings */
+[data-ui-density="compressed"] {
+  --density-text-sm: 0.75rem; /* 12px */
+  --density-text-base: 0.8125rem; /* 13px */
+  --density-text-lg: 0.875rem; /* 14px */
+  --density-spacing-xs: 0.25rem; /* 4px */
+  --density-spacing-sm: 0.375rem; /* 6px */
+  --density-spacing-md: 0.5rem; /* 8px */
+  --density-spacing-lg: 0.625rem; /* 10px */
+  --density-height-sm: 1.75rem; /* 28px */
+  --density-height-md: 2rem; /* 32px */
+  --density-height-lg: 2.25rem; /* 36px */
+}
+
+[data-ui-density="standard"] {
+  --density-text-sm: 0.875rem; /* 14px */
+  --density-text-base: 1rem; /* 16px */
+  --density-text-lg: 1.125rem; /* 18px */
+  --density-spacing-xs: 0.375rem; /* 6px */
+  --density-spacing-sm: 0.5rem; /* 8px */
+  --density-spacing-md: 0.75rem; /* 12px */
+  --density-spacing-lg: 1rem; /* 16px */
+  --density-height-sm: 2rem; /* 32px */
+  --density-height-md: 2.5rem; /* 40px */
+  --density-height-lg: 2.75rem; /* 44px */
+}
+
+[data-ui-density="comfortable"] {
+  --density-text-sm: 1rem; /* 16px */
+  --density-text-base: 1.125rem; /* 18px */
+  --density-text-lg: 1.25rem; /* 20px */
+  --density-spacing-xs: 0.5rem; /* 8px */
+  --density-spacing-sm: 0.75rem; /* 12px */
+  --density-spacing-md: 1rem; /* 16px */
+  --density-spacing-lg: 1.25rem; /* 20px */
+  --density-height-sm: 2.5rem; /* 40px */
+  --density-height-md: 3rem; /* 48px */
+  --density-height-lg: 3.25rem; /* 52px */
+}
+
+/* Apply density variables to UI elements */
+[data-ui-density] .text-sm {
+  font-size: var(--density-text-sm) !important;
+}
+
+[data-ui-density] .text-base {
+  font-size: var(--density-text-base) !important;
+}
+
+[data-ui-density] .text-lg {
+  font-size: var(--density-text-lg) !important;
+}
+
+/* Button density adjustments */
+[data-ui-density] .btn,
+[data-ui-density] button {
+  font-size: var(--density-text-sm);
+}
+
+[data-ui-density="compressed"] .btn,
+[data-ui-density="compressed"] button {
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  min-height: var(--density-height-sm);
+}
+
+[data-ui-density="standard"] .btn,
+[data-ui-density="standard"] button {
+  padding: var(--density-spacing-sm) var(--density-spacing-md);
+  min-height: var(--density-height-md);
+}
+
+[data-ui-density="comfortable"] .btn,
+[data-ui-density="comfortable"] button {
+  padding: var(--density-spacing-md) var(--density-spacing-lg);
+  min-height: var(--density-height-lg);
+}
+
+/* Card and component spacing */
+[data-ui-density="compressed"] .card,
+[data-ui-density="compressed"] .p-4 {
+  padding: var(--density-spacing-sm) !important;
+}
+
+[data-ui-density="compressed"] .p-6 {
+  padding: var(--density-spacing-md) !important;
+}
+
+[data-ui-density="comfortable"] .card,
+[data-ui-density="comfortable"] .p-4 {
+  padding: var(--density-spacing-lg) !important;
+}
+
+[data-ui-density="comfortable"] .p-6 {
+  padding: calc(var(--density-spacing-lg) * 1.5) !important;
+}
+
+/* Table row height adjustments */
+[data-ui-density="compressed"] .table tr,
+[data-ui-density="compressed"] tbody tr {
+  height: var(--density-height-sm);
+}
+
+[data-ui-density="standard"] .table tr,
+[data-ui-density="standard"] tbody tr {
+  height: var(--density-height-md);
+}
+
+[data-ui-density="comfortable"] .table tr,
+[data-ui-density="comfortable"] tbody tr {
+  height: var(--density-height-lg);
+}
+
+/* Navigation and menu item spacing */
+[data-ui-density="compressed"] .navigation-item,
+[data-ui-density="compressed"] .menu-item {
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  font-size: var(--density-text-sm);
+}
+
+[data-ui-density="comfortable"] .navigation-item,
+[data-ui-density="comfortable"] .menu-item {
+  padding: var(--density-spacing-md) var(--density-spacing-lg);
+  font-size: var(--density-text-base);
+}
+
+/* Form input height adjustments */
+[data-ui-density="compressed"] input,
+[data-ui-density="compressed"] select,
+[data-ui-density="compressed"] textarea {
+  min-height: var(--density-height-sm);
+  padding: var(--density-spacing-xs) var(--density-spacing-sm);
+  font-size: var(--density-text-sm);
+}
+
+[data-ui-density="comfortable"] input,
+[data-ui-density="comfortable"] select,
+[data-ui-density="comfortable"] textarea {
+  min-height: var(--density-height-lg);
+  padding: var(--density-spacing-md) var(--density-spacing-lg);
+  font-size: var(--density-text-base);
+}

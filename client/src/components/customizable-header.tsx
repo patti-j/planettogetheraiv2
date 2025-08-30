@@ -600,48 +600,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             )}
           </Button>
 
-          {/* UI Density Control */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="flex items-center gap-2 px-3 py-2 h-9"
-                title="UI Density"
-              >
-                {uiDensity === 'compressed' && <Minus className="h-4 w-4" />}
-                {uiDensity === 'standard' && <Equal className="h-4 w-4" />}
-                {uiDensity === 'comfortable' && <MoreHorizontal className="h-4 w-4" />}
-                {showHeaderText && <span className="hidden lg:inline text-sm">Density</span>}
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem
-                onClick={() => handleDensityChange('compressed')}
-                className={cn("flex items-center gap-2", uiDensity === 'compressed' && "bg-accent")}
-              >
-                <Minus className="h-4 w-4" />
-                Compressed
-                {uiDensity === 'compressed' && <span className="ml-auto text-xs">•</span>}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDensityChange('standard')}
-                className={cn("flex items-center gap-2", uiDensity === 'standard' && "bg-accent")}
-              >
-                <Equal className="h-4 w-4" />
-                Standard
-                {uiDensity === 'standard' && <span className="ml-auto text-xs">•</span>}
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                onClick={() => handleDensityChange('comfortable')}
-                className={cn("flex items-center gap-2", uiDensity === 'comfortable' && "bg-accent")}
-              >
-                <MoreHorizontal className="h-4 w-4" />
-                Comfortable
-                {uiDensity === 'comfortable' && <span className="ml-auto text-xs">•</span>}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
 
           {/* Theme (always visible) */}
           {headerItems.filter(item => ['theme'].includes(item.id)).map(renderHeaderItem)}
