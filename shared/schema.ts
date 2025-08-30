@@ -109,8 +109,8 @@ export const recipeOperations = PT.ptJobOperations;
 
 // Recipe Material Assignments - REMOVED - Using PT tables instead
 
-// Vendors - supplier information for recipe materials and equipment
-export const vendors = pgTable("vendors", {
+// PTVendors - supplier information for recipe materials and equipment
+export const PTvendors = pgTable("ptvendors", {
   id: serial("id").primaryKey(),
   vendorNumber: text("vendor_number").notNull().unique(), // e.g., "VND-001"
   vendorName: text("vendor_name").notNull(),
@@ -4496,7 +4496,7 @@ export const insertRecipeSchema = createInsertSchema(recipes, {
 
 
 // Vendor and Customer Insert Schemas
-export const insertVendorSchema = createInsertSchema(vendors, { 
+export const insertPTVendorSchema = createInsertSchema(PTvendors, { 
   id: undefined,
   createdAt: undefined,
   updatedAt: undefined,
@@ -4537,8 +4537,8 @@ export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 
 
 // Vendor and Customer Types
-export type Vendor = typeof vendors.$inferSelect;
-export type InsertVendor = z.infer<typeof insertVendorSchema>;
+export type PTVendor = typeof PTvendors.$inferSelect;
+export type InsertPTVendor = z.infer<typeof insertPTVendorSchema>;
 
 export type Customer = typeof customers.$inferSelect;
 export type InsertCustomer = z.infer<typeof insertCustomerSchema>;
@@ -8423,7 +8423,7 @@ export const formulations = pgTable("formulations", {
   // productionVersionId: integer("production_version_id").references(() => productionVersions.id),
   
   // Sourcing and supply
-  preferredVendorId: integer("preferred_vendor_id").references(() => vendors.id),
+  preferredVendorId: integer("preferred_vendor_id").references(() => PTvendors.id),
   backupVendors: jsonb("backup_vendors").$type<number[]>().default([]), // Array of vendor IDs
   standardPackSize: numeric("standard_pack_size", { precision: 10, scale: 4 }), // kg, L, units
   packSizeUnit: text("pack_size_unit"), // kg, L, units, drums, bags

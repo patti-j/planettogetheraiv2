@@ -51,7 +51,7 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertPtJobMaterialsSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertMaterialRequirementSchema,
+  insertPTVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertMaterialRequirementSchema,
   insertBomProductOutputSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
@@ -1362,7 +1362,7 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
                 break;
               case 'vendors':
                 for (const item of records) {
-                  const insertVendor = insertVendorSchema.parse({
+                  const insertVendor = insertPTVendorSchema.parse({
                     vendorNumber: item.vendorNumber || `V${Date.now()}`,
                     vendorName: item.vendorName,
                     vendorType: item.vendorType || 'supplier',
@@ -23194,7 +23194,7 @@ Response must be valid JSON:
 
   app.post("/api/vendors", async (req, res) => {
     try {
-      const validation = insertVendorSchema.safeParse(req.body);
+      const validation = insertPTVendorSchema.safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid vendor data", details: validation.error.errors });
       }
@@ -23214,7 +23214,7 @@ Response must be valid JSON:
         return res.status(400).json({ error: "Invalid vendor ID" });
       }
 
-      const validation = insertVendorSchema.partial().safeParse(req.body);
+      const validation = insertPTVendorSchema.partial().safeParse(req.body);
       if (!validation.success) {
         return res.status(400).json({ error: "Invalid vendor data", details: validation.error.errors });
       }

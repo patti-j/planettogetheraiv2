@@ -1,7 +1,7 @@
 import { 
   plants, capabilities, resources, plantResources, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
-  recipes, vendors, customers, salesOrders, productionVersion, formulations, formulationDetails, materialRequirements,
+  recipes, PTvendors, customers, salesOrders, productionVersion, formulations, formulationDetails, materialRequirements,
   bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,
@@ -14,7 +14,7 @@ import {
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Plant, type Capability, type Resource, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
   type ProductionOrder, type InsertProductionOrder,
-  type Recipe, type Vendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type MaterialRequirement,
+  type Recipe, type PTVendor, type Customer, type SalesOrder, type ProductionVersion, type Formulation, type FormulationDetail, type MaterialRequirement,
   type BomProductOutput,
   type ScheduleScenario, type ScenarioOperation, type ScenarioEvaluation, type ScenarioDiscussion,
   type SystemUser, type SystemHealth, type SystemEnvironment, type SystemUpgrade, type SystemAuditLog, type SystemSettings,
@@ -27,7 +27,7 @@ import {
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertPlant, type InsertCapability, type InsertResource,
   type InsertResourceView, type InsertCustomTextLabel, type InsertKanbanConfig, type InsertReportConfig, type InsertDashboardConfig,
-  type InsertVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertMaterialRequirement,
+  type InsertPTVendor, type InsertCustomer, type InsertProductionVersion, type InsertFormulation, type InsertFormulationDetail, type InsertMaterialRequirement,
   type InsertBomProductOutput,
   type InsertScheduleScenario, type InsertScenarioOperation, type InsertScenarioEvaluation, type InsertScenarioDiscussion,
   type InsertSystemUser, type InsertSystemHealth, type InsertSystemEnvironment, type InsertSystemUpgrade, type InsertSystemAuditLog, type InsertSystemSettings,
@@ -1640,7 +1640,7 @@ export interface IStorage {
   getResourcesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Resource>>;
   getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>>;
   getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>>;
-  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
+  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<PTVendor>>;
   getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
   getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
   getDefaultOptimizationScopeConfig(category: string): Promise<OptimizationScopeConfig | undefined>;
@@ -1838,10 +1838,10 @@ export interface IStorage {
 
   // Vendors - Commented out, replaced with PT Publish tables
   /*
-  getVendors(): Promise<Vendor[]>;
-  getVendor(id: number): Promise<Vendor | undefined>;
-  createVendor(vendor: InsertVendor): Promise<Vendor>;
-  updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined>;
+  getVendors(): Promise<PTVendor[]>;
+  getVendor(id: number): Promise<PTVendor | undefined>;
+  createVendor(vendor: InsertPTVendor): Promise<PTVendor>;
+  updateVendor(id: number, vendor: Partial<InsertPTVendor>): Promise<PTVendor | undefined>;
   deleteVendor(id: number): Promise<boolean>;
   */
 
@@ -1934,7 +1934,7 @@ export interface IStorage {
   getCapabilitiesWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Capability>>;
   getProductionOrdersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<ProductionOrder>>;
   getOperationsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Operation>>;
-  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>>;
+  getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<PTVendor>>;
   getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>>;
   getStockItemsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<StockItem>>;
   
@@ -5451,9 +5451,9 @@ export class DatabaseStorage implements IStorage {
 
   async getVendors(): Promise<any[]> {
     try {
-      return await db.select().from(vendors);
+      return await db.select().from(PTvendors);
     } catch (error) {
-      console.error('Error fetching vendors:', error);
+      console.error('Error fetching PTvendors:', error);
       return [];
     }
   }
@@ -5741,7 +5741,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Business Partners
-    if (['vendors', 'customers'].includes(tableName)) {
+    if (['PTvendors', 'customers'].includes(tableName)) {
       return 'Business Partners';
     }
     
@@ -5794,7 +5794,7 @@ export class DatabaseStorage implements IStorage {
       items: 'Products, materials, and inventory items',
       storage_locations: 'Warehouse locations and storage areas',
       inventory: 'Current inventory levels and stock data',
-      vendors: 'Suppliers and vendor information',
+      PTvendors: 'Suppliers and vendor information',
       customers: 'Customer data and contact information',
       sales_orders: 'Customer orders and sales data',
       purchase_orders: 'Procurement orders and purchasing data',
@@ -13741,30 +13741,30 @@ export class DatabaseStorage implements IStorage {
   */
 
   // Vendors
-  async getVendors(): Promise<Vendor[]> {
-    return await db.select().from(vendors).orderBy(vendors.vendorName);
+  async getVendors(): Promise<PTVendor[]> {
+    return await db.select().from(PTvendors).orderBy(PTvendors.vendorName);
   }
 
-  async getVendor(id: number): Promise<Vendor | undefined> {
-    const [vendor] = await db.select().from(vendors).where(eq(vendors.id, id));
+  async getVendor(id: number): Promise<PTVendor | undefined> {
+    const [vendor] = await db.select().from(PTvendors).where(eq(PTvendors.id, id));
     return vendor || undefined;
   }
 
-  async createVendor(vendor: InsertVendor): Promise<Vendor> {
-    const [newVendor] = await db.insert(vendors).values(vendor).returning();
+  async createVendor(vendor: InsertPTVendor): Promise<PTVendor> {
+    const [newVendor] = await db.insert(PTvendors).values(vendor).returning();
     return newVendor;
   }
 
-  async updateVendor(id: number, vendor: Partial<InsertVendor>): Promise<Vendor | undefined> {
-    const [updated] = await db.update(vendors)
+  async updateVendor(id: number, vendor: Partial<InsertPTVendor>): Promise<PTVendor | undefined> {
+    const [updated] = await db.update(PTvendors)
       .set({ ...vendor, updatedAt: new Date() })
-      .where(eq(vendors.id, id))
+      .where(eq(PTvendors.id, id))
       .returning();
     return updated || undefined;
   }
 
   async deleteVendor(id: number): Promise<boolean> {
-    const result = await db.delete(vendors).where(eq(vendors.id, id));
+    const result = await db.delete(PTvendors).where(eq(PTvendors.id, id));
     return result.rowCount > 0;
   }
 
@@ -14318,8 +14318,8 @@ export class DatabaseStorage implements IStorage {
     return this.getDataWithPagination<Operation>('operations', request);
   }
 
-  async getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Vendor>> {
-    return this.getDataWithPagination<Vendor>('vendors', request);
+  async getVendorsWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<PTVendor>> {
+    return this.getDataWithPagination<PTVendor>('ptvendors', request);
   }
 
   async getCustomersWithPagination(request: import("@shared/data-management-types").DataRequest): Promise<import("@shared/data-management-types").DataResponse<Customer>> {
