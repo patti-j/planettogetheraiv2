@@ -36,8 +36,7 @@ export const productionOrders = PT.ptManufacturingOrders;
 export const recipeOperations = PT.ptJobOperations;
 
 // Re-export PT tables with their actual names
-export const ptJobOperations = PT.ptJobOperations;
-export const ptManufacturingOrders = PT.ptManufacturingOrders;
+// Note: ptJobOperations and ptManufacturingOrders are defined later in this file with full schemas
 
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 // REMOVED: Using PT tables instead
