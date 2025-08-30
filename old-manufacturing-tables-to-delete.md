@@ -22,9 +22,9 @@ These are the old manufacturing tables that will be deleted once migration to PT
 
 ### 3. Operation Types
 - **discrete_operations** → replaced by `pt_publish_job_activities`
-- **discrete_operation_phases** → replaced by PT activity phases
+- **discrete_operation_phases** → ✅ DELETED (replaced by PT job operations)
 - **discrete_operation_phase_relationships** → ✅ DELETED (replaced by PT relationships)
-- **discrete_operation_phase_resource_requirements** → replaced by PT resource requirements
+- **discrete_operation_phase_resource_requirements** → ✅ DELETED (replaced by PT resource requirements)
 - **process_operations** → replaced by `pt_publish_job_activities` with activity_type
 - **operation_status_reports** → replaced by PT status tracking
 
@@ -47,9 +47,9 @@ These are the old manufacturing tables that will be deleted once migration to PT
 
 ### 6. Production Versions
 - **production_versions** → replaced by PT production versions
-- **production_version_phase_bom_product_outputs** → replaced by PT structures
+- **production_version_phase_bom_product_outputs** → ✅ DELETED (replaced by PT structures)
 - **production_version_phase_formulation_details** → replaced by PT formulations
-- **production_version_phase_material_requirements** → replaced by PT requirements
+- **production_version_phase_material_requirements** → ✅ DELETED (replaced by PT requirements)
 - **production_version_phase_recipe_product_outputs** → replaced by PT outputs
 
 ### 7. Bills of Material
@@ -68,7 +68,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **stock_optimization_scenarios** → replaced by PT optimization
 
 ### 9. Resource Planning
-- **resource_requirements** → replaced by PT resource requirements
+- **resource_requirements** → ✅ DELETED (replaced by PT resource requirements)
 - **resource_requirement_assignments** → replaced by PT assignments
 - **resource_requirement_blocks** → replaced by PT blocks
 - **resource_allocations** → replaced by PT allocations
