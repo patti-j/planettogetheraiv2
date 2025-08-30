@@ -2221,11 +2221,11 @@ export class MemStorage implements Partial<IStorage> {
 
     // Default resources
     const defaultResources = [
-      { name: "CNC-001", type: "Machine", status: "active", capabilities: [1] },
-      { name: "CNC-002", type: "Machine", status: "active", capabilities: [1] },
-      { name: "WLD-001", type: "Welding Station", status: "active", capabilities: [2] },
-      { name: "ASM-001", type: "Assembly Station", status: "active", capabilities: [3] },
-      { name: "QC-001", type: "Quality Station", status: "active", capabilities: [4] },
+      { name: "CNC-001", resourceType: "Machine", status: "active", capabilities: [1] },
+      { name: "CNC-002", resourceType: "Machine", status: "active", capabilities: [1] },
+      { name: "WLD-001", resourceType: "Welding Station", status: "active", capabilities: [2] },
+      { name: "ASM-001", resourceType: "Assembly Station", status: "active", capabilities: [3] },
+      { name: "QC-001", resourceType: "Quality Station", status: "active", capabilities: [4] },
     ];
 
     defaultResources.forEach(res => {
@@ -2237,7 +2237,7 @@ export class MemStorage implements Partial<IStorage> {
         departmentId: 1,
         resourceId: this.currentResourceId - 1,
         name: res.name,
-        description: res.type,
+        description: res.name + " - " + res.name,
         notes: null,
         externalId: null,
         attributesSummary: null,
@@ -2524,24 +2524,24 @@ export class MemStorage implements Partial<IStorage> {
       // Map PT Publish Job Operations to Operation format for backward compatibility
       const mappedOps: Operation[] = ptOperations.map(op => ({
         id: op.id,
-        name: op.name || `Operation ${op.operationId}`,
+        name: op.name || `Operation ${op.id}`,
         description: op.description,
         duration: Number(op.setupHours || 1),
         jobId: Number(op.jobId),
         productionOrderId: Number(op.jobId),
         order: Number(op.id || 0),
-        status: op.percentComplete === "100" ? 'completed' : 
-                op.percentComplete && op.percentComplete !== "0" ? 'in_progress' : 'planned',
+        status: op.setupRunHours === "100" ? 'completed' : 
+                op.setupRunHours && op.setupRunHours !== "0" ? 'in_progress' : 'planned',
         assignedResourceId: null, // Not available in PT operations
-        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
-        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
+        startTime: op.scheduledStartCalculated ? new Date(op.scheduledStartCalculated) : null,
+        endTime: op.scheduledEndCalculated ? new Date(op.scheduledEndCalculated) : null,
         routingId: null,
-        operationName: op.name || `Operation ${op.operationId}`,
+        operationName: op.name || `Operation ${op.id}`,
         standardDuration: Number(op.setupHours || 1),
         actualDuration: null,
         workCenterId: null,
-        priority: op.locked ? 5 : 3,
-        completionPercentage: Number(op.percentComplete || 0),
+        priority: op.locked === true ? 5 : 3,
+        completionPercentage: Number(op.setupRunHours || 0),
         qualityCheckRequired: false,
         qualityStatus: null,
         notes: op.notes || null,

@@ -127,7 +127,7 @@ function requireAuth(req: any, res: any, next: any) {
     if (token.startsWith('demo_')) {
       const tokenParts = token.split('_');
       if (tokenParts.length >= 3) {
-        userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+        userId = 'demo_' + tokenParts[1]; // Reconstruct as demo_user, demo_exec, etc.
       }
     }
     // Extract user ID from regular token (format: user_ID_timestamp_random)
@@ -240,8 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.createCompanyOnboarding({
         companyName: companyName,
         industry: "trial",
-        description: "Trial evaluation",
-        features: ["production-scheduling"],
+        selectedFeatures: ["production-scheduling"],
         completedSteps: ["welcome", "company", "features"],
         currentStep: "completed",
         teamMembers: 1,
@@ -1827,7 +1826,7 @@ Rules:
           isDemo = true;
           const tokenParts = token.split('_');
           if (tokenParts.length >= 3) {
-            userId = tokenParts[1] + '_' + tokenParts[2]; // demo_exec, demo_prod, etc.
+            userId = tokenParts[0] + '_' + tokenParts[1]; // Reconstruct as demo_user, demo_exec, etc.
             console.log("Demo token userId:", userId);
           }
         }
@@ -1840,7 +1839,7 @@ Rules:
               console.log("=== TOKEN EXPIRED ===", token, "expired at:", new Date(expiresAt).toISOString());
               return res.status(401).json({ message: "Token has expired" });
             }
-            userId = parseInt(tokenParts[1]);
+            userId = Number(tokenParts[1]);
             console.log("Token userId:", userId, "expires:", new Date(expiresAt).toISOString());
           }
         }
