@@ -51,8 +51,8 @@ import {
   insertApiIntegrationSchema, insertApiMappingSchema, insertApiTestSchema, insertApiCredentialSchema, insertApiAuditLogSchema,
   insertSchedulingHistorySchema, insertSchedulingResultSchema, insertAlgorithmPerformanceSchema,
   insertPtJobMaterialsSchema,
-  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertProductionVersionPhaseFormulationDetailSchema, insertMaterialRequirementSchema,
-  insertProductionVersionPhaseBomProductOutputSchema, insertProductionVersionPhaseRecipeProductOutputSchema, insertBomProductOutputSchema,
+  insertVendorSchema, insertCustomerSchema, insertFormulationSchema, insertFormulationDetailSchema, insertMaterialRequirementSchema,
+  insertBomProductOutputSchema,
   insertOptimizationScopeConfigSchema, insertOptimizationRunSchema,
   insertOptimizationProfileSchema, insertProfileUsageHistorySchema,
   insertUserSecretSchema,
@@ -23466,24 +23466,13 @@ Response must be valid JSON:
     }
   });
 
-  // Production Version Phase Formulation Details Junction Management
-  app.get("/api/production-version-phase-formulation-details", async (req, res) => {
+  // DELETED: Production Version Phase endpoints - replaced by PT structures
+  
+  // BOM Product Outputs Management  
+  app.get("/api/bom-product-outputs", requireAuth, async (req, res) => {
     try {
-      const productionVersionId = req.query.productionVersionId ? parseInt(req.query.productionVersionId as string) : undefined;
-      const assignments = await storage.getProductionVersionPhaseFormulationDetails(productionVersionId);
-      res.json(assignments);
-    } catch (error) {
-      console.error("Error fetching production version phase formulation details:", error);
-      res.status(500).json({ error: "Failed to fetch production version phase formulation details" });
-    }
-  });
-
-  app.get("/api/production-version-phase-formulation-details/:id", async (req, res) => {
-    try {
-      const id = parseInt(req.params.id);
-      if (isNaN(id)) {
-        return res.status(400).json({ error: "Invalid assignment ID" });
-      }
+      const outputs = await storage.getBomProductOutputs();
+      res.json(outputs);
 
       const assignment = await storage.getProductionVersionPhaseFormulationDetail(id);
       if (!assignment) {

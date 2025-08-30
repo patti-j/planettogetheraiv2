@@ -5134,113 +5134,15 @@ export type InsertFeedback = z.infer<typeof insertFeedbackSchema>;
 export type FeedbackComment = typeof feedbackComments.$inferSelect;
 export type InsertFeedbackComment = z.infer<typeof insertFeedbackCommentSchema>;
 
-// Production Version Phase Product Output Junction Tables
-// Junction table linking production versions, discrete operation phases, and BOM product outputs
-export const productionVersionPhaseBomProductOutputs = pgTable("production_version_phase_bom_product_outputs", {
-  id: serial("id").primaryKey(),
-  // COMMENTED OUT: productionVersions table not defined
-  // productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
-  // discreteOperationPhaseId: integer("discrete_operation_phase_id"), // TODO: Add reference when discreteOperationPhases table is defined
-  bomProductOutputId: integer("bom_product_output_id").references(() => bomProductOutputs.id, { onDelete: "cascade" }).notNull(),
-  phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
-  phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
-  timingConstraints: jsonb("timing_constraints").$type<{
-    startOffset?: number;
-    endOffset?: number;
-    duration?: number;
-    flexibility?: "fixed" | "flexible" | "preferred";
-  }>(),
-  productionTiming: text("production_timing").default("end_of_phase"), // start_of_phase, during_phase, end_of_phase
-  qualityRequirements: jsonb("quality_requirements").$type<{
-    required_tests?: string[];
-    quality_checkpoints?: string[];
-    acceptance_criteria?: string[];
-  }>(),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-// }, (table) => ({
-//   uniqueProductionVersionPhaseBomOutput: unique().on(table.productionVersionId, table.discreteOperationPhaseId, table.bomProductOutputId),
-});
+// DELETED: productionVersionPhaseBomProductOutputs - Replaced by PT production structures
 
-// Junction table linking production versions, recipe phases, and recipe product outputs
-export const productionVersionPhaseRecipeProductOutputs = pgTable("production_version_phase_recipe_product_outputs", {
-  id: serial("id").primaryKey(),
-  // COMMENTED OUT: productionVersions table not defined
-  // productionVersionId: integer("production_version_id").references(() => productionVersions.id, { onDelete: "cascade" }).notNull(),
-  recipePhaseId: integer("recipe_phase_id").references(() => recipePhases.id, { onDelete: "cascade" }).notNull(),
-  // recipeProductOutputId: integer("recipe_product_output_id").references(() => recipeProductOutputs.id, { onDelete: "cascade" }).notNull(),
-  phaseSpecificQuantity: numeric("phase_specific_quantity", { precision: 10, scale: 4 }),
-  phasePriority: text("phase_priority", { enum: ["low", "medium", "high", "critical"] }).default("medium"),
-  timingConstraints: jsonb("timing_constraints").$type<{
-    startOffset?: number;
-    endOffset?: number;
-    duration?: number;
-    flexibility?: "fixed" | "flexible" | "preferred";
-  }>(),
-  productionTiming: text("production_timing").default("end_of_phase"), // start_of_phase, during_phase, end_of_phase
-  qualityRequirements: jsonb("quality_requirements").$type<{
-    required_tests?: string[];
-    quality_checkpoints?: string[];
-    acceptance_criteria?: string[];
-  }>(),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  uniqueProductionVersionPhaseRecipeOutput: unique().on(table.productionVersionId, table.recipePhaseId, table.recipeProductOutputId),
-}));
+// DELETED: productionVersionPhaseRecipeProductOutputs - Replaced by PT production structures
 
-// Insert schemas for product output junction tables
-export const insertProductionVersionPhaseBomProductOutputSchema = createInsertSchema(productionVersionPhaseBomProductOutputs, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// DELETED: Insert schemas for productionVersionPhase tables - replaced by PT structures
 
-export const insertProductionVersionPhaseRecipeProductOutputSchema = createInsertSchema(productionVersionPhaseRecipeProductOutputs, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
+// DELETED: Types for productionVersionPhase tables - replaced by PT structures
 
-// Types for product output junction tables
-export type ProductionVersionPhaseBomProductOutput = typeof productionVersionPhaseBomProductOutputs.$inferSelect;
-export type InsertProductionVersionPhaseBomProductOutput = z.infer<typeof insertProductionVersionPhaseBomProductOutputSchema>;
-
-export type ProductionVersionPhaseRecipeProductOutput = typeof productionVersionPhaseRecipeProductOutputs.$inferSelect;
-export type InsertProductionVersionPhaseRecipeProductOutput = z.infer<typeof insertProductionVersionPhaseRecipeProductOutputSchema>;
-
-// Relations for production version phase product output junction tables
-export const productionVersionPhaseBomProductOutputsRelations = relations(productionVersionPhaseBomProductOutputs, ({ one }) => ({
-  productionVersion: one(productionVersions, {
-    fields: [productionVersionPhaseBomProductOutputs.productionVersionId],
-    references: [productionVersions.id],
-  }),
-  discreteOperationPhase: one(discreteOperationPhases, {
-    fields: [productionVersionPhaseBomProductOutputs.discreteOperationPhaseId],
-    references: [discreteOperationPhases.id],
-  }),
-  bomProductOutput: one(bomProductOutputs, {
-    fields: [productionVersionPhaseBomProductOutputs.bomProductOutputId],
-    references: [bomProductOutputs.id],
-  }),
-}));
-
-export const productionVersionPhaseRecipeProductOutputsRelations = relations(productionVersionPhaseRecipeProductOutputs, ({ one }) => ({
-  productionVersion: one(productionVersions, {
-    fields: [productionVersionPhaseRecipeProductOutputs.productionVersionId],
-    references: [productionVersions.id],
-  }),
-  recipePhase: one(recipePhases, {
-    fields: [productionVersionPhaseRecipeProductOutputs.recipePhaseId],
-    references: [recipePhases.id],
-  }),
-  // recipeProductOutput: one(recipeProductOutputs, {
-  //   fields: [productionVersionPhaseRecipeProductOutputs.recipeProductOutputId],
-  //   references: [recipeProductOutputs.id],
-  // }),
-}));
+// DELETED: Relations for productionVersionPhase tables - replaced by PT structures
 
 // Onboarding schemas
 export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding, { 
@@ -8454,29 +8356,7 @@ export const formulationDetails = pgTable("formulation_details", {
 });
 
 // Junction table linking formulation details to specific recipe phases within production versions
-export const productionVersionPhaseFormulationDetails = pgTable("production_version_phase_formulation_details", {
-  id: serial("id").primaryKey(),
-  // COMMENTED OUT: productionVersions table not defined
-  // productionVersionId: integer("production_version_id").notNull().references(() => productionVersions.id, { onDelete: "cascade" }),
-  recipePhaseId: integer("recipe_phase_id").notNull().references(() => recipePhases.id, { onDelete: "cascade" }),
-  formulationDetailId: integer("formulation_detail_id").notNull().references(() => formulationDetails.id, { onDelete: "cascade" }),
-  phaseSpecificValue: text("phase_specific_value"), // Override value for this specific phase
-  phaseSpecificNotes: text("phase_specific_notes"), // Phase-specific instructions or notes
-  applicabilityConditions: text("applicability_conditions"), // When this detail applies in the phase
-  criticality: text("criticality").default("medium"), // "low", "medium", "high", "critical"
-  validationRequired: boolean("validation_required").default(false), // Whether this detail requires validation in this phase
-  monitoringFrequency: text("monitoring_frequency"), // "continuous", "batch_start", "batch_end", "hourly", etc.
-  alertThresholds: jsonb("alert_thresholds"), // JSON for threshold configurations
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  // Unique constraint to prevent duplicate assignments
-  uniqueAssignment: unique().on(table.productionVersionId, table.recipePhaseId, table.formulationDetailId),
-  // Indexes for efficient querying
-  productionVersionIdx: index("pvpfd_production_version_idx").on(table.productionVersionId),
-  recipePhaseIdx: index("pvpfd_recipe_phase_idx").on(table.recipePhaseId),
-  formulationDetailIdx: index("pvpfd_formulation_detail_idx").on(table.formulationDetailId),
-}));
+// DELETED: productionVersionPhaseFormulationDetails - Replaced by PT formulation structures
 
 // Formulations - master list of formulations for process manufacturing (similar to BOM but for process manufacturing)
 export const formulations = pgTable("formulations", {
@@ -9247,20 +9127,7 @@ export const productionOrdersRelations = relations(productionOrders, ({ one, man
 // }));
 
 // Relations for production version phase formulation details junction table - COMMENTED OUT: Tables not defined
-// export const productionVersionPhaseFormulationDetailsRelations = relations(productionVersionPhaseFormulationDetails, ({ one }) => ({
-//   productionVersion: one(productionVersions, {
-//     fields: [productionVersionPhaseFormulationDetails.productionVersionId],
-//     references: [productionVersions.id],
-//   }),
-//   recipePhase: one(recipePhases, {
-//     fields: [productionVersionPhaseFormulationDetails.recipePhaseId],
-//     references: [recipePhases.id],
-//   }),
-//   formulationDetail: one(formulationDetails, {
-//     fields: [productionVersionPhaseFormulationDetails.formulationDetailId],
-//     references: [formulationDetails.id],
-//   }),
-// }));
+// DELETED: productionVersionPhaseFormulationDetails relations - Replaced by PT structures
 
 // Enhanced vendor relations to include formulations - COMMENTED OUT: formulations table not defined
 // export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -9608,14 +9475,7 @@ export const insertFormulationDetailSchema = createInsertSchema(formulationDetai
 export type FormulationDetail = typeof formulationDetails.$inferSelect;
 export type InsertFormulationDetail = z.infer<typeof insertFormulationDetailSchema>;
 
-export const insertProductionVersionPhaseFormulationDetailSchema = createInsertSchema(productionVersionPhaseFormulationDetails, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-});
-
-export type ProductionVersionPhaseFormulationDetail = typeof productionVersionPhaseFormulationDetails.$inferSelect;
-export type InsertProductionVersionPhaseFormulationDetail = z.infer<typeof insertProductionVersionPhaseFormulationDetailSchema>;
+// DELETED: productionVersionPhaseFormulationDetails schemas and types - Replaced by PT structures
 
 // Canvas widgets that Max can display on the canvas at user request
 export const canvasWidgets = pgTable("canvas_widgets", {
