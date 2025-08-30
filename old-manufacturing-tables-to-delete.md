@@ -70,7 +70,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 ### 9. Resource Planning
 - **resource_requirements** → ✅ DELETED (replaced by PT resource requirements)
 - **resource_requirement_assignments** → replaced by PT assignments
-- **resource_requirement_blocks** → replaced by PT blocks
+- **resource_requirement_blocks** → ✅ DELETED (replaced by `ptjobresourceblocks`)
 - **resource_allocations** → replaced by PT allocations
 - **resource_absences** → replaced by PT absence tracking
 - **resource_shift_assignments** → replaced by PT shift management

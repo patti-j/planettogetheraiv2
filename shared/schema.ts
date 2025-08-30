@@ -357,49 +357,7 @@ export const scheduleScenarios = pgTable("schedule_scenarios", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Resource Requirement Blocks - unified scheduling blocks for both discrete and process operation resource requirements
-export const resourceRequirementBlocks = pgTable("resource_requirement_blocks", {
-  id: serial("id").primaryKey(),
-  scenarioId: integer("scenario_id").references(() => scheduleScenarios.id).notNull(),
-  
-  // Reference to PT Job Operations resource requirements
-  ptJobOperationId: integer("pt_job_operation_id").references(() => ptJobOperations.id),
-  
-  // Assigned resource and timing (the core scheduling information)
-  assignedResourceId: integer("assigned_resource_id").references(() => resources.id).notNull(),
-  scheduledStartTime: timestamp("scheduled_start_time").notNull(),
-  scheduledEndTime: timestamp("scheduled_end_time").notNull(),
-  
-  // Block properties
-  blockType: text("block_type").notNull().default("operation"), // operation, setup, teardown, maintenance
-  status: text("status").notNull().default("planned"), // planned, confirmed, in_progress, completed, cancelled
-  priority: integer("priority").default(1), // Higher number = higher priority for conflict resolution
-  
-  // Capacity and resource usage
-  requiredCapacity: numeric("required_capacity", { precision: 10, scale: 4 }).default("1.0"), // How much of the resource is needed (0.0-1.0 or more for parallel)
-  actualCapacity: numeric("actual_capacity", { precision: 10, scale: 4 }), // Actual capacity used when executed
-  
-  // Dependencies and constraints
-  predecessorBlockIds: jsonb("predecessor_block_ids").$type<number[]>().default([]), // Must complete before this block
-  successorBlockIds: jsonb("successor_block_ids").$type<number[]>().default([]), // This block must complete before these
-  
-  // Optimization data
-  isBottleneck: boolean("is_bottleneck").default(false),
-  isCriticalPath: boolean("is_critical_path").default(false),
-  floatTime: integer("float_time").default(0), // Available slack time in minutes
-  
-  // Notes and metadata
-  notes: text("notes"),
-  constraints: jsonb("constraints").$type<{
-    cannot_overlap_with?: number[]; // Block IDs that cannot overlap
-    requires_same_resource_as?: number[]; // Block IDs that must use same resource
-    setup_time_minutes?: number;
-    teardown_time_minutes?: number;
-  }>().default({}),
-  
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// resourceRequirementBlocks - DELETED: replaced by ptjobresourceblocks
 
 // Operations within specific scenarios (kept for backward compatibility if needed)
 export const scenarioOperations = pgTable("scenario_operations", {
@@ -905,13 +863,7 @@ export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios
   isArchived: z.boolean().optional(),
 });
 
-export const insertResourceRequirementBlockSchema = createInsertSchema(resourceRequirementBlocks, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
-  scheduledStartTime: z.union([z.string().datetime(), z.date()]),
-  scheduledEndTime: z.union([z.string().datetime(), z.date()]),
-});
+// insertResourceRequirementBlockSchema - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 
 
@@ -2348,8 +2300,8 @@ export type ScheduleScenario = typeof scheduleScenarios.$inferSelect;
 export type InsertScenarioOperation = z.infer<typeof insertScenarioOperationSchema>;
 export type ScenarioOperation = typeof scenarioOperations.$inferSelect;
 
-export type InsertResourceRequirementBlock = z.infer<typeof insertResourceRequirementBlockSchema>;
-export type ResourceRequirementBlock = typeof resourceRequirementBlocks.$inferSelect;
+// InsertResourceRequirementBlock - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
+// ResourceRequirementBlock - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 
 
@@ -12100,29 +12052,12 @@ export type IntegrationLog = typeof integrationLogs.$inferSelect;
 // Additional Relations for Resource Management
 // ========================================
 
-// Relations for Schedule Scenarios - Many-to-many with resource requirement blocks
+// scheduleScenarioRelations - resourceRequirementBlocks relation DELETED: replaced by ptjobresourceblocks
 export const scheduleScenarioRelations = relations(scheduleScenarios, ({ many }) => ({
-  resourceRequirementBlocks: many(resourceRequirementBlocks),
+  // resourceRequirementBlocks: DELETED - replaced by ptjobresourceblocks
 }));
 
-// Relations for Resource Requirement Blocks
-export const resourceRequirementBlocksRelations = relations(resourceRequirementBlocks, ({ one, many }) => ({
-  // Many-to-one with schedule scenarios
-  scenario: one(scheduleScenarios, {
-    fields: [resourceRequirementBlocks.scenarioId],
-    references: [scheduleScenarios.id],
-  }),
-  // Many-to-one with PT Job Operations
-  ptJobOperation: one(ptJobOperations, {
-    fields: [resourceRequirementBlocks.ptJobOperationId],
-    references: [ptJobOperations.id],
-  }),
-  // Many-to-one with assigned resources
-  assignedResource: one(resources, {
-    fields: [resourceRequirementBlocks.assignedResourceId],
-    references: [resources.id],
-  }),
-}));
+// resourceRequirementBlocksRelations - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 // Note: PT Job Activities and PT Job Resources relationships are handled 
 // through the ptJobOperations relationship already established above

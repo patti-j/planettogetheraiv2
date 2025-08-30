@@ -148,8 +148,8 @@ import {
   schedulingHistory, schedulingResults, algorithmPerformance,
   type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
-  resourceRequirementBlocks,
-  type ResourceRequirement, type ResourceRequirementAssignment, type ResourceRequirementBlock,
+  // resourceRequirementBlocks: DELETED - replaced by ptjobresourceblocks
+  type ResourceRequirement, type ResourceRequirementAssignment, // type ResourceRequirementBlock: DELETED
   alerts, alertComments, alertTemplates, alertTrainingData, alertSubscriptions,
   type Alert, type InsertAlert, type AlertComment, type InsertAlertComment,
   type AlertTemplate, type InsertAlertTemplate, type AlertTrainingData, type InsertAlertTrainingData,
@@ -159,7 +159,7 @@ import {
   type UserAuthority, type InsertUserAuthority,
   type AIScheduleRecommendation, type InsertAIScheduleRecommendation,
   type AIRecommendationFeedback, type InsertAIRecommendationFeedback,
-  type InsertResourceRequirement, type InsertResourceRequirementAssignment, type InsertResourceRequirementBlock,
+  type InsertResourceRequirement, type InsertResourceRequirementAssignment, // type InsertResourceRequirementBlock: DELETED
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,
@@ -4146,43 +4146,7 @@ export class DatabaseStorage implements IStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // Resource Requirement Blocks methods
-  async getResourceRequirementBlocks(scenarioId?: number): Promise<ResourceRequirementBlock[]> {
-    if (scenarioId) {
-      return await db.select().from(resourceRequirementBlocks)
-        .where(eq(resourceRequirementBlocks.scenarioId, scenarioId))
-        .orderBy(asc(resourceRequirementBlocks.scheduledStartTime));
-    }
-    return await db.select().from(resourceRequirementBlocks)
-      .orderBy(asc(resourceRequirementBlocks.scheduledStartTime));
-  }
-
-  async getResourceRequirementBlock(id: number): Promise<ResourceRequirementBlock | undefined> {
-    const [block] = await db.select().from(resourceRequirementBlocks)
-      .where(eq(resourceRequirementBlocks.id, id));
-    return block || undefined;
-  }
-
-  async createResourceRequirementBlock(block: InsertResourceRequirementBlock): Promise<ResourceRequirementBlock> {
-    const [newBlock] = await db.insert(resourceRequirementBlocks)
-      .values(block)
-      .returning();
-    return newBlock;
-  }
-
-  async updateResourceRequirementBlock(id: number, block: Partial<InsertResourceRequirementBlock>): Promise<ResourceRequirementBlock | undefined> {
-    const [updatedBlock] = await db.update(resourceRequirementBlocks)
-      .set(block)
-      .where(eq(resourceRequirementBlocks.id, id))
-      .returning();
-    return updatedBlock || undefined;
-  }
-
-  async deleteResourceRequirementBlock(id: number): Promise<boolean> {
-    const result = await db.delete(resourceRequirementBlocks)
-      .where(eq(resourceRequirementBlocks.id, id));
-    return (result.rowCount || 0) > 0;
-  }
+  // Resource Requirement Blocks methods - DELETED: replaced by ptjobresourceblocks
 
   async getResourceViews(): Promise<ResourceView[]> {
     return await db.select().from(resourceViews);
