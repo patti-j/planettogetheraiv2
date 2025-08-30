@@ -150,7 +150,7 @@ import {
   type SchedulingHistory, type SchedulingResult, type AlgorithmPerformance,
   type InsertSchedulingHistory, type InsertSchedulingResult, type InsertAlgorithmPerformance,
   // resourceRequirementBlocks: DELETED - replaced by ptjobresourceblocks
-  type ResourceRequirement, type ResourceRequirementAssignment, // type ResourceRequirementBlock: DELETED
+  // type ResourceRequirement, type ResourceRequirementAssignment, // type ResourceRequirementBlock: DELETED (removed as not available)
   alerts, alertComments, alertTemplates, alertTrainingData, alertSubscriptions,
   type Alert, type InsertAlert, type AlertComment, type InsertAlertComment,
   type AlertTemplate, type InsertAlertTemplate, type AlertTrainingData, type InsertAlertTrainingData,
@@ -160,7 +160,7 @@ import {
   type UserAuthority, type InsertUserAuthority,
   type AIScheduleRecommendation, type InsertAIScheduleRecommendation,
   type AIRecommendationFeedback, type InsertAIRecommendationFeedback,
-  type InsertResourceRequirement, type InsertResourceRequirementAssignment, // type InsertResourceRequirementBlock: DELETED
+  // type InsertResourceRequirement, type InsertResourceRequirementAssignment, // type InsertResourceRequirementBlock: DELETED (removed as not available)
   strategyDocuments, developmentTasks, testSuites, testCases, architectureComponents,
   type StrategyDocument, type DevelopmentTask, type TestSuite, type TestCase, type ArchitectureComponent,
   type InsertStrategyDocument, type InsertDevelopmentTask, type InsertTestSuite, type InsertTestCase, type InsertArchitectureComponent,

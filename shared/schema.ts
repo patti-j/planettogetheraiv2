@@ -2262,12 +2262,12 @@ export const presentationProjects = pgTable("presentation_projects", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Types already defined above - removing duplicates
-export type Capability = typeof capabilities.$inferSelect;
-export type Resource = typeof resources.$inferSelect;
+// Types already defined above - removing duplicates to avoid conflicts
+// export type Capability = typeof capabilities.$inferSelect;
+// export type Resource = typeof resources.$inferSelect;
 // PlantResource now uses PT tables
 // export type PlantResource = typeof plantResources.$inferSelect;
-export type ProductionOrder = typeof productionOrders.$inferSelect;
+// export type ProductionOrder = typeof productionOrders.$inferSelect;
 // PlannedOrder now uses PT tables
 // export type PlannedOrder = typeof plannedOrders.$inferSelect;
 
