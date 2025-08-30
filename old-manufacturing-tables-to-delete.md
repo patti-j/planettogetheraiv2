@@ -16,7 +16,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **resources** → replaced by `pt_publish_resources`
 - **capabilities** → ✅ DELETED (replaced by `ptcapabilities`)
 - **departments** → ✅ DELETED (replaced by `ptdepartments`)
-- **plants** → replaced by `pt_publish_plants`
+- **plants** → ✅ DELETED (replaced by `ptplants`)
 - **plant_resources** → ✅ DELETED (replaced by ptplant→ptdepartment→ptresources relationships)
 - **plant_algorithm_deployments** → plant-specific, needs migration
 
