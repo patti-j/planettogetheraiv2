@@ -1130,14 +1130,13 @@ Create authentic pharmaceutical manufacturing data for ${companyInfo.name} with 
       let response;
       try {
         response = await openai.chat.completions.create({
-          model: "gpt-5", // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
+          model: "gpt-4o", // Use available model
           messages: [
             { role: "system", content: systemPrompt },
             { role: "user", content: finalUserPrompt }
           ],
           response_format: { type: "json_object" },
-          max_tokens: 4000,
-          timeout: 60000 // 60 second timeout
+          max_tokens: 4000
         });
       } catch (apiError: any) {
         console.error(`[AI Bulk Generate] Error generating data:`, apiError.message);
@@ -3372,7 +3371,7 @@ Rules:
   app.delete("/api/operations/:id", async (req, res) => {
     try {
       const id = parseInt(req.params.id);
-      const deleted = await storage.deleteOperation(id);
+      const deleted = await storage.deletePtJobOperation(id);
       if (!deleted) {
         return res.status(404).json({ message: "Operation not found" });
       }

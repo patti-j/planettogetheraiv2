@@ -836,8 +836,7 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
 export const insertAgentActionSchema = createInsertSchema(agentActions).omit({
-  id: true,
-  undoneAt: true
+  id: true
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
@@ -867,15 +866,11 @@ export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
 });
 
 export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+  id: true
 });
 
 export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+  id: true
 });
 
 // insertResourceRequirementBlockSchema - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
@@ -887,14 +882,11 @@ export const insertScenarioOperationSchema = createInsertSchema(scenarioOperatio
 });
 
 export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
-  id: true,
-  createdAt: true,
-  updatedAt: true
+  id: true
 });
 
 export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
-  id: true,
-  createdAt: true
+  id: true
 });
 
 // Systems Management Insert Schemas
