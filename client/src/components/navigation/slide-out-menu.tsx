@@ -18,7 +18,13 @@ interface SlideOutMenuProps {
 export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
   const [location, setLocation] = useLocation();
   const [searchFilter, setSearchFilter] = useState('');
-  const [isPinned, setIsPinned] = useState(false);
+  const [isPinned, setIsPinned] = useState(() => {
+    try {
+      return localStorage.getItem('navigationMenuPinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const [layoutMode, setLayoutMode] = useState<'list' | 'hierarchical'>('list');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { hasPermission } = usePermissions();
@@ -115,7 +121,9 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
       
       switch (e.key) {
         case 'Escape':
-          onClose();
+          if (!isPinned) {
+            onClose();
+          }
           break;
         case 'ArrowUp':
           e.preventDefault();
@@ -209,7 +217,15 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setIsPinned(!isPinned)}
+                onClick={() => {
+                  const newPinned = !isPinned;
+                  setIsPinned(newPinned);
+                  try {
+                    localStorage.setItem('navigationMenuPinned', newPinned.toString());
+                  } catch {
+                    // Ignore localStorage errors
+                  }
+                }}
                 className={cn("h-8 w-8", isPinned && "bg-accent text-accent-foreground")}
                 title={isPinned ? 'Unpin menu' : 'Pin menu open'}
               >
