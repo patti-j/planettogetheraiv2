@@ -2640,30 +2640,26 @@ export class DatabaseStorage {
   }
   // Plants
   async getPlants(): Promise<Plant[]> {
-    const result = await db.select({
-      id: ptPlants.id,
-      name: ptPlants.name,
-      location: sql<string>`CASE 
-        WHEN ${ptPlants.city} IS NOT NULL AND ${ptPlants.state} IS NOT NULL THEN CONCAT(${ptPlants.city}, ', ', ${ptPlants.state})
-        WHEN ${ptPlants.city} IS NOT NULL THEN ${ptPlants.city}
-        WHEN ${ptPlants.country} IS NOT NULL THEN ${ptPlants.country}
-        ELSE 'Location not specified'
-      END`,
-      address: ptPlants.address,
-      city: ptPlants.city,
-      state: ptPlants.state,
-      country: ptPlants.country,
-      postalCode: ptPlants.postalCode,
-      latitude: ptPlants.latitude,
-      longitude: ptPlants.longitude,
-      timezone: ptPlants.timezone,
-      isActive: ptPlants.isActive,
-      plantType: ptPlants.plantType,
-      capacity: ptPlants.capacity,
-      operationalMetrics: ptPlants.operationalMetrics
-    }).from(ptPlants).orderBy(asc(ptPlants.name));
-    
-    return result;
+    try {
+      console.log('Getting plants from database...');
+      const result = await db.select().from(ptPlants);
+      console.log('Raw query result:', result?.length || 0, 'plants found');
+      
+      // Transform the result to include computed location field
+      const transformedResult = result.map((plant: any) => ({
+        ...plant,
+        location: plant.city && plant.state 
+          ? `${plant.city}, ${plant.state}`
+          : plant.city || plant.country || 'Location not specified'
+      })) as Plant[];
+      
+      console.log('Transformed result:', transformedResult?.length || 0, 'plants transformed');
+      return transformedResult;
+    } catch (error) {
+      console.error('Error in getPlants():', error);
+      console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+      throw error;
+    }
   }
 
   async getPlant(id: number): Promise<Plant | undefined> {

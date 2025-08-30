@@ -162,22 +162,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.sendFile(path.join(process.cwd(), 'client/public/gantt.umd.js'));
   });
   
-  // Debug: Log all API requests to ensure they hit the right routes
-  app.all('/api/*', (req, res, next) => {
-    console.log(`[API] ${req.method} ${req.originalUrl} - Body:`, req.body ? Object.keys(req.body) : 'none');
-    next();
+  // Temporarily disabled logging middleware
+  // app.all('/api/*', (req, res, next) => {
+  //   console.log(`[API] ${req.method} ${req.originalUrl}`);
+  //   next();
+  // });
+
+  // Test endpoint to verify routing works
+  app.get("/api/test-plants", async (req, res) => {
+    console.log('=== TEST PLANTS ENDPOINT HIT ===');
+    res.json({ message: "Test endpoint works", count: 5 });
   });
 
   // Public plants endpoint for map visualization (no auth required) - MUST BE EARLY
   app.get("/api/plants/map", async (req, res) => {
+    console.log('=== PLANTS MAP ENDPOINT HIT ===');
     try {
-      const plants = await storage.getPlants();
-      if (!plants) {
-        return res.status(500).json({ error: 'Failed to retrieve plants from database' });
+      console.log('[PLANTS MAP] Starting direct database fetch...');
+      
+      // Direct database query to bypass schema compilation issues
+      const result = await db.select().from(schema.ptPlants);
+      console.log('[PLANTS MAP] Plants fetched successfully:', result?.length || 0);
+      
+      if (!result || result.length === 0) {
+        console.error('[PLANTS MAP] No plants found in database');
+        return res.status(404).json({ error: 'No plants found' });
       }
       
       // Return only the data needed for map visualization
-      const mapData = plants.map(plant => ({
+      const mapData = result.map(plant => ({
         id: plant.id,
         name: plant.name,
         latitude: plant.latitude,
@@ -190,9 +203,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         operationalMetrics: plant.operationalMetrics
       }));
       
+      console.log('[PLANTS MAP] Returning map data:', mapData.length, 'plants');
       res.json(mapData);
     } catch (error) {
-      console.error('Error fetching plants for map:', error);
+      console.error('[PLANTS MAP] Error fetching plants for map:', error);
+      console.error('[PLANTS MAP] Error message:', error instanceof Error ? error.message : 'Unknown error');
+      console.error('[PLANTS MAP] Error stack:', error instanceof Error ? error.stack : 'No stack');
       res.status(500).json({ error: 'Failed to fetch plants for map' });
     }
   });
