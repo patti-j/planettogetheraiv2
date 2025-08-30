@@ -3,12 +3,43 @@ import fs from "fs";
 import path from "path";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import session from "express-session";
+import connectPg from "connect-pg-simple";
+
+// Extend session interface
+declare module "express-session" {
+  interface SessionData {
+    userId: number;
+    isDemo: boolean;
+  }
+}
 
 const app = express();
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+
+// Session middleware configuration - must be after CORS and before routes
+const pgSession = connectPg(session);
+app.use(session({
+  store: new pgSession({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    tableName: 'session'
+  }),
+  secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
+  resave: false,
+  saveUninitialized: false,
+  name: 'sessionId', // Change cookie name to avoid conflicts
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: false, 
+    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
+  }
+}));
 
 // CORS
 app.use((req, res, next) => {
