@@ -43,7 +43,7 @@ interface NavigationContextType {
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
 
-const MAX_RECENT_PAGES = 12;
+const DEFAULT_MAX_RECENT_PAGES = 5;
 
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
@@ -115,6 +115,15 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
   
+  // Fetch user preferences to get maxRecentPages setting
+  const { data: userPreferences } = useQuery<any>({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+  
+  // Get max recent pages from user preferences or use default
+  const maxRecentPages = userPreferences?.dashboardLayout?.maxRecentPages || DEFAULT_MAX_RECENT_PAGES;
+  
   // Throttling state to prevent infinite loops
   const [lastSaveTime, setLastSaveTime] = useState<number>(0);
   const [pendingSave, setPendingSave] = useState<RecentPage[] | null>(null);
@@ -150,7 +159,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         isPinned: true
       };
       // Add Getting Started without slicing other pages - increase the limit temporarily
-      return [gettingStartedPage, ...pages.slice(0, MAX_RECENT_PAGES)];
+      return [gettingStartedPage, ...pages.slice(0, maxRecentPages)];
     }
     
     // If Getting Started exists, just make sure it's in the list - don't force pin
@@ -264,10 +273,10 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           } else {
             // First replace old routes, then ensure Getting Started is pinned
             const updatedRoutes = replaceOldRoutes(savedRecentPages);
-            const processedPages = ensureGettingStartedPinned(updatedRoutes.slice(0, MAX_RECENT_PAGES));
+            const processedPages = ensureGettingStartedPinned(updatedRoutes.slice(0, maxRecentPages));
             setRecentPages(processedPages);
             // Only save if auto-pinning or route replacement changed something
-            if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, MAX_RECENT_PAGES))) {
+            if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, maxRecentPages))) {
               saveRecentPages(processedPages);
             }
           }
@@ -403,12 +412,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         const pinnedPages = current.filter(page => page.isPinned);
         const unpinnedPages = current.filter(page => !page.isPinned);
         
-        // New page - add to the unpinned section and limit total to MAX_RECENT_PAGES
+        // New page - add to the unpinned section and limit total to maxRecentPages
         const newPage = { path, label: finalLabel, icon: finalIcon, timestamp: Date.now(), isPinned: false };
         const updatedUnpinned = [newPage, ...unpinnedPages];
         
-        // Combine pinned + unpinned, ensuring we don't exceed MAX_RECENT_PAGES
-        const updated = [...pinnedPages, ...updatedUnpinned].slice(0, MAX_RECENT_PAGES);
+        // Combine pinned + unpinned, ensuring we don't exceed maxRecentPages
+        const updated = [...pinnedPages, ...updatedUnpinned].slice(0, maxRecentPages);
 
         // Apply auto-pinning logic and save to user preferences
         const processedUpdated = ensureGettingStartedPinned(updated);

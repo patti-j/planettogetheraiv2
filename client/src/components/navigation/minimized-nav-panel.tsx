@@ -4,6 +4,8 @@ import { Menu, Home, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useAuth } from '@/hooks/useAuth';
+import { useQuery } from '@tanstack/react-query';
 // Import icons directly instead of using getIconComponent
 import * as Icons from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +36,16 @@ interface MinimizedNavPanelProps {
 
 export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: MinimizedNavPanelProps) {
   const [location, setLocation] = useLocation();
+  const { user } = useAuth();
+  
+  // Fetch user preferences to get maxRecentPages setting
+  const { data: userPreferences } = useQuery<any>({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+  
+  // Get max recent pages from user preferences or use default of 5
+  const maxRecentPages = userPreferences?.dashboardLayout?.maxRecentPages || 5;
   
   // Safe navigation context access with fallback
   let recentPages: any[] = [];
@@ -103,7 +115,7 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
           </Tooltip>
 
           {/* Recent Pages */}
-          {recentPages.slice(0, 8).map((page, index) => {
+          {recentPages.slice(0, maxRecentPages).map((page, index) => {
             const IconComponent = getIconComponent(page.icon || 'FileText');
             const isActive = location === page.path;
             
