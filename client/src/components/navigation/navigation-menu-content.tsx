@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/useAuth';
@@ -25,12 +26,32 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   
   // Safe navigation context access with fallback
   let addRecentPage = (path: string, label: string, icon?: string) => {};
+  let recentPages: any[] = [];
+  let togglePinPage = (path: string) => {};
+  let clearRecentPages = () => {};
   try {
     const navigation = useNavigation();
     addRecentPage = navigation.addRecentPage;
+    recentPages = navigation.recentPages || [];
+    togglePinPage = navigation.togglePinPage;
+    clearRecentPages = navigation.clearRecentPages;
   } catch (error) {
     console.warn('NavigationContext not available, using fallback:', error);
   }
+
+  // Get Lucide icon component from icon name
+  const getIconComponent = (iconName: string) => {
+    const icons: Record<string, any> = {
+      Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, 
+      Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
+      Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
+      GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
+      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown
+    };
+    
+    const IconComponent = icons[iconName] || FileText;
+    return IconComponent;
+  };
 
   // Get flat list of all navigation items for arrow navigation
   const getAllNavigationItems = () => {
@@ -142,6 +163,21 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
             )}
           </div>
         </div>
+
+        {/* Home Button */}
+        <div className="mb-3">
+          <Button
+            variant={location === '/' ? 'default' : 'ghost'}
+            className="w-full justify-start"
+            onClick={() => {
+              setLocation('/');
+              if (!isPinned && onClose) onClose();
+            }}
+          >
+            <Home className="h-4 w-4 mr-2" />
+            Home
+          </Button>
+        </div>
         
         {/* Current Page Indicator */}
         {currentIndex >= 0 && allItems.length > 0 && (
@@ -174,6 +210,90 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
             >
               <X className="h-3 w-3" />
             </Button>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Pages Section */}
+      <div className="p-4 border-b">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground" />
+            <p className="text-sm font-medium text-muted-foreground">Recent Pages</p>
+          </div>
+          {recentPages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearRecentPages}
+              className="h-6 px-2 text-xs"
+            >
+              Clear
+            </Button>
+          )}
+        </div>
+        
+        <div className="space-y-1">
+          {recentPages.length === 0 ? (
+            <p className="text-xs text-muted-foreground text-center py-2">
+              No recent pages
+            </p>
+          ) : (
+            recentPages.map((page) => {
+              const IconComponent = getIconComponent(page.icon || 'FileText');
+              // Find the color from navigation config
+              const getColorForPage = () => {
+                for (const group of navigationGroups) {
+                  const feature = group.features.find((f: any) => f.href === page.path);
+                  if (feature) {
+                    // Convert bg-color to text-color
+                    const bgColor = feature.color;
+                    if (!bgColor) return 'text-blue-500';
+                    if (bgColor.includes('gradient')) return 'text-purple-500';
+                    return bgColor.replace('bg-', 'text-');
+                  }
+                }
+                return 'text-gray-500';
+              };
+
+              return (
+                <Tooltip key={page.path}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant={location === page.path ? 'secondary' : 'ghost'}
+                      className="w-full justify-start group h-9"
+                      onClick={() => {
+                        setLocation(page.path);
+                        if (!isPinned && onClose) onClose();
+                      }}
+                    >
+                      <IconComponent className={cn("h-4 w-4 mr-2 flex-shrink-0", getColorForPage())} />
+                      <span className="flex-1 text-left truncate text-sm">
+                        {page.label}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          togglePinPage(page.path);
+                        }}
+                      >
+                        {page.isPinned ? (
+                          <PinOff className="h-3 w-3" />
+                        ) : (
+                          <Pin className="h-3 w-3" />
+                        )}
+                      </Button>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    <p>{page.label}</p>
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })
           )}
         </div>
       </div>

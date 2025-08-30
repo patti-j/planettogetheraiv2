@@ -3,7 +3,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
 import { BottomDrawer } from './bottom-drawer';
-import { LeftRailNav } from './left-rail-nav';
+import { SlideOutMenu } from './slide-out-menu';
 import TopMenu from '@/components/top-menu';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,16 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [location, setLocation] = useLocation();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
+  const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  
+  // Check if navigation is pinned
+  const [isNavigationPinned, setIsNavigationPinned] = useState(() => {
+    try {
+      return localStorage.getItem('navigationMenuPinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
@@ -179,6 +189,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
+  // Listen for navigation pinned state changes
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const pinned = localStorage.getItem('navigationMenuPinned') === 'true';
+        setIsNavigationPinned(pinned);
+      } catch {
+        // Ignore errors
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 100);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Add keyboard support for exiting fullscreen with Escape key
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -213,7 +243,12 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         <div className="flex-1 flex flex-col">
           
           {/* TopMenu for navigation menu - hidden in full screen */}
-          {!isFullScreen && <TopMenu />}
+          {!isFullScreen && (
+            <TopMenu 
+              onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+              isNavPanelOpen={isNavigationOpen}
+            />
+          )}
           
           {/* Main content area - with bottom padding for activity center */}
           <div className="flex-1 overflow-auto pb-10">
@@ -221,8 +256,15 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </div>
         </div>
         
-        {/* Navigation Rail - now on the right side - hidden in full screen */}
-        {!isFullScreen && <LeftRailNav />}
+        {/* Navigation Panel - Only show when pinned - hidden in full screen */}
+        {!isFullScreen && isNavigationPinned && (
+          <div className="h-full flex flex-col bg-background border-l border-border w-80">
+            <SlideOutMenu 
+              isOpen={true}
+              onClose={() => {}}
+            />
+          </div>
+        )}
       </div>
       
       {/* Bottom drawer for notifications - hidden in full screen */}
@@ -279,6 +321,14 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      )}
+
+      {/* Global Navigation Menu - only show when not pinned */}
+      {!isNavigationPinned && !isFullScreen && (
+        <SlideOutMenu 
+          isOpen={isNavigationOpen}
+          onClose={() => setIsNavigationOpen(false)}
+        />
       )}
     </div>
   );

@@ -598,6 +598,19 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 
                 {/* Role switching controls on the right */}
                 <div className="flex items-center space-x-2 flex-shrink-0">
+                  {/* Navigation toggle - desktop only and when nav panel handler exists */}
+                  {onToggleNavPanel && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={onToggleNavPanel}
+                      className="p-2 h-8 w-8 hover:bg-muted hidden sm:flex"
+                      title="Open navigation menu"
+                    >
+                      <Menu className="h-4 w-4" />
+                    </Button>
+                  )}
+                  
                   {/* Show assigned role switcher for users with multiple assigned roles */}
                   <AssignedRoleSwitcher userId={user?.id || 0} currentRole={currentRoleForSwitcher} />
                 </div>
