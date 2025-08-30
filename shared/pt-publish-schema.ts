@@ -1017,7 +1017,6 @@ export const ptResourcesRelations = relations(ptResources, ({ one, many }) => ({
     references: [ptDepartments.departmentId],
   }),
   resourceCapabilities: many(ptResourceCapabilities),
-  jobActivities: many(ptJobActivities),
   capacityIntervalAssignments: many(ptCapacityIntervalResourceAssignments),
 }));
 
@@ -1118,10 +1117,6 @@ export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => 
   operation: one(ptJobOperations, {
     fields: [ptJobActivities.operationId],
     references: [ptJobOperations.operationId],
-  }),
-  resource: one(ptResources, {
-    fields: [ptJobActivities.resource_id],
-    references: [ptResources.resourceId],
   }),
 }));
 
