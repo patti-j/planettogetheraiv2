@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { db } from "./db";
-import { alerts, ptJobOperations, ptResources } from "../shared/schema";
+import { alerts } from "../shared/alerts-schema";
+import { ptJobOperations, ptResources } from "../shared/schema";
 import { eq, sql, gte, lte, and, desc } from "drizzle-orm";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
