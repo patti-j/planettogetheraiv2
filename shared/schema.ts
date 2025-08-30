@@ -3736,11 +3736,9 @@ export const insertRecommendationActionSchema = createInsertSchema(recommendatio
 });
 
 // Type exports for new tables
-export type Department = typeof departments.$inferSelect;
-export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
-
-export type UserAuthority = typeof userAuthorities.$inferSelect;
-export type InsertUserAuthority = z.infer<typeof insertUserAuthoritySchema>;
+// Remove duplicate Department export - already defined elsewhere
+// export type Department = typeof departments.$inferSelect;
+// export type InsertDepartment = z.infer<typeof insertDepartmentSchema>;
 
 export type AiScheduleRecommendation = typeof aiScheduleRecommendations.$inferSelect;
 export type InsertAiScheduleRecommendation = z.infer<typeof insertAiScheduleRecommendationSchema>;
@@ -3781,8 +3779,9 @@ export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
 
-export type UserAuthority = typeof userAuthorities.$inferSelect;
-export type InsertUserAuthority = typeof userAuthorities.$inferInsert;
+// Remove duplicate UserAuthority export - already defined elsewhere  
+// export type UserAuthority = typeof userAuthorities.$inferSelect;
+// export type InsertUserAuthority = typeof userAuthorities.$inferInsert;
 
 export type AIScheduleRecommendation = typeof aiScheduleRecommendations.$inferSelect;
 export type InsertAIScheduleRecommendation = typeof aiScheduleRecommendations.$inferInsert;
