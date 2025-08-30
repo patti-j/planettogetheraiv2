@@ -835,7 +835,7 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions).omit({
+export const insertAgentActionSchema = createInsertSchema(agentActions, {}).omit({
   id: true,
   createdAt: true
 });
@@ -850,29 +850,29 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
+export const insertResourceViewSchema = createInsertSchema(resourceViews, {}).omit({
   id: true
 });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {}).omit({
   id: true
 });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {}).omit({
   id: true
 });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
+export const insertReportConfigSchema = createInsertSchema(reportConfigs, {}).omit({
   id: true
 });
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {}).omit({
   id: true,
   createdAt: true,
   updatedAt: true
 });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {}).omit({
   id: true,
   createdAt: true,
   updatedAt: true
@@ -882,17 +882,17 @@ export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {}).omit({
   id: true
 });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {}).omit({
   id: true,
   createdAt: true,
   updatedAt: true
 });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {}).omit({
   id: true,
   createdAt: true
 });

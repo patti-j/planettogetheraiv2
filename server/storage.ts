@@ -9,7 +9,6 @@ import {
   businessGoals, goalProgress, goalRisks, goalIssues, goalKpis, goalActions,
   users, roles, permissions, userRoles, rolePermissions, visualFactoryDisplays,
   disruptions, disruptionActions, disruptionEscalations,
-  alerts,
   stockItems, stockTransactions, stockBalances, demandForecasts, demandDrivers, demandHistory, stockOptimizationScenarios, optimizationRecommendations,
   systemIntegrations, integrationJobs, integrationEvents, integrationMappings, integrationTemplates,
   type Capability, type Resource, type ResourceView, type CustomTextLabel, type KanbanConfig, type ReportConfig, type DashboardConfig, type Department,
@@ -21,7 +20,6 @@ import {
   type BusinessGoal, type GoalProgress, type GoalRisk, type GoalIssue, type GoalKpi, type GoalAction,
   type User, type Role, type Permission, type UserRole, type RolePermission, type UserWithRoles,
   type Disruption, type DisruptionAction, type DisruptionEscalation,
-  type Alert,
   type StockItem, type StockTransaction, type StockBalance, type DemandForecast, type DemandDriver, type DemandHistory, type StockOptimizationScenario, type OptimizationRecommendation,
   type SystemIntegration, type IntegrationJob, type IntegrationEvent, type IntegrationMapping, type IntegrationTemplate,
   type InsertCapability, type InsertResource,
@@ -157,7 +155,6 @@ import {
   type AlertSubscription, type InsertAlertSubscription,
   // AI Schedule Recommendations
   userAuthorities, aiScheduleRecommendations, aiRecommendationFeedback,
-  type UserAuthority, type InsertUserAuthority,
   type AIScheduleRecommendation, type InsertAIScheduleRecommendation,
   type AIRecommendationFeedback, type InsertAIRecommendationFeedback,
   // type InsertResourceRequirement, type InsertResourceRequirementAssignment, // type InsertResourceRequirementBlock: DELETED (removed as not available)
