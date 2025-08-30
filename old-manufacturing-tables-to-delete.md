@@ -96,6 +96,8 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **formulation_details** → replaced by PT formulation details
 - **items** → ✅ DELETED (replaced by `ptitems`) (product master)
 - **purchase_orders** → ✅ DELETED (replaced by `ptpurchasestostock`)
+- **sales** → ✅ DELETED (replaced by `ptsalesorders`)
+- **sales_orders** → ✅ DELETED (replaced by `ptsalesorders`)
 - **vendors** → replaced by `pt_publish_vendors`
 
 ## Summary Statistics
