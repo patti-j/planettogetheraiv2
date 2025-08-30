@@ -57,15 +57,26 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
   // Update target pane based on navigation target setting
   React.useEffect(() => {
+    console.log('Navigation useEffect triggered:', { 
+      splitMode, 
+      navigationTarget, 
+      location, 
+      primaryPage, 
+      secondaryPage 
+    });
+    
     if (splitMode !== 'none') {
       if (navigationTarget === 'primary' && location !== primaryPage) {
+        console.log('Updating primary page from', primaryPage, 'to', location);
         setPrimaryPage(location);
       } else if (navigationTarget === 'secondary' && location !== secondaryPage) {
+        console.log('Updating secondary page from', secondaryPage, 'to', location);
         setSecondaryPage(location);
       }
     } else {
       // In single pane mode, always update the primary page
       if (location !== primaryPage) {
+        console.log('Single mode: updating primary page from', primaryPage, 'to', location);
         setPrimaryPage(location);
       }
     }
@@ -123,6 +134,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('Setting navigation target to primary');
                 setNavigationTarget('primary');
               }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
@@ -182,6 +194,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
+                console.log('Setting navigation target to secondary');
                 setNavigationTarget('secondary');
               }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
