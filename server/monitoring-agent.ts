@@ -1,7 +1,6 @@
 import OpenAI from "openai";
 import { db } from "./db";
-import { alerts } from "../shared/alerts-schema";
-import { ptJobOperations, ptResources } from "../shared/schema";
+import { alerts, ptJobOperations, ptResources } from "../shared/schema";
 import { eq, sql, gte, lte, and, desc } from "drizzle-orm";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -335,7 +334,7 @@ export class SystemMonitoringAgent {
         .from(alerts)
         .where(
           and(
-            eq(alerts.type, alertData.type),
+            eq(alerts.type, alertData.type as any),
             eq(alerts.description, alertData.message),
             gte(alerts.createdAt, new Date(Date.now() - 60 * 60 * 1000)) // Last hour
           )
@@ -352,7 +351,7 @@ export class SystemMonitoringAgent {
         description: alertData.message,
         severity: alertData.severity,
         status: 'active',
-        type: alertData.type,
+        type: alertData.type as any,
         metadata: alertData.data,
         plantId: alertData.plantId
       });
