@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import { db } from "./db";
-import { alerts, plants, ptJobOperations, ptResources } from "../shared/schema";
+import { alerts, ptJobOperations, ptResources } from "../shared/schema";
 import { eq, sql, gte, lte, and, desc } from "drizzle-orm";
 
 // the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
@@ -150,10 +150,8 @@ export class SystemMonitoringAgent {
 
   private async collectSystemMetrics(): Promise<SystemMetrics> {
     try {
-      // Get total plants count (PT plants don't have isActive field by default)
-      const activePlantsResult = await db
-        .select({ count: sql`count(*)`.mapWith(Number) })
-        .from(plants);
+      // Get total plants count from actual database table
+      const activePlantsResult = await db.execute(sql`select count(*) from ptplants`);
       
       const activePlants = activePlantsResult[0]?.count || 0;
 

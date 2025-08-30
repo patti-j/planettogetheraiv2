@@ -7,25 +7,6 @@ import { relations } from "drizzle-orm";
 // Core Master Data Tables
 // ============================================
 
-export const ptPlants = pgTable("pt_plants", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 38 }).notNull(),
-  plantId: bigint("plant_id", { mode: "number" }).notNull(),
-  name: text("name"),
-  description: text("description"),
-  notes: text("notes"),
-  bottleneckThreshold: numeric("bottleneck_threshold"),
-  heavyLoadThreshold: numeric("heavy_load_threshold"),
-  externalId: text("external_id"),
-  attributesSummary: text("attributes_summary"),
-  departmentCount: integer("department_count"),
-  stableDays: numeric("stable_days"),
-  dailyOperatingExpense: numeric("daily_operating_expense"),
-  investedCapital: numeric("invested_capital"),
-  annualPercentageRate: numeric("annual_percentage_rate"),
-  isActive: boolean("is_active").default(true), // Added for monitoring agent compatibility
-});
 
 export const ptDepartments = pgTable("pt_departments", {
   id: serial("id").primaryKey(),
@@ -1159,28 +1140,14 @@ export const ptJobMaterialSupplyingActivities = pgTable("pt_job_material_supplyi
 // Table Relations (using numeric PT IDs for efficient joins)
 // ============================================
 
-// Plant Relations
-export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
-  departments: many(ptDepartments),
-  resources: many(ptResources),
-  plantWarehouses: many(ptPlantWarehouses),
-}));
 
 // Department Relations
 export const ptDepartmentsRelations = relations(ptDepartments, ({ one, many }) => ({
-  plant: one(ptPlants, {
-    fields: [ptDepartments.plantId],
-    references: [ptPlants.plantId],
-  }),
   resources: many(ptResources),
 }));
 
 // Resource Relations
 export const ptResourcesRelations = relations(ptResources, ({ one, many }) => ({
-  plant: one(ptPlants, {
-    fields: [ptResources.plantId],
-    references: [ptPlants.plantId],
-  }),
   department: one(ptDepartments, {
     fields: [ptResources.departmentId],
     references: [ptDepartments.departmentId],
@@ -1375,7 +1342,6 @@ export const ptCapacityIntervalResourceAssignmentsRelations = relations(ptCapaci
 // Export Insert Schemas and Types
 // ============================================
 
-export const insertPtPlantsSchema = createInsertSchema(ptPlants);
 export const insertPtDepartmentsSchema = createInsertSchema(ptDepartments);
 export const insertPtResourcesSchema = createInsertSchema(ptResources);
 export const insertPtCapabilitiesSchema = createInsertSchema(ptCapabilities);
@@ -1409,7 +1375,6 @@ export const insertPtProductRulesSchema = createInsertSchema(ptProductRules);
 export const insertPtSystemDataSchema = createInsertSchema(ptSystemData);
 
 // Export Select Types
-export type PtPlant = typeof ptPlants.$inferSelect;
 export type PtDepartment = typeof ptDepartments.$inferSelect;
 export type PtResource = typeof ptResources.$inferSelect;
 export type PtCapability = typeof ptCapabilities.$inferSelect;
@@ -1443,7 +1408,6 @@ export type PtProductRule = typeof ptProductRules.$inferSelect;
 export type PtSystemData = typeof ptSystemData.$inferSelect;
 
 // Export Insert Types
-export type InsertPtPlant = z.infer<typeof insertPtPlantsSchema>;
 export type InsertPtDepartment = z.infer<typeof insertPtDepartmentsSchema>;
 export type InsertPtResource = z.infer<typeof insertPtResourcesSchema>;
 export type InsertPtCapability = z.infer<typeof insertPtCapabilitiesSchema>;
