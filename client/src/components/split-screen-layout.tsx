@@ -120,7 +120,11 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               Primary: {availablePages.find(p => p.path === primaryPage)?.label || primaryPage}
             </div>
             <button
-              onClick={() => setNavigationTarget('primary')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setNavigationTarget('primary');
+              }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
                 navigationTarget === 'primary' 
                   ? 'bg-blue-500 border-blue-500 text-white' 
@@ -175,7 +179,11 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               ))}
             </select>
             <button
-              onClick={() => setNavigationTarget('secondary')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setNavigationTarget('secondary');
+              }}
               className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
                 navigationTarget === 'secondary' 
                   ? 'bg-blue-500 border-blue-500 text-white' 
