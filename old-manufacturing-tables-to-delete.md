@@ -13,7 +13,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **master_production_schedule** → replaced by PT planning tables
 
 ### 2. Resources & Capabilities
-- **resources** → replaced by `pt_publish_resources`
+- **resources** → ✅ DELETED (replaced by `ptresources`)
 - **capabilities** → ✅ DELETED (replaced by `ptcapabilities`)
 - **departments** → ✅ DELETED (replaced by `ptdepartments`)
 - **plants** → ✅ DELETED (replaced by `ptplants`)
@@ -30,7 +30,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 
 ### 4. Work Centers & Routings
 - **work_centers** → replaced by `pt_publish_work_centers`
-- **work_center_resources** → replaced by PT work center relationships
+- **work_center_resources** → ✅ DELETED (replaced by `ptresources`)
 - **routings** → replaced by `pt_publish_routings`
 - **routing_operations** → replaced by `pt_publish_routing_operations`
 
