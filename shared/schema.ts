@@ -9,7 +9,6 @@ import * as PT from "./pt-publish-schema";
 
 // Re-export PT insert schemas
 export { 
-  insertPtPlantsSchema,
   insertPtJobMaterialsSchema, 
   insertPtManufacturingOrdersSchema,
   insertPtJobOperationsSchema,
@@ -5581,15 +5580,7 @@ export type InsertWorkflowActionExecution = z.infer<typeof insertWorkflowActionE
 export type WorkflowMonitoring = typeof workflowMonitoring.$inferSelect;
 export type InsertWorkflowMonitoring = z.infer<typeof insertWorkflowMonitoringSchema>;
 
-// Plant Management Schemas
-export const insertPlantSchema = createInsertSchema(PT.ptPlants).omit({ 
-  id: true,
-  createdAt: true,
-});
-
-// Plant Management Types
-export type Plant = typeof PT.ptPlants.$inferSelect;
-export type InsertPlant = z.infer<typeof insertPlantSchema>;
+// Plant Management Schemas - Temporarily removed PT.ptPlants references
 
 // Extension Studio Tables
 export const extensions = pgTable("extensions", {
@@ -8489,16 +8480,7 @@ export const forecasts = pgTable("forecasts", {
 
 // ===== ERP RELATIONS =====
 
-// Plants Relations
-export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
-  plantResources: many(plantResources),
-  productionOrders: many(productionOrders),
-  departments: many(departments),
-  workCenters: many(workCenters),
-  productionVersions: many(productionVersions),
-  plannedOrders: many(plannedOrders),
-  // storageLocations: DELETED - storageLocations table was replaced by ptwarehouses
-}));
+// Plants Relations - Temporarily removed PT.ptPlants references
 
 // Resources Relations
 export const resourcesRelations = relations(resources, ({ many }) => ({
