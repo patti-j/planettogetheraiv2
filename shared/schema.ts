@@ -36,7 +36,10 @@ export const productionOrders = PT.ptManufacturingOrders;
 export const recipeOperations = PT.ptJobOperations;
 
 // Re-export PT tables with their actual names
-// Note: ptJobOperations and ptManufacturingOrders are defined later in this file with full schemas
+export const ptJobOperations = PT.ptJobOperations;
+export const ptManufacturingOrders = PT.ptManufacturingOrders;
+export const ptCapabilities = PT.ptCapabilities;
+export const ptMetrics = PT.ptMetrics;
 
 // Recipe Phases - subdivisions of operations for more granular control (PP-PI specific)
 // REMOVED: Using PT tables instead
@@ -10935,133 +10938,9 @@ export const ptResources = pgTable("ptresources", {
   setupCodeTableName: text("setup_code_table_name"),
 });
 
-// PT Publish Job Operations - Operations from PlanetTogether
-export const ptJobOperations = pgTable("ptjoboperations", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 255 }).notNull(),
-  jobId: integer("job_id").notNull(),
-  manufacturingOrderId: integer("manufacturing_order_id").notNull(),
-  operationId: integer("operation_id").notNull(),
-  name: text("name"),
-  description: text("description"),
-  setupHours: numeric("setup_hours", { precision: 10, scale: 2 }),
-  requiredStartQty: numeric("required_start_qty", { precision: 15, scale: 5 }),
-  requiredFinishQty: numeric("required_finish_qty", { precision: 15, scale: 5 }),
-  qtyPerCycle: numeric("qty_per_cycle", { precision: 15, scale: 5 }),
-  minutesPerCycle: numeric("minutes_per_cycle", { precision: 10, scale: 2 }),
-  postProcessingHours: numeric("post_processing_hours", { precision: 10, scale: 2 }),
-  overlapTransferQty: numeric("overlap_transfer_qty", { precision: 15, scale: 5 }),
-  canPause: boolean("can_pause").default(true),
-  canSubcontract: boolean("can_subcontract").default(false),
-  dailyCarryingCost: numeric("daily_carrying_cost", { precision: 15, scale: 2 }),
-  compatibilityCode: text("compatibility_code"),
-  batchCode: text("batch_code"),
-});
 
-// PT Publish Capabilities - Resource capabilities from PlanetTogether
-export const ptCapabilities = pgTable("ptcapabilities", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 255 }).notNull(),
-  capabilityId: integer("capability_id").notNull(),
-  name: text("name"),
-  description: text("description"),
-  category: text("category"),
-  isActive: boolean("is_active").default(true),
-});
 
-// PT Publish Metrics - Calculated metrics from PlanetTogether
-export const ptMetrics = pgTable("ptmetrics", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 255 }).notNull(),
-  metricType: text("metric_type").notNull(),
-  metricName: text("metric_name").notNull(),
-  metricValue: numeric("metric_value", { precision: 20, scale: 5 }),
-  metricUnit: text("metric_unit"),
-  plantId: integer("plant_id"),
-  resourceId: integer("resource_id"),
-  jobId: integer("job_id"),
-  calculatedAt: timestamp("calculated_at").defaultNow(),
-});
 
-// PT Publish Manufacturing Orders - Manufacturing orders from PlanetTogether
-export const ptManufacturingOrders = pgTable("ptmanufacturingorders", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 255 }).notNull(),
-  jobId: integer("job_id").notNull(),
-  manufacturingOrderId: integer("manufacturing_order_id").notNull(),
-  name: text("name"),
-  requiredQty: numeric("required_qty", { precision: 15, scale: 5 }),
-  expectedFinishQty: numeric("expected_finish_qty", { precision: 15, scale: 5 }),
-  description: text("description"),
-  productName: text("product_name"),
-  productDescription: text("product_description"),
-  released: boolean("released").default(false),
-  releaseDate: timestamp("release_date"),
-  notes: text("notes"),
-  scheduled: boolean("scheduled").default(false),
-  scheduledStart: timestamp("scheduled_start"),
-  scheduledEnd: timestamp("scheduled_end"),
-  canSpanPlants: boolean("can_span_plants").default(false),
-  currentPathId: integer("current_path_id"),
-  defaultPathId: integer("default_path_id"),
-  family: text("family"),
-  finished: boolean("finished").default(false),
-  frozen: text("frozen"),
-  onHold: text("on_hold"),
-  holdReason: text("hold_reason"),
-  late: boolean("late").default(false),
-  latenessDays: numeric("lateness_days", { precision: 10, scale: 2 }),
-  leadTimeDays: numeric("lead_time_days", { precision: 10, scale: 2 }),
-  locked: text("locked"),
-  lockedPlantId: integer("locked_plant_id"),
-  uom: text("uom"),
-  externalId: text("external_id"),
-  anchored: text("anchored"),
-  breakOffSourceMOName: text("break_off_source_mo_name"),
-  copyRoutingFromTemplate: boolean("copy_routing_from_template").default(false),
-  holdUntil: timestamp("hold_until"),
-  isBreakOff: boolean("is_break_off").default(false),
-  needDate: timestamp("need_date"),
-  percentFinished: integer("percent_finished").default(0),
-  productColor: text("product_color"),
-  useMONeedDate: boolean("use_mo_need_date").default(false),
-  standardHours: numeric("standard_hours", { precision: 10, scale: 2 }),
-  bottlenecks: text("bottlenecks"),
-  defaultPathName: text("default_path_name"),
-  expectedRunHours: numeric("expected_run_hours", { precision: 10, scale: 2 }),
-  expectedSetupHours: numeric("expected_setup_hours", { precision: 10, scale: 2 }),
-  hold: boolean("hold").default(false),
-  isReleased: boolean("is_released").default(false),
-  laborCost: numeric("labor_cost", { precision: 15, scale: 2 }),
-  lockedPlantName: text("locked_plant_name"),
-  machineCost: numeric("machine_cost", { precision: 15, scale: 2 }),
-  materialCost: numeric("material_cost", { precision: 15, scale: 2 }),
-  moNeedDate: boolean("mo_need_date").default(false),
-  preserveRequiredQty: boolean("preserve_required_qty").default(false),
-  releaseDateTime: timestamp("release_date_time"),
-  reportedRunHours: numeric("reported_run_hours", { precision: 10, scale: 2 }),
-  reportedSetupHours: numeric("reported_setup_hours", { precision: 10, scale: 2 }),
-  requestedQty: numeric("requested_qty", { precision: 15, scale: 5 }),
-  schedulingHours: numeric("scheduling_hours", { precision: 10, scale: 2 }),
-  autoJoinGroup: text("auto_join_group"),
-  split: boolean("split").default(false),
-  splitCount: integer("split_count"),
-  splitFromManufacturingOrderId: integer("split_from_manufacturing_order_id"),
-  started: boolean("started").default(false),
-  lockToCurrentAlternatePath: boolean("lock_to_current_alternate_path").default(false),
-  dbrShippingBufferOverride: integer("dbr_shipping_buffer_override"),
-  dbrReleaseDate: timestamp("dbr_release_date"),
-  dbrShippingDueDate: timestamp("dbr_shipping_due_date"),
-  dbrBufferHrs: numeric("dbr_buffer_hrs", { precision: 10, scale: 2 }),
-  shippingBufferCurrentPenetrationPercent: numeric("shipping_buffer_current_penetration_percent", { precision: 5, scale: 2 }),
-  shippingBufferProjectedPenetrationPercent: numeric("shipping_buffer_projected_penetration_percent", { precision: 5, scale: 2 }),
-  drumBufferProjectedPenetrationPercent: numeric("drum_buffer_projected_penetration_percent", { precision: 5, scale: 2 }),
-  drumBufferCurrentPenetrationPercent: numeric("drum_buffer_current_penetration_percent", { precision: 5, scale: 2 }),
-});
 
 // Insert schemas for PT Publish tables
 export const insertPtJobSchema = createInsertSchema(ptJobs).omit({
