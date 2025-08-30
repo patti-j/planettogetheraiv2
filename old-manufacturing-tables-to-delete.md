@@ -59,7 +59,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **bom_product_outputs** → replaced by PT product outputs
 
 ### 8. Inventory & Stock Management
-- **inventory** → replaced by `pt_publish_inventory`
+- **inventory** → ✅ DELETED (replaced by `ptinventories`)
 - **inventory_lots** → replaced by PT lot tracking
 - **stock_items** → replaced by PT stock management
 - **stock_balances** → replaced by PT balances
