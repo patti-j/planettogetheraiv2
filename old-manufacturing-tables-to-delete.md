@@ -79,7 +79,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **user_resource_assignments** → may need to keep for user-resource mapping
 
 ### 10. Forecasting & Planning
-- **forecasts** → replaced by `pt_publish_forecasts`
+- **forecasts** → ✅ DELETED (replaced by `pt_publish_forecasts`)
 - **demand_forecasts** → replaced by PT demand planning
 - **sales_forecasts** → replaced by PT sales forecasting
 - **material_requirements** → replaced by PT MRP tables
@@ -94,7 +94,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 ### 12. Material Management
 - **formulations** → replaced by PT formulations
 - **formulation_details** → replaced by PT formulation details
-- **items** → replaced by `pt_publish_items` (product master)
+- **items** → ✅ DELETED (replaced by `ptitems`) (product master)
 - **vendors** → replaced by `pt_publish_vendors`
 
 ## Summary Statistics
