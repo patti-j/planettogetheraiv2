@@ -7,7 +7,7 @@ import { relations } from "drizzle-orm";
 // Import and re-export PT Publish tables with proper aliasing
 import * as PT from "./pt-publish-schema";
 
-// Re-export PT insert schemas
+// Re-export PT insert schemas with proper names
 export const insertPtPlantsSchema = PT.insertPtPlantsSchema;
 export const insertPtJobMaterialsSchema = PT.insertPtJobMaterialsSchema;
 export const insertPtManufacturingOrdersSchema = PT.insertPtManufacturingOrdersSchema;
@@ -23,10 +23,15 @@ export const insertResourceSchema = PT.insertPtResourcesSchema;
 export const insertProductionOrderSchema = PT.insertPtManufacturingOrdersSchema;
 
 // Using PT tables instead of non-PT tables
+export const ptPlants = PT.ptPlants;
 export const capabilities = PT.ptCapabilities;
 export const resources = PT.ptResources;
 export const plantResources = PT.ptResourceCapabilities; // Using PT ResourceCapabilities table
 export const departments = PT.ptDepartments;
+
+// Re-export PT tables with their actual names
+export const ptJobOperations = PT.ptJobOperations;
+export const ptManufacturingOrders = PT.ptManufacturingOrders;
 
 
 
