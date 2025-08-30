@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'wouter';
 import { Home, Clock, ChevronRight, ChevronLeft, FolderOpen, Pin, PinOff, X, Menu, Minimize2, Maximize2, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,7 @@ import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { SlideOutMenu } from './slide-out-menu';
+import { NavigationMenuContent } from './navigation-menu-content';
 import { navigationGroups } from '@/config/navigation-menu';
 
 interface LeftRailNavProps {
@@ -19,6 +20,13 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
   const [location, setLocation] = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMenuPinned, setIsMenuPinned] = useState(() => {
+    try {
+      return localStorage.getItem('navigationMenuPinned') === 'true';
+    } catch {
+      return false;
+    }
+  });
   const { user } = useAuth();
   // Safe navigation context access with fallback
   let recentPages = [];
@@ -46,6 +54,44 @@ export function LeftRailNav({ onClose }: LeftRailNavProps) {
     const IconComponent = icons[iconName] || FileText;
     return IconComponent;
   };
+
+  // Listen for changes to pinned state from localStorage
+  useEffect(() => {
+    const handleStorageChange = () => {
+      try {
+        const pinned = localStorage.getItem('navigationMenuPinned') === 'true';
+        setIsMenuPinned(pinned);
+      } catch {
+        // Ignore errors
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also listen for local changes
+    const interval = setInterval(handleStorageChange, 100);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
+  // If navigation is pinned, show it in place of regular nav content
+  if (isMenuPinned) {
+    return (
+      <TooltipProvider>
+        <div className="h-full bg-background border-r w-80 flex flex-col">
+          <NavigationMenuContent isPinned={true} onTogglePin={() => {
+            setIsMenuPinned(false);
+            try {
+              localStorage.setItem('navigationMenuPinned', 'false');
+            } catch {}
+          }} />
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <>
