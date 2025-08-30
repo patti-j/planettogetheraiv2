@@ -29,15 +29,13 @@ export const resources = PT.ptResources;
 export const plantResources = PT.ptResourceCapabilities; // Using PT ResourceCapabilities table
 export const departments = PT.ptDepartments;
 
-// Using PT ManufacturingOrders table instead of productionOrders
-export const productionOrders = PT.ptManufacturingOrders;
-
-// Using PT JobOperations table instead of recipeOperations
-export const recipeOperations = PT.ptJobOperations;
-
 // Re-export PT tables with their actual names
 export const ptJobOperations = PT.ptJobOperations;
 export const ptManufacturingOrders = PT.ptManufacturingOrders;
+
+// Create aliases for legacy references
+export const productionOrders = ptManufacturingOrders;
+export const recipeOperations = ptJobOperations;
 export const ptCapabilities = PT.ptCapabilities;
 export const ptMetrics = PT.ptMetrics;
 
