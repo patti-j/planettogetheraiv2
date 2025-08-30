@@ -45,7 +45,9 @@ import {
   Grid3x3,
   LayoutGrid,
   List,
-  Loader2
+  Loader2,
+  ShoppingCart,
+  FileText
 } from 'lucide-react';
 
 // Master data table definitions with metadata
@@ -157,20 +159,54 @@ const masterDataTables = [
     ]
   },
   {
-    id: 'departments',
-    name: 'Departments',
-    description: 'Organizational departments',
+    id: 'ptDepartments',
+    name: 'Departments (PT)',
+    description: 'PT organizational departments',
     icon: Building2,
     category: 'Core',
     columns: [
       { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'departmentId', header: 'Department ID', type: 'number' as const, required: true },
+      { key: 'plantId', header: 'Plant ID', type: 'number' as const, required: true },
       { key: 'name', header: 'Name', type: 'text' as const, required: true },
-      { key: 'code', header: 'Code', type: 'text' as const, required: true },
       { key: 'description', header: 'Description', type: 'text' as const },
-      { key: 'plantId', header: 'Plant ID', type: 'number' as const },
-      { key: 'managerId', header: 'Manager ID', type: 'number' as const },
-      { key: 'costCenter', header: 'Cost Center', type: 'text' as const },
-      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+      { key: 'notes', header: 'Notes', type: 'text' as const },
+      { key: 'externalId', header: 'External ID', type: 'text' as const },
+      { key: 'plantName', header: 'Plant Name', type: 'text' as const },
+    ]
+  },
+  {
+    id: 'ptPurchasesToStock',
+    name: 'Purchase Orders (PT)',
+    description: 'PT purchase to stock orders',
+    icon: ShoppingCart,
+    category: 'Orders',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'purchaseToStockId', header: 'Purchase Order ID', type: 'number' as const, required: true },
+      { key: 'supplierExternalId', header: 'Supplier ID', type: 'text' as const },
+      { key: 'inventoryId', header: 'Inventory ID', type: 'number' as const },
+      { key: 'purchaseOrderExternalId', header: 'PO External ID', type: 'text' as const },
+      { key: 'orderQty', header: 'Order Quantity', type: 'number' as const },
+      { key: 'orderDate', header: 'Order Date', type: 'date' as const },
+      { key: 'expectedReceiptDate', header: 'Expected Receipt', type: 'date' as const },
+    ]
+  },
+  {
+    id: 'ptTransferOrders',
+    name: 'Transfer Orders (PT)',
+    description: 'PT transfer orders',
+    icon: FileText,
+    category: 'Orders',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'transferOrderId', header: 'Transfer Order ID', type: 'number' as const, required: true },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'notes', header: 'Notes', type: 'text' as const },
+      { key: 'externalId', header: 'External ID', type: 'text' as const },
+      { key: 'firm', header: 'Firm', type: 'boolean' as const },
+      { key: 'priority', header: 'Priority', type: 'number' as const },
     ]
   },
   {
