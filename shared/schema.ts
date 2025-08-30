@@ -11129,6 +11129,20 @@ export type Operation = {
   startTime?: Date | null;
   endTime?: Date | null;
   order: number;
+  jobId?: number;
+  productionOrderId?: number;
+  routingId?: number | null;
+  operationName?: string;
+  standardDuration?: number;
+  actualDuration?: number | null;
+  workCenterId?: number | null;
+  priority?: number;
+  completionPercentage?: number;
+  qualityCheckRequired?: boolean;
+  qualityStatus?: string | null;
+  notes?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 // Helper function to convert different operation types to unified Operation type

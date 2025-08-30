@@ -2242,8 +2242,6 @@ export class MemStorage implements Partial<IStorage> {
         externalId: null,
         attributesSummary: null,
         setupHours: "0",
-        runHours: "0",
-        teardownHours: "0",
         bottleneck: false,
         bufferHours: "0",
         capacityType: "finite",
