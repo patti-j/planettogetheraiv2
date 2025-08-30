@@ -31,7 +31,7 @@ import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
 import LaborPlanning from "@/pages/labor-planning";
-import EnterpriseMap from "@/pages/enterprise-map";
+// import EnterpriseMap from "@/pages/enterprise-map"; // Temporarily disabled
 // import DemoPage from "@/pages/demo"; // Commented out - file doesn't exist
 import Onboarding from "@/pages/onboarding";
 import OptimizationStudio from "@/pages/optimization-studio";
@@ -331,12 +331,12 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
-              {/* Global Control Tower */}
-              <Route path="/control-tower">
+              {/* Global Control Tower - Temporarily disabled due to compilation error */}
+              {/* <Route path="/control-tower">
                 <ProtectedRoute feature="analytics" action="view">
                   <EnterpriseMap />
                 </ProtectedRoute>
-              </Route>
+              </Route> */}
               
               {/* Customer & Sales */}
               <Route path="/sales">

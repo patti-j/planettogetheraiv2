@@ -12,7 +12,7 @@ import ScheduleManagement from '@/pages/schedule-management';
 import ProductionPlanning from '@/pages/production-planning';
 import CapacityPlanning from '@/pages/capacity-planning';
 import MasterData from '@/pages/master-data';
-import ControlTower from '@/pages/control-tower';
+// import ControlTower from '@/pages/control-tower'; // Temporarily disabled due to compilation errors
 
 interface SplitScreenLayoutProps {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ const availablePages = [
   { path: '/production-planning', label: 'Production Planning', component: ProductionPlanning },
   { path: '/capacity-planning', label: 'Capacity Planning', component: CapacityPlanning },
   { path: '/master-data', label: 'Master Data', component: MasterData },
-  { path: '/control-tower', label: 'Global Control Tower', component: ControlTower },
+  // { path: '/control-tower', label: 'Global Control Tower', component: ControlTower }, // Temporarily disabled
 ];
 
 function PageRenderer({ path }: { path: string }) {
