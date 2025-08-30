@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { ChevronLeft, Home, Pin, PinOff } from 'lucide-react';
+import { Menu, Home, Pin, PinOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigation } from '@/contexts/NavigationContext';
@@ -69,13 +69,13 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
                 size="icon"
                 onClick={onExpand}
                 className="text-white hover:text-white/80 bg-transparent w-8 h-8"
-                title="Expand navigation panel"
+                title="Open navigation menu"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <Menu className="w-4 h-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="left">
-              <p>Expand navigation</p>
+              <p>Open navigation menu</p>
             </TooltipContent>
           </Tooltip>
         </div>
