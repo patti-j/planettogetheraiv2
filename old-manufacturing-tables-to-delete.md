@@ -15,6 +15,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 ### 2. Resources & Capabilities
 - **resources** → replaced by `pt_publish_resources`
 - **capabilities** → ✅ DELETED (replaced by `ptcapabilities`)
+- **departments** → ✅ DELETED (replaced by `ptdepartments`)
 - **plants** → replaced by `pt_publish_plants`
 - **plant_resources** → replaced by PT resource-plant relationships
 - **plant_algorithm_deployments** → plant-specific, needs migration
@@ -74,7 +75,7 @@ These are the old manufacturing tables that will be deleted once migration to PT
 - **resource_absences** → replaced by PT absence tracking
 - **resource_shift_assignments** → replaced by PT shift management
 - **resource_views** → replaced by PT resource views
-- **department_resources** → replaced by PT department relationships
+- **department_resources** → ✅ DELETED (replaced by PT department relationships)
 - **user_resource_assignments** → may need to keep for user-resource mapping
 
 ### 10. Forecasting & Planning
