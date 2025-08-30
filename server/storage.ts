@@ -2210,11 +2210,11 @@ export class MemStorage implements Partial<IStorage> {
         id: this.currentCapabilityId++,
         publishDate: new Date(),
         instanceId: "default-instance",
-        capabilityId: this.currentCapabilityId - 1,
         name: cap.name,
         description: cap.description || null,
         notes: null,
-        externalId: null
+        externalId: null,
+        capabilityId: this.currentCapabilityId - 1
       };
       this.capabilities.set(capability.id, capability);
     });
@@ -2454,21 +2454,21 @@ export class MemStorage implements Partial<IStorage> {
       },
     ];
 
-    sampleOperations.forEach(opData => {
-      const operation: Operation = {
-        id: this.currentOperationId++,
-        jobId: opData.jobId,
-        name: opData.name,
-        description: opData.description,
-        status: opData.status,
-        duration: opData.duration,
-
-        startTime: opData.startTime,
-        endTime: opData.endTime,
-        order: opData.order,
-      };
-      this.operations.set(operation.id, operation);
-    });
+    // Sample operations are now handled by PT Publish tables - removing legacy code
+    // sampleOperations.forEach(opData => {
+    //   const operation: Operation = {
+    //     id: this.currentOperationId++,
+    //     jobId: opData.jobId,
+    //     name: opData.name,
+    //     description: opData.description,
+    //     status: opData.status,
+    //     duration: opData.duration,
+    //     startTime: opData.startTime,
+    //     endTime: opData.endTime,
+    //     order: opData.order,
+    //   };
+    //   this.operations.set(operation.id, operation);
+    // });
   }
 
   // Capabilities
@@ -2621,22 +2621,16 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async getDefaultResourceView(): Promise<ResourceView | undefined> {
-    return Array.from(this.resourceViews.values()).find(view => view.isDefault);
+    const [view] = await db.select().from(resourceViews).where(eq(resourceViews.isDefault, true));
+    return view;
   }
 
   async setDefaultResourceView(id: number): Promise<void> {
     // First, set all existing views to non-default
-    Array.from(this.resourceViews.values()).forEach(view => {
-      view.isDefault = false;
-      this.resourceViews.set(view.id, view);
-    });
+    await db.update(resourceViews).set({ isDefault: false });
     
     // Then set the specified view as default
-    const view = this.resourceViews.get(id);
-    if (view) {
-      view.isDefault = true;
-      this.resourceViews.set(id, view);
-    }
+    await db.update(resourceViews).set({ isDefault: true }).where(eq(resourceViews.id, id));
   }
 }
 

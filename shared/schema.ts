@@ -1564,12 +1564,12 @@ export const alerts = pgTable("alerts", {
   category: text("category"), // delay, breakdown, quality_issue, shortage, capacity, safety, performance
   
   // Entity associations
-  plantId: integer("plant_id").references(() => PT.ptPlants.id),
-  departmentId: integer("department_id").references(() => departments.id),
-  resourceId: integer("resource_id").references(() => resources.id),
-  jobId: integer("job_id").references(() => productionOrders.id),
-  operationId: integer("operation_id").references(() => ptJobOperations.id),
-  itemId: integer("item_id").references(() => items.id),
+  plantId: integer("plant_id"),
+  departmentId: integer("department_id"),
+  resourceId: integer("resource_id"),
+  jobId: integer("job_id"),
+  operationId: integer("operation_id"),
+  userId: integer("user_id").references(() => users.id), // Changed from itemId to userId
   
   // Alert metadata
   metadata: jsonb("metadata").$type<Record<string, any>>().default({}),

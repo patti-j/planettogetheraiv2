@@ -1808,7 +1808,7 @@ Rules:
       console.log("Session userId:", req.session?.userId);
       console.log("Session isDemo:", (req.session as any)?.isDemo);
       
-      let userId = req.session?.userId;
+      let userId: string | number | undefined = req.session?.userId;
       let isDemo = (req.session as any)?.isDemo;
       
       // Check for token in Authorization header if session fails
