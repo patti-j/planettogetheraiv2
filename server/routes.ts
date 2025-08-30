@@ -236,11 +236,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         department: companyName
       });
 
-      // Create trial onboarding data (removed primaryGoal field)
+      // Create trial onboarding data
       await storage.createCompanyOnboarding({
         companyName: companyName,
         industry: "trial",
-        selectedFeatures: ["production-scheduling"],
         completedSteps: ["welcome", "company", "features"],
         currentStep: "completed",
         teamMembers: 1,

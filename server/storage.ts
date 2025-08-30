@@ -2237,7 +2237,7 @@ export class MemStorage implements Partial<IStorage> {
         departmentId: 1,
         resourceId: this.currentResourceId - 1,
         name: res.name,
-        description: res.name + " - " + res.name,
+        description: res.name + " - " + res.resourceType,
         notes: null,
         externalId: null,
         attributesSummary: null,
@@ -2271,7 +2271,7 @@ export class MemStorage implements Partial<IStorage> {
         currentProductSetup: null,
         currentSetupCode: null,
         currentSetupNumber: "0",
-        resourceType: res.resourceType,
+        // resourceType: res.resourceType || null, // Property doesn't exist in PT table
         alwaysShowPostProcessing: false,
         attributeCodeTableName: null,
         bottleneckPercent: "0",
@@ -2531,8 +2531,8 @@ export class MemStorage implements Partial<IStorage> {
         status: op.setupRunHours === "100" ? 'completed' : 
                 op.setupRunHours && op.setupRunHours !== "0" ? 'in_progress' : 'planned',
         assignedResourceId: null, // Not available in PT operations
-        startTime: op.scheduledStartCalculated ? new Date(op.scheduledStartCalculated) : null,
-        endTime: op.scheduledEndCalculated ? new Date(op.scheduledEndCalculated) : null,
+        startTime: op.scheduledStart ? new Date(op.scheduledStart) : null,
+        endTime: op.scheduledEnd ? new Date(op.scheduledEnd) : null,
         routingId: null,
         operationName: op.name || `Operation ${op.id}`,
         standardDuration: Number(op.setupHours || 1),
