@@ -2221,11 +2221,11 @@ export class MemStorage implements Partial<IStorage> {
 
     // Default resources
     const defaultResources = [
-      { name: "CNC-001", resourceType: "Machine", status: "active", capabilities: [1] },
-      { name: "CNC-002", resourceType: "Machine", status: "active", capabilities: [1] },
-      { name: "WLD-001", resourceType: "Welding Station", status: "active", capabilities: [2] },
-      { name: "ASM-001", resourceType: "Assembly Station", status: "active", capabilities: [3] },
-      { name: "QC-001", resourceType: "Quality Station", status: "active", capabilities: [4] },
+      { name: "CNC-001", resourceType: "Machine" },
+      { name: "CNC-002", resourceType: "Machine" },
+      { name: "WLD-001", resourceType: "Welding Station" },
+      { name: "ASM-001", resourceType: "Assembly Station" },
+      { name: "QC-001", resourceType: "Quality Station" },
     ];
 
     defaultResources.forEach(res => {
