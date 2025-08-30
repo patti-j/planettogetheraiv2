@@ -1739,6 +1739,12 @@ Rules:
       // Update last login
       await storage.updateUserLastLogin(user.id);
       
+      // Set up session for compatibility with /api/auth/me
+      if (req.session) {
+        req.session.userId = user.id;
+        req.session.isDemo = false;
+      }
+      
       // Generate a simple token for token-based authentication with 24-hour expiration
       console.log("=== LOGIN SUCCESS ===");
       const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
@@ -1746,8 +1752,9 @@ Rules:
       
       console.log("Generated token:", token);
       console.log("Token expires at:", new Date(expiresAt).toISOString());
+      console.log("Session userId set to:", user.id);
       
-      // Return user data with token (no session dependency)
+      // Return user data with token
       const { passwordHash, ...userData } = user;
       console.log("=== RETURNING USER DATA ===");
       console.log("User data to return:", JSON.stringify({ ...userData, token }));

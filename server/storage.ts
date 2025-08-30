@@ -2271,7 +2271,7 @@ export class MemStorage implements Partial<IStorage> {
         currentProductSetup: null,
         currentSetupCode: null,
         currentSetupNumber: "0",
-        resourceType: res.type,
+        resourceType: res.resourceType,
         alwaysShowPostProcessing: false,
         attributeCodeTableName: null,
         bottleneckPercent: "0",
@@ -2684,6 +2684,111 @@ export class DatabaseStorage implements IStorage {
   async deletePlant(id: number): Promise<boolean> {
     const result = await db.delete(ptPlants).where(eq(ptPlants.id, id));
     return (result.rowCount || 0) > 0;
+  }
+
+  // Stub implementations for missing interface methods
+  async deleteOperation(id: number): Promise<boolean> {
+    // Stub - using PT operations
+    const result = await db.delete(ptJobOperations).where(eq(ptJobOperations.id, id));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getIntegrations(): Promise<any[]> {
+    // Stub implementation - return empty array
+    return [];
+  }
+
+  async getIntegration(id: number): Promise<any | undefined> {
+    // Stub implementation
+    return undefined;
+  }
+
+  async createIntegration(integration: any): Promise<any> {
+    // Stub implementation
+    throw new Error("Not implemented");
+  }
+
+  async updateIntegration(id: number, integration: any): Promise<any | undefined> {
+    // Stub implementation
+    return undefined;
+  }
+
+  async deleteIntegration(id: number): Promise<boolean> {
+    // Stub implementation
+    return false;
+  }
+
+  // Add more missing methods as stubs
+  async getResourceRequirements(): Promise<ResourceRequirement[]> {
+    return [];
+  }
+
+  async getResourceRequirementsByOperationId(operationId: number): Promise<ResourceRequirement[]> {
+    return [];
+  }
+
+  async getResourceRequirement(id: number): Promise<ResourceRequirement | undefined> {
+    return undefined;
+  }
+
+  async createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement> {
+    throw new Error("Not implemented");
+  }
+
+  async updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined> {
+    return undefined;
+  }
+
+  async deleteResourceRequirement(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]> {
+    return [];
+  }
+
+  async getResourceRequirementAssignmentsByRequirementId(requirementId: number): Promise<ResourceRequirementAssignment[]> {
+    return [];
+  }
+
+  async getResourceRequirementAssignmentsByResourceId(resourceId: number): Promise<ResourceRequirementAssignment[]> {
+    return [];
+  }
+
+  async getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined> {
+    return undefined;
+  }
+
+  async createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment> {
+    throw new Error("Not implemented");
+  }
+
+  async updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined> {
+    return undefined;
+  }
+
+  async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getPlannedOrders(): Promise<PlannedOrder[]> {
+    return [];
+  }
+
+  async getPlannedOrder(id: number): Promise<PlannedOrder | undefined> {
+    return undefined;
+  }
+
+  async createPlannedOrder(order: InsertPlannedOrder): Promise<PlannedOrder> {
+    throw new Error("Not implemented");
+  }
+
+  async updatePlannedOrder(id: number, order: Partial<InsertPlannedOrder>): Promise<PlannedOrder | undefined> {
+    return undefined;
+  }
+
+  async deletePlannedOrder(id: number): Promise<boolean> {
+    return false;
   }
 
   // Departments
@@ -17705,6 +17810,248 @@ export class DatabaseStorage implements IStorage {
         related_insights: []
       }
     ];
+  }
+
+  // Stub methods to satisfy interface - these can be implemented later as needed
+  async getIntegrations(): Promise<any[]> {
+    return [];
+  }
+
+  async getIntegration(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createIntegration(integration: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateIntegration(id: number, integration: any): Promise<any | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteIntegration(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getScheduleOptimizationProfiles(): Promise<any[]> {
+    return [];
+  }
+
+  async getScheduleOptimizationProfile(id: number): Promise<any | undefined> {
+    return undefined;
+  }
+
+  async createScheduleOptimizationProfile(profile: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateScheduleOptimizationProfile(id: number, profile: any): Promise<any | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteScheduleOptimizationProfile(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getJobsByOrderId(orderId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getSchedulingDetails(): Promise<any> {
+    return {};
+  }
+
+  async getSchedulingAnalytics(): Promise<any> {
+    return {};
+  }
+
+  async optimizeSchedule(params: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async rescheduleOperation(id: number, params: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getResourceAvailability(resourceId: number, startDate: Date, endDate: Date): Promise<any[]> {
+    return [];
+  }
+
+  async createSchedulingConstraint(constraint: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getSchedulingConstraints(): Promise<any[]> {
+    return [];
+  }
+
+  async updateSchedulingConstraint(id: number, constraint: any): Promise<any | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteSchedulingConstraint(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getCapacityPlanningData(): Promise<any> {
+    return {};
+  }
+
+  async updateResourceCapacity(resourceId: number, capacity: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getResourceUtilization(resourceId?: number, startDate?: Date, endDate?: Date): Promise<any[]> {
+    return [];
+  }
+
+  async getBottleneckAnalysis(): Promise<any[]> {
+    return [];
+  }
+
+  async getOperationsByJobId(jobId: number): Promise<any[]> {
+    const result = await db.select().from(ptJobOperations).where(eq(ptJobOperations.jobId, jobId));
+    return result;
+  }
+
+  async getProductionVersions(): Promise<ProductionVersion[]> {
+    return [];
+  }
+
+  async getProductionVersion(id: number): Promise<ProductionVersion | undefined> {
+    return undefined;
+  }
+
+  async createProductionVersion(version: InsertProductionVersion): Promise<ProductionVersion> {
+    throw new Error('Not implemented');
+  }
+
+  async updateProductionVersion(id: number, version: Partial<InsertProductionVersion>): Promise<ProductionVersion | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteProductionVersion(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getProductionVersionPhaseFormulationDetails(): Promise<ProductionVersionPhaseFormulationDetail[]> {
+    return [];
+  }
+
+  async getProductionVersionPhaseFormulationDetail(id: number): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
+    return undefined;
+  }
+
+  async createProductionVersionPhaseFormulationDetail(detail: InsertProductionVersionPhaseFormulationDetail): Promise<ProductionVersionPhaseFormulationDetail> {
+    throw new Error('Not implemented');
+  }
+
+  async updateProductionVersionPhaseFormulationDetail(id: number, detail: Partial<InsertProductionVersionPhaseFormulationDetail>): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteProductionVersionPhaseFormulationDetail(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
+    return [];
+  }
+
+  async getProductionVersionPhaseRecipeProductOutput(id: number): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
+    return undefined;
+  }
+
+  async createProductionVersionPhaseRecipeProductOutput(output: InsertProductionVersionPhaseRecipeProductOutput): Promise<ProductionVersionPhaseRecipeProductOutput> {
+    throw new Error('Not implemented');
+  }
+
+  async updateProductionVersionPhaseRecipeProductOutput(id: number, output: Partial<InsertProductionVersionPhaseRecipeProductOutput>): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteProductionVersionPhaseRecipeProductOutput(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getPlannedOrders(): Promise<PlannedOrder[]> {
+    return [];
+  }
+
+  async getPlannedOrder(id: number): Promise<PlannedOrder | undefined> {
+    return undefined;
+  }
+
+  async createPlannedOrder(order: InsertPlannedOrder): Promise<PlannedOrder> {
+    throw new Error('Not implemented');
+  }
+
+  async updatePlannedOrder(id: number, order: Partial<InsertPlannedOrder>): Promise<PlannedOrder | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deletePlannedOrder(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getResourceRequirements(): Promise<ResourceRequirement[]> {
+    return [];
+  }
+
+  async getResourceRequirement(id: number): Promise<ResourceRequirement | undefined> {
+    return undefined;
+  }
+
+  async createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement> {
+    throw new Error('Not implemented');
+  }
+
+  async updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteResourceRequirement(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]> {
+    return [];
+  }
+
+  async getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined> {
+    return undefined;
+  }
+
+  async createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment> {
+    throw new Error('Not implemented');
+  }
+
+  async updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
+    return false;
+  }
+
+  async assignResourceToPlant(plantId: number, resourceId: number, isPrimary?: boolean): Promise<PlantResource> {
+    throw new Error('Not implemented');
+  }
+
+  async removeResourceFromPlant(plantId: number, resourceId: number): Promise<boolean> {
+    return false;
+  }
+
+  async updatePlantResourceAssignment(plantId: number, resourceId: number, updates: Partial<InsertPlantResource>): Promise<PlantResource | undefined> {
+    throw new Error('Not implemented');
+  }
+
+  async getResourcesByPlantId(plantId: number): Promise<any[]> {
+    return [];
+  }
+
+  async getPlantsByResourceId(resourceId: number): Promise<any[]> {
+    return [];
   }
 }
 
