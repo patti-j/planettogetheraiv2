@@ -214,89 +214,91 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
         </div>
       </div>
 
-      {/* Recent Pages Section */}
-      <div className="p-4 border-b">
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <p className="text-sm font-medium text-muted-foreground">Recent Pages</p>
+      {/* Recent Pages Section - Only show in list mode */}
+      {layoutMode === 'list' && (
+        <div className="p-4 border-b">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-4 w-4 text-muted-foreground" />
+              <p className="text-sm font-medium text-muted-foreground">Recent Pages</p>
+            </div>
+            {recentPages.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearRecentPages}
+                className="h-6 px-2 text-xs"
+              >
+                Clear
+              </Button>
+            )}
           </div>
-          {recentPages.length > 0 && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearRecentPages}
-              className="h-6 px-2 text-xs"
-            >
-              Clear
-            </Button>
-          )}
-        </div>
-        
-        <div className="space-y-1">
-          {recentPages.length === 0 ? (
-            <p className="text-xs text-muted-foreground text-center py-2">
-              No recent pages
-            </p>
-          ) : (
-            recentPages.map((page) => {
-              const IconComponent = getIconComponent(page.icon || 'FileText');
-              // Find the color from navigation config
-              const getColorForPage = () => {
-                for (const group of navigationGroups) {
-                  const feature = group.features.find((f: any) => f.href === page.path);
-                  if (feature) {
-                    // Convert bg-color to text-color
-                    const bgColor = feature.color;
-                    if (!bgColor) return 'text-blue-500';
-                    if (bgColor.includes('gradient')) return 'text-purple-500';
-                    return bgColor.replace('bg-', 'text-');
+          
+          <div className="space-y-1">
+            {recentPages.length === 0 ? (
+              <p className="text-xs text-muted-foreground text-center py-2">
+                No recent pages
+              </p>
+            ) : (
+              recentPages.map((page) => {
+                const IconComponent = getIconComponent(page.icon || 'FileText');
+                // Find the color from navigation config
+                const getColorForPage = () => {
+                  for (const group of navigationGroups) {
+                    const feature = group.features.find((f: any) => f.href === page.path);
+                    if (feature) {
+                      // Convert bg-color to text-color
+                      const bgColor = feature.color;
+                      if (!bgColor) return 'text-blue-500';
+                      if (bgColor.includes('gradient')) return 'text-purple-500';
+                      return bgColor.replace('bg-', 'text-');
+                    }
                   }
-                }
-                return 'text-gray-500';
-              };
+                  return 'text-gray-500';
+                };
 
-              return (
-                <Tooltip key={page.path}>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant={location === page.path ? 'secondary' : 'ghost'}
-                      className="w-full justify-start group h-9"
-                      onClick={() => {
-                        setLocation(page.path);
-                        if (!isPinned && onClose) onClose();
-                      }}
-                    >
-                      <IconComponent className={cn("h-4 w-4 mr-2 flex-shrink-0", getColorForPage())} />
-                      <span className="flex-1 text-left truncate text-sm">
-                        {page.label}
-                      </span>
+                return (
+                  <Tooltip key={page.path}>
+                    <TooltipTrigger asChild>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          togglePinPage(page.path);
+                        variant={location === page.path ? 'secondary' : 'ghost'}
+                        className="w-full justify-start group h-9"
+                        onClick={() => {
+                          setLocation(page.path);
+                          if (!isPinned && onClose) onClose();
                         }}
                       >
-                        {page.isPinned ? (
-                          <PinOff className="h-3 w-3" />
-                        ) : (
-                          <Pin className="h-3 w-3" />
-                        )}
+                        <IconComponent className={cn("h-4 w-4 mr-2 flex-shrink-0", getColorForPage())} />
+                        <span className="flex-1 text-left truncate text-sm">
+                          {page.label}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            togglePinPage(page.path);
+                          }}
+                        >
+                          {page.isPinned ? (
+                            <PinOff className="h-3 w-3" />
+                          ) : (
+                            <Pin className="h-3 w-3" />
+                          )}
+                        </Button>
                       </Button>
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    <p>{page.label}</p>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })
-          )}
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      <p>{page.label}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Menu Content */}
       <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
@@ -386,6 +388,118 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
           ) : (
             // Hierarchical Layout - Show collapsible categories
             <>
+              {/* Recent Pages as Collapsible Category */}
+              <div className="px-3 py-2 border-b border-border/40">
+                {/* Recent Pages Header - Clickable to expand/collapse */}
+                <Button
+                  variant="ghost"
+                  className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
+                  onClick={() => toggleGroup('Recent Pages')}
+                >
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">
+                      Recent Pages
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-muted-foreground">
+                      {recentPages.length}
+                    </span>
+                    {recentPages.length > 0 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          clearRecentPages();
+                        }}
+                        className="h-5 w-5 p-0 ml-1 text-xs hover:bg-muted-foreground/20"
+                        title="Clear recent pages"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    )}
+                  </div>
+                </Button>
+
+                {/* Recent Pages Items - Only shown when expanded */}
+                {expandedGroups.has('Recent Pages') && (
+                  <div className="mt-1 ml-3 space-y-0.5">
+                    {recentPages.length === 0 ? (
+                      <p className="text-xs text-muted-foreground text-center py-2 ml-3">
+                        No recent pages
+                      </p>
+                    ) : (
+                      recentPages.map((page, pageIndex) => {
+                        const IconComponent = getIconComponent(page.icon || 'FileText');
+                        const isActive = location === page.path;
+                        
+                        // Find the color from navigation config
+                        const getColorForPage = () => {
+                          for (const group of navigationGroups) {
+                            const feature = group.features.find((f: any) => f.href === page.path);
+                            if (feature) {
+                              // Convert bg-color to text-color
+                              const bgColor = feature.color;
+                              if (!bgColor) return 'text-blue-500';
+                              if (bgColor.includes('gradient')) return 'text-purple-500';
+                              return bgColor.replace('bg-', 'text-');
+                            }
+                          }
+                          return 'text-gray-500';
+                        };
+                        
+                        return (
+                          <Button
+                            key={page.path}
+                            variant="ghost"
+                            className={cn(
+                              "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150 ml-3 group",
+                              isActive && "bg-accent text-accent-foreground",
+                              !isActive && "hover:bg-accent/50 hover:text-foreground"
+                            )}
+                            onClick={() => {
+                              setLocation(page.path);
+                              addRecentPage(page.path, page.label, page.icon);
+                              if (!isPinned && onClose) onClose();
+                            }}
+                          >
+                            <div className="flex items-center gap-2.5 flex-1">
+                              <IconComponent className={cn(
+                                "h-3.5 w-3.5 flex-shrink-0",
+                                isActive ? "text-primary" : getColorForPage()
+                              )} />
+                              <span className={cn(
+                                "truncate text-sm",
+                                !isActive && "text-foreground/80"
+                              )}>
+                                {page.label}
+                              </span>
+                            </div>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                togglePinPage(page.path);
+                              }}
+                            >
+                              {page.isPinned ? (
+                                <PinOff className="h-2.5 w-2.5" />
+                              ) : (
+                                <Pin className="h-2.5 w-2.5" />
+                              )}
+                            </Button>
+                          </Button>
+                        );
+                      })
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {filteredGroups.map((group, index) => {
                 const isExpanded = expandedGroups.has(group.title);
                 const priorityBg = group.priority === 'high' 
