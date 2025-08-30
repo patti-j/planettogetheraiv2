@@ -835,9 +835,9 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });
 // export type InsertPlannedOrder = z.infer<typeof insertPlannedOrderSchema>;
 
-export const insertAgentActionSchema = createInsertSchema(agentActions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertAgentActionSchema = createInsertSchema(agentActions).omit({
+  id: true,
+  createdAt: true
 });
 export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 
@@ -850,54 +850,51 @@ export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 // Dependencies table not available in PT schema - removed
 // export const insertDependencySchema = createInsertSchema(dependencies).omit({ id: true });
 
-export const insertResourceViewSchema = createInsertSchema(resourceViews, {
-  id: z.number().optional(),
+export const insertResourceViewSchema = createInsertSchema(resourceViews).omit({
+  id: true
 });
 
-export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels, {
-  id: z.number().optional(),
+export const insertCustomTextLabelSchema = createInsertSchema(customTextLabels).omit({
+  id: true
 });
 
-export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs, {
-  id: z.number().optional(),
+export const insertKanbanConfigSchema = createInsertSchema(kanbanConfigs).omit({
+  id: true
 });
 
-export const insertReportConfigSchema = createInsertSchema(reportConfigs, {
-  id: z.number().optional(),
+export const insertReportConfigSchema = createInsertSchema(reportConfigs).omit({
+  id: true
 });
 
-export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertDashboardConfigSchema = createInsertSchema(dashboardConfigs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
-  isArchived: z.boolean().optional(),
+export const insertScheduleScenarioSchema = createInsertSchema(scheduleScenarios).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
 // insertResourceRequirementBlockSchema - DELETED: resourceRequirementBlocks table was replaced by ptjobresourceblocks
 
 
 
-export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations, {
-  id: z.number().optional(),
-  startTime: z.union([z.string().datetime(), z.date()]).optional(),
-  endTime: z.union([z.string().datetime(), z.date()]).optional(),
+export const insertScenarioOperationSchema = createInsertSchema(scenarioOperations).omit({
+  id: true
 });
 
-export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const insertScenarioEvaluationSchema = createInsertSchema(scenarioEvaluations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
 });
 
-export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions, {
-  id: z.number().optional(),
-  createdAt: z.date().optional(),
+export const insertScenarioDiscussionSchema = createInsertSchema(scenarioDiscussions).omit({
+  id: true,
+  createdAt: true
 });
 
 // Systems Management Insert Schemas

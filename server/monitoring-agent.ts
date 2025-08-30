@@ -347,14 +347,13 @@ export class SystemMonitoringAgent {
       }
 
       await db.insert(alerts).values({
+        title: alertData.message.substring(0, 100), // Use first 100 chars as title
         description: alertData.message,
         severity: alertData.severity,
         status: 'active',
         type: alertData.type,
         metadata: alertData.data,
-        plantId: alertData.plantId,
-        aiGenerated: true,
-        createdBy: alertData.userId
+        plantId: alertData.plantId
       });
 
       console.log(`🚨 Alert created: ${alertData.message} (${alertData.severity})`);
