@@ -266,24 +266,16 @@ export default function Chat() {
                   <div className="text-center text-muted-foreground p-4">No messages yet. Start the conversation!</div>
                 ) : (
                   messages.map((message) => (
-                    <div key={message.id} className="flex items-start space-x-2 sm:space-x-3">
-                      <Avatar className="h-7 w-7 sm:h-8 sm:w-8 flex-shrink-0">
-                        <AvatarImage src={message.sender?.avatar || undefined} />
-                        <AvatarFallback className="text-xs">
-                          {getInitials(message.sender?.displayName || message.sender?.username || 'Unknown')}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-medium text-xs sm:text-sm truncate">
-                            {message.sender?.displayName || message.sender?.username || 'Unknown User'}
-                          </span>
-                          <span className="text-xs text-muted-foreground flex-shrink-0">
-                            {formatTime(message.createdAt)}
-                          </span>
-                        </div>
-                        <p className="text-sm mt-1 break-words">{message.content}</p>
+                    <div key={message.id} className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-xs sm:text-sm truncate">
+                          {message.sender?.displayName || message.sender?.username || 'Unknown User'}
+                        </span>
+                        <span className="text-[10px] text-muted-foreground flex-shrink-0">
+                          {formatTime(message.createdAt)}
+                        </span>
                       </div>
+                      <p className="text-sm break-words">{message.content}</p>
                     </div>
                   ))
                 )}
