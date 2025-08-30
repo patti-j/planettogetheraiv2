@@ -78,12 +78,12 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
       <div
         ref={menuRef}
         className={cn(
-          "fixed right-0 top-0 h-full bg-background border-l shadow-xl z-50",
+          "fixed right-0 top-[72px] bg-background border-l shadow-xl z-50",
           "w-80",
           isPinned 
-            ? "translate-x-0" // Always visible when pinned
+            ? "translate-x-0 h-[calc(100vh-72px)]" // Always visible when pinned, height adjusted for header
             : cn(
-                "transition-transform duration-300 ease-in-out",
+                "transition-transform duration-300 ease-in-out h-[calc(100vh-72px)]",
                 isOpen ? "translate-x-0" : "translate-x-full"
               )
         )}
