@@ -4,6 +4,7 @@ import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
 import { BottomDrawer } from './bottom-drawer';
 import { SlideOutMenu } from './slide-out-menu';
+import { MinimizedNavPanel } from './minimized-nav-panel';
 import TopMenu from '@/components/top-menu';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
@@ -189,6 +190,17 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
+  // Toggle pin functionality
+  const handleTogglePin = () => {
+    const newPinned = !isNavigationPinned;
+    setIsNavigationPinned(newPinned);
+    try {
+      localStorage.setItem('navigationMenuPinned', newPinned.toString());
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
   // Listen for navigation pinned state changes
   useEffect(() => {
     const handleStorageChange = () => {
@@ -233,11 +245,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Customizable desktop header - hidden in full screen */}
       {!isFullScreen && (
-        <CustomizableHeader 
-          onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
-          isNavPanelOpen={isNavigationOpen}
-          isNavPanelPinned={isNavigationPinned}
-        />
+        <CustomizableHeader />
       )}
       
       {/* Main content area with AI panel on left and navigation on right */}
@@ -262,14 +270,24 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </div>
         </div>
         
-        {/* Navigation Panel - Only show when pinned - hidden in full screen */}
-        {!isFullScreen && isNavigationPinned && (
-          <div className="h-full flex flex-col bg-background border-l border-border w-80">
-            <SlideOutMenu 
-              isOpen={true}
-              onClose={() => {}}
-            />
-          </div>
+        {/* Navigation Panel - Show full when pinned, minimized when not pinned - hidden in full screen */}
+        {!isFullScreen && (
+          <>
+            {isNavigationPinned ? (
+              <div className="h-full flex flex-col bg-background border-l border-border w-80">
+                <SlideOutMenu 
+                  isOpen={true}
+                  onClose={() => {}}
+                />
+              </div>
+            ) : (
+              <MinimizedNavPanel 
+                onExpand={() => setIsNavigationOpen(true)}
+                isPinned={isNavigationPinned}
+                onTogglePin={handleTogglePin}
+              />
+            )}
+          </>
         )}
       </div>
       
