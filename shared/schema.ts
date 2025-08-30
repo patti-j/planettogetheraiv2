@@ -17,6 +17,12 @@ export {
   insertPtDepartmentsSchema
 } from "./pt-publish-schema";
 
+// Create aliases for legacy schema names
+// export const insertPlantSchema = PT.insertPtPlantsSchema; // TODO: Add when ptPlants is defined
+export const insertCapabilitySchema = PT.insertPtCapabilitiesSchema;
+export const insertResourceSchema = PT.insertPtResourcesSchema;
+export const insertProductionOrderSchema = PT.insertPtManufacturingOrdersSchema;
+
 // Using PT tables instead of non-PT tables
 export const capabilities = PT.ptCapabilities;
 export const resources = PT.ptResources;
@@ -793,24 +799,13 @@ export const disruptionEscalations = pgTable("disruption_escalations", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-export const insertCapabilitySchema = createInsertSchema(capabilities, {
-  id: z.number().optional(),
-});
-export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
-
-export const insertResourceSchema = createInsertSchema(resources, {
-  id: z.number().optional(),
-});
-export type InsertResource = z.infer<typeof insertResourceSchema>;
+// Removed duplicate exports - using PT schema aliases instead
 
 // Commented out - plantResources table aliased to PT tables
 // export const insertPlantResourceSchema = createInsertSchema(plantResources, {}).omit({ id: true, createdAt: true });
 // export type InsertPlantResource = z.infer<typeof insertPlantResourceSchema>;
 
-export const insertProductionOrderSchema = createInsertSchema(productionOrders, {
-  id: z.number().optional(),
-});
-export type InsertProductionOrder = z.infer<typeof insertProductionOrderSchema>;
+// Removed duplicate export - using PT schema alias instead
 
 // Commented out - plannedOrders table not available
 // export const insertPlannedOrderSchema = createInsertSchema(plannedOrders, {}).omit({ id: true, createdAt: true });

@@ -1338,6 +1338,7 @@ export const ptCapacityIntervalResourceAssignmentsRelations = relations(ptCapaci
 // Export Insert Schemas and Types
 // ============================================
 
+// export const insertPtPlantsSchema = createInsertSchema(ptPlants); // TODO: Add ptPlants definition first
 export const insertPtDepartmentsSchema = createInsertSchema(ptDepartments);
 export const insertPtResourcesSchema = createInsertSchema(ptResources);
 export const insertPtCapabilitiesSchema = createInsertSchema(ptCapabilities);
