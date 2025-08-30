@@ -3021,7 +3021,7 @@ async function seedMarketingData() {
         isShared: true,
         scopeFilters: {
           stockItems: { includeAll: true, specificIds: [], categories: [], statuses: ["active", "low_stock"] },
-          storageLocations: { includeAll: true, specificIds: [], types: [] },
+          warehouses: { includeAll: true, specificIds: [], types: [] }, // Updated from storageLocations to match ptwarehouses
           timeRange: { startDate: null, endDate: null, duration: "90_days" },
           suppliers: { includeAll: true, specificIds: [] }
         },
@@ -3053,7 +3053,7 @@ async function seedMarketingData() {
         isShared: true,
         scopeFilters: {
           stockItems: { includeAll: false, specificIds: [], categories: ["raw_materials", "components"], statuses: ["active"] },
-          storageLocations: { includeAll: true, specificIds: [], types: [] },
+          warehouses: { includeAll: true, specificIds: [], types: [] }, // Updated from storageLocations to match ptwarehouses
           timeRange: { startDate: null, endDate: null, duration: "30_days" },
           suppliers: { includeAll: true, specificIds: [] }
         },
