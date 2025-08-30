@@ -8155,49 +8155,12 @@ export const employees = pgTable("employees", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// Sites - multiple manufacturing locations
-export const sites = pgTable("sites", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  code: text("code").notNull().unique(),
-  address: jsonb("address").$type<{
-    street: string;
-    city: string;
-    state: string;
-    postalCode: string;
-    country: string;
-  }>().notNull(),
-  timezone: text("timezone").notNull().default("UTC"),
-  currency: text("currency").notNull().default("USD"),
-  parentSiteId: integer("parent_site_id").references((): any => sites.id),
-  siteType: text("site_type").notNull().default("manufacturing"), // manufacturing, warehouse, distribution, office
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Sites - DELETED: replaced by ptwarehouses
 
 // Using PT Items table instead of non-PT items table
 export const items = PT.ptItems;
 
-// Storage Locations - warehouses and storage areas within plants
-export const storageLocations = pgTable("storage_locations", {
-  id: serial("id").primaryKey(),
-  name: text("name").notNull(),
-  code: text("code").notNull().unique(),
-  description: text("description"),
-  plantId: integer("plant_id").references(() => plants.id).notNull(), // Changed from siteId to plantId for one-to-many relationship
-  locationType: text("location_type").notNull().default("general"), // general, finished_goods, raw_materials, work_in_process
-  address: jsonb("address").$type<{
-    street?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-  }>(),
-  totalCapacity: integer("total_capacity").default(0), // cubic units
-  usedCapacity: integer("used_capacity").default(0), // cubic units
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Storage Locations - DELETED: replaced by ptwarehouses
 
 // Using PT Inventories table instead of non-PT inventory table
 export const inventory = PT.ptInventories;
@@ -8349,45 +8312,9 @@ export const salesOrders = pgTable("sales_orders", {
   salesOrderContractIdx: index("sales_orders_contract_number_idx").on(table.contractNumber),
 }));
 
-// Sales order line items
-export const salesOrderLines = pgTable("sales_order_lines", {
-  id: serial("id").primaryKey(),
-  salesOrderId: integer("sales_order_id").references(() => salesOrders.id).notNull(),
-  lineNumber: integer("line_number").notNull(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  orderedQuantity: integer("ordered_quantity").notNull(),
-  shippedQuantity: integer("shipped_quantity").default(0),
-  unitPrice: integer("unit_price").notNull(), // in cents
-  extendedPrice: integer("extended_price").notNull(), // in cents
-  requestedDate: timestamp("requested_date").notNull(),
-  promisedDate: timestamp("promised_date"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  salesOrderLineIdx: unique().on(table.salesOrderId, table.lineNumber),
-}));
+// Sales order line items - DELETED: replaced by ptsalesorderlines
 
-// Sales order line distributions - track how much is or was shipped from the full line qty at various dates
-export const salesOrderLineDistributions = pgTable("sales_order_line_distributions", {
-  id: serial("id").primaryKey(),
-  salesOrderLineId: integer("sales_order_line_id").references(() => salesOrderLines.id).notNull(),
-  distributionNumber: integer("distribution_number").notNull(), // Sequential number for this line
-  shippedQuantity: integer("shipped_quantity").notNull(),
-  shipmentDate: timestamp("shipment_date").notNull(),
-  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record being shipped
-  carrierName: text("carrier_name"),
-  trackingNumber: text("tracking_number"),
-  shippingMethod: text("shipping_method"), // ground, air, express, freight
-  status: text("status").notNull().default("planned"), // planned, picked, packed, shipped, delivered, returned
-  actualDeliveryDate: timestamp("actual_delivery_date"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (table) => ({
-  salesOrderLineDistributionIdx: unique().on(table.salesOrderLineId, table.distributionNumber),
-  shipmentDateIdx: index("sales_order_line_distributions_shipment_date_idx").on(table.shipmentDate),
-  statusIdx: index("sales_order_line_distributions_status_idx").on(table.status),
-}));
+// Sales order line distributions - DELETED: replaced by ptsalesorderlinedistributions
 
 // Stocks table - indicates how much of an item is in stock (linked to storage_locations and other tables)
 export const stocks = pgTable("stocks", {
@@ -8448,57 +8375,11 @@ export const purchaseOrders = pgTable("purchase_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Purchase order line items
-export const purchaseOrderLines = pgTable("purchase_order_lines", {
-  id: serial("id").primaryKey(),
-  purchaseOrderId: integer("purchase_order_id").references(() => purchaseOrders.id).notNull(),
-  lineNumber: integer("line_number").notNull(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record when received
-  orderedQuantity: integer("ordered_quantity").notNull(),
-  receivedQuantity: integer("received_quantity").default(0),
-  unitCost: integer("unit_cost").notNull(), // in cents
-  extendedCost: integer("extended_cost").notNull(), // in cents
-  requestedDate: timestamp("requested_date").notNull(),
-  promisedDate: timestamp("promised_date"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  purchaseOrderLineIdx: unique().on(table.purchaseOrderId, table.lineNumber),
-}));
+// Purchase order line items - DELETED: replaced by ptpurchasestostock
 
-// Transfer orders between storage locations/sites
-export const transferOrders = pgTable("transfer_orders", {
-  id: serial("id").primaryKey(),
-  orderNumber: text("order_number").notNull().unique(),
-  requestedDate: timestamp("requested_date").notNull(),
-  shippedDate: timestamp("shipped_date"),
-  receivedDate: timestamp("received_date"),
-  status: text("status").notNull().default("open"), // open, shipped, received, cancelled
-  priority: text("priority").notNull().default("medium"), // low, medium, high, urgent
-  requestedBy: text("requested_by"),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
+// Transfer orders - DELETED: replaced by pttransferorders
 
-// Transfer order line items
-export const transferOrderLines = pgTable("transfer_order_lines", {
-  id: serial("id").primaryKey(),
-  transferOrderId: integer("transfer_order_id").references(() => transferOrders.id).notNull(),
-  lineNumber: integer("line_number").notNull(),
-  itemId: integer("item_id").references(() => items.id).notNull(),
-  stockId: integer("stock_id").references(() => stocks.id), // Link to specific stock record for transfer tracking
-  fromStorageLocationId: integer("from_storage_location_id").references(() => storageLocations.id).notNull(),
-  toStorageLocationId: integer("to_storage_location_id").references(() => storageLocations.id).notNull(),
-  requestedQuantity: integer("requested_quantity").notNull(),
-  shippedQuantity: integer("shipped_quantity").default(0),
-  receivedQuantity: integer("received_quantity").default(0),
-  notes: text("notes"),
-  createdAt: timestamp("created_at").defaultNow(),
-}, (table) => ({
-  transferOrderLineIdx: unique().on(table.transferOrderId, table.lineNumber),
-}));
+// Transfer order line items - DELETED: replaced by pttransferorders
 
 // Bills of Material - main BOM table
 export const billsOfMaterial = pgTable("bills_of_material", {
@@ -8870,24 +8751,15 @@ export const employeesRelations = relations(employees, ({ one }) => ({
   }),
 }));
 
-export const sitesRelations = relations(sites, ({ one, many }) => ({
-  parentSite: one(sites, {
-    fields: [sites.parentSiteId],
-    references: [sites.id],
-  }),
-  // Removed storageLocations: storage locations now belong to plants instead of sites
-  salesOrders: many(salesOrders),
-  purchaseOrders: many(purchaseOrders),
-  forecasts: many(forecasts),
-}));
+// sitesRelations - DELETED: sites table was replaced by ptwarehouses
 
 export const itemsRelations = relations(items, ({ many }) => ({
   inventory: many(inventory),
   inventoryLots: many(inventoryLots),
   stocks: many(stocks), // Link to stocks for comprehensive inventory tracking
-  salesOrderLines: many(salesOrderLines),
-  purchaseOrderLines: many(purchaseOrderLines),
-  transferOrderLines: many(transferOrderLines),
+  // salesOrderLines: DELETED - replaced by ptsalesorderlines
+  // purchaseOrderLines: DELETED - replaced by ptpurchasestostock
+  // transferOrderLines: DELETED - replaced by pttransferorders
   billsOfMaterial: many(billsOfMaterial),
   bomLines: many(bomLines),
   bomProductOutputs: many(bomProductOutputs), // BOM outputs for discrete manufacturing
@@ -8899,27 +8771,14 @@ export const itemsRelations = relations(items, ({ many }) => ({
   plannedOrders: many(plannedOrders), // Link to planned orders for this item
 }));
 
-export const storageLocationsRelations = relations(storageLocations, ({ one, many }) => ({
-  plant: one(plants, {
-    fields: [storageLocations.plantId],
-    references: [plants.id],
-  }),
-  inventory: many(inventory),
-  inventoryLots: many(inventoryLots),
-  stocks: many(stocks),
-  transferOrderLinesFrom: many(transferOrderLines, { relationName: "fromStorageLocation" }),
-  transferOrderLinesTo: many(transferOrderLines, { relationName: "toStorageLocation" }),
-}));
+// storageLocationsRelations - DELETED: storageLocations table was replaced by ptwarehouses
 
 export const inventoryRelations = relations(inventory, ({ one }) => ({
   item: one(items, {
     fields: [inventory.itemId],
     references: [items.id],
   }),
-  storageLocation: one(storageLocations, {
-    fields: [inventory.storageLocationId],
-    references: [storageLocations.id],
-  }),
+  // storageLocation: DELETED - storageLocations table was replaced by ptwarehouses
 }));
 
 export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
@@ -8927,10 +8786,7 @@ export const inventoryLotsRelations = relations(inventoryLots, ({ one }) => ({
     fields: [inventoryLots.itemId],
     references: [items.id],
   }),
-  storageLocation: one(storageLocations, {
-    fields: [inventoryLots.storageLocationId],
-    references: [storageLocations.id],
-  }),
+  // storageLocation: DELETED - storageLocations table was replaced by ptwarehouses
 }));
 
 export const customersRelations = relations(customers, ({ many }) => ({
@@ -8943,52 +8799,27 @@ export const salesOrdersRelations = relations(salesOrders, ({ one, many }) => ({
     fields: [salesOrders.customerId],
     references: [customers.id],
   }),
-  site: one(sites, {
-    fields: [salesOrders.siteId],
-    references: [sites.id],
-  }),
-  lines: many(salesOrderLines),
+  // site: DELETED - sites table was replaced by ptwarehouses
+  // lines: DELETED - salesOrderLines table was replaced by ptsalesorderlines
 }));
 
-export const salesOrderLinesRelations = relations(salesOrderLines, ({ one, many }) => ({
-  salesOrder: one(salesOrders, {
-    fields: [salesOrderLines.salesOrderId],
-    references: [salesOrders.id],
-  }),
-  item: one(items, {
-    fields: [salesOrderLines.itemId],
-    references: [items.id],
-  }),
-  distributions: many(salesOrderLineDistributions),
-}));
+// salesOrderLinesRelations - DELETED: salesOrderLines table was replaced by ptsalesorderlines
 
-export const salesOrderLineDistributionsRelations = relations(salesOrderLineDistributions, ({ one }) => ({
-  salesOrderLine: one(salesOrderLines, {
-    fields: [salesOrderLineDistributions.salesOrderLineId],
-    references: [salesOrderLines.id],
-  }),
-  stock: one(stocks, {
-    fields: [salesOrderLineDistributions.stockId],
-    references: [stocks.id],
-  }),
-}));
+// salesOrderLineDistributionsRelations - DELETED: salesOrderLineDistributions table was replaced by ptsalesorderlinedistributions
 
 export const stocksRelations = relations(stocks, ({ one, many }) => ({
   item: one(items, {
     fields: [stocks.itemId],
     references: [items.id],
   }),
-  storageLocation: one(storageLocations, {
-    fields: [stocks.storageLocationId],
-    references: [storageLocations.id],
-  }),
-  salesOrderLineDistributions: many(salesOrderLineDistributions),
-  purchaseOrderLines: many(purchaseOrderLines),
+  // storageLocation: DELETED - storageLocations table was replaced by ptwarehouses
+  // salesOrderLineDistributions: DELETED - replaced by ptsalesorderlinedistributions
+  // purchaseOrderLines: DELETED - replaced by ptpurchasestostock
+  // transferOrderLines: DELETED - replaced by pttransferorders
   demandForecasts: many(demandForecasts),
   bomProductOutputs: many(bomProductOutputs),
   // recipeProductOutputs: many(recipeProductOutputs),
   materialRequirements: many(materialRequirements),
-  transferOrderLines: many(transferOrderLines),
 }));
 
 export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many }) => ({
@@ -8999,49 +8830,11 @@ export const purchaseOrdersRelations = relations(purchaseOrders, ({ one, many })
   lines: many(purchaseOrderLines),
 }));
 
-export const purchaseOrderLinesRelations = relations(purchaseOrderLines, ({ one }) => ({
-  purchaseOrder: one(purchaseOrders, {
-    fields: [purchaseOrderLines.purchaseOrderId],
-    references: [purchaseOrders.id],
-  }),
-  item: one(items, {
-    fields: [purchaseOrderLines.itemId],
-    references: [items.id],
-  }),
-  stock: one(stocks, {
-    fields: [purchaseOrderLines.stockId],
-    references: [stocks.id],
-  }),
-}));
+// purchaseOrderLinesRelations - DELETED: purchaseOrderLines table was replaced by ptpurchasestostock
 
-export const transferOrdersRelations = relations(transferOrders, ({ many }) => ({
-  lines: many(transferOrderLines),
-}));
+// transferOrdersRelations - DELETED: transferOrders table was replaced by pttransferorders
 
-export const transferOrderLinesRelations = relations(transferOrderLines, ({ one }) => ({
-  transferOrder: one(transferOrders, {
-    fields: [transferOrderLines.transferOrderId],
-    references: [transferOrders.id],
-  }),
-  item: one(items, {
-    fields: [transferOrderLines.itemId],
-    references: [items.id],
-  }),
-  stock: one(stocks, {
-    fields: [transferOrderLines.stockId],
-    references: [stocks.id],
-  }),
-  fromStorageLocation: one(storageLocations, {
-    fields: [transferOrderLines.fromStorageLocationId],
-    references: [storageLocations.id],
-    relationName: "fromStorageLocation",
-  }),
-  toStorageLocation: one(storageLocations, {
-    fields: [transferOrderLines.toStorageLocationId],
-    references: [storageLocations.id],
-    relationName: "toStorageLocation",
-  }),
-}));
+// transferOrderLinesRelations - DELETED: transferOrderLines table was replaced by pttransferorders
 
 export const billsOfMaterialRelations = relations(billsOfMaterial, ({ one, many }) => ({
   parentItem: one(items, {
@@ -9562,10 +9355,7 @@ export const insertEmployeeSchema = createInsertSchema(employees, {
   terminationDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSiteSchema = createInsertSchema(sites, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// insertSiteSchema - DELETED: sites table was replaced by ptwarehouses
 
 export const insertItemSchema = createInsertSchema(items, { 
   id: undefined,
@@ -9581,10 +9371,7 @@ export const insertItemSchema = createInsertSchema(items, {
   lastUsageDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertStorageLocationSchema = createInsertSchema(storageLocations, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// insertStorageLocationSchema - DELETED: storageLocations table was replaced by ptwarehouses
 
 export const insertInventorySchema = createInsertSchema(inventory, { 
   id: undefined,
@@ -9616,22 +9403,9 @@ export const insertSalesOrderSchema = createInsertSchema(salesOrders, {
   approvedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertSalesOrderLineSchema = createInsertSchema(salesOrderLines, { 
-  id: undefined,
-  createdAt: undefined,
-}, {
-  requestedDate: z.union([z.string().datetime(), z.date()]),
-  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// insertSalesOrderLineSchema - DELETED: salesOrderLines table was replaced by ptsalesorderlines
 
-export const insertSalesOrderLineDistributionSchema = createInsertSchema(salesOrderLineDistributions, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
-  shipmentDate: z.union([z.string().datetime(), z.date()]),
-  actualDeliveryDate: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// insertSalesOrderLineDistributionSchema - DELETED: salesOrderLineDistributions table was replaced by ptsalesorderlinedistributions
 
 export const insertStockSchema = createInsertSchema(stocks, { 
   id: undefined,
@@ -9654,28 +9428,11 @@ export const insertPurchaseOrderSchema = createInsertSchema(purchaseOrders, {
   receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
 });
 
-export const insertPurchaseOrderLineSchema = createInsertSchema(purchaseOrderLines, { 
-  id: undefined,
-  createdAt: undefined,
-}, {
-  requestedDate: z.union([z.string().datetime(), z.date()]),
-  promisedDate: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// insertPurchaseOrderLineSchema - DELETED: purchaseOrderLines table was replaced by ptpurchasestostock
 
-export const insertTransferOrderSchema = createInsertSchema(transferOrders, { 
-  id: undefined,
-  createdAt: undefined,
-  updatedAt: undefined,
-}, {
-  requestedDate: z.union([z.string().datetime(), z.date()]),
-  shippedDate: z.union([z.string().datetime(), z.date()]).optional(),
-  receivedDate: z.union([z.string().datetime(), z.date()]).optional(),
-});
+// insertTransferOrderSchema - DELETED: transferOrders table was replaced by pttransferorders
 
-export const insertTransferOrderLineSchema = createInsertSchema(transferOrderLines, { 
-  id: undefined,
-  createdAt: undefined,
-});
+// insertTransferOrderLineSchema - DELETED: transferOrderLines table was replaced by pttransferorders
 
 export const insertBillOfMaterialSchema = createInsertSchema(billsOfMaterial, { 
   id: undefined,
