@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -17,14 +17,31 @@ interface NavigationMenuContentProps {
   isPinned: boolean;
   onTogglePin: () => void;
   onClose?: () => void;
+  isOpen?: boolean;
 }
 
-export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: NavigationMenuContentProps) {
+export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }: NavigationMenuContentProps) {
   const [location, setLocation] = useLocation();
   const [searchFilter, setSearchFilter] = useState('');
   const [layoutMode, setLayoutMode] = useState<'list' | 'hierarchical'>('list');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const { hasPermission } = usePermissions();
+  
+  // Auto-focus search input when navigation menu opens
+  useEffect(() => {
+    if (isOpen && searchInputRef.current) {
+      // Use a small delay to ensure the menu has fully opened and rendered
+      const timer = setTimeout(() => {
+        if (searchInputRef.current) {
+          searchInputRef.current.focus();
+          // Select existing text if any
+          searchInputRef.current.select();
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
   const { splitMode, handleNavigation } = useSplitScreen();
   const { user } = useAuth();
   
@@ -195,6 +212,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
+            ref={searchInputRef}
             type="text"
             placeholder="Search menu..."
             value={searchFilter}

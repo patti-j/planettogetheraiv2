@@ -92,6 +92,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
           isPinned={isPinned}
           onTogglePin={handleTogglePin}
           onClose={onClose}
+          isOpen={isOpen}
         />
       </div>
     </>
