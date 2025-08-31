@@ -146,11 +146,12 @@ export default function Settings() {
   // Update user preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest(`/api/user-preferences/${user?.id}`, {
+      const response = await fetch(`/api/user-preferences/${user?.id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) throw new Error('Failed to update preferences');
       return response.json();
     },
     onSuccess: () => {
