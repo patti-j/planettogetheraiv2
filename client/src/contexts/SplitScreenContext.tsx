@@ -73,8 +73,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
         setSecondaryPage(pendingNavigation.path);
       }
       setNavigationTarget(target);
-      // Navigate to the page after selecting the pane
-      setLocation(pendingNavigation.path);
+      // Don't navigate - just update which pane shows the content
     }
     setShowPaneSelector(false);
     setPendingNavigation(null);
