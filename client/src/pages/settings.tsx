@@ -52,13 +52,6 @@ export default function Settings() {
   
   // Local state for preferences form
   const [maxRecentPages, setMaxRecentPages] = useState<string>('5');
-  
-  // Initialize maxRecentPages state when preferences are loaded
-  useEffect(() => {
-    if (preferences?.dashboardLayout?.maxRecentPages) {
-      setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
-    }
-  }, [preferences]);
 
   // Fetch AI agents data
   const { data: aiAgentsData, isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
@@ -142,6 +135,13 @@ export default function Settings() {
     },
     enabled: !!user?.id
   });
+
+  // Initialize maxRecentPages state when preferences are loaded
+  useEffect(() => {
+    if (preferences?.dashboardLayout?.maxRecentPages) {
+      setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
+    }
+  }, [preferences]);
 
   // Update user preferences mutation
   const updatePreferencesMutation = useMutation({
