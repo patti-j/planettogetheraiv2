@@ -258,10 +258,60 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
   };
 
   const getVisibleGroups = () => {
-    return featureGroups.map(group => ({
+    const groups = featureGroups.map(group => ({
       ...group,
       features: getVisibleFeatures(group.features)
     })).filter(group => group.features.length > 0);
+    
+    // Add Recent & Favorites group at the beginning when not searching and there are recent pages
+    if (!searchFilter.trim() && recentPages.length > 0) {
+      const recentGroup = {
+        title: "Recent & Favorites",
+        priority: "high" as const,
+        color: "gray" as const,
+        bgColor: "bg-gray-50 dark:bg-gray-950/20",
+        borderColor: "border-gray-200 dark:border-gray-800",
+        features: recentPages.map((page, index) => {
+          // Map page paths to their original icons and colors
+          const getIconAndColorForPage = (path: string) => {
+            // Find the icon and color from the feature groups
+            for (const group of featureGroups) {
+              const feature = group.features.find(f => f.href === path);
+              if (feature) {
+                return { 
+                  icon: feature.icon, 
+                  color: feature.color || "bg-gray-500", 
+                  isAI: (feature as any).isAI || false 
+                };
+              }
+            }
+            // Default fallback
+            return { icon: FileText, color: "bg-gray-500", isAI: false };
+          };
+          
+          const { icon, color, isAI } = getIconAndColorForPage(page.path);
+          
+          return {
+            label: page.label,
+            href: page.path === "#max" ? "#" : page.path,
+            icon: icon,
+            color: color,
+            isAI: isAI,
+            isPinned: page.isPinned,
+            onClick: () => {
+              if (page.path === "#max") {
+                toggleMaxAI();
+              }
+              setMenuOpen(false);
+            }
+          };
+        })
+      };
+      
+      groups.unshift(recentGroup);
+    }
+    
+    return groups;
   };
 
   // Flatten all menu items for individual search results
@@ -312,6 +362,11 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
   };
 
   const handleFeatureClick = (feature: any) => {
+    // Handle recent pages features specially
+    if (feature.onClick) {
+      feature.onClick();
+      return;
+    }
     if (feature.href === "#max") {
       // Add Max AI to recent pages
       addRecentPage("#max", "Max AI Assistant", "Bot");
@@ -682,148 +737,6 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
 
             {/* Menu Content */}
             <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-              {/* Recent & Favorites Section */}
-              {recentPages.filter(page => {
-                if (!searchFilter.trim()) return true;
-                const searchTerm = searchFilter.toLowerCase();
-                return page.label.toLowerCase().includes(searchTerm);
-              }).length > 0 && (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
-                      Recent & Favorites
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={clearRecentPages}
-                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
-                    >
-                      Clear
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr">
-                    {recentPages.filter(page => {
-                      if (!searchFilter.trim()) return true;
-                      const searchTerm = searchFilter.toLowerCase();
-                      return page.label.toLowerCase().includes(searchTerm);
-                    }).map((page, index) => {
-                      // Map page paths to their original icons and colors
-                      const getIconAndColorForPage = (path: string) => {
-                        // Find the icon and color from the feature groups
-                        for (const group of featureGroups) {
-                          const feature = group.features.find(f => f.href === path);
-                          if (feature) {
-                            // Ensure we have proper color with dark mode support
-                            let bgColor = feature.color || "bg-gray-500";
-                            // Add dark mode variant if not already present
-                            if (!bgColor.includes('dark:') && !bgColor.includes('gradient')) {
-                              const baseColor = bgColor.replace('bg-', '').replace('-500', '').replace('-600', '').replace('-700', '');
-                              bgColor = `${bgColor} dark:${bgColor.replace('-500', '-600').replace('-600', '-700')}`;
-                            }
-                            return { 
-                              icon: feature.icon, 
-                              color: bgColor, 
-                              isAI: (feature as any).isAI || false 
-                            };
-                          }
-                        }
-                        // Default fallback with dark mode support
-                        return { icon: FileText, color: "bg-gray-500 dark:bg-gray-600", isAI: false };
-                      };
-                      
-                      const { icon: IconComponent, color, isAI } = getIconAndColorForPage(page.path);
-                      
-                      // Better icon color mapping that handles various color formats
-                      const getIconColor = (bgColor: string, isAIIcon: boolean) => {
-                        if (isAIIcon) return 'text-white';
-                        
-                        // Map background colors to proper text colors
-                        const colorMap: Record<string, string> = {
-                          'bg-blue-500': 'text-blue-600',
-                          'bg-purple-500': 'text-purple-600',
-                          'bg-green-500': 'text-green-600',
-                          'bg-orange-500': 'text-orange-600',
-                          'bg-red-500': 'text-red-600',
-                          'bg-yellow-500': 'text-yellow-600',
-                          'bg-indigo-500': 'text-indigo-600',
-                          'bg-pink-500': 'text-pink-600',
-                          'bg-cyan-500': 'text-cyan-600',
-                          'bg-teal-500': 'text-teal-600',
-                          'bg-lime-500': 'text-lime-600',
-                          'bg-emerald-500': 'text-emerald-600',
-                          'bg-violet-500': 'text-violet-600',
-                          'bg-fuchsia-500': 'text-fuchsia-600',
-                          'bg-rose-500': 'text-rose-600',
-                          'bg-sky-500': 'text-sky-600',
-                          'bg-amber-500': 'text-amber-600',
-                          'bg-slate-500': 'text-slate-600',
-                          'bg-gray-500': 'text-gray-600',
-                        };
-                        
-                        // Try direct mapping first
-                        if (colorMap[bgColor]) {
-                          return colorMap[bgColor];
-                        }
-                        
-                        // Fallback: try basic string replacement
-                        if (bgColor.includes('bg-')) {
-                          return bgColor.replace('bg-', 'text-').replace('-500', '-600');
-                        }
-                        
-                        // Default fallback
-                        return 'text-gray-600';
-                      };
-                      
-                      const iconColorClass = getIconColor(color, isAI);
-                      
-                      return (
-                        <div key={`${page.path}-${index}`} className="relative group">
-                          <Link 
-                            href={page.path === "#max" ? "#" : page.path}
-                            onClick={() => {
-                              if (page.path === "#max") {
-                                toggleMaxAI();
-                              }
-                              setMenuOpen(false);
-                            }}
-                          >
-                            <div className={`
-                              w-full aspect-square min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
-                              border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
-                              flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden
-                              ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
-                              ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                            `}>
-                              <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${isAI ? 'text-purple-600' : iconColorClass}`} strokeWidth={1.5} fill="none" />
-                              <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
-                                {page.label}
-                              </span>
-                              {/* Pin/Unpin Button - Bottom Right Corner */}
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  togglePinPage(page.path);
-                                }}
-                                className={`
-                                  absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
-                                  ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
-                                `}
-                                title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-                              >
-                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
-                              </Button>
-                            </div>
-                          </Link>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Search Results Section - Show individual menu items when searching */}
               {searchFilter.trim() && getSearchResults().length > 0 && (() => {
@@ -935,6 +848,19 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                               })()}
                             </div>
                             <div className="flex items-center space-x-2">
+                              {group.title === "Recent & Favorites" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    clearRecentPages();
+                                  }}
+                                  className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
+                                >
+                                  Clear
+                                </Button>
+                              )}
                               <span className="text-xs text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full"
                                 style={{ 
                                   backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(243, 244, 246)'
@@ -956,18 +882,39 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                                 <div 
                                   key={featureIndex} 
                                   onClick={() => handleFeatureClick(feature)}
+                                  className="relative group"
                                 >
                                   <div className={`
                                     h-[50px] border hover:shadow-sm
                                     rounded-lg p-2 cursor-pointer transition-all duration-150
                                     flex items-center space-x-2
-                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 
+                                      feature.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' :
+                                      'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                                     ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                                   `}>
                                     <feature.icon className={`w-3 h-3 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
-                                    <span className="text-xs text-gray-700 dark:text-white leading-tight line-clamp-2 overflow-hidden">
+                                    <span className="text-xs text-gray-700 dark:text-white leading-tight line-clamp-2 overflow-hidden flex-1">
                                       {feature.label}
                                     </span>
+                                    {group.title === "Recent & Favorites" && (
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={(e) => {
+                                          e.preventDefault();
+                                          e.stopPropagation();
+                                          togglePinPage(feature.href);
+                                        }}
+                                        className={`
+                                          h-3 w-3 p-0 transition-all opacity-0 group-hover:opacity-100
+                                          ${feature.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
+                                        `}
+                                        title={feature.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                                      >
+                                        {feature.isPinned ? <Pin className="h-2 w-2" strokeWidth={2} /> : <PinOff className="h-2 w-2" strokeWidth={1} />}
+                                      </Button>
+                                    )}
                                   </div>
                                 </div>
                               ))}
@@ -983,40 +930,55 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 (<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
                   {getVisibleGroups().map((group, groupIndex) => (
                     <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`}>
-                      <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 mb-3 flex items-center uppercase tracking-wide">
-                        {(() => {
-                          const FirstIcon = group.features[0]?.icon;
-                          const colorMap: Record<string, string> = {
-                            'blue': 'bg-blue-500',
-                            'purple': 'bg-purple-500',
-                            'orange': 'bg-orange-500',
-                            'green': 'bg-green-500',
-                            'gray': 'bg-gray-500',
-                            'teal': 'bg-teal-500',
-                            'amber': 'bg-amber-500'
-                          };
-                          const bgColor = colorMap[group.color] || 'bg-gray-500';
-                          
-                          return (
-                            <>
-                              {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
-                              {group.title}
-                            </>
-                          );
-                        })()}
-                      </h3>
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center uppercase tracking-wide">
+                          {(() => {
+                            const FirstIcon = group.features[0]?.icon;
+                            const colorMap: Record<string, string> = {
+                              'blue': 'bg-blue-500',
+                              'purple': 'bg-purple-500',
+                              'orange': 'bg-orange-500',
+                              'green': 'bg-green-500',
+                              'gray': 'bg-gray-500',
+                              'teal': 'bg-teal-500',
+                              'amber': 'bg-amber-500'
+                            };
+                            const bgColor = colorMap[group.color] || 'bg-gray-500';
+                            
+                            return (
+                              <>
+                                {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
+                                {group.title}
+                              </>
+                            );
+                          })()}
+                        </h3>
+                        {group.title === "Recent & Favorites" && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={clearRecentPages}
+                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
+                          >
+                            Clear
+                          </Button>
+                        )}
+                      </div>
                       <div className="grid grid-cols-2 gap-2">
                         {group.features.map((feature, featureIndex) => (
                           <div 
                             key={featureIndex} 
                             onClick={() => handleFeatureClick(feature)}
+                            className="relative group"
                           >
                             <div className={`
                               ${getCardSize(group.priority)}
                               border hover:shadow-sm
                               rounded-lg p-2 cursor-pointer transition-all duration-150
-                              flex flex-col items-center justify-center text-center gap-1
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                              flex flex-col items-center justify-center text-center gap-1 relative
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 
+                                feature.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' :
+                                'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
                               ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
                             `}>
                               <feature.icon 
@@ -1027,6 +989,24 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                               <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
                                 {feature.label}
                               </span>
+                              {group.title === "Recent & Favorites" && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    togglePinPage(feature.href);
+                                  }}
+                                  className={`
+                                    absolute top-1 right-1 h-4 w-4 p-0 transition-all opacity-0 group-hover:opacity-100
+                                    ${feature.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
+                                  `}
+                                  title={feature.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                                >
+                                  {feature.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
+                                </Button>
+                              )}
                             </div>
                           </div>
                         ))}
