@@ -5,39 +5,88 @@ import { Button } from '@/components/ui/button';
 import { X, GripVertical, GripHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Import your main pages for the split screen
-import Dashboard from '@/pages/dashboard';
-import Analytics from '@/pages/analytics';
-import ScheduleManagement from '@/pages/schedule-management';
-import ProductionPlanning from '@/pages/production-planning';
-import CapacityPlanning from '@/pages/capacity-planning';
-import MasterData from '@/pages/master-data';
-import ControlTower from '@/pages/control-tower';
-import DemandPlanning from '@/pages/demand-planning';
+// Dynamic page rendering - no need to import every page
 
 interface SplitScreenLayoutProps {
   children: React.ReactNode;
 }
 
-const availablePages = [
-  { path: '/dashboard', label: 'Dashboard', component: Dashboard },
-  { path: '/analytics', label: 'Analytics', component: Analytics },
-  { path: '/schedule-management', label: 'Schedule Management', component: ScheduleManagement },
-  { path: '/production-planning', label: 'Production Planning', component: ProductionPlanning },
-  { path: '/capacity-planning', label: 'Capacity Planning', component: CapacityPlanning },
-  { path: '/master-data', label: 'Master Data', component: MasterData },
-  { path: '/control-tower', label: 'Global Control Tower', component: ControlTower },
-  { path: '/demand-planning', label: 'Demand Planning', component: DemandPlanning },
-];
-
 function PageRenderer({ path }: { path: string }) {
-  const page = availablePages.find(p => p.path === path);
-  if (!page) {
-    return <div className="p-4">Page not found: {path}</div>;
+  const [PageComponent, setPageComponent] = useState<React.ComponentType | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const loadComponent = async () => {
+      setLoading(true);
+      setError(null);
+      
+      try {
+        // Dynamic import based on path - this automatically works with any page that exists
+        const pathWithoutSlash = path.replace(/^\//, '');
+        const componentPath = pathWithoutSlash || 'dashboard';
+        
+        // Convert kebab-case to PascalCase for component names
+        const componentName = componentPath
+          .split('-')
+          .map(part => part.charAt(0).toUpperCase() + part.slice(1))
+          .join('');
+        
+        // Try to dynamically import the component
+        let component;
+        try {
+          // First try the pages directory
+          const module = await import(`../pages/${pathWithoutSlash}.tsx`);
+          component = module.default;
+        } catch (err) {
+          // If not found in pages, try common alternative paths
+          try {
+            const module = await import(`../pages/${componentPath}/${componentPath}.tsx`);
+            component = module.default;
+          } catch (err2) {
+            // If still not found, try with different naming convention
+            try {
+              const module = await import(`../pages/${componentName}.tsx`);
+              component = module.default;
+            } catch (err3) {
+              throw new Error(`Component not found for path: ${path}`);
+            }
+          }
+        }
+        
+        setPageComponent(() => component);
+      } catch (err) {
+        console.warn(`Failed to load component for path ${path}:`, err);
+        setError(`Page not available: ${path}`);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadComponent();
+  }, [path]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-muted-foreground">Loading...</div>
+      </div>
+    );
   }
-  
-  const PageComponent = page.component;
-  return <PageComponent />;
+
+  if (error || !PageComponent) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-muted-foreground">{error || `Page not found: ${path}`}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-full overflow-auto">
+      <PageComponent />
+    </div>
+  );
 }
 
 export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
@@ -65,18 +114,16 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   React.useEffect(() => {
     if (splitMode !== 'none' && location !== primaryPage && location !== secondaryPage) {
       // New navigation in split mode - ask user which pane to use
-      const pageInfo = availablePages.find(p => p.path === location);
+      // Create a friendly label from the path
+      const pathParts = location.split('/').filter(Boolean);
+      const label = pathParts.length > 0 
+        ? pathParts[pathParts.length - 1]
+            .replace(/-/g, ' ')
+            .replace(/\b\w/g, l => l.toUpperCase()) 
+        : 'Page';
       
-      if (pageInfo) {
-        setPendingNavigation({ path: location, label: pageInfo.label });
-        setShowPaneSelector(true);
-      } else {
-        // Handle pages not in availablePages list - create a generic label
-        const pathParts = location.split('/').filter(Boolean);
-        const label = pathParts.length > 0 ? pathParts[pathParts.length - 1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown Page';
-        setPendingNavigation({ path: location, label });
-        setShowPaneSelector(true);
-      }
+      setPendingNavigation({ path: location, label });
+      setShowPaneSelector(true);
     } else if (splitMode === 'none') {
       // Single pane mode - always update primary
       if (location !== primaryPage) {
