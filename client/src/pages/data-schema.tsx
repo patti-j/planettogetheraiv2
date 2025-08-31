@@ -30,6 +30,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { 
@@ -1037,10 +1038,32 @@ function DataSchemaViewContent() {
   }, [isFullScreen]);
   
   const { toast } = useToast();
-  const { fitView } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, setZoom, getZoom } = useReactFlow();
   
   // Manual refresh functionality
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Manual zoom control state
+  const [zoomLevel, setZoomLevel] = useState([1]); // Initial zoom level 100%
+  
+  // Handle manual zoom slider changes
+  const handleZoomChange = (newZoom: number[]) => {
+    const zoom = newZoom[0];
+    setZoomLevel(newZoom);
+    setZoom(zoom, { duration: 200 });
+  };
+  
+  // Update zoom level when ReactFlow zoom changes (from mouse wheel, etc.)
+  useEffect(() => {
+    try {
+      const currentZoom = getZoom();
+      if (Math.abs(currentZoom - zoomLevel[0]) > 0.01) {
+        setZoomLevel([currentZoom]);
+      }
+    } catch (error) {
+      // Ignore errors during initial setup
+    }
+  }, [getZoom, zoomLevel]);
   
   const handleManualRefresh = async () => {
     setIsRefreshing(true);
@@ -3017,7 +3040,68 @@ function DataSchemaViewContent() {
           )}
 
           {/* Custom Control Buttons */}
-          <Panel position="top-right" className="flex gap-2">
+          <Panel position="top-right" className="flex flex-col gap-2">
+            {/* Zoom Controls */}
+            <div className="flex items-center gap-2 bg-white/90 backdrop-blur-sm rounded-lg p-2 border shadow-sm">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newZoom = Math.max(0.1, zoomLevel[0] - 0.2);
+                        handleZoomChange([newZoom]);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Zoom out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <div className="flex flex-col items-center gap-1 min-w-[80px]">
+                <Slider
+                  value={zoomLevel}
+                  onValueChange={handleZoomChange}
+                  min={0.1}
+                  max={3.0}
+                  step={0.1}
+                  className="w-20"
+                />
+                <span className="text-xs text-gray-600 font-mono">
+                  {Math.round(zoomLevel[0] * 100)}%
+                </span>
+              </div>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const newZoom = Math.min(3.0, zoomLevel[0] + 0.2);
+                        handleZoomChange([newZoom]);
+                      }}
+                      className="h-8 w-8 p-0"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Zoom in</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+            
+            {/* Other Control Buttons */}
+            <div className="flex gap-2">
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -3138,6 +3222,7 @@ function DataSchemaViewContent() {
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+            </div>
           </Panel>
           
           {showMiniMap && (
