@@ -128,7 +128,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
                 onClick={() => handlePaneSelection('primary')}
               >
                 <Monitor className="h-6 w-6" />
-                Left Pane
+                {splitMode === 'horizontal' ? 'Top Pane' : 'Left Pane'}
               </Button>
               
               <Button
@@ -137,7 +137,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
                 onClick={() => handlePaneSelection('secondary')}
               >
                 <SplitSquareHorizontal className="h-6 w-6" />
-                Right Pane
+                {splitMode === 'horizontal' ? 'Bottom Pane' : 'Right Pane'}
               </Button>
             </div>
             
