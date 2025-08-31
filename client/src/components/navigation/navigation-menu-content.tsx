@@ -77,6 +77,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   const currentIndex = allItems.findIndex(item => item.href === location);
 
   const handleItemClick = (item: any) => {
+    console.log('🔥 handleItemClick called:', { href: item.href, label: item.label, splitMode });
+    
     // Handle external links (e.g., HTML files)
     if (item.isExternal || item.href.endsWith('.html')) {
       window.open(item.href, '_blank');
@@ -84,6 +86,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
       return;
     }
     
+    console.log('🔥 About to call handleNavigation');
     // Use the split screen context's navigation handler - this will show the dialog if needed
     handleNavigation(item.href, item.label);
     addRecentPage(item.href, item.label, item.icon);

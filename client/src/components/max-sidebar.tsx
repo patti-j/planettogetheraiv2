@@ -14,6 +14,7 @@ import { useAITheme } from "@/hooks/use-ai-theme";
 import { useLocation } from "wouter";
 import { useTour } from "@/contexts/TourContext";
 import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
+import { useSplitScreen } from "@/contexts/SplitScreenContext";
 import { 
   Bot, 
   Send, 
@@ -141,6 +142,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const { getThemeClasses } = useAITheme();
   const themeClasses = getThemeClasses();
   const { startTour } = useTour();
+  const { handleNavigation } = useSplitScreen();
   
   // State management
   const [messages, setMessages] = useState<Message[]>([]);
@@ -818,7 +820,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         }
         
         console.log('Navigating to:', path);
-        setLocation(path);
+        handleNavigation(path, name || page);
         
         // Add buffer to prevent navigation conflicts
         setTimeout(() => {
@@ -835,7 +837,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       } else if (navigationData.path) {
         // Simple navigation with path only
         console.log('Navigating to:', navigationData.path);
-        setLocation(navigationData.path);
+        handleNavigation(navigationData.path, navigationData.page || 'page');
         
         // Give user feedback about navigation
         toast({
@@ -845,7 +847,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       } else if (navigationData.route) {
         // Legacy navigation with route
         const targetPath = navigationData.route.startsWith('/') ? navigationData.route : `/${navigationData.route}`;
-        setLocation(targetPath);
+        handleNavigation(targetPath, navigationData.page || 'page');
         
         console.log(`Navigated to ${targetPath}`);
         toast({
