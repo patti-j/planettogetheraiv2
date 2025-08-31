@@ -38,7 +38,7 @@ interface MinimizedNavPanelProps {
 export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: MinimizedNavPanelProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
-  const { handleNavigation, splitMode } = useSplitScreen();
+  const { handleNavigation } = useSplitScreen();
   
   // Fetch user preferences to get maxRecentPages setting
   const { data: userPreferences } = useQuery<any>({
@@ -62,13 +62,11 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
   }
 
   const handlePageClick = (page: any) => {
-    console.log('MinimizedNavPanel handlePageClick - Split mode:', splitMode, 'Path:', page.path);
     handleNavigation(page.path, page.label);
     addRecentPage(page.path, page.label, page.icon);
   };
 
   const handleHomeClick = () => {
-    console.log('MinimizedNavPanel handleHomeClick - Split mode:', splitMode);
     handleNavigation('/', 'Dashboard');
     addRecentPage('/', 'Dashboard', 'BarChart3');
   };
