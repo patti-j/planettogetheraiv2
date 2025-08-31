@@ -894,90 +894,59 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 </div>
               )}
               
-              {/* Card Layout (when content overflows) or Expanded Layout (when content fits) */}
+              {/* Menu Categories - Unified List View */}
               {!searchFilter.trim() && (
-                useCardLayout ? (
-                // Card layout for when content exceeds viewport
-                (<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {getVisibleGroups().map((group, groupIndex) => {
-                    const isExpanded = expandedCategories.has(group.title);
-                    const Icon = isExpanded ? ChevronDown : ChevronRight;
-                    
-                    return (
-                      <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} overflow-hidden shadow-sm`}>
-                        <div 
-                          className="p-4 cursor-pointer hover:bg-opacity-70 transition-colors"
-                          onClick={() => toggleCategory(group.title)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-3">
-                              {(() => {
-                                const FirstIcon = group.features[0]?.icon;
-                                const colorMap: Record<string, string> = {
-                                  'blue': 'bg-blue-500 dark:bg-blue-600',
-                                  'purple': 'bg-purple-500 dark:bg-purple-600',
-                                  'orange': 'bg-orange-500 dark:bg-orange-600',
-                                  'green': 'bg-green-500 dark:bg-green-600',
-                                  'gray': 'bg-gray-500 dark:bg-gray-600',
-                                  'teal': 'bg-teal-500 dark:bg-teal-600',
-                                  'amber': 'bg-amber-500 dark:bg-amber-600'
-                                };
-                                const bgColor = colorMap[group.color] || 'bg-gray-500 dark:bg-gray-600';
-                                
-                                return (
-                                  <>
-                                    {FirstIcon && <FirstIcon className={`w-5 h-5 flex-shrink-0 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
-                                    <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 uppercase tracking-wide">
-                                      {group.title}
-                                    </h3>
-                                  </>
-                                );
-                              })()}
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <span className="text-xs text-gray-600 dark:text-gray-300 px-2 py-1 rounded-full"
-                                style={{ 
-                                  backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgb(243, 244, 246)'
-                                }}>
-                                {group.features.length}
-                              </span>
-                              <Icon className="w-4 h-4 text-gray-600 dark:text-gray-300" />
-                            </div>
-                          </div>
-                        </div>
-                        
-                        {isExpanded && (
-                          <div className="border-t border-gray-200 dark:border-gray-700 p-3 bg-opacity-50 dark:bg-opacity-100"
-                            style={{ 
-                              backgroundColor: resolvedTheme === 'dark' ? 'rgb(55, 65, 81)' : 'rgba(243, 244, 246, 0.5)'
-                            }}>
-                            <div className="grid grid-cols-2 gap-2">
-                              {group.features.map((feature, featureIndex) => (
-                                <div 
-                                  key={featureIndex} 
-                                  onClick={() => handleFeatureClick(feature)}
-                                >
-                                  <div className={`
-                                    h-[50px] border hover:shadow-sm
-                                    rounded-lg p-2 cursor-pointer transition-all duration-150
-                                    flex items-center space-x-2
-                                    ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
-                                    ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                                  `}>
-                                    <feature.icon className={`w-3 h-3 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
-                                    <span className="text-xs text-gray-700 dark:text-white leading-tight line-clamp-2 overflow-hidden">
-                                      {feature.label}
-                                    </span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
+                <div className="space-y-4">
+                  {getVisibleGroups().map((group, groupIndex) => (
+                    <div key={groupIndex} className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        {(() => {
+                          const FirstIcon = group.features[0]?.icon;
+                          const colorMap: Record<string, string> = {
+                            'blue': 'bg-blue-500 dark:bg-blue-600',
+                            'purple': 'bg-purple-500 dark:bg-purple-600',
+                            'orange': 'bg-orange-500 dark:bg-orange-600',
+                            'green': 'bg-green-500 dark:bg-green-600',
+                            'gray': 'bg-gray-500 dark:bg-gray-600',
+                            'teal': 'bg-teal-500 dark:bg-teal-600',
+                            'amber': 'bg-amber-500 dark:bg-amber-600'
+                          };
+                          const bgColor = colorMap[group.color] || 'bg-gray-500 dark:bg-gray-600';
+                          
+                          return (
+                            <>
+                              {FirstIcon && <FirstIcon className={`w-5 h-5 flex-shrink-0 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
+                              <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1 uppercase tracking-wide">
+                                {group.title}
+                              </h3>
+                            </>
+                          );
+                        })()}
                       </div>
-                    );
-                  })}
-                </div>)
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+                        {group.features.map((feature, featureIndex) => (
+                          <div 
+                            key={featureIndex} 
+                            onClick={() => handleFeatureClick(feature)}
+                          >
+                            <div className={`
+                              w-full aspect-square min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
+                              border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                              flex flex-col items-center justify-center text-center space-y-1
+                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                              ${feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
+                            `}>
+                              <feature.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
+                              <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                {feature.label}
+                              </span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 // Expanded layout when content fits comfortably
                 (<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
