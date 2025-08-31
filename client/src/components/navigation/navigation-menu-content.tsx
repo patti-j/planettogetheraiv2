@@ -208,31 +208,31 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
 
       {/* Recent Pages Section - Only show in list mode */}
       {layoutMode === 'list' && (
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-between mb-3">
+        <div className="px-3 py-2 border-b">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Clock className="h-4 w-4 text-muted-foreground" />
-              <p className="text-sm font-medium text-muted-foreground">Recent Pages</p>
+              <Clock className="h-3 w-3 text-muted-foreground" />
+              <p className="text-xs font-medium text-muted-foreground">Recent Pages</p>
             </div>
             {recentPages.length > 0 && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={clearRecentPages}
-                className="h-6 px-2 text-xs"
+                className="h-5 px-1 text-xs"
               >
                 Clear
               </Button>
             )}
           </div>
           
-          <div className="space-y-1">
+          <div className="space-y-0.5">
             {recentPages.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-2">
+              <p className="text-xs text-muted-foreground text-center py-1">
                 No recent pages
               </p>
             ) : (
-              recentPages.map((page) => {
+              recentPages.slice(0, 3).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
@@ -254,21 +254,21 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                     <TooltipTrigger asChild>
                       <Button
                         variant={location === page.path ? 'secondary' : 'ghost'}
-                        className="w-full justify-start group h-9"
+                        className="w-full justify-start group h-7"
                         onClick={() => {
                           handleNavigation(page.path, page.label);
                           if (!isPinned && onClose) onClose();
                         }}
                       >
-                        <IconComponent className={cn("h-4 w-4 mr-2 flex-shrink-0", getColorForPage())} />
-                        <span className="flex-1 text-left truncate text-sm">
+                        <IconComponent className={cn("h-3 w-3 mr-2 flex-shrink-0", getColorForPage())} />
+                        <span className="flex-1 text-left truncate text-xs">
                           {page.label}
                         </span>
                         <Button
                           variant="ghost"
                           size="sm"
                           className={cn(
-                            "h-5 w-5 p-0 transition-opacity",
+                            "h-4 w-4 p-0 transition-opacity",
                             page.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
                           )}
                           onClick={(e) => {
@@ -277,9 +277,9 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                           }}
                         >
                           {page.isPinned ? (
-                            <PinOff className="h-3 w-3" />
+                            <PinOff className="h-2.5 w-2.5" />
                           ) : (
-                            <Pin className="h-3 w-3" />
+                            <Pin className="h-2.5 w-2.5" />
                           )}
                         </Button>
                       </Button>
