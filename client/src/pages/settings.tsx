@@ -160,12 +160,13 @@ export default function Settings() {
 
   // Initialize all form states when preferences are loaded
   useEffect(() => {
-    console.log('Loading preferences:', preferences);
     if (preferences) {
-      if (preferences.dashboardLayout?.maxRecentPages) {
-        console.log('Setting maxRecentPages from preferences:', preferences.dashboardLayout.maxRecentPages);
-        setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
+      // Handle maxRecentPages with fallback to default value
+      const maxPages = preferences.dashboardLayout?.maxRecentPages;
+      if (maxPages !== undefined && maxPages !== null) {
+        setMaxRecentPages(maxPages.toString());
       }
+      
       if (preferences.theme) {
         setTheme(preferences.theme);
       }
@@ -189,7 +190,7 @@ export default function Settings() {
     mutationFn: async (data: any) => {
       try {
         const token = localStorage.getItem('authToken');
-        const response = await fetch(`/api/user-preferences/${user?.id}`, {
+        const response = await fetch('/api/user-preferences', {
           method: 'PUT',
           body: JSON.stringify(data),
           headers: { 
@@ -325,7 +326,6 @@ export default function Settings() {
   });
 
   const handleSavePreferences = () => {
-    console.log('Saving preferences - maxRecentPages:', maxRecentPages, 'parsed:', parseInt(maxRecentPages));
     const updatedPrefs = {
       ...preferences,
       theme,
@@ -339,7 +339,6 @@ export default function Settings() {
       }
     };
     
-    console.log('Updated preferences object:', updatedPrefs);
     updatePreferencesMutation.mutate(updatedPrefs);
   };
 
