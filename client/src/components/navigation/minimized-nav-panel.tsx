@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useAuth } from '@/hooks/useAuth';
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useQuery } from '@tanstack/react-query';
 // Import icons directly instead of using getIconComponent
 import * as Icons from 'lucide-react';
@@ -37,6 +38,7 @@ interface MinimizedNavPanelProps {
 export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: MinimizedNavPanelProps) {
   const [location, setLocation] = useLocation();
   const { user } = useAuth();
+  const { handleNavigation } = useSplitScreen();
   
   // Fetch user preferences to get maxRecentPages setting
   const { data: userPreferences } = useQuery<any>({
@@ -60,12 +62,12 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
   }
 
   const handlePageClick = (page: any) => {
-    setLocation(page.path);
+    handleNavigation(page.path, page.label);
     addRecentPage(page.path, page.label, page.icon);
   };
 
   const handleHomeClick = () => {
-    setLocation('/');
+    handleNavigation('/', 'Dashboard');
     addRecentPage('/', 'Dashboard', 'BarChart3');
   };
 
