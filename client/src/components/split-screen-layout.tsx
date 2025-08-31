@@ -47,7 +47,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const preventEventPropagation = (e: React.MouseEvent | React.TouchEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    e.stopImmediatePropagation();
+    // stopImmediatePropagation is not available on all event types
+    if ('stopImmediatePropagation' in e && typeof e.stopImmediatePropagation === 'function') {
+      e.stopImmediatePropagation();
+    }
   };
 
   // Add event listeners for dragging
