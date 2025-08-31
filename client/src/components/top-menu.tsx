@@ -939,34 +939,21 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                   })}
                 </div>)
               ) : (
-                // Expanded layout when content fits comfortably
-                (<div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
-                  {getVisibleGroups().map((group, groupIndex) => (
-                    <div key={groupIndex} className={`${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`}>
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center uppercase tracking-wide">
-                          {(() => {
-                            const FirstIcon = group.features[0]?.icon;
-                            const colorMap: Record<string, string> = {
-                              'blue': 'bg-blue-500',
-                              'purple': 'bg-purple-500',
-                              'orange': 'bg-orange-500',
-                              'green': 'bg-green-500',
-                              'gray': 'bg-gray-500',
-                              'teal': 'bg-teal-500',
-                              'amber': 'bg-amber-500'
-                            };
-                            const bgColor = colorMap[group.color] || 'bg-gray-500';
-                            
-                            return (
-                              <>
-                                {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
-                                {group.title}
-                              </>
-                            );
-                          })()}
-                        </h3>
-                        {group.title === "Recent & Favorites" && (
+                // Expanded layout when content fits comfortably - Unified vertical layout
+                (<div className="space-y-4">
+                  {getVisibleGroups().map((group, groupIndex) => {
+                    const isRecentGroup = group.title === "Recent & Favorites";
+                    
+                    return (
+                    <div key={groupIndex} className={
+                      isRecentGroup ? 'mb-6' : 
+                      `${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`
+                    }>
+                      {isRecentGroup ? (
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
+                            Recent & Favorites
+                          </h3>
                           <Button
                             variant="ghost"
                             size="sm"
@@ -975,9 +962,34 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                           >
                             Clear
                           </Button>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between mb-3">
+                          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center uppercase tracking-wide">
+                            {(() => {
+                              const FirstIcon = group.features[0]?.icon;
+                              const colorMap: Record<string, string> = {
+                                'blue': 'bg-blue-500',
+                                'purple': 'bg-purple-500',
+                                'orange': 'bg-orange-500',
+                                'green': 'bg-green-500',
+                                'gray': 'bg-gray-500',
+                                'teal': 'bg-teal-500',
+                                'amber': 'bg-amber-500'
+                              };
+                              const bgColor = colorMap[group.color] || 'bg-gray-500';
+                              
+                              return (
+                                <>
+                                  {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
+                                  {group.title}
+                                </>
+                              );
+                            })()}
+                          </h3>
+                        </div>
+                      )}
+                      <div className={`${isRecentGroup ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3' : 'grid grid-cols-2 gap-2'}`}>
                         {group.features.map((feature, featureIndex) => (
                           <div 
                             key={featureIndex} 
@@ -1025,7 +1037,8 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                         ))}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>)
                 )
               )}
