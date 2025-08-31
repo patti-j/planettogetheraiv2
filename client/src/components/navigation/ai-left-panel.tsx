@@ -19,6 +19,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 
 interface AIInsight {
   id: string;
@@ -40,6 +41,7 @@ interface AILeftPanelProps {
 
 export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [, navigate] = useLocation();
+  const { handleNavigation } = useSplitScreen();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
@@ -382,7 +384,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         if (target.endsWith('.html')) {
           window.open(target, '_blank');
         } else {
-          setLocation(target);
+          handleNavigation(target, data.action.target.replace('/', '').replace('-', ' '));
         }
         
         // Show navigation confirmation
@@ -711,7 +713,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation('/canvas')}
+                onClick={() => handleNavigation('/canvas', 'AI Canvas')}
                 className="text-white hover:text-white/80 bg-transparent"
                 title="Open AI Canvas"
               >
@@ -720,7 +722,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation('/playbooks')}
+                onClick={() => handleNavigation('/playbooks', 'Playbooks')}
                 className="text-white hover:text-white/80 bg-transparent"
                 title="Open Playbooks"
               >
@@ -729,7 +731,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation('/agent-history')}
+                onClick={() => handleNavigation('/agent-history', 'Agent History')}
                 className="text-white hover:text-white/80 bg-transparent"
                 title="Open Agent History"
               >
@@ -738,7 +740,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               <Button
                 variant="ghost"
                 size="icon"
-                onClick={() => setLocation('/ai-insights')}
+                onClick={() => handleNavigation('/ai-insights', 'AI Insights')}
                 className="text-white hover:text-white/80 bg-transparent"
                 title="Open AI Insights"
               >
