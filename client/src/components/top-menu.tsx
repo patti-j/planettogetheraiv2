@@ -702,14 +702,8 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                       Clear
                     </Button>
                   </div>
-                  <DashboardCardContainer
-                    maxVisibleCardsMobile={3}
-                    maxVisibleCardsTablet={3}
-                    maxVisibleCardsDesktop={3}
-                    showMoreText="Show More"
-                    showLessText="Show Less"
-                    gridClassName="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr"
-                    cards={recentPages.filter(page => {
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3 auto-rows-fr">
+                    {recentPages.filter(page => {
                       if (!searchFilter.trim()) return true;
                       const searchTerm = searchFilter.toLowerCase();
                       return page.label.toLowerCase().includes(searchTerm);
@@ -783,55 +777,51 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                       
                       const iconColorClass = getIconColor(color, isAI);
                       
-                      return {
-                        id: `recent-${page.path}-${index}`,
-                        priority: page.isPinned ? 1 : 5, // Pinned items get highest priority
-                        content: (
-                          <div key={`${page.path}-${index}`} className="relative group">
-                            <Link 
-                              href={page.path === "#max" ? "#" : page.path}
-                              onClick={() => {
-                                if (page.path === "#max") {
-                                  toggleMaxAI();
-                                }
-                                setMenuOpen(false);
-                              }}
-                            >
-                              <div className={`
-                                w-full aspect-square min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
-                                border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
-                                flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden
-                                ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
-                                ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                              `}>
-                                <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${isAI ? 'text-purple-600' : iconColorClass}`} strokeWidth={1.5} fill="none" />
-                                <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
-                                  {page.label}
-                                </span>
-                                {/* Pin/Unpin Button - Bottom Right Corner */}
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    togglePinPage(page.path);
-                                  }}
-                                  className={`
-                                    absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
-                                    ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
-                                  `}
-                                  title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-                                >
-                                  {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
-                                </Button>
-                              </div>
-                            </Link>
-                          </div>
-                        )
-                      };
+                      return (
+                        <div key={`${page.path}-${index}`} className="relative group">
+                          <Link 
+                            href={page.path === "#max" ? "#" : page.path}
+                            onClick={() => {
+                              if (page.path === "#max") {
+                                toggleMaxAI();
+                              }
+                              setMenuOpen(false);
+                            }}
+                          >
+                            <div className={`
+                              w-full aspect-square min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
+                              border hover:shadow-md rounded-xl p-2 cursor-pointer transition-all duration-200 hover:scale-[1.02] 
+                              flex flex-col items-center justify-center text-center space-y-1 relative overflow-hidden
+                              ${page.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                              ${isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
+                            `}>
+                              <IconComponent className={`w-3 h-3 sm:w-4 sm:h-4 flex-shrink-0 ${isAI ? 'text-purple-600' : iconColorClass}`} strokeWidth={1.5} fill="none" />
+                              <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0 px-1">
+                                {page.label}
+                              </span>
+                              {/* Pin/Unpin Button - Bottom Right Corner */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  togglePinPage(page.path);
+                                }}
+                                className={`
+                                  absolute bottom-1 right-1 h-4 w-4 p-0 transition-all
+                                  ${page.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
+                                `}
+                                title={page.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                              >
+                                {page.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
+                              </Button>
+                            </div>
+                          </Link>
+                        </div>
+                      );
                     })}
-                  />
+                  </div>
                 </div>
               )}
 
