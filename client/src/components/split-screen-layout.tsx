@@ -189,8 +189,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         }}
         onClick={(e) => {
           preventEventPropagation(e);
-          console.log('Secondary pane CLICK, setting navigationTarget to secondary');
+          console.log('🔥 Secondary pane CLICK, setting navigationTarget to secondary');
+          console.log('🔥 Split mode before click:', splitMode);
           setNavigationTarget('secondary');
+          console.log('🔥 Split mode after setting target:', splitMode);
         }}
       >
         {/* Subtle border indicator for active navigation target */}
