@@ -2314,10 +2314,31 @@ function DataSchemaViewContent() {
     if (table) {
       // Get click position relative to viewport
       const rect = event.target.getBoundingClientRect();
+      
+      // Calculate menu dimensions (approximate)
+      const menuHeight = 180; // Estimated height of the menu
+      const menuWidth = 200;   // Estimated width of the menu
+      
+      // Determine best position (above or below the table)
+      let x = rect.left + rect.width / 2;
+      let y = rect.top - 10; // Default: position above
+      
+      // Check if menu would go off the top of the screen
+      if (y - menuHeight < 10) {
+        y = rect.bottom + 10; // Position below instead
+      }
+      
+      // Check if menu would go off the left/right of the screen
+      if (x - menuWidth / 2 < 10) {
+        x = 10 + menuWidth / 2; // Align to left edge
+      } else if (x + menuWidth / 2 > window.innerWidth - 10) {
+        x = window.innerWidth - 10 - menuWidth / 2; // Align to right edge
+      }
+      
       setFloatingMenu({
         show: true,
-        x: rect.left + rect.width / 2,
-        y: rect.top - 10, // Position above the table card
+        x: x,
+        y: y,
         tableName: node.id,
         table: table
       });
