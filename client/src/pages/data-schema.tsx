@@ -2374,22 +2374,22 @@ function DataSchemaViewContent() {
 
   return (
     <div className="h-screen flex flex-col">
-      {/* Header - Mobile Optimized with proper hamburger menu spacing */}
+      {/* Header - Mobile Optimized with better responsive design */}
       {!isFullScreen && (
-        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-4 relative z-20">
+        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-3 relative z-20 min-h-0">
         {/* Title Row - Compact on Mobile with proper spacing */}
-        <div className="flex items-center justify-between mb-2 sm:mb-4">
-          <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center justify-between mb-2 gap-2">
+          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-            <h1 className="text-lg sm:text-2xl font-bold">Data Schema</h1>
+            <h1 className="text-base sm:text-2xl font-bold">Data Schema</h1>
             <Badge variant="outline" className="text-xs">
               {filteredTables.length}
             </Badge>
           </div>
           
-          {/* Top Right Controls - Responsive with proper overflow handling */}
-          <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0 max-w-full overflow-x-auto">
-            {/* Homepage Navigation Button - More prominent */}
+          {/* Top Right Controls - Essential buttons only, responsive */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {/* Essential controls only - show most important ones */}
             <Button 
               onClick={() => {
                 console.log('🏠 Navigating to homepage...');
@@ -2397,139 +2397,12 @@ function DataSchemaViewContent() {
               }}
               variant="default"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white flex-shrink-0"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
-              <Home className="w-4 h-4 sm:hidden" />
-              <span className="hidden sm:inline">← Homepage</span>
+              <Home className="w-4 h-4" />
             </Button>
             
-            {/* Manual Refresh Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualRefresh}
-                    disabled={isRefreshing}
-                    className="flex-shrink-0"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Manually refresh schema data to load recent changes</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Fit to View Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fitView({ padding: 0.2, minZoom: 0.05, maxZoom: 2.0, duration: 800 })}
-                    className="flex-shrink-0"
-                  >
-                    <Target className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Fit to View - Center and zoom to show all tables</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* MiniMap Toggle */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowMiniMap(!showMiniMap)}
-                    className={`flex-shrink-0 ${showMiniMap ? 'ring-2 ring-blue-500' : ''}`}
-                  >
-                    {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{showMiniMap ? 'Hide' : 'Show'} MiniMap</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Lasso Selection Toggle */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setIsLassoMode(!isLassoMode);
-                      if (isLassoMode) {
-                        // Clear lasso selection when turning off lasso mode
-                        setLassoPath([]);
-                        setIsDrawing(false);
-                      }
-                    }}
-                    className={`flex-shrink-0 ${isLassoMode ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
-                  >
-                    {isLassoMode ? <MousePointer className="w-4 h-4" /> : <Lasso className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{isLassoMode ? 'Exit Lasso Mode' : 'Enable Lasso Selection'} - Draw around tables to select</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-
-            {/* Zoom to Lasso Selection */}
-            {lassoSelection.length > 0 && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => zoomToLassoSelection(nodes)}
-                      className="flex-shrink-0 bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
-                    >
-                      <Focus className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>Zoom to Lasso Selection ({lassoSelection.length} tables)</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {/* Reset Lasso Zoom */}
-            {zoomedToLasso && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={resetLassoZoom}
-                      className="flex-shrink-0 bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
-                    >
-                      <RotateCcw className="w-4 h-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>Reset to Full View</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            )}
-
-            {/* Full Screen Toggle */}
+            {/* Full Screen Toggle - Always visible for better UX */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -2537,7 +2410,7 @@ function DataSchemaViewContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => setIsFullScreen(!isFullScreen)}
-                    className={`flex-shrink-0 ${isFullScreen ? 'ring-2 ring-green-500' : ''}`}
+                    className={isFullScreen ? 'ring-2 ring-green-500' : ''}
                   >
                     {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
                   </Button>
@@ -2565,21 +2438,22 @@ function DataSchemaViewContent() {
           )}
         </div>
         
-        {/* Controls - Responsive Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2 sm:gap-4">
-          {/* Search - Full width on mobile */}
-          <div className="flex items-center gap-2 sm:col-span-2 lg:col-span-1">
-            <Search className="w-4 h-4 text-gray-400" />
-            <Input
-              placeholder="Search tables..."
-              value={searchTerm}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="w-full sm:w-64"
-            />
-          </div>
+        {/* Main Controls - Better responsive layout */}
+        <div className="space-y-3">
+          {/* Primary Controls Row */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+            {/* Search - Full width on mobile */}
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+              <Input
+                placeholder="Search tables..."
+                value={searchTerm}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full"
+              />
+            </div>
 
-          {/* Table Selection Button */}
-          <div className="flex items-center gap-2">
+            {/* Table Selection Button */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -2587,10 +2461,10 @@ function DataSchemaViewContent() {
                     variant="outline"
                     size="sm"
                     onClick={() => setShowTableSelector(!showTableSelector)}
-                    className={`${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
+                    className={`flex-shrink-0 ${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
                   >
                     <Settings className="w-4 h-4 mr-1" />
-                    Tables ({selectedTables.length})
+                    <span className="hidden sm:inline">Tables </span>({selectedTables.length})
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
@@ -2600,70 +2474,68 @@ function DataSchemaViewContent() {
             </TooltipProvider>
           </div>
           
-          {/* Feature Filter - Priority on mobile */}
-          <Select value={selectedFeature} onValueChange={handleFeatureChange}>
-            <SelectTrigger className="w-full sm:w-52">
-              <SelectValue placeholder="Select feature" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableFeatures.map(feature => (
-                <SelectItem key={feature.value} value={feature.value}>
-                  <div className="flex items-center gap-2">
-                    <Filter className="w-4 h-4 text-blue-500" />
-                    {feature.label}
-                  </div>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Category Filter */}
-          <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {categories.map(category => (
-                <SelectItem key={category} value={category}>
-                  {category}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          
-          {/* Layout - Hidden on mobile, compact on tablet */}
-          <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
-            <SelectTrigger className="w-full sm:w-32 hidden sm:block">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hierarchical">Tree</SelectItem>
-              <SelectItem value="circular">Circle</SelectItem>
-              <SelectItem value="grid">Grid</SelectItem>
-            </SelectContent>
-          </Select>
-          
-          {/* Toggles - Compact on all screens */}
-          <div className="flex items-center gap-3 sm:gap-4 col-span-1 sm:col-span-2 lg:col-span-1">
+          {/* Secondary Controls Row */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Feature Filter */}
+            <Select value={selectedFeature} onValueChange={handleFeatureChange}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Feature" />
+              </SelectTrigger>
+              <SelectContent>
+                {availableFeatures.map(feature => (
+                  <SelectItem key={feature.value} value={feature.value}>
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-blue-500" />
+                      {feature.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Category Filter */}
+            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
+              <SelectTrigger className="w-full sm:w-40">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {categories.map(category => (
+                  <SelectItem key={category} value={category}>
+                    {category}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            
+            {/* Layout - Compact on all screens */}
+            <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
+              <SelectTrigger className="w-20 sm:w-24">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hierarchical">Tree</SelectItem>
+                <SelectItem value="circular">Circle</SelectItem>
+                <SelectItem value="grid">Grid</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* Quick Action Buttons - Always visible */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1">
-                    <Switch
-                      id="show-columns"
-                      checked={showColumns}
-                      onCheckedChange={setShowColumns}
-                      className="scale-75 sm:scale-100"
-                    />
-                    <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleManualRefresh}
+                    disabled={isRefreshing}
+                    className="flex-shrink-0"
+                  >
+                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    <strong>Show Table Fields:</strong> Display individual columns/fields inside each table card. 
-                    Turn off to show only table names for a cleaner overview.
-                  </p>
+                <TooltipContent side="bottom">
+                  <p>Refresh schema</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -2671,79 +2543,141 @@ function DataSchemaViewContent() {
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1">
-                    <Switch
-                      id="show-relationships"
-                      checked={showRelationships}
-                      onCheckedChange={setShowRelationships}
-                      className="scale-75 sm:scale-100"
-                    />
-                    <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Lines</Label>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fitView({ padding: 0.2, minZoom: 0.05, maxZoom: 2.0, duration: 800 })}
+                    className="flex-shrink-0"
+                  >
+                    <Target className="w-4 h-4" />
+                  </Button>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    <strong>Show Relationship Lines:</strong> Display connecting lines between related tables. 
-                    Turn off to hide all relationship connections for a simpler view.
-                  </p>
+                <TooltipContent side="bottom">
+                  <p>Fit to view</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
+          </div>
+          
+          {/* View Options Row */}
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            {/* View Toggle Options */}
+            <div className="flex items-center gap-1">
+              <Switch
+                id="show-columns"
+                checked={showColumns}
+                onCheckedChange={setShowColumns}
+                className="scale-75 sm:scale-100"
+              />
+              <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
+            </div>
             
-            {/* Simplify Lines toggle - only shown when relationships are visible */}
+            <div className="flex items-center gap-1">
+              <Switch
+                id="show-relationships"
+                checked={showRelationships}
+                onCheckedChange={setShowRelationships}
+                className="scale-75 sm:scale-100"
+              />
+              <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Lines</Label>
+            </div>
+            
             {showRelationships && (
+              <div className="flex items-center gap-1">
+                <Switch
+                  id="simplify-lines"
+                  checked={simplifyLines}
+                  onCheckedChange={setSimplifyLines}
+                  className="scale-75 sm:scale-100"
+                />
+                <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Straight</Label>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1">
+              <Switch
+                id="focus-mode"
+                checked={focusMode}
+                onCheckedChange={(checked) => {
+                  setFocusMode(checked);
+                  if (!checked) {
+                    setFocusTable(null);
+                  }
+                }}
+                className="scale-75 sm:scale-100"
+              />
+              <Label htmlFor="focus-mode" className="text-xs sm:text-sm flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                Focus
+              </Label>
+            </div>
+            
+            {/* Additional Controls - Hidden on very small screens */}
+            <div className="hidden sm:flex items-center gap-2">
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1">
-                      <Switch
-                        id="simplify-lines"
-                        checked={simplifyLines}
-                        onCheckedChange={setSimplifyLines}
-                        className="scale-75 sm:scale-100"
-                      />
-                      <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Straight Lines</Label>
-                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowMiniMap(!showMiniMap)}
+                      className={showMiniMap ? 'ring-2 ring-blue-500' : ''}
+                    >
+                      {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                    </Button>
                   </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="max-w-xs">
-                      <strong>Straight Lines Mode:</strong> Shows direct straight-line connections between tables instead of curved/stepped paths. 
-                      Reduces visual clutter but may cause line crossings. Turn off for curved relationship paths.
-                    </p>
+                  <TooltipContent side="bottom">
+                    <p>{showMiniMap ? 'Hide' : 'Show'} MiniMap</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-            )}
-            {/* Focus toggle - compact mobile */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center gap-1">
-                    <Switch
-                      id="focus-mode"
-                      checked={focusMode}
-                      onCheckedChange={(checked) => {
-                        setFocusMode(checked);
-                        if (!checked) {
-                          setFocusTable(null);
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsLassoMode(!isLassoMode);
+                        if (isLassoMode) {
+                          setLassoPath([]);
+                          setIsDrawing(false);
                         }
                       }}
-                      className="scale-75 sm:scale-100"
-                    />
-                    <Label htmlFor="focus-mode" className="text-xs sm:text-sm flex items-center gap-1">
-                      <Target className="w-3 h-3" />
-                      Focus
-                    </Label>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="max-w-xs">
-                    Focus mode shows only a selected table and its connected relationships. 
-                    Click any table while focus mode is enabled to isolate its network.
-                  </p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+                      className={isLassoMode ? 'ring-2 ring-purple-500 bg-purple-50' : ''}
+                    >
+                      {isLassoMode ? <MousePointer className="w-4 h-4" /> : <Lasso className="w-4 h-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{isLassoMode ? 'Exit Lasso Mode' : 'Enable Lasso Selection'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {lassoSelection.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => zoomToLassoSelection(nodes)}
+                  className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                >
+                  <Focus className="w-4 h-4" />
+                </Button>
+              )}
+              
+              {zoomedToLasso && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetLassoZoom}
+                  className="bg-amber-50 border-amber-200 text-amber-700 hover:bg-amber-100"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
         
