@@ -173,7 +173,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
             variant={location === '/' ? 'default' : 'ghost'}
             className="w-full justify-start"
             onClick={() => {
-              setLocation('/');
+              handleNavigation('/', 'Home');
               if (!isPinned && onClose) onClose();
             }}
           >
@@ -256,7 +256,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                         variant={location === page.path ? 'secondary' : 'ghost'}
                         className="w-full justify-start group h-9"
                         onClick={() => {
-                          setLocation(page.path);
+                          handleNavigation(page.path, page.label);
                           if (!isPinned && onClose) onClose();
                         }}
                       >
@@ -452,7 +452,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                               !isActive && "hover:bg-accent/50 hover:text-foreground"
                             )}
                             onClick={() => {
-                              setLocation(page.path);
+                              handleNavigation(page.path, page.label);
                               addRecentPage(page.path, page.label, page.icon);
                               if (!isPinned && onClose) onClose();
                             }}
