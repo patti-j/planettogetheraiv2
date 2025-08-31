@@ -68,12 +68,14 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const handlePaneSelection = (target: 'primary' | 'secondary') => {
     if (pendingNavigation) {
       if (target === 'primary') {
+        // For primary pane, navigate to the page (since primary shows current route)
         setPrimaryPage(pendingNavigation.path);
+        setLocation(pendingNavigation.path);
       } else {
+        // For secondary pane, just update the secondaryPage state
         setSecondaryPage(pendingNavigation.path);
       }
       setNavigationTarget(target);
-      // Don't navigate - just update which pane shows the content
     }
     setShowPaneSelector(false);
     setPendingNavigation(null);

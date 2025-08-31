@@ -161,7 +161,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         }}
       >
         <div className="h-full overflow-auto">
-          <PageRenderer path={primaryPage} />
+          {children}
         </div>
       </div>
 
