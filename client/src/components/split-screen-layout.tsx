@@ -205,14 +205,8 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
       >
-        {/* Page information indicator */}
-        {primaryPage && (
-          <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm">
-            {primaryPage}
-          </div>
-        )}
         <div className="h-full overflow-auto">
-          <PageRenderer path={primaryPage} />
+          {children}
         </div>
       </div>
 
