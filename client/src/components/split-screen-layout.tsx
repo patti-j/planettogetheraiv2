@@ -21,6 +21,12 @@ function PageRenderer({ path }: { path: string }) {
       setLoading(true);
       setError(null);
       
+      if (!path) {
+        setError('No path provided');
+        setLoading(false);
+        return;
+      }
+      
       try {
         // Dynamic import based on path - this automatically works with any page that exists
         const pathWithoutSlash = path.replace(/^\//, '');
@@ -235,7 +241,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
       {/* Secondary pane */}
       <div 
-        className="relative bg-background overflow-hidden"
+        className="relative bg-background overflow-hidden flex-1"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
