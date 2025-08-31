@@ -47,9 +47,26 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
   const { handleNavigation } = useSplitScreen();
   
   // Fetch user preferences to get maxRecentPages setting
-  const { data: userPreferences } = useQuery<any>({
-    queryKey: [`/api/user-preferences/${user?.id}`],
-    enabled: !!user?.id,
+  const { data: userPreferences } = useQuery({
+    queryKey: ['/api/user-preferences', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch preferences:', response.status, response.statusText);
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!user?.id
   });
   
   // Get max recent pages from user preferences or use default of 5

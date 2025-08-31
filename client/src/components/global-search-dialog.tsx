@@ -7,7 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Search, X, ChevronRight, Clock, Star } from "lucide-react";
 import { navigationGroups } from "@/config/navigation-menu";
 import { useNavigation } from "@/contexts/NavigationContext";
-import { usePermissions } from "@/hooks/useAuth";
+import { usePermissions, useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 
 interface GlobalSearchDialogProps {
   open: boolean;
@@ -19,7 +20,29 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [, setLocation] = useLocation();
   const { recentPages, addRecentPage } = useNavigation();
-  const { hasPermission } = usePermissions();
+  const { hasPermission, user } = usePermissions();
+  
+  // Fetch user preferences to get maxRecentPages setting
+  const { data: userPreferences } = useQuery({
+    queryKey: ['/api/user-preferences', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        return null;
+      }
+      return response.json();
+    },
+    enabled: !!user?.id
+  });
 
   // Get all searchable items from navigation
   const getAllSearchableItems = () => {
@@ -81,7 +104,8 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
 
   // Get recent items for quick access
   const getRecentItems = () => {
-    return recentPages.slice(0, 8).map(page => ({
+    const maxRecentPages = userPreferences?.dashboardLayout?.maxRecentPages || 5;
+    return recentPages.slice(0, maxRecentPages).map(page => ({
       ...page,
       isRecent: true
     }));
