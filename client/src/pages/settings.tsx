@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -36,13 +37,16 @@ import {
   AlertCircle,
   CheckCircle,
   BarChart3,
-  Zap
+  Zap,
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { apiRequest, queryClient } from '@/lib/queryClient';
 
 export default function Settings() {
   const { user } = useAuth();
+  const [, setLocation] = useLocation();
   const [showPassword, setShowPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
@@ -334,9 +338,19 @@ export default function Settings() {
       <div className="container mx-auto py-8 px-4 max-w-5xl">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <SettingsIcon className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">Settings</h1>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <SettingsIcon className="h-8 w-8 text-primary" />
+              <h1 className="text-3xl font-bold">Settings</h1>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLocation('/dashboard')}
+              className="h-10 w-10"
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
           <p className="text-muted-foreground">
             Manage your account settings and preferences
