@@ -939,107 +939,128 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                   })}
                 </div>)
               ) : (
-                // Expanded layout when content fits comfortably - Unified vertical layout
-                (<div className="space-y-4">
-                  {getVisibleGroups().map((group, groupIndex) => {
-                    const isRecentGroup = group.title === "Recent & Favorites";
-                    
-                    return (
-                    <div key={groupIndex} className={
-                      isRecentGroup ? 'mb-6' : 
-                      `${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} p-4 shadow-sm`
-                    }>
-                      {isRecentGroup ? (
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
-                            Recent & Favorites
-                          </h3>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={clearRecentPages}
-                            className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
-                          >
-                            Clear
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-sm font-bold text-gray-800 dark:text-gray-100 flex items-center uppercase tracking-wide">
-                            {(() => {
-                              const FirstIcon = group.features[0]?.icon;
-                              const colorMap: Record<string, string> = {
-                                'blue': 'bg-blue-500',
-                                'purple': 'bg-purple-500',
-                                'orange': 'bg-orange-500',
-                                'green': 'bg-green-500',
-                                'gray': 'bg-gray-500',
-                                'teal': 'bg-teal-500',
-                                'amber': 'bg-amber-500'
-                              };
-                              const bgColor = colorMap[group.color] || 'bg-gray-500';
-                              
-                              return (
-                                <>
-                                  {FirstIcon && <FirstIcon className={`w-4 h-4 flex-shrink-0 mr-2.5 ${bgColor.replace('bg-', 'text-').replace('-500', '-600')}`} strokeWidth={1.5} />}
-                                  {group.title}
-                                </>
-                              );
-                            })()}
-                          </h3>
+                // Expanded layout when content fits comfortably - Unified flat layout like search results
+                (() => {
+                  const allGroups = getVisibleGroups();
+                  const recentGroup = allGroups.find(g => g.title === "Recent & Favorites");
+                  const otherGroups = allGroups.filter(g => g.title !== "Recent & Favorites");
+                  
+                  // Flatten all non-recent features into a single array with group context
+                  const allOtherFeatures = otherGroups.flatMap(group => 
+                    group.features.map(feature => ({
+                      ...feature,
+                      groupTitle: group.title,
+                      groupColor: group.color,
+                      groupPriority: group.priority
+                    }))
+                  );
+                  
+                  return (
+                    <div className="space-y-6">
+                      {/* Recent & Favorites Section */}
+                      {recentGroup && recentGroup.features.length > 0 && (
+                        <div>
+                          <div className="flex items-center justify-between mb-4">
+                            <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 flex-1">
+                              Recent & Favorites
+                            </h3>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={clearRecentPages}
+                              className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 px-2 py-1 h-auto"
+                            >
+                              Clear
+                            </Button>
+                          </div>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3 mb-8">
+                            {recentGroup.features.map((feature, featureIndex) => (
+                              <div 
+                                key={featureIndex} 
+                                onClick={() => handleFeatureClick(feature)}
+                                className="relative group"
+                              >
+                                <div className={`
+                                  w-full min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
+                                  border hover:shadow-sm rounded-xl p-2 sm:p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                                  flex flex-col items-center justify-center text-center space-y-1
+                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 
+                                    feature.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' :
+                                    'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                  ${feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
+                                `}>
+                                  <feature.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
+                                  <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                    {feature.label}
+                                  </span>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      togglePinPage(feature.href);
+                                    }}
+                                    className={`
+                                      absolute top-1 right-1 h-4 w-4 p-0 transition-all opacity-0 group-hover:opacity-100
+                                      ${feature.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
+                                    `}
+                                    title={feature.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
+                                  >
+                                    {feature.isPinned ? <Pin className="h-2 w-2" strokeWidth={2} /> : <PinOff className="h-2 w-2" strokeWidth={1} />}
+                                  </Button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
                       )}
-                      <div className={`${isRecentGroup ? 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3' : 'grid grid-cols-2 gap-2'}`}>
-                        {group.features.map((feature, featureIndex) => (
-                          <div 
-                            key={featureIndex} 
-                            onClick={() => handleFeatureClick(feature)}
-                            className="relative group"
-                          >
-                            <div className={`
-                              ${getCardSize(group.priority)}
-                              border hover:shadow-sm
-                              rounded-lg p-2 cursor-pointer transition-all duration-150
-                              flex flex-col items-center justify-center text-center gap-1 relative
-                              ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-700/40' : 
-                                feature.isPinned ? 'border-emerald-300 bg-emerald-50 dark:bg-emerald-700/40 dark:border-emerald-400' :
-                                'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
-                              ${feature.isAI ? 'border-purple-200 dark:border-purple-400 hover:border-purple-300 dark:hover:border-purple-300 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-700/30 dark:to-pink-700/30' : ''}
-                            `}>
-                              <feature.icon 
-                                className={`${getIconSize(group.priority)} flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`}
-                                strokeWidth={1.5} 
-                                fill="none"
-                              />
-                              <span className={`${getTextSize(group.priority)} text-gray-700 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0`}>
-                                {feature.label}
-                              </span>
-                              {group.title === "Recent & Favorites" && (
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    togglePinPage(feature.href);
-                                  }}
-                                  className={`
-                                    absolute top-1 right-1 h-4 w-4 p-0 transition-all opacity-0 group-hover:opacity-100
-                                    ${feature.isPinned ? 'text-emerald-600 hover:text-emerald-700' : 'text-gray-400 hover:text-gray-600'}
-                                  `}
-                                  title={feature.isPinned ? 'Unpin from favorites' : 'Pin to favorites'}
-                                >
-                                  {feature.isPinned ? <Pin className="h-2.5 w-2.5" strokeWidth={2} /> : <PinOff className="h-2.5 w-2.5" strokeWidth={1} />}
-                                </Button>
-                              )}
-                            </div>
+                      
+                      {/* All Other Menu Items in One Unified Grid */}
+                      {allOtherFeatures.length > 0 && (
+                        <div>
+                          <h3 className="text-lg font-semibold text-gray-800 dark:text-gray-100 border-b border-gray-200 dark:border-gray-700 pb-2 mb-4">
+                            All Features
+                          </h3>
+                          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 sm:gap-3">
+                            {allOtherFeatures.map((feature, featureIndex) => (
+                              <div 
+                                key={featureIndex} 
+                                onClick={() => handleFeatureClick(feature)}
+                              >
+                                <div className={`
+                                  w-full min-h-[70px] h-[70px] sm:min-h-[80px] sm:h-[80px] 
+                                  border hover:shadow-sm rounded-xl p-2 sm:p-3 cursor-pointer transition-all duration-200 hover:scale-[1.02]
+                                  flex flex-col items-center justify-center text-center space-y-1
+                                  ${location === feature.href ? 'ring-2 ring-blue-500 border-blue-500 bg-blue-50 dark:bg-blue-900/20' : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-500 hover:border-gray-300 dark:hover:border-gray-400'}
+                                  ${feature.isAI ? 'border-purple-200 dark:border-purple-700 hover:border-purple-300 dark:hover:border-purple-600 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20' : ''}
+                                `}>
+                                  <feature.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 ${feature.isAI ? 'text-purple-600' : feature.color?.replace('bg-', 'text-').replace('-500', '-600') || 'text-gray-600'}`} strokeWidth={1.5} fill="none" />
+                                  <div className="space-y-0.5">
+                                    <span className="text-[10px] sm:text-xs font-medium text-gray-800 dark:text-white leading-tight text-center line-clamp-2 overflow-hidden flex-shrink-0">
+                                      {feature.label}
+                                    </span>
+                                    <span className={`text-[9px] sm:text-xs ${
+                                      feature.groupColor === 'blue' ? 'text-blue-600 dark:text-blue-400' :
+                                      feature.groupColor === 'purple' ? 'text-purple-600 dark:text-purple-400' :
+                                      feature.groupColor === 'orange' ? 'text-orange-600 dark:text-orange-400' :
+                                      feature.groupColor === 'green' ? 'text-green-600 dark:text-green-400' :
+                                      feature.groupColor === 'gray' ? 'text-gray-600 dark:text-gray-400' :
+                                      feature.groupColor === 'teal' ? 'text-teal-600 dark:text-teal-400' :
+                                      'text-gray-600 dark:text-gray-400'
+                                    } font-normal`}>
+                                      {feature.groupTitle}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      )}
                     </div>
-                    );
-                  })}
-                </div>)
+                  );
+                })()
                 )
               )}
             </div>
