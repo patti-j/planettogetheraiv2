@@ -43,6 +43,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
 
+  // Prevent any split screen events from bubbling up to header or other controls
+  const preventEventPropagation = (e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+  };
+
   // Add event listeners for dragging
   React.useEffect(() => {
     if (isDragging) {
@@ -114,8 +121,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
         onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+          preventEventPropagation(e);
           console.log('Primary pane MOUSEDOWN, setting navigationTarget to primary', {
             currentTarget: navigationTarget,
             newTarget: 'primary'
@@ -123,7 +129,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           setNavigationTarget('primary');
         }}
         onClickCapture={(e) => {
+          preventEventPropagation(e);
           console.log('Primary pane CLICK CAPTURE, setting navigationTarget to primary');
+          setNavigationTarget('primary');
+        }}
+        onClick={(e) => {
+          preventEventPropagation(e);
+          console.log('Primary pane CLICK, setting navigationTarget to primary');
           setNavigationTarget('primary');
         }}
       >
@@ -160,8 +172,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
         onMouseDown={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
+          preventEventPropagation(e);
           console.log('Secondary pane MOUSEDOWN, setting navigationTarget to secondary', {
             currentTarget: navigationTarget,
             newTarget: 'secondary'
@@ -169,7 +180,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           setNavigationTarget('secondary');
         }}
         onClickCapture={(e) => {
+          preventEventPropagation(e);
           console.log('Secondary pane CLICK CAPTURE, setting navigationTarget to secondary');
+          setNavigationTarget('secondary');
+        }}
+        onClick={(e) => {
+          preventEventPropagation(e);
+          console.log('Secondary pane CLICK, setting navigationTarget to secondary');
           setNavigationTarget('secondary');
         }}
       >
@@ -185,12 +202,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
             onChange={(e) => setSecondaryPage(e.target.value)}
             className="bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm"
             onClick={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
+              preventEventPropagation(e);
             }}
             onMouseDown={(e) => {
-              e.stopPropagation();
-              e.preventDefault();
+              preventEventPropagation(e);
             }}
           >
             {availablePages.map(page => (
