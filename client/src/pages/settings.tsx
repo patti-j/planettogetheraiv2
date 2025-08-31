@@ -140,8 +140,19 @@ export default function Settings() {
     queryKey: ['/api/user-preferences', user?.id],
     queryFn: async () => {
       if (!user?.id) return null;
-      const response = await fetch(`/api/user-preferences/${user.id}`);
-      if (!response.ok) return null;
+      
+      const token = localStorage.getItem('authToken');
+      const response = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        console.error('Failed to fetch preferences:', response.status, response.statusText);
+        return null;
+      }
       return response.json();
     },
     enabled: !!user?.id
@@ -149,8 +160,10 @@ export default function Settings() {
 
   // Initialize all form states when preferences are loaded
   useEffect(() => {
+    console.log('Loading preferences:', preferences);
     if (preferences) {
       if (preferences.dashboardLayout?.maxRecentPages) {
+        console.log('Setting maxRecentPages from preferences:', preferences.dashboardLayout.maxRecentPages);
         setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
       }
       if (preferences.theme) {
@@ -175,10 +188,14 @@ export default function Settings() {
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: any) => {
       try {
+        const token = localStorage.getItem('authToken');
         const response = await fetch(`/api/user-preferences/${user?.id}`, {
           method: 'PUT',
           body: JSON.stringify(data),
-          headers: { 'Content-Type': 'application/json' }
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          }
         });
         
         if (!response.ok) {
@@ -200,11 +217,12 @@ export default function Settings() {
       }
     },
     onSuccess: () => {
+      // Invalidate and refetch the preferences query with user ID
+      queryClient.invalidateQueries({ queryKey: ['/api/user-preferences', user?.id] });
       toast({
         title: "Settings Updated",
         description: "Your preferences have been saved successfully.",
       });
-      queryClient.invalidateQueries({ queryKey: ['/api/user-preferences'] });
     },
     onError: (error: any) => {
       console.error('Mutation error:', error);
@@ -307,6 +325,7 @@ export default function Settings() {
   });
 
   const handleSavePreferences = () => {
+    console.log('Saving preferences - maxRecentPages:', maxRecentPages, 'parsed:', parseInt(maxRecentPages));
     const updatedPrefs = {
       ...preferences,
       theme,
@@ -320,6 +339,7 @@ export default function Settings() {
       }
     };
     
+    console.log('Updated preferences object:', updatedPrefs);
     updatePreferencesMutation.mutate(updatedPrefs);
   };
 
