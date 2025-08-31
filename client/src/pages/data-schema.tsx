@@ -1202,7 +1202,7 @@ function DataSchemaViewContent() {
   }, [isFullScreen]);
   
   const { toast } = useToast();
-  const { fitView, zoomIn, zoomOut, setZoom, getZoom } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, zoomTo, getZoom } = useReactFlow();
   
   // Manual refresh functionality
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -1214,7 +1214,7 @@ function DataSchemaViewContent() {
   const handleZoomChange = (newZoom: number[]) => {
     const zoom = newZoom[0];
     setZoomLevel(newZoom);
-    setZoom(zoom, { duration: 200 });
+    zoomTo(zoom, { duration: 200 });
   };
   
   // Update zoom level when ReactFlow zoom changes (from mouse wheel, etc.)
