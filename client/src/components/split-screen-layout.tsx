@@ -30,14 +30,7 @@ function PageRenderer({ path }: { path: string }) {
       try {
         // Dynamic import based on path - this automatically works with any page that exists
         const pathWithoutSlash = path.replace(/^\//, '');
-        
-        // Map special paths to their actual component files
-        const pathMappings: Record<string, string> = {
-          'dashboard': 'home',
-          '': 'home'
-        };
-        
-        const componentPath = pathMappings[pathWithoutSlash] || pathWithoutSlash || 'home';
+        const componentPath = pathWithoutSlash || 'dashboard';
         
         // Convert kebab-case to PascalCase for component names
         const componentName = componentPath

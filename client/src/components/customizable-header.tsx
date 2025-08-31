@@ -634,27 +634,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             {showHeaderText && <span className="hidden lg:inline text-sm">Customize</span>}
           </Button>
 
-          {/* Fullscreen toggle button - Hide during split mode */}
-          {splitMode === 'none' && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={toggleFullScreen}
-              className="flex items-center gap-2 px-3 py-2 h-9"
-              title={isFullScreen ? "Exit Fullscreen" : "Enter Fullscreen"}
-            >
-              {isFullScreen ? (
-                <Minimize className="h-4 w-4" />
-              ) : (
-                <Maximize className="h-4 w-4" />
-              )}
-              {showHeaderText && (
-                <span className="hidden lg:inline text-sm">
-                  {isFullScreen ? "Exit Fullscreen" : "Fullscreen"}
-                </span>
-              )}
-            </Button>
-          )}
 
 
           {/* Theme (always visible) */}

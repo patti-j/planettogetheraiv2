@@ -24,7 +24,7 @@ interface SplitScreenProviderProps {
 
 export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const [splitMode, setSplitMode] = useState<SplitMode>('none');
-  const [primaryPage, setPrimaryPage] = useState('/dashboard');
+  const [primaryPage, setPrimaryPage] = useState('/home');
   const [secondaryPage, setSecondaryPage] = useState('/analytics');
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for first pane
   const [navigationTarget, setNavigationTarget] = useState<NavigationTarget>('primary');
