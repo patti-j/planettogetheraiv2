@@ -114,46 +114,14 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
       >
-        <div className="absolute top-2 right-2 z-10">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 bg-background/80 backdrop-blur-sm rounded px-2 py-1 text-xs text-muted-foreground">
-              Primary: {availablePages.find(p => p.path === primaryPage)?.label || primaryPage}
-            </div>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-                setNavigationTarget('primary');
-                return false;
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
-                navigationTarget === 'primary' 
-                  ? 'bg-blue-500 border-blue-500 text-white' 
-                  : 'bg-background/80 border-muted-foreground/40 text-muted-foreground hover:border-blue-400'
-              }`}
-              title="Click to make this pane receive navigation updates"
-            >
-              1
-            </button>
-          </div>
-        </div>
-        <div className="h-full overflow-auto">
+        {/* Subtle border indicator for active navigation target */}
+        <div className={`absolute inset-0 pointer-events-none transition-colors ${
+          navigationTarget === 'primary' ? 'ring-2 ring-blue-500/30' : ''
+        }`} />
+        <div 
+          className="h-full overflow-auto"
+          onClick={() => setNavigationTarget('primary')}
+        >
           {children}
         </div>
       </div>
@@ -182,54 +150,30 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
       >
-        <div className="absolute top-2 left-2 right-2 z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <select
-              value={secondaryPage}
-              onChange={(e) => setSecondaryPage(e.target.value)}
-              className="bg-background/80 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs"
-            >
-              {availablePages.map(page => (
-                <option key={page.path} value={page.path}>
-                  {page.label}
-                </option>
-              ))}
-            </select>
-            <button
-              type="button"
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-              }}
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                e.nativeEvent.stopImmediatePropagation();
-                setNavigationTarget('secondary');
-                return false;
-              }}
-              onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              className={`w-6 h-6 rounded-full border-2 flex items-center justify-center text-xs font-bold transition-colors ${
-                navigationTarget === 'secondary' 
-                  ? 'bg-blue-500 border-blue-500 text-white' 
-                  : 'bg-background/80 border-muted-foreground/40 text-muted-foreground hover:border-blue-400'
-              }`}
-              title="Click to make this pane receive navigation updates"
-            >
-              2
-            </button>
-          </div>
+        {/* Subtle border indicator for active navigation target */}
+        <div className={`absolute inset-0 pointer-events-none transition-colors ${
+          navigationTarget === 'secondary' ? 'ring-2 ring-blue-500/30' : ''
+        }`} />
+        
+        {/* Clean page selector that appears on hover */}
+        <div className="absolute top-2 right-2 z-10 opacity-0 hover:opacity-100 transition-opacity">
+          <select
+            value={secondaryPage}
+            onChange={(e) => setSecondaryPage(e.target.value)}
+            className="bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {availablePages.map(page => (
+              <option key={page.path} value={page.path}>
+                {page.label}
+              </option>
+            ))}
+          </select>
         </div>
-        <div className="h-full overflow-auto pt-10">
+        <div 
+          className="h-full overflow-auto"
+          onClick={() => setNavigationTarget('secondary')}
+        >
           <PageRenderer path={secondaryPage} />
         </div>
       </div>
