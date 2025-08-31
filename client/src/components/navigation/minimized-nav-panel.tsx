@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import * as Icons from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-// Get Lucide icon component from icon name
+// Get Lucide icon component from icon name - comprehensive mapping
 const getIconComponent = (iconName: string) => {
   const icons: Record<string, any> = {
     Calendar: Icons.Calendar, Brain: Icons.Brain, Briefcase: Icons.Briefcase, Database: Icons.Database, 
@@ -24,7 +24,13 @@ const getIconComponent = (iconName: string) => {
     GitBranch: Icons.GitBranch, DollarSign: Icons.DollarSign, Headphones: Icons.Headphones, Upload: Icons.Upload, 
     ArrowRightLeft: Icons.ArrowRightLeft, FileSearch: Icons.FileSearch, Presentation: Icons.Presentation, 
     FileX: Icons.FileX, Clock: Icons.Clock, Home: Icons.Home, CreditCard: Icons.CreditCard, Layout: Icons.Layout,
-    Grid: Icons.Grid, Workflow: Icons.Workflow, ArrowUpDown: Icons.ArrowUpDown
+    Grid: Icons.Grid, Workflow: Icons.Workflow, ArrowUpDown: Icons.ArrowUpDown, PlayCircle: Icons.PlayCircle,
+    History: Icons.History, Puzzle: Icons.Puzzle, AlertCircle: Icons.AlertCircle, Layers: Icons.Layers,
+    Search: Icons.Search, Users: Icons.Users, UserCheck: Icons.UserCheck, Activity: Icons.Activity,
+    Zap: Icons.Zap, Cpu: Icons.Cpu, HardDrive: Icons.HardDrive, Clipboard: Icons.Clipboard,
+    CheckCircle: Icons.CheckCircle, XCircle: Icons.XCircle, Info: Icons.Info, Mail: Icons.Mail,
+    Phone: Icons.Phone, MapPin: Icons.MapPin, Star: Icons.Star, Heart: Icons.Heart, Bookmark: Icons.Bookmark,
+    Tag: Icons.Tag, Filter: Icons.Filter, MoreHorizontal: Icons.MoreHorizontal
   };
   return icons[iconName] || Icons.FileText;
 };

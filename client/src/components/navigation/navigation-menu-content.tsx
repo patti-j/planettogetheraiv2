@@ -234,8 +234,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
             )}
           </div>
           
-          <ScrollArea className="max-h-32">
-            <div className="space-y-0.5 pr-3">
+          <ScrollArea className="h-32 w-full">
+            <div className="space-y-0.5 pr-2">
               {recentPages.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-1">
                   No recent pages
