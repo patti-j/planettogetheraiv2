@@ -135,7 +135,7 @@ export function MinimizedNavPanel({ onExpand, isPinned, onTogglePin }: Minimized
                   >
                     <IconComponent className="w-4 h-4" />
                     {page.isPinned && (
-                      <Pin className="absolute -top-1 -right-1 w-2 h-2 text-primary" />
+                      <Pin className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 text-primary" />
                     )}
                   </Button>
                 </TooltipTrigger>
