@@ -70,11 +70,12 @@ export default function Settings() {
   // Update AI agent mutation
   const updateAgentMutation = useMutation({
     mutationFn: async ({ agentId, data }: { agentId: string; data: any }) => {
-      const response = await apiRequest(`/api/ai-agents/${agentId}`, {
+      const response = await fetch(`/api/ai-agents/${agentId}`, {
         method: 'PUT',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) throw new Error('Failed to update AI agent');
       return response.json();
     },
     onSuccess: () => {
@@ -96,11 +97,12 @@ export default function Settings() {
   // Update global settings mutation
   const updateGlobalSettingsMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest('/api/ai-agents/global/settings', {
+      const response = await fetch('/api/ai-agents/global/settings', {
         method: 'PUT',
         body: JSON.stringify(data),
         headers: { 'Content-Type': 'application/json' }
       });
+      if (!response.ok) throw new Error('Failed to update global settings');
       return response.json();
     },
     onSuccess: () => {
@@ -1219,7 +1221,7 @@ export default function Settings() {
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={() => handleSavePreferences(preferences)}>
+                  <Button onClick={handleSavePreferences}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Notification Settings
                   </Button>
