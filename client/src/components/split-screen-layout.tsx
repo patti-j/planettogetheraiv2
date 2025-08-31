@@ -115,12 +115,15 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         }}
       >
         {/* Subtle border indicator for active navigation target */}
-        <div className={`absolute inset-0 pointer-events-none transition-colors ${
-          navigationTarget === 'primary' ? 'ring-2 ring-blue-500/30' : ''
+        <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+          navigationTarget === 'primary' ? 'ring-2 ring-blue-500 ring-inset' : ''
         }`} />
         <div 
           className="h-full overflow-auto"
-          onClick={() => setNavigationTarget('primary')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setNavigationTarget('primary');
+          }}
         >
           {children}
         </div>
@@ -151,8 +154,8 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         }}
       >
         {/* Subtle border indicator for active navigation target */}
-        <div className={`absolute inset-0 pointer-events-none transition-colors ${
-          navigationTarget === 'secondary' ? 'ring-2 ring-blue-500/30' : ''
+        <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
+          navigationTarget === 'secondary' ? 'ring-2 ring-blue-500 ring-inset' : ''
         }`} />
         
         {/* Clean page selector that appears on hover */}
@@ -172,7 +175,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         </div>
         <div 
           className="h-full overflow-auto"
-          onClick={() => setNavigationTarget('secondary')}
+          onClick={(e) => {
+            e.stopPropagation();
+            setNavigationTarget('secondary');
+          }}
         >
           <PageRenderer path={secondaryPage} />
         </div>
