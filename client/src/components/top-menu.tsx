@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useViewMode } from "@/hooks/use-view-mode";
+import { useLayoutDensity } from "@/contexts/LayoutDensityContext";
 import { navigationGroups } from "@/config/navigation-menu";
 import companyLogo from '@/assets/planet-together-logo.png';
 
@@ -385,37 +386,112 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
     setMenuOpen(false);
   };
 
-  // Compact card sizes for 3-column layout without scrolling
+  // Get density from context
+  const { density } = useLayoutDensity();
+
+  // Compact card sizes for 3-column layout without scrolling - now respects density
   const getCardSize = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "w-full min-h-[60px] h-[60px] sm:min-h-[65px] sm:h-[65px] md:min-h-[70px] md:h-[70px]";
-      case "medium":
-        return "w-full min-h-[55px] h-[55px] sm:min-h-[60px] sm:h-[60px] md:min-h-[65px] md:h-[65px]";
-      default:
-        return "w-full min-h-[50px] h-[50px] sm:min-h-[55px] sm:h-[55px] md:min-h-[60px] md:h-[60px]";
+    // Adjust sizes based on density
+    if (density === 'compact') {
+      switch (priority) {
+        case "high":
+          return "w-full min-h-[50px] h-[50px] sm:min-h-[55px] sm:h-[55px] md:min-h-[60px] md:h-[60px]";
+        case "medium":
+          return "w-full min-h-[45px] h-[45px] sm:min-h-[50px] sm:h-[50px] md:min-h-[55px] md:h-[55px]";
+        default:
+          return "w-full min-h-[40px] h-[40px] sm:min-h-[45px] sm:h-[45px] md:min-h-[50px] md:h-[50px]";
+      }
+    } else if (density === 'compressed') {
+      switch (priority) {
+        case "high":
+          return "w-full min-h-[45px] h-[45px] sm:min-h-[50px] sm:h-[50px] md:min-h-[55px] md:h-[55px]";
+        case "medium":
+          return "w-full min-h-[40px] h-[40px] sm:min-h-[45px] sm:h-[45px] md:min-h-[50px] md:h-[50px]";
+        default:
+          return "w-full min-h-[35px] h-[35px] sm:min-h-[40px] sm:h-[40px] md:min-h-[45px] md:h-[45px]";
+      }
+    } else if (density === 'comfortable') {
+      switch (priority) {
+        case "high":
+          return "w-full min-h-[70px] h-[70px] sm:min-h-[75px] sm:h-[75px] md:min-h-[80px] md:h-[80px]";
+        case "medium":
+          return "w-full min-h-[65px] h-[65px] sm:min-h-[70px] sm:h-[70px] md:min-h-[75px] md:h-[75px]";
+        default:
+          return "w-full min-h-[60px] h-[60px] sm:min-h-[65px] sm:h-[65px] md:min-h-[70px] md:h-[70px]";
+      }
+    } else { // standard
+      switch (priority) {
+        case "high":
+          return "w-full min-h-[60px] h-[60px] sm:min-h-[65px] sm:h-[65px] md:min-h-[70px] md:h-[70px]";
+        case "medium":
+          return "w-full min-h-[55px] h-[55px] sm:min-h-[60px] sm:h-[60px] md:min-h-[65px] md:h-[65px]";
+        default:
+          return "w-full min-h-[50px] h-[50px] sm:min-h-[55px] sm:h-[55px] md:min-h-[60px] md:h-[60px]";
+      }
     }
   };
 
   const getIconSize = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "w-4 h-4";
-      case "medium":
-        return "w-3.5 h-3.5";
-      default:
-        return "w-3 h-3";
+    // Adjust icon sizes based on density
+    if (density === 'compact' || density === 'compressed') {
+      switch (priority) {
+        case "high":
+          return "w-3.5 h-3.5";
+        case "medium":
+          return "w-3 h-3";
+        default:
+          return "w-2.5 h-2.5";
+      }
+    } else if (density === 'comfortable') {
+      switch (priority) {
+        case "high":
+          return "w-5 h-5";
+        case "medium":
+          return "w-4.5 h-4.5";
+        default:
+          return "w-4 h-4";
+      }
+    } else { // standard
+      switch (priority) {
+        case "high":
+          return "w-4 h-4";
+        case "medium":
+          return "w-3.5 h-3.5";
+        default:
+          return "w-3 h-3";
+      }
     }
   };
 
   const getTextSize = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "text-[11px] font-semibold";
-      case "medium":
-        return "text-[10px] font-medium";
-      default:
-        return "text-[10px] font-normal";
+    // Adjust text sizes based on density
+    if (density === 'compact' || density === 'compressed') {
+      switch (priority) {
+        case "high":
+          return "text-[10px] font-semibold";
+        case "medium":
+          return "text-[9px] font-medium";
+        default:
+          return "text-[9px] font-normal";
+      }
+    } else if (density === 'comfortable') {
+      switch (priority) {
+        case "high":
+          return "text-[12px] font-semibold";
+        case "medium":
+          return "text-[11px] font-medium";
+        default:
+          return "text-[11px] font-normal";
+      }
+    } else { // standard
+      switch (priority) {
+        case "high":
+          return "text-[11px] font-semibold";
+        case "medium":
+          return "text-[10px] font-medium";
+        default:
+          return "text-[10px] font-normal";
+      }
     }
   };
 
