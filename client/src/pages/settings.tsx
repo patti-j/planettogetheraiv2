@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -49,6 +49,16 @@ export default function Settings() {
     newPassword: '',
     confirmPassword: ''
   });
+  
+  // Local state for preferences form
+  const [maxRecentPages, setMaxRecentPages] = useState<string>('5');
+  
+  // Initialize maxRecentPages state when preferences are loaded
+  useEffect(() => {
+    if (preferences?.dashboardLayout?.maxRecentPages) {
+      setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
+    }
+  }, [preferences]);
 
   // Fetch AI agents data
   const { data: aiAgentsData, isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
@@ -211,7 +221,15 @@ export default function Settings() {
     }
   });
 
-  const handleSavePreferences = (updatedPrefs: any) => {
+  const handleSavePreferences = () => {
+    const updatedPrefs = {
+      ...preferences,
+      dashboardLayout: {
+        ...preferences?.dashboardLayout,
+        maxRecentPages: parseInt(maxRecentPages)
+      }
+    };
+    
     updatePreferencesMutation.mutate(updatedPrefs);
   };
 
@@ -481,10 +499,32 @@ export default function Settings() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="maxRecentPages" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Max Recent Pages
+                    </Label>
+                    <Select 
+                      value={maxRecentPages}
+                      onValueChange={setMaxRecentPages}
+                      defaultValue={preferences?.dashboardLayout?.maxRecentPages?.toString() || '5'}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select max recent pages" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="3">3 pages</SelectItem>
+                        <SelectItem value="5">5 pages</SelectItem>
+                        <SelectItem value="8">8 pages</SelectItem>
+                        <SelectItem value="10">10 pages</SelectItem>
+                        <SelectItem value="12">12 pages</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
 
                 <div className="flex justify-end">
-                  <Button onClick={() => handleSavePreferences(preferences)}>
+                  <Button onClick={handleSavePreferences}>
                     <Save className="h-4 w-4 mr-2" />
                     Save Preferences
                   </Button>
