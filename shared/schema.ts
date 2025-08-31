@@ -3744,14 +3744,13 @@ export const userPreferences = pgTable("user_preferences", {
     sidebarCollapsed: boolean;
     defaultPage: string;
     widgetPreferences: Record<string, any>;
-    recentPagesCount?: number;
     recentPages?: Array<{
       path: string;
       label: string;
       icon?: string;
       timestamp: number;
     }>;
-  }>().default(sql`'{"sidebarCollapsed": false, "defaultPage": "/", "widgetPreferences": {}, "recentPagesCount": 10}'::jsonb`),
+  }>().default(sql`'{"sidebarCollapsed": false, "defaultPage": "/", "widgetPreferences": {}}'::jsonb`),
   companyInfo: jsonb("company_info").$type<{
     name?: string;
     industry?: string;
