@@ -43,15 +43,9 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
 
-  // Prevent any split screen events from bubbling up to header or other controls
-  const preventEventPropagation = (e: React.MouseEvent | React.TouchEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    // stopImmediatePropagation is not available on all event types
-    if ('stopImmediatePropagation' in e && typeof e.stopImmediatePropagation === 'function') {
-      e.stopImmediatePropagation();
-    }
-  };
+  // State for pane selection dialog
+  const [showPaneSelector, setShowPaneSelector] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{ path: string; label: string } | null>(null);
 
   // Add event listeners for dragging
   React.useEffect(() => {
@@ -65,21 +59,36 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
   }, [isDragging]);
 
-  // Update target pane based on navigation target setting
+  // Handle navigation - ask user which pane in split mode
   React.useEffect(() => {
-    if (splitMode !== 'none') {
-      if (navigationTarget === 'primary' && location !== primaryPage) {
-        setPrimaryPage(location);
-      } else if (navigationTarget === 'secondary' && location !== secondaryPage) {
-        setSecondaryPage(location);
+    if (splitMode !== 'none' && location !== primaryPage && location !== secondaryPage) {
+      // New navigation in split mode - ask user which pane to use
+      const pageInfo = availablePages.find(p => p.path === location);
+      if (pageInfo) {
+        setPendingNavigation({ path: location, label: pageInfo.label });
+        setShowPaneSelector(true);
       }
-    } else {
-      // In single pane mode, always update the primary page
+    } else if (splitMode === 'none') {
+      // Single pane mode - always update primary
       if (location !== primaryPage) {
         setPrimaryPage(location);
       }
     }
-  }, [location, splitMode, navigationTarget, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage]);
+  }, [location, splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage]);
+
+  // Handle pane selection
+  const handlePaneSelection = (target: 'primary' | 'secondary') => {
+    if (pendingNavigation) {
+      if (target === 'primary') {
+        setPrimaryPage(pendingNavigation.path);
+      } else {
+        setSecondaryPage(pendingNavigation.path);
+      }
+      setNavigationTarget(target);
+    }
+    setShowPaneSelector(false);
+    setPendingNavigation(null);
+  };
 
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
@@ -123,29 +132,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
-        onMouseDown={(e) => {
-          preventEventPropagation(e);
-          console.log('Primary pane MOUSEDOWN, setting navigationTarget to primary', {
-            currentTarget: navigationTarget,
-            newTarget: 'primary'
-          });
-          setNavigationTarget('primary');
-        }}
-        onClickCapture={(e) => {
-          preventEventPropagation(e);
-          console.log('Primary pane CLICK CAPTURE, setting navigationTarget to primary');
-          setNavigationTarget('primary');
-        }}
-        onClick={(e) => {
-          preventEventPropagation(e);
-          console.log('Primary pane CLICK, setting navigationTarget to primary');
-          setNavigationTarget('primary');
-        }}
       >
-        {/* Subtle border indicator for active navigation target */}
-        <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-          navigationTarget === 'primary' ? 'ring-1 ring-blue-400/60 ring-inset' : ''
-        }`} />
         <div className="h-full overflow-auto">
           {children}
         </div>
@@ -174,44 +161,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
-        onMouseDown={(e) => {
-          preventEventPropagation(e);
-          console.log('Secondary pane MOUSEDOWN, setting navigationTarget to secondary', {
-            currentTarget: navigationTarget,
-            newTarget: 'secondary'
-          });
-          setNavigationTarget('secondary');
-        }}
-        onClickCapture={(e) => {
-          preventEventPropagation(e);
-          console.log('Secondary pane CLICK CAPTURE, setting navigationTarget to secondary');
-          setNavigationTarget('secondary');
-        }}
-        onClick={(e) => {
-          preventEventPropagation(e);
-          console.log('🔥 Secondary pane CLICK, setting navigationTarget to secondary');
-          console.log('🔥 Split mode before click:', splitMode);
-          setNavigationTarget('secondary');
-          console.log('🔥 Split mode after setting target:', splitMode);
-        }}
       >
-        {/* Subtle border indicator for active navigation target */}
-        <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-          navigationTarget === 'secondary' ? 'ring-1 ring-blue-400/60 ring-inset' : ''
-        }`} />
-        
         {/* Clean page selector that appears on hover */}
         <div className="absolute top-2 right-2 z-10 opacity-0 hover:opacity-100 transition-opacity">
           <select
             value={secondaryPage}
             onChange={(e) => setSecondaryPage(e.target.value)}
             className="bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm"
-            onClick={(e) => {
-              preventEventPropagation(e);
-            }}
-            onMouseDown={(e) => {
-              preventEventPropagation(e);
-            }}
           >
             {availablePages.map(page => (
               <option key={page.path} value={page.path}>
@@ -224,6 +180,43 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           <PageRenderer path={secondaryPage} />
         </div>
       </div>
+
+      {/* Pane Selection Dialog */}
+      {showPaneSelector && pendingNavigation && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-background border border-border rounded-lg p-6 shadow-lg max-w-md w-full mx-4">
+            <h3 className="text-lg font-semibold mb-4">Choose Pane</h3>
+            <p className="text-muted-foreground mb-6">
+              Where would you like to show <strong>{pendingNavigation.label}</strong>?
+            </p>
+            <div className="flex gap-3">
+              <Button
+                onClick={() => handlePaneSelection('primary')}
+                className="flex-1"
+                variant="outline"
+              >
+                {splitMode === 'horizontal' ? 'Left Side' : 'Top'}
+              </Button>
+              <Button
+                onClick={() => handlePaneSelection('secondary')}
+                className="flex-1"
+              >
+                {splitMode === 'horizontal' ? 'Right Side' : 'Bottom'}
+              </Button>
+            </div>
+            <Button
+              onClick={() => {
+                setShowPaneSelector(false);
+                setPendingNavigation(null);
+              }}
+              variant="ghost"
+              className="w-full mt-3"
+            >
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
