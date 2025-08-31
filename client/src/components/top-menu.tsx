@@ -730,10 +730,9 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
               </div>
             </div>
 
-            {/* Scrollable content area containing everything else */}
-            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
-              {/* Mobile-only search */}
-              <div className="sm:hidden px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-25 dark:bg-gray-800">
+            {/* Fixed search section - not scrollable */}
+            {/* Mobile-only search */}
+            <div className="sm:hidden px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-25 dark:bg-gray-800">
               <div className="flex items-center justify-between space-x-3">
                 {/* Search on the left */}
                 <div className="relative flex-1">
@@ -816,8 +815,9 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
               </div>
             </div>
 
-            {/* Menu Content - Removed flex-1 to ensure it doesn't try to fill space */}
-            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
+            {/* Scrollable content area containing menu items only */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto">
 
               {/* Search Results Section - Show individual menu items when searching */}
               {searchFilter.trim() && getSearchResults().length > 0 && (() => {
@@ -1015,7 +1015,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                   })}
                 </div>
               )}
-            </div>
+              </div>
             </div>{/* End of scrollable content area */}
           </div>
           
