@@ -191,12 +191,30 @@ export default function Settings() {
   // Update user profile mutation
   const updateProfileMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest(`/api/users/${user?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response.json();
+      try {
+        const response = await fetch(`/api/users/${user?.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        // Try to parse JSON, but handle cases where response might be empty
+        const responseText = await response.text();
+        try {
+          return responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          // If JSON parsing fails, just return success indication
+          return { success: true };
+        }
+      } catch (error) {
+        console.error('Profile update error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -205,10 +223,11 @@ export default function Settings() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/auth/me'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Profile mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to update profile. Please try again.",
+        description: `Failed to update profile: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
     }
@@ -217,12 +236,30 @@ export default function Settings() {
   // Change password mutation
   const changePasswordMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest(`/api/users/${user?.id}/change-password`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response.json();
+      try {
+        const response = await fetch(`/api/users/${user?.id}/change-password`, {
+          method: 'POST',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        // Try to parse JSON, but handle cases where response might be empty
+        const responseText = await response.text();
+        try {
+          return responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          // If JSON parsing fails, just return success indication
+          return { success: true };
+        }
+      } catch (error) {
+        console.error('Password change error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -231,10 +268,11 @@ export default function Settings() {
       });
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Password mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to change password. Please check your current password.",
+        description: `Failed to change password: ${error.message || 'Please check your current password.'}`,
         variant: "destructive",
       });
     }
