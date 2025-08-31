@@ -647,7 +647,7 @@ export default function ControlTower() {
         <div className="flex items-center space-x-3">
           <Globe className="h-8 w-8 text-blue-600" />
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">Global Control Tower</h1>
+            <h1 className="text-3xl font-bold text-foreground">Global Control Tower</h1>
             <p className="text-gray-600">Plant performance monitoring and autonomous optimization</p>
           </div>
         </div>
@@ -705,7 +705,7 @@ export default function ControlTower() {
                         style={{ width: `${Math.min(performance * 100, 100)}%` }}
                       />
                     </div>
-                    <div className="text-2xl font-bold text-gray-900">
+                    <div className="text-2xl font-bold text-foreground">
                       {(performance * 100).toFixed(1)}%
                     </div>
                     {plantOptimization && (

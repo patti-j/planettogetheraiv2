@@ -382,7 +382,7 @@ export default function DemandPlanningPage() {
         {/* Page Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground flex items-center">
               <Sparkles className="w-6 h-6 mr-2" />
               Demand Planning
             </h1>

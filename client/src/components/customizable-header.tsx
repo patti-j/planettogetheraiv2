@@ -495,11 +495,6 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
 
   return (
     <>
-      {/* Apply UI density classes to the document */}
-      {typeof document !== 'undefined' && (() => {
-        document.documentElement.setAttribute('data-ui-density', uiDensity);
-        return null;
-      })()}
       <div className={cn(
         "relative flex items-center px-4 py-2 border-b bg-background",
         className

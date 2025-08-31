@@ -241,7 +241,7 @@ export default function SystemIntegrationsPage() {
     <div className="p-6 max-w-7xl mx-auto">
       <div className="mb-8">
         <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">System Integrations</h1>
+          <h1 className="text-2xl font-bold text-foreground mb-2">System Integrations</h1>
           <p className="text-gray-600">
             Connect PlanetTogether with external systems using AI-powered integration builder
           </p>
@@ -570,7 +570,7 @@ export default function SystemIntegrationsPage() {
             ) : (
               <div className="col-span-full text-center py-12">
                 <Database className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Integrations Found</h3>
+                <h3 className="text-lg font-medium text-foreground mb-2">No Integrations Found</h3>
                 <p className="text-gray-600 mb-4">
                   Get started by creating your first system integration using our AI wizard.
                 </p>

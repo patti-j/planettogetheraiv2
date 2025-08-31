@@ -362,7 +362,7 @@ export default function SystemsManagementPage() {
       {/* Header */}
       <div className="relative">
         <div className="md:ml-0 ml-12">
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+          <h1 className="text-xl md:text-2xl font-semibold text-foreground flex items-center">
             <Server className="w-6 h-6 mr-2" />
             Systems Management
           </h1>

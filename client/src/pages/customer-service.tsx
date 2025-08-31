@@ -729,7 +729,7 @@ export default function CustomerService() {
       <div className="bg-white shadow-sm border-b p-3 sm:p-6 flex-shrink-0">
         <div className="relative">
           <div className="md:ml-0 ml-12">
-            <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
+            <h1 className="text-xl md:text-2xl font-semibold text-foreground flex items-center">
               <Headphones className="w-6 h-6 mr-2" />
               Customer Service
             </h1>

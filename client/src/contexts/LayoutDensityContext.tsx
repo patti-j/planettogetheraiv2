@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useAuth } from '@/hooks/useAuth';
 
-export type LayoutDensity = 'compressed' | 'standard' | 'comfortable';
+export type LayoutDensity = 'compact' | 'compressed' | 'standard' | 'comfortable';
 
 interface LayoutDensityContextType {
   density: LayoutDensity;
@@ -10,25 +12,34 @@ interface LayoutDensityContextType {
 const LayoutDensityContext = createContext<LayoutDensityContextType | undefined>(undefined);
 
 export const LayoutDensityProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
   const [density, setDensityState] = useState<LayoutDensity>('standard');
 
-  // Load from localStorage on mount
-  useEffect(() => {
-    const saved = localStorage.getItem('layout-density') as LayoutDensity;
-    if (saved && ['compressed', 'standard', 'comfortable'].includes(saved)) {
-      setDensityState(saved);
-    }
-  }, []);
+  // Load density from user preferences
+  const { data: preferences } = useQuery({
+    queryKey: ['/api/user-preferences', user?.id],
+    enabled: !!user?.id,
+  });
 
-  // Apply CSS classes to document root
+  // Update density when preferences change
   useEffect(() => {
-    document.documentElement.classList.remove('density-compressed', 'density-standard', 'density-comfortable');
-    document.documentElement.classList.add(`density-${density}`);
+    if (preferences) {
+      const prefDensity = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
+      if (['compact', 'compressed', 'standard', 'comfortable'].includes(prefDensity)) {
+        setDensityState(prefDensity);
+      }
+    }
+  }, [preferences]);
+
+  // Apply data-ui-density attribute to document root to work with existing CSS system
+  useEffect(() => {
+    document.documentElement.setAttribute('data-ui-density', density);
   }, [density]);
 
   const setDensity = (newDensity: LayoutDensity) => {
     setDensityState(newDensity);
-    localStorage.setItem('layout-density', newDensity);
+    // Note: Actual saving is handled by CustomizableHeader through user preferences
+    // This context is mainly for reading the current density state
   };
 
   return (
