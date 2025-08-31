@@ -109,23 +109,25 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     )}>
       {/* Primary pane */}
       <div 
-        className="relative bg-background border-r border-border overflow-hidden"
+        className="relative bg-background border-r border-border overflow-hidden cursor-pointer"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Clicking primary pane CONTAINER, setting navigationTarget to primary', {
+            currentTarget: navigationTarget,
+            newTarget: 'primary'
+          });
+          setNavigationTarget('primary');
         }}
       >
         {/* Subtle border indicator for active navigation target */}
         <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
           navigationTarget === 'primary' ? 'ring-1 ring-blue-400/60 ring-inset' : ''
         }`} />
-        <div 
-          className="h-full overflow-auto"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('Clicking primary pane, setting navigationTarget to primary');
-            setNavigationTarget('primary');
-          }}
-        >
+        <div className="h-full overflow-auto">
           {children}
         </div>
       </div>
@@ -149,9 +151,18 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
       {/* Secondary pane */}
       <div 
-        className="relative bg-background overflow-hidden"
+        className="relative bg-background overflow-hidden cursor-pointer"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
+        }}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          console.log('Clicking secondary pane CONTAINER, setting navigationTarget to secondary', {
+            currentTarget: navigationTarget,
+            newTarget: 'secondary'
+          });
+          setNavigationTarget('secondary');
         }}
       >
         {/* Subtle border indicator for active navigation target */}
@@ -174,14 +185,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
             ))}
           </select>
         </div>
-        <div 
-          className="h-full overflow-auto"
-          onClick={(e) => {
-            e.stopPropagation();
-            console.log('Clicking secondary pane, setting navigationTarget to secondary');
-            setNavigationTarget('secondary');
-          }}
-        >
+        <div className="h-full overflow-auto">
           <PageRenderer path={secondaryPage} />
         </div>
       </div>
