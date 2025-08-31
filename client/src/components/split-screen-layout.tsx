@@ -97,6 +97,8 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   // State for pane selection dialog
   const [showPaneSelector, setShowPaneSelector] = useState(false);
   const [pendingNavigation, setPendingNavigation] = useState<{ path: string; label: string } | null>(null);
+  // Track the previous location to show while dialog is open
+  const [frozenLocation, setFrozenLocation] = useState<string | null>(null);
 
   // Add event listeners for dragging
   React.useEffect(() => {
@@ -118,7 +120,9 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
       const isAlreadyPending = pendingNavigation?.path === location;
       
       if (!isCurrentlyDisplayed && !isAlreadyPending && !showPaneSelector) {
-        // New navigation in split mode - ask user which pane to use
+        // New navigation in split mode - freeze the current display and ask user which pane to use
+        setFrozenLocation(primaryPage || '/dashboard'); // Freeze what was showing before
+        
         // Create a friendly label from the path
         const pathParts = location.split('/').filter(Boolean);
         const label = pathParts.length > 0 
@@ -153,12 +157,14 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
     setShowPaneSelector(false);
     setPendingNavigation(null);
+    setFrozenLocation(null); // Unfreeze the display
   };
 
   // Cancel pane selection - go back to the previous page
   const handleCancelPaneSelection = () => {
     setShowPaneSelector(false);
     setPendingNavigation(null);
+    setFrozenLocation(null); // Unfreeze the display
     // Note: We don't change the URL back since that would cause another navigation
   };
 
@@ -205,14 +211,12 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
       >
-        {/* Page information indicator */}
-        {primaryPage && (
-          <div className="absolute top-2 left-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm">
-            {primaryPage}
-          </div>
-        )}
         <div className="h-full overflow-auto">
-          <PageRenderer path={primaryPage} />
+          {frozenLocation && showPaneSelector ? (
+            <PageRenderer path={frozenLocation} />
+          ) : (
+            children
+          )}
         </div>
       </div>
 
