@@ -116,12 +116,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
       >
         {/* Subtle border indicator for active navigation target */}
         <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-          navigationTarget === 'primary' ? 'ring-2 ring-blue-500 ring-inset' : ''
+          navigationTarget === 'primary' ? 'ring-1 ring-blue-400/60 ring-inset' : ''
         }`} />
         <div 
           className="h-full overflow-auto"
           onClick={(e) => {
             e.stopPropagation();
+            console.log('Clicking primary pane, setting navigationTarget to primary');
             setNavigationTarget('primary');
           }}
         >
@@ -155,7 +156,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
       >
         {/* Subtle border indicator for active navigation target */}
         <div className={`absolute inset-0 pointer-events-none transition-all duration-200 ${
-          navigationTarget === 'secondary' ? 'ring-2 ring-blue-500 ring-inset' : ''
+          navigationTarget === 'secondary' ? 'ring-1 ring-blue-400/60 ring-inset' : ''
         }`} />
         
         {/* Clean page selector that appears on hover */}
@@ -177,6 +178,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           className="h-full overflow-auto"
           onClick={(e) => {
             e.stopPropagation();
+            console.log('Clicking secondary pane, setting navigationTarget to secondary');
             setNavigationTarget('secondary');
           }}
         >
