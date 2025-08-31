@@ -869,7 +869,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             </Button>
                           )}
                         </div>
-                        <span className="text-[6px] text-muted-foreground px-1">
+                        <span className="text-xs text-muted-foreground px-1">
                           {new Date(message.createdAt).toLocaleTimeString()}
                         </span>
                       </div>

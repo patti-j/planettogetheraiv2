@@ -1715,6 +1715,7 @@ div[data-radix-tooltip-content] {
 
 /* UI Density Settings */
 [data-ui-density="compact"] {
+  --density-text-xs: 0.5rem; /* 8px */
   --density-text-sm: 0.625rem; /* 10px */
   --density-text-base: 0.6875rem; /* 11px */
   --density-text-lg: 0.75rem; /* 12px */
@@ -1732,6 +1733,7 @@ div[data-radix-tooltip-content] {
 }
 
 [data-ui-density="compressed"] {
+  --density-text-xs: 0.625rem; /* 10px */
   --density-text-sm: 0.75rem; /* 12px */
   --density-text-base: 0.8125rem; /* 13px */
   --density-text-lg: 0.875rem; /* 14px */
@@ -1749,6 +1751,7 @@ div[data-radix-tooltip-content] {
 }
 
 [data-ui-density="standard"] {
+  --density-text-xs: 0.75rem; /* 12px */
   --density-text-sm: 0.875rem; /* 14px */
   --density-text-base: 1rem; /* 16px */
   --density-text-lg: 1.125rem; /* 18px */
@@ -1766,6 +1769,7 @@ div[data-radix-tooltip-content] {
 }
 
 [data-ui-density="comfortable"] {
+  --density-text-xs: 0.875rem; /* 14px */
   --density-text-sm: 1rem; /* 16px */
   --density-text-base: 1.125rem; /* 18px */
   --density-text-lg: 1.25rem; /* 20px */
@@ -1783,6 +1787,10 @@ div[data-radix-tooltip-content] {
 }
 
 /* Apply density variables to UI elements */
+[data-ui-density] .text-xs {
+  font-size: var(--density-text-xs) !important;
+}
+
 [data-ui-density] .text-sm {
   font-size: var(--density-text-sm) !important;
 }
