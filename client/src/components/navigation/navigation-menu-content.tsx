@@ -267,7 +267,10 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                          className={cn(
+                            "h-5 w-5 p-0 transition-opacity",
+                            page.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                          )}
                           onClick={(e) => {
                             e.stopPropagation();
                             togglePinPage(page.path);
@@ -472,7 +475,10 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-4 w-4 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className={cn(
+                                "h-4 w-4 p-0 transition-opacity",
+                                page.isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                              )}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 togglePinPage(page.path);
