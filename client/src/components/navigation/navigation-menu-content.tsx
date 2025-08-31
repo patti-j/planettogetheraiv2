@@ -7,10 +7,11 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 import { cn } from '@/lib/utils';
-import { usePermissions } from '@/hooks/useAuth';
+import { usePermissions, useAuth } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { navigationGroups } from '@/config/navigation-menu';
+import { useQuery } from '@tanstack/react-query';
 
 interface NavigationMenuContentProps {
   isPinned: boolean;
@@ -25,6 +26,13 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { hasPermission } = usePermissions();
   const { splitMode, handleNavigation } = useSplitScreen();
+  const { user } = useAuth();
+  
+  // Fetch user preferences to get maxRecentPages setting
+  const { data: userPreferences } = useQuery<any>({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
   
   // Safe navigation context access with fallback
   let addRecentPage = (path: string, label: string, icon?: string) => {};
