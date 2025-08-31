@@ -39,6 +39,7 @@ interface NavigationContextType {
   togglePinPage: (path: string) => void;
   lastVisitedRoute: string | null;
   setLastVisitedRoute: (route: string) => void;
+  maxRecentPages: number;
 }
 
 const NavigationContext = createContext<NavigationContextType | undefined>(undefined);
@@ -122,7 +123,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   });
   
   // Get max recent pages from user preferences or use default
-  const maxRecentPages = userPreferences?.dashboardLayout?.maxRecentPages || DEFAULT_MAX_RECENT_PAGES;
+  const maxRecentPages = userPreferences?.dashboardLayout?.recentPagesCount || DEFAULT_MAX_RECENT_PAGES;
   
   // Throttling state to prevent infinite loops
   const [lastSaveTime, setLastSaveTime] = useState<number>(0);
@@ -589,7 +590,8 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       clearRecentPages,
       togglePinPage,
       lastVisitedRoute,
-      setLastVisitedRoute
+      setLastVisitedRoute,
+      maxRecentPages
     }}>
       {children}
     </NavigationContext.Provider>

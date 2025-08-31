@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -23,6 +23,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   const [searchFilter, setSearchFilter] = useState('');
   const [layoutMode, setLayoutMode] = useState<'list' | 'hierarchical'>('list');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [isRecentPagesExpanded, setIsRecentPagesExpanded] = useState(false);
   const { hasPermission } = usePermissions();
   const { splitMode, handleNavigation } = useSplitScreen();
   
@@ -31,12 +32,14 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   let recentPages: any[] = [];
   let togglePinPage = (path: string) => {};
   let clearRecentPages = () => {};
+  let maxRecentPages = 3; // Default fallback
   try {
     const navigation = useNavigation();
     addRecentPage = navigation.addRecentPage;
     recentPages = navigation.recentPages || [];
     togglePinPage = navigation.togglePinPage;
     clearRecentPages = navigation.clearRecentPages;
+    maxRecentPages = navigation.maxRecentPages || 3;
   } catch (error) {
     console.warn('NavigationContext not available, using fallback:', error);
   }
@@ -208,31 +211,53 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
 
       {/* Recent Pages Section - Only show in list mode */}
       {layoutMode === 'list' && (
-        <div className="px-3 py-2 border-b">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Clock className="h-3 w-3 text-muted-foreground" />
-              <p className="text-xs font-medium text-muted-foreground">Recent Pages</p>
-            </div>
-            {recentPages.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearRecentPages}
-                className="h-5 px-1 text-xs"
-              >
-                Clear
-              </Button>
-            )}
+        <div className="border-b">
+          {/* Collapsible Header */}
+          <div className="px-3 py-2">
+            <Button
+              variant="ghost"
+              className="w-full justify-between h-8 px-2 hover:bg-accent/50"
+              onClick={() => setIsRecentPagesExpanded(!isRecentPagesExpanded)}
+            >
+              <div className="flex items-center gap-2">
+                <Clock className="h-3 w-3 text-muted-foreground" />
+                <span className="text-xs font-medium text-muted-foreground">
+                  Recent Pages ({recentPages.length})
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                {recentPages.length > 0 && isRecentPagesExpanded && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearRecentPages();
+                    }}
+                    className="h-5 px-1 text-xs hover:bg-muted-foreground/20"
+                  >
+                    Clear
+                  </Button>
+                )}
+                <ChevronDown 
+                  className={cn(
+                    "h-3 w-3 text-muted-foreground transition-transform",
+                    isRecentPagesExpanded ? "rotate-180" : ""
+                  )} 
+                />
+              </div>
+            </Button>
           </div>
           
-          <div className="space-y-0.5">
-            {recentPages.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-1">
-                No recent pages
-              </p>
-            ) : (
-              recentPages.slice(0, 3).map((page) => {
+          {/* Expandable Content */}
+          {isRecentPagesExpanded && (
+            <div className="px-3 pb-2 space-y-0.5">
+              {recentPages.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-1">
+                  No recent pages
+                </p>
+              ) : (
+                recentPages.slice(0, maxRecentPages).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
