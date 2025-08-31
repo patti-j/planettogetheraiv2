@@ -65,7 +65,7 @@ import {
   Focus
 } from "lucide-react";
 
-// Custom edge component for relationships with cardinality labels
+// Custom edge component for relationships with cardinality labels and tooltips
 const CardinalityEdge = ({
   sourceX,
   sourceY,
@@ -78,6 +78,9 @@ const CardinalityEdge = ({
   markerEnd,
   markerStart,
 }: any) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
   const [edgePath] = getStraightPath({
     sourceX,
     sourceY,
@@ -94,9 +97,73 @@ const CardinalityEdge = ({
   const targetX_pos = sourceX + (targetX - sourceX) * 0.95;
   const targetY_pos = sourceY + (targetY - sourceY) * 0.95;
 
+  // Calculate tooltip position at the center of the edge
+  const centerX = sourceX + (targetX - sourceX) * 0.5;
+  const centerY = sourceY + (targetY - sourceY) * 0.5;
+
+  const handleMouseEnter = (event: React.MouseEvent) => {
+    const rect = (event.currentTarget as Element).getBoundingClientRect();
+    setTooltipPosition({ 
+      x: centerX,
+      y: centerY - 40 // Position tooltip above the line
+    });
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
   return (
     <>
-      <BaseEdge path={edgePath} markerEnd={markerEnd} markerStart={markerStart} style={style} />
+      <BaseEdge 
+        path={edgePath} 
+        markerEnd={markerEnd} 
+        markerStart={markerStart} 
+        style={{
+          ...style,
+          strokeWidth: (style.strokeWidth || 3) + 2, // Make slightly thicker for easier hovering
+          cursor: 'pointer',
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      
+      {/* Relationship information tooltip */}
+      {showTooltip && data?.relationshipInfo && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -100%) translate(${tooltipPosition.x}px,${tooltipPosition.y}px)`,
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 'normal',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 2000,
+              pointerEvents: 'none',
+              maxWidth: '280px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div className="text-center">
+              <div className="font-medium mb-1">
+                {data.relationshipInfo.fromTable}.{data.relationshipInfo.fromColumn}
+              </div>
+              <div className="text-gray-300 text-xs mb-1">
+                {data.relationshipInfo.type.replace('-', ' ')}
+              </div>
+              <div className="font-medium">
+                {data.relationshipInfo.toTable}.{data.relationshipInfo.toColumn}
+              </div>
+            </div>
+          </div>
+        </EdgeLabelRenderer>
+      )}
+      
       {data?.showCardinality && (
         <EdgeLabelRenderer>
           {sourceLabel && (
@@ -147,8 +214,105 @@ const CardinalityEdge = ({
   );
 };
 
+// Custom edge component for regular edges with tooltips
+const TooltipEdge = ({
+  sourceX,
+  sourceY,
+  targetX,
+  targetY,
+  sourcePosition,
+  targetPosition,
+  style = {},
+  data,
+  markerEnd,
+  markerStart,
+}: any) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
+  const [edgePath] = getStraightPath({
+    sourceX,
+    sourceY,
+    targetX,
+    targetY,
+  });
+
+  // Calculate tooltip position at the center of the edge
+  const centerX = sourceX + (targetX - sourceX) * 0.5;
+  const centerY = sourceY + (targetY - sourceY) * 0.5;
+
+  const handleMouseEnter = () => {
+    setTooltipPosition({ 
+      x: centerX,
+      y: centerY - 40 // Position tooltip above the line
+    });
+    setShowTooltip(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowTooltip(false);
+  };
+
+  return (
+    <>
+      <BaseEdge 
+        path={edgePath} 
+        markerEnd={markerEnd} 
+        markerStart={markerStart} 
+        style={{
+          ...style,
+          strokeWidth: (style.strokeWidth || 3) + 2, // Make slightly thicker for easier hovering
+          cursor: 'pointer',
+        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+      />
+      
+      {/* Relationship information tooltip */}
+      {showTooltip && data?.relationshipInfo && (
+        <EdgeLabelRenderer>
+          <div
+            style={{
+              position: 'absolute',
+              transform: `translate(-50%, -100%) translate(${tooltipPosition.x}px,${tooltipPosition.y}px)`,
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 'normal',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              zIndex: 2000,
+              pointerEvents: 'none',
+              maxWidth: '280px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div className="text-center">
+              <div className="font-medium mb-1">
+                {data.relationshipInfo.fromTable}.{data.relationshipInfo.fromColumn}
+              </div>
+              <div className="text-gray-300 text-xs mb-1">
+                {data.relationshipInfo.type.replace('-', ' ')}
+              </div>
+              <div className="font-medium">
+                {data.relationshipInfo.toTable}.{data.relationshipInfo.toColumn}
+              </div>
+            </div>
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  );
+};
+
 const edgeTypes: EdgeTypes = {
   cardinality: CardinalityEdge,
+  'default': TooltipEdge,
+  'straight': TooltipEdge,
+  'step': TooltipEdge,
+  'bezier': TooltipEdge,
+  'smoothstep': TooltipEdge,
 };
 
 interface SchemaTable {
@@ -1629,7 +1793,16 @@ function DataSchemaViewContent() {
                 filter: isHighlighted ? 'drop-shadow(0px 0px 8px rgba(59, 130, 246, 0.5))' : 'drop-shadow(0px 0px 2px rgba(0, 0, 0, 0.1))',
               },
               markerStart: markerStart,
-              markerEnd: markerEnd
+              markerEnd: markerEnd,
+              data: {
+                relationshipInfo: {
+                  fromTable: rel.fromTable,
+                  fromColumn: rel.fromColumn,
+                  toTable: rel.toTable,
+                  toColumn: rel.toColumn,
+                  type: rel.type
+                }
+              }
             });
 
             // Add cardinality labels as edge labels using a single edge
@@ -1659,11 +1832,18 @@ function DataSchemaViewContent() {
               flowEdges.push({
                 ...mainEdge,
                 type: 'cardinality',
-                // Add custom edge data for rendering cardinality markers
+                // Add custom edge data for rendering cardinality markers and tooltip info
                 data: {
                   sourceLabel: sourceCardinalityLabel,
                   targetLabel: targetCardinalityLabel,
-                  showCardinality: true
+                  showCardinality: true,
+                  relationshipInfo: {
+                    fromTable: rel.fromTable,
+                    fromColumn: rel.fromColumn,
+                    toTable: rel.toTable,
+                    toColumn: rel.toColumn,
+                    type: rel.type
+                  }
                 }
               });
             }
