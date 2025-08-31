@@ -218,20 +218,12 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
       >
-        {/* Clean page selector that appears on hover */}
-        <div className="absolute top-2 right-2 z-10 opacity-0 hover:opacity-100 transition-opacity">
-          <select
-            value={secondaryPage}
-            onChange={(e) => setSecondaryPage(e.target.value)}
-            className="bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm"
-          >
-            {availablePages.map(page => (
-              <option key={page.path} value={page.path}>
-                {page.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        {/* Page information indicator */}
+        {secondaryPage && (
+          <div className="absolute top-2 right-2 z-10 bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm">
+            {secondaryPage}
+          </div>
+        )}
         <div className="h-full overflow-auto">
           <PageRenderer path={secondaryPage} />
         </div>
