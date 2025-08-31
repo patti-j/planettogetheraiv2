@@ -410,12 +410,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         }
       }
 
-      // Handle canvas actions if present
+      // Canvas actions are handled by the Max sidebar component, not the left panel
       if (data.canvasAction) {
-        console.log('AI Left Panel - Canvas action detected:', data.canvasAction);
-        handleCanvasAction(data.canvasAction);
-      } else {
-        console.log('AI Left Panel - No canvas action in response');
+        console.log('AI Left Panel - Canvas action detected but handled by Max sidebar:', data.canvasAction);
       }
       
       // If there are insights, show them (but not if we just navigated)
@@ -824,15 +821,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     <div
                       key={message.id}
                       className={cn(
-                        "flex gap-3",
-                        message.role === 'user' && "flex-row-reverse"
+                        "flex",
+                        message.role === 'user' && "justify-end"
                       )}
                     >
-                      <Avatar className="h-6 w-6 flex-shrink-0">
-                        <AvatarFallback>
-                          {message.role === 'user' ? <User className="h-3 w-3" /> : <Sparkles className="h-3 w-3" />}
-                        </AvatarFallback>
-                      </Avatar>
                       <div
                         className={cn(
                           "flex flex-col gap-1 max-w-[90%]",
@@ -877,7 +869,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             </Button>
                           )}
                         </div>
-                        <span className="text-xs text-muted-foreground px-1">
+                        <span className="text-[6px] text-muted-foreground px-1">
                           {new Date(message.createdAt).toLocaleTimeString()}
                         </span>
                       </div>

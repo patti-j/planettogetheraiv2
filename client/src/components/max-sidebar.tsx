@@ -38,7 +38,7 @@ import {
   Copy,
   Sparkles,
 } from "lucide-react";
-import WidgetStudioButton from "./widget-studio-button";
+// import WidgetStudioButton from "./widget-studio-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
 
@@ -1287,7 +1287,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 }`}
               >
                 {message.content}
-                <div className={`text-[8px] mt-1 opacity-70 flex items-center justify-between`}>
+                <div className={`text-[6px] mt-1 opacity-70 flex items-center justify-between`}>
                   <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {message.type === 'assistant' && (
                     <Button

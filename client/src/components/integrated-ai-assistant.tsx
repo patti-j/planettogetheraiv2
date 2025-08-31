@@ -978,7 +978,7 @@ export default function IntegratedAIAssistant() {
                       }`}
                     >
                       {message.content}
-                      <div className={`text-[8px] mt-1 opacity-70`}>
+                      <div className={`text-[6px] mt-1 opacity-70`}>
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </div>
                     </div>
