@@ -1,0 +1,652 @@
+================================================================================
+PT TABLES RELATIONSHIPS DOCUMENTATION
+Generated: August 31, 2025
+Total PT Tables: 68
+================================================================================
+
+================================================================================
+TABLE: ptattributes
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Standalone lookup table for attribute definitions
+================================================================================
+
+================================================================================
+TABLE: ptbuffer_consumption
+Primary Key: id
+Outgoing Relations:
+  - buffer_definition_id -> ptbuffer_definitions(id) [Many-to-One]
+Incoming Relations: None
+Notes: Tracks buffer consumption records, multiple consumptions per buffer definition
+================================================================================
+
+================================================================================
+TABLE: ptbuffer_definitions
+Primary Key: id
+Outgoing Relations:
+  - created_by -> users(id) [Many-to-One]
+  - item_id -> ptitems(id) [Many-to-One]
+  - updated_by -> users(id) [Many-to-One]
+Incoming Relations:
+  - ptbuffer_consumption(buffer_definition_id) [One-to-Many]
+  - ptbuffer_management_history(buffer_definition_id) [One-to-Many]
+Notes: Core buffer definitions, can have multiple consumption and history records
+================================================================================
+
+================================================================================
+TABLE: ptbuffer_management_history
+Primary Key: id
+Outgoing Relations:
+  - buffer_definition_id -> ptbuffer_definitions(id) [Many-to-One]
+  - resolved_by -> users(id) [Many-to-One]
+Incoming Relations: None
+Notes: Historical tracking of buffer management actions
+================================================================================
+
+================================================================================
+TABLE: ptbuffer_policies
+Primary Key: id
+Outgoing Relations:
+  - created_by -> users(id) [Many-to-One]
+Incoming Relations: None
+Notes: Buffer management policies configuration
+================================================================================
+
+================================================================================
+TABLE: ptcapabilities
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptresourcecapabilities(capability_id) [One-to-Many]
+Notes: Master list of capabilities that can be assigned to resources
+================================================================================
+
+================================================================================
+TABLE: ptcapacity_planning_scenarios
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptcapacity_projections(scenario_id) [One-to-Many]
+Notes: Capacity planning scenario definitions
+================================================================================
+
+================================================================================
+TABLE: ptcapacity_projections
+Primary Key: id
+Outgoing Relations:
+  - scenario_id -> ptcapacity_planning_scenarios(id) [Many-to-One]
+Incoming Relations: None
+Notes: Projected capacity data for planning scenarios
+================================================================================
+
+================================================================================
+TABLE: ptcapacityintervalresourceassignments
+Primary Key: id
+Outgoing Relations:
+  - resource_id -> ptresources(resource_id) [Many-to-One]
+Incoming Relations: None
+Notes: Resource assignments to capacity intervals
+================================================================================
+
+================================================================================
+TABLE: ptcapacityintervals
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Standalone capacity interval definitions
+================================================================================
+
+================================================================================
+TABLE: ptcustomers
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptsalesorders(customer_id) [One-to-Many]
+Notes: Customer master data, one customer can have multiple sales orders
+================================================================================
+
+================================================================================
+TABLE: ptdepartments
+Primary Key: id
+Outgoing Relations:
+  - plant_id -> ptplants(plant_id) [Many-to-One]
+Incoming Relations:
+  - ptproductrules(department_id) [One-to-Many]
+  - ptresources(department_id) [One-to-Many]
+Notes: Department within plants, one department can have multiple resources
+================================================================================
+
+================================================================================
+TABLE: ptforecasts
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptforecastshipments(forecast_id) [One-to-Many]
+Notes: Forecast master data
+================================================================================
+
+================================================================================
+TABLE: ptforecastshipmentinventoryadjustments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Inventory adjustments for forecast shipments
+================================================================================
+
+================================================================================
+TABLE: ptforecastshipments
+Primary Key: id
+Outgoing Relations:
+  - forecast_id -> ptforecasts(forecast_id) [Many-to-One]
+Incoming Relations: None
+Notes: Shipment details for forecasts
+================================================================================
+
+================================================================================
+TABLE: ptinventories
+Primary Key: id
+Outgoing Relations:
+  - item_id -> ptitems(item_id) [Many-to-One]
+  - warehouse_id -> ptwarehouses(warehouse_id) [Many-to-One]
+Incoming Relations: None
+Notes: Inventory records, multiple inventory entries per item and warehouse
+================================================================================
+
+================================================================================
+TABLE: ptitems
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptbuffer_definitions(item_id) [One-to-Many]
+  - ptinventories(item_id) [One-to-Many]
+  - ptproductrules(item_id) [One-to-Many]
+  - ptsalesorderlines(item_id) [One-to-Many]
+Notes: Item master data, central to inventory and production
+================================================================================
+
+================================================================================
+TABLE: ptjobactivities
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+  - manufacturing_order_id -> ptmanufacturingorders(manufacturing_order_id) [Many-to-One]
+Incoming Relations: None
+Notes: Activities within jobs and manufacturing orders
+================================================================================
+
+================================================================================
+TABLE: ptjobactivityinventoryadjustments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Inventory adjustments related to job activities
+================================================================================
+
+================================================================================
+TABLE: ptjobmaterials
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+  - manufacturing_order_id -> ptmanufacturingorders(manufacturing_order_id) [Many-to-One]
+Incoming Relations: None
+Notes: Material requirements for jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobmaterialsupplyingactivities
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Activities that supply materials to jobs
+================================================================================
+
+================================================================================
+TABLE: ptjoboperationattributes
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Additional attributes for job operations
+================================================================================
+
+================================================================================
+TABLE: ptjoboperations
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+  - manufacturing_order_id -> ptmanufacturingorders(manufacturing_order_id) [Many-to-One]
+Incoming Relations: None
+Notes: Operations within jobs, multiple operations per job
+================================================================================
+
+================================================================================
+TABLE: ptjobpathnodes
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+Incoming Relations: None
+Notes: Nodes in job execution paths
+================================================================================
+
+================================================================================
+TABLE: ptjobpaths
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+Incoming Relations: None
+Notes: Execution paths for jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobproductdeleteddemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Deleted product demands from jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobproductforecastdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Forecast-based product demands for jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobproducts
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+  - manufacturing_order_id -> ptmanufacturingorders(manufacturing_order_id) [Many-to-One]
+Incoming Relations: None
+Notes: Products produced by jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobproductsafetystockdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Safety stock demands for job products
+================================================================================
+
+================================================================================
+TABLE: ptjobproductsalesorderdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Sales order demands for job products
+================================================================================
+
+================================================================================
+TABLE: ptjobproducttransferorderdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Transfer order demands for job products
+================================================================================
+
+================================================================================
+TABLE: ptjobresourceblockintervals
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Time intervals when job resources are blocked
+================================================================================
+
+================================================================================
+TABLE: ptjobresourceblocks
+Primary Key: id
+Outgoing Relations:
+  - schedule_id -> ptschedules(id) [Many-to-One]
+Incoming Relations: None
+Notes: Resource blocks within schedules
+================================================================================
+
+================================================================================
+TABLE: ptjobresourcecapabilities
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Capabilities required by job resources
+================================================================================
+
+================================================================================
+TABLE: ptjobresources
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+Incoming Relations: None
+Notes: Resources assigned to jobs
+================================================================================
+
+================================================================================
+TABLE: ptjobs
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptjobactivities(job_id) [One-to-Many]
+  - ptjobmaterials(job_id) [One-to-Many]
+  - ptjoboperations(job_id) [One-to-Many]
+  - ptjobpathnodes(job_id) [One-to-Many]
+  - ptjobpaths(job_id) [One-to-Many]
+  - ptjobproducts(job_id) [One-to-Many]
+  - ptjobresources(job_id) [One-to-Many]
+  - ptmanufacturingorders(job_id) [One-to-Many]
+Notes: Central job entity, hub of production planning with many child records
+================================================================================
+
+================================================================================
+TABLE: ptjobsuccessormanufacturingorders
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Manufacturing orders that succeed jobs
+================================================================================
+
+================================================================================
+TABLE: ptkpis
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Key Performance Indicator definitions
+================================================================================
+
+================================================================================
+TABLE: ptlots
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Lot tracking information
+================================================================================
+
+================================================================================
+TABLE: ptmanufacturingorders
+Primary Key: id
+Outgoing Relations:
+  - job_id -> ptjobs(job_id) [Many-to-One]
+Incoming Relations:
+  - ptjobactivities(manufacturing_order_id) [One-to-Many]
+  - ptjobmaterials(manufacturing_order_id) [One-to-Many]
+  - ptjoboperations(manufacturing_order_id) [One-to-Many]
+  - ptjobproducts(manufacturing_order_id) [One-to-Many]
+Notes: Manufacturing orders linked to jobs, can have multiple activities and operations
+================================================================================
+
+================================================================================
+TABLE: ptmasterproductionschedule
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Master production schedule data
+================================================================================
+
+================================================================================
+TABLE: ptmetrics
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: System metrics and measurements
+================================================================================
+
+================================================================================
+TABLE: ptplants
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptdepartments(plant_id) [One-to-Many]
+  - ptproductrules(plant_id) [One-to-Many]
+  - ptresources(plant_id) [One-to-Many]
+Notes: Top-level plant entity, one plant has many departments and resources
+================================================================================
+
+================================================================================
+TABLE: ptplantwarehouses
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Mapping between plants and warehouses
+================================================================================
+
+================================================================================
+TABLE: ptproductrules
+Primary Key: id
+Outgoing Relations:
+  - department_id -> ptdepartments(department_id) [Many-to-One]
+  - item_id -> ptitems(item_id) [Many-to-One]
+  - plant_id -> ptplants(plant_id) [Many-to-One]
+  - resource_id -> ptresources(resource_id) [Many-to-One]
+Incoming Relations: None
+Notes: Production rules linking items, resources, departments, and plants
+================================================================================
+
+================================================================================
+TABLE: ptpurchasestostock
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Purchase to stock orders
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostockdeleteddemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Deleted demands for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostockforecastdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Forecast demands for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostockinventoryadjustments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Inventory adjustments for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostocksafetystockdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Safety stock demands for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostocksalesorderdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Sales order demands for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptpurchasetostocktransferorderdemands
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Transfer order demands for purchase to stock
+================================================================================
+
+================================================================================
+TABLE: ptrecurringcapacityintervalrecurrences
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Recurrence patterns for capacity intervals
+================================================================================
+
+================================================================================
+TABLE: ptrecurringcapacityintervalresourceassignments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Resource assignments for recurring capacity intervals
+================================================================================
+
+================================================================================
+TABLE: ptrecurringcapacityintervals
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Recurring capacity interval definitions
+================================================================================
+
+================================================================================
+TABLE: ptreportblocks
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Report block definitions for reporting system
+================================================================================
+
+================================================================================
+TABLE: ptresourcecapabilities
+Primary Key: id
+Outgoing Relations:
+  - capability_id -> ptcapabilities(capability_id) [Many-to-One]
+  - resource_id -> ptresources(resource_id) [Many-to-One]
+Incoming Relations: None
+Notes: Junction table linking resources to their capabilities (Many-to-Many)
+================================================================================
+
+================================================================================
+TABLE: ptresources
+Primary Key: id
+Outgoing Relations:
+  - department_id -> ptdepartments(department_id) [Many-to-One]
+  - plant_id -> ptplants(plant_id) [Many-to-One]
+Incoming Relations:
+  - ptcapacityintervalresourceassignments(resource_id) [One-to-Many]
+  - ptproductrules(resource_id) [One-to-Many]
+  - ptresourcecapabilities(resource_id) [One-to-Many]
+Notes: Resources within departments and plants, can have multiple capabilities
+================================================================================
+
+================================================================================
+TABLE: ptsalesorderdistributioninventoryadjustments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Inventory adjustments for sales order distributions
+================================================================================
+
+================================================================================
+TABLE: ptsalesorderlinedistributions
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Distribution details for sales order lines
+================================================================================
+
+================================================================================
+TABLE: ptsalesorderlines
+Primary Key: id
+Outgoing Relations:
+  - item_id -> ptitems(item_id) [Many-to-One]
+  - sales_order_id -> ptsalesorders(sales_order_id) [Many-to-One]
+Incoming Relations: None
+Notes: Line items within sales orders
+================================================================================
+
+================================================================================
+TABLE: ptsalesorders
+Primary Key: id
+Outgoing Relations:
+  - customer_id -> ptcustomers(customer_id) [Many-to-One]
+Incoming Relations:
+  - ptsalesorderlines(sales_order_id) [One-to-Many]
+Notes: Sales orders from customers, one order can have multiple lines
+================================================================================
+
+================================================================================
+TABLE: ptschedules
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptjobresourceblocks(schedule_id) [One-to-Many]
+Notes: Schedule definitions for production planning
+================================================================================
+
+================================================================================
+TABLE: ptsystemdata
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: System configuration and metadata
+================================================================================
+
+================================================================================
+TABLE: pttransferorderdistributioninventoryadjustments
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Inventory adjustments for transfer order distributions
+================================================================================
+
+================================================================================
+TABLE: pttransferorderdistributions
+Primary Key: id
+Outgoing Relations:
+  - from_warehouse_id -> ptwarehouses(warehouse_id) [Many-to-One]
+  - to_warehouse_id -> ptwarehouses(warehouse_id) [Many-to-One]
+Incoming Relations: None
+Notes: Distribution details for transfers between warehouses
+================================================================================
+
+================================================================================
+TABLE: pttransferorders
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations: None
+Notes: Transfer orders between locations
+================================================================================
+
+================================================================================
+TABLE: ptwarehouses
+Primary Key: id
+Outgoing Relations: None
+Incoming Relations:
+  - ptinventories(warehouse_id) [One-to-Many]
+  - pttransferorderdistributions(from_warehouse_id) [One-to-Many]
+  - pttransferorderdistributions(to_warehouse_id) [One-to-Many]
+Notes: Warehouse master data, one warehouse can have multiple inventory records
+================================================================================
+
+================================================================================
+KEY RELATIONSHIP PATTERNS:
+================================================================================
+
+1. HIERARCHICAL STRUCTURE:
+   ptplants (top level)
+     └─> ptdepartments (Many-to-One to plants)
+           └─> ptresources (Many-to-One to departments and plants)
+
+2. CENTRAL HUB TABLES:
+   - ptjobs: Hub for all job-related activities (8 child relationships)
+   - ptitems: Central to inventory and production (4 child relationships)
+   - ptwarehouses: Central to inventory and transfers (3 child relationships)
+
+3. JUNCTION TABLES (Many-to-Many):
+   - ptresourcecapabilities: Links resources to capabilities
+
+4. EXTERNAL REFERENCES:
+   - Several tables reference non-PT 'users' table for audit trails
+   
+5. COMPOSITE RELATIONSHIPS:
+   - ptproductrules: Links 4 entities (items, resources, departments, plants)
+   - ptjobactivities, ptjobmaterials, ptjoboperations, ptjobproducts: 
+     All link to both ptjobs AND ptmanufacturingorders
+
+================================================================================
+END OF PT TABLES RELATIONSHIPS DOCUMENTATION
+================================================================================
