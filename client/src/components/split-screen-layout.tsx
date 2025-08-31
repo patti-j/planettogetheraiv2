@@ -109,17 +109,21 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     )}>
       {/* Primary pane */}
       <div 
-        className="relative bg-background border-r border-border overflow-hidden cursor-pointer"
+        className="relative bg-background border-r border-border overflow-hidden"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${splitRatio}%`
         }}
-        onClick={(e) => {
+        onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('Clicking primary pane CONTAINER, setting navigationTarget to primary', {
+          console.log('Primary pane MOUSEDOWN, setting navigationTarget to primary', {
             currentTarget: navigationTarget,
             newTarget: 'primary'
           });
+          setNavigationTarget('primary');
+        }}
+        onClickCapture={(e) => {
+          console.log('Primary pane CLICK CAPTURE, setting navigationTarget to primary');
           setNavigationTarget('primary');
         }}
       >
@@ -151,17 +155,21 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
       {/* Secondary pane */}
       <div 
-        className="relative bg-background overflow-hidden cursor-pointer"
+        className="relative bg-background overflow-hidden"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}
-        onClick={(e) => {
+        onMouseDown={(e) => {
           e.preventDefault();
           e.stopPropagation();
-          console.log('Clicking secondary pane CONTAINER, setting navigationTarget to secondary', {
+          console.log('Secondary pane MOUSEDOWN, setting navigationTarget to secondary', {
             currentTarget: navigationTarget,
             newTarget: 'secondary'
           });
+          setNavigationTarget('secondary');
+        }}
+        onClickCapture={(e) => {
+          console.log('Secondary pane CLICK CAPTURE, setting navigationTarget to secondary');
           setNavigationTarget('secondary');
         }}
       >
@@ -176,7 +184,14 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
             value={secondaryPage}
             onChange={(e) => setSecondaryPage(e.target.value)}
             className="bg-background/90 backdrop-blur-sm border border-border rounded px-2 py-1 text-xs shadow-sm"
-            onClick={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
           >
             {availablePages.map(page => (
               <option key={page.path} value={page.path}>
