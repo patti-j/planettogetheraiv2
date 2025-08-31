@@ -56,6 +56,11 @@ export default function Settings() {
   
   // Local state for preferences form
   const [maxRecentPages, setMaxRecentPages] = useState<string>('5');
+  const [theme, setTheme] = useState<string>('light');
+  const [language, setLanguage] = useState<string>('en');
+  const [timezone, setTimezone] = useState<string>('UTC');
+  const [dateFormat, setDateFormat] = useState<string>('MM/dd/yyyy');
+  const [timeFormat, setTimeFormat] = useState<string>('12h');
 
   // Fetch AI agents data
   const { data: aiAgentsData, isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
@@ -142,10 +147,27 @@ export default function Settings() {
     enabled: !!user?.id
   });
 
-  // Initialize maxRecentPages state when preferences are loaded
+  // Initialize all form states when preferences are loaded
   useEffect(() => {
-    if (preferences?.dashboardLayout?.maxRecentPages) {
-      setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
+    if (preferences) {
+      if (preferences.dashboardLayout?.maxRecentPages) {
+        setMaxRecentPages(preferences.dashboardLayout.maxRecentPages.toString());
+      }
+      if (preferences.theme) {
+        setTheme(preferences.theme);
+      }
+      if (preferences.language) {
+        setLanguage(preferences.language);
+      }
+      if (preferences.timezone) {
+        setTimezone(preferences.timezone);
+      }
+      if (preferences.dateFormat) {
+        setDateFormat(preferences.dateFormat);
+      }
+      if (preferences.timeFormat) {
+        setTimeFormat(preferences.timeFormat);
+      }
     }
   }, [preferences]);
 
@@ -287,6 +309,11 @@ export default function Settings() {
   const handleSavePreferences = () => {
     const updatedPrefs = {
       ...preferences,
+      theme,
+      language,
+      timezone,
+      dateFormat,
+      timeFormat,
       dashboardLayout: {
         ...preferences?.dashboardLayout,
         maxRecentPages: parseInt(maxRecentPages)
@@ -510,7 +537,7 @@ export default function Settings() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="theme">Theme</Label>
-                    <Select defaultValue={preferences?.theme || 'light'}>
+                    <Select value={theme} onValueChange={setTheme}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select theme" />
                       </SelectTrigger>
@@ -526,7 +553,7 @@ export default function Settings() {
                       <Globe className="h-4 w-4" />
                       Language
                     </Label>
-                    <Select defaultValue={preferences?.language || 'en'}>
+                    <Select value={language} onValueChange={setLanguage}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select language" />
                       </SelectTrigger>
@@ -543,7 +570,7 @@ export default function Settings() {
                       <Clock className="h-4 w-4" />
                       Timezone
                     </Label>
-                    <Select defaultValue={preferences?.timezone || 'UTC'}>
+                    <Select value={timezone} onValueChange={setTimezone}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select timezone" />
                       </SelectTrigger>
@@ -561,14 +588,29 @@ export default function Settings() {
                       <Calendar className="h-4 w-4" />
                       Date Format
                     </Label>
-                    <Select defaultValue={preferences?.dateFormat || 'MM/DD/YYYY'}>
+                    <Select value={dateFormat} onValueChange={setDateFormat}>
                       <SelectTrigger>
                         <SelectValue placeholder="Select date format" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="MM/DD/YYYY">MM/DD/YYYY</SelectItem>
-                        <SelectItem value="DD/MM/YYYY">DD/MM/YYYY</SelectItem>
-                        <SelectItem value="YYYY-MM-DD">YYYY-MM-DD</SelectItem>
+                        <SelectItem value="MM/dd/yyyy">MM/DD/YYYY</SelectItem>
+                        <SelectItem value="dd/MM/yyyy">DD/MM/YYYY</SelectItem>
+                        <SelectItem value="yyyy-MM-dd">YYYY-MM-DD</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="timeFormat" className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Time Format
+                    </Label>
+                    <Select value={timeFormat} onValueChange={setTimeFormat}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select time format" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12h">12 Hour (AM/PM)</SelectItem>
+                        <SelectItem value="24h">24 Hour</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -580,7 +622,6 @@ export default function Settings() {
                     <Select 
                       value={maxRecentPages}
                       onValueChange={setMaxRecentPages}
-                      defaultValue={preferences?.dashboardLayout?.maxRecentPages?.toString() || '5'}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select max recent pages" />
