@@ -28,6 +28,7 @@ import { useAuth, usePermissions } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useFullScreen } from '@/contexts/FullScreenContext';
+import { useLayoutDensity } from '@/contexts/LayoutDensityContext';
 import { UserProfileDialog } from './user-profile';
 import { ThemeToggle } from './theme-toggle';
 import { GlobalSearchDialog } from './global-search-dialog';
@@ -240,6 +241,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   const [tempHeaderItems, setTempHeaderItems] = useState<HeaderItem[]>([]);
   const [showHeaderText, setShowHeaderText] = useState<boolean>(true);
   const [tempShowHeaderText, setTempShowHeaderText] = useState<boolean>(true);
+  const { density, setDensity } = useLayoutDensity();
   const [uiDensity, setUiDensity] = useState<'compact' | 'compressed' | 'standard' | 'comfortable'>('standard');
   const { addRecentPage } = useNavigation();
   const { splitMode, setSplitMode } = useSplitScreen();
@@ -282,8 +284,12 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     setShowHeaderText(showText);
     
     // Load UI density setting
-    const density = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
-    setUiDensity(density);
+    const prefDensity = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
+    setUiDensity(prefDensity);
+    // Also sync with context if different
+    if (density !== prefDensity) {
+      setDensity(prefDensity);
+    }
   }, [preferences, currentRole]);
 
   // Save header configuration
@@ -333,9 +339,12 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
   });
 
   // Handle density change
-  const handleDensityChange = (density: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
-    setUiDensity(density);
-    saveDensityMutation.mutate(density);
+  const handleDensityChange = (newDensity: 'compact' | 'compressed' | 'standard' | 'comfortable') => {
+    // Update both local state and context immediately for instant UI feedback
+    setUiDensity(newDensity);
+    setDensity(newDensity);
+    // Save to database
+    saveDensityMutation.mutate(newDensity);
   };
 
   // Handle drag end for reordering and moving between lists
@@ -585,28 +594,28 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem 
                 onClick={() => handleDensityChange('compact')}
-                className={cn("flex items-center gap-2", uiDensity === 'compact' && "bg-accent")}
+                className={cn("flex items-center gap-2", (uiDensity === 'compact' || density === 'compact') && "bg-accent")}
               >
                 <Minus className="h-3 w-3" />
                 <span>Compact</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleDensityChange('compressed')}
-                className={cn("flex items-center gap-2", uiDensity === 'compressed' && "bg-accent")}
+                className={cn("flex items-center gap-2", (uiDensity === 'compressed' || density === 'compressed') && "bg-accent")}
               >
                 <Minus className="h-4 w-4" />
                 <span>Compressed</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleDensityChange('standard')}
-                className={cn("flex items-center gap-2", uiDensity === 'standard' && "bg-accent")}
+                className={cn("flex items-center gap-2", (uiDensity === 'standard' || density === 'standard') && "bg-accent")}
               >
                 <Equal className="h-4 w-4" />
                 <span>Standard</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
                 onClick={() => handleDensityChange('comfortable')}
-                className={cn("flex items-center gap-2", uiDensity === 'comfortable' && "bg-accent")}
+                className={cn("flex items-center gap-2", (uiDensity === 'comfortable' || density === 'comfortable') && "bg-accent")}
               >
                 <Plus className="h-4 w-4" />
                 <span>Comfortable</span>
