@@ -47,6 +47,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
 
   // New method for handling navigation that might trigger pane selection
   const handleNavigation = (path: string, label: string) => {
+    console.log('SplitScreenContext handleNavigation - Split mode:', splitMode, 'Path:', path);
     if (splitMode !== 'none') {
       // Check if this path is already displayed in either pane
       if (path === primaryPage || path === secondaryPage) {
@@ -56,6 +57,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
       }
       
       // New page in split mode - show pane selector WITHOUT navigating
+      console.log('Showing pane selector dialog for split screen navigation');
       setPendingNavigation({ path, label });
       setShowPaneSelector(true);
     } else {
