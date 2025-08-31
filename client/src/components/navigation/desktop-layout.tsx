@@ -328,27 +328,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         </div>
       </div>
 
-      {/* Exit Fullscreen Button - only visible in fullscreen mode */}
-      {isFullScreen && (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={toggleFullScreen}
-                size="sm"
-                variant="outline"
-                className="fixed top-4 right-4 z-50 rounded-full w-10 h-10 p-0 bg-background/80 backdrop-blur-sm shadow-lg border-border/50"
-              >
-                <Minimize className="w-4 h-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Exit Fullscreen (ESC)</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      )}
-
       {/* Global Navigation Menu - only show when not pinned */}
       {!isNavigationPinned && !isFullScreen && (
         <SlideOutMenu 
