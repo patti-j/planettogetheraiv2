@@ -119,34 +119,14 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
   // Handle navigation - ask user which pane in split mode
   React.useEffect(() => {
-    if (splitMode !== 'none') {
-      // In split mode - check if this is a new navigation
-      const isCurrentlyDisplayed = location === primaryPage || location === secondaryPage;
-      const isAlreadyPending = pendingNavigation?.path === location;
-      
-      if (!isCurrentlyDisplayed && !isAlreadyPending && !showPaneSelector) {
-        // New navigation in split mode - ask user which pane to use
-        // Create a friendly label from the path
-        const pathParts = location.split('/').filter(Boolean);
-        const label = pathParts.length > 0 
-          ? pathParts[pathParts.length - 1]
-              .replace(/-/g, ' ')
-              .replace(/\b\w/g, l => l.toUpperCase()) 
-          : 'Page';
-        
-        setPendingNavigation({ path: location, label });
-        setShowPaneSelector(true);
-        
-        // Prevent automatic navigation - keep showing current pages until user chooses
-        return;
-      }
-    } else if (splitMode === 'none') {
+    if (splitMode === 'none') {
       // Single pane mode - always update primary
       if (location !== primaryPage) {
         setPrimaryPage(location);
       }
     }
-  }, [location, splitMode, primaryPage, secondaryPage, showPaneSelector, pendingNavigation, setPrimaryPage]);
+    // Don't interfere with split mode - let it use default pages
+  }, [location, splitMode, primaryPage, setPrimaryPage]);
 
   // Handle pane selection
   const handlePaneSelection = (target: 'primary' | 'secondary') => {
