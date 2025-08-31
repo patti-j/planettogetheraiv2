@@ -653,12 +653,12 @@ export default function ControlTower() {
         </div>
         
         <div className="flex items-center space-x-4">
-          <Select value={selectedPlant?.toString() || ""} onValueChange={(value) => setSelectedPlant(value ? parseInt(value) : null)}>
+          <Select value={selectedPlant?.toString() || "all"} onValueChange={(value) => setSelectedPlant(value === "all" ? null : parseInt(value))}>
             <SelectTrigger className="w-48">
               <SelectValue placeholder="All Plants" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">All Plants</SelectItem>
+              <SelectItem value="all">All Plants</SelectItem>
               {plants.map((plant: Plant) => (
                 <SelectItem key={plant.id} value={plant.id.toString()}>
                   {plant.name}

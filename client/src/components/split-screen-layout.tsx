@@ -61,34 +61,25 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
   // Handle navigation - ask user which pane in split mode
   React.useEffect(() => {
-    console.log('🔍 Navigation detected:', { location, splitMode, primaryPage, secondaryPage });
-    
     if (splitMode !== 'none' && location !== primaryPage && location !== secondaryPage) {
       // New navigation in split mode - ask user which pane to use
-      console.log('🚨 New navigation in split mode, should show pane selector');
       const pageInfo = availablePages.find(p => p.path === location);
-      console.log('🔍 Page info found:', pageInfo);
       
       if (pageInfo) {
-        console.log('✅ Showing pane selector for:', pageInfo.label);
         setPendingNavigation({ path: location, label: pageInfo.label });
         setShowPaneSelector(true);
       } else {
         // Handle pages not in availablePages list - create a generic label
         const pathParts = location.split('/').filter(Boolean);
         const label = pathParts.length > 0 ? pathParts[pathParts.length - 1].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : 'Unknown Page';
-        console.log('✅ Showing pane selector for unlisted page:', label);
         setPendingNavigation({ path: location, label });
         setShowPaneSelector(true);
       }
     } else if (splitMode === 'none') {
       // Single pane mode - always update primary
       if (location !== primaryPage) {
-        console.log('📝 Single mode: updating primary page to', location);
         setPrimaryPage(location);
       }
-    } else {
-      console.log('⏭️ Navigation to existing pane, no action needed');
     }
   }, [location, splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage]);
 
