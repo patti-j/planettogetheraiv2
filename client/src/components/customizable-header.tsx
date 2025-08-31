@@ -554,7 +554,10 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
                 <span>Single Page</span>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => setSplitMode('horizontal')}
+                onClick={() => {
+                  console.log('🚀 User clicked Side by Side - calling setSplitMode(horizontal)');
+                  setSplitMode('horizontal');
+                }}
                 className={cn("flex items-center gap-2", splitMode === 'horizontal' && "bg-accent")}
               >
                 <SplitSquareHorizontal className="h-4 w-4" />
