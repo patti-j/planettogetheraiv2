@@ -1098,43 +1098,26 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           </Button>
           
           {/* Mobile Layout Switcher - Only show on mobile */}
-          {isMobile && (
+          {isMobile && mobileLayoutMode === 'fullscreen' && (
             <>
-              {mobileLayoutMode === 'split' ? (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setMobileLayoutMode('fullscreen');
-                    setCurrentFullscreenView('max'); // Show Max by default when entering fullscreen
-                  }}
-                  className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                  title="Switch to Fullscreen Mode"
-                >
-                  <Maximize className="h-3 w-3" />
-                </Button>
-              ) : (
-                <>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentFullscreenView(currentFullscreenView === 'main' ? 'max' : 'main')}
-                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                    title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
-                  >
-                    {currentFullscreenView === 'main' ? <Sparkles className="h-3 w-3 text-white" /> : <MessageSquare className="h-3 w-3" />}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setMobileLayoutMode('split')}
-                    className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                    title="Switch to Split Mode"
-                  >
-                    <SplitSquareVertical className="h-3 w-3" />
-                  </Button>
-                </>
-              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setCurrentFullscreenView(currentFullscreenView === 'main' ? 'max' : 'main')}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                title={`Switch to ${currentFullscreenView === 'main' ? 'Max' : 'Main Content'} View`}
+              >
+                {currentFullscreenView === 'main' ? <Sparkles className="h-3 w-3 text-white" /> : <MessageSquare className="h-3 w-3" />}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setMobileLayoutMode('split')}
+                className="h-6 w-6 p-0 text-white hover:bg-white/20"
+                title="Switch to Split Mode"
+              >
+                <SplitSquareVertical className="h-3 w-3" />
+              </Button>
             </>
           )}
           

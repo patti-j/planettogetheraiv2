@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -38,6 +39,7 @@ interface TopMenuProps {
 
 export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOpen, isNavPanelOpen }: TopMenuProps) {
   const [location, setLocation] = useLocation();
+  const { handleNavigation } = useSplitScreen();
   const [menuOpen, setMenuOpen] = useState(false);
   const [userProfileOpen, setUserProfileOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -320,7 +322,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
     } else {
       // For all regular menu items, add them to recent pages and navigate
       addRecentPage(feature.href, feature.label, feature.icon?.name || 'FileText');
-      setLocation(feature.href);
+      handleNavigation(feature.href, feature.label);
     }
     setMenuOpen(false);
   };
@@ -395,7 +397,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation('/mobile-home')}
+              onClick={() => handleNavigation('/mobile-home', 'Home')}
               className="flex flex-col items-center gap-1 p-2 h-auto"
             >
               <Home className="h-5 w-5" />
@@ -435,7 +437,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setLocation('/mobile-home')}
+              onClick={() => handleNavigation('/mobile-home', 'Home')}
               className="flex flex-col items-center gap-1 p-2 h-auto"
             >
               <History className="h-5 w-5" />
