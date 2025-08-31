@@ -24,14 +24,10 @@ interface SplitScreenProviderProps {
 
 export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const [splitMode, setSplitMode] = useState<SplitMode>('none');
-  const [primaryPage, setPrimaryPage] = useState('/home');
+  const [primaryPage, setPrimaryPage] = useState('/dashboard');
   const [secondaryPage, setSecondaryPage] = useState('/analytics');
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for first pane
   const [navigationTarget, setNavigationTarget] = useState<NavigationTarget>('primary');
-
-  const setSplitModeWithLogging = (mode: SplitMode) => {
-    setSplitMode(mode);
-  };
 
 
 
@@ -39,7 +35,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
     <SplitScreenContext.Provider
       value={{
         splitMode,
-        setSplitMode: setSplitModeWithLogging,
+        setSplitMode,
         primaryPage,
         setPrimaryPage,
         secondaryPage,

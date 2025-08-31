@@ -21,12 +21,6 @@ function PageRenderer({ path }: { path: string }) {
       setLoading(true);
       setError(null);
       
-      if (!path) {
-        setError('No path provided');
-        setLoading(false);
-        return;
-      }
-      
       try {
         // Dynamic import based on path - this automatically works with any page that exists
         const pathWithoutSlash = path.replace(/^\//, '');
@@ -96,7 +90,6 @@ function PageRenderer({ path }: { path: string }) {
 }
 
 export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
-  console.log('🎯 SplitScreenLayout component rendering');
   const { splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage, splitRatio, setSplitRatio, navigationTarget, setNavigationTarget } = useSplitScreen();
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
@@ -119,14 +112,34 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
   // Handle navigation - ask user which pane in split mode
   React.useEffect(() => {
-    if (splitMode === 'none') {
+    if (splitMode !== 'none') {
+      // In split mode - check if this is a new navigation
+      const isCurrentlyDisplayed = location === primaryPage || location === secondaryPage;
+      const isAlreadyPending = pendingNavigation?.path === location;
+      
+      if (!isCurrentlyDisplayed && !isAlreadyPending && !showPaneSelector) {
+        // New navigation in split mode - ask user which pane to use
+        // Create a friendly label from the path
+        const pathParts = location.split('/').filter(Boolean);
+        const label = pathParts.length > 0 
+          ? pathParts[pathParts.length - 1]
+              .replace(/-/g, ' ')
+              .replace(/\b\w/g, l => l.toUpperCase()) 
+          : 'Page';
+        
+        setPendingNavigation({ path: location, label });
+        setShowPaneSelector(true);
+        
+        // Prevent automatic navigation - keep showing current pages until user chooses
+        return;
+      }
+    } else if (splitMode === 'none') {
       // Single pane mode - always update primary
       if (location !== primaryPage) {
         setPrimaryPage(location);
       }
     }
-    // Don't interfere with split mode - let it use default pages
-  }, [location, splitMode, primaryPage, setPrimaryPage]);
+  }, [location, splitMode, primaryPage, secondaryPage, showPaneSelector, pendingNavigation, setPrimaryPage]);
 
   // Handle pane selection
   const handlePaneSelection = (target: 'primary' | 'secondary') => {
@@ -222,7 +235,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
       {/* Secondary pane */}
       <div 
-        className="relative bg-background overflow-hidden flex-1"
+        className="relative bg-background overflow-hidden"
         style={{
           [splitMode === 'horizontal' ? 'width' : 'height']: `${100 - splitRatio}%`
         }}

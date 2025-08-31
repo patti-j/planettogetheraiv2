@@ -634,7 +634,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
             {showHeaderText && <span className="hidden lg:inline text-sm">Customize</span>}
           </Button>
 
-          {/* Fullscreen toggle button (rectangular icon - the good one) */}
+          {/* Fullscreen toggle button */}
           <Button
             variant="ghost"
             size="sm"

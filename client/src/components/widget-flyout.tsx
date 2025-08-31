@@ -235,6 +235,14 @@ export function WidgetFlyout({
           <Button
             variant="ghost"
             size="sm"
+            onClick={onMaximize}
+            className="h-7 w-7 p-0"
+          >
+            <Maximize2 className="h-3 w-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={onClose}
             className="h-7 w-7 p-0"
           >
