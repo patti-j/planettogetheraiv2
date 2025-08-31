@@ -168,10 +168,15 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     // Note: We don't change the URL back since that would cause another navigation
   };
 
+  console.log('SplitScreenLayout render:', { splitMode, primaryPage, secondaryPage });
+  
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
+    console.log('Rendering normal mode (children)');
     return <>{children}</>;
   }
+  
+  console.log('Rendering split mode layout');
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
