@@ -13,7 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { 
   TrendingUp, TrendingDown, BarChart3, Activity, Target,
   Plus, Calendar, Eye, AlertCircle, CheckCircle, Clock,
-  ArrowUp, ArrowDown, Zap
+  ArrowUp, ArrowDown, Zap, Sparkles
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
