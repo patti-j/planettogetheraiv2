@@ -15,6 +15,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 
 interface DesktopLayoutProps {
   children: React.ReactNode;
@@ -27,6 +28,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { user } = useAuth();
   const { addMessage } = useChatSync();
   const [location, setLocation] = useLocation();
+  const { handleNavigation } = useSplitScreen();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -137,7 +139,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       // Handle navigation actions from Max AI
       if (data?.action?.type === 'navigate' && data?.action?.target) {
-        setLocation(data.action.target);
+        handleNavigation(data.action.target, data.action.target.replace('/', '').replace('-', ' '));
         
         // Add navigation confirmation message
         addMessage({

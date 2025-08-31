@@ -261,29 +261,6 @@ export function DesktopTopBar() {
       {/* Spacer */}
       <div className="flex-1" />
 
-      {/* Full Screen Toggle */}
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleFullScreen}
-              className="flex-shrink-0"
-              aria-label={isFullScreen ? "Exit full screen" : "Enter full screen"}
-            >
-              {isFullScreen ? (
-                <Minimize2 className="h-4 w-4" />
-              ) : (
-                <Maximize2 className="h-4 w-4" />
-              )}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{isFullScreen ? "Exit full screen" : "Enter full screen"}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
 
       {/* Layout Density Control */}
       <DropdownMenu>

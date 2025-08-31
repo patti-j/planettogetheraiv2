@@ -47,23 +47,18 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
 
   // New method for handling navigation that might trigger pane selection
   const handleNavigation = (path: string, label: string) => {
-    console.log('🚀 handleNavigation called:', { path, label, splitMode, primaryPage, secondaryPage });
-    
     if (splitMode !== 'none') {
       // Check if this path is already displayed in either pane
       if (path === primaryPage || path === secondaryPage) {
-        console.log('📍 Path already displayed, navigating normally');
         // Already displayed, just navigate normally using React router
         setLocation(path);
         return;
       }
       
-      console.log('🎯 New page in split mode - showing pane selector');
       // New page in split mode - show pane selector WITHOUT navigating
       setPendingNavigation({ path, label });
       setShowPaneSelector(true);
     } else {
-      console.log('📱 Single pane mode - navigating normally');
       // Single pane mode - navigate normally using React router
       setLocation(path);
     }
@@ -119,9 +114,6 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
           <DialogHeader>
             <DialogTitle>Choose Split Screen Pane</DialogTitle>
           </DialogHeader>
-          <div className="text-xs text-muted-foreground mb-2">
-            Debug: showPaneSelector={String(showPaneSelector)}, pendingNavigation={pendingNavigation?.label || 'null'}
-          </div>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               You're viewing {pendingNavigation?.label || 'a page'} in split screen mode. 
