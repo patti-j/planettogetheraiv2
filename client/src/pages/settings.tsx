@@ -146,13 +146,30 @@ export default function Settings() {
   // Update user preferences mutation
   const updatePreferencesMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await fetch(`/api/user-preferences/${user?.id}`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-        headers: { 'Content-Type': 'application/json' }
-      });
-      if (!response.ok) throw new Error('Failed to update preferences');
-      return response.json();
+      try {
+        const response = await fetch(`/api/user-preferences/${user?.id}`, {
+          method: 'PUT',
+          body: JSON.stringify(data),
+          headers: { 'Content-Type': 'application/json' }
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+        
+        // Try to parse JSON, but handle cases where response might be empty
+        const responseText = await response.text();
+        try {
+          return responseText ? JSON.parse(responseText) : {};
+        } catch (parseError) {
+          // If JSON parsing fails, just return success indication
+          return { success: true };
+        }
+      } catch (error) {
+        console.error('Preferences update error:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -161,10 +178,11 @@ export default function Settings() {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/user-preferences'] });
     },
-    onError: (error) => {
+    onError: (error: any) => {
+      console.error('Mutation error:', error);
       toast({
         title: "Error",
-        description: "Failed to update settings. Please try again.",
+        description: `Failed to update settings: ${error.message || 'Please try again.'}`,
         variant: "destructive",
       });
     }
