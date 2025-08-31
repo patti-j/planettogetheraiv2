@@ -30,7 +30,14 @@ function PageRenderer({ path }: { path: string }) {
       try {
         // Dynamic import based on path - this automatically works with any page that exists
         const pathWithoutSlash = path.replace(/^\//, '');
-        const componentPath = pathWithoutSlash || 'dashboard';
+        
+        // Map special paths to their actual component files
+        const pathMappings: Record<string, string> = {
+          'dashboard': 'home',
+          '': 'home'
+        };
+        
+        const componentPath = pathMappings[pathWithoutSlash] || pathWithoutSlash || 'home';
         
         // Convert kebab-case to PascalCase for component names
         const componentName = componentPath
@@ -169,15 +176,10 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     // Note: We don't change the URL back since that would cause another navigation
   };
 
-  console.log('SplitScreenLayout render:', { splitMode, primaryPage, secondaryPage });
-  
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
-    console.log('Rendering normal mode (children)');
     return <>{children}</>;
   }
-  
-  console.log('Rendering split mode layout');
 
   const handleMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
