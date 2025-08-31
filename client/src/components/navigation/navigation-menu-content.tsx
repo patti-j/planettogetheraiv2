@@ -9,6 +9,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { cn } from '@/lib/utils';
 import { usePermissions } from '@/hooks/useAuth';
 import { useNavigation } from '@/contexts/NavigationContext';
+import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { navigationGroups } from '@/config/navigation-menu';
 
 interface NavigationMenuContentProps {
@@ -23,6 +24,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
   const [layoutMode, setLayoutMode] = useState<'list' | 'hierarchical'>('list');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const { hasPermission } = usePermissions();
+  const { splitMode, handleNavigation } = useSplitScreen();
   
   // Safe navigation context access with fallback
   let addRecentPage = (path: string, label: string, icon?: string) => {};
@@ -82,7 +84,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
       return;
     }
     
-    setLocation(item.href);
+    // Use the split screen context's navigation handler - this will show the dialog if needed
+    handleNavigation(item.href, item.label);
     addRecentPage(item.href, item.label, item.icon);
     if (!isPinned && onClose) onClose();
   };

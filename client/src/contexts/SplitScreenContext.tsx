@@ -1,4 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { useLocation } from 'wouter';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Monitor, SplitSquareHorizontal } from 'lucide-react';
 
 export type SplitMode = 'none' | 'horizontal' | 'vertical';
 export type NavigationTarget = 'primary' | 'secondary';
@@ -14,6 +18,13 @@ interface SplitScreenContextType {
   setSplitRatio: (ratio: number) => void;
   navigationTarget: NavigationTarget;
   setNavigationTarget: (target: NavigationTarget) => void;
+  // New method for handling navigation that might trigger pane selection
+  handleNavigation: (path: string, label: string) => void;
+  // State for pane selection dialog
+  showPaneSelector: boolean;
+  setShowPaneSelector: (show: boolean) => void;
+  pendingNavigation: { path: string; label: string } | null;
+  setPendingNavigation: (nav: { path: string; label: string } | null) => void;
 }
 
 const SplitScreenContext = createContext<SplitScreenContextType | undefined>(undefined);
@@ -23,13 +34,57 @@ interface SplitScreenProviderProps {
 }
 
 export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
+  const [, setLocation] = useLocation();
   const [splitMode, setSplitMode] = useState<SplitMode>('none');
   const [primaryPage, setPrimaryPage] = useState('/dashboard');
   const [secondaryPage, setSecondaryPage] = useState('/analytics');
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for first pane
   const [navigationTarget, setNavigationTarget] = useState<NavigationTarget>('primary');
+  
+  // New state for pane selection dialog
+  const [showPaneSelector, setShowPaneSelector] = useState(false);
+  const [pendingNavigation, setPendingNavigation] = useState<{ path: string; label: string } | null>(null);
 
+  // New method for handling navigation that might trigger pane selection
+  const handleNavigation = (path: string, label: string) => {
+    if (splitMode !== 'none') {
+      // Check if this path is already displayed in either pane
+      if (path === primaryPage || path === secondaryPage) {
+        // Already displayed, just navigate normally using React router
+        setLocation(path);
+        return;
+      }
+      
+      // New page in split mode - show pane selector WITHOUT navigating
+      setPendingNavigation({ path, label });
+      setShowPaneSelector(true);
+    } else {
+      // Single pane mode - navigate normally using React router
+      setLocation(path);
+    }
+  };
 
+  // Handle pane selection
+  const handlePaneSelection = (target: 'primary' | 'secondary') => {
+    if (pendingNavigation) {
+      if (target === 'primary') {
+        setPrimaryPage(pendingNavigation.path);
+      } else {
+        setSecondaryPage(pendingNavigation.path);
+      }
+      setNavigationTarget(target);
+      // Navigate to the page after selecting the pane
+      setLocation(pendingNavigation.path);
+    }
+    setShowPaneSelector(false);
+    setPendingNavigation(null);
+  };
+
+  // Cancel pane selection
+  const handleCancelPaneSelection = () => {
+    setShowPaneSelector(false);
+    setPendingNavigation(null);
+  };
 
   return (
     <SplitScreenContext.Provider
@@ -44,9 +99,55 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
         setSplitRatio,
         navigationTarget,
         setNavigationTarget,
+        handleNavigation,
+        showPaneSelector,
+        setShowPaneSelector,
+        pendingNavigation,
+        setPendingNavigation,
       }}
     >
       {children}
+      
+      {/* Pane Selection Dialog */}
+      <Dialog open={showPaneSelector} onOpenChange={setShowPaneSelector}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Choose Split Screen Pane</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              You're viewing {pendingNavigation?.label || 'a page'} in split screen mode. 
+              Which pane should display this content?
+            </p>
+            
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                className="h-16 flex-col gap-2"
+                onClick={() => handlePaneSelection('primary')}
+              >
+                <Monitor className="h-6 w-6" />
+                Left Pane
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="h-16 flex-col gap-2"
+                onClick={() => handlePaneSelection('secondary')}
+              >
+                <SplitSquareHorizontal className="h-6 w-6" />
+                Right Pane
+              </Button>
+            </div>
+            
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={handleCancelPaneSelection}>
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </SplitScreenContext.Provider>
   );
 }

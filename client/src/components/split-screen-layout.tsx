@@ -94,9 +94,6 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
 
-  // State for pane selection dialog
-  const [showPaneSelector, setShowPaneSelector] = useState(false);
-  const [pendingNavigation, setPendingNavigation] = useState<{ path: string; label: string } | null>(null);
 
   // Add event listeners for dragging
   React.useEffect(() => {
@@ -110,53 +107,15 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
   }, [isDragging]);
 
-  // Handle navigation - ask user which pane in split mode
-  React.useLayoutEffect(() => {
-    if (splitMode !== 'none') {
-      // In split mode - check if this is a new navigation
-      const isCurrentlyDisplayed = location === primaryPage || location === secondaryPage;
-      const isAlreadyPending = pendingNavigation?.path === location;
-      
-      if (!isCurrentlyDisplayed && !isAlreadyPending && !showPaneSelector) {
-        // New navigation in split mode - ask user which pane to use
-        // Create a friendly label from the path
-        const pathParts = location.split('/').filter(Boolean);
-        const label = pathParts.length > 0 
-          ? pathParts[pathParts.length - 1]
-              .replace(/-/g, ' ')
-              .replace(/\b\w/g, l => l.toUpperCase()) 
-          : 'Page';
-        
-        setPendingNavigation({ path: location, label });
-        setShowPaneSelector(true);
-      }
-    } else if (splitMode === 'none') {
+  // Handle navigation - update primary page in single pane mode
+  React.useEffect(() => {
+    if (splitMode === 'none') {
       // Single pane mode - always update primary
       if (location !== primaryPage) {
         setPrimaryPage(location);
       }
     }
-  }, [location, splitMode, primaryPage, secondaryPage, showPaneSelector, pendingNavigation, setPrimaryPage]);
-
-  // Handle pane selection
-  const handlePaneSelection = (target: 'primary' | 'secondary') => {
-    if (pendingNavigation) {
-      if (target === 'primary') {
-        setPrimaryPage(pendingNavigation.path);
-      } else {
-        setSecondaryPage(pendingNavigation.path);
-      }
-      setNavigationTarget(target);
-    }
-    setShowPaneSelector(false);
-    setPendingNavigation(null);
-  };
-
-  // Cancel pane selection - go back to the previous page
-  const handleCancelPaneSelection = () => {
-    setShowPaneSelector(false);
-    setPendingNavigation(null);
-  };
+  }, [location, splitMode, primaryPage, setPrimaryPage]);
 
   // If not in split mode, just render children normally
   if (splitMode === 'none') {
@@ -241,39 +200,6 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         </div>
       </div>
 
-      {/* Pane Selection Dialog */}
-      {showPaneSelector && pendingNavigation && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-background border border-border rounded-lg p-6 shadow-lg max-w-md w-full mx-4">
-            <h3 className="text-lg font-semibold mb-4">Choose Pane</h3>
-            <p className="text-muted-foreground mb-6">
-              Where would you like to show <strong>{pendingNavigation.label}</strong>?
-            </p>
-            <div className="flex gap-3">
-              <Button
-                onClick={() => handlePaneSelection('primary')}
-                className="flex-1"
-                variant="outline"
-              >
-                {splitMode === 'horizontal' ? 'Left Side' : 'Top'}
-              </Button>
-              <Button
-                onClick={() => handlePaneSelection('secondary')}
-                className="flex-1"
-              >
-                {splitMode === 'horizontal' ? 'Right Side' : 'Bottom'}
-              </Button>
-            </div>
-            <Button
-              onClick={handleCancelPaneSelection}
-              variant="ghost"
-              className="w-full mt-3"
-            >
-              Cancel
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
