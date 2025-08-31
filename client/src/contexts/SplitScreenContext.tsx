@@ -67,6 +67,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   // Handle pane selection
   const handlePaneSelection = (target: 'primary' | 'secondary') => {
     if (pendingNavigation) {
+      console.log('Handling pane selection - target:', target, 'path:', pendingNavigation.path, 'current splitMode:', splitMode);
       if (target === 'primary') {
         // For primary pane, navigate to the page (since primary shows current route)
         setPrimaryPage(pendingNavigation.path);
@@ -74,6 +75,7 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
       } else {
         // For secondary pane, just update the secondaryPage state
         setSecondaryPage(pendingNavigation.path);
+        console.log('Set secondary page to:', pendingNavigation.path);
       }
       setNavigationTarget(target);
     }
@@ -110,7 +112,11 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
       {children}
       
       {/* Pane Selection Dialog */}
-      <Dialog open={showPaneSelector} onOpenChange={setShowPaneSelector}>
+      <Dialog open={showPaneSelector} onOpenChange={(open) => {
+        if (!open) {
+          handleCancelPaneSelection();
+        }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Choose Split Screen Pane</DialogTitle>
