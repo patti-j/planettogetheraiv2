@@ -74,13 +74,12 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
     if (pendingNavigation) {
       if (target === 'primary') {
         setPrimaryPage(pendingNavigation.path);
-        // Only change global route for primary pane (left pane shows current route)
-        setLocation(pendingNavigation.path);
       } else {
         setSecondaryPage(pendingNavigation.path);
-        // Don't change global route for secondary pane (right pane shows independent content)
       }
       setNavigationTarget(target);
+      // Navigate to the page after selecting the pane
+      setLocation(pendingNavigation.path);
     }
     setShowPaneSelector(false);
     setPendingNavigation(null);
