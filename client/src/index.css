@@ -1787,200 +1787,218 @@ div[data-radix-tooltip-content] {
 }
 
 /* Apply density variables to UI elements - works for all density values */
-[data-ui-density="compact"] .text-xs,
-[data-ui-density="compressed"] .text-xs,
-[data-ui-density="standard"] .text-xs,
-[data-ui-density="comfortable"] .text-xs {
+/* Using html selector for higher specificity and proper cascading */
+html[data-ui-density="compact"] .text-xs,
+html[data-ui-density="compressed"] .text-xs,
+html[data-ui-density="standard"] .text-xs,
+html[data-ui-density="comfortable"] .text-xs {
   font-size: var(--density-text-xs) !important;
 }
 
-[data-ui-density="compact"] .text-sm,
-[data-ui-density="compressed"] .text-sm,
-[data-ui-density="standard"] .text-sm,
-[data-ui-density="comfortable"] .text-sm {
+html[data-ui-density="compact"] .text-sm,
+html[data-ui-density="compressed"] .text-sm,
+html[data-ui-density="standard"] .text-sm,
+html[data-ui-density="comfortable"] .text-sm {
   font-size: var(--density-text-sm) !important;
 }
 
-[data-ui-density="compact"] .text-base,
-[data-ui-density="compressed"] .text-base,
-[data-ui-density="standard"] .text-base,
-[data-ui-density="comfortable"] .text-base {
+html[data-ui-density="compact"] .text-base,
+html[data-ui-density="compressed"] .text-base,
+html[data-ui-density="standard"] .text-base,
+html[data-ui-density="comfortable"] .text-base {
   font-size: var(--density-text-base) !important;
 }
 
-[data-ui-density="compact"] .text-lg,
-[data-ui-density="compressed"] .text-lg,
-[data-ui-density="standard"] .text-lg,
-[data-ui-density="comfortable"] .text-lg {
+html[data-ui-density="compact"] .text-lg,
+html[data-ui-density="compressed"] .text-lg,
+html[data-ui-density="standard"] .text-lg,
+html[data-ui-density="comfortable"] .text-lg {
   font-size: var(--density-text-lg) !important;
 }
 
-[data-ui-density="compact"] .text-xl,
-[data-ui-density="compressed"] .text-xl,
-[data-ui-density="standard"] .text-xl,
-[data-ui-density="comfortable"] .text-xl {
+html[data-ui-density="compact"] .text-xl,
+html[data-ui-density="compressed"] .text-xl,
+html[data-ui-density="standard"] .text-xl,
+html[data-ui-density="comfortable"] .text-xl,
+html[data-ui-density="compact"] [class*="text-xl"],
+html[data-ui-density="compressed"] [class*="text-xl"],
+html[data-ui-density="standard"] [class*="text-xl"],
+html[data-ui-density="comfortable"] [class*="text-xl"] {
   font-size: var(--density-text-xl) !important;
 }
 
-[data-ui-density="compact"] .text-2xl,
-[data-ui-density="compressed"] .text-2xl,
-[data-ui-density="standard"] .text-2xl,
-[data-ui-density="comfortable"] .text-2xl {
+html[data-ui-density="compact"] .text-2xl,
+html[data-ui-density="compressed"] .text-2xl,
+html[data-ui-density="standard"] .text-2xl,
+html[data-ui-density="comfortable"] .text-2xl,
+html[data-ui-density="compact"] [class*="text-2xl"],
+html[data-ui-density="compressed"] [class*="text-2xl"],
+html[data-ui-density="standard"] [class*="text-2xl"],
+html[data-ui-density="comfortable"] [class*="text-2xl"] {
   font-size: var(--density-text-2xl) !important;
 }
 
-[data-ui-density="compact"] .text-3xl,
-[data-ui-density="compressed"] .text-3xl,
-[data-ui-density="standard"] .text-3xl,
-[data-ui-density="comfortable"] .text-3xl {
+html[data-ui-density="compact"] .text-3xl,
+html[data-ui-density="compressed"] .text-3xl,
+html[data-ui-density="standard"] .text-3xl,
+html[data-ui-density="comfortable"] .text-3xl {
   font-size: var(--density-text-3xl) !important;
 }
 
-[data-ui-density="compact"] .text-4xl,
-[data-ui-density="compressed"] .text-4xl,
-[data-ui-density="standard"] .text-4xl,
-[data-ui-density="comfortable"] .text-4xl {
+html[data-ui-density="compact"] .text-4xl,
+html[data-ui-density="compressed"] .text-4xl,
+html[data-ui-density="standard"] .text-4xl,
+html[data-ui-density="comfortable"] .text-4xl {
   font-size: var(--density-text-4xl) !important;
 }
 
 /* Button density adjustments */
-[data-ui-density="compact"] .btn,
-[data-ui-density="compact"] button,
-[data-ui-density="compressed"] .btn,
-[data-ui-density="compressed"] button,
-[data-ui-density="standard"] .btn,
-[data-ui-density="standard"] button,
-[data-ui-density="comfortable"] .btn,
-[data-ui-density="comfortable"] button {
+html[data-ui-density="compact"] .btn,
+html[data-ui-density="compact"] button,
+html[data-ui-density="compressed"] .btn,
+html[data-ui-density="compressed"] button,
+html[data-ui-density="standard"] .btn,
+html[data-ui-density="standard"] button,
+html[data-ui-density="comfortable"] .btn,
+html[data-ui-density="comfortable"] button {
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="compact"] .btn,
-[data-ui-density="compact"] button {
+html[data-ui-density="compact"] .btn,
+html[data-ui-density="compact"] button {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   min-height: var(--density-height-sm);
 }
 
-[data-ui-density="compressed"] .btn,
-[data-ui-density="compressed"] button {
+html[data-ui-density="compressed"] .btn,
+html[data-ui-density="compressed"] button {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   min-height: var(--density-height-sm);
 }
 
-[data-ui-density="standard"] .btn,
-[data-ui-density="standard"] button {
+html[data-ui-density="standard"] .btn,
+html[data-ui-density="standard"] button {
   padding: var(--density-spacing-sm) var(--density-spacing-md);
   min-height: var(--density-height-md);
 }
 
-[data-ui-density="comfortable"] .btn,
-[data-ui-density="comfortable"] button {
+html[data-ui-density="comfortable"] .btn,
+html[data-ui-density="comfortable"] button {
   padding: var(--density-spacing-md) var(--density-spacing-lg);
   min-height: var(--density-height-lg);
 }
 
 /* Card and component spacing */
-[data-ui-density="compact"] .card,
-[data-ui-density="compact"] .p-4 {
+html[data-ui-density="compact"] .card,
+html[data-ui-density="compact"] .p-4 {
   padding: var(--density-spacing-xs) !important;
 }
 
-[data-ui-density="compact"] .p-6 {
+html[data-ui-density="compact"] .p-6 {
   padding: var(--density-spacing-sm) !important;
 }
 
-[data-ui-density="compressed"] .card,
-[data-ui-density="compressed"] .p-4 {
+html[data-ui-density="compressed"] .card,
+html[data-ui-density="compressed"] .p-4 {
   padding: var(--density-spacing-sm) !important;
 }
 
-[data-ui-density="compressed"] .p-6 {
+html[data-ui-density="compressed"] .p-6 {
   padding: var(--density-spacing-md) !important;
 }
 
-[data-ui-density="comfortable"] .card,
-[data-ui-density="comfortable"] .p-4 {
+html[data-ui-density="standard"] .card,
+html[data-ui-density="standard"] .p-4 {
+  padding: var(--density-spacing-md) !important;
+}
+
+html[data-ui-density="standard"] .p-6 {
   padding: var(--density-spacing-lg) !important;
 }
 
-[data-ui-density="comfortable"] .p-6 {
+html[data-ui-density="comfortable"] .card,
+html[data-ui-density="comfortable"] .p-4 {
+  padding: var(--density-spacing-lg) !important;
+}
+
+html[data-ui-density="comfortable"] .p-6 {
   padding: calc(var(--density-spacing-lg) * 1.5) !important;
 }
 
 /* Table row height adjustments */
-[data-ui-density="compact"] .table tr,
-[data-ui-density="compact"] tbody tr {
+html[data-ui-density="compact"] .table tr,
+html[data-ui-density="compact"] tbody tr {
   height: var(--density-height-sm);
 }
 
-[data-ui-density="compressed"] .table tr,
-[data-ui-density="compressed"] tbody tr {
+html[data-ui-density="compressed"] .table tr,
+html[data-ui-density="compressed"] tbody tr {
   height: var(--density-height-sm);
 }
 
-[data-ui-density="standard"] .table tr,
-[data-ui-density="standard"] tbody tr {
+html[data-ui-density="standard"] .table tr,
+html[data-ui-density="standard"] tbody tr {
   height: var(--density-height-md);
 }
 
-[data-ui-density="comfortable"] .table tr,
-[data-ui-density="comfortable"] tbody tr {
+html[data-ui-density="comfortable"] .table tr,
+html[data-ui-density="comfortable"] tbody tr {
   height: var(--density-height-lg);
 }
 
 /* Navigation and menu item spacing */
-[data-ui-density="compact"] .navigation-item,
-[data-ui-density="compact"] .menu-item {
+html[data-ui-density="compact"] .navigation-item,
+html[data-ui-density="compact"] .menu-item {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="compressed"] .navigation-item,
-[data-ui-density="compressed"] .menu-item {
+html[data-ui-density="compressed"] .navigation-item,
+html[data-ui-density="compressed"] .menu-item {
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="standard"] .navigation-item,
-[data-ui-density="standard"] .menu-item {
+html[data-ui-density="standard"] .navigation-item,
+html[data-ui-density="standard"] .menu-item {
   padding: var(--density-spacing-sm) var(--density-spacing-md);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="comfortable"] .navigation-item,
-[data-ui-density="comfortable"] .menu-item {
+html[data-ui-density="comfortable"] .navigation-item,
+html[data-ui-density="comfortable"] .menu-item {
   padding: var(--density-spacing-md) var(--density-spacing-lg);
   font-size: var(--density-text-base);
 }
 
 /* Form input height adjustments */
-[data-ui-density="compact"] input,
-[data-ui-density="compact"] select,
-[data-ui-density="compact"] textarea {
+html[data-ui-density="compact"] input,
+html[data-ui-density="compact"] select,
+html[data-ui-density="compact"] textarea {
   min-height: var(--density-height-sm);
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="compressed"] input,
-[data-ui-density="compressed"] select,
-[data-ui-density="compressed"] textarea {
+html[data-ui-density="compressed"] input,
+html[data-ui-density="compressed"] select,
+html[data-ui-density="compressed"] textarea {
   min-height: var(--density-height-sm);
   padding: var(--density-spacing-xs) var(--density-spacing-sm);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="standard"] input,
-[data-ui-density="standard"] select,
-[data-ui-density="standard"] textarea {
+html[data-ui-density="standard"] input,
+html[data-ui-density="standard"] select,
+html[data-ui-density="standard"] textarea {
   min-height: var(--density-height-md);
   padding: var(--density-spacing-sm) var(--density-spacing-md);
   font-size: var(--density-text-sm);
 }
 
-[data-ui-density="comfortable"] input,
-[data-ui-density="comfortable"] select,
-[data-ui-density="comfortable"] textarea {
+html[data-ui-density="comfortable"] input,
+html[data-ui-density="comfortable"] select,
+html[data-ui-density="comfortable"] textarea {
   min-height: var(--density-height-lg);
   padding: var(--density-spacing-md) var(--density-spacing-lg);
   font-size: var(--density-text-base);
