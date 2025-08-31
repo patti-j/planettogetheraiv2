@@ -1118,6 +1118,15 @@ function DataSchemaViewContent() {
     relationshipInfo?: any;
   }>({ show: false, x: 0, y: 0 });
   
+  // Floating tool menu state for table cards
+  const [floatingMenu, setFloatingMenu] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    tableName: string;
+    table?: SchemaTable;
+  }>({ show: false, x: 0, y: 0, tableName: '' });
+  
   // Handle manual zoom slider changes
   const handleZoomChange = (newZoom: number[]) => {
     const zoom = newZoom[0];
@@ -2299,7 +2308,72 @@ function DataSchemaViewContent() {
     if (focusMode) {
       setFocusTable(node.id);
     }
-  }, [focusMode]);
+    
+    // Show floating tool menu
+    const table = schemaData?.find((t: SchemaTable) => t.name === node.id);
+    if (table) {
+      // Get click position relative to viewport
+      const rect = event.target.getBoundingClientRect();
+      setFloatingMenu({
+        show: true,
+        x: rect.left + rect.width / 2,
+        y: rect.top - 10, // Position above the table card
+        tableName: node.id,
+        table: table
+      });
+    }
+  }, [focusMode, schemaData]);
+
+  // Handle pane click to hide floating menu
+  const handlePaneClick = useCallback(() => {
+    setFloatingMenu({ show: false, x: 0, y: 0, tableName: '' });
+  }, []);
+
+  // Handle showing table relations (add to existing)
+  const handleShowRelations = useCallback((tableName: string, hideOthers: boolean = false) => {
+    const table = schemaData?.find((t: SchemaTable) => t.name === tableName);
+    if (!table || !Array.isArray(schemaData)) return;
+
+    // Get all tables related to this table
+    const relatedTableNames = getConnectedTables(tableName, schemaData);
+    
+    if (hideOthers) {
+      // Show only this table and its relations
+      setSelectedTables(relatedTableNames);
+      setShowRelatedTables(false);
+    } else {
+      // Add to existing selection
+      setSelectedTables(prev => {
+        const combined = [...new Set([...prev, ...relatedTableNames])];
+        return combined;
+      });
+      if (selectedTables.length === 0) {
+        setShowRelatedTables(false);
+      }
+    }
+    
+    // Hide the menu
+    setFloatingMenu({ show: false, x: 0, y: 0, tableName: '' });
+    
+    // Show toast with count
+    toast({
+      title: hideOthers ? "Showing Table Relations" : "Relations Added",
+      description: hideOthers 
+        ? `Displaying ${relatedTableNames.length} tables related to ${tableName}`
+        : `Added ${relatedTableNames.length} related tables to current view`,
+    });
+    
+    // Fit view after selection
+    setTimeout(() => {
+      fitView({ 
+        padding: 0.15, 
+        duration: 800,
+        includeHiddenNodes: false,
+        minZoom: 0.1,
+        maxZoom: 1.5
+      });
+    }, 100);
+  }, [schemaData, getConnectedTables, selectedTables, setSelectedTables, setShowRelatedTables, toast, fitView]);
 
   // Handle edge hover for better line tracing and tooltip display
   const handleEdgeMouseEnter = useCallback((event: React.MouseEvent, edge: Edge) => {
@@ -3094,6 +3168,7 @@ function DataSchemaViewContent() {
           onNodesChange={handleNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={handleNodeClick}
+          onPaneClick={handlePaneClick}
           onEdgeMouseEnter={handleEdgeMouseEnter}
           onEdgeMouseLeave={handleEdgeMouseLeave}
           onMouseDown={handleLassoMouseDown}
@@ -3471,6 +3546,54 @@ function DataSchemaViewContent() {
             </Panel>
           )}
         </ReactFlow>
+        
+        {/* Floating Tool Menu - Fixed position overlay */}
+        {floatingMenu.show && floatingMenu.table && (
+          <div
+            style={{
+              position: 'fixed',
+              left: floatingMenu.x,
+              top: floatingMenu.y,
+              transform: 'translate(-50%, -100%)',
+              zIndex: 10000,
+              pointerEvents: 'auto',
+            }}
+          >
+            <Card className="bg-white shadow-lg border border-gray-200">
+              <CardContent className="p-3">
+                <div className="flex flex-col gap-2 min-w-[180px]">
+                  <div className="text-sm font-medium text-gray-900 mb-2 border-b pb-2">
+                    {floatingMenu.tableName}
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleShowRelations(floatingMenu.tableName, false)}
+                    className="justify-start text-left"
+                  >
+                    <Link2 className="w-4 h-4 mr-2" />
+                    Show Relations
+                  </Button>
+                  
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleShowRelations(floatingMenu.tableName, true)}
+                    className="justify-start text-left"
+                  >
+                    <EyeOff className="w-4 h-4 mr-2" />
+                    Show Relations (hide others)
+                  </Button>
+                  
+                  <div className="text-xs text-gray-500 mt-1 pt-2 border-t">
+                    {floatingMenu.table.relationships?.length || 0} relationships
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
         
         {/* Relationship Tooltip - Fixed position overlay */}
         {edgeTooltip.show && edgeTooltip.relationshipInfo && (
