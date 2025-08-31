@@ -112,15 +112,6 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
 
   // Handle navigation - ask user which pane in split mode
   React.useEffect(() => {
-    console.log('Navigation effect triggered:', { 
-      splitMode, 
-      location, 
-      primaryPage, 
-      secondaryPage,
-      showPaneSelector,
-      pendingNavigation 
-    });
-
     if (splitMode !== 'none') {
       // In split mode - check if this is a new navigation
       const isCurrentlyDisplayed = location === primaryPage || location === secondaryPage;
@@ -128,8 +119,6 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
       
       if (!isCurrentlyDisplayed && !isAlreadyPending && !showPaneSelector) {
         // New navigation in split mode - ask user which pane to use
-        console.log('Triggering pane selector for:', location);
-        
         // Create a friendly label from the path
         const pathParts = location.split('/').filter(Boolean);
         const label = pathParts.length > 0 
@@ -140,6 +129,9 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
         
         setPendingNavigation({ path: location, label });
         setShowPaneSelector(true);
+        
+        // Prevent automatic navigation - keep showing current pages until user chooses
+        return;
       }
     } else if (splitMode === 'none') {
       // Single pane mode - always update primary
@@ -161,6 +153,13 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
     }
     setShowPaneSelector(false);
     setPendingNavigation(null);
+  };
+
+  // Cancel pane selection - go back to the previous page
+  const handleCancelPaneSelection = () => {
+    setShowPaneSelector(false);
+    setPendingNavigation(null);
+    // Note: We don't change the URL back since that would cause another navigation
   };
 
   // If not in split mode, just render children normally
@@ -270,10 +269,7 @@ export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
               </Button>
             </div>
             <Button
-              onClick={() => {
-                setShowPaneSelector(false);
-                setPendingNavigation(null);
-              }}
+              onClick={handleCancelPaneSelection}
               variant="ghost"
               className="w-full mt-3"
             >
