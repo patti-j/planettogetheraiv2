@@ -62,7 +62,8 @@ import {
   Zap,
   Lasso,
   MousePointer,
-  Focus
+  Focus,
+  Network
 } from "lucide-react";
 
 // Custom edge component for relationships with cardinality labels and tooltips
@@ -78,8 +79,7 @@ const CardinalityEdge = ({
   markerEnd,
   markerStart,
 }: any) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
 
   const [edgePath] = getStraightPath({
     sourceX,
@@ -97,22 +97,6 @@ const CardinalityEdge = ({
   const targetX_pos = sourceX + (targetX - sourceX) * 0.95;
   const targetY_pos = sourceY + (targetY - sourceY) * 0.95;
 
-  // Calculate tooltip position at the center of the edge
-  const centerX = sourceX + (targetX - sourceX) * 0.5;
-  const centerY = sourceY + (targetY - sourceY) * 0.5;
-
-  const handleMouseEnter = (event: React.MouseEvent) => {
-    const rect = (event.currentTarget as Element).getBoundingClientRect();
-    setTooltipPosition({ 
-      x: centerX,
-      y: centerY - 40 // Position tooltip above the line
-    });
-    setShowTooltip(true);
-  };
-
-  const handleMouseLeave = () => {
-    setShowTooltip(false);
-  };
 
   return (
     <>
@@ -122,47 +106,13 @@ const CardinalityEdge = ({
         markerStart={markerStart} 
         style={{
           ...style,
-          strokeWidth: (style.strokeWidth || 3) + 2, // Make slightly thicker for easier hovering
-          cursor: 'pointer',
+          strokeWidth: style.strokeWidth || 3,
+          cursor: 'pointer'
         }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+
       />
       
-      {/* Relationship information tooltip */}
-      {showTooltip && data?.relationshipInfo && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -100%) translate(${tooltipPosition.x}px,${tooltipPosition.y}px)`,
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
-              color: 'white',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 'normal',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              zIndex: 2000,
-              pointerEvents: 'none',
-              maxWidth: '280px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div className="text-center">
-              <div className="font-medium mb-1">
-                {data.relationshipInfo.fromTable}.{data.relationshipInfo.fromColumn}
-              </div>
-              <div className="text-gray-300 text-xs mb-1">
-                {data.relationshipInfo.type.replace('-', ' ')}
-              </div>
-              <div className="font-medium">
-                {data.relationshipInfo.toTable}.{data.relationshipInfo.toColumn}
-              </div>
-            </div>
-          </div>
-        </EdgeLabelRenderer>
-      )}
+
       
       {data?.showCardinality && (
         <EdgeLabelRenderer>
@@ -227,8 +177,7 @@ const TooltipEdge = ({
   markerEnd,
   markerStart,
 }: any) => {
-  const [showTooltip, setShowTooltip] = useState(false);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+
 
   const [edgePath] = getStraightPath({
     sourceX,
@@ -237,21 +186,6 @@ const TooltipEdge = ({
     targetY,
   });
 
-  // Calculate tooltip position at the center of the edge
-  const centerX = sourceX + (targetX - sourceX) * 0.5;
-  const centerY = sourceY + (targetY - sourceY) * 0.5;
-
-  const handleMouseEnter = () => {
-    setTooltipPosition({ 
-      x: centerX,
-      y: centerY - 40 // Position tooltip above the line
-    });
-    setShowTooltip(true);
-  };
-
-  const handleMouseLeave = () => {
-    setShowTooltip(false);
-  };
 
   return (
     <>
@@ -261,47 +195,13 @@ const TooltipEdge = ({
         markerStart={markerStart} 
         style={{
           ...style,
-          strokeWidth: (style.strokeWidth || 3) + 2, // Make slightly thicker for easier hovering
-          cursor: 'pointer',
+          strokeWidth: style.strokeWidth || 3,
+          cursor: 'pointer'
         }}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+
       />
       
-      {/* Relationship information tooltip */}
-      {showTooltip && data?.relationshipInfo && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -100%) translate(${tooltipPosition.x}px,${tooltipPosition.y}px)`,
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
-              color: 'white',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '12px',
-              fontWeight: 'normal',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              zIndex: 2000,
-              pointerEvents: 'none',
-              maxWidth: '280px',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div className="text-center">
-              <div className="font-medium mb-1">
-                {data.relationshipInfo.fromTable}.{data.relationshipInfo.fromColumn}
-              </div>
-              <div className="text-gray-300 text-xs mb-1">
-                {data.relationshipInfo.type.replace('-', ' ')}
-              </div>
-              <div className="font-medium">
-                {data.relationshipInfo.toTable}.{data.relationshipInfo.toColumn}
-              </div>
-            </div>
-          </div>
-        </EdgeLabelRenderer>
-      )}
+
     </>
   );
 };
@@ -1209,6 +1109,14 @@ function DataSchemaViewContent() {
   
   // Manual zoom control state
   const [zoomLevel, setZoomLevel] = useState([1]); // Initial zoom level 100%
+  
+  // Tooltip state for edge relationships
+  const [edgeTooltip, setEdgeTooltip] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    relationshipInfo?: any;
+  }>({ show: false, x: 0, y: 0 });
   
   // Handle manual zoom slider changes
   const handleZoomChange = (newZoom: number[]) => {
@@ -2393,8 +2301,8 @@ function DataSchemaViewContent() {
     }
   }, [focusMode]);
 
-  // Handle edge hover for better line tracing
-  const handleEdgeMouseEnter = useCallback((_: any, edge: Edge) => {
+  // Handle edge hover for better line tracing and tooltip display
+  const handleEdgeMouseEnter = useCallback((event: React.MouseEvent, edge: Edge) => {
     setEdges((eds) =>
       eds.map((e) => {
         if (e.id === edge.id) {
@@ -2419,6 +2327,16 @@ function DataSchemaViewContent() {
         };
       })
     );
+
+    // Show tooltip with relationship information
+    if (edge.data?.relationshipInfo) {
+      setEdgeTooltip({
+        show: true,
+        x: event.clientX,
+        y: event.clientY - 60,
+        relationshipInfo: edge.data.relationshipInfo
+      });
+    }
   }, [setEdges]);
 
   const handleEdgeMouseLeave = useCallback(() => {
@@ -2435,6 +2353,9 @@ function DataSchemaViewContent() {
         animated: false,
       }))
     );
+    
+    // Hide tooltip
+    setEdgeTooltip({ show: false, x: 0, y: 0 });
   }, [setEdges, focusMode]);
 
   if (isLoading) {
@@ -2757,6 +2678,57 @@ function DataSchemaViewContent() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p>Fit to view</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      // Clear any existing selection
+                      setSelectedTables([]);
+                      setShowRelatedTables(false);
+                      setSelectedFeature('all');
+                      setSelectedCategory('all');
+                      
+                      // Get all tables with relationships
+                      if (schemaData && Array.isArray(schemaData)) {
+                        const tablesWithRelations = schemaData
+                          .filter((table: SchemaTable) => table.relationships && table.relationships.length > 0)
+                          .map((table: SchemaTable) => table.name);
+                        
+                        setSelectedTables(tablesWithRelations);
+                        setShowRelatedTables(false); // Show only the tables with relations, not their connections
+                        
+                        // Show toast with count
+                        toast({
+                          title: "Showing Tables with Relations",
+                          description: `Displaying ${tablesWithRelations.length} tables that have relationships`,
+                        });
+                        
+                        // Fit view after selection
+                        setTimeout(() => {
+                          fitView({ 
+                            padding: 0.15, 
+                            duration: 800,
+                            includeHiddenNodes: false,
+                            minZoom: 0.1,
+                            maxZoom: 1.5
+                          });
+                        }, 100);
+                      }
+                    }}
+                    className="flex-shrink-0"
+                  >
+                    <Network className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Show all tables with relationships</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -3499,6 +3471,41 @@ function DataSchemaViewContent() {
             </Panel>
           )}
         </ReactFlow>
+        
+        {/* Relationship Tooltip - Fixed position overlay */}
+        {edgeTooltip.show && edgeTooltip.relationshipInfo && (
+          <div
+            style={{
+              position: 'fixed',
+              left: edgeTooltip.x,
+              top: edgeTooltip.y,
+              transform: 'translate(-50%, -100%)',
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '12px',
+              fontWeight: 'normal',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+              zIndex: 10000,
+              pointerEvents: 'none',
+              maxWidth: '300px',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <div className="text-center">
+              <div className="font-medium mb-1 text-blue-200">
+                {edgeTooltip.relationshipInfo.fromTable}.{edgeTooltip.relationshipInfo.fromColumn}
+              </div>
+              <div className="text-gray-300 text-xs mb-1">
+                {edgeTooltip.relationshipInfo.type.replace('-', ' to ')}
+              </div>
+              <div className="font-medium text-green-200">
+                {edgeTooltip.relationshipInfo.toTable}.{edgeTooltip.relationshipInfo.toColumn}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
