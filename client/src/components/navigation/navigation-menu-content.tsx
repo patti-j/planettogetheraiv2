@@ -234,13 +234,14 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
             )}
           </div>
           
-          <div className="space-y-0.5">
-            {recentPages.length === 0 ? (
-              <p className="text-xs text-muted-foreground text-center py-1">
-                No recent pages
-              </p>
-            ) : (
-              recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
+          <ScrollArea className="max-h-32">
+            <div className="space-y-0.5 pr-3">
+              {recentPages.length === 0 ? (
+                <p className="text-xs text-muted-foreground text-center py-1">
+                  No recent pages
+                </p>
+              ) : (
+                recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
@@ -298,8 +299,9 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                   </Tooltip>
                 );
               })
-            )}
-          </div>
+              )}
+            </div>
+          </ScrollArea>
         </div>
       )}
 
