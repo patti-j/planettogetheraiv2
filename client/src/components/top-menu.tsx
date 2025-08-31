@@ -557,7 +557,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
           }}
         >
           <div 
-            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-y-auto flex flex-col scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full flex flex-col"
             style={{ 
               zIndex: 2147483645,
               touchAction: 'pan-y' 
@@ -572,8 +572,8 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
               e.stopPropagation();
             }}
           >
-            {/* Menu Header with Logo and Controls */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm ml-[100px] mr-[100px]">
+            {/* Menu Header with Logo and Controls - Fixed header, minimal height */}
+            <div className="flex items-center justify-between px-4 sm:px-6 py-2 border-b-2 border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-sm flex-shrink-0">
               <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
                 {/* Logo */}
                 <div className="flex items-center space-x-2">
@@ -654,8 +654,10 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
               </div>
             </div>
 
-            {/* Mobile-only user controls and search - combined on same level to save vertical space */}
-            <div className="sm:hidden px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-25 dark:bg-gray-800">
+            {/* Scrollable content area containing everything else */}
+            <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+              {/* Mobile-only search */}
+              <div className="sm:hidden px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-gray-25 dark:bg-gray-800">
               <div className="flex items-center justify-between space-x-3">
                 {/* Search on the left */}
                 <div className="relative flex-1">
@@ -1064,6 +1066,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                 )
               )}
             </div>
+            </div>{/* End of scrollable content area */}
           </div>
           
           {/* Click outside to close */}
