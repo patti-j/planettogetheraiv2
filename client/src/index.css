@@ -1972,7 +1972,7 @@ html[data-ui-density="comfortable"] .menu-item {
 }
 
 /* Form input height adjustments */
-html[data-ui-density="compact"] input,
+html[data-ui-density="compact"] input:not(.pl-9),
 html[data-ui-density="compact"] select,
 html[data-ui-density="compact"] textarea {
   min-height: var(--density-height-sm);
@@ -1980,7 +1980,17 @@ html[data-ui-density="compact"] textarea {
   font-size: var(--density-text-sm);
 }
 
-html[data-ui-density="compressed"] input,
+/* Special handling for search inputs with icons (preserve pl-9 for icon positioning) */
+html[data-ui-density="compact"] input.pl-9 {
+  min-height: var(--density-height-sm);
+  padding-top: var(--density-spacing-xs);
+  padding-bottom: var(--density-spacing-xs);
+  padding-right: var(--density-spacing-sm);
+  padding-left: 2.25rem; /* Keep pl-9 for icon positioning */
+  font-size: var(--density-text-sm);
+}
+
+html[data-ui-density="compressed"] input:not(.pl-9),
 html[data-ui-density="compressed"] select,
 html[data-ui-density="compressed"] textarea {
   min-height: var(--density-height-sm);
@@ -1988,7 +1998,16 @@ html[data-ui-density="compressed"] textarea {
   font-size: var(--density-text-sm);
 }
 
-html[data-ui-density="standard"] input,
+html[data-ui-density="compressed"] input.pl-9 {
+  min-height: var(--density-height-sm);
+  padding-top: var(--density-spacing-xs);
+  padding-bottom: var(--density-spacing-xs);
+  padding-right: var(--density-spacing-sm);
+  padding-left: 2.25rem;
+  font-size: var(--density-text-sm);
+}
+
+html[data-ui-density="standard"] input:not(.pl-9),
 html[data-ui-density="standard"] select,
 html[data-ui-density="standard"] textarea {
   min-height: var(--density-height-md);
@@ -1996,10 +2015,28 @@ html[data-ui-density="standard"] textarea {
   font-size: var(--density-text-sm);
 }
 
-html[data-ui-density="comfortable"] input,
+html[data-ui-density="standard"] input.pl-9 {
+  min-height: var(--density-height-md);
+  padding-top: var(--density-spacing-sm);
+  padding-bottom: var(--density-spacing-sm);
+  padding-right: var(--density-spacing-md);
+  padding-left: 2.25rem;
+  font-size: var(--density-text-sm);
+}
+
+html[data-ui-density="comfortable"] input:not(.pl-9),
 html[data-ui-density="comfortable"] select,
 html[data-ui-density="comfortable"] textarea {
   min-height: var(--density-height-lg);
   padding: var(--density-spacing-md) var(--density-spacing-lg);
+  font-size: var(--density-text-base);
+}
+
+html[data-ui-density="comfortable"] input.pl-9 {
+  min-height: var(--density-height-lg);
+  padding-top: var(--density-spacing-md);
+  padding-bottom: var(--density-spacing-md);
+  padding-right: var(--density-spacing-lg);
+  padding-left: 2.25rem;
   font-size: var(--density-text-base);
 }
