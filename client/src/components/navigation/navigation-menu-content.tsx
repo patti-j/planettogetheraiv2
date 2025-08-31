@@ -232,7 +232,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose }: Naviga
                 No recent pages
               </p>
             ) : (
-              recentPages.slice(0, 3).map((page) => {
+              recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
