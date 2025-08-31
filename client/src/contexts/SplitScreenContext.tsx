@@ -29,13 +29,19 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
   const [splitRatio, setSplitRatio] = useState(50); // Percentage for first pane
   const [navigationTarget, setNavigationTarget] = useState<NavigationTarget>('primary');
 
+  // Debug logging for split mode changes
+  const setSplitModeWithLogging = (mode: SplitMode) => {
+    console.log('🔄 Split mode changing from', splitMode, 'to', mode);
+    setSplitMode(mode);
+  };
+
 
 
   return (
     <SplitScreenContext.Provider
       value={{
         splitMode,
-        setSplitMode,
+        setSplitMode: setSplitModeWithLogging,
         primaryPage,
         setPrimaryPage,
         secondaryPage,

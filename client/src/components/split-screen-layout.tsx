@@ -96,6 +96,7 @@ function PageRenderer({ path }: { path: string }) {
 }
 
 export function SplitScreenLayout({ children }: SplitScreenLayoutProps) {
+  console.log('🎯 SplitScreenLayout component rendering');
   const { splitMode, primaryPage, secondaryPage, setPrimaryPage, setSecondaryPage, splitRatio, setSplitRatio, navigationTarget, setNavigationTarget } = useSplitScreen();
   const [location] = useLocation();
   const [isDragging, setIsDragging] = useState(false);
