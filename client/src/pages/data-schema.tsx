@@ -2879,6 +2879,29 @@ function DataSchemaViewContent() {
                   <Button
                     variant="ghost"
                     size="sm"
+                    onClick={() => {
+                      // Select all tables that have any relationships (incoming or outgoing)
+                      const tablesWithRelations = filteredTables.filter(table => {
+                        // Check if table has outgoing relationships
+                        const hasOutgoingRelations = table.relationships.length > 0;
+                        
+                        // Check if table has incoming relationships (other tables reference this table)
+                        const hasIncomingRelations = filteredTables.some(otherTable => 
+                          otherTable.relationships.some(rel => rel.toTable === table.name)
+                        );
+                        
+                        return hasOutgoingRelations || hasIncomingRelations;
+                      }).map(t => t.name);
+                      
+                      setSelectedTables(tablesWithRelations);
+                    }}
+                  >
+                    <Link2 className="w-3 h-3 mr-1" />
+                    With Relations
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
                     onClick={() => setSelectedTables([])}
                     disabled={selectedTables.length === 0}
                   >
