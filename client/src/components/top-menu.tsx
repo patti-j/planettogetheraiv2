@@ -557,7 +557,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
           }}
         >
           <div 
-            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-hidden flex flex-col"
+            className="hamburger-menu-container bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-2xl h-full overflow-y-auto flex flex-col scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600"
             style={{ 
               zIndex: 2147483645,
               touchAction: 'pan-y' 
@@ -739,7 +739,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
             </div>
 
             {/* Menu Content */}
-            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600">
+            <div ref={menuContentRef} className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 max-w-[1600px] mx-auto flex-1">
 
               {/* Search Results Section - Show individual menu items when searching */}
               {searchFilter.trim() && getSearchResults().length > 0 && (() => {
