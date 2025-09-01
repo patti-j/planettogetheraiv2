@@ -253,6 +253,9 @@ interface SchemaRelationship {
 const TableNode = ({ data }: { data: any }) => {
   const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250, minHeight = 180 } = data;
   
+  // Debug logging to verify card size values
+  console.log(`TableNode ${table.name}:`, { minWidth, minHeight, showColumns });
+  
   const getCardClassName = () => {
     // Use fixed width in full view, allow dynamic sizing in compressed view
     const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : "w-auto";
@@ -1811,7 +1814,7 @@ function DataSchemaViewContent() {
     }
 
     return { nodes: flowNodes, edges: flowEdges };
-  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, clickedTable]);
+  }, [filteredTables, layoutType, showColumns, showRelationships, focusMode, focusTable, schemaData, getConnectedTables, simplifyLines, selectedCards, clickedTable, cardSize]);
 
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
