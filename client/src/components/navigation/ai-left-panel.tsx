@@ -42,7 +42,10 @@ interface AILeftPanelProps {
 export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [, navigate] = useLocation();
   const { handleNavigation } = useSplitScreen();
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    const saved = localStorage.getItem('ai-panel-collapsed');
+    return saved === 'true';
+  });
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
   const [panelWidth, setPanelWidth] = useState(() => {
@@ -578,6 +581,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       }
     }
   }, [chatMessages, isNearBottom, scrollToBottom]);
+
+  // Save collapsed state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('ai-panel-collapsed', isCollapsed.toString());
+  }, [isCollapsed]);
 
   // Listen for toggle event from command palette
   useEffect(() => {
