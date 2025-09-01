@@ -1126,6 +1126,17 @@ function DataSchemaViewContent() {
     tableName: string;
     table?: SchemaTable;
   }>({ show: false, x: 0, y: 0, tableName: '' });
+
+  // Properties window state for draggable/resizable table properties
+  const [propertiesWindow, setPropertiesWindow] = useState<{
+    show: boolean;
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+    tableName: string;
+    table?: SchemaTable;
+  }>({ show: false, x: 100, y: 100, width: 400, height: 500, tableName: '' });
   
   // Handle manual zoom slider changes
   const handleZoomChange = (newZoom: number[]) => {
@@ -2312,6 +2323,20 @@ function DataSchemaViewContent() {
     // Show floating tool menu
     const table = schemaData?.find((t: SchemaTable) => t.name === node.id);
     if (table) {
+      // If properties window is open, update its content to show the clicked table
+      if (propertiesWindow.show) {
+        setPropertiesWindow(prev => ({
+          ...prev,
+          tableName: node.id,
+          table: table
+        }));
+        
+        toast({
+          title: "Properties Updated",
+          description: `Now showing properties for: ${node.id}`,
+        });
+      }
+      
       // Get click position relative to viewport
       const rect = event.target.getBoundingClientRect();
       
@@ -2343,7 +2368,7 @@ function DataSchemaViewContent() {
         table: table
       });
     }
-  }, [focusMode, schemaData]);
+  }, [focusMode, schemaData, propertiesWindow.show, toast]);
 
   // Handle pane click to hide floating menu
   const handlePaneClick = useCallback(() => {
@@ -2395,6 +2420,39 @@ function DataSchemaViewContent() {
       });
     }, 100);
   }, [schemaData, getConnectedTables, selectedTables, setSelectedTables, setShowRelatedTables, toast, fitView]);
+
+  // Handle showing table properties window
+  const handleShowProperties = useCallback((tableName: string) => {
+    const table = schemaData?.find((t: SchemaTable) => t.name === tableName);
+    if (!table || !Array.isArray(schemaData)) return;
+
+    // Position properties window in center-left of screen if not already open
+    let x = propertiesWindow.x;
+    let y = propertiesWindow.y;
+    
+    if (!propertiesWindow.show) {
+      x = Math.max(50, window.innerWidth * 0.15);
+      y = Math.max(50, window.innerHeight * 0.15);
+    }
+
+    setPropertiesWindow({
+      show: true,
+      x: x,
+      y: y,
+      width: propertiesWindow.width,
+      height: propertiesWindow.height,
+      tableName: tableName,
+      table: table
+    });
+    
+    // Hide the floating menu
+    setFloatingMenu({ show: false, x: 0, y: 0, tableName: '' });
+    
+    toast({
+      title: "Properties Window Opened",
+      description: `Showing properties for table: ${tableName}`,
+    });
+  }, [schemaData, propertiesWindow, toast]);
 
   // Handle edge hover for better line tracing and tooltip display
   const handleEdgeMouseEnter = useCallback((event: React.MouseEvent, edge: Edge) => {
@@ -3607,6 +3665,16 @@ function DataSchemaViewContent() {
                     Show Relations (hide others)
                   </Button>
                   
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleShowProperties(floatingMenu.tableName)}
+                    className="justify-start text-left"
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Properties
+                  </Button>
+                  
                   <div className="text-xs text-gray-500 mt-1 pt-2 border-t">
                     {floatingMenu.table.relationships?.length || 0} relationships
                   </div>
@@ -3648,6 +3716,162 @@ function DataSchemaViewContent() {
                 {edgeTooltip.relationshipInfo.toTable}.{edgeTooltip.relationshipInfo.toColumn}
               </div>
             </div>
+          </div>
+        )}
+        
+        {/* Table Properties Window - Draggable and Resizable */}
+        {propertiesWindow.show && propertiesWindow.table && (
+          <div
+            style={{
+              position: 'fixed',
+              left: propertiesWindow.x,
+              top: propertiesWindow.y,
+              width: propertiesWindow.width,
+              height: propertiesWindow.height,
+              zIndex: 20000,
+              pointerEvents: 'auto',
+            }}
+            className="bg-white border border-gray-300 rounded-lg shadow-xl flex flex-col"
+          >
+            {/* Header with drag handle */}
+            <div
+              className="bg-gray-100 px-4 py-3 rounded-t-lg border-b cursor-move select-none flex justify-between items-center"
+              onMouseDown={(e) => {
+                const startX = e.clientX - propertiesWindow.x;
+                const startY = e.clientY - propertiesWindow.y;
+                
+                const handleMouseMove = (moveEvent: MouseEvent) => {
+                  const newX = Math.max(0, Math.min(window.innerWidth - propertiesWindow.width, moveEvent.clientX - startX));
+                  const newY = Math.max(0, Math.min(window.innerHeight - propertiesWindow.height, moveEvent.clientY - startY));
+                  
+                  setPropertiesWindow(prev => ({
+                    ...prev,
+                    x: newX,
+                    y: newY
+                  }));
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <Table className="w-4 h-4" />
+                <span className="font-medium text-sm">{propertiesWindow.tableName}</span>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setPropertiesWindow(prev => ({ ...prev, show: false }))}
+                className="h-6 w-6 p-0"
+              >
+                <X className="w-3 h-3" />
+              </Button>
+            </div>
+            
+            {/* Content area - scrollable */}
+            <div className="flex-1 overflow-auto p-4">
+              <div className="space-y-4">
+                {/* Table Overview */}
+                <div>
+                  <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <Info className="w-4 h-4" />
+                    Table Information
+                  </h3>
+                  <div className="bg-gray-50 p-3 rounded text-xs space-y-1">
+                    <div><span className="font-medium">Name:</span> {propertiesWindow.table.name}</div>
+                    <div><span className="font-medium">Category:</span> {propertiesWindow.table.category}</div>
+                    <div><span className="font-medium">Fields:</span> {propertiesWindow.table.columns?.length || 0}</div>
+                    <div><span className="font-medium">Relationships:</span> {propertiesWindow.table.relationships?.length || 0}</div>
+                  </div>
+                </div>
+                
+                {/* Fields Section */}
+                <div>
+                  <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <Key className="w-4 h-4" />
+                    Fields ({propertiesWindow.table.columns?.length || 0})
+                  </h3>
+                  <div className="max-h-48 overflow-auto border rounded">
+                    {propertiesWindow.table.columns?.map((field, index) => (
+                      <div key={index} className="p-2 border-b last:border-b-0 text-xs">
+                        <div className="flex justify-between items-start">
+                          <div className="flex-1">
+                            <div className="font-medium flex items-center gap-1">
+                              {field.primaryKey && <Key className="w-3 h-3 text-yellow-600" />}
+                              {field.name}
+                            </div>
+                            <div className="text-gray-600 mt-1">
+                              {field.type} {!field.nullable && <span className="text-red-500">NOT NULL</span>}
+                            </div>
+                            {field.defaultValue && (
+                              <div className="text-gray-500 mt-1">Default: {field.defaultValue}</div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )) || <div className="p-2 text-xs text-gray-500">No fields available</div>}
+                  </div>
+                </div>
+                
+                {/* Relationships Section */}
+                <div>
+                  <h3 className="font-medium text-sm mb-2 flex items-center gap-2">
+                    <Link2 className="w-4 h-4" />
+                    Relationships ({propertiesWindow.table.relationships?.length || 0})
+                  </h3>
+                  <div className="max-h-32 overflow-auto border rounded">
+                    {propertiesWindow.table.relationships?.map((rel, index) => (
+                      <div key={index} className="p-2 border-b last:border-b-0 text-xs">
+                        <div className="font-medium">{rel.type}</div>
+                        <div className="text-gray-600 mt-1">
+                          {rel.fromTable}.{rel.fromColumn} → {rel.toTable}.{rel.toColumn}
+                        </div>
+                      </div>
+                    )) || <div className="p-2 text-xs text-gray-500">No relationships available</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Resize handle - bottom right corner */}
+            <div
+              className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize bg-gray-300 hover:bg-gray-400"
+              style={{
+                clipPath: 'polygon(100% 0%, 0% 100%, 100% 100%)'
+              }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const startWidth = propertiesWindow.width;
+                const startHeight = propertiesWindow.height;
+                
+                const handleMouseMove = (moveEvent: MouseEvent) => {
+                  const newWidth = Math.max(300, startWidth + (moveEvent.clientX - startX));
+                  const newHeight = Math.max(200, startHeight + (moveEvent.clientY - startY));
+                  
+                  setPropertiesWindow(prev => ({
+                    ...prev,
+                    width: newWidth,
+                    height: newHeight
+                  }));
+                };
+                
+                const handleMouseUp = () => {
+                  document.removeEventListener('mousemove', handleMouseMove);
+                  document.removeEventListener('mouseup', handleMouseUp);
+                };
+                
+                document.addEventListener('mousemove', handleMouseMove);
+                document.addEventListener('mouseup', handleMouseUp);
+              }}
+            />
           </div>
         )}
       </div>
