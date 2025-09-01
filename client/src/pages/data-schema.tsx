@@ -255,7 +255,7 @@ const TableNode = ({ data }: { data: any }) => {
   
   const getCardClassName = () => {
     // Use dynamic width in compressed view, fixed width in full view
-    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : `min-w-[${minWidth}px] max-w-[${minWidth + 50}px]`;
+    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : "";
     let baseClasses = `${widthClasses} shadow-lg border-2 transition-all duration-200`;
     
     if (isFocused) {
@@ -282,7 +282,7 @@ const TableNode = ({ data }: { data: any }) => {
   return (
     <Card 
       className={getCardClassName()} 
-      style={{...getCardStyle(), minWidth: showColumns ? '280px' : `${minWidth}px`}}
+      style={{...getCardStyle(), minWidth: showColumns ? '280px' : `${minWidth}px`, maxWidth: showColumns ? '380px' : `${minWidth + 20}px`}}
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
