@@ -2,40 +2,52 @@ import { Route, Switch } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { Suspense, lazy } from "react";
 
 // Website Components
 import WebsiteHeader from "@/components/website/WebsiteHeader";
 import WebsiteFooter from "@/components/website/WebsiteFooter";
 
-// Website Pages
-import MarketingHome from "@/pages/marketing-home";
-import MarketingLandingPage from "@/pages/marketing-landing";
-import Pricing from "@/pages/pricing";
-import Login from "@/pages/Login";
-import WhatsComing from "@/pages/whats-coming-v14";
-import SolutionsComparison from "@/pages/solutions-comparison";
-import TechnologyStack from "@/pages/technology-stack";
-// // // // import DemoTour from "@/pages/demo-tour"; // Temporarily commented out - page doesn't exist // Removed - file doesn't exist // Commented out - file doesn't exist // Component doesn't exist yet
-import PresentationPage from "@/pages/presentation";
-import ClearStorage from "@/pages/clear-storage";
+// Lazy-loaded Website Pages
+const MarketingHome = lazy(() => import("@/pages/marketing-home"));
+const MarketingLandingPage = lazy(() => import("@/pages/marketing-landing"));
+const Pricing = lazy(() => import("@/pages/pricing"));
+const Login = lazy(() => import("@/pages/Login"));
+const WhatsComing = lazy(() => import("@/pages/whats-coming-v14"));
+const SolutionsComparison = lazy(() => import("@/pages/solutions-comparison"));
+const TechnologyStack = lazy(() => import("@/pages/technology-stack"));
+const PresentationPage = lazy(() => import("@/pages/presentation"));
+const ClearStorage = lazy(() => import("@/pages/clear-storage"));
 
-// Feature Detail Pages
-import AiFeaturesPage from "@/pages/ai-features";
-import ProductionSchedulingPage from "@/pages/production-scheduling";
-import SupplyChainMarketingPage from "@/pages/supply-chain-marketing";
-import TheoryOfConstraintsPage from "@/pages/theory-of-constraints";
-import EnterpriseScalabilityPage from "@/pages/enterprise-scalability";
-import SecurityFeaturesPage from "@/pages/security-features";
-import IntegrationApiPage from "@/pages/integration-api";
-import AnalyticsReportingPage from "@/pages/analytics-reporting";
-import InvestorRelationsPage from "@/pages/investor-relations";
+// Lazy-loaded Feature Detail Pages
+const AiFeaturesPage = lazy(() => import("@/pages/ai-features"));
+const ProductionSchedulingPage = lazy(() => import("@/pages/production-scheduling"));
+const SupplyChainMarketingPage = lazy(() => import("@/pages/supply-chain-marketing"));
+const TheoryOfConstraintsPage = lazy(() => import("@/pages/theory-of-constraints"));
+const EnterpriseScalabilityPage = lazy(() => import("@/pages/enterprise-scalability"));
+const SecurityFeaturesPage = lazy(() => import("@/pages/security-features"));
+const IntegrationApiPage = lazy(() => import("@/pages/integration-api"));
+const AnalyticsReportingPage = lazy(() => import("@/pages/analytics-reporting"));
+const InvestorRelationsPage = lazy(() => import("@/pages/investor-relations"));
+
+// Loading component for page transitions
+const PageLoader = () => (
+  <div className="flex items-center justify-center min-h-[400px]">
+    <div className="text-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+      <p className="text-gray-600">Loading page...</p>
+    </div>
+  </div>
+);
 
 // Layout wrapper for website pages
 const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-gray-50 flex flex-col pt-safe">
     <WebsiteHeader />
     <main className="flex-1">
-      {children}
+      <Suspense fallback={<PageLoader />}>
+        {children}
+      </Suspense>
     </main>
     <WebsiteFooter />
   </div>
@@ -44,7 +56,9 @@ const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
 // Special pages that don't use the standard layout
 const SpecialLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-gray-50">
-    {children}
+    <Suspense fallback={<PageLoader />}>
+      {children}
+    </Suspense>
   </div>
 );
 
