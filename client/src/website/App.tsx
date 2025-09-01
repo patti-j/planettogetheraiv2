@@ -28,6 +28,7 @@ import EnterpriseScalabilityPage from "@/pages/enterprise-scalability";
 import SecurityFeaturesPage from "@/pages/security-features";
 import IntegrationApiPage from "@/pages/integration-api";
 import AnalyticsReportingPage from "@/pages/analytics-reporting";
+import InvestorRelationsPage from "@/pages/investor-relations";
 
 // Layout wrapper for website pages
 const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
@@ -144,6 +145,12 @@ export default function WebsiteApp() {
           <Route path="/analytics-reporting">
             <WebsiteLayout>
               <AnalyticsReportingPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/investors">
+            <WebsiteLayout>
+              <InvestorRelationsPage />
             </WebsiteLayout>
           </Route>
           

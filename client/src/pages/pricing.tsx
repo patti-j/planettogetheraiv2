@@ -26,9 +26,11 @@ import {
   Database,
   Cloud,
   ChevronRight,
-  Bot
+  Bot,
+  Calculator
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import ROICalculator from "@/components/website/ROICalculator";
 
 interface PricingTier {
   id: string;
@@ -177,6 +179,7 @@ export default function Pricing() {
   const [selectedTier, setSelectedTier] = useState<string | null>(null);
   const [selectedModules, setSelectedModules] = useState<string[]>([]);
   const [numberOfPlants, setNumberOfPlants] = useState<number>(1);
+  const [showROICalculator, setShowROICalculator] = useState(false);
   const { toast } = useToast();
 
   const toggleAddon = (addonId: string) => {
@@ -518,6 +521,14 @@ export default function Pricing() {
               >
                 Start Interactive Demo Tour
               </Button>
+              <Button 
+                onClick={() => setShowROICalculator(!showROICalculator)} 
+                variant="outline"
+                className="border-green-600 text-green-600 hover:bg-green-50 px-8 py-3"
+              >
+                <Calculator className="w-4 h-4 mr-2" />
+                Calculate Your ROI
+              </Button>
             </div>
           </div>
 
@@ -553,6 +564,13 @@ export default function Pricing() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* ROI Calculator Section */}
+        {showROICalculator && (
+          <div className="mb-12">
+            <ROICalculator />
+          </div>
+        )}
+        
         {/* Pricing Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {pricingTiers.map((tier) => (
