@@ -1817,17 +1817,17 @@ function DataSchemaViewContent() {
     
     console.log('Enhanced compact force-directed layout: Processing', tables.length, 'tables');
     
-    // Calculate actual card dimensions based on content
+    // Calculate actual card dimensions based on content (updated for smaller cards)
     const getCardDimensions = (table: SchemaTable) => {
-      const baseWidth = 320; // Slightly larger for readability
-      const baseHeight = 140; // Header height
+      const baseWidth = 280; // Reduced from 320 due to removed elements
+      const baseHeight = 100; // Reduced from 140 (removed category badge + description)
       const columnHeight = showColumns ? Math.min(table.columns.length, 10) * 30 : 0; // 30px per column
       const commentHeight = showColumns ? table.columns.slice(0, 10).reduce((acc, col) => 
         acc + (col.comment ? 24 : 0), 0) : 0; // Extra height for comments
       
       return {
         width: baseWidth,
-        height: baseHeight + columnHeight + commentHeight + 40 // padding
+        height: baseHeight + columnHeight + commentHeight + 30 // reduced padding
       };
     };
     
@@ -2119,11 +2119,11 @@ function DataSchemaViewContent() {
     // Phase 4: Position Assignment with Collision Avoidance
     const positions: Record<string, { x: number; y: number }> = {};
     
-    // Responsive card dimensions based on Fields toggle state
-    const cardWidth = showColumns ? 360 : 280; // Smaller width in compressed view
-    const cardHeight = showColumns ? 240 : 120; // Much smaller height in compressed view
-    const horizontalSpacing = showColumns ? 40 : 30; // Tighter spacing in compressed view
-    const verticalSpacing = showColumns ? 100 : 60; // More compact vertical spacing
+    // Responsive card dimensions based on Fields toggle state (updated for smaller cards)
+    const cardWidth = showColumns ? 320 : 250; // Reduced widths due to removed elements
+    const cardHeight = showColumns ? 200 : 90; // Reduced heights (removed category badge + description)
+    const horizontalSpacing = showColumns ? 35 : 25; // Tighter spacing in compressed view
+    const verticalSpacing = showColumns ? 80 : 50; // More compact vertical spacing
     const viewportWidth = 1400; // Target viewport width
     const startY = 150; // Start position
     
