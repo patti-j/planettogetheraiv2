@@ -15,6 +15,7 @@ import { useLocation } from "wouter";
 import { useTour } from "@/contexts/TourContext";
 import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
 import { useSplitScreen } from "@/contexts/SplitScreenContext";
+import { AIReasoning } from "@/components/max-ai-reasoning";
 import { 
   Bot, 
   Send, 
@@ -54,10 +55,30 @@ interface Message {
     action?: string;
     data?: any;
   };
+  reasoning?: {
+    thought_process: string[];
+    decision_factors: string[];
+    playbooks_consulted: string[];
+    confidence_score: number;
+    alternative_approaches?: string[];
+  };
+  playbooksUsed?: Array<{
+    id: number;
+    title: string;
+    relevance_score: number;
+    sections_used: string[];
+    applied_rules?: string[];
+  }>;
   canvasAction?: {
     type: 'create' | 'update' | 'clear';
     items?: CanvasItem[];
   };
+    id: number;
+    title: string;
+    relevance_score: number;
+    sections_used: string[];
+    applied_rules?: string[];
+  }>;
 }
 
 
@@ -398,6 +419,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         context: {
           page: window.location.pathname
         },
+        reasoning: response.reasoning,
+        playbooksUsed: response.playbooksUsed,
         canvasAction: response.canvasAction
       };
       setMessages(prev => [...prev, assistantMessage]);
@@ -1349,6 +1372,16 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 }`}
               >
                 {message.content}
+                {message.type === 'assistant' && (message.reasoning || message.playbooksUsed) && (
+                  <AIReasoning 
+                    reasoning={message.reasoning}
+                    playbooksUsed={message.playbooksUsed}
+                    onFeedback={(feedback) => {
+                      console.log('AI reasoning feedback:', feedback);
+                      // Could send feedback to backend here
+                    }}
+                  />
+                )}
                 <div className={`text-xs mt-1 opacity-70 flex items-center justify-between`}>
                   <span>{message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                   {message.type === 'assistant' && (
@@ -1364,6 +1397,31 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   )}
                 </div>
               </div>
+              {/* Show AI reasoning for assistant messages */}
+              {message.type === 'assistant' && (message.reasoning || message.playbooksUsed) && (
+                <div className="mt-2">
+                  <AIReasoning
+                    reasoning={message.reasoning}
+                    playbooksUsed={message.playbooksUsed}
+                    onFeedback={(feedback, details) => {
+                      // Track feedback for improving AI
+                      apiRequest('/api/max-ai/feedback', 'POST', {
+                        messageId: message.id,
+                        feedback,
+                        details
+                      }).catch(console.error);
+                    }}
+                    onEditPlaybook={(playbookId) => {
+                      // Navigate to playbook editor
+                      window.location.href = `/memory-book?edit=${playbookId}`;
+                    }}
+                    onCreatePlaybook={(context) => {
+                      // Navigate to create new playbook with context
+                      window.location.href = `/memory-book?create=true&context=${encodeURIComponent(message.content)}`;
+                    }}
+                  />
+                </div>
+              )}
             </div>
           ))}
           <div ref={messagesEndRef} />

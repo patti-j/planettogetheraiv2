@@ -3,7 +3,11 @@ import { db } from '../db';
 import { 
   alerts,
   aiMemories,
-  type insertAIMemorySchema
+  playbooks,
+  playbookUsage,
+  agentActions,
+  type insertAIMemorySchema,
+  type Playbook
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
 
@@ -70,6 +74,24 @@ interface MaxResponse {
   streaming?: boolean;
   relatedTopics?: string[];
   learnedPreference?: any;
+  reasoning?: AIReasoning;
+  playbooksUsed?: PlaybookReference[];
+}
+
+interface AIReasoning {
+  thought_process: string[];
+  decision_factors: string[];
+  playbooks_consulted: string[];
+  confidence_score: number;
+  alternative_approaches?: string[];
+}
+
+interface PlaybookReference {
+  id: number;
+  title: string;
+  relevance_score: number;
+  sections_used: string[];
+  applied_rules?: string[];
 }
 
 interface TaskStep {
@@ -188,6 +210,144 @@ Only store information that would be helpful for future conversations. Don't sto
     } catch (error) {
       console.error('Memory storage error:', error);
       // Don't fail the main conversation for memory issues
+    }
+  }
+
+  // Search for relevant playbooks based on the user's query
+  private async searchRelevantPlaybooks(query: string, context: MaxContext): Promise<PlaybookReference[]> {
+    try {
+      // Get all active playbooks
+      const allPlaybooks = await db.select()
+        .from(playbooks)
+        .where(eq(playbooks.isActive, true));
+      
+      if (allPlaybooks.length === 0) {
+        return [];
+      }
+
+      // Use AI to find relevant playbooks
+      const relevanceCheck = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: `You are analyzing a manufacturing knowledge base to find relevant playbooks for the user's query.
+            
+Available playbooks:
+${allPlaybooks.map((p, i) => `${i + 1}. ID: ${p.id}, Title: "${p.title}"\nTags: ${JSON.stringify(p.tags)}\nContent preview: ${p.content.substring(0, 300)}...`).join('\n\n')}
+
+User query: "${query}"
+Current context: Page - ${context.currentPage}, Role - ${context.userRole}
+
+Return a JSON array of the most relevant playbooks (max 3) with:
+{
+  "playbooks": [
+    {
+      "id": number,
+      "title": string,
+      "relevance_score": 0.0-1.0,
+      "sections_used": ["section names that are relevant"],
+      "applied_rules": ["specific rules or principles from this playbook that apply"]
+    }
+  ]
+}
+
+Only include playbooks with relevance_score > 0.5. Return empty array if none are relevant.`
+          }
+        ],
+        response_format: { type: "json_object" },
+        temperature: 0.3
+      });
+
+      const result = JSON.parse(relevanceCheck.choices[0].message.content || '{"playbooks":[]}');
+      
+      // Track playbook usage for analytics
+      for (const playbook of result.playbooks || []) {
+        if (playbook.relevance_score > 0.7) {
+          await db.insert(playbookUsage).values({
+            playbookId: playbook.id,
+            userId: context.userId || null,
+            actionType: 'referenced',
+            context: `Query: ${query.substring(0, 100)}`,
+            effectivenessRating: null
+          });
+        }
+      }
+      
+      return result.playbooks || [];
+    } catch (error) {
+      console.error('Playbook search error:', error);
+      return [];
+    }
+  }
+
+  // Build AI reasoning explanation
+  private buildReasoningExplanation(
+    query: string,
+    playbooks: PlaybookReference[],
+    decision: string
+  ): AIReasoning {
+    return {
+      thought_process: [
+        `Analyzed user query: "${query}"`,
+        `Found ${playbooks.length} relevant playbooks in knowledge base`,
+        playbooks.length > 0 ? 
+          `Consulted: ${playbooks.map(p => p.title).join(', ')}` :
+          'No specific playbooks directly applied',
+        `Made decision based on context and best practices`
+      ],
+      decision_factors: [
+        'User role and permissions',
+        'Current page context',
+        'Historical patterns',
+        'Manufacturing best practices',
+        ...(playbooks.length > 0 ? ['Playbook guidelines'] : [])
+      ],
+      playbooks_consulted: playbooks.map(p => p.title),
+      confidence_score: playbooks.length > 0 ? 0.85 : 0.7,
+      alternative_approaches: [
+        'Could analyze historical data for patterns',
+        'Could request more specific information',
+        'Could suggest creating a new playbook for this scenario'
+      ]
+    };
+  }
+  
+  // Track AI actions for transparency and audit trail
+  private async trackAIAction(
+    context: MaxContext,
+    userPrompt: string,
+    aiResponse: string,
+    playbooks: PlaybookReference[]
+  ): Promise<void> {
+    try {
+      const sessionId = `max_${context.userId}_${Date.now()}`;
+      const reasoning = this.buildReasoningExplanation(userPrompt, playbooks, aiResponse);
+      
+      await db.insert(agentActions).values({
+        sessionId: sessionId,
+        agentType: 'max',
+        actionType: 'chat',
+        entityType: 'conversation',
+        entityId: null,
+        actionDescription: `Responded to user query with ${playbooks.length} playbook(s) referenced`,
+        reasoning: JSON.stringify(reasoning),
+        userPrompt: userPrompt.substring(0, 500),
+        beforeState: null,
+        afterState: {
+          playbooks_used: playbooks.map(p => p.id),
+          confidence: reasoning.confidence_score,
+          response_length: aiResponse.length
+        },
+        undoInstructions: null,
+        batchId: null,
+        executionTime: 0,
+        success: true,
+        createdBy: context.userId
+      });
+    } catch (error) {
+      console.error('Error tracking AI action:', error);
+      // Don't fail the main conversation for tracking issues
     }
   }
 
@@ -562,6 +722,9 @@ Rules:
     }
   ): Promise<MaxResponse> {
     try {
+        // Search for relevant playbooks FIRST to guide AI thinking
+        const playbooks = await this.searchRelevantPlaybooks(query, context);
+        
         // Analyze user intent using AI
         const intent = await this.analyzeUserIntentWithAI(query);
         
@@ -574,9 +737,17 @@ Rules:
           }
         }
         
-        // Use the new flexible AI response system
-        const flexibleResponse = await this.getAIFlexibleResponse(query, context);
+        // Use the new flexible AI response system with playbook guidance
+        const flexibleResponse = await this.getAIFlexibleResponse(query, context, playbooks);
         if (flexibleResponse) {
+          // Add playbook reasoning to response
+          const reasoning = this.buildReasoningExplanation(query, playbooks, flexibleResponse.content);
+          flexibleResponse.reasoning = reasoning;
+          flexibleResponse.playbooksUsed = playbooks;
+          
+          // Track AI action for transparency
+          await this.trackAIAction(context, query, flexibleResponse.content, playbooks);
+          
           return flexibleResponse;
         }
 
@@ -603,6 +774,9 @@ Rules:
         
         // Get relevant memories for context
         const relevantMemories = await this.getRelevantMemories(context.userId, query);
+        
+        // Search for relevant playbooks to guide the response
+        const responsePlaybooks = await this.searchRelevantPlaybooks(query, context);
         
         // Analyze conversation context
         const conversationContext = this.analyzeConversationContext(history);
@@ -631,8 +805,8 @@ Rules:
           };
         }
         
-        // Build context-aware prompt with conversation history and memories
-        const systemPrompt = this.buildSystemPrompt(context, intent, relevantMemories);
+        // Build context-aware prompt with conversation history, memories, and playbooks
+        const systemPrompt = this.buildSystemPrompt(context, intent, relevantMemories, responsePlaybooks);
         const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
 
         // Only enable function calling for specific action queries
@@ -709,12 +883,20 @@ Rules:
 
         // Detect and store memory after successful response
         await this.detectAndStoreMemory(context.userId, query, assistantContent);
+        
+        // Build reasoning explanation
+        const reasoning = this.buildReasoningExplanation(query, responsePlaybooks, assistantContent);
+        
+        // Track AI action for transparency
+        await this.trackAIAction(context, query, assistantContent, responsePlaybooks);
 
         return {
           content: assistantContent,
           insights: insights.length > 0 ? insights : undefined,
           suggestions: await this.getContextualSuggestions(context),
-          data: productionData
+          data: productionData,
+          reasoning: reasoning,
+          playbooksUsed: responsePlaybooks.length > 0 ? responsePlaybooks : undefined
         };
     } catch (error) {
       console.error('Max AI response generation error:', error);
@@ -735,7 +917,8 @@ Rules:
       // Build context and messages similar to regular response
       const productionData = await this.getProductionStatus(context);
       const insights = await this.analyzeSchedule(context);
-      const systemPrompt = this.buildSystemPrompt(context);
+      const streamPlaybooks = await this.searchRelevantPlaybooks(query, context);
+      const systemPrompt = this.buildSystemPrompt(context, undefined, undefined, streamPlaybooks);
       
       // Create streaming completion
       const stream = await openai.chat.completions.create({
@@ -794,12 +977,33 @@ Would you like me to analyze any specific area in detail?`;
   }
 
   // Build role and context-specific system prompt
-  private buildSystemPrompt(context: MaxContext, intent?: { type: string; target?: string; confidence: number }, relevantMemories?: string): string {
+  private buildSystemPrompt(
+    context: MaxContext, 
+    intent?: { type: string; target?: string; confidence: number }, 
+    relevantMemories?: string,
+    playbooks?: PlaybookReference[]
+  ): string {
+    // Build playbook context if available
+    let playbookContext = '';
+    if (playbooks && playbooks.length > 0) {
+      playbookContext = '\n\n    PLAYBOOK GUIDANCE:\n';
+      playbooks.forEach(pb => {
+        playbookContext += `    - ${pb.title} (Relevance: ${Math.round(pb.relevance_score * 100)}%)\n`;
+        if (pb.applied_rules && pb.applied_rules.length > 0) {
+          pb.applied_rules.forEach(rule => {
+            playbookContext += `      * ${rule}\n`;
+          });
+        }
+      });
+      playbookContext += '\n    Apply these playbook principles in your response.\n';
+    }
+
     const basePrompt = `You are Max, an intelligent manufacturing assistant for PlanetTogether SCM + APS system. 
     You have deep knowledge of production scheduling, resource optimization, quality management, and supply chain operations.
     You provide actionable insights and can help optimize manufacturing processes.
 
     ${relevantMemories ? `\n    PERSONAL CONTEXT:\n    ${relevantMemories}\n    Remember to apply these preferences and context to your responses.\n` : ''}
+    ${playbookContext}
 
     COMMUNICATION RULES:
     - When users ask to "show me" something specific (like "show me the production schedule"), understand they want to SEE that page/data, not just talk about it
@@ -841,7 +1045,7 @@ Would you like me to analyze any specific area in detail?`;
   }
 
   // Use AI flexibly to understand user intent and determine appropriate actions
-  private async getAIFlexibleResponse(query: string, context: MaxContext): Promise<MaxResponse | null> {
+  private async getAIFlexibleResponse(query: string, context: MaxContext, playbooks: PlaybookReference[] = []): Promise<MaxResponse | null> {
     try {
       // Let AI understand the user's intent and decide what to do
       const intentResponse = await openai.chat.completions.create({
@@ -850,6 +1054,14 @@ Would you like me to analyze any specific area in detail?`;
           {
             role: 'system',
             content: `You are Max, an intelligent manufacturing AI assistant. Analyze the user's request and determine what they want.
+
+${playbooks.length > 0 ? `PLAYBOOK GUIDANCE:
+You have consulted the following playbooks to guide your understanding:
+${playbooks.map(p => `- ${p.title} (${Math.round(p.relevance_score * 100)}% relevant)
+  Applied rules: ${p.applied_rules?.join(', ') || 'General guidance'}`).join('\n')}
+
+Use these playbooks to inform your decision-making while remaining flexible to the specific user request.
+` : ''}
 
 Available actions you can take:
 1. FETCH_DATA - if they want specific information from the system
@@ -896,7 +1108,17 @@ Respond with JSON:
       } else if (intent.intent === 'NAVIGATE') {
         return await this.handleNavigationIntent(query, intent, context);
       } else if (intent.intent === 'ANALYZE') {
-        return await this.handleAnalysisIntent(query, intent, context);
+        const analysisResponse = await this.handleAnalysisIntent(query, intent, context, playbooks);
+        if (analysisResponse) {
+          // Add playbook reasoning to response
+          const reasoning = this.buildReasoningExplanation(query, playbooks, analysisResponse.content);
+          analysisResponse.reasoning = reasoning;
+          analysisResponse.playbooksUsed = playbooks;
+          
+          // Track AI action for transparency
+          await this.trackAIAction(context, query, analysisResponse.content, playbooks);
+        }
+        return analysisResponse;
       } else if (intent.intent === 'CREATE') {
         return await this.handleCreateIntent(query, intent, context);
       } else {
@@ -1500,7 +1722,7 @@ IMPORTANT RULES:
     return null;
   }
 
-  private async handleAnalysisIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
+  private async handleAnalysisIntent(query: string, intent: any, context: MaxContext, playbooks: PlaybookReference[] = []): Promise<MaxResponse | null> {
     // Get current production data for analysis
     const productionData = await this.getProductionStatus(context);
     
@@ -1511,6 +1733,11 @@ IMPORTANT RULES:
           {
             role: 'system',
             content: `You are Max, a manufacturing analytics AI. Provide insightful analysis based on the user's request and available data.
+
+${playbooks.length > 0 ? `PLAYBOOK GUIDANCE:
+${playbooks.map(p => `- ${p.title}: ${p.applied_rules?.join(', ') || 'Apply relevant best practices'}`).join('\n')}
+
+Apply these playbook guidelines while maintaining flexibility for the specific context.\n` : ''}
 
 Focus on:
 - Production efficiency and bottlenecks

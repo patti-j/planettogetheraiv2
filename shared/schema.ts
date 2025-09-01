@@ -468,9 +468,7 @@ export const playbookCollaborators = pgTable("playbook_collaborators", {
   permission: text("permission").notNull().default("edit"), // read, edit, admin
   addedBy: integer("added_by").references(() => users.id).notNull(),
   addedAt: timestamp("added_at").defaultNow(),
-}, (table) => ({
-  collaboratorUnique: unique().on(table.playbookId, table.userId),
-}));
+});
 
 // Playbook History - track all changes for audit purposes
 export const playbookHistory = pgTable("playbook_history", {
