@@ -10,7 +10,7 @@ import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Minimize, Send, Sparkles, Menu } from 'lucide-react';
+import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
@@ -32,6 +32,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  
+  // Panel force-show state for small screens
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+  const [forcePanelsVisible, setForcePanelsVisible] = useState(false);
   
   // Check if navigation is pinned
   const [isNavigationPinned, setIsNavigationPinned] = useState(() => {
@@ -223,6 +227,20 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     };
   }, []);
 
+  // Track window width for responsive panel hiding
+  useEffect(() => {
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+      // Reset force-show when going back to larger screen
+      if (window.innerWidth >= 480) {
+        setForcePanelsVisible(false);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   // Add keyboard support for exiting fullscreen with Escape key
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -234,6 +252,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullScreen, toggleFullScreen]);
+
+  // Determine if panels should be hidden due to small screen
+  const shouldHidePanels = windowWidth < 480 && !forcePanelsVisible;
+  const showPanels = !isFullScreen && !shouldHidePanels;
 
   // For mobile, render content directly without TopMenu
   // Mobile pages should handle their own navigation
@@ -252,8 +274,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Main content area with AI panel on left and navigation on right */}
       <div className="flex flex-1 overflow-hidden">
-        {/* AI Panel - now on the left side - hidden in full screen */}
-        {!isFullScreen && <AILeftPanel />}
+        {/* AI Panel - now on the left side - hidden in full screen or small screens unless forced */}
+        {showPanels && <AILeftPanel />}
         
         {/* Main content */}
         <div className="flex-1 flex flex-col">
@@ -272,8 +294,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </div>
         </div>
         
-        {/* Navigation Panel - Show full when pinned, minimized when not pinned - hidden in full screen */}
-        {!isFullScreen && (
+        {/* Navigation Panel - Show full when pinned, minimized when not pinned - hidden in full screen or small screens unless forced */}
+        {showPanels && (
           <>
             {isNavigationPinned ? (
               <div className="h-full flex flex-col bg-background border-l border-border w-80">
@@ -295,6 +317,54 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Bottom drawer for notifications - hidden in full screen */}
       {!isFullScreen && <BottomDrawer />}
+
+      {/* Panel Toggle Button - Show when panels are hidden due to small screen */}
+      {!isFullScreen && shouldHidePanels && (
+        <div className="fixed top-4 left-4 z-50">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setForcePanelsVisible(!forcePanelsVisible)}
+                  size="sm"
+                  variant="outline"
+                  className="bg-background/90 backdrop-blur-sm shadow-lg border-2 hover:bg-muted"
+                >
+                  <Sidebar className="h-4 w-4 mr-2" />
+                  Show Panels
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Show navigation and AI panels</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* Panel Hide Button - Show when panels are force-visible on small screen */}
+      {!isFullScreen && forcePanelsVisible && windowWidth < 480 && (
+        <div className="fixed top-4 left-4 z-50">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={() => setForcePanelsVisible(false)}
+                  size="sm"
+                  variant="outline"
+                  className="bg-background/90 backdrop-blur-sm shadow-lg border-2 hover:bg-muted"
+                >
+                  <EyeOff className="h-4 w-4 mr-2" />
+                  Hide Panels
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Hide panels to see more content</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
       
       {/* Floating Max AI Prompt - always visible, positioned higher to avoid Activity Center */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-50">
