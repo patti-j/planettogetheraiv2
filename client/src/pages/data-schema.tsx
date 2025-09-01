@@ -2830,24 +2830,6 @@ function DataSchemaViewContent() {
               <span className="hidden sm:inline ml-1">Home</span>
             </Button>
             
-            {/* Full Screen Toggle - Always visible for better UX */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsFullScreen(!isFullScreen)}
-                    className={isFullScreen ? 'ring-2 ring-green-500' : ''}
-                  >
-                    {isFullScreen ? <Minimize className="w-4 h-4" /> : <Maximize className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{isFullScreen ? 'Exit' : 'Enter'} Full Screen (F11)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
           </div>
 
         </div>
