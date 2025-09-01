@@ -3515,22 +3515,6 @@ function DataSchemaViewContent() {
         </div>
       )}
 
-      {/* Floating Homepage Button - Bottom right corner for visibility */}
-      {!isFullScreen && (
-        <div className="fixed bottom-8 right-8 z-40">
-          <Button 
-            onClick={() => {
-              console.log('🏠 Navigating to homepage...');
-              setLocation('/');
-            }}
-            className="bg-blue-600 hover:bg-blue-700 text-white shadow-2xl border-2 border-white"
-            size="lg"
-          >
-            <Home className="w-5 h-5 mr-2" />
-            <span className="font-semibold">Go to Homepage</span>
-          </Button>
-        </div>
-      )}
       
       {/* Schema Diagram */}
       <div className={`${isFullScreen ? 'h-screen' : 'flex-1'} relative`}>
