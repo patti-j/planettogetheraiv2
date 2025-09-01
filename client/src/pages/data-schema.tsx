@@ -2973,8 +2973,6 @@ function DataSchemaViewContent() {
                 </Button>
               )}
             </div>
-          </div>
-        </div>
         
         {/* Focus Controls - Separate row on mobile when active */}
         {focusMode && (
@@ -3029,7 +3027,7 @@ function DataSchemaViewContent() {
         )}
         
         {/* Card Selection Status - Floating overlay that doesn't affect layout */}
-        {selectedCards.length > 0 && !isFullScreen && (
+        {selectedCards.length > 0 && (
           <div className="absolute top-full left-4 right-4 z-40 flex items-center justify-between gap-4 bg-green-50 border border-green-200 px-3 py-2 rounded-lg shadow-md backdrop-blur-sm">
             <div className="flex items-center gap-2">
               <Flag className="w-4 h-4 text-green-600" />
@@ -3052,7 +3050,7 @@ function DataSchemaViewContent() {
         )}
         
         {/* Show Related Tables Toggle - appears when tables are selected */}
-        {selectedTables.length > 0 && !isFullScreen && (
+        {selectedTables.length > 0 && (
           <div className="flex items-center gap-4 mt-2 pt-2 border-t border-gray-200">
             <div className="flex items-center gap-2">
               <Label className="text-sm text-gray-600">Selected: {selectedTables.length} tables</Label>
