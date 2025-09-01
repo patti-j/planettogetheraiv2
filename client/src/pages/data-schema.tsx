@@ -254,8 +254,8 @@ const TableNode = ({ data }: { data: any }) => {
   const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250, minHeight = 180 } = data;
   
   const getCardClassName = () => {
-    // Use dynamic width in compressed view, fixed width in full view
-    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : "";
+    // Use fixed width in full view, allow dynamic sizing in compressed view
+    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : "w-auto";
     let baseClasses = `${widthClasses} shadow-lg border-2 transition-all duration-200`;
     
     if (isFocused) {
@@ -270,24 +270,28 @@ const TableNode = ({ data }: { data: any }) => {
   };
 
   const getCardStyle = () => {
+    const baseStyle = {
+      minWidth: showColumns ? '280px' : `${minWidth}px`, 
+      maxWidth: showColumns ? '380px' : `${minWidth + 20}px`,
+      minHeight: showColumns ? '200px' : `${minHeight}px`,
+      maxHeight: showColumns ? '300px' : `${minHeight + 20}px`,
+      width: showColumns ? 'auto' : `${minWidth}px`,
+      height: showColumns ? 'auto' : `${minHeight}px`
+    };
+
     if (isFocused || isConnected) {
-      return { borderColor: '#3b82f6' };
+      return { ...baseStyle, borderColor: '#3b82f6' };
     } else if (isSelected) {
-      return { borderColor: '#10b981' };
+      return { ...baseStyle, borderColor: '#10b981' };
     } else {
-      return { borderColor: getCategoryColor(table.category) };
+      return { ...baseStyle, borderColor: getCategoryColor(table.category) };
     }
   };
 
   return (
     <Card 
       className={getCardClassName()} 
-      style={{...getCardStyle(), 
-        minWidth: showColumns ? '280px' : `${minWidth}px`, 
-        maxWidth: showColumns ? '380px' : `${minWidth + 20}px`,
-        minHeight: showColumns ? '200px' : `${minHeight}px`,
-        maxHeight: showColumns ? '300px' : `${minHeight + 20}px`
-      }}
+      style={getCardStyle()}
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
