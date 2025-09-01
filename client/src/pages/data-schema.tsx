@@ -251,7 +251,7 @@ interface SchemaRelationship {
 
 // Custom node component for database tables
 const TableNode = ({ data }: { data: any }) => {
-  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250, minHeight = 180 } = data;
+  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250, minHeight = 180, fontSize = 12 } = data;
   
   
   const getCardClassName = () => {
@@ -295,8 +295,8 @@ const TableNode = ({ data }: { data: any }) => {
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
-        <CardTitle className="flex items-start gap-2 text-sm pr-8 leading-tight">
-          <Table className="w-4 h-4 flex-shrink-0 mt-0.5" />
+        <CardTitle className="flex items-start gap-2 pr-8 leading-tight" style={{ fontSize: `${fontSize}px` }}>
+          <Table className="flex-shrink-0 mt-0.5" style={{ width: `${fontSize}px`, height: `${fontSize}px` }} />
           <span className="break-words hyphens-auto leading-tight font-medium overflow-hidden">{table.name}</span>
         </CardTitle>
         
@@ -327,26 +327,26 @@ const TableNode = ({ data }: { data: any }) => {
           <div className="space-y-2 max-h-[200px] overflow-y-auto">
             {table.columns.slice(0, 10).map((column: SchemaColumn, idx: number) => (
               <div key={idx} className="pb-2 border-b border-gray-100 last:border-0">
-                <div className="flex items-start flex-wrap gap-1 text-xs">
+                <div className="flex items-start flex-wrap gap-1" style={{ fontSize: `${Math.max(fontSize - 2, 8)}px` }}>
                   <div className="flex items-center gap-1 min-w-0">
-                    {column.primaryKey && <Key className="w-3 h-3 text-yellow-500 flex-shrink-0" />}
-                    {column.foreignKey && <Link2 className="w-3 h-3 text-blue-500 flex-shrink-0" />}
+                    {column.primaryKey && <Key className="text-yellow-500 flex-shrink-0" style={{ width: `${Math.max(fontSize - 3, 8)}px`, height: `${Math.max(fontSize - 3, 8)}px` }} />}
+                    {column.foreignKey && <Link2 className="text-blue-500 flex-shrink-0" style={{ width: `${Math.max(fontSize - 3, 8)}px`, height: `${Math.max(fontSize - 3, 8)}px` }} />}
                     <span className={`${column.primaryKey ? "font-bold" : ""} break-words`}>{column.name}</span>
                   </div>
-                  <Badge variant="secondary" className="text-xs px-1 py-0 ml-auto">
+                  <Badge variant="secondary" className="px-1 py-0 ml-auto" style={{ fontSize: `${Math.max(fontSize - 4, 7)}px` }}>
                     {column.type}
                   </Badge>
                   {!column.nullable && <span className="text-red-500 ml-1">*</span>}
                 </div>
                 {column.comment && (
-                  <div className="mt-1 pl-4 text-xs text-gray-500 italic leading-relaxed break-words max-w-full">
+                  <div className="mt-1 pl-4 text-gray-500 italic leading-relaxed break-words max-w-full" style={{ fontSize: `${Math.max(fontSize - 3, 8)}px` }}>
                     {column.comment}
                   </div>
                 )}
               </div>
             ))}
             {table.columns.length > 10 && (
-              <div className="text-xs text-gray-500 italic">
+              <div className="text-gray-500 italic" style={{ fontSize: `${Math.max(fontSize - 2, 8)}px` }}>
                 ... and {table.columns.length - 10} more columns
               </div>
             )}
@@ -1497,9 +1497,9 @@ function DataSchemaViewContent() {
   const [cardSize, setCardSize] = useState(() => {
     try {
       const saved = localStorage.getItem('dataSchemaCardSize');
-      return saved ? JSON.parse(saved) : { width: 250, height: 180 };
+      return saved ? JSON.parse(saved) : { width: 250, height: 180, fontSize: 12 };
     } catch {
-      return { width: 250, height: 180 };
+      return { width: 250, height: 180, fontSize: 12 };
     }
   });
 
@@ -1591,7 +1591,7 @@ function DataSchemaViewContent() {
           minWidth: cardSize.width,
           onSelect: handleCardSelection,
           onClick: handleTableClick,
-          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, minWidth: cardSize.width, minHeight: cardSize.height, onSelect: handleCardSelection, onClick: handleTableClick }} />
+          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, minWidth: cardSize.width, minHeight: cardSize.height, fontSize: cardSize.fontSize, onSelect: handleCardSelection, onClick: handleTableClick }} />
         },
         style: {
           background: 'transparent',
@@ -2481,8 +2481,9 @@ function DataSchemaViewContent() {
           ...node.data,
           minWidth: cardSize.width,
           minHeight: cardSize.height,
+          fontSize: cardSize.fontSize,
           // Add a key that changes to force re-render
-          sizeKey: `${cardSize.width}-${cardSize.height}`
+          sizeKey: `${cardSize.width}-${cardSize.height}-${cardSize.fontSize}`
         }
       }))
     );
@@ -3042,6 +3043,25 @@ function DataSchemaViewContent() {
                 />
               </div>
               <span className="text-gray-500 text-[10px] w-8">{cardSize.height}</span>
+            </div>
+            
+            <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
+              <span className="text-gray-600 text-[10px]">Font:</span>
+              <div className="relative w-16">
+                <input
+                  type="range"
+                  value={cardSize.fontSize}
+                  onChange={(e) => setCardSize(prev => ({ ...prev, fontSize: parseInt(e.target.value) }))}
+                  max={20}
+                  min={8}
+                  step={1}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+              </div>
+              <span className="text-gray-500 text-[10px] w-8">{cardSize.fontSize}</span>
             </div>
             
             <div className="flex items-center gap-1">
