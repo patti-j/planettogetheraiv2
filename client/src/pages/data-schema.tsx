@@ -63,7 +63,10 @@ import {
   Lasso,
   MousePointer,
   Focus,
-  Network
+  Network,
+  GitBranch,
+  Circle,
+  Grid3x3
 } from "lucide-react";
 
 // Custom edge component for relationships with cardinality labels and tooltips
@@ -2663,33 +2666,33 @@ function DataSchemaViewContent() {
 
   return (
     <>
-    <div className="h-screen flex flex-col">
-      {/* Header - Mobile Optimized with better responsive design */}
+    <div className="h-screen flex flex-col bg-gray-50">
+      {/* Enhanced Header with improved visual hierarchy */}
       {!isFullScreen && (
-        <div className="border-b bg-white px-3 sm:px-6 py-1 sm:py-2 relative z-20 min-h-0">
-        {/* Title Row - Compact on Mobile with proper spacing */}
-        <div className="flex items-center justify-between mb-1 gap-2">
-          <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-            <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-            <h1 className="text-base sm:text-xl font-bold">Data Schema</h1>
-            <Badge variant="outline" className="text-xs">
-              {filteredTables.length}
+        <div className="border-b bg-white shadow-sm px-4 sm:px-6 py-2 sm:py-3 relative z-20">
+        {/* Title Row with better spacing and visual weight */}
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <Database className="w-6 h-6 text-blue-600" />
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900">Data Schema Visualizer</h1>
+            <Badge variant="secondary" className="text-sm font-medium">
+              {filteredTables.length} Tables
             </Badge>
           </div>
           
-          {/* Top Right Controls - Essential buttons only, responsive */}
-          <div className="flex items-center gap-1 flex-shrink-0">
-            {/* Essential controls only - show most important ones */}
+          {/* Enhanced Top Right Controls with better styling */}
+          <div className="flex items-center gap-2 flex-shrink-0">
             <Button 
               onClick={() => {
                 console.log('🏠 Navigating to homepage...');
                 setLocation('/');
               }}
-              variant="default"
+              variant="ghost"
               size="sm"
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="hover:bg-gray-100"
             >
               <Home className="w-4 h-4" />
+              <span className="hidden sm:inline ml-1">Home</span>
             </Button>
             
             {/* Full Screen Toggle - Always visible for better UX */}
@@ -2714,55 +2717,79 @@ function DataSchemaViewContent() {
 
         </div>
         
-        {/* Compact Combined Controls */}
-        <div className="flex flex-col lg:flex-row gap-2 lg:gap-3">
-          {/* Left Side - Search and Table Selection */}
+        {/* Enhanced Control Bar with better organization */}
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-4">
+          {/* Left Side - Search with improved styling */}
           <div className="flex items-center gap-2 flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
+            <div className="relative flex items-center flex-1 max-w-md">
+              <Search className="absolute left-3 w-4 h-4 text-gray-400" />
               <Input
-                placeholder="Search tables..."
+                placeholder="Search tables, columns, or descriptions..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="flex-1"
+                className="pl-10 pr-3 py-1.5 bg-gray-50 border-gray-200 focus:bg-white"
               />
             </div>
             <Button
               variant="outline"
               size="sm"
               onClick={() => setShowTableSelector(!showTableSelector)}
-              className={`flex-shrink-0 ${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
+              className={`flex-shrink-0 transition-colors ${
+                selectedTables.length > 0 
+                  ? 'bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100' 
+                  : 'hover:bg-gray-50'
+              }`}
             >
               <Settings className="w-4 h-4 mr-1" />
-              <span className="hidden sm:inline">Tables </span>({selectedTables.length})
+              <span className="hidden sm:inline">Select Tables </span>
+              <Badge variant="secondary" className="ml-1 text-xs">
+                {selectedTables.length}
+              </Badge>
             </Button>
           </div>
           
-          {/* Right Side - Filters and Controls in Single Row */}
-          <div className="flex flex-wrap items-center gap-2">
-            {/* Compact Status Badges */}
-            {selectedFeature !== 'all' && (
-              <Badge variant="default" className="bg-emerald-500 text-xs">
-                <Filter className="w-3 h-3 mr-1" />
-                {availableFeatures.find(f => f.value === selectedFeature)?.label}
-              </Badge>
-            )}
-            {focusMode && focusTable && (
-              <Badge variant="default" className="bg-blue-500 text-xs">
-                Focus: {focusTable}
-              </Badge>
-            )}
+          {/* Right Side - Enhanced Controls with better grouping */}
+          <div className="flex items-center gap-3">
+            {/* Active Filters Display */}
+            <div className="flex items-center gap-2">
+              {selectedFeature !== 'all' && (
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                  <Filter className="w-3 h-3 mr-1" />
+                  {availableFeatures.find(f => f.value === selectedFeature)?.label}
+                </Badge>
+              )}
+              {focusMode && focusTable && (
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
+                  <Target className="w-3 h-3 mr-1" />
+                  {focusTable}
+                </Badge>
+              )}
+            </div>
             
-            {/* Filters removed - now only available in table selector dialog */}
-            
+            {/* Layout Type Selector with icons */}
             <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
-              <SelectTrigger className="w-20">
-                <SelectValue />
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Layout" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="hierarchical">Tree</SelectItem>
-                <SelectItem value="circular">Circle</SelectItem>
-                <SelectItem value="grid">Grid</SelectItem>
+                <SelectItem value="hierarchical">
+                  <div className="flex items-center gap-2">
+                    <GitBranch className="w-4 h-4" />
+                    Tree
+                  </div>
+                </SelectItem>
+                <SelectItem value="circular">
+                  <div className="flex items-center gap-2">
+                    <Circle className="w-4 h-4" />
+                    Circle
+                  </div>
+                </SelectItem>
+                <SelectItem value="grid">
+                  <div className="flex items-center gap-2">
+                    <Grid3x3 className="w-4 h-4" />
+                    Grid
+                  </div>
+                </SelectItem>
               </SelectContent>
             </Select>
             
