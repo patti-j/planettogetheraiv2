@@ -2950,46 +2950,46 @@ function DataSchemaViewContent() {
             </Button>
           </div>
           
-          {/* Right Side - Enhanced Controls with better grouping */}
-          <div className="flex items-center gap-3">
-            {/* Active Filters Display */}
-            <div className="flex items-center gap-2">
+          {/* Right Side - Enhanced Controls with responsive wrapping */}
+          <div className="flex flex-wrap items-center gap-2 lg:gap-3">
+            {/* Active Filters Display - hide on very small screens */}
+            <div className="hidden sm:flex items-center gap-2">
               {selectedFeature !== 'all' && (
                 <Badge variant="secondary" className="bg-emerald-50 text-emerald-700 border-emerald-200">
                   <Filter className="w-3 h-3 mr-1" />
-                  {availableFeatures.find(f => f.value === selectedFeature)?.label}
+                  <span className="hidden md:inline">{availableFeatures.find(f => f.value === selectedFeature)?.label}</span>
                 </Badge>
               )}
               {focusMode && focusTable && (
                 <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
                   <Target className="w-3 h-3 mr-1" />
-                  {focusTable}
+                  <span className="hidden md:inline">{focusTable}</span>
                 </Badge>
               )}
             </div>
             
             {/* Layout Type Selector with icons */}
             <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
-              <SelectTrigger className="w-32">
+              <SelectTrigger className="w-24 sm:w-32">
                 <SelectValue placeholder="Layout" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="hierarchical">
                   <div className="flex items-center gap-2">
                     <GitBranch className="w-4 h-4" />
-                    Tree
+                    <span className="hidden sm:inline">Tree</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="circular">
                   <div className="flex items-center gap-2">
                     <Circle className="w-4 h-4" />
-                    Circle
+                    <span className="hidden sm:inline">Circle</span>
                   </div>
                 </SelectItem>
                 <SelectItem value="grid">
                   <div className="flex items-center gap-2">
                     <Grid3x3 className="w-4 h-4" />
-                    Grid
+                    <span className="hidden sm:inline">Grid</span>
                   </div>
                 </SelectItem>
               </SelectContent>
@@ -3006,62 +3006,64 @@ function DataSchemaViewContent() {
               <Label htmlFor="show-columns" className="text-xs">Fields</Label>
             </div>
             
-            {/* Card Size Controls - Only work when Fields toggle is OFF */}
-            <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
-              <span className="text-gray-600 text-[10px]">Width:</span>
-              <div className="relative w-16">
-                <input
-                  type="range"
-                  value={cardSize.width}
-                  onChange={(e) => setCardSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
-                  max={400}
-                  min={100}
-                  step={10}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
+            {/* Card Size Controls Group - responsive sizing */}
+            <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+              <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 bg-gray-50 rounded text-xs">
+                <span className="text-gray-600 text-[10px] hidden sm:inline">W:</span>
+                <div className="relative w-12 sm:w-16">
+                  <input
+                    type="range"
+                    value={cardSize.width}
+                    onChange={(e) => setCardSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                    max={400}
+                    min={100}
+                    step={10}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb 100%)`
+                    }}
+                  />
+                </div>
+                <span className="text-gray-500 text-[10px] w-6 sm:w-8">{cardSize.width}</span>
               </div>
-              <span className="text-gray-500 text-[10px] w-8">{cardSize.width}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
-              <span className="text-gray-600 text-[10px]">Height:</span>
-              <div className="relative w-16">
-                <input
-                  type="range"
-                  value={cardSize.height}
-                  onChange={(e) => setCardSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
-                  max={300}
-                  min={80}
-                  step={10}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
+              
+              <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 bg-gray-50 rounded text-xs">
+                <span className="text-gray-600 text-[10px] hidden sm:inline">H:</span>
+                <div className="relative w-12 sm:w-16">
+                  <input
+                    type="range"
+                    value={cardSize.height}
+                    onChange={(e) => setCardSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                    max={300}
+                    min={80}
+                    step={10}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb 100%)`
+                    }}
+                  />
+                </div>
+                <span className="text-gray-500 text-[10px] w-6 sm:w-8">{cardSize.height}</span>
               </div>
-              <span className="text-gray-500 text-[10px] w-8">{cardSize.height}</span>
-            </div>
-            
-            <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
-              <span className="text-gray-600 text-[10px]">Font:</span>
-              <div className="relative w-16">
-                <input
-                  type="range"
-                  value={cardSize.fontSize}
-                  onChange={(e) => setCardSize(prev => ({ ...prev, fontSize: parseInt(e.target.value) }))}
-                  max={20}
-                  min={8}
-                  step={1}
-                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
-                  style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb 100%)`
-                  }}
-                />
+              
+              <div className="flex items-center gap-1 sm:gap-2 px-1 sm:px-2 py-1 bg-gray-50 rounded text-xs">
+                <span className="text-gray-600 text-[10px] hidden sm:inline">F:</span>
+                <div className="relative w-12 sm:w-16">
+                  <input
+                    type="range"
+                    value={cardSize.fontSize}
+                    onChange={(e) => setCardSize(prev => ({ ...prev, fontSize: parseInt(e.target.value) }))}
+                    max={20}
+                    min={8}
+                    step={1}
+                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb ${((cardSize.fontSize - 8) / (20 - 8)) * 100}%, #e5e7eb 100%)`
+                    }}
+                  />
+                </div>
+                <span className="text-gray-500 text-[10px] w-6 sm:w-8">{cardSize.fontSize}</span>
               </div>
-              <span className="text-gray-500 text-[10px] w-8">{cardSize.fontSize}</span>
             </div>
             
             <div className="flex items-center gap-1">
@@ -3100,7 +3102,7 @@ function DataSchemaViewContent() {
               />
               <Label htmlFor="focus-mode" className="text-xs flex items-center gap-1">
                 <Target className="w-3 h-3" />
-                Focus
+                <span className="hidden sm:inline">Focus</span>
               </Label>
             </div>
             
