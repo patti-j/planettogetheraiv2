@@ -251,10 +251,12 @@ interface SchemaRelationship {
 
 // Custom node component for database tables
 const TableNode = ({ data }: { data: any }) => {
-  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick } = data;
+  const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250 } = data;
   
   const getCardClassName = () => {
-    let baseClasses = "min-w-[280px] max-w-[380px] shadow-lg border-2 transition-all duration-200";
+    // Use dynamic width in compressed view, fixed width in full view
+    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : `min-w-[${minWidth}px] max-w-[${minWidth + 50}px]`;
+    let baseClasses = `${widthClasses} shadow-lg border-2 transition-all duration-200`;
     
     if (isFocused) {
       return `${baseClasses} ring-4 ring-blue-500 ring-opacity-50 border-blue-500 scale-105`;
@@ -280,7 +282,7 @@ const TableNode = ({ data }: { data: any }) => {
   return (
     <Card 
       className={getCardClassName()} 
-      style={{...getCardStyle(), minWidth: '250px'}}
+      style={{...getCardStyle(), minWidth: showColumns ? '280px' : `${minWidth}px`}}
       onClick={() => onClick?.(table.name)}
     >
       <CardHeader className="pb-2 relative">
@@ -655,7 +657,8 @@ const forceDirectedLayout = (tables: SchemaTable[], iterations: number = 100) =>
 
 // Layout algorithms with improved collision detection and relationship-aware spacing
 const layoutAlgorithms = {
-  hierarchical: (tables: SchemaTable[]) => {
+  hierarchical: (tables: SchemaTable[], dynamicMinWidth?: number) => {
+    const actualMinWidth = dynamicMinWidth || 250;
     const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
@@ -665,7 +668,7 @@ const layoutAlgorithms = {
     
     // Then organize by categories with relationship-aware grouping
     const categories = Array.from(new Set(tables.map(t => t.category)));
-    const minCardWidth = 320;
+    const cardWidth = actualMinWidth;
     const minCardHeight = 200;
     const padding = 60;
     
@@ -686,7 +689,7 @@ const layoutAlgorithms = {
       const maxCols = avgConnections > 3 ? 4 : Math.max(2, Math.min(5, Math.ceil(Math.sqrt(categoryTables.length * 1.5))));
       const cols = Math.min(maxCols, categoryTables.length);
       
-      const horizontalSpacing = minCardWidth + padding;
+      const horizontalSpacing = cardWidth + padding;
       
       categoryTables.forEach((table, tableIndex) => {
         const row = Math.floor(tableIndex / cols);
@@ -722,7 +725,8 @@ const layoutAlgorithms = {
     return positions;
   },
   
-  circular: (tables: SchemaTable[]) => {
+  circular: (tables: SchemaTable[], dynamicMinWidth?: number) => {
+    const actualMinWidth = dynamicMinWidth || 250;
     const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
@@ -731,7 +735,7 @@ const layoutAlgorithms = {
     
     // Dynamic radius based on table count and relationship density
     const minRadius = 350;
-    const cardWidth = 320;
+    const cardWidth = actualMinWidth;
     const cardHeight = 200;
     
     // Calculate radius considering relationships
@@ -771,12 +775,13 @@ const layoutAlgorithms = {
     return positions;
   },
   
-  grid: (tables: SchemaTable[]) => {
+  grid: (tables: SchemaTable[], dynamicMinWidth?: number) => {
+    const actualMinWidth = dynamicMinWidth || 250;
     const { tableConnections, connectionCounts } = analyzeRelationshipClusters(tables);
     const positions: { [key: string]: { x: number; y: number } } = {};
     const existingPositions: { x: number; y: number }[] = [];
     
-    const minCardWidth = 320;
+    const cardWidth = actualMinWidth;
     const minCardHeight = 200;
     const padding = 60;
     
@@ -800,7 +805,7 @@ const layoutAlgorithms = {
     
     // Use force-directed layout as base for relationship awareness
     const forcePositions = forceDirectedLayout(tables, 40);
-    const horizontalSpacing = minCardWidth + padding;
+    const horizontalSpacing = cardWidth + padding;
     
     sortedTables.forEach((table, index) => {
       const row = Math.floor(index / cols);
@@ -1476,6 +1481,22 @@ function DataSchemaViewContent() {
     return tables;
   }, [schemaData, searchTerm, selectedCategory, selectedFeature, focusMode, focusTable, selectedTables, showRelatedTables, getConnectedTables, getRelatedTablesForSelection]);
 
+  // Calculate minimum card width based on longest table name
+  const minCardWidth = useMemo(() => {
+    if (!filteredTables.length) return 200; // default minimum
+    
+    // Find longest table name
+    const longestName = filteredTables.reduce((longest, table) => 
+      table.name.length > longest.length ? table.name : longest, ''
+    );
+    
+    // Estimate width: ~8px per character + padding for icon + flag button
+    // Icon (16px) + gap (8px) + text + gap (8px) + flag button (20px) + padding (32px)
+    const estimatedWidth = Math.max(200, longestName.length * 8 + 84);
+    
+    return Math.min(estimatedWidth, 300); // cap at 300px for very long names
+  }, [filteredTables]);
+
   // Get unique categories
   const categories = useMemo(() => {
     if (!schemaData || !Array.isArray(schemaData)) return [];
@@ -1517,7 +1538,7 @@ function DataSchemaViewContent() {
     const savedPositions = customPositions[filterKey];
     if (savedPositions && Object.keys(savedPositions).length > 0 && positionsRestored) {
       // Use saved positions for tables that exist, fallback to algorithm for new tables
-      const algorithmPositions = layoutAlgorithms[layoutType](filteredTables);
+      const algorithmPositions = layoutAlgorithms[layoutType](filteredTables, minCardWidth);
       const positions: Record<string, { x: number; y: number }> = {};
       
       filteredTables.forEach(table => {
@@ -1528,8 +1549,8 @@ function DataSchemaViewContent() {
     }
     
     // Use algorithm-generated positions
-    return layoutAlgorithms[layoutType](filteredTables);
-  }, [filteredTables, layoutType, selectedFeature, selectedCategory, selectedTables, showRelatedTables, customPositions, positionsRestored]);
+    return layoutAlgorithms[layoutType](filteredTables, minCardWidth);
+  }, [filteredTables, layoutType, selectedFeature, selectedCategory, selectedTables, showRelatedTables, customPositions, positionsRestored, minCardWidth]);
 
   // Generate nodes and edges for React Flow
   const { nodes, edges } = useMemo(() => {
@@ -1556,9 +1577,10 @@ function DataSchemaViewContent() {
           isFocused,
           isConnected,
           isSelected,
+          minWidth: minCardWidth,
           onSelect: handleCardSelection,
           onClick: handleTableClick,
-          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect: handleCardSelection, onClick: handleTableClick }} />
+          label: <TableNode data={{ table, showColumns, showRelationships, isFocused, isConnected, isSelected, minWidth: minCardWidth, onSelect: handleCardSelection, onClick: handleTableClick }} />
         },
         style: {
           background: 'transparent',
@@ -1812,14 +1834,15 @@ function DataSchemaViewContent() {
   };
 
   // Enhanced Compact Force-Directed Layout Algorithm
-  const generateForceDirectedLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
+  const generateForceDirectedLayout = useCallback((tables: SchemaTable[], dynamicMinWidth?: number): Record<string, { x: number; y: number }> => {
+    const actualMinWidth = dynamicMinWidth || 250;
     if (!tables.length) return {};
     
     console.log('Enhanced compact force-directed layout: Processing', tables.length, 'tables');
     
     // Calculate actual card dimensions based on content (updated for smaller cards)
     const getCardDimensions = (table: SchemaTable) => {
-      const baseWidth = 280; // Reduced from 320 due to removed elements
+      const baseWidth = showColumns ? 280 : actualMinWidth; // Use dynamic width in compressed view
       const baseHeight = 100; // Reduced from 140 (removed category badge + description)
       const columnHeight = showColumns ? Math.min(table.columns.length, 10) * 30 : 0; // 30px per column
       const commentHeight = showColumns ? table.columns.slice(0, 10).reduce((acc, col) => 
@@ -2015,7 +2038,8 @@ function DataSchemaViewContent() {
   }, [showColumns]); // Include showColumns dependency to recalculate when column visibility changes
 
   // Professional Database Schema Layout (Sugiyama Algorithm)
-  const generateHierarchicalLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
+  const generateHierarchicalLayout = useCallback((tables: SchemaTable[], dynamicMinWidth?: number): Record<string, { x: number; y: number }> => {
+    const actualMinWidth = dynamicMinWidth || 250;
     if (!tables.length) return {};
     
     console.log('Professional schema layout: Processing', tables.length, 'tables with Sugiyama algorithm');
@@ -2120,7 +2144,7 @@ function DataSchemaViewContent() {
     const positions: Record<string, { x: number; y: number }> = {};
     
     // Responsive card dimensions based on Fields toggle state (updated for smaller cards)
-    const cardWidth = showColumns ? 320 : 250; // Reduced widths due to removed elements
+    const cardWidth = showColumns ? 320 : actualMinWidth; // Use dynamic width in compressed view
     const cardHeight = showColumns ? 200 : 90; // Reduced heights (removed category badge + description)
     const horizontalSpacing = showColumns ? 35 : 25; // Tighter spacing in compressed view
     const verticalSpacing = showColumns ? 80 : 50; // More compact vertical spacing
