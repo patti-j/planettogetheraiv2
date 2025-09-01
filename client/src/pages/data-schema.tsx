@@ -710,7 +710,7 @@ const layoutAlgorithms = {
           y: gridPos.y + (forcePos.y - gridPos.y) * 0.2
         };
         
-        const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
+        const finalPosition = resolveCollision(proposedPosition, existingPositions, cardWidth, estimatedHeight);
         positions[table.name] = finalPosition;
         existingPositions.push(finalPosition);
       });
@@ -826,7 +826,7 @@ const layoutAlgorithms = {
         y: gridPos.y + (forcePos.y - gridPos.y) * 0.15
       };
       
-      const finalPosition = resolveCollision(proposedPosition, existingPositions, minCardWidth, estimatedHeight);
+      const finalPosition = resolveCollision(proposedPosition, existingPositions, cardWidth, estimatedHeight);
       positions[table.name] = finalPosition;
       existingPositions.push(finalPosition);
     });
