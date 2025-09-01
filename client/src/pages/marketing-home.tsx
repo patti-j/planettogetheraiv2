@@ -42,23 +42,23 @@ interface ExtendedFeatureCardProps extends FeatureCardProps {
 }
 
 const FeatureCard: React.FC<ExtendedFeatureCardProps> = ({ icon, title, description, roi, highlight = false }) => (
-  <Card className={`transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${highlight ? 'border-primary bg-gradient-to-br from-primary/10 to-primary/5 relative overflow-hidden' : ''}`}>
+  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
     {highlight && (
-      <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-500 to-orange-500 text-white text-xs px-3 py-1 rounded-bl-lg font-semibold">
-        TOP RATED
+      <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-white text-xs sm:text-sm px-4 py-2 rounded-bl-xl font-bold shadow-lg">
+        ✨ MOST POPULAR
       </div>
     )}
-    <CardHeader className="pb-3 sm:pb-4">
-      <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center mb-2 sm:mb-3 ${highlight ? 'bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-lg' : 'bg-secondary'}`}>
+    <CardHeader className="pb-4 sm:pb-6 p-6 sm:p-8">
+      <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform duration-300 ${highlight ? 'bg-gradient-to-br from-blue-500 to-purple-600 text-white shadow-xl' : 'bg-gradient-to-br from-gray-100 to-gray-200 text-gray-700'}`}>
         {icon}
       </div>
-      <CardTitle className="text-base sm:text-lg leading-tight">{title}</CardTitle>
+      <CardTitle className="text-lg sm:text-xl lg:text-2xl leading-tight font-bold text-gray-900">{title}</CardTitle>
     </CardHeader>
-    <CardContent className="space-y-3">
-      <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">{description}</p>
+    <CardContent className="space-y-4 p-6 sm:p-8 pt-0">
+      <p className="text-base sm:text-lg text-gray-600 leading-relaxed">{description}</p>
       {roi && (
-        <div className="flex items-center gap-2 text-xs sm:text-sm font-semibold text-green-600 dark:text-green-400">
-          <TrendingUp className="w-3 h-3 sm:w-4 sm:h-4" />
+        <div className="flex items-center gap-3 text-sm sm:text-base font-bold text-green-600 bg-green-50 px-4 py-2 rounded-xl">
+          <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
           {roi}
         </div>
       )}
@@ -73,10 +73,10 @@ interface StatCardProps {
 }
 
 const StatCard: React.FC<StatCardProps> = ({ value, label, description }) => (
-  <div className="text-center p-4 sm:p-6 bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-shadow">
-    <div className="text-2xl sm:text-3xl lg:text-4xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-1 sm:mb-2">{value}</div>
-    <div className="text-sm sm:text-base lg:text-lg font-semibold mb-0.5 sm:mb-1">{label}</div>
-    <div className="text-xs sm:text-sm text-muted-foreground">{description}</div>
+  <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+    <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2 group-hover:scale-110 transition-transform duration-300">{value}</div>
+    <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">{label}</div>
+    <div className="text-sm text-gray-600">{description}</div>
   </div>
 );
 
@@ -195,117 +195,183 @@ const MarketingHome: React.FC = () => {
 
   return (
     <div className="fixed inset-0 min-h-screen bg-background z-[9999] overflow-auto">
-      {/* Hero Section - Mobile Optimized */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary/5 via-background to-secondary/10">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 pb-8 sm:pb-12">
-          <div className="max-w-4xl mx-auto text-center">
-            {/* Mobile-optimized badge */}
-            <Badge variant="secondary" className="mb-3 sm:mb-4 px-3 sm:px-4 py-1.5 sm:py-2 text-xs sm:text-sm">
-              <Sparkles className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              AI-Powered Manufacturing Excellence
-            </Badge>
+      {/* Hero Section - Enhanced Modern Design */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
+        {/* Background Effects */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-cyan-600/20" />
+        <div className="absolute inset-0 bg-grid-white/5" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
+        
+        {/* Floating Elements */}
+        <div className="absolute top-20 left-10 w-16 h-16 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
+        <div className="absolute top-40 right-20 w-20 h-20 bg-purple-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '1s'}} />
+        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-cyan-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}} />
+        
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-16 sm:pb-20">
+          <div className="max-w-5xl mx-auto text-center">
+            {/* Enhanced badge with glow effect */}
+            <div className="mb-6 sm:mb-8">
+              <Badge className="bg-gradient-to-r from-blue-500 to-purple-500 text-white border-0 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-medium shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-300">
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2 animate-pulse" />
+                AI-Powered Manufacturing Excellence
+              </Badge>
+            </div>
             
-            {/* Mobile-optimized heading */}
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent mb-3 sm:mb-4 leading-tight">
-              Transform Your Manufacturing Operations
+            {/* Enhanced heading with better typography */}
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
+              <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
+                Transform Your
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+                Manufacturing Operations
+              </span>
             </h1>
             
-            {/* Mobile-optimized description */}
-            <p className="text-base sm:text-lg md:text-xl text-muted-foreground mb-4 sm:mb-6 max-w-2xl mx-auto leading-relaxed px-2 sm:px-0">
-              The most advanced AI First Factory Optimization Platform with transparent AI decision-making. 
-              <span className="hidden sm:inline"> Trust AI that shows its thinking and learns from your expertise.</span>
+            {/* Enhanced description with better contrast */}
+            <p className="text-lg sm:text-xl md:text-2xl text-blue-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed px-2 sm:px-0 font-light">
+              The most advanced <span className="font-semibold text-white">AI-First Factory Optimization Platform</span> with transparent AI decision-making.
+              <br className="hidden sm:block" />
+              <span className="text-cyan-200">Trust AI that shows its thinking and learns from your expertise.</span>
             </p>
             
-            {/* Mobile-optimized CTAs */}
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-4 sm:px-0">
+            {/* Enhanced CTAs with modern styling */}
+            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 justify-center mb-10 sm:mb-12 px-4 sm:px-0">
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
-                className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-semibold bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary/80 shadow-lg"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 hover:from-blue-600 hover:via-purple-600 hover:to-cyan-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
-                Start Free Trial
-                <Rocket className="ml-2 w-4 h-4 sm:w-5 sm:h-5" />
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative z-10 flex items-center justify-center">
+                  Start Free Trial
+                  <Rocket className="ml-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:translate-x-1 transition-transform duration-300" />
+                </span>
               </Button>
               
               <Button 
                 size="lg"
                 variant="outline"
                 onClick={handleWatchDemo}
-                className="w-full sm:w-auto px-6 sm:px-8 py-5 sm:py-6 text-base sm:text-lg font-semibold border-2"
+                className="group w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 shadow-lg backdrop-blur-sm transition-all duration-300 rounded-xl"
               >
-                <Play className="mr-2 w-4 h-4 sm:w-5 sm:h-5" />
+                <Play className="mr-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform duration-300" />
                 Watch 3-Min Demo
               </Button>
             </div>
             
-            {/* Pricing indicator for transparency */}
-            <p className="text-xs sm:text-sm text-muted-foreground mb-4 sm:mb-6">
-              Starting at <span className="font-semibold text-primary">$499/month</span> • No credit card required • Cancel anytime
-            </p>
+            {/* Enhanced pricing indicator */}
+            <div className="mb-8 sm:mb-10">
+              <p className="text-base sm:text-lg text-blue-200 font-medium">
+                Starting at <span className="font-bold text-white bg-gradient-to-r from-blue-400 to-cyan-400 px-3 py-1 rounded-full text-base sm:text-lg">$499/month</span>
+              </p>
+              <p className="text-sm sm:text-base text-blue-300 mt-2">
+                No credit card required • Cancel anytime • 30-day money-back guarantee
+              </p>
+            </div>
 
-            {/* Mobile-optimized Trust Indicators */}
-            <div className="grid grid-cols-2 sm:flex sm:flex-wrap justify-center items-center gap-4 sm:gap-6 lg:gap-8 text-xs sm:text-sm text-muted-foreground">
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                <Shield className="w-3 h-3 sm:w-4 sm:h-4 text-green-600" />
-                <span>FDA Compliant</span>
+            {/* Enhanced Trust Indicators with better styling */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 max-w-4xl mx-auto">
+              <div className="flex flex-col items-center justify-center gap-2 p-4 sm:p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <Shield className="w-6 h-6 sm:w-8 sm:h-8 text-green-400 mb-1" />
+                <span className="text-sm sm:text-base font-semibold text-white">FDA Compliant</span>
+                <span className="text-xs text-blue-200">Regulatory Ready</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                <Award className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-                <span>ISO Certified</span>
+              <div className="flex flex-col items-center justify-center gap-2 p-4 sm:p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <Award className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 mb-1" />
+                <span className="text-sm sm:text-base font-semibold text-white">ISO Certified</span>
+                <span className="text-xs text-blue-200">Quality Standards</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                <Users className="w-3 h-3 sm:w-4 sm:h-4 text-purple-600" />
-                <span>500+ Customers</span>
+              <div className="flex flex-col items-center justify-center gap-2 p-4 sm:p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 text-purple-400 mb-1" />
+                <span className="text-sm sm:text-base font-semibold text-white">500+ Customers</span>
+                <span className="text-xs text-blue-200">Global Trust</span>
               </div>
-              <div className="flex items-center justify-center gap-1.5 sm:gap-2">
-                <Star className="w-3 h-3 sm:w-4 sm:h-4 text-yellow-600" />
-                <span>4.9/5 Rating</span>
+              <div className="flex flex-col items-center justify-center gap-2 p-4 sm:p-6 bg-white/10 backdrop-blur-sm rounded-xl border border-white/20 hover:bg-white/15 transition-all duration-300">
+                <Star className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-400 mb-1" />
+                <span className="text-sm sm:text-base font-semibold text-white">4.9/5 Rating</span>
+                <span className="text-xs text-blue-200">Top Rated</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Stats Section - Mobile Optimized */}
-      <section className="py-8 sm:py-12 bg-gradient-to-b from-secondary/30 to-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-            <StatCard 
-              value="25%" 
-              label="Cost Reduction" 
-              description="Avg. savings"
-            />
-            <StatCard 
-              value="30%" 
-              label="Efficiency" 
-              description="Improvement"
-            />
-            <StatCard 
-              value="95%" 
-              label="On-Time" 
-              description="Delivery rate"
-            />
-            <StatCard 
-              value="24/7" 
-              label="AI Monitor" 
-              description="Always on"
-            />
+      {/* Enhanced Stats Section */}
+      <section className="py-16 sm:py-20 bg-gradient-to-b from-white via-blue-50 to-white relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-grid-slate-100/50" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/5 to-purple-500/5" />
+        
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-4 sm:mb-6 bg-gradient-to-r from-blue-100 to-purple-100 text-blue-800 border-blue-200 px-4 py-2 text-sm font-medium">
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Proven Performance
+            </Badge>
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
+              Results That <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Speak Volumes</span>
+            </h2>
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
+              Real improvements from real customers across the globe
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+            <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">25%</div>
+              <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Cost Reduction</div>
+              <div className="text-sm text-gray-600">Average savings achieved</div>
+            </div>
+            
+            <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-400 to-indigo-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <TrendingUp className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-2">30%</div>
+              <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Efficiency</div>
+              <div className="text-sm text-gray-600">Operational improvement</div>
+            </div>
+            
+            <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-400 to-pink-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">95%</div>
+              <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">On-Time</div>
+              <div className="text-sm text-gray-600">Delivery performance</div>
+            </div>
+            
+            <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-orange-400 to-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+                <Bot className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
+              </div>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent mb-2">24/7</div>
+              <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">AI Monitor</div>
+              <div className="text-sm text-gray-600">Always optimizing</div>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section - Mobile Optimized */}
-      <section className="py-12 sm:py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-8 sm:mb-12">
-            <Badge variant="outline" className="mb-3 sm:mb-4 text-xs sm:text-sm">
-              <Cpu className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
-              Advanced Features
+      {/* Enhanced Features Section */}
+      <section className="py-16 sm:py-24 bg-gradient-to-b from-gray-50 to-white relative">
+        <div className="absolute inset-0 bg-grid-slate-100/30" />
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12 sm:mb-16">
+            <Badge className="mb-6 sm:mb-8 bg-gradient-to-r from-blue-600 to-purple-600 text-white border-0 px-6 py-3 text-base font-medium shadow-lg">
+              <Cpu className="w-5 h-5 mr-2" />
+              Advanced AI Features
             </Badge>
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-4 px-2">Everything You Need for Manufacturing Excellence</h2>
-            <p className="text-sm sm:text-base lg:text-xl text-muted-foreground max-w-2xl mx-auto px-4 sm:px-6 lg:px-0">
-              AI-powered platform with transparent decision-making and proven ROI.
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 sm:mb-8 px-2 text-gray-900">
+              Everything You Need for <br className="hidden sm:block" />
+              <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">Manufacturing Excellence</span>
+            </h2>
+            <p className="text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-6 lg:px-0 leading-relaxed">
+              AI-powered platform with transparent decision-making and proven ROI across every manufacturing process.
             </p>
           </div>
 
