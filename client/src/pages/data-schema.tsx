@@ -255,9 +255,8 @@ const TableNode = ({ data }: { data: any }) => {
   
   
   const getCardClassName = () => {
-    // Use fixed width in full view, allow dynamic sizing in compressed view
-    const widthClasses = showColumns ? "min-w-[280px] max-w-[380px]" : "w-auto";
-    let baseClasses = `${widthClasses} shadow-lg border-2 transition-all duration-200`;
+    // Remove fixed width classes to allow dynamic sizing
+    let baseClasses = "shadow-lg border-2 transition-all duration-200";
     
     if (isFocused) {
       return `${baseClasses} ring-4 ring-blue-500 ring-opacity-50 border-blue-500 scale-105`;
@@ -272,12 +271,12 @@ const TableNode = ({ data }: { data: any }) => {
 
   const getCardStyle = () => {
     const baseStyle = {
-      minWidth: showColumns ? '280px' : `${minWidth}px !important`, 
-      maxWidth: showColumns ? '380px' : `${minWidth + 20}px !important`,
-      minHeight: showColumns ? '200px' : `${minHeight}px !important`,
-      maxHeight: showColumns ? '300px' : `${minHeight + 20}px !important`,
-      width: showColumns ? 'auto' : `${minWidth}px !important`,
-      height: showColumns ? 'auto' : `${minHeight}px !important`
+      minWidth: showColumns ? 280 : minWidth, 
+      maxWidth: showColumns ? 380 : minWidth + 50,
+      minHeight: showColumns ? 200 : minHeight,
+      maxHeight: showColumns ? 400 : minHeight + 50,
+      width: showColumns ? 'auto' : minWidth,
+      height: 'auto'
     };
 
     if (isFocused || isConnected) {
