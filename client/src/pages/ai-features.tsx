@@ -39,12 +39,48 @@ import { useLocation } from "wouter";
 const AiFeaturesPage: React.FC = () => {
   const [, setLocation] = useLocation();
   const [activeDemo, setActiveDemo] = useState<string | null>(null);
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+
+  const investorHighlights = [
+    { metric: "AI Market Size", value: "$4.2B", growth: "by 2025", description: "Manufacturing AI TAM" },
+    { metric: "Customer Adoption", value: "85%", growth: "AI feature usage", description: "Active AI engagement" },
+    { metric: "ROI Achievement", value: "6 months", growth: "avg. payback", description: "Customer ROI timeline" },
+    { metric: "Patent Portfolio", value: "12+", growth: "AI patents", description: "Proprietary technology" }
+  ];
+
+  const customerTestimonials = [
+    {
+      quote: "The transparent AI reasoning has been a game-changer. Our operators trust the system because they can see exactly why decisions are made.",
+      author: "Maria Rodriguez",
+      title: "VP Operations",
+      company: "PharmaTech Industries",
+      results: "35% efficiency improvement",
+      rating: 5
+    },
+    {
+      quote: "Voice control on the shop floor has transformed how we interact with our systems. It's like having an expert assistant always available.",
+      author: "John Chen",
+      title: "Plant Manager",
+      company: "Automotive Solutions Inc",
+      results: "60% faster data access",
+      rating: 5
+    },
+    {
+      quote: "The AI playbook system captured decades of our expertise and made it accessible to everyone. New operators are productive in days, not months.",
+      author: "Sarah Williams",
+      title: "Director of Manufacturing",
+      company: "Chemical Corp",
+      results: "50% training reduction",
+      rating: 5
+    }
+  ];
 
   const coreAiFeatures = [
     {
       title: "Max AI Assistant with Transparent Reasoning",
-      icon: <Sparkles className="w-8 h-8" />,
+      icon: <Sparkles className="w-6 h-6 sm:w-8 sm:h-8" />,
       description: "The first manufacturing AI that shows you exactly how it thinks and makes decisions",
+      mobileDescription: "AI that shows its thinking process",
       benefits: [
         "See step-by-step AI reasoning for every recommendation",
         "Understand confidence levels and uncertainty factors",
@@ -52,12 +88,14 @@ const AiFeaturesPage: React.FC = () => {
         "Learn from AI logic to improve your own decision-making"
       ],
       roiImpact: "35% faster decision-making with 90% confidence in AI recommendations",
+      metrics: { value: "90%", label: "Decision Confidence" },
       competitiveDifferentiator: "Unlike black-box AI systems, Max AI shows its complete thought process, building trust through transparency"
     },
     {
       title: "AI Playbook Integration & Knowledge System",
-      icon: <BookOpen className="w-8 h-8" />,
+      icon: <BookOpen className="w-6 h-6 sm:w-8 sm:h-8" />,
       description: "Collaborative knowledge management where AI learns from your manufacturing expertise",
+      mobileDescription: "AI that learns from your expertise",
       benefits: [
         "AI learns from your proven manufacturing processes and best practices",
         "Collaborative playbook creation with intelligent suggestions",
@@ -65,12 +103,14 @@ const AiFeaturesPage: React.FC = () => {
         "AI recommendations based on your specific context and history"
       ],
       roiImpact: "50% reduction in training time for new operators, 25% improvement in process consistency",
+      metrics: { value: "50%", label: "Training Reduction" },
       competitiveDifferentiator: "First AI system that truly learns and adapts to your specific manufacturing environment and expertise"
     },
     {
       title: "Natural Language Voice Control",
-      icon: <Mic className="w-8 h-8" />,
+      icon: <Mic className="w-6 h-6 sm:w-8 sm:h-8" />,
       description: "Control your entire manufacturing system using natural speech commands",
+      mobileDescription: "Voice-controlled manufacturing",
       benefits: [
         "Hands-free operation for shop floor environments",
         "Natural conversation with your manufacturing data",
@@ -78,12 +118,14 @@ const AiFeaturesPage: React.FC = () => {
         "Accessibility for users with different technical backgrounds"
       ],
       roiImpact: "60% faster data access, 40% reduction in training requirements",
+      metrics: { value: "60%", label: "Faster Access" },
       competitiveDifferentiator: "Industry's most advanced voice interface specifically designed for manufacturing operations"
     },
     {
       title: "AI File Analysis & Vision",
-      icon: <Upload className="w-8 h-8" />,
+      icon: <Upload className="w-6 h-6 sm:w-8 sm:h-8" />,
       description: "Upload and analyze any manufacturing document, drawing, or image with AI",
+      mobileDescription: "AI document & image analysis",
       benefits: [
         "Instant analysis of technical drawings and specifications",
         "Extract production requirements from any document format",
@@ -91,6 +133,7 @@ const AiFeaturesPage: React.FC = () => {
         "Automated data extraction from legacy documents"
       ],
       roiImpact: "80% faster document processing, 95% reduction in manual data entry errors",
+      metrics: { value: "95%", label: "Error Reduction" },
       competitiveDifferentiator: "Only manufacturing platform with built-in AI vision and document intelligence"
     }
   ];
@@ -271,124 +314,153 @@ const AiFeaturesPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
-      {/* Hero Section */}
+      {/* Hero Section - Mobile Optimized */}
       <section className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 lg:py-32">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24 lg:py-32">
           <div className="text-center text-white">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkles className="w-10 h-10 text-yellow-300" />
-              <Badge className="bg-blue-600/50 text-white border-blue-400 text-lg px-4 py-2">
+            <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+              <Sparkles className="w-8 h-8 sm:w-10 sm:h-10 text-yellow-300" />
+              <Badge className="bg-blue-600/50 text-white border-blue-400 text-xs sm:text-sm lg:text-lg px-3 sm:px-4 py-1 sm:py-2">
                 Industry-Leading AI Technology
               </Badge>
             </div>
-            <h1 className="text-4xl lg:text-6xl font-bold mb-6">
+            <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold mb-4 sm:mb-6 px-2 sm:px-0">
               AI That Shows Its Work:
-              <span className="block text-yellow-300">Transparent Manufacturing Intelligence</span>
+              <span className="block text-yellow-300 mt-2">Transparent Manufacturing Intelligence</span>
             </h1>
-            <p className="text-xl lg:text-2xl mb-8 text-blue-100 max-w-4xl mx-auto">
-              The first manufacturing AI system that explains every decision, learns from your expertise, 
-              and continuously improves your operations with complete transparency and trust.
+            <p className="text-base sm:text-lg lg:text-2xl mb-6 sm:mb-8 text-blue-100 max-w-4xl mx-auto px-4 sm:px-6 lg:px-0">
+              The first manufacturing AI that explains every decision. 
+              <span className="hidden sm:inline">Learns from your expertise and continuously improves with complete transparency.</span>
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            
+            {/* Mobile-friendly pricing indicator */}
+            <div className="mb-4 sm:mb-6">
+              <p className="text-sm sm:text-base text-blue-200">
+                Starting at <span className="font-bold text-yellow-300">$999/month</span> for AI features
+              </p>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-4 sm:px-0">
               <Button 
                 size="lg" 
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-90 text-white px-8 py-4 text-lg"
+                className="w-full sm:w-auto bg-gradient-to-r from-blue-500 to-indigo-600 hover:opacity-90 text-white px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg shadow-xl"
                 onClick={() => setLocation('/demo-tour')}
               >
-                <Play className="w-5 h-5 mr-2" />
-                Watch AI Demo (3 min)
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Watch AI Demo
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 text-lg"
+                className="w-full sm:w-auto border-2 border-white text-white hover:bg-white hover:text-slate-900 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg"
                 onClick={() => setLocation('/pricing')}
               >
-                <Sparkles className="w-5 h-5 mr-2" />
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Start Free Trial
               </Button>
             </div>
-            <div className="flex items-center justify-center gap-8 text-blue-100">
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>See AI reasoning in real-time</span>
+            <div className="grid grid-cols-1 sm:flex sm:items-center sm:justify-center gap-4 sm:gap-6 lg:gap-8 text-xs sm:text-sm text-blue-100 px-4 sm:px-0">
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                <span>See AI reasoning</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>Voice-controlled operations</span>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                <span>Voice control</span>
               </div>
-              <div className="flex items-center gap-2">
-                <CheckCircle className="w-5 h-5 text-green-400" />
-                <span>Learns from your expertise</span>
+              <div className="flex items-center justify-center gap-2">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-400" />
+                <span>Learns from you</span>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Core AI Features */}
-      <section className="py-20 bg-white">
+      {/* Investor Highlights - NEW Mobile Optimized */}
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 text-blue-600 border-blue-600">
-              <Cpu className="w-4 h-4 mr-2" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+            {investorHighlights.map((item, index) => (
+              <Card key={index} className="text-center hover:shadow-lg transition-shadow">
+                <CardContent className="p-4 sm:p-6">
+                  <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-primary mb-1">
+                    {item.value}
+                  </div>
+                  <div className="text-xs sm:text-sm font-semibold mb-0.5">{item.metric}</div>
+                  <Badge variant="secondary" className="text-xs">
+                    {item.growth}
+                  </Badge>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Core AI Features - Mobile Optimized */}
+      <section className="py-12 sm:py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-8 sm:mb-16">
+            <Badge variant="outline" className="mb-3 sm:mb-4 text-blue-600 border-blue-600 text-xs sm:text-sm">
+              <Cpu className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
               Revolutionary AI Technology
             </Badge>
-            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-5xl font-bold text-gray-900 mb-3 sm:mb-6 px-2">
               Four Game-Changing AI Capabilities
             </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Transform your manufacturing operations with AI technology that's transparent, 
-              trustworthy, and specifically designed for production environments.
+            <p className="text-sm sm:text-base lg:text-xl text-gray-600 max-w-3xl mx-auto px-4 sm:px-6 lg:px-0">
+              Transparent, trustworthy AI designed for manufacturing.
+              <span className="hidden sm:inline"> Transform operations with AI that shows its work.</span>
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-2 gap-8">
+          <div className="grid lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
             {coreAiFeatures.map((feature, index) => (
               <Card key={index} className="group hover:shadow-2xl transition-all duration-500 border-2 hover:border-blue-200">
-                <CardHeader className="pb-4">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                <CardHeader className="pb-3 sm:pb-4">
+                  <div className="flex flex-col sm:flex-row items-start gap-3 sm:gap-4">
+                    <div className="p-2.5 sm:p-3 bg-blue-100 rounded-xl text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                       {feature.icon}
                     </div>
                     <div className="flex-1">
-                      <CardTitle className="text-xl font-bold mb-3 group-hover:text-blue-600 transition-colors">
-                        {feature.title}
+                      <CardTitle className="text-base sm:text-lg lg:text-xl font-bold mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors">
+                        <span className="sm:hidden">{feature.title.split(' ').slice(0, 3).join(' ')}</span>
+                        <span className="hidden sm:inline">{feature.title}</span>
                       </CardTitle>
-                      <p className="text-gray-600 text-base leading-relaxed">
-                        {feature.description}
+                      <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
+                        <span className="sm:hidden">{feature.mobileDescription}</span>
+                        <span className="hidden sm:inline">{feature.description}</span>
                       </p>
+                      {feature.metrics && (
+                        <div className="mt-3 inline-flex items-center gap-2 bg-green-50 px-3 py-1.5 rounded-full">
+                          <span className="text-xl sm:text-2xl font-bold text-green-600">{feature.metrics.value}</span>
+                          <span className="text-xs sm:text-sm text-green-700">{feature.metrics.label}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  <div>
+                <CardContent className="space-y-4 sm:space-y-6">
+                  <div className="hidden sm:block">
                     <h4 className="font-semibold text-gray-900 mb-3">Key Benefits:</h4>
                     <ul className="space-y-2">
-                      {feature.benefits.map((benefit, idx) => (
+                      {feature.benefits.slice(0, 3).map((benefit, idx) => (
                         <li key={idx} className="flex items-start gap-2">
-                          <CheckCircle className="w-5 h-5 text-green-500 mt-0.5 flex-shrink-0" />
-                          <span className="text-gray-700">{benefit}</span>
+                          <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span className="text-sm sm:text-base text-gray-700">{benefit}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
                   
-                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <TrendingUp className="w-5 h-5 text-green-600" />
-                      <span className="font-semibold text-green-800">Proven ROI Impact</span>
+                  <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-3 sm:p-4">
+                    <div className="flex items-center gap-2 mb-1 sm:mb-2">
+                      <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-600" />
+                      <span className="text-xs sm:text-sm font-semibold text-green-800">ROI Impact</span>
                     </div>
-                    <p className="text-green-700 font-medium">{feature.roiImpact}</p>
-                  </div>
-
-                  <div className="bg-blue-50 rounded-lg p-4 border-l-4 border-blue-500">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Star className="w-5 h-5 text-blue-600" />
-                      <span className="font-semibold text-blue-800">Competitive Advantage</span>
-                    </div>
-                    <p className="text-blue-700">{feature.competitiveDifferentiator}</p>
+                    <p className="text-xs sm:text-sm text-green-700 font-medium">{feature.roiImpact}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -588,60 +660,103 @@ const AiFeaturesPage: React.FC = () => {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 bg-gradient-to-r from-gray-900 to-blue-900">
+      {/* Testimonials Section - NEW Mobile Optimized */}
+      <section className="py-12 sm:py-16 bg-gradient-to-b from-gray-50 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-6 sm:mb-10">
+            <Badge variant="outline" className="mb-3 sm:mb-4 text-xs sm:text-sm">
+              <Star className="w-3 h-3 sm:w-4 sm:h-4 mr-1.5 sm:mr-2" />
+              Customer Success Stories
+            </Badge>
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2 sm:mb-4">What Customers Say</h2>
+          </div>
+
+          <Card className="max-w-3xl mx-auto">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex gap-1 mb-3">
+                {[...Array(customerTestimonials[activeTestimonial].rating)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 sm:w-5 sm:h-5 fill-yellow-500 text-yellow-500" />
+                ))}
+              </div>
+              <p className="text-base sm:text-lg lg:text-xl mb-4 italic text-gray-700">
+                "{customerTestimonials[activeTestimonial].quote}"
+              </p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-3 sm:mb-0">
+                  <p className="font-semibold text-sm sm:text-base">{customerTestimonials[activeTestimonial].author}</p>
+                  <p className="text-xs sm:text-sm text-gray-600">
+                    {customerTestimonials[activeTestimonial].title}, {customerTestimonials[activeTestimonial].company}
+                  </p>
+                </div>
+                <Badge className="bg-green-100 text-green-800 self-start sm:self-auto">
+                  <TrendingUp className="w-3 h-3 mr-1" />
+                  {customerTestimonials[activeTestimonial].results}
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Mobile-friendly navigation dots */}
+          <div className="flex justify-center gap-2 mt-6">
+            {customerTestimonials.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setActiveTestimonial(index)}
+                className={`w-2 h-2 rounded-full transition-colors ${
+                  index === activeTestimonial ? 'bg-primary' : 'bg-gray-300'
+                }`}
+                aria-label={`Go to testimonial ${index + 1}`}
+              />
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section - Mobile Optimized */}
+      <section className="py-12 sm:py-20 bg-gradient-to-r from-gray-900 to-blue-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="max-w-3xl mx-auto text-white">
-            <div className="flex items-center justify-center gap-2 mb-6">
-              <Sparkles className="w-8 h-8 text-yellow-300" />
-              <Badge className="bg-blue-600/50 text-white border-blue-400 text-lg px-4 py-2">
-                Ready to Experience AI Transparency?
+            <div className="flex items-center justify-center gap-2 mb-4 sm:mb-6">
+              <Sparkles className="w-6 h-6 sm:w-8 sm:h-8 text-yellow-300" />
+              <Badge className="bg-blue-600/50 text-white border-blue-400 text-xs sm:text-sm lg:text-lg px-3 sm:px-4 py-1 sm:py-2">
+                Ready for AI Transparency?
               </Badge>
             </div>
-            <h2 className="text-4xl font-bold mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-3 sm:mb-6 px-2">
               See Max AI in Action Today
             </h2>
-            <p className="text-xl mb-8 opacity-90">
-              Experience the first manufacturing AI that shows its work. Watch our live demo to see 
-              transparent reasoning, voice control, and intelligent automation in action.
+            <p className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 opacity-90 px-4 sm:px-0">
+              Experience the first manufacturing AI that shows its work.
+              <span className="hidden sm:inline"> Watch our demo to see transparent reasoning and voice control.</span>
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center mb-6 sm:mb-8 px-4 sm:px-0">
               <Button 
                 size="lg" 
-                className="bg-white text-blue-600 hover:bg-blue-50 px-8 py-4 text-lg font-semibold"
+                className="w-full sm:w-auto bg-white text-blue-600 hover:bg-blue-50 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg font-semibold shadow-lg"
                 onClick={() => setLocation('/demo-tour')}
               >
-                <Play className="w-5 h-5 mr-2" />
-                Watch Live Demo
+                <Play className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+                Watch Demo
               </Button>
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold"
+                className="w-full sm:w-auto border-2 border-white text-white hover:bg-white/10 px-6 sm:px-8 py-4 sm:py-5 text-base sm:text-lg font-semibold"
                 onClick={() => setLocation('/pricing')}
               >
-                <Sparkles className="w-5 h-5 mr-2" />
+                <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 Start Free Trial
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline" 
-                className="border-white text-white hover:bg-white/10 px-8 py-4 text-lg font-semibold"
-                onClick={() => setLocation('/solutions-comparison')}
-              >
-                <BarChart3 className="w-5 h-5 mr-2" />
-                Compare Solutions
               </Button>
             </div>
 
-            <div className="flex flex-wrap justify-center items-center gap-6 text-sm opacity-80">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                Setup in 15 minutes
+            <div className="grid grid-cols-3 sm:flex sm:justify-center items-center gap-3 sm:gap-6 text-xs sm:text-sm opacity-80">
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span>15-min setup</span>
               </div>
-              <div className="flex items-center gap-2">
-                <DollarSign className="w-4 h-4" />
+              <div className="flex flex-col sm:flex-row items-center gap-1 sm:gap-2">
+                <DollarSign className="w-3 h-3 sm:w-4 sm:h-4" />
                 No setup fees
               </div>
               <div className="flex items-center gap-2">
