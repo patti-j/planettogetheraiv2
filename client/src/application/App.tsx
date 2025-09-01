@@ -97,12 +97,12 @@ import { useState, useEffect } from "react";
 export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
 
-  // Reactive mobile detection that updates on window resize - use much smaller breakpoint for actual mobile devices
-  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 320);
+  // Reactive mobile detection that updates on window resize - use standard mobile breakpoint
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 480);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 320);
+      setIsMobile(window.innerWidth < 480);
     };
 
     window.addEventListener('resize', handleResize);
