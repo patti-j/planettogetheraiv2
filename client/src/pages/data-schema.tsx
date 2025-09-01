@@ -2650,6 +2650,7 @@ function DataSchemaViewContent() {
   }
 
   return (
+    <>
     <div className="h-screen flex flex-col">
       {/* Header - Mobile Optimized with better responsive design */}
       {!isFullScreen && (
@@ -3842,6 +3843,7 @@ function DataSchemaViewContent() {
         )}
       </div>
     </div>
+    </>
   );
 }
 
