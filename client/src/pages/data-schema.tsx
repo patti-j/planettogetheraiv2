@@ -940,6 +940,9 @@ function DataSchemaViewContent() {
   const [showTableSelector, setShowTableSelector] = useState(false);
   const [tableSelectorSearch, setTableSelectorSearch] = useState("");
   
+  // Dialog-specific filter states (separate from main view)
+  const [dialogSelectedFeature, setDialogSelectedFeature] = useState<string>('all');
+  const [dialogSelectedCategory, setDialogSelectedCategory] = useState<string>('all');
   
   // Card-based selection for relationship filtering - separate from table selector
   const [selectedCards, setSelectedCards] = useState<string[]>([]);
@@ -3092,8 +3095,47 @@ function DataSchemaViewContent() {
               </Button>
             </div>
             
-            {/* Search within table selector */}
-            <div className="mb-4">
+            {/* Filter Controls within Dialog */}
+            <div className="mb-4 space-y-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium text-gray-600">Feature:</Label>
+                  <Select value={dialogSelectedFeature} onValueChange={setDialogSelectedFeature}>
+                    <SelectTrigger className="w-40">
+                      <SelectValue placeholder="Feature" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {availableFeatures.map(feature => (
+                        <SelectItem key={feature.value} value={feature.value}>
+                          <div className="flex items-center gap-2">
+                            <Filter className="w-4 h-4 text-blue-500" />
+                            {feature.label}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <Label className="text-sm font-medium text-gray-600">Category:</Label>
+                  <Select value={dialogSelectedCategory} onValueChange={setDialogSelectedCategory}>
+                    <SelectTrigger className="w-36">
+                      <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map(category => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              {/* Search within table selector */}
               <div className="flex items-center gap-2">
                 <Search className="w-4 h-4 text-gray-400" />
                 <Input
@@ -3113,17 +3155,22 @@ function DataSchemaViewContent() {
                     variant="ghost"
                     size="sm"
                     onClick={() => {
-                      // Get all tables that match current search
-                      const searchFilteredTables = schemaData?.filter((table: SchemaTable) => {
-                        const matchesSearch = tableSelectorSearch === "" ||
-                                             table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
+                      // Get all tables that match current dialog filters
+                      const dialogFilteredTables = schemaData?.filter((table: SchemaTable) => {
+                        const matchesSearch = table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                              table.description?.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                              table.columns.some((col: any) => col.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()));
                         
-                        return matchesSearch;
+                        const matchesCategory = dialogSelectedCategory === 'all' || table.category === dialogSelectedCategory;
+                        
+                        const matchesFeature = dialogSelectedFeature === 'all' || 
+                                               (featureTableMapping[dialogSelectedFeature] && 
+                                                featureTableMapping[dialogSelectedFeature].includes(table.name));
+                        
+                        return matchesSearch && matchesCategory && matchesFeature;
                       }) || [];
                       
-                      setSelectedTables(searchFilteredTables.map(t => t.name));
+                      setSelectedTables(dialogFilteredTables.map(t => t.name));
                     }}
                   >
                     <Plus className="w-3 h-3 mr-1" />
@@ -3132,29 +3179,25 @@ function DataSchemaViewContent() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => setSelectedTables([])}
-                    className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                  >
-                    <X className="w-3 h-3 mr-1" />
-                    Clear All
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
                     onClick={() => {
-                      // Get tables that match search and have relationships
-                      const searchFilteredTables = schemaData?.filter((table: SchemaTable) => {
-                        const matchesSearch = tableSelectorSearch === "" ||
-                                             table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
+                      // Get tables that match dialog filters and have relationships
+                      const dialogFilteredTables = schemaData?.filter((table: SchemaTable) => {
+                        const matchesSearch = table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                              table.description?.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                              table.columns.some((col: any) => col.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()));
                         
-                        return matchesSearch;
+                        const matchesCategory = dialogSelectedCategory === 'all' || table.category === dialogSelectedCategory;
+                        
+                        const matchesFeature = dialogSelectedFeature === 'all' || 
+                                               (featureTableMapping[dialogSelectedFeature] && 
+                                                featureTableMapping[dialogSelectedFeature].includes(table.name));
+                        
+                        return matchesSearch && matchesCategory && matchesFeature;
                       }) || [];
                       
-                      const tablesWithRelations = searchFilteredTables.filter(table => {
+                      const tablesWithRelations = dialogFilteredTables.filter(table => {
                         const hasOutgoingRelations = table.relationships.length > 0;
-                        const hasIncomingRelations = searchFilteredTables.some(otherTable => 
+                        const hasIncomingRelations = dialogFilteredTables.some(otherTable => 
                           otherTable.relationships.some(rel => rel.toTable === table.name)
                         );
                         return hasOutgoingRelations || hasIncomingRelations;
@@ -3198,22 +3241,28 @@ function DataSchemaViewContent() {
           <div className="max-h-64 overflow-y-auto p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
               {(() => {
-                // Filter tables based on search only
-                const searchFilteredTables = schemaData?.filter((table: SchemaTable) => {
+                // Filter tables based on dialog filters, not global filters
+                const dialogFilteredTables = schemaData?.filter((table: SchemaTable) => {
                   const matchesSearch = tableSelectorSearch === "" ||
                                        table.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                        table.description?.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                        table.columns.some((col: any) => col.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()));
                   
-                  return matchesSearch;
+                  const matchesCategory = dialogSelectedCategory === 'all' || table.category === dialogSelectedCategory;
+                  
+                  const matchesFeature = dialogSelectedFeature === 'all' || 
+                                         (featureTableMapping[dialogSelectedFeature] && 
+                                          featureTableMapping[dialogSelectedFeature].includes(table.name));
+                  
+                  return matchesSearch && matchesCategory && matchesFeature;
                 }) || [];
                 
-                // Always show selected tables even if they don't match current search
+                // Always show selected tables even if they don't match current filters
                 const allVisibleTables = [
-                  ...searchFilteredTables,
+                  ...dialogFilteredTables,
                   ...(schemaData?.filter((table: SchemaTable) => 
                     selectedTables.includes(table.name) && 
-                    !searchFilteredTables.some(dt => dt.name === table.name)
+                    !dialogFilteredTables.some(dt => dt.name === table.name)
                   ) || [])
                 ];
                 
@@ -3240,7 +3289,7 @@ function DataSchemaViewContent() {
                       <div className="font-medium text-sm truncate">{table.name}</div>
                       <div className="text-xs text-gray-500 truncate">
                         {table.columns.length} columns • {table.category}
-                        {selectedTables.includes(table.name) && !searchFilteredTables.some(dt => dt.name === table.name) && (
+                        {selectedTables.includes(table.name) && !dialogFilteredTables.some(dt => dt.name === table.name) && (
                           <span className="ml-1 text-blue-600 font-medium">• Selected</span>
                         )}
                       </div>
@@ -3259,7 +3308,13 @@ function DataSchemaViewContent() {
                                        table.description?.toLowerCase().includes(tableSelectorSearch.toLowerCase()) ||
                                        table.columns.some((col: any) => col.name.toLowerCase().includes(tableSelectorSearch.toLowerCase()));
                   
-                  return matchesSearch;
+                  const matchesCategory = dialogSelectedCategory === 'all' || table.category === dialogSelectedCategory;
+                  
+                  const matchesFeature = dialogSelectedFeature === 'all' || 
+                                         (featureTableMapping[dialogSelectedFeature] && 
+                                          featureTableMapping[dialogSelectedFeature].includes(table.name));
+                  
+                  return matchesSearch && matchesCategory && matchesFeature;
                 }) || [];
                 
                 const selectedNotInFilter = selectedTables.filter(tableName => 
