@@ -2701,61 +2701,48 @@ function DataSchemaViewContent() {
 
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-3 mb-1">
-          {selectedFeature !== 'all' && (
-            <Badge variant="default" className="bg-emerald-500 text-xs hidden sm:flex">
-              <Filter className="w-3 h-3 mr-1" />
-              {availableFeatures.find(f => f.value === selectedFeature)?.label}
-            </Badge>
-          )}
-          {focusMode && focusTable && (
-            <Badge variant="default" className="bg-blue-500 text-xs hidden md:flex">
-              Focus: {focusTable}
-            </Badge>
-          )}
-        </div>
-        
-        {/* Main Controls - Better responsive layout */}
-        <div className="space-y-2">
-          {/* Primary Controls Row */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
-            {/* Search - Full width on mobile */}
+        {/* Compact Combined Controls */}
+        <div className="flex flex-col lg:flex-row gap-2 lg:gap-3">
+          {/* Left Side - Search and Table Selection */}
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-1 min-w-0">
               <Search className="w-4 h-4 text-gray-400 flex-shrink-0" />
               <Input
                 placeholder="Search tables..."
                 value={searchTerm}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full"
+                className="flex-1"
               />
             </div>
-
-            {/* Table Selection Button */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowTableSelector(!showTableSelector)}
-                    className={`flex-shrink-0 ${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
-                  >
-                    <Settings className="w-4 h-4 mr-1" />
-                    <span className="hidden sm:inline">Tables </span>({selectedTables.length})
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Select specific tables to display</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowTableSelector(!showTableSelector)}
+              className={`flex-shrink-0 ${selectedTables.length > 0 ? 'bg-blue-50 border-blue-200' : ''}`}
+            >
+              <Settings className="w-4 h-4 mr-1" />
+              <span className="hidden sm:inline">Tables </span>({selectedTables.length})
+            </Button>
           </div>
           
-          {/* Secondary Controls Row */}
+          {/* Right Side - Filters and Controls in Single Row */}
           <div className="flex flex-wrap items-center gap-2">
-            {/* Feature Filter */}
+            {/* Compact Status Badges */}
+            {selectedFeature !== 'all' && (
+              <Badge variant="default" className="bg-emerald-500 text-xs">
+                <Filter className="w-3 h-3 mr-1" />
+                {availableFeatures.find(f => f.value === selectedFeature)?.label}
+              </Badge>
+            )}
+            {focusMode && focusTable && (
+              <Badge variant="default" className="bg-blue-500 text-xs">
+                Focus: {focusTable}
+              </Badge>
+            )}
+            
+            {/* Filters */}
             <Select value={selectedFeature} onValueChange={handleFeatureChange}>
-              <SelectTrigger className="w-full sm:w-48">
+              <SelectTrigger className="w-32 lg:w-40">
                 <SelectValue placeholder="Feature" />
               </SelectTrigger>
               <SelectContent>
@@ -2770,9 +2757,8 @@ function DataSchemaViewContent() {
               </SelectContent>
             </Select>
             
-            {/* Category Filter */}
             <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-full sm:w-40">
+              <SelectTrigger className="w-28 lg:w-32">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
@@ -2785,9 +2771,8 @@ function DataSchemaViewContent() {
               </SelectContent>
             </Select>
             
-            {/* Layout - Compact on all screens */}
             <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
-              <SelectTrigger className="w-20 sm:w-24">
+              <SelectTrigger className="w-20">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -2797,7 +2782,58 @@ function DataSchemaViewContent() {
               </SelectContent>
             </Select>
             
-            {/* Quick Action Buttons - Always visible */}
+            {/* View Options - Inline toggles */}
+            <div className="flex items-center gap-1">
+              <Switch
+                id="show-columns"
+                checked={showColumns}
+                onCheckedChange={setShowColumns}
+                className="scale-75"
+              />
+              <Label htmlFor="show-columns" className="text-xs">Fields</Label>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              <Switch
+                id="show-relationships"
+                checked={showRelationships}
+                onCheckedChange={setShowRelationships}
+                className="scale-75"
+              />
+              <Label htmlFor="show-relationships" className="text-xs">Lines</Label>
+            </div>
+            
+            {showRelationships && (
+              <div className="flex items-center gap-1">
+                <Switch
+                  id="simplify-lines"
+                  checked={simplifyLines}
+                  onCheckedChange={setSimplifyLines}
+                  className="scale-75"
+                />
+                <Label htmlFor="simplify-lines" className="text-xs">Straight</Label>
+              </div>
+            )}
+            
+            <div className="flex items-center gap-1">
+              <Switch
+                id="focus-mode"
+                checked={focusMode}
+                onCheckedChange={(checked) => {
+                  setFocusMode(checked);
+                  if (!checked) {
+                    setFocusTable(null);
+                  }
+                }}
+                className="scale-75"
+              />
+              <Label htmlFor="focus-mode" className="text-xs flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                Focus
+              </Label>
+            </div>
+            
+            {/* Action Buttons */}
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
@@ -2813,24 +2849,6 @@ function DataSchemaViewContent() {
                 </TooltipTrigger>
                 <TooltipContent side="bottom">
                   <p>Refresh schema</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => fitView({ padding: 0.2, minZoom: 0.05, maxZoom: 2.0, duration: 800 })}
-                    className="flex-shrink-0"
-                  >
-                    <Target className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Fit to view</p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -2886,59 +2904,7 @@ function DataSchemaViewContent() {
               </Tooltip>
             </TooltipProvider>
           </div>
-          
-          {/* View Options Row */}
-          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
-            {/* View Toggle Options */}
-            <div className="flex items-center gap-1">
-              <Switch
-                id="show-columns"
-                checked={showColumns}
-                onCheckedChange={setShowColumns}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="show-columns" className="text-xs sm:text-sm">Fields</Label>
-            </div>
-            
-            <div className="flex items-center gap-1">
-              <Switch
-                id="show-relationships"
-                checked={showRelationships}
-                onCheckedChange={setShowRelationships}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="show-relationships" className="text-xs sm:text-sm">Lines</Label>
-            </div>
-            
-            {showRelationships && (
-              <div className="flex items-center gap-1">
-                <Switch
-                  id="simplify-lines"
-                  checked={simplifyLines}
-                  onCheckedChange={setSimplifyLines}
-                  className="scale-75 sm:scale-100"
-                />
-                <Label htmlFor="simplify-lines" className="text-xs sm:text-sm">Straight</Label>
-              </div>
-            )}
-            
-            <div className="flex items-center gap-1">
-              <Switch
-                id="focus-mode"
-                checked={focusMode}
-                onCheckedChange={(checked) => {
-                  setFocusMode(checked);
-                  if (!checked) {
-                    setFocusTable(null);
-                  }
-                }}
-                className="scale-75 sm:scale-100"
-              />
-              <Label htmlFor="focus-mode" className="text-xs sm:text-sm flex items-center gap-1">
-                <Target className="w-3 h-3" />
-                Focus
-              </Label>
-            </div>
+        </div>
             
             {/* Additional Controls - Hidden on very small screens */}
             <div className="hidden sm:flex items-center gap-2">
