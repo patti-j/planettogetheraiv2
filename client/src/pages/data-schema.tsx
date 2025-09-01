@@ -3014,11 +3014,11 @@ function DataSchemaViewContent() {
                   value={cardSize.width}
                   onChange={(e) => setCardSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
                   max={400}
-                  min={180}
+                  min={100}
                   step={10}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                   style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.width - 180) / (400 - 180)) * 100}%, #e5e7eb ${((cardSize.width - 180) / (400 - 180)) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb ${((cardSize.width - 100) / (400 - 100)) * 100}%, #e5e7eb 100%)`
                   }}
                 />
               </div>
@@ -3033,11 +3033,11 @@ function DataSchemaViewContent() {
                   value={cardSize.height}
                   onChange={(e) => setCardSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
                   max={300}
-                  min={120}
+                  min={80}
                   step={10}
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                   style={{
-                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.height - 120) / (300 - 120)) * 100}%, #e5e7eb ${((cardSize.height - 120) / (300 - 120)) * 100}%, #e5e7eb 100%)`
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb ${((cardSize.height - 80) / (300 - 80)) * 100}%, #e5e7eb 100%)`
                   }}
                 />
               </div>
