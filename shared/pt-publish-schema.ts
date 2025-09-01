@@ -355,7 +355,6 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
   jobId: bigint("job_id", { mode: "number" }).notNull(),
-  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
   name: text("name"),
   requiredQty: numeric("required_qty"),
   expectedFinishQty: numeric("expected_finish_qty"),
@@ -432,7 +431,6 @@ export const ptJobOperations = pgTable("ptjoboperations", {
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
   jobId: bigint("job_id", { mode: "number" }).notNull(),
-  manufacturingOrderId: bigint("manufacturing_order_id", { mode: "number" }).notNull(),
   operationId: bigint("operation_id", { mode: "number" }).notNull(),
   name: text("name"),
   description: text("description"),
@@ -1255,7 +1253,6 @@ export const ptJobsRelations = relations(ptJobs, ({ many }) => ({
 // Manufacturing Order Relations
 export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
   jobs: many(ptJobs),
-  operations: many(ptJobOperations),
 }));
 
 // Job Operation Relations
@@ -1263,10 +1260,6 @@ export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many 
   job: one(ptJobs, {
     fields: [ptJobOperations.jobId],
     references: [ptJobs.jobId],
-  }),
-  manufacturingOrder: one(ptManufacturingOrders, {
-    fields: [ptJobOperations.manufacturingOrderId],
-    references: [ptManufacturingOrders.manufacturingOrderId],
   }),
   activities: many(ptJobActivities),
 }));
