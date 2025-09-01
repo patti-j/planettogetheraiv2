@@ -253,8 +253,6 @@ interface SchemaRelationship {
 const TableNode = ({ data }: { data: any }) => {
   const { table, showColumns, showRelationships, isFocused, isConnected, isSelected, onSelect, onClick, minWidth = 250, minHeight = 180 } = data;
   
-  // Debug logging to verify card size values
-  console.log(`TableNode ${table.name}:`, { minWidth, minHeight, showColumns });
   
   const getCardClassName = () => {
     // Use fixed width in full view, allow dynamic sizing in compressed view

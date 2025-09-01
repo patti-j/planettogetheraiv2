@@ -937,13 +937,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               {/* Buffer Time */}
               <div className="space-y-2">
                 <Label>Buffer Time (hours): {parameters.bufferTime}</Label>
-                <Slider
-                  value={[parameters.bufferTime]}
-                  onValueChange={([value]) => updateParameter('bufferTime', value)}
+                <input
+                  type="range"
+                  value={parameters.bufferTime}
+                  onChange={(e) => updateParameter('bufferTime', parseFloat(e.target.value))}
                   max={8}
                   min={0}
                   step={0.1}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(parameters.bufferTime / 8) * 100}%, #e5e7eb ${(parameters.bufferTime / 8) * 100}%, #e5e7eb 100%)`
+                  }}
                 />
                 <p className="text-sm text-gray-600">
                   Safety buffer time added between operations to account for setup, transit, or unexpected delays
@@ -953,13 +957,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               {/* Priority Weight */}
               <div className="space-y-2">
                 <Label>Priority Weight: {parameters.priorityWeight}</Label>
-                <Slider
-                  value={[parameters.priorityWeight]}
-                  onValueChange={([value]) => updateParameter('priorityWeight', value)}
+                <input
+                  type="range"
+                  value={parameters.priorityWeight}
+                  onChange={(e) => updateParameter('priorityWeight', parseFloat(e.target.value))}
                   max={10}
                   min={0.1}
                   step={0.1}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((parameters.priorityWeight - 0.1) / (10 - 0.1)) * 100}%, #e5e7eb ${((parameters.priorityWeight - 0.1) / (10 - 0.1)) * 100}%, #e5e7eb 100%)`
+                  }}
                 />
                 <p className="text-sm text-gray-600">
                   How much job priority influences scheduling order (higher = more priority influence)
@@ -969,13 +977,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               {/* Resource Utilization Target */}
               <div className="space-y-2">
                 <Label>Resource Utilization Target (%): {parameters.resourceUtilizationTarget}</Label>
-                <Slider
-                  value={[parameters.resourceUtilizationTarget]}
-                  onValueChange={([value]) => updateParameter('resourceUtilizationTarget', value)}
+                <input
+                  type="range"
+                  value={parameters.resourceUtilizationTarget}
+                  onChange={(e) => updateParameter('resourceUtilizationTarget', parseInt(e.target.value))}
                   max={100}
                   min={50}
                   step={5}
-                  className="w-full"
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((parameters.resourceUtilizationTarget - 50) / (100 - 50)) * 100}%, #e5e7eb ${((parameters.resourceUtilizationTarget - 50) / (100 - 50)) * 100}%, #e5e7eb 100%)`
+                  }}
                 />
                 <p className="text-sm text-gray-600">
                   Target utilization percentage for resources (affects resource selection)
@@ -1062,13 +1074,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
                 {parameters.includePlannedOrders && (
                   <div className="space-y-2">
                     <Label>Planned Order Weight: {parameters.plannedOrderWeight}</Label>
-                    <Slider
-                      value={[parameters.plannedOrderWeight]}
-                      onValueChange={([value]) => updateParameter('plannedOrderWeight', value)}
+                    <input
+                      type="range"
+                      value={parameters.plannedOrderWeight}
+                      onChange={(e) => updateParameter('plannedOrderWeight', parseFloat(e.target.value))}
                       max={1}
                       min={0.1}
                       step={0.1}
-                      className="w-full"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((parameters.plannedOrderWeight - 0.1) / (1 - 0.1)) * 100}%, #e5e7eb ${((parameters.plannedOrderWeight - 0.1) / (1 - 0.1)) * 100}%, #e5e7eb 100%)`
+                      }}
                     />
                     <div className="text-xs text-emerald-600">
                       Weight factor for planned orders vs. confirmed production orders (0.1 = low priority, 1.0 = equal priority)
@@ -1102,13 +1118,17 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
                 {parameters.frozenHorizonEnabled && (
                   <div className="space-y-2">
                     <Label>Frozen Horizon Period (days): {parameters.frozenHorizonDays}</Label>
-                    <Slider
-                      value={[parameters.frozenHorizonDays]}
-                      onValueChange={([value]) => updateParameter('frozenHorizonDays', value)}
+                    <input
+                      type="range"
+                      value={parameters.frozenHorizonDays}
+                      onChange={(e) => updateParameter('frozenHorizonDays', parseInt(e.target.value))}
                       max={14}
                       min={1}
                       step={1}
-                      className="w-full"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((parameters.frozenHorizonDays - 1) / (14 - 1)) * 100}%, #e5e7eb ${((parameters.frozenHorizonDays - 1) / (14 - 1)) * 100}%, #e5e7eb 100%)`
+                      }}
                     />
                     <div className="text-xs text-blue-600">
                       Operations scheduled to start within {parameters.frozenHorizonDays} day{parameters.frozenHorizonDays !== 1 ? 's' : ''} from today will not be rescheduled.

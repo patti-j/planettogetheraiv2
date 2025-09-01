@@ -254,12 +254,17 @@ export function MaxAICard({ className = "", showDemo = false }: MaxAICardProps) 
                   
                   <div className="space-y-2">
                     <Label className="text-sm font-normal">Response Volume</Label>
-                    <Slider
-                      value={settings.responseVolume}
-                      onValueChange={(value) => handleSettingsChange('responseVolume', value)}
+                    <input
+                      type="range"
+                      value={settings.responseVolume[0]}
+                      onChange={(e) => handleSettingsChange('responseVolume', [parseInt(e.target.value)])}
                       max={100}
+                      min={0}
                       step={10}
-                      className="w-full"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${settings.responseVolume[0]}%, #e5e7eb ${settings.responseVolume[0]}%, #e5e7eb 100%)`
+                      }}
                     />
                     <div className="text-xs text-gray-500 text-center">
                       {settings.responseVolume[0]}%

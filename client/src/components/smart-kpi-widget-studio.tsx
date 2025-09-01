@@ -1102,34 +1102,49 @@ export function SmartKPIWidgetStudio({ open, onOpenChange, existingWidget }: Sma
                     <CardContent className="space-y-4">
                       <div className="space-y-2">
                         <Label>Target Value: {widgetConfig.targetValue}</Label>
-                        <Slider
-                          value={[widgetConfig.targetValue]}
-                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, targetValue: value })}
+                        <input
+                          type="range"
+                          value={widgetConfig.targetValue}
+                          onChange={(e) => setWidgetConfig({ ...widgetConfig, targetValue: parseInt(e.target.value) })}
                           max={200}
+                          min={0}
                           step={1}
-                          className="w-full"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(widgetConfig.targetValue / 200) * 100}%, #e5e7eb ${(widgetConfig.targetValue / 200) * 100}%, #e5e7eb 100%)`
+                          }}
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label>Warning Threshold: {widgetConfig.warningThreshold}</Label>
-                        <Slider
-                          value={[widgetConfig.warningThreshold]}
-                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, warningThreshold: value })}
+                        <input
+                          type="range"
+                          value={widgetConfig.warningThreshold}
+                          onChange={(e) => setWidgetConfig({ ...widgetConfig, warningThreshold: parseInt(e.target.value) })}
                           max={200}
+                          min={0}
                           step={1}
-                          className="w-full"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(widgetConfig.warningThreshold / 200) * 100}%, #e5e7eb ${(widgetConfig.warningThreshold / 200) * 100}%, #e5e7eb 100%)`
+                          }}
                         />
                       </div>
 
                       <div className="space-y-2">
                         <Label>Critical Threshold: {widgetConfig.criticalThreshold}</Label>
-                        <Slider
-                          value={[widgetConfig.criticalThreshold]}
-                          onValueChange={([value]) => setWidgetConfig({ ...widgetConfig, criticalThreshold: value })}
+                        <input
+                          type="range"
+                          value={widgetConfig.criticalThreshold}
+                          onChange={(e) => setWidgetConfig({ ...widgetConfig, criticalThreshold: parseInt(e.target.value) })}
                           max={200}
+                          min={0}
                           step={1}
-                          className="w-full"
+                          className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                          style={{
+                            background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(widgetConfig.criticalThreshold / 200) * 100}%, #e5e7eb ${(widgetConfig.criticalThreshold / 200) * 100}%, #e5e7eb 100%)`
+                          }}
                         />
                       </div>
 

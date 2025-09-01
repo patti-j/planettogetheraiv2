@@ -728,16 +728,20 @@ export function MobileAlerts() {
                     </span>
                   </div>
                   <div className="px-2">
-                    <Slider
-                      value={[aiSettings.confidenceThreshold]}
-                      onValueChange={(value) => 
-                        setAiSettings(prev => ({ ...prev, confidenceThreshold: value[0] }))
+                    <input
+                      type="range"
+                      value={aiSettings.confidenceThreshold}
+                      onChange={(e) => 
+                        setAiSettings(prev => ({ ...prev, confidenceThreshold: parseInt(e.target.value) }))
                       }
                       max={100}
                       min={25}
                       step={5}
-                      className="w-full"
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
                       disabled={!aiSettings.globalAiEnabled}
+                      style={{
+                        background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((aiSettings.confidenceThreshold - 25) / (100 - 25)) * 100}%, #e5e7eb ${((aiSettings.confidenceThreshold - 25) / (100 - 25)) * 100}%, #e5e7eb 100%)`
+                      }}
                     />
                     <div className="flex justify-between text-xs text-muted-foreground mt-1">
                       <span>More Alerts</span>

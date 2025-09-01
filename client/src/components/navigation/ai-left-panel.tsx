@@ -1119,14 +1119,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       <Label htmlFor="voice-speed" className="text-sm">
                         Voice Speed: {aiSettings.voiceSpeed}x
                       </Label>
-                      <Slider
+                      <input
+                        type="range"
                         id="voice-speed"
                         min={0.5}
                         max={2}
                         step={0.1}
-                        value={[aiSettings.voiceSpeed]}
-                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, voiceSpeed: value }))}
-                        className="mt-2"
+                        value={aiSettings.voiceSpeed}
+                        onChange={(e) => setAiSettings(prev => ({ ...prev, voiceSpeed: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider mt-2"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((aiSettings.voiceSpeed - 0.5) / (2 - 0.5)) * 100}%, #e5e7eb ${((aiSettings.voiceSpeed - 0.5) / (2 - 0.5)) * 100}%, #e5e7eb 100%)`
+                        }}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Adjust the speed of voice responses
@@ -1233,14 +1237,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       <Label htmlFor="temperature" className="text-sm">
                         Creativity (Temperature): {aiSettings.temperature}
                       </Label>
-                      <Slider
+                      <input
+                        type="range"
                         id="temperature"
                         min={0}
                         max={1}
                         step={0.1}
-                        value={[aiSettings.temperature]}
-                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, temperature: value }))}
-                        className="mt-2"
+                        value={aiSettings.temperature}
+                        onChange={(e) => setAiSettings(prev => ({ ...prev, temperature: parseFloat(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider mt-2"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${(aiSettings.temperature / 1) * 100}%, #e5e7eb ${(aiSettings.temperature / 1) * 100}%, #e5e7eb 100%)`
+                        }}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
                         Lower = More focused, Higher = More creative
@@ -1251,14 +1259,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       <Label htmlFor="max-tokens" className="text-sm">
                         Response Length: {aiSettings.maxTokens} tokens
                       </Label>
-                      <Slider
+                      <input
+                        type="range"
                         id="max-tokens"
                         min={500}
                         max={4000}
                         step={500}
-                        value={[aiSettings.maxTokens]}
-                        onValueChange={([value]) => setAiSettings(prev => ({ ...prev, maxTokens: value }))}
-                        className="mt-2"
+                        value={aiSettings.maxTokens}
+                        onChange={(e) => setAiSettings(prev => ({ ...prev, maxTokens: parseInt(e.target.value) }))}
+                        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider mt-2"
+                        style={{
+                          background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((aiSettings.maxTokens - 500) / (4000 - 500)) * 100}%, #e5e7eb ${((aiSettings.maxTokens - 500) / (4000 - 500)) * 100}%, #e5e7eb 100%)`
+                        }}
                       />
                     </div>
 
