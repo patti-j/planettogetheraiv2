@@ -271,12 +271,12 @@ const TableNode = ({ data }: { data: any }) => {
 
   const getCardStyle = () => {
     const baseStyle = {
-      minWidth: showColumns ? '280px' : `${minWidth}px`, 
-      maxWidth: showColumns ? '380px' : `${minWidth + 20}px`,
-      minHeight: showColumns ? '200px' : `${minHeight}px`,
-      maxHeight: showColumns ? '300px' : `${minHeight + 20}px`,
-      width: showColumns ? 'auto' : `${minWidth}px`,
-      height: showColumns ? 'auto' : `${minHeight}px`
+      minWidth: showColumns ? '280px' : `${minWidth}px !important`, 
+      maxWidth: showColumns ? '380px' : `${minWidth + 20}px !important`,
+      minHeight: showColumns ? '200px' : `${minHeight}px !important`,
+      maxHeight: showColumns ? '300px' : `${minHeight + 20}px !important`,
+      width: showColumns ? 'auto' : `${minWidth}px !important`,
+      height: showColumns ? 'auto' : `${minHeight}px !important`
     };
 
     if (isFocused || isConnected) {
@@ -2989,30 +2989,42 @@ function DataSchemaViewContent() {
               <Label htmlFor="show-columns" className="text-xs">Fields</Label>
             </div>
             
-            {/* Card Size Controls */}
+            {/* Card Size Controls - Only work when Fields toggle is OFF */}
             <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
               <span className="text-gray-600 text-[10px]">Width:</span>
-              <Slider
-                value={[cardSize.width]}
-                onValueChange={(value) => setCardSize(prev => ({ ...prev, width: value[0] }))}
-                max={400}
-                min={180}
-                step={10}
-                className="w-12 h-4 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:shadow-sm"
-              />
+              <div className="relative w-16">
+                <input
+                  type="range"
+                  value={cardSize.width}
+                  onChange={(e) => setCardSize(prev => ({ ...prev, width: parseInt(e.target.value) }))}
+                  max={400}
+                  min={180}
+                  step={10}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.width - 180) / (400 - 180)) * 100}%, #e5e7eb ${((cardSize.width - 180) / (400 - 180)) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+              </div>
               <span className="text-gray-500 text-[10px] w-8">{cardSize.width}</span>
             </div>
             
             <div className="flex items-center gap-2 px-2 py-1 bg-gray-50 rounded text-xs">
               <span className="text-gray-600 text-[10px]">Height:</span>
-              <Slider
-                value={[cardSize.height]}
-                onValueChange={(value) => setCardSize(prev => ({ ...prev, height: value[0] }))}
-                max={300}
-                min={120}
-                step={10}
-                className="w-12 h-4 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:shadow-sm"
-              />
+              <div className="relative w-16">
+                <input
+                  type="range"
+                  value={cardSize.height}
+                  onChange={(e) => setCardSize(prev => ({ ...prev, height: parseInt(e.target.value) }))}
+                  max={300}
+                  min={120}
+                  step={10}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((cardSize.height - 120) / (300 - 120)) * 100}%, #e5e7eb ${((cardSize.height - 120) / (300 - 120)) * 100}%, #e5e7eb 100%)`
+                  }}
+                />
+              </div>
               <span className="text-gray-500 text-[10px] w-8">{cardSize.height}</span>
             </div>
             
