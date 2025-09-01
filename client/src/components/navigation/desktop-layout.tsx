@@ -257,9 +257,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const shouldHidePanels = windowWidth < 480 && !forcePanelsVisible;
   const showPanels = !isFullScreen && !shouldHidePanels;
 
-  // For mobile, render content directly without TopMenu
-  // Mobile pages should handle their own navigation
-  if (!isDesktop) {
+  // For very small screens (actual mobile), render content directly without TopMenu
+  // Only do this for screens smaller than 320px (actual mobile devices)
+  if (windowWidth < 320) {
     return <>{children}</>;
   }
 
