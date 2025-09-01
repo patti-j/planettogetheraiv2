@@ -43,6 +43,7 @@ import {
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
 import { useMaxDock, CanvasItem } from '@/contexts/MaxDockContext';
+import { useQuery } from '@tanstack/react-query';
 import {
   PieChart as RechartsPieChart,
   Pie,

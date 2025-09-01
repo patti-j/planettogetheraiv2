@@ -128,6 +128,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const [location, setLocation] = useLocation();
   const { isKeyboardOpen, handleInputFocus, handleInputBlur } = useMobileKeyboard();
   const { 
+    isMaxOpen,
     setMaxOpen, 
     isMobile, 
     mobileLayoutMode, 
@@ -235,6 +236,31 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     // Whisper transcription is server-based, no browser initialization needed
   }, []);
 
+  // Add global keyboard shortcut (Cmd/Ctrl+K) to open Max
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check for Cmd+K (Mac) or Ctrl+K (Windows/Linux)
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault(); // Prevent default browser behavior
+        setMaxOpen(true);
+        // Focus the input field after a short delay to ensure the panel is open
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+      }
+      // Add Escape key to close Max
+      if (event.key === 'Escape' && isMaxOpen) {
+        setMaxOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isMaxOpen, setMaxOpen]);
+
   // Add global unhandled rejection handler to debug the issue
   useEffect(() => {
     const handleUnhandledRejection = (event: any) => {
@@ -292,14 +318,65 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     setCurrentInsights(insights);
   };
 
+  // Enhanced context capture function
+  const captureEnhancedContext = () => {
+    // Capture viewport and screen information
+    const viewport = {
+      x: window.scrollX,
+      y: window.scrollY,
+      width: window.innerWidth,
+      height: window.innerHeight
+    };
+    
+    // Detect device type
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const device = isMobileDevice ? 'mobile' : window.innerWidth < 768 ? 'tablet' : 'desktop';
+    
+    // Capture selected text if any
+    const selectedText = window.getSelection()?.toString();
+    
+    // Capture active filters and search from URL params
+    const urlParams = new URLSearchParams(window.location.search);
+    const activeFilters: Record<string, any> = {};
+    urlParams.forEach((value, key) => {
+      activeFilters[key] = value;
+    });
+    
+    // Get theme preference
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    
+    return {
+      viewState: {
+        activeFilters,
+        selectedText,
+        searchQuery: urlParams.get('search') || '',
+        viewport
+      },
+      environmentInfo: {
+        device,
+        screenSize: { width: window.screen.width, height: window.screen.height },
+        browser: navigator.userAgent,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        isDarkMode
+      },
+      sessionMetrics: {
+        sessionDuration: Date.now() - (window as any).sessionStartTime || 0,
+        lastActivity: new Date()
+      }
+    };
+  };
+
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
+      const enhancedContext = captureEnhancedContext();
+      
       const response = await apiRequest('POST', '/api/ai-agent/chat', {
         message,
         context: {
           page: window.location.pathname,
           user: user?.roles?.[0]?.name || user?.username,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
+          ...enhancedContext
         }
       });
       return await response.json();

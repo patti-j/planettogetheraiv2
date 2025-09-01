@@ -4617,7 +4617,7 @@ If nothing important to remember, respond with:
   // Max AI endpoints for manufacturing intelligence
   app.post("/api/max-ai/chat", requireAuth, async (req, res) => {
     try {
-      const { message, context } = req.body;
+      const { message, context, streaming = false } = req.body;
       const userId = (req as any).userId;
       
       if (!message) {
@@ -4634,21 +4634,59 @@ If nothing important to remember, respond with:
       // Get user's existing memory books for context
       const memories = await storage.getMemoryBooks("global", undefined, userId);
       
-      // Generate AI response with context and memories
-      const response = await maxAI.generateResponse(message, {
+      // Enhanced context with all the new fields
+      const enhancedContext = {
         userId,
         userRole: role?.name || 'User',
         currentPage: context?.currentPage || '/',
         selectedData: context?.selectedData,
         recentActions: context?.recentActions,
-        existingMemories: memories
-      });
+        existingMemories: memories,
+        viewState: context?.viewState,
+        userPreferences: context?.userPreferences,
+        sessionMetrics: context?.sessionMetrics,
+        environmentInfo: context?.environmentInfo
+      };
       
-      // After generating response, detect if we should store something in memory
-      await detectAndStoreMemory(message, response, userId, user);
-      
-      console.log('Max AI Response:', JSON.stringify(response, null, 2));
-      res.json(response);
+      // If streaming is requested, set up SSE (Server-Sent Events)
+      if (streaming) {
+        res.setHeader('Content-Type', 'text/event-stream');
+        res.setHeader('Cache-Control', 'no-cache');
+        res.setHeader('Connection', 'keep-alive');
+        
+        // Send initial message
+        res.write(`data: ${JSON.stringify({ type: 'start', content: 'Processing...' })}\n\n`);
+        
+        try {
+          // Generate response with streaming
+          const response = await maxAI.generateResponse(message, enhancedContext, {
+            streaming: true,
+            onChunk: (chunk: string) => {
+              res.write(`data: ${JSON.stringify({ type: 'chunk', content: chunk })}\n\n`);
+            }
+          });
+          
+          // Send final response
+          res.write(`data: ${JSON.stringify({ type: 'complete', response })}\n\n`);
+          res.end();
+          
+          // After generating response, detect if we should store something in memory
+          await detectAndStoreMemory(message, response, userId, user);
+        } catch (streamError) {
+          console.error('Streaming error:', streamError);
+          res.write(`data: ${JSON.stringify({ type: 'error', error: 'Failed to generate response' })}\n\n`);
+          res.end();
+        }
+      } else {
+        // Non-streaming response (default)
+        const response = await maxAI.generateResponse(message, enhancedContext);
+        
+        // After generating response, detect if we should store something in memory
+        await detectAndStoreMemory(message, response, userId, user);
+        
+        console.log('Max AI Response:', JSON.stringify(response, null, 2));
+        res.json(response);
+      }
     } catch (error) {
       console.error("Max AI chat error:", error);
       res.status(500).json({ error: "Failed to generate AI response" });

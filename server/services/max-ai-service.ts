@@ -3,7 +3,7 @@ import { db } from '../db';
 import { 
   alerts,
   aiMemories,
-  type InsertAIMemorySchema
+  type insertAIMemorySchema
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
 
@@ -18,20 +18,67 @@ interface MaxContext {
   selectedData?: any;
   recentActions?: string[];
   conversationHistory?: ConversationMessage[];
+  // Enhanced context fields
+  viewState?: {
+    activeFilters?: Record<string, any>;
+    selectedItems?: string[];
+    visibleColumns?: string[];
+    sortOrder?: { field: string; direction: 'asc' | 'desc' };
+    searchQuery?: string;
+    dateRange?: { start: Date; end: Date };
+    zoom?: number;
+    viewport?: { x: number; y: number; width: number; height: number };
+  };
+  userPreferences?: {
+    preferredVisualization?: 'table' | 'chart' | 'kanban' | 'gantt';
+    dataGranularity?: 'summary' | 'detailed';
+    notificationLevel?: 'all' | 'critical' | 'none';
+    autoSuggest?: boolean;
+    language?: string;
+  };
+  sessionMetrics?: {
+    sessionDuration?: number;
+    pageViews?: number;
+    actionsPerformed?: number;
+    lastActivity?: Date;
+    commonTasks?: string[];
+  };
+  environmentInfo?: {
+    device?: 'desktop' | 'mobile' | 'tablet';
+    screenSize?: { width: number; height: number };
+    browser?: string;
+    timezone?: string;
+    isDarkMode?: boolean;
+  };
 }
 
 interface MaxResponse {
   content: string;
   action?: {
-    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart';
+    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify';
     target?: string;
     data?: any;
     chartConfig?: ChartConfig;
+    steps?: TaskStep[];
+    clarificationNeeded?: string;
   };
   insights?: ProductionInsight[];
   suggestions?: string[];
   data?: any;
   error?: boolean;
+  confidence?: number;
+  streaming?: boolean;
+  relatedTopics?: string[];
+  learnedPreference?: any;
+}
+
+interface TaskStep {
+  id: string;
+  description: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  progress?: number;
+  result?: any;
+  error?: string;
 }
 
 interface ChartConfig {
@@ -66,9 +113,17 @@ export class MaxAIService {
   // Store conversation history in memory (in production, use Redis or database)
   private conversationStore = new Map<number, ConversationMessage[]>();
   
-  // Memory book integration - detect and store user preferences/instructions
+  // Enhanced memory system - detect and store user preferences/instructions with improved context awareness
   private async detectAndStoreMemory(userId: number, userMessage: string, aiResponse: string): Promise<void> {
     try {
+      // Track interaction for learning
+      await recommendationEngine.learnFromInteraction(
+        userId,
+        userMessage,
+        'chat',
+        !aiResponse.includes('error')
+      );
+      
       // Use AI to detect if this should be stored as memory
       const memoryAnalysis = await openai.chat.completions.create({
         model: "gpt-4o",
@@ -305,7 +360,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       try {
         // Query PT Publish job operations table directly
         const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjoboperations`);
-        totalJobs = jobCountResult.rows[0]?.count || 0;
+        totalJobs = Number(jobCountResult.rows[0]?.count) || 0;
         
         // Count operations in progress
         const runningOpsResult = await db.execute(sql`
@@ -313,7 +368,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
           FROM ptjoboperations 
           WHERE scheduled_start <= NOW() AND scheduled_end >= NOW()
         `);
-        runningOperations = runningOpsResult.rows[0]?.count || 0;
+        runningOperations = Number(runningOpsResult.rows[0]?.count) || 0;
       } catch (jobError) {
         console.log('Job data unavailable:', jobError.message);
       }
@@ -497,159 +552,228 @@ Rules:
   }
 
   // Generate contextual AI response based on user query and context
-  async generateResponse(query: string, context: MaxContext): Promise<MaxResponse> {
-    // Analyze user intent using AI
-    const intent = await this.analyzeUserIntentWithAI(query);
-    
-    // Use the new flexible AI response system
-    const flexibleResponse = await this.getAIFlexibleResponse(query, context);
-    if (flexibleResponse) {
-      return flexibleResponse;
+  async generateResponse(
+    query: string, 
+    context: MaxContext,
+    options?: { 
+      streaming?: boolean; 
+      onChunk?: (chunk: string) => void;
+      maxRetries?: number;
     }
-
-    // Handle navigation intent
-    if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
-      return {
-        content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
-        action: {
-          type: 'navigate',
-          target: intent.target
+  ): Promise<MaxResponse> {
+    try {
+        // Analyze user intent using AI
+        const intent = await this.analyzeUserIntentWithAI(query);
+        
+        // If streaming is enabled, handle differently
+        if (options?.streaming && options.onChunk) {
+          // Stream the response chunks
+          const streamedResponse = await this.getStreamedAIResponse(query, context, options.onChunk);
+          if (streamedResponse) {
+            return streamedResponse;
+          }
         }
-      };
-    }
-    
-    // Get conversation history
-    const history = this.getConversationHistory(context.userId);
-    
-    // Add user message to history
-    this.addToConversationHistory(context.userId, {
+        
+        // Use the new flexible AI response system
+        const flexibleResponse = await this.getAIFlexibleResponse(query, context);
+        if (flexibleResponse) {
+          return flexibleResponse;
+        }
+
+        // Handle navigation intent
+        if (intent.type === 'navigate' && intent.target && intent.confidence > 0.7) {
+          return {
+            content: `Taking you to ${intent.target.replace('/', '').replace('-', ' ')}...`,
+            action: {
+              type: 'navigate',
+              target: intent.target
+            }
+          };
+        }
+        
+        // Get conversation history
+        const history = this.getConversationHistory(context.userId);
+        
+        // Add user message to history
+        this.addToConversationHistory(context.userId, {
       role: 'user',
       content: query,
       timestamp: new Date()
-    });
-    
-    // Get relevant memories for context
-    const relevantMemories = await this.getRelevantMemories(context.userId, query);
-    
-    // Analyze conversation context
-    const conversationContext = this.analyzeConversationContext(history);
-    
-    // Enrich context with real-time data
-    const productionData = await this.getProductionStatus(context);
-    const insights = await this.analyzeSchedule(context);
-    
-    // Handle data display intent with flexible AI analysis
-    if (intent.type === 'show_data' && intent.confidence > 0.7) {
-      const flexibleResponse = await this.getAIFlexibleResponse(query, context);
-      if (flexibleResponse) {
-        return flexibleResponse;
-      }
-      
-      // Fallback to general production status
-      return {
-        content: this.formatProductionStatusResponse(productionData),
-        action: {
-          type: 'show_data',
-          data: productionData
-        },
-        insights,
-        suggestions: await this.getContextualSuggestions(context),
-        data: productionData
-      };
-    }
-    
-    // Build context-aware prompt with conversation history and memories
-    const systemPrompt = this.buildSystemPrompt(context, intent, relevantMemories);
-    const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
-
-    try {
-      // Only enable function calling for specific action queries
-      const isActionQuery = query.toLowerCase().includes('reschedule') || 
-                           query.toLowerCase().includes('create alert') ||
-                           query.toLowerCase().includes('optimize schedule');
-      
-      // Build messages array with conversation history
-      const messages: any[] = [
-        { role: 'system', content: systemPrompt }
-      ];
-      
-      // Add last 5 messages from history for context (excluding the current message we just added)
-      const recentHistory = history.slice(-6, -1); // Get last 5 messages before current
-      recentHistory.forEach(msg => {
-        if (msg.role === 'user' || msg.role === 'assistant') {
-          messages.push({ role: msg.role, content: msg.content });
+        });
+        
+        // Get relevant memories for context
+        const relevantMemories = await this.getRelevantMemories(context.userId, query);
+        
+        // Analyze conversation context
+        const conversationContext = this.analyzeConversationContext(history);
+        
+        // Enrich context with real-time data
+        const productionData = await this.getProductionStatus(context);
+        const insights = await this.analyzeSchedule(context);
+        
+        // Handle data display intent with flexible AI analysis
+        if (intent.type === 'show_data' && intent.confidence > 0.7) {
+          const flexibleResponse = await this.getAIFlexibleResponse(query, context);
+          if (flexibleResponse) {
+            return flexibleResponse;
+          }
+          
+          // Fallback to general production status
+          return {
+            content: this.formatProductionStatusResponse(productionData),
+            action: {
+              type: 'show_data',
+              data: productionData
+            },
+            insights,
+            suggestions: await this.getContextualSuggestions(context),
+            data: productionData
+          };
         }
-      });
-      
-      // Add the current enriched query
-      messages.push({ role: 'user', content: enrichedQuery });
-      
-      const requestOptions: any = {
-        model: 'gpt-4o',
-        messages,
-        temperature: 0.7,
-        max_tokens: 1000
-      };
-      
-      // Only add functions for action queries
-      if (isActionQuery) {
-        requestOptions.functions = this.getAvailableFunctions(context);
-        requestOptions.function_call = 'auto';
-      }
-      
-      const response = await openai.chat.completions.create(requestOptions);
+        
+        // Build context-aware prompt with conversation history and memories
+        const systemPrompt = this.buildSystemPrompt(context, intent, relevantMemories);
+        const enrichedQuery = await this.enrichQuery(query, productionData, insights, context, conversationContext);
 
-      // Handle function calls if needed
-      if (response.choices[0].message.function_call) {
-        const result = await this.handleFunctionCall(
-          response.choices[0].message.function_call,
-          context
-        );
+        // Only enable function calling for specific action queries
+        const isActionQuery = query.toLowerCase().includes('reschedule') || 
+                             query.toLowerCase().includes('create alert') ||
+                             query.toLowerCase().includes('optimize schedule');
+        
+        // Build messages array with conversation history
+        const messages: any[] = [
+          { role: 'system', content: systemPrompt }
+        ];
+        
+        // Add last 5 messages from history for context (excluding the current message we just added)
+        const recentHistory = history.slice(-6, -1); // Get last 5 messages before current
+        recentHistory.forEach(msg => {
+          if (msg.role === 'user' || msg.role === 'assistant') {
+            messages.push({ role: msg.role, content: msg.content });
+          }
+        });
+        
+        // Add the current enriched query
+        messages.push({ role: 'user', content: enrichedQuery });
+        
+        const requestOptions: any = {
+          model: 'gpt-4o',
+          messages,
+          temperature: 0.7,
+          max_tokens: 1000
+        };
+        
+        // Only add functions for action queries
+        if (isActionQuery) {
+          requestOptions.functions = this.getAvailableFunctions(context);
+          requestOptions.function_call = 'auto';
+        }
+        
+        const response = await openai.chat.completions.create(requestOptions);
+
+        // Handle function calls if needed
+        if (response.choices[0].message.function_call) {
+          const result = await this.handleFunctionCall(
+            response.choices[0].message.function_call,
+            context
+          );
+        
+          // Store assistant's response in history
+          this.addToConversationHistory(context.userId, {
+            role: 'assistant',
+            content: result.content || '',
+            timestamp: new Date(),
+            context: {
+              lastTopic: this.extractTopic(result.content || '')
+            }
+          });
+          
+          // Detect and store memory for function call responses too
+          await this.detectAndStoreMemory(context.userId, query, result.content || '');
+          
+          return result;
+        }
+
+        const assistantContent = response.choices[0].message.content || '';
         
         // Store assistant's response in history
         this.addToConversationHistory(context.userId, {
           role: 'assistant',
-          content: result.content || '',
+          content: assistantContent,
           timestamp: new Date(),
           context: {
-            lastTopic: this.extractTopic(result.content || '')
+            alertsOffered: assistantContent.includes('Would you like me to analyze the alerts?'),
+            lastTopic: this.extractTopic(assistantContent)
           }
         });
-        
-        // Detect and store memory for function call responses too
-        await this.detectAndStoreMemory(context.userId, query, result.content || '');
-        
-        return result;
-      }
 
-      const assistantContent = response.choices[0].message.content || '';
+        // Detect and store memory after successful response
+        await this.detectAndStoreMemory(context.userId, query, assistantContent);
+
+        return {
+          content: assistantContent,
+          insights: insights.length > 0 ? insights : undefined,
+          suggestions: await this.getContextualSuggestions(context),
+          data: productionData
+        };
+    } catch (error) {
+      console.error('Max AI response generation error:', error);
+      return {
+        content: 'I encountered an error while processing your request. Please try again.',
+        error: true
+      };
+    }
+  }
+  
+  // New method for streaming AI responses
+  private async getStreamedAIResponse(
+    query: string, 
+    context: MaxContext, 
+    onChunk: (chunk: string) => void
+  ): Promise<MaxResponse | null> {
+    try {
+      // Build context and messages similar to regular response
+      const productionData = await this.getProductionStatus(context);
+      const insights = await this.analyzeSchedule(context);
+      const systemPrompt = this.buildSystemPrompt(context);
       
-      // Store assistant's response in history
+      // Create streaming completion
+      const stream = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: query }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000,
+        stream: true
+      });
+      
+      let fullContent = '';
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || '';
+        if (content) {
+          fullContent += content;
+          onChunk(content);
+        }
+      }
+      
+      // Store in conversation history
       this.addToConversationHistory(context.userId, {
         role: 'assistant',
-        content: assistantContent,
-        timestamp: new Date(),
-        context: {
-          alertsOffered: assistantContent.includes('Would you like me to analyze the alerts?'),
-          lastTopic: this.extractTopic(assistantContent)
-        }
+        content: fullContent,
+        timestamp: new Date()
       });
-
-      // Detect and store memory after successful response
-      await this.detectAndStoreMemory(context.userId, query, assistantContent);
-
+      
       return {
-        content: assistantContent,
+        content: fullContent,
         insights: insights.length > 0 ? insights : undefined,
         suggestions: await this.getContextualSuggestions(context),
         data: productionData
       };
     } catch (error) {
-      console.error('Max AI response generation error:', error);
-      return {
-        content: 'I encountered an error while analyzing the data. Please try again.',
-        error: true
-      };
+      console.error('Streaming response error:', error);
+      return null;
     }
   }
 
@@ -2007,4 +2131,155 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
   }
 }
 
+// User pattern interface for tracking behavior
+interface UserPattern {
+  frequentQueries: string[];
+  preferredActions: string[];
+  workingHours: number[];
+  commonIssues: string[];
+  lastActivity: Date;
+}
+
+// Proactive Recommendations Engine
+class ProactiveRecommendationEngine {
+  private userPatterns: Map<number, UserPattern> = new Map();
+  private lastRecommendations: Map<number, Date> = new Map();
+  
+  // Analyze user behavior and generate proactive recommendations
+  async generateProactiveRecommendations(
+    userId: number,
+    context: MaxContext
+  ): Promise<{ recommendations: string[], priority: 'high' | 'medium' | 'low' }[]> {
+    const recommendations: { recommendations: string[], priority: 'high' | 'medium' | 'low' }[] = [];
+    const hour = new Date().getHours();
+    const dayOfWeek = new Date().getDay();
+    
+    // Get user's pattern
+    let pattern = this.userPatterns.get(userId);
+    if (!pattern) {
+      pattern = await this.analyzeUserPattern(userId);
+      this.userPatterns.set(userId, pattern);
+    }
+    
+    // Time-based recommendations
+    if (hour === 8 && dayOfWeek >= 1 && dayOfWeek <= 5) {
+      recommendations.push({
+        recommendations: [
+          'Review production schedule for today',
+          'Check overnight alerts and issues',
+          'Verify resource availability'
+        ],
+        priority: 'high'
+      });
+    }
+    
+    if (hour === 14) {
+      recommendations.push({
+        recommendations: [
+          'Review afternoon shift changeover',
+          'Check production progress against targets',
+          'Identify potential bottlenecks for resolution'
+        ],
+        priority: 'medium'
+      });
+    }
+    
+    // Context-based recommendations
+    if (context.currentPage === '/production-schedule') {
+      recommendations.push({
+        recommendations: [
+          'Try drag-and-drop to reschedule operations',
+          'Use ASAP optimization for urgent orders',
+          'Review critical path for key deliveries'
+        ],
+        priority: 'low'
+      });
+    }
+    
+    // Pattern-based recommendations
+    if (pattern.commonIssues.includes('delays')) {
+      recommendations.push({
+        recommendations: [
+          'Consider buffer time adjustments',
+          'Review resource allocation for efficiency',
+          'Analyze historical delay patterns'
+        ],
+        priority: 'high'
+      });
+    }
+    
+    return recommendations;
+  }
+  
+  // Analyze user's historical patterns
+  private async analyzeUserPattern(userId: number): Promise<any> {
+    // This would query the database for user's historical data
+    // For now, return a default pattern
+    return {
+      frequentQueries: [],
+      preferredActions: [],
+      workingHours: [8, 9, 10, 11, 14, 15, 16],
+      commonIssues: [],
+      lastActivity: new Date()
+    };
+  }
+  
+  // Learn from user interactions
+  async learnFromInteraction(
+    userId: number,
+    query: string,
+    action: string,
+    successful: boolean
+  ): Promise<void> {
+    const pattern = this.userPatterns.get(userId) || await this.analyzeUserPattern(userId);
+    
+    // Update patterns based on interaction
+    if (successful) {
+      if (!pattern.frequentQueries.includes(query)) {
+        pattern.frequentQueries.push(query);
+        // Keep only last 20 queries
+        if (pattern.frequentQueries.length > 20) {
+          pattern.frequentQueries.shift();
+        }
+      }
+      if (!pattern.preferredActions.includes(action)) {
+        pattern.preferredActions.push(action);
+        // Keep only last 10 actions
+        if (pattern.preferredActions.length > 10) {
+          pattern.preferredActions.shift();
+        }
+      }
+    }
+    
+    // Track working hours
+    const hour = new Date().getHours();
+    if (!pattern.workingHours.includes(hour)) {
+      pattern.workingHours.push(hour);
+    }
+    
+    // Track common issues from query
+    if (query.toLowerCase().includes('delay') || query.toLowerCase().includes('late')) {
+      if (!pattern.commonIssues.includes('delays')) {
+        pattern.commonIssues.push('delays');
+      }
+    }
+    if (query.toLowerCase().includes('quality') || query.toLowerCase().includes('defect')) {
+      if (!pattern.commonIssues.includes('quality')) {
+        pattern.commonIssues.push('quality');
+      }
+    }
+    if (query.toLowerCase().includes('resource') || query.toLowerCase().includes('capacity')) {
+      if (!pattern.commonIssues.includes('resources')) {
+        pattern.commonIssues.push('resources');
+      }
+    }
+    
+    pattern.lastActivity = new Date();
+    this.userPatterns.set(userId, pattern);
+  }
+}
+
+const recommendationEngine = new ProactiveRecommendationEngine();
+
 export const maxAI = new MaxAIService();
+export { recommendationEngine };
