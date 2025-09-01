@@ -92,12 +92,22 @@ import ProductionSchedulerPro from "@/pages/production-scheduler-pro";
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 
 export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
 
-  // Check if user is on mobile
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
+  // Reactive mobile detection that updates on window resize - use much smaller breakpoint for actual mobile devices
+  const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 320);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 320);
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   if (isLoading) {
     return (
