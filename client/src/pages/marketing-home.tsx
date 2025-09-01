@@ -84,8 +84,8 @@ const MarketingHome: React.FC = () => {
   const features = [
     {
       icon: <Sparkles className="w-6 h-6" />,
-      title: "AI-Powered Intelligence",
-      description: "Advanced AI assistant Max provides real-time insights, predictive analytics, and intelligent recommendations for optimal production planning.",
+      title: "Enhanced Max AI Assistant",
+      description: "Next-generation AI with transparent decision-making, playbook integration, and real-time production intelligence. See exactly how AI makes recommendations with full reasoning transparency.",
       highlight: true
     },
     {
@@ -100,8 +100,8 @@ const MarketingHome: React.FC = () => {
     },
     {
       icon: <Cog className="w-6 h-6" />,
-      title: "Process Optimization",
-      description: "Intelligent algorithms for backwards and forward scheduling, capacity planning, and resource allocation optimization."
+      title: "AI Knowledge System",
+      description: "Collaborative playbook system where AI learns from your manufacturing expertise and provides transparent, knowledge-driven recommendations for better decisions."
     },
     {
       icon: <Shield className="w-6 h-6" />,
@@ -148,8 +148,8 @@ const MarketingHome: React.FC = () => {
             </h1>
             
             <p className="text-xl text-muted-foreground mb-6 max-w-2xl mx-auto leading-relaxed">
-              The most advanced AI First Factory Optimization Platform for pharmaceutical, chemical, and industrial manufacturing. 
-              Optimize production, reduce costs, and accelerate growth with intelligent automation.
+              The most advanced AI First Factory Optimization Platform with transparent AI decision-making, collaborative knowledge management, and intelligent playbook integration. 
+              Trust AI that shows its thinking and learns from your expertise.
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
@@ -235,7 +235,7 @@ const MarketingHome: React.FC = () => {
             </Badge>
             <h2 className="text-4xl font-bold mb-4">Everything You Need for Manufacturing Excellence</h2>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Comprehensive AI First Factory Optimization Platform with AI-powered insights, real-time monitoring, and intelligent optimization.
+              Comprehensive AI First Factory Optimization Platform with enhanced Max AI transparency, collaborative playbook knowledge system, and intelligent decision-making you can trust.
             </p>
           </div>
 

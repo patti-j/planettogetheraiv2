@@ -149,8 +149,8 @@ const BUYER_PERSONAS = [
   },
   {
     role: 'Production Manager',
-    pain_points: ['Schedule optimization', 'Resource allocation', 'Quality control'],
-    value_props: ['Intelligent scheduling', 'Resource optimization', 'Quality tracking'],
+    pain_points: ['Schedule optimization', 'Resource allocation', 'AI decision trust'],
+    value_props: ['Transparent AI scheduling', 'Playbook-guided optimization', 'Explainable AI decisions'],
     icon: Target
   },
   {
@@ -292,12 +292,12 @@ export default function MarketingLandingPage() {
               <h1 className="text-4xl lg:text-6xl font-bold mb-6">
                 Transform Your Manufacturing Operations with 
                 <span className={`block ${aiTheme.gradient} bg-clip-text text-transparent`}>
-                  AI-Powered Intelligence
+                  Transparent AI Intelligence
                 </span>
               </h1>
               <p className="text-xl lg:text-2xl mb-8 text-blue-100">
-                Join other leading global manufacturers achieving 25% efficiency gains through intelligent AI-powered planning and scheduling, 
-                real-time optimization, and  powerful insights.
+                Join other leading global manufacturers achieving 25% efficiency gains through transparent AI decision-making, 
+                collaborative knowledge systems, and intelligent playbook-guided optimization.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mb-8">
                 <Button 
@@ -314,7 +314,7 @@ export default function MarketingLandingPage() {
                   onClick={() => window.location.href = '/whats-coming'}
                 >
                   <Sparkles className="w-5 h-5 mr-2" />
-                  What's Coming in V14
+                  Enhanced AI Features
                 </Button>
                 <Button 
                   size="lg" 
@@ -332,7 +332,7 @@ export default function MarketingLandingPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400" />
-                  <span>Full-featured platform</span>
+                  <span>AI transparency & reasoning</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <CheckCircle className="w-5 h-5 text-green-400" />
@@ -456,6 +456,62 @@ export default function MarketingLandingPage() {
                 </CardContent>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* AI Transparency & Playbook Features Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="flex items-center justify-center gap-2 mb-4">
+              <Sparkles className="w-8 h-8 text-blue-600" />
+              <span className="text-blue-600 font-semibold">Enhanced AI Intelligence</span>
+            </div>
+            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
+              Transparent AI You Can Trust
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              See exactly how our enhanced Max AI makes decisions with transparent reasoning, collaborative playbooks, and explainable intelligence.
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <Lightbulb className="w-12 h-12 text-blue-600 mb-4" />
+                <CardTitle className="text-xl">AI Reasoning Display</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  See step-by-step how Max AI analyzes data, considers options, and makes recommendations. Full transparency in every decision.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <Settings className="w-12 h-12 text-blue-600 mb-4" />
+                <CardTitle className="text-xl">Playbook Integration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  AI learns from your manufacturing expertise through collaborative playbooks, ensuring decisions align with your proven processes.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="hover:shadow-lg transition-shadow duration-300">
+              <CardHeader>
+                <Gauge className="w-12 h-12 text-blue-600 mb-4" />
+                <CardTitle className="text-xl">Confidence Scoring</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600">
+                  Every AI recommendation comes with confidence levels and reasoning, so you know when to trust automation and when to review manually.
+                </p>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </section>
@@ -618,10 +674,10 @@ export default function MarketingLandingPage() {
       <section className={`py-20 ${aiTheme.gradient} text-white`}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl lg:text-5xl font-bold mb-6">
-            Ready to Transform Your Manufacturing Operations?
+            Ready to Experience Transparent AI Manufacturing?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join 1,000+ manufacturers who've already revolutionized their production with our AI-powered platform.
+            Join 1,000+ manufacturers experiencing AI that shows its thinking, learns from expertise, and delivers transparent optimization.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8">

@@ -243,7 +243,7 @@ export default function Pricing() {
         jobs: 200,
         storage: "10GB",
         dataProcessing: "10,000 records/month",
-        aiUsage: "500 AI requests/month",
+        aiUsage: "1,000 AI requests/month with playbook integration",
         support: "Email & Community"
       },
       icon: <Rocket className="w-6 h-6" />
@@ -253,10 +253,12 @@ export default function Pricing() {
       name: "Professional",
       price: 0, // Contact Sales
       billingPeriod: billingCycle,
-      description: "Advanced AI-powered manufacturing optimization",
+      description: "Advanced AI-powered manufacturing optimization with transparent reasoning",
       features: [
         "Everything in Starter",
-        "Max AI Assistant with voice interaction",
+        "Enhanced Max AI with transparent decision-making",
+        "AI playbook integration & knowledge management",
+        "Max AI reasoning display & confidence scoring",
         "Advanced capacity planning & forecasting",
         "Inventory optimization & demand planning",
         "Scheduling optimizer with AI algorithms",
@@ -278,7 +280,7 @@ export default function Pricing() {
         jobs: 1000,
         storage: "100GB",
         dataProcessing: "100,000 records/month",
-        aiUsage: "5,000 AI requests/month",
+        aiUsage: "10,000 AI requests/month with full transparency",
         support: "Phone, Email & Chat"
       },
       popular: true,
@@ -293,7 +295,8 @@ export default function Pricing() {
       features: [
         "Everything in Professional",
         "Unlimited multi-plant operations",
-        "Advanced Max AI with file analysis",
+        "Advanced Max AI with transparent reasoning & file analysis",
+        "AI Knowledge System with collaborative playbooks",
         "AI Optimization Studio",
         "Custom AI model training",
         "White-label platform options",
@@ -318,7 +321,7 @@ export default function Pricing() {
         jobs: "unlimited",
         storage: "Unlimited",
         dataProcessing: "1M+ records/month included",
-        aiUsage: "50,000 AI requests/month",
+        aiUsage: "Unlimited AI requests with advanced reasoning",
         support: "24/7 Dedicated with SLA"
       },
       enterprise: true,
@@ -412,8 +415,10 @@ export default function Pricing() {
     {
       category: "AI & Intelligence",
       features: [
-        { name: "Max AI Assistant (Text)", starter: false, professional: true, enterprise: true },
+        { name: "Enhanced Max AI with Playbook Integration", starter: false, professional: true, enterprise: true },
+        { name: "AI Transparency & Reasoning Display", starter: false, professional: true, enterprise: true },
         { name: "Max AI with Voice Interaction", starter: false, professional: true, enterprise: true },
+        { name: "AI Knowledge Base & Collaborative Playbooks", starter: false, professional: true, enterprise: true },
         { name: "Max AI File Analysis & Vision", starter: false, professional: false, enterprise: true },
         { name: "AI Optimization Studio", starter: false, professional: false, enterprise: true },
         { name: "Custom AI Model Training", starter: false, professional: false, enterprise: true },
