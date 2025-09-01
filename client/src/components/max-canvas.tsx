@@ -696,16 +696,40 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
         console.log('Bar chart data (original):', chartData);
         console.log('Bar chart data (processed):', processedData);
         
+        // Calculate the domain to ensure proper scaling
+        const maxValue = Math.max(...processedData.map((d: any) => d.value));
+        const minValue = 0; // Start from 0 for better visualization
+        
         // Let Recharts handle auto-scaling for proper bar height differences
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={processedData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <RechartsBarChart 
+              data={processedData} 
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              barCategoryGap="20%"
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Legend />
-              <Bar dataKey="value" fill="#8884d8" />
+              <XAxis 
+                dataKey="name" 
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                interval={0}
+              />
+              <YAxis 
+                domain={[minValue, maxValue + (maxValue * 0.1)]}
+                allowDataOverflow={false}
+              />
+              <Tooltip 
+                formatter={(value, name) => [value, 'Quantity']}
+                labelFormatter={(label) => `Category: ${label}`}
+              />
+              <Bar 
+                dataKey="value" 
+                fill="#8884d8"
+                stroke="#6366f1"
+                strokeWidth={1}
+              />
             </RechartsBarChart>
           </ResponsiveContainer>
         );
