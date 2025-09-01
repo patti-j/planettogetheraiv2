@@ -2128,10 +2128,12 @@ function DataSchemaViewContent() {
     
     // Phase 4: Position Assignment with Collision Avoidance
     const positions: Record<string, { x: number; y: number }> = {};
-    const cardWidth = 360; // Larger cards for better readability
-    const cardHeight = 240; // Accommodate more content
-    const horizontalSpacing = 40; // Tighter horizontal spacing
-    const verticalSpacing = 100; // Compact vertical spacing
+    
+    // Responsive card dimensions based on Fields toggle state
+    const cardWidth = showColumns ? 360 : 280; // Smaller width in compressed view
+    const cardHeight = showColumns ? 240 : 120; // Much smaller height in compressed view
+    const horizontalSpacing = showColumns ? 40 : 30; // Tighter spacing in compressed view
+    const verticalSpacing = showColumns ? 100 : 60; // More compact vertical spacing
     const viewportWidth = 1400; // Target viewport width
     const startY = 150; // Start position
     
@@ -2250,7 +2252,7 @@ function DataSchemaViewContent() {
     });
     
     return finalPositions;
-  }, []);
+  }, [showColumns]); // Include showColumns dependency to recalculate when Fields toggle changes
 
   // Smart Layout Algorithm - Optimized for Database Schema Visualization
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
