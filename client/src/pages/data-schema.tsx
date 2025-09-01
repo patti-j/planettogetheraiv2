@@ -2815,21 +2815,61 @@ function DataSchemaViewContent() {
             </Badge>
           </div>
           
-          {/* Enhanced Top Right Controls with better styling */}
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button 
-              onClick={() => {
-                console.log('🏠 Navigating to homepage...');
-                setLocation('/');
-              }}
-              variant="ghost"
-              size="sm"
-              className="hover:bg-gray-100"
-            >
-              <Home className="w-4 h-4" />
-              <span className="hidden sm:inline ml-1">Home</span>
-            </Button>
-            
+          {/* Header Action Controls - Compact layout */}
+          <div className="flex items-center gap-1 flex-shrink-0">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      // Reset all view settings to show everything
+                      setShowRelationships(true);
+                      setFocusMode(false);
+                      setFocusTable(null);
+                      setSelectedFeature('');
+                      setSelectedCategory('');
+                      setSearchTerm('');
+                      // Fit view after reset
+                      setTimeout(() => {
+                        fitView({ 
+                          padding: 0.15, 
+                          duration: 800,
+                          includeHiddenNodes: false,
+                          minZoom: 0.1,
+                          maxZoom: 1.5
+                        });
+                      }, 100);
+                    }}
+                    className="flex-shrink-0 h-8 w-8 p-0"
+                  >
+                    <RotateCcw className="w-4 h-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>Reset all filters</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowMiniMap(!showMiniMap)}
+                    className={`flex-shrink-0 h-8 w-8 p-0 ${showMiniMap ? 'ring-2 ring-blue-500' : ''}`}
+                  >
+                    {showMiniMap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <p>{showMiniMap ? 'Hide' : 'Show'} view finder</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
 
         </div>
@@ -2962,24 +3002,6 @@ function DataSchemaViewContent() {
             </div>
             
             {/* Action Buttons */}
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleManualRefresh}
-                    disabled={isRefreshing}
-                    className="flex-shrink-0"
-                  >
-                    <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Refresh schema</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
 
             <TooltipProvider>
               <Tooltip>
@@ -3036,48 +3058,6 @@ function DataSchemaViewContent() {
             
             {/* Additional Controls - Hidden on very small screens */}
             <div className="hidden sm:flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowMiniMap(!showMiniMap)}
-                      className={showMiniMap ? 'ring-2 ring-blue-500' : ''}
-                    >
-                      {showMiniMap ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>{showMiniMap ? 'Hide' : 'Show'} MiniMap</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setIsLassoMode(!isLassoMode);
-                        if (isLassoMode) {
-                          setLassoPath([]);
-                          setIsDrawing(false);
-                        }
-                      }}
-                      className={isLassoMode ? 'ring-2 ring-purple-500 bg-purple-50' : ''}
-                    >
-                      {isLassoMode ? <MousePointer className="w-4 h-4" /> : <Lasso className="w-4 h-4" />}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom">
-                    <p>{isLassoMode ? 'Exit Lasso Mode' : 'Enable Lasso Selection'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              
               {lassoSelection.length > 0 && (
                 <Button
                   variant="outline"
@@ -3635,110 +3615,101 @@ function DataSchemaViewContent() {
               </TooltipProvider>
             </div>
             
-            {/* Other Control Buttons */}
-            <div className="flex gap-2">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      console.log('Smart Layout clicked');
-                      if (typeof handleSmartLayout === 'function') {
-                        handleSmartLayout();
-                      } else {
-                        console.error('handleSmartLayout is not a function');
-                      }
-                    }}
-                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
-                  >
-                    <Zap className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Smart Layout - Reorganize tables to minimize relationship confusion and maximize visibility</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => fitView({ 
-                      padding: 0.15, 
-                      duration: 800,
-                      includeHiddenNodes: false,
-                      minZoom: 0.1,
-                      maxZoom: 1.5
-                    })}
-                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
-                  >
-                    <Target className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Fit all visible tables in view</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      // Reset all view settings to show everything
-                      setShowRelationships(true);
-                      setFocusMode(false);
-                      setFocusTable(null);
-                      setSelectedFeature('');
-                      setSelectedCategory('');
-                      setSearchTerm('');
-                      // Fit view after reset
-                      setTimeout(() => {
-                        fitView({ 
-                          padding: 0.15, 
-                          duration: 800,
-                          includeHiddenNodes: false,
-                          minZoom: 0.1,
-                          maxZoom: 1.5
-                        });
-                      }, 100);
-                    }}
-                    className="bg-white/90 backdrop-blur-sm hover:bg-white"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>Reset all filters and show all tables with relationships</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+            {/* Canvas Action Controls - Compact organization */}
+            <div className="flex gap-1">
+              {/* Layout & View Controls */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        console.log('Smart Layout clicked');
+                        if (typeof handleSmartLayout === 'function') {
+                          handleSmartLayout();
+                        } else {
+                          console.error('handleSmartLayout is not a function');
+                        }
+                      }}
+                      className="bg-white/90 backdrop-blur-sm hover:bg-white h-8 w-8 p-0"
+                    >
+                      <Zap className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Smart Layout</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => fitView({ 
+                        padding: 0.15, 
+                        duration: 800,
+                        includeHiddenNodes: false,
+                        minZoom: 0.1,
+                        maxZoom: 1.5
+                      })}
+                      className="bg-white/90 backdrop-blur-sm hover:bg-white h-8 w-8 p-0"
+                    >
+                      <Target className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Fit all tables</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              
+              {/* Moved from Header - Data Actions */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleManualRefresh}
+                      disabled={isRefreshing}
+                      className="bg-white/90 backdrop-blur-sm hover:bg-white h-8 w-8 p-0"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>Refresh schema</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setShowMiniMap(!showMiniMap)}
-                    className={`bg-white/90 backdrop-blur-sm hover:bg-white ${showMiniMap ? 'ring-2 ring-blue-200' : ''}`}
-                  >
-                    {showMiniMap ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <p>{showMiniMap ? 'Hide' : 'Show'} view finder (minimap)</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setIsLassoMode(!isLassoMode);
+                        if (isLassoMode) {
+                          setLassoPath([]);
+                          setIsDrawing(false);
+                        }
+                      }}
+                      className={`bg-white/90 backdrop-blur-sm hover:bg-white h-8 w-8 p-0 ${isLassoMode ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}
+                    >
+                      {isLassoMode ? <MousePointer className="w-4 h-4" /> : <Lasso className="w-4 h-4" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom">
+                    <p>{isLassoMode ? 'Exit Lasso Mode' : 'Enable Lasso Selection'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
             <TooltipProvider>
               <Tooltip>
