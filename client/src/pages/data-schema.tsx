@@ -1818,17 +1818,17 @@ function DataSchemaViewContent() {
     };
   };
 
-  // Content-Aware Force-Directed Layout Algorithm
+  // Enhanced Compact Force-Directed Layout Algorithm
   const generateForceDirectedLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
     if (!tables.length) return {};
     
-    console.log('Content-aware force-directed layout: Processing', tables.length, 'tables');
+    console.log('Enhanced compact force-directed layout: Processing', tables.length, 'tables');
     
     // Calculate actual card dimensions based on content
     const getCardDimensions = (table: SchemaTable) => {
-      const baseWidth = 300;
-      const baseHeight = 120; // Header height
-      const columnHeight = showColumns ? Math.min(table.columns.length, 10) * 28 : 0; // 28px per column (including comments)
+      const baseWidth = 320; // Slightly larger for readability
+      const baseHeight = 140; // Header height
+      const columnHeight = showColumns ? Math.min(table.columns.length, 10) * 30 : 0; // 30px per column
       const commentHeight = showColumns ? table.columns.slice(0, 10).reduce((acc, col) => 
         acc + (col.comment ? 24 : 0), 0) : 0; // Extra height for comments
       
@@ -1852,27 +1852,31 @@ function DataSchemaViewContent() {
       maxCardHeight = Math.max(maxCardHeight, dims.height);
     });
     
-    // Calculate optimal viewport dimensions based on content
-    const targetDensity = 0.35; // 35% of space filled with cards
+    // Create much more compact layout with higher density
+    const targetDensity = 0.65; // Increase from 0.35 to 0.65 for much tighter packing
     const requiredArea = totalCardArea / targetDensity;
-    const aspectRatio = 1.4; // Prefer slightly wider layouts
+    const aspectRatio = 1.2; // Less wide, more square for better readability
     const W = Math.sqrt(requiredArea * aspectRatio);
     const H = requiredArea / W;
     
-    // Ensure minimum viable spacing
-    const minW = Math.sqrt(tables.length) * maxCardWidth * 1.8;
-    const minH = Math.sqrt(tables.length) * maxCardHeight * 1.8;
+    // Reduce minimum spacing significantly for more compact layout
+    const minW = Math.sqrt(tables.length) * maxCardWidth * 1.2; // Reduced from 1.8 to 1.2
+    const minH = Math.sqrt(tables.length) * maxCardHeight * 1.2; // Reduced from 1.8 to 1.2
     const finalW = Math.max(W, minW);
     const finalH = Math.max(H, minH);
     
-    const iterations = Math.min(60, Math.max(40, tables.length * 2));
+    const iterations = Math.min(80, Math.max(50, tables.length * 2)); // More iterations for better convergence
     
-    // Calculate optimal distance (k) based on average card size
+    // Reduce spacing significantly for tighter layout
     const avgCardWidth = totalCardArea / tables.length / (maxCardHeight || 200);
-    const k = avgCardWidth * 1.3; // Spacing based on actual card width
+    const k = avgCardWidth * 0.8; // Reduced from 1.3 to 0.8 for much closer spacing
     
+    // Enhanced force functions for better clustering of related tables
     const fa = (x: number): number => (x * x) / k; // Attractive force
-    const fr = (x: number): number => (k * k) / Math.max(x, 20); // Repulsive force with minimum distance
+    const fr = (x: number): number => (k * k) / Math.max(x, 15); // Stronger repulsion with closer minimum distance
+    
+    // Extra strong attraction for connected tables (relationships)
+    const faStrong = (x: number): number => (x * x) / (k * 0.6); // 40% stronger attraction for related tables
     
     console.log('Content-aware FR parameters:', { 
       finalW: finalW.toFixed(0), 
@@ -1922,8 +1926,8 @@ function DataSchemaViewContent() {
       displacements[table.name] = createVector(0, 0);
     });
     
-    // Temperature system for cooling based on content dimensions
-    let t = finalW / 12; // Slower cooling for better convergence
+    // Temperature system for faster cooling for tighter convergence
+    let t = finalW / 8; // Faster cooling for more compact final layout
     const dt = t / (iterations + 1);
     
     // Main force-directed algorithm iteration
@@ -1958,19 +1962,23 @@ function DataSchemaViewContent() {
         });
       });
       
-      // Calculate attractive forces between connected nodes
+      // Calculate enhanced attractive forces between connected nodes
       tables.forEach(table => {
         relationshipGraph[table.name].forEach(connectedTable => {
           const delta = nodePositions[connectedTable].subtract(nodePositions[table.name]);
           if (delta.length > 0) {
-            const attractiveForce = fa(delta.length);
+            // Use stronger attraction for connected tables to create clusters
+            const attractiveForce = faStrong(delta.length);
             const direction = delta.normalize();
             
+            // Apply stronger force multiplier for relationship clustering
+            const forceMultiplier = 1.5; // Extra pull for related tables
+            
             displacements[connectedTable] = displacements[connectedTable].subtract(
-              direction.multiply(attractiveForce)
+              direction.multiply(attractiveForce * forceMultiplier)
             );
             displacements[table.name] = displacements[table.name].add(
-              direction.multiply(attractiveForce)
+              direction.multiply(attractiveForce * forceMultiplier)
             );
           }
         });
@@ -1985,10 +1993,10 @@ function DataSchemaViewContent() {
           );
           nodePositions[table.name] = nodePositions[table.name].add(limitedDisplacement);
           
-          // Keep nodes within content-aware frame
+          // Keep nodes within more constrained frame for compactness
           nodePositions[table.name] = createVector(
-            Math.min(finalW/2, Math.max(-finalW/2, nodePositions[table.name].x)),
-            Math.min(finalH/2, Math.max(-finalH/2, nodePositions[table.name].y))
+            Math.min(finalW/2.5, Math.max(-finalW/2.5, nodePositions[table.name].x)),
+            Math.min(finalH/2.5, Math.max(-finalH/2.5, nodePositions[table.name].y))
           );
         }
       });
@@ -1997,9 +2005,9 @@ function DataSchemaViewContent() {
       t -= dt;
     }
     
-    // Convert to final positions with centering offset
-    const centerX = 800;
-    const centerY = 600;
+    // Convert to final positions with dynamic centering for better viewport utilization
+    const centerX = 600; // More compact center positioning
+    const centerY = 400;
     const positions: Record<string, { x: number; y: number }> = {};
     
     tables.forEach(table => {
@@ -2009,7 +2017,7 @@ function DataSchemaViewContent() {
       };
     });
     
-    console.log('Content-aware force-directed layout complete:', positions);
+    console.log('Enhanced compact force-directed layout complete:', positions);
     return positions;
   }, [showColumns]); // Include showColumns dependency to recalculate when column visibility changes
 
