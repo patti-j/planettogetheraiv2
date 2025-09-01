@@ -2745,36 +2745,7 @@ function DataSchemaViewContent() {
               </Badge>
             )}
             
-            {/* Filters */}
-            <Select value={selectedFeature} onValueChange={handleFeatureChange}>
-              <SelectTrigger className="w-32 lg:w-40">
-                <SelectValue placeholder="Feature" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableFeatures.map(feature => (
-                  <SelectItem key={feature.value} value={feature.value}>
-                    <div className="flex items-center gap-2">
-                      <Filter className="w-4 h-4 text-blue-500" />
-                      {feature.label}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-              <SelectTrigger className="w-28 lg:w-32">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories.map(category => (
-                  <SelectItem key={category} value={category}>
-                    {category}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {/* Filters removed - now only available in table selector dialog */}
             
             <Select value={layoutType} onValueChange={(value: any) => setLayoutType(value)}>
               <SelectTrigger className="w-20">
