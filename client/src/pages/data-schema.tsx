@@ -2998,7 +2998,7 @@ function DataSchemaViewContent() {
                 max={400}
                 min={180}
                 step={10}
-                className="w-12 h-3"
+                className="w-12 h-4 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:shadow-sm"
               />
               <span className="text-gray-500 text-[10px] w-8">{cardSize.width}</span>
             </div>
@@ -3011,7 +3011,7 @@ function DataSchemaViewContent() {
                 max={300}
                 min={120}
                 step={10}
-                className="w-12 h-3"
+                className="w-12 h-4 [&_[role=slider]]:h-3 [&_[role=slider]]:w-3 [&_[role=slider]]:border-2 [&_[role=slider]]:border-white [&_[role=slider]]:bg-blue-500 [&_[role=slider]]:shadow-sm"
               />
               <span className="text-gray-500 text-[10px] w-8">{cardSize.height}</span>
             </div>
