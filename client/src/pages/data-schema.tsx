@@ -2024,125 +2024,241 @@ function DataSchemaViewContent() {
     return positions;
   }, [showColumns]); // Include showColumns dependency to recalculate when column visibility changes
 
-  // Enhanced Hierarchical Layout with Layer Assignment
+  // Professional Database Schema Layout (Sugiyama Algorithm)
   const generateHierarchicalLayout = useCallback((tables: SchemaTable[]): Record<string, { x: number; y: number }> => {
     if (!tables.length) return {};
     
-    console.log('Hierarchical layout: Processing', tables.length, 'tables');
+    console.log('Professional schema layout: Processing', tables.length, 'tables with Sugiyama algorithm');
     
-    const positions: Record<string, { x: number; y: number }> = {};
-    
-    // Build relationship graph
-    const relationshipGraph: Record<string, string[]> = {};
-    const incomingEdges: Record<string, string[]> = {};
+    // Phase 1: Build directed dependency graph
+    const dependsOn: Record<string, Set<string>> = {}; // Forward references (FK to PK)
+    const dependents: Record<string, Set<string>> = {}; // Back references (PK from FK)
+    const allTables = new Set(tables.map(t => t.name));
     
     tables.forEach(table => {
-      relationshipGraph[table.name] = [];
-      incomingEdges[table.name] = [];
+      dependsOn[table.name] = new Set();
+      dependents[table.name] = new Set();
     });
     
     tables.forEach(table => {
       table.relationships.forEach(rel => {
-        if (tables.some(t => t.name === rel.toTable)) {
-          relationshipGraph[table.name].push(rel.toTable);
-          incomingEdges[rel.toTable].push(table.name);
+        if (allTables.has(rel.toTable)) {
+          dependsOn[table.name].add(rel.toTable); // table depends on rel.toTable
+          dependents[rel.toTable].add(table.name); // rel.toTable has table as dependent
         }
       });
     });
     
-    // Layer assignment using modified topological sort
+    // Phase 2: Layer Assignment with Cycle Detection
     const layers: string[][] = [];
-    const visited = new Set<string>();
-    const tempMark = new Set<string>();
+    const assigned = new Set<string>();
+    const processing = new Set<string>();
+    const layerAssignment: Record<string, number> = {};
     
-    // Find root nodes (no incoming edges) for starting points
-    const rootNodes = tables
-      .filter(table => incomingEdges[table.name].length === 0)
-      .map(table => table.name);
-    
-    if (rootNodes.length === 0) {
-      // If no clear roots, use most connected nodes
-      const connectionCounts = tables.map(table => ({
-        name: table.name,
-        connections: relationshipGraph[table.name].length + incomingEdges[table.name].length
-      }));
-      connectionCounts.sort((a, b) => b.connections - a.connections);
-      rootNodes.push(connectionCounts[0].name);
-    }
-    
-    // Assign layers using BFS-like approach
-    const nodeLayer: Record<string, number> = {};
-    const queue = rootNodes.map(node => ({ node, layer: 0 }));
-    
-    while (queue.length > 0) {
-      const { node, layer } = queue.shift()!;
-      
-      if (nodeLayer[node] !== undefined) {
-        nodeLayer[node] = Math.max(nodeLayer[node], layer);
-        continue;
+    // Helper function for DFS with cycle detection
+    const assignLayer = (tableName: string, currentLayer: number): number => {
+      if (assigned.has(tableName)) {
+        return layerAssignment[tableName];
       }
       
-      nodeLayer[node] = layer;
+      if (processing.has(tableName)) {
+        // Cycle detected, assign to current layer
+        return currentLayer;
+      }
       
-      // Add children to next layer
-      relationshipGraph[node].forEach(child => {
-        if (nodeLayer[child] === undefined) {
-          queue.push({ node: child, layer: layer + 1 });
+      processing.add(tableName);
+      
+      // Find maximum dependency layer
+      let maxDependencyLayer = -1;
+      dependsOn[tableName].forEach(dependency => {
+        if (allTables.has(dependency)) {
+          const depLayer = assignLayer(dependency, currentLayer);
+          maxDependencyLayer = Math.max(maxDependencyLayer, depLayer);
         }
       });
-    }
+      
+      const assignedLayer = maxDependencyLayer + 1;
+      layerAssignment[tableName] = assignedLayer;
+      assigned.add(tableName);
+      processing.delete(tableName);
+      
+      return assignedLayer;
+    };
     
-    // Handle unassigned nodes (put them in layer 0)
+    // Assign layers to all tables
     tables.forEach(table => {
-      if (nodeLayer[table.name] === undefined) {
-        nodeLayer[table.name] = 0;
+      if (!assigned.has(table.name)) {
+        assignLayer(table.name, 0);
       }
     });
     
-    // Group nodes by layer
-    const maxLayer = Math.max(...Object.values(nodeLayer));
+    // Group tables by layers
+    const maxLayer = Math.max(...Object.values(layerAssignment));
     for (let i = 0; i <= maxLayer; i++) {
       layers[i] = [];
     }
     
     tables.forEach(table => {
-      layers[nodeLayer[table.name]].push(table.name);
+      const layer = layerAssignment[table.name];
+      layers[layer].push(table.name);
     });
     
-    // Position nodes within layers
-    const nodeWidth = 320;
-    const nodeHeight = 200;
-    const horizontalSpacing = 100;
-    const verticalSpacing = 250; // Larger spacing between layers
+    // Phase 3: Minimize Edge Crossings within Layers
+    const optimizeLayerOrder = (layers: string[][]) => {
+      // Sort each layer by connectivity and centrality
+      layers.forEach(layer => {
+        layer.sort((a, b) => {
+          // Primary: number of connections (more connected tables in center)
+          const connectionsA = dependsOn[a].size + dependents[a].size;
+          const connectionsB = dependsOn[b].size + dependents[b].size;
+          
+          if (connectionsA !== connectionsB) {
+            return connectionsB - connectionsA; // Higher connectivity first
+          }
+          
+          // Secondary: alphabetical for consistency
+          return a.localeCompare(b);
+        });
+      });
+      
+      return layers;
+    };
     
-    layers.forEach((layer, layerIndex) => {
-      const layerWidth = layer.length * (nodeWidth + horizontalSpacing) - horizontalSpacing;
-      const startX = (1400 - layerWidth) / 2; // Center the layer
-      const y = 200 + layerIndex * verticalSpacing;
+    const optimizedLayers = optimizeLayerOrder(layers);
+    
+    // Phase 4: Position Assignment with Collision Avoidance
+    const positions: Record<string, { x: number; y: number }> = {};
+    const cardWidth = 360; // Larger cards for better readability
+    const cardHeight = 240; // Accommodate more content
+    const horizontalSpacing = 40; // Tighter horizontal spacing
+    const verticalSpacing = 100; // Compact vertical spacing
+    const viewportWidth = 1400; // Target viewport width
+    const startY = 150; // Start position
+    
+    optimizedLayers.forEach((layer, layerIndex) => {
+      if (layer.length === 0) return;
+      
+      // Calculate optimal horizontal distribution
+      const totalCardWidth = layer.length * cardWidth;
+      const totalSpacing = (layer.length - 1) * horizontalSpacing;
+      const totalWidth = totalCardWidth + totalSpacing;
+      
+      // Center the layer or spread if too wide
+      let startX: number;
+      let actualSpacing: number;
+      
+      if (totalWidth <= viewportWidth) {
+        // Center the layer
+        startX = (viewportWidth - totalWidth) / 2;
+        actualSpacing = horizontalSpacing;
+      } else {
+        // Spread across viewport
+        startX = 50; // Small margin
+        const availableWidth = viewportWidth - 100; // Leave margins
+        actualSpacing = Math.max(20, (availableWidth - totalCardWidth) / (layer.length - 1));
+      }
+      
+      const y = startY + layerIndex * (cardHeight + verticalSpacing);
       
       layer.forEach((tableName, index) => {
-        const x = startX + index * (nodeWidth + horizontalSpacing);
+        const x = startX + index * (cardWidth + actualSpacing);
         positions[tableName] = { x, y };
       });
     });
     
-    console.log('Hierarchical layout complete:', { layers: layers.length, positions });
-    return positions;
+    // Phase 5: Final Optimization - Reduce Edge Length
+    const reduceEdgeLength = (positions: Record<string, { x: number; y: number }>) => {
+      let improved = true;
+      let iterations = 0;
+      const maxIterations = 3;
+      
+      while (improved && iterations < maxIterations) {
+        improved = false;
+        iterations++;
+        
+        optimizedLayers.forEach((layer, layerIndex) => {
+          if (layer.length <= 1) return;
+          
+          // Try swapping adjacent nodes to reduce edge crossings
+          for (let i = 0; i < layer.length - 1; i++) {
+            const tableA = layer[i];
+            const tableB = layer[i + 1];
+            
+            // Calculate current edge stress
+            const stressBefore = calculateEdgeStress(tableA, tableB, positions, dependsOn, dependents);
+            
+            // Swap positions
+            const tempPos = positions[tableA];
+            positions[tableA] = positions[tableB];
+            positions[tableB] = tempPos;
+            
+            const stressAfter = calculateEdgeStress(tableA, tableB, positions, dependsOn, dependents);
+            
+            if (stressAfter < stressBefore) {
+              improved = true;
+              // Keep the swap
+              [layer[i], layer[i + 1]] = [layer[i + 1], layer[i]];
+            } else {
+              // Revert the swap
+              const revertPos = positions[tableA];
+              positions[tableA] = positions[tableB];
+              positions[tableB] = revertPos;
+            }
+          }
+        });
+      }
+      
+      return positions;
+    };
+    
+    // Helper function to calculate edge stress
+    const calculateEdgeStress = (
+      tableA: string, 
+      tableB: string, 
+      positions: Record<string, { x: number; y: number }>,
+      dependsOn: Record<string, Set<string>>,
+      dependents: Record<string, Set<string>>
+    ): number => {
+      let stress = 0;
+      
+      // Calculate stress for all edges involving these tables
+      [tableA, tableB].forEach(table => {
+        dependsOn[table].forEach(dep => {
+          const dx = positions[table].x - positions[dep].x;
+          const dy = positions[table].y - positions[dep].y;
+          stress += Math.sqrt(dx * dx + dy * dy);
+        });
+        
+        dependents[table].forEach(dep => {
+          const dx = positions[table].x - positions[dep].x;
+          const dy = positions[table].y - positions[dep].y;
+          stress += Math.sqrt(dx * dx + dy * dy);
+        });
+      });
+      
+      return stress;
+    };
+    
+    const finalPositions = reduceEdgeLength(positions);
+    
+    console.log('Professional schema layout complete:', { 
+      layers: optimizedLayers.length, 
+      averageLayerSize: optimizedLayers.reduce((sum, layer) => sum + layer.length, 0) / optimizedLayers.length,
+      maxLayerSize: Math.max(...optimizedLayers.map(l => l.length)),
+      totalTables: tables.length,
+      optimization: 'Sugiyama algorithm with edge crossing minimization'
+    });
+    
+    return finalPositions;
   }, []);
 
-  // Smart Layout Algorithm - Prioritizes Force-Directed for Better Space Utilization
+  // Smart Layout Algorithm - Optimized for Database Schema Visualization
   const generateSmartLayout = useCallback((tables: SchemaTable[]) => {
     if (!tables.length) return {};
     
-    console.log('Smart layout: Processing', tables.length, 'tables with enhanced force-directed algorithm');
+    console.log('Smart layout: Analyzing', tables.length, 'tables for optimal layout strategy');
     
-    // Use force-directed layout as primary choice for better space utilization
-    // Only use hierarchical for very specific cases with clear layer structures
-    if (tables.length <= 30) {
-      return generateForceDirectedLayout(tables);
-    }
-    
-    // For larger graphs, check if there's a very clear hierarchical structure
+    // Analyze relationship structure to determine best layout
     const relationshipGraph: Record<string, string[]> = {};
     const incomingEdges: Record<string, string[]> = {};
     
@@ -2160,17 +2276,36 @@ function DataSchemaViewContent() {
       });
     });
     
-    // Only use hierarchical if there are clear root nodes and multiple layers
+    const totalRelationships = tables.reduce((sum, table) => sum + table.relationships.length, 0);
     const rootNodes = tables.filter(table => incomingEdges[table.name].length === 0);
     const leafNodes = tables.filter(table => relationshipGraph[table.name].length === 0);
-    const hasMultipleLayers = rootNodes.length > 0 && leafNodes.length > 0 && rootNodes.length + leafNodes.length < tables.length * 0.8;
+    const hasDirectionalFlow = rootNodes.length > 0 && leafNodes.length > 0;
+    const relationshipDensity = totalRelationships / tables.length;
     
-    if (hasMultipleLayers && tables.length > 30) {
+    console.log('Layout analysis:', {
+      tables: tables.length,
+      relationships: totalRelationships,
+      density: relationshipDensity.toFixed(2),
+      roots: rootNodes.length,
+      leaves: leafNodes.length,
+      hasFlow: hasDirectionalFlow
+    });
+    
+    // Decision logic for optimal layout:
+    // 1. For schemas with clear hierarchical structure (many FK relationships) → Hierarchical
+    // 2. For small, highly connected schemas → Force-directed for better clustering
+    // 3. For medium schemas with some structure → Hierarchical for clarity
+    
+    if (hasDirectionalFlow && (relationshipDensity > 0.5 || tables.length > 10)) {
+      console.log('→ Using hierarchical layout (clear directional structure detected)');
+      return generateHierarchicalLayout(tables);
+    } else if (tables.length <= 8 && relationshipDensity > 1.5) {
+      console.log('→ Using force-directed layout (small, highly connected schema)');
+      return generateForceDirectedLayout(tables);
+    } else {
+      console.log('→ Using hierarchical layout (optimal for schema visualization)');
       return generateHierarchicalLayout(tables);
     }
-    
-    // Default to force-directed for better space utilization multilevel approach
-    return generateForceDirectedLayout(tables);
   }, [generateForceDirectedLayout, generateHierarchicalLayout]);
 
   // Smart Layout Handler
