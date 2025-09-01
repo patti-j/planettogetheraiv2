@@ -18,7 +18,7 @@ export function SmartHomeWrapper() {
   // Remove the authentication check that was causing blank page
   
   // On mobile devices, redirect to mobile-home for authenticated users
-  if (deviceType === "mobile" && window.innerWidth < 768) {
+  if (deviceType === "mobile" && window.innerWidth < 480) {
     // Don't redirect if we're on login, portal, or other public routes
     const publicRoutes = ['/login', '/portal', '/home', '/marketing', '/pricing'];
     const isPublicRoute = publicRoutes.some(route => location.includes(route));

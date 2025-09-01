@@ -76,7 +76,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   // Detect mobile on mount and window resize
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 480);
     };
     
     checkMobile();

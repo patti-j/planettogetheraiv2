@@ -91,7 +91,7 @@ export default function IntegratedAIAssistant() {
     const screenHeight = window.innerHeight;
     
     // Mobile-first responsive sizing
-    if (screenWidth < 768) {
+    if (screenWidth < 480) {
       return {
         width: Math.min(screenWidth - 20, 350), // Use almost full width on mobile
         height: Math.min(screenHeight - 80, 450), // Use more height on mobile
@@ -302,7 +302,7 @@ export default function IntegratedAIAssistant() {
         }));
         
         // On mobile, reset to appropriate size
-        if (window.innerWidth < 768) {
+        if (window.innerWidth < 480) {
           setSize({
             width: newDimensions.width,
             height: newDimensions.height
@@ -954,7 +954,7 @@ export default function IntegratedAIAssistant() {
             <div className="flex-1 p-3 overflow-y-auto" 
                  style={{ 
                    minHeight: '200px',
-                   maxHeight: window.innerWidth < 768 ? '300px' : `${size.height - 200}px`
+                   maxHeight: window.innerWidth < 480 ? '300px' : `${size.height - 200}px`
                  }}>
               <div className="space-y-3">
                 {messages.length === 0 && (

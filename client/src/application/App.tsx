@@ -97,7 +97,7 @@ export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
 
   // Check if user is on mobile
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 480;
 
   if (isLoading) {
     return (

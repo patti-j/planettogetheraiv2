@@ -222,7 +222,7 @@
 }
 
 /* Ensure mobile footer is always visible */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .mobile-footer {
     position: fixed !important;
     bottom: 0 !important;
@@ -279,7 +279,7 @@
 }
 
 /* Mobile keyboard handling and viewport fixes */
-@media screen and (max-device-width: 768px) {
+@media screen and (max-device-width: 480px) {
   /* Prevent viewport shifts on mobile keyboard appearance */
   body {
     height: 100vh;
@@ -422,7 +422,7 @@
 
 /* Dynamic viewport units for modern browsers */
 @supports (height: 100dvh) {
-  @media screen and (max-device-width: 768px) {
+  @media screen and (max-device-width: 480px) {
     body, #root {
       height: 100dvh;
       min-height: 100dvh;
@@ -466,7 +466,7 @@
 }
 
 /* Enhanced Mobile Responsiveness Utilities */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   /* Responsive dialog sizes */
   .dialog-mobile {
     @apply max-w-[95vw] w-full;
@@ -1314,7 +1314,7 @@ div[data-radix-tooltip-content] {
 }
 
 /* Ensure proper touch scrolling on mobile */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   .mobile-scroll-container {
     overflow-x: auto;
     scroll-behavior: smooth;
@@ -1528,7 +1528,7 @@ div[data-radix-tooltip-content] {
   display: none;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 481px) {
   .mobile-only {
     display: none;
   }
@@ -1560,7 +1560,7 @@ div[data-radix-tooltip-content] {
 }
 
 /* Mobile header protection - ensure nothing covers it */
-@media (max-width: 768px) {
+@media (max-width: 480px) {
   /* Ensure all fixed elements stay below mobile header z-100 */
   .fixed:not([class*="z-\\[100\\]"]) {
     z-index: 40 !important;

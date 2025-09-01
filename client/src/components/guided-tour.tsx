@@ -299,7 +299,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
     const getInitialPosition = () => {
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      const isMobile = windowWidth < 768;
+      const isMobile = windowWidth < 480;
       
       console.log("Initializing tour window position:", { windowWidth, windowHeight, isMobile });
       
@@ -371,7 +371,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
       // Reposition tour window to ensure it stays visible after resize
       const windowWidth = window.innerWidth;
       const windowHeight = window.innerHeight;
-      const isMobile = windowWidth < 768;
+      const isMobile = windowWidth < 480;
       
       console.log("Resize event - repositioning tour window:", { windowWidth, windowHeight, isMobile });
       
@@ -1124,13 +1124,13 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
           position: 'fixed',
           left: `${position.x}px`,
           top: `${position.y}px`,
-          width: windowSize.width < 768 ? 
+          width: windowSize.width < 480 ? 
             `${Math.min(280, windowSize.width - 16)}px` : 
             `${windowDimensions.width}px`,
-          height: windowSize.width < 768 ? 
+          height: windowSize.width < 480 ? 
             `${Math.min(200, windowSize.height * 0.35)}px` : 
             `${windowDimensions.height}px`,
-          maxHeight: windowSize.width < 768 ? '35vh' : '90vh',
+          maxHeight: windowSize.width < 480 ? '35vh' : '90vh',
           cursor: isDragging ? 'grabbing' : 'default'
         }}
       >
@@ -1148,7 +1148,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
             </div>
             <div className="flex items-center gap-0.5 sm:gap-1">
               {/* Desktop volume control */}
-              {windowSize.width >= 768 && (
+              {windowSize.width >= 481 && (
                 <div className="relative" ref={volumeSliderRef}>
                   <Button
                     variant="ghost"
@@ -1207,7 +1207,7 @@ export function GuidedTour({ roleId, initialStep = 0, initialVoiceEnabled = fals
                 <ScrollText className={`h-3 w-3 sm:h-4 sm:w-4 ${autoScrollEnabled ? 'text-blue-600' : 'text-gray-400'}`} />
               </Button>
               {/* Desktop only: Minimize toggle */}
-              {windowSize.width >= 768 && (
+              {windowSize.width >= 481 && (
                 <Button
                   variant="ghost"
                   size="sm"

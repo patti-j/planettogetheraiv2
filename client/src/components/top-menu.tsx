@@ -506,10 +506,10 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
     return () => window.removeEventListener('resize', handleResize);
   }, []);
   
-  // Show footer on mobile viewport (less than 768px) or on specific mobile pages
+  // Show footer on mobile viewport (less than 480px) or on specific mobile pages
   // BUT NOT when we're using MobileLayout component (which handles its own navigation)
   const isMobilePage = location === '/mobile-home' || location === '/mobile' || location.startsWith('/widgets/') || location.startsWith('/dashboards/');
-  const isMobileViewport = windowWidth < 768;
+  const isMobileViewport = windowWidth < 480;
   
   // Don't render mobile navigation if we're on routes that use MobileLayout
   const mobileLayoutRoutes = ['/mobile-home', '/mobile'];

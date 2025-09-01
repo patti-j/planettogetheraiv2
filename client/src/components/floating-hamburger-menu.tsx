@@ -24,7 +24,7 @@ export function FloatingHamburgerMenu({
   };
 
   // Check if mobile device
-  const isMobile = window.innerWidth < 768;
+  const isMobile = window.innerWidth < 480;
   
   // Hide on desktop since we have hamburger menu in desktop top bar
   if (deviceType === 'desktop') {

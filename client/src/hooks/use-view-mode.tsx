@@ -21,7 +21,7 @@ export function ViewModeProvider({ children }: { children: React.ReactNode }) {
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
+      setIsMobile(window.innerWidth < 480);
     };
     
     checkMobile();

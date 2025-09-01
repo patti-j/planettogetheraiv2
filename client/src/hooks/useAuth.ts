@@ -193,7 +193,7 @@ export function useAuth() {
     onSuccess: async (data) => {
       try {
         // Detect if user is on mobile device
-        const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
         
         console.log(`Login successful, redirecting to ${redirectPath} (mobile: ${isMobile})`);
@@ -223,7 +223,7 @@ export function useAuth() {
       } catch (error) {
         console.error("Post-login processing error:", error);
         // Even if invalidation fails, still redirect based on device type
-        const isMobile = window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
         setTimeout(() => {
           window.location.href = redirectPath;
