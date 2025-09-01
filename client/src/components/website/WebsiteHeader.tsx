@@ -17,7 +17,6 @@ const WebsiteHeader: React.FC = () => {
     { name: "Solutions", href: "/solutions-comparison" },
     { name: "Technology", href: "/technology-stack" },
     { name: "Pricing", href: "/pricing" },
-    { name: "Investors", href: "/investors" },
     { name: "Demo", href: "/demo-tour" },
   ];
 
