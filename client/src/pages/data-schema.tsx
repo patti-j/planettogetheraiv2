@@ -2653,12 +2653,12 @@ function DataSchemaViewContent() {
     <div className="h-screen flex flex-col">
       {/* Header - Mobile Optimized with better responsive design */}
       {!isFullScreen && (
-        <div className="border-b bg-white px-3 sm:px-6 py-2 sm:py-3 relative z-20 min-h-0">
+        <div className="border-b bg-white px-3 sm:px-6 py-1 sm:py-2 relative z-20 min-h-0">
         {/* Title Row - Compact on Mobile with proper spacing */}
-        <div className="flex items-center justify-between mb-2 gap-2">
+        <div className="flex items-center justify-between mb-1 gap-2">
           <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
             <Database className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-            <h1 className="text-base sm:text-2xl font-bold">Data Schema</h1>
+            <h1 className="text-base sm:text-xl font-bold">Data Schema</h1>
             <Badge variant="outline" className="text-xs">
               {filteredTables.length}
             </Badge>
@@ -2701,7 +2701,7 @@ function DataSchemaViewContent() {
 
         </div>
         
-        <div className="flex items-center gap-2 sm:gap-3 mb-2">
+        <div className="flex items-center gap-2 sm:gap-3 mb-1">
           {selectedFeature !== 'all' && (
             <Badge variant="default" className="bg-emerald-500 text-xs hidden sm:flex">
               <Filter className="w-3 h-3 mr-1" />
@@ -2716,7 +2716,7 @@ function DataSchemaViewContent() {
         </div>
         
         {/* Main Controls - Better responsive layout */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           {/* Primary Controls Row */}
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
             {/* Search - Full width on mobile */}
@@ -3011,7 +3011,7 @@ function DataSchemaViewContent() {
         
         {/* Focus Controls - Separate row on mobile when active */}
         {focusMode && (
-          <div className="space-y-2 mt-2 pt-2 border-t border-gray-200">
+          <div className="space-y-2 mt-1 pt-1 border-t border-gray-200">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Info className="w-4 h-4" />
               <span>Click any table to focus on its relationships</span>
