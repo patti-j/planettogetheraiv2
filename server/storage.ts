@@ -15982,10 +15982,12 @@ export class DatabaseStorage {
         }
       });
 
-      // Add relationships based on foreign keys
+      // Add relationships based on foreign keys (both outgoing and incoming)
       foreignKeys.forEach((fk: any) => {
         const fromTable = schemaMap.get(fk.from_table);
+        const toTable = schemaMap.get(fk.to_table);
         
+        // Add outgoing relationship (from table has foreign key)
         if (fromTable) {
           fromTable.relationships.push({
             type: 'many-to-one',
@@ -15994,6 +15996,18 @@ export class DatabaseStorage {
             toTable: fk.to_table,
             toColumn: fk.to_column,
             description: `${fk.from_table}.${fk.from_column} references ${fk.to_table}.${fk.to_column}`
+          });
+        }
+        
+        // Add incoming relationship (to table is referenced by foreign key)
+        if (toTable) {
+          toTable.relationships.push({
+            type: 'one-to-many',
+            fromTable: fk.to_table,
+            fromColumn: fk.to_column,
+            toTable: fk.from_table,
+            toColumn: fk.from_column,
+            description: `${fk.to_table}.${fk.to_column} is referenced by ${fk.from_table}.${fk.from_column}`
           });
         }
       });
