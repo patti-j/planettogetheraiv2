@@ -2473,6 +2473,22 @@ function DataSchemaViewContent() {
     setEdges(edges);
   }, [nodes, edges, setNodes, setEdges, shouldPreservePositions]);
 
+  // Force ReactFlow to re-render nodes when card size changes
+  useEffect(() => {
+    setNodes(currentNodes => 
+      currentNodes.map(node => ({
+        ...node,
+        data: { 
+          ...node.data,
+          minWidth: cardSize.width,
+          minHeight: cardSize.height,
+          // Add a key that changes to force re-render
+          sizeKey: `${cardSize.width}-${cardSize.height}`
+        }
+      }))
+    );
+  }, [cardSize, setNodes]);
+
   // Auto-fit view when filters change to show all filtered tables
   useEffect(() => {
     if (filteredTables.length > 0 && nodes.length > 0) {
