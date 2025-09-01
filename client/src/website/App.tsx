@@ -19,6 +19,16 @@ import TechnologyStack from "@/pages/technology-stack";
 import PresentationPage from "@/pages/presentation";
 import ClearStorage from "@/pages/clear-storage";
 
+// Feature Detail Pages
+import AiFeaturesPage from "@/pages/ai-features";
+import ProductionSchedulingPage from "@/pages/production-scheduling";
+import SupplyChainMarketingPage from "@/pages/supply-chain-marketing";
+import TheoryOfConstraintsPage from "@/pages/theory-of-constraints";
+import EnterpriseScalabilityPage from "@/pages/enterprise-scalability";
+import SecurityFeaturesPage from "@/pages/security-features";
+import IntegrationApiPage from "@/pages/integration-api";
+import AnalyticsReportingPage from "@/pages/analytics-reporting";
+
 // Layout wrapper for website pages
 const WebsiteLayout = ({ children }: { children: React.ReactNode }) => (
   <div className="min-h-screen bg-gray-50 flex flex-col pt-safe">
@@ -85,6 +95,55 @@ export default function WebsiteApp() {
           <Route path="/technology-stack">
             <WebsiteLayout>
               <TechnologyStack />
+            </WebsiteLayout>
+          </Route>
+          
+          {/* Feature Detail Pages */}
+          <Route path="/ai-features">
+            <WebsiteLayout>
+              <AiFeaturesPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/production-scheduling">
+            <WebsiteLayout>
+              <ProductionSchedulingPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/supply-chain">
+            <WebsiteLayout>
+              <SupplyChainMarketingPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/theory-of-constraints">
+            <WebsiteLayout>
+              <TheoryOfConstraintsPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/enterprise-scalability">
+            <WebsiteLayout>
+              <EnterpriseScalabilityPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/security-features">
+            <WebsiteLayout>
+              <SecurityFeaturesPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/integration-api">
+            <WebsiteLayout>
+              <IntegrationApiPage />
+            </WebsiteLayout>
+          </Route>
+          
+          <Route path="/analytics-reporting">
+            <WebsiteLayout>
+              <AnalyticsReportingPage />
             </WebsiteLayout>
           </Route>
           
