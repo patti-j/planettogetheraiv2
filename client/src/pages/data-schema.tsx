@@ -310,16 +310,6 @@ const TableNode = ({ data }: { data: any }) => {
           </Button>
         </div>
         
-        {/* Category badge positioned below title */}
-        <div className="flex items-center gap-2 mt-1">
-          <Badge variant="outline" className="text-xs">
-            {table.category}
-          </Badge>
-        </div>
-        
-        {table.description && (
-          <p className="text-xs text-gray-600 mt-1">{table.description}</p>
-        )}
       </CardHeader>
       {showColumns && (
         <CardContent className="pt-0">
