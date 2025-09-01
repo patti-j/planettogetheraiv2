@@ -905,15 +905,6 @@ function DataSchemaViewContent() {
     }
   });
   
-  const [viewMode, setViewMode] = useState<'full' | 'compressed'>(() => {
-    try {
-      const saved = localStorage.getItem('dataSchemaViewMode');
-      return (saved as 'full' | 'compressed') || 'full';
-    } catch {
-      return 'full';
-    }
-  });
-  
   const [selectedTable, setSelectedTable] = useState<string | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [clickedTable, setClickedTable] = useState<string | null>(null);
@@ -1080,14 +1071,6 @@ function DataSchemaViewContent() {
       console.warn('Failed to save simplify lines setting to localStorage:', error);
     }
   }, [simplifyLines]);
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('dataSchemaViewMode', viewMode);
-    } catch (error) {
-      console.warn('Failed to save view mode setting to localStorage:', error);
-    }
-  }, [viewMode]);
 
   useEffect(() => {
     try {
