@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { GanttDataService } from '@/services/scheduler/GanttDataService';
 import { GanttConfigService } from '@/services/scheduler/GanttConfigService';
 import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesService';
+import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
 
 const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
@@ -43,6 +44,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   const dataService = GanttDataService.getInstance();
   const configService = GanttConfigService.getInstance();
   const favoritesService = GanttFavoritesService.getInstance();
+  const contextService = SchedulerContextService.getInstance();
 
   // Load initial data
   useEffect(() => {
@@ -152,6 +154,9 @@ const ProductionSchedulerProV2: React.FC = () => {
         if (instance && typeof instance.zoomToFit === 'function') {
           console.log('✅ Scheduler instance captured successfully');
           setSchedulerInstance(instance);
+          
+          // Register with context service for Max AI integration
+          contextService.setSchedulerInstance(instance);
           
           // Apply initial zoom to fit
           setTimeout(() => {

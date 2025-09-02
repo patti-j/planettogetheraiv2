@@ -16,6 +16,7 @@ import { useTour } from "@/contexts/TourContext";
 import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
 import { useSplitScreen } from "@/contexts/SplitScreenContext";
 import { AIReasoning } from "@/components/max-ai-reasoning";
+import { SchedulerContextService } from "@/services/scheduler/SchedulerContextService";
 import { 
   Bot, 
   Send, 
@@ -39,6 +40,10 @@ import {
   Share2,
   Copy,
   Sparkles,
+  Calendar,
+  BarChart3,
+  Clock,
+  AlertCircle,
 } from "lucide-react";
 // import WidgetStudioButton from "./widget-studio-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -299,10 +304,30 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     };
   }, []);
 
-  // Generate page insights
+  // Services
+  const schedulerContextService = SchedulerContextService.getInstance();
+  const [schedulerContext, setSchedulerContext] = useState<any>(null);
+  
+  // Generate page insights and capture scheduler context
   useEffect(() => {
     const currentPage = window.location.pathname;
     generatePageInsights(currentPage);
+    
+    // Capture scheduler context if on scheduler page
+    if (currentPage === '/production-scheduler-pro') {
+      const context = schedulerContextService.getContext();
+      setSchedulerContext(context);
+      
+      // Update context periodically while on scheduler page
+      const interval = setInterval(() => {
+        const newContext = schedulerContextService.getContext();
+        setSchedulerContext(newContext);
+      }, 5000); // Update every 5 seconds
+      
+      return () => clearInterval(interval);
+    } else {
+      setSchedulerContext(null);
+    }
   }, [window.location.pathname]);
 
   const generatePageInsights = async (page: string) => {
@@ -327,6 +352,50 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           confidence: 0.9,
           actionable: true
         });
+        break;
+      case '/production-scheduler-pro':
+        // Generate scheduler-specific insights
+        if (schedulerContext) {
+          if (schedulerContext.events.conflicts.length > 0) {
+            insights.push({
+              type: 'warning',
+              title: 'Scheduling Conflicts',
+              message: `${schedulerContext.events.conflicts.length} scheduling conflicts detected. Would you like me to help resolve them?`,
+              confidence: 1.0,
+              actionable: true
+            });
+          }
+          
+          if (schedulerContext.metrics.resourceUtilization > 90) {
+            insights.push({
+              type: 'optimization',
+              title: 'Resource Overload',
+              message: `Resources are at ${Math.round(schedulerContext.metrics.resourceUtilization)}% utilization. Consider resource leveling.`,
+              confidence: 0.95,
+              actionable: true
+            });
+          }
+          
+          if (schedulerContext.events.overdue > 0) {
+            insights.push({
+              type: 'warning',
+              title: 'Overdue Operations',
+              message: `${schedulerContext.events.overdue} operations are overdue. Need help prioritizing?`,
+              confidence: 1.0,
+              actionable: true
+            });
+          }
+          
+          if (schedulerContext.dependencies.violated > 0) {
+            insights.push({
+              type: 'warning',
+              title: 'Dependency Issues',
+              message: `${schedulerContext.dependencies.violated} dependency violations found. Should I analyze the critical path?`,
+              confidence: 0.9,
+              actionable: true
+            });
+          }
+        }
         break;
     }
     
@@ -360,7 +429,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     // Get theme preference
     const isDarkMode = document.documentElement.classList.contains('dark');
     
-    return {
+    // Include scheduler context if available
+    const baseContext = {
       viewState: {
         activeFilters,
         selectedText,
@@ -379,6 +449,28 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         lastActivity: new Date()
       }
     };
+    
+    // Add scheduler context if on scheduler page
+    if (window.location.pathname === '/production-scheduler-pro' && schedulerContext) {
+      return {
+        ...baseContext,
+        schedulerContext: {
+          currentView: schedulerContext.currentView,
+          dateRange: schedulerContext.dateRange,
+          resourceUtilization: schedulerContext.metrics.resourceUtilization,
+          scheduleCompliance: schedulerContext.metrics.scheduleCompliance,
+          totalEvents: schedulerContext.events.total,
+          pendingEvents: schedulerContext.events.pending,
+          conflicts: schedulerContext.events.conflicts,
+          selectedEvent: schedulerContext.selectedEvent,
+          selectedResource: schedulerContext.selectedResource,
+          criticalResources: schedulerContext.resources.criticalResources,
+          suggestions: schedulerContextService.getSuggestions()
+        }
+      };
+    }
+    
+    return baseContext;
   };
 
   const sendMessageMutation = useMutation({
@@ -1234,7 +1326,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       </div>
 
       {/* Consolidated Settings Panel - Only when needed */}
-      {(showVoiceSettings || currentInsights.length > 0) && (
+      {(showVoiceSettings || currentInsights.length > 0 || schedulerContext) && (
         <div className="p-3 bg-gray-50 border-b">
           {/* Voice Settings - Compact */}
           {showVoiceSettings && (
@@ -1260,6 +1352,81 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 </Button>
                 <AIThemeSelector />
               </div>
+            </div>
+          )}
+
+          {/* Scheduler Context Display - When on Scheduler Pro page */}
+          {schedulerContext && window.location.pathname === '/production-scheduler-pro' && (
+            <div className="space-y-2 mb-3">
+              <div className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+                <Calendar className="h-3 w-3" />
+                Scheduler Status
+              </div>
+              
+              {/* Quick Metrics */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-white p-2 rounded border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Operations</span>
+                    <span className="font-medium">{schedulerContext.events.total}</span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {schedulerContext.events.inProgress} in progress, {schedulerContext.events.pending} pending
+                  </div>
+                </div>
+                
+                <div className="bg-white p-2 rounded border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600">Resources</span>
+                    <span className="font-medium">{Math.round(schedulerContext.metrics.resourceUtilization)}%</span>
+                  </div>
+                  <div className="text-[10px] text-gray-500 mt-1">
+                    {schedulerContext.resources.total} total resources
+                  </div>
+                </div>
+              </div>
+
+              {/* Critical Issues */}
+              {(schedulerContext.events.conflicts.length > 0 || 
+                schedulerContext.events.overdue > 0 || 
+                schedulerContext.dependencies.violated > 0) && (
+                <div className="bg-yellow-50 border border-yellow-200 rounded p-2 text-xs">
+                  <div className="flex items-center gap-1 mb-1">
+                    <AlertCircle className="h-3 w-3 text-yellow-600" />
+                    <span className="font-medium text-yellow-800">Issues Detected</span>
+                  </div>
+                  <div className="space-y-1 text-[10px] text-yellow-700">
+                    {schedulerContext.events.conflicts.length > 0 && (
+                      <div>• {schedulerContext.events.conflicts.length} scheduling conflicts</div>
+                    )}
+                    {schedulerContext.events.overdue > 0 && (
+                      <div>• {schedulerContext.events.overdue} overdue operations</div>
+                    )}
+                    {schedulerContext.dependencies.violated > 0 && (
+                      <div>• {schedulerContext.dependencies.violated} dependency violations</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Quick Actions */}
+              {schedulerContext.suggestions && schedulerContext.suggestions.length > 0 && (
+                <div className="space-y-1">
+                  <div className="text-[10px] font-medium text-gray-600">Suggested Actions:</div>
+                  {schedulerContext.suggestions.slice(0, 3).map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => {
+                        setInputMessage(suggestion);
+                        handleSendMessage();
+                      }}
+                      className="w-full text-left text-[10px] p-1.5 bg-white hover:bg-blue-50 border rounded transition-colors"
+                    >
+                      • {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
