@@ -3,7 +3,12 @@
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system specializing in production scheduling with a visual Gantt chart interface. Its vision is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system provides complete supply chain visibility from procurement through production to sales, with traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing. It aims to provide an enterprise-grade production deployment with unlimited horizontal scaling.
 
-**Latest Update (August 29, 2025)**: Successfully migrated from PT Import tables to PT Publish tables. Removed all 61 PT Import tables and imported 60+ PT Publish tables converted from MSSQL to PostgreSQL. Updated all non-PT manufacturing table references to use PT equivalents (plants→ptPlants, resources→ptResources, capabilities→ptCapabilities, customers→ptCustomers, items→ptItems, inventory→ptInventories). Added comprehensive table relations using numeric PT IDs for efficient database joins.
+**Latest Update (September 2, 2025)**: Implemented code quality improvements:
+- Moved backup files (.bak, .backup, .old) to ../backups directory outside source tree for cleaner codebase
+- Enabled TypeScript strict mode for better type safety and early error detection
+- Note: CI type checking script (npm run check) should use "tsc --noEmit" for proper type validation
+
+**Previous Update (August 29, 2025)**: Successfully migrated from PT Import tables to PT Publish tables. Removed all 61 PT Import tables and imported 60+ PT Publish tables converted from MSSQL to PostgreSQL. Updated all non-PT manufacturing table references to use PT equivalents (plants→ptPlants, resources→ptResources, capabilities→ptCapabilities, customers→ptCustomers, items→ptItems, inventory→ptInventories). Added comprehensive table relations using numeric PT IDs for efficient database joins.
 
 ## User Preferences
 Preferred communication style: Simple, everyday language.
@@ -31,7 +36,7 @@ Note on concurrent work:
 - **Quality Assurance**: Always test fixes and check for runtime errors before completing tasks. Restart workflows to verify server-side changes and monitor console logs for errors.
 
 ### Frontend Architecture
-- **Framework**: React 18 with TypeScript.
+- **Framework**: React 18 with TypeScript (strict mode enabled).
 - **UI Framework**: Shadcn/UI components built on Radix UI primitives.
 - **Styling**: Tailwind CSS with custom CSS variables.
 - **State Management**: TanStack Query (React Query) for server state.
