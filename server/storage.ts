@@ -1,7 +1,7 @@
 import { 
   ptPlants, /* capabilities, resources, */ plantResources, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
-  recipes, PTvendors, ptCustomers, salesOrders, formulations, formulationDetails, materialRequirements,
+  recipes, PTvendors, customers, salesOrders, formulations, formulationDetails, materialRequirements,
   bomProductOutputs,
   scheduleScenarios, scenarioOperations, scenarioEvaluations, scenarioDiscussions,
   systemUsers, systemHealth, systemEnvironments, systemUpgrades, systemAuditLog, systemSettings,

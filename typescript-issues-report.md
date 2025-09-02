@@ -1,23 +1,33 @@
 # TypeScript Issues Analysis Report
 Generated: September 2, 2025
-Last Updated: September 2, 2025 - 7:45 PM
+Last Updated: September 2, 2025 - 9:50 PM
 
 ## Current Task List Status
-| Task ID | Description | Status |
-|---------|-------------|--------|
-| 1 | Remove all references to old manufacturing tables (plants, plannedOrders, etc.) and replace with PT tables | **IN PROGRESS** |
-| 2 | Fix type mismatches in server/storage.ts - ensure PT tables use string types except for dates and measurable quantities | PENDING |
-| 3 | Remove or comment out DiscreteOperations and related old manufacturing table references | PENDING |
-| 4 | Fix duplicate function implementations in server/storage.ts (130 duplicates) | PENDING |
-| 5 | Fix type mismatches in server/routes.ts - align with PT table string types | PENDING |
-| 6 | Clean up database-explorer.tsx TypeScript issues | PENDING |
-| 7 | Update IStorage interface to remove old table methods | PENDING |
-| 8 | Test all changes and verify no runtime errors | PENDING |
+| Task ID | Description | Status | Notes |
+|---------|-------------|--------|-------|
+| 1 | Remove all references to old manufacturing tables (plants, plannedOrders, etc.) and replace with PT tables | **IN PROGRESS** | Found 244 references in storage.ts, 304 in routes.ts |
+| 2 | Fix type mismatches in server/storage.ts - ensure PT tables use string types except for dates and measurable quantities | **PENDING** | 1271 total issues in storage.ts |
+| 3 | Remove or comment out DiscreteOperations and related old manufacturing table references | **PENDING** | DiscreteOperations aliased to ptJobOperations in schema |
+| 4 | Fix duplicate function implementations in server/storage.ts (130 duplicates) | **PENDING** | Multiple duplicate functions found |
+| 5 | Fix type mismatches in server/routes.ts - align with PT table string types | **PENDING** | 1052 issues in routes.ts |
+| 6 | Clean up database-explorer.tsx TypeScript issues | **PENDING** | 16 issues |
+| 7 | Update IStorage interface to remove old table methods | **PENDING** | |
+| 8 | Test all changes and verify no runtime errors | **PENDING** | |
 
 ## Executive Summary
-The codebase has **7,180 TypeScript issues** across three critical files that need addressing. While these are mostly non-breaking warnings due to TypeScript strict mode, they impact code maintainability, type safety, and developer experience.
+The codebase has **2,339 TypeScript issues** across three critical files (reduced from 7,180). While these are mostly non-breaking warnings due to TypeScript strict mode, they impact code maintainability, type safety, and developer experience.
 
 **Key Issue Identified**: Many references to old manufacturing tables (non-PT tables) still exist. All manufacturing tables should use PT-prefixed tables as per the migration completed on August 29, 2025.
+
+### Current State (as of 9:50 PM):
+- **Total LSP Diagnostics**: 2,339 issues
+  - server/storage.ts: 1,271 issues
+  - server/routes.ts: 1,052 issues  
+  - database-explorer.tsx: 16 issues
+- **Old Table References Found**:
+  - capabilities, resources, plants, plannedOrders, discreteOperations, manufacturingOrders
+  - These are aliased to PT tables in schema.ts but still directly referenced in many files
+  - ai-agent.ts has 93 references, routes.ts has 304, storage.ts has 244
 
 ## File-by-File Analysis
 
