@@ -166,7 +166,6 @@ export default function DatabaseExplorer() {
   // Handle table selection
   const handleTableSelect = (tableName: string) => {
     setSelectedTable(tableName);
-    setViewMode('schema');
     setCurrentPage(1);
     setFilters({});
     setSortBy('');
