@@ -426,7 +426,7 @@ export default function ProductDevelopment() {
     }
   ];
 
-  const testSuites: TestSuite[] = [
+  const backupTestSuites: TestSuite[] = [
     {
       id: 1,
       name: "Optimization Algorithm Tests",
@@ -509,7 +509,7 @@ export default function ProductDevelopment() {
     }
   ];
 
-  const architectureComponents = [
+  const backupArchitectureComponents = [
     {
       name: "Frontend Layer",
       technology: "React + TypeScript",
@@ -881,7 +881,7 @@ export default function ProductDevelopment() {
           </div>
 
           <div className="grid gap-4">
-            {architectureComponents.map((component, index) => (
+            {backupArchitectureComponents.map((component, index) => (
               <Card key={index}>
                 <CardHeader>
                   <div className="flex items-center justify-between">

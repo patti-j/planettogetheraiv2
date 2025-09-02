@@ -241,7 +241,7 @@ export default function Analytics() {
   const resourceUtilization = getResourceUtilization();
   const overdueJobs = getOverdueJobs();
 
-  const handleWidgetCreate = (widget: AnalyticsWidget) => {
+  const handleAnalyticsWidgetCreate = (widget: AnalyticsWidget) => {
     setCustomWidgets(prev => [...prev, widget]);
   };
 
@@ -614,7 +614,7 @@ export default function Analytics() {
           <AIAnalyticsManager
             open={aiAnalyticsOpen}
             onOpenChange={setAiAnalyticsOpen}
-            onWidgetCreate={handleWidgetCreate}
+            onWidgetCreate={handleAnalyticsWidgetCreate}
             currentWidgets={customWidgets}
             onWidgetUpdate={handleWidgetUpdate}
           />
@@ -656,7 +656,7 @@ export default function Analytics() {
       <AIAnalyticsManager
         open={aiAnalyticsOpen}
         onOpenChange={setAiAnalyticsOpen}
-        onWidgetCreate={handleWidgetCreate}
+        onWidgetCreate={handleAnalyticsWidgetCreate}
         currentWidgets={customWidgets}
         onWidgetUpdate={handleWidgetUpdate}
       />

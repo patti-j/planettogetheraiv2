@@ -110,6 +110,7 @@ import { systemMonitoringAgent } from "./monitoring-agent";
 import { agentActionService } from "./agent-action-service";
 import { registerTimeTrackingRoutes } from "./routes/time-tracking-routes";
 import aiAgentsRouter from "./routes/ai-agents-routes";
+import smsService from "./services/sms-service";
 
 // Session interface is declared in index.ts
 
@@ -30403,6 +30404,161 @@ Be careful to preserve data integrity and relationships.`;
     } catch (error) {
       console.error('Error in Max AI scheduler chat:', error);
       res.status(500).json({ error: 'Failed to process AI request' });
+    }
+  });
+
+  // SMS API Routes
+  app.post('/api/sms/send', requireAuth, async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+      }
+
+      const result = await smsService.sendSMS({ to, message });
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: 'SMS sent successfully' 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      res.status(500).json({ error: 'Failed to send SMS' });
+    }
+  });
+
+  app.post('/api/sms/send-production-alert', requireAuth, async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+      }
+
+      const result = await smsService.sendProductionAlert(to, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: 'Production alert sent successfully' 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending production alert:', error);
+      res.status(500).json({ error: 'Failed to send production alert' });
+    }
+  });
+
+  app.post('/api/sms/send-quality-alert', requireAuth, async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+      }
+
+      const result = await smsService.sendQualityAlert(to, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: 'Quality alert sent successfully' 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending quality alert:', error);
+      res.status(500).json({ error: 'Failed to send quality alert' });
+    }
+  });
+
+  app.post('/api/sms/send-inventory-alert', requireAuth, async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+      }
+
+      const result = await smsService.sendInventoryAlert(to, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: 'Inventory alert sent successfully' 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending inventory alert:', error);
+      res.status(500).json({ error: 'Failed to send inventory alert' });
+    }
+  });
+
+  app.post('/api/sms/send-maintenance-alert', requireAuth, async (req, res) => {
+    try {
+      const { to, message } = req.body;
+      
+      if (!to || !message) {
+        return res.status(400).json({ error: 'Phone number and message are required' });
+      }
+
+      const result = await smsService.sendMaintenanceAlert(to, message);
+      
+      if (result.success) {
+        res.json({ 
+          success: true, 
+          messageId: result.messageId,
+          message: 'Maintenance alert sent successfully' 
+        });
+      } else {
+        res.status(400).json({ 
+          success: false, 
+          error: result.error 
+        });
+      }
+    } catch (error) {
+      console.error('Error sending maintenance alert:', error);
+      res.status(500).json({ error: 'Failed to send maintenance alert' });
+    }
+  });
+
+  app.get('/api/sms/status', requireAuth, async (req, res) => {
+    try {
+      const isConfigured = smsService.isConfigured();
+      res.json({ 
+        configured: isConfigured,
+        service: 'Twilio SMS',
+        status: isConfigured ? 'Ready' : 'Not configured'
+      });
+    } catch (error) {
+      console.error('Error checking SMS status:', error);
+      res.status(500).json({ error: 'Failed to check SMS status' });
     }
   });
 
