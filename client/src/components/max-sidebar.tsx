@@ -73,12 +73,6 @@ interface Message {
     type: 'create' | 'update' | 'clear';
     items?: CanvasItem[];
   };
-    id: number;
-    title: string;
-    relevance_score: number;
-    sections_used: string[];
-    applied_rules?: string[];
-  }>;
 }
 
 

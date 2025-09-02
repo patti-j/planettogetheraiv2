@@ -34,7 +34,7 @@ import { useDeviceType } from '@/hooks/useDeviceType';
 import { useToast } from '@/hooks/use-toast';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
-import WidgetDesignStudio from '@/components/widget-design-studio';
+import WidgetDesignStudio from '@/components/widget-studio';
 import { EnhancedDashboardManager } from '@/components/dashboard-manager-enhanced';
 import AIDesignStudio from '@/components/ai-design-studio';
 
@@ -1122,7 +1122,6 @@ export default function DesignStudio({ open, onOpenChange }: DesignStudioProps) 
                 </div>
               </Tabs>
             </div>
-          </>
         )}
       </DialogContent>
       
