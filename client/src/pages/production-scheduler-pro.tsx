@@ -90,7 +90,6 @@ const ProductionSchedulerProV2: React.FC = () => {
         
         // Get demo data from service
         const ganttData = await dataService.getDemoData();
-        console.log('Gantt data loaded:', ganttData);
         
         // Get default configuration
         const config = configService.getDefaultConfig();
@@ -186,7 +185,7 @@ const ProductionSchedulerProV2: React.FC = () => {
     if (!schedulerConfig) return;
     
     let captureAttempts = 0;
-    const maxAttempts = 20;
+    const maxAttempts = 10; // Reduced max attempts
     
     const timer = setInterval(() => {
       captureAttempts++;
@@ -206,7 +205,6 @@ const ProductionSchedulerProV2: React.FC = () => {
         
         // Check if we have the actual Bryntum widget with zoom methods
         if (instance && typeof instance.zoomToFit === 'function') {
-          console.log('✅ Scheduler instance captured successfully');
           setSchedulerInstance(instance);
           
           // Register with context service for Max AI integration
@@ -232,25 +230,23 @@ const ProductionSchedulerProV2: React.FC = () => {
                   rightMargin: 50
                 });
                 
-                console.log('✅ Initial view set: Today\'s date with zoom to fit');
                 setIsInitialLoad(false); // Mark that initial load is complete
               } catch (error) {
-                console.error('Error setting initial view:', error);
                 // Fallback to simple zoomToFit
                 try {
                   instance.zoomToFit();
                 } catch (e) {
-                  console.error('Error with fallback zoomToFit:', e);
+                  // Silent fallback
                 }
                 setIsInitialLoad(false);
               }
-            }, 500); // Delay to ensure data is fully rendered
+            }, 1000); // Increased delay for better stability
           }
           
           clearInterval(timer);
         }
       }
-    }, 250); // Reduced frequency to avoid performance issues
+    }, 1000); // Increased interval to 1 second to reduce CPU usage
     
     return () => {
       clearInterval(timer);

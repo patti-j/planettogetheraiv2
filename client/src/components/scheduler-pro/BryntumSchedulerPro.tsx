@@ -53,7 +53,6 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const bryntumResources = useMemo(() => {
     if (!Array.isArray(effectiveResources) || !effectiveResources.length) return [];
     
-    console.log('Creating Bryntum resources from PT data:', effectiveResources.length);
     
     // Deduplicate resources by ID to ensure one row per resource
     const resourceMap = new Map();
@@ -82,8 +81,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     
     const deduplicatedResources = Array.from(resourceMap.values());
     
-    console.log('Bryntum resources created (deduplicated):', deduplicatedResources.length, 'from', effectiveResources.length, 'original');
-    console.log('Sample Bryntum resource:', deduplicatedResources[0]);
+    // console.log('Bryntum resources created (deduplicated):', deduplicatedResources.length, 'from', effectiveResources.length, 'original');
+    // console.log('Sample Bryntum resource:', deduplicatedResources[0]);
     
     return deduplicatedResources;
   }, [effectiveResources]);
@@ -92,8 +91,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const bryntumEvents = useMemo(() => {
     if (!Array.isArray(effectiveOperations) || !effectiveOperations.length) return [];
     
-    console.log('Creating Bryntum events from operations:', effectiveOperations.length);
-    console.log('Sample operation data:', effectiveOperations[0]);
+    // console.log('Creating Bryntum events from operations:', effectiveOperations.length);
+    // console.log('Sample operation data:', effectiveOperations[0]);
     
     const events = effectiveOperations.map((op: any) => {
       const startDate = new Date(op.startTime);
@@ -106,7 +105,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         return null; // Skip invalid events
       }
       
-      console.log(`Event ${op.operationName} dates:`, { 
+      // console.log(`Event ${op.operationName} dates:`, { 
         startDate: startDate instanceof Date, 
         endDate: endDate instanceof Date,
         startType: typeof startDate,
@@ -141,7 +140,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       };
     }).filter(Boolean); // Remove null entries from invalid dates
     
-    console.log('Created events:', events.length);
+    // console.log('Created events:', events.length);
     return events;
   }, [effectiveOperations]);
 
@@ -156,14 +155,14 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                                op.assignedResourceId === resource.id;
       
       if (isDefaultResource) {
-        console.log(`✅ Using default/preferred resource: ${op.operationName} -> ${resource.name}`);
+        // console.log(`✅ Using default/preferred resource: ${op.operationName} -> ${resource.name}`);
         return true; // Default resource is always valid per Jim's notes
       }
       
       // For non-default assignments, we would normally check capabilities
       // but for now, allow all assignments to show the actual PT data
       // TODO: Implement proper capability checking when PT capability APIs are available
-      console.log(`✅ Allowing PT assignment: ${op.operationName} -> ${resource.name}`);
+      // console.log(`✅ Allowing PT assignment: ${op.operationName} -> ${resource.name}`);
       return true;
     };
     
@@ -187,7 +186,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           }) : null;
         
         if (matchingResource) {
-          console.log(`✅ Creating assignment: ${op.operationName} -> ${matchingResource.name} (ID: ${resourceId})`);
+          // console.log(`✅ Creating assignment: ${op.operationName} -> ${matchingResource.name} (ID: ${resourceId})`);
           
           return {
             id: `a_${op.id || op.operationId}_${index}`,
@@ -196,19 +195,19 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             units: 100
           };
         } else {
-          console.log(`❌ No matching resource found for operation ${op.operationName} (resourceId: ${resourceId})`);
+          // console.log(`❌ No matching resource found for operation ${op.operationName} (resourceId: ${resourceId})`);
           return null;
         }
       })
       .filter(Boolean); // Remove null assignments
     
-    console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
+    // console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
     
     if (assignments.length === 0 && effectiveOperations.length > 0) {
-      console.log('DEBUG: No assignments created, checking data:');
-      console.log('Sample operation:', effectiveOperations[0]);
-      console.log('Sample resource:', effectiveResources[0]);
-      console.log('Operations with resource IDs:', effectiveOperations.filter(op => 
+      // console.log('DEBUG: No assignments created, checking data:');
+      // console.log('Sample operation:', effectiveOperations[0]);
+      // console.log('Sample resource:', effectiveResources[0]);
+      // console.log('Operations with resource IDs:', effectiveOperations.filter(op => 
         op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId || op.defaultResourceId
       ).length);
     }
@@ -259,16 +258,16 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
   const projectModel = useMemo(() => {
     // If project prop is already a ProjectModel instance, use it directly
     if (project instanceof ProjectModel) {
-      console.log('Using provided ProjectModel instance');
+      // console.log('Using provided ProjectModel instance');
       return project;
     }
     
     // If project prop has data arrays, create ProjectModel from it
     if (hasProjectProp && project) {
-      console.log('Creating ProjectModel from provided data');
-      console.log('- Resources:', project.resources?.length || 0);
-      console.log('- Events:', project.events?.length || 0);
-      console.log('- Assignments:', project.assignments?.length || 0);
+      // console.log('Creating ProjectModel from provided data');
+      // console.log('- Resources:', project.resources?.length || 0);
+      // console.log('- Events:', project.events?.length || 0);
+      // console.log('- Assignments:', project.assignments?.length || 0);
       
       return new ProjectModel({
         resources: project.resources || [],
@@ -278,24 +277,24 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     }
     
     // Otherwise, build ProjectModel from operations/resources
-    console.log('Creating ProjectModel from operations/resources:');
-    console.log('- Resources:', bryntumResources.length);
-    console.log('- Events:', bryntumEvents.length);  
-    console.log('- Assignments:', bryntumAssignments.length);
-    console.log('- Dependencies:', bryntumDependencies.length);
+    // console.log('Creating ProjectModel from operations/resources:');
+    // console.log('- Resources:', bryntumResources.length);
+    // console.log('- Events:', bryntumEvents.length);  
+    // console.log('- Assignments:', bryntumAssignments.length);
+    // console.log('- Dependencies:', bryntumDependencies.length);
     
     // Log some sample data for debugging
     if (bryntumResources.length > 0) {
-      console.log('Sample resource:', bryntumResources[0]);
+      // console.log('Sample resource:', bryntumResources[0]);
     }
     if (bryntumEvents.length > 0) {
-      console.log('Sample event:', bryntumEvents[0]);
-      console.log('Event date types:', typeof bryntumEvents[0]?.startDate, typeof bryntumEvents[0]?.endDate);
-      console.log('Event date range:', bryntumEvents[0]?.startDate, 'to', bryntumEvents[0]?.endDate);
-      console.log('Scheduler view dates:', new Date(2025, 7, 22), 'to', new Date(2025, 7, 29));
+      // console.log('Sample event:', bryntumEvents[0]);
+      // console.log('Event date types:', typeof bryntumEvents[0]?.startDate, typeof bryntumEvents[0]?.endDate);
+      // console.log('Event date range:', bryntumEvents[0]?.startDate, 'to', bryntumEvents[0]?.endDate);
+      // console.log('Scheduler view dates:', new Date(2025, 7, 22), 'to', new Date(2025, 7, 29));
     }
     if (bryntumAssignments.length > 0) {
-      console.log('Sample assignment:', bryntumAssignments[0]);
+      // console.log('Sample assignment:', bryntumAssignments[0]);
     }
     
     // Create ProjectModel instance with proper store configuration
@@ -382,7 +381,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                 const event = dragData?.eventRecord;
                 
                 // Log validation for debugging production scheduling constraints
-                console.log('Validating production operation drag:', {
+                // console.log('Validating production operation drag:', {
                   operation: event?.name,
                   targetResource: targetResourceRecord?.name,
                   resourceType: targetResourceRecord?.type,
@@ -457,7 +456,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                   }
                 }
                 
-                console.log('Validation passed: Operation can be moved to this resource');
+                // console.log('Validation passed: Operation can be moved to this resource');
                 return { valid: true };
                 
               } catch (validationError) {
@@ -523,7 +522,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             return;
           }
           
-          console.log('Operation moved:', {
+          // console.log('Operation moved:', {
             operation: eventRecord?.name || 'Unknown',
             from: oldResource?.name,
             to: newResource?.name,
@@ -562,7 +561,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onEventDragStart={({ eventRecord }: any) => {
-          console.log('Drag started for operation:', eventRecord?.name || 'Unknown');
+          // console.log('Drag started for operation:', eventRecord?.name || 'Unknown');
           
           // Add visual feedback class
           if (schedulerRef.current) {
@@ -571,7 +570,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onEventDragAbort={({ eventRecord }: any) => {
-          console.log('Drag ended for operation:', eventRecord?.name || 'Unknown');
+          // console.log('Drag ended for operation:', eventRecord?.name || 'Unknown');
           
           // Remove visual feedback class
           if (schedulerRef.current) {
@@ -580,7 +579,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onEventResizeEnd={({ eventRecord }: any) => {
-          console.log('Operation resized:', {
+          // console.log('Operation resized:', {
             operation: eventRecord?.name || 'Unknown',
             newStart: eventRecord?.startDate,
             newEnd: eventRecord?.endDate,
@@ -601,18 +600,18 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         }}
         
         onPaint={() => {
-          console.log('💡 Production Scheduler Pro loaded with Jim\'s corrections');
+          // console.log('💡 Production Scheduler Pro loaded with Jim\'s corrections');
           if (schedulerRef.current?.widget) {
             const widget = schedulerRef.current.widget;
-            console.log('✅ Scheduler painted with ProjectModel:');
-            console.log('Store counts:', {
+            // console.log('✅ Scheduler painted with ProjectModel:');
+            // console.log('Store counts:', {
               resources: widget.resourceStore?.count || 0,
               events: widget.eventStore?.count || 0,
               assignments: widget.assignmentStore?.count || 0,
               dependencies: widget.dependencyStore?.count || 0
             });
           }
-          console.log('Assignment types:', {
+          // console.log('Assignment types:', {
             scheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'scheduled').length,
             unscheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'unscheduled').length
           });
