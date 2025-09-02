@@ -116,19 +116,16 @@ export default function DatabaseExplorer() {
   });
   const tableData = tableDataRaw as TableData;
 
-  // Fetch table constraints when viewing constraints
-  const { data: tableRelationshipsRaw = [], isLoading: relationshipsLoading } = useQuery({
+  // Fetch table relationships for both constraints and relations views
+  const { data: relationshipsRaw = [], isLoading: relationshipsLoading } = useQuery({
     queryKey: [`/api/database/tables/${selectedTable}/relationships`],
-    enabled: !!selectedTable && viewMode === 'constraints'
+    enabled: !!selectedTable && (viewMode === 'constraints' || viewMode === 'relations')
   });
-  const tableRelationships = tableRelationshipsRaw as TableRelationship[];
-
-  // Fetch schema relations when viewing relations
-  const { data: schemaRelationsRaw = [], isLoading: schemaRelationsLoading } = useQuery({
-    queryKey: [`/api/database/tables/${selectedTable}/schema-relations`],
-    enabled: !!selectedTable && viewMode === 'relations'
-  });
-  const schemaRelations = schemaRelationsRaw as any[];
+  const relationships = relationshipsRaw as TableRelationship[];
+  
+  // Filter relationships for different views
+  const tableRelationships = relationships; // All constraints
+  const schemaRelations = relationships.filter(rel => rel.constraint_type === 'FOREIGN KEY'); // Only foreign keys for relations
 
   // Export mutation
   const exportMutation = useMutation({
@@ -341,7 +338,7 @@ export default function DatabaseExplorer() {
             </CardHeader>
 
             <CardContent className="flex-1 overflow-hidden p-3">
-              <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'relations' | 'data') => setViewMode(value)}>
+              <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'schema' | 'constraints' | 'relations' | 'data')}>
                 <TabsList className="mb-3 h-8">
                   <TabsTrigger value="schema" className="flex items-center gap-2 text-xs h-7">
                     <Info className="h-3 w-3" />
@@ -457,7 +454,7 @@ export default function DatabaseExplorer() {
                   </TabsContent>
 
                   <TabsContent value="relations" className="mt-0">
-                    {schemaRelationsLoading ? (
+                    {relationshipsLoading ? (
                       <div className="text-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4" />
                         <p className="text-sm">Loading table relations...</p>
@@ -754,7 +751,7 @@ export default function DatabaseExplorer() {
               </CardHeader>
 
               <CardContent className="flex-1 overflow-hidden">
-                <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'constraints' | 'relations' | 'data') => setViewMode(value)}>
+                <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as 'list' | 'schema' | 'constraints' | 'relations' | 'data')}>
                   <TabsList className="mb-4">
                     <TabsTrigger value="schema" className="flex items-center gap-2">
                       <Info className="h-4 w-4" />
@@ -817,7 +814,7 @@ export default function DatabaseExplorer() {
                   </TabsContent>
 
                   <TabsContent value="relations">
-                    {schemaRelationsLoading ? (
+                    {relationshipsLoading ? (
                       <div className="text-center py-8">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                         <p>Loading table relationships...</p>
