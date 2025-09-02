@@ -224,67 +224,6 @@ export default function DatabaseExplorer() {
     return 'bg-gray-100 text-gray-800';
   };
 
-  // Tables List Component for reuse
-  const TablesList = () => (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Table className="h-5 w-5" />
-          Database Tables
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => refetchTables()}
-            className="ml-auto h-6 w-6"
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </CardTitle>
-        <CardDescription>
-          {tables.length} tables found
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="h-[calc(100%-120px)] overflow-y-auto">
-        <div className="space-y-2 mb-4">
-          <Input
-            key="mobile-table-search-stable"
-            placeholder="Search tables..."
-            value={tableSearchTerm}
-            onChange={handleTableSearchChange}
-            className="h-8"
-            autoComplete="off"
-            autoCorrect="off"
-            autoCapitalize="off"
-            spellCheck={false}
-          />
-        </div>
-        
-        {tablesLoading ? (
-          <div className="text-center py-4">
-            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
-            <p className="text-sm text-gray-500">Loading tables...</p>
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {filteredTables.map((table: DatabaseTable) => (
-              <button
-                key={table.name}
-                onClick={() => handleTableSelect(table.name)}
-                className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
-                  selectedTable === table.name
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
-                    : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                }`}
-              >
-                <Table className="h-4 w-4" />
-                <span className="text-sm font-medium truncate">{table.name}</span>
-              </button>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="container mx-auto p-3 md:p-6">
@@ -648,7 +587,52 @@ export default function DatabaseExplorer() {
         <ResizablePanelGroup direction="horizontal" className="h-[calc(100vh-200px)] w-full">
           {/* Tables List Sidebar */}
           <ResizablePanel defaultSize={25} minSize={20} maxSize={40}>
-            <TablesList />
+            <Card className="h-full">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">Database Tables</CardTitle>
+                <CardDescription className="text-sm">
+                  {tables.length} tables available
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-4 h-[calc(100%-120px)] flex flex-col">
+                <div className="mb-3">
+                  <Input
+                    placeholder="Search tables..."
+                    value={tableSearchTerm}
+                    onChange={handleTableSearchChange}
+                    className="h-9"
+                    autoComplete="off"
+                    autoCorrect="off"
+                    autoCapitalize="off"
+                    spellCheck={false}
+                  />
+                </div>
+                
+                <div className="flex-1 overflow-y-auto space-y-1">
+                  {tablesLoading ? (
+                    <div className="text-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4" />
+                      <p className="text-sm text-gray-500">Loading tables...</p>
+                    </div>
+                  ) : (
+                    filteredTables.map((table: DatabaseTable) => (
+                      <button
+                        key={table.name}
+                        onClick={() => handleTableSelect(table.name)}
+                        className={`w-full text-left px-3 py-2 rounded-lg transition-colors flex items-center gap-2 ${
+                          selectedTable === table.name
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                        }`}
+                      >
+                        <Table className="h-4 w-4 flex-shrink-0" />
+                        <span className="font-medium truncate">{table.name}</span>
+                      </button>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           </ResizablePanel>
         
         <ResizableHandle withHandle />
