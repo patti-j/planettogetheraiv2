@@ -476,7 +476,7 @@ export default function DatabaseExplorer() {
                               </TableRow>
                             </TableHeader>
                             <TableBody>
-                              {schemaRelations.map((rel: any, index) => (
+                              {schemaRelations.map((rel: TableRelationship, index) => (
                                 <TableRow key={`${rel.tableName}-${index}`}>
                                   <TableCell className="font-medium text-xs break-words max-w-32">{rel.tableName}</TableCell>
                                   <TableCell className="text-xs">
@@ -566,9 +566,9 @@ export default function DatabaseExplorer() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {tableData.data.map((row: any, index: number) => (
+                                {tableData.data.map((row: Record<string, unknown>, index: number) => (
                                   <TableRow key={index}>
-                                    {Object.values(row).map((value: any, cellIndex: number) => (
+                                    {Object.values(row).map((value: unknown, cellIndex: number) => (
                                       <TableCell key={cellIndex} className="text-xs">
                                         <div className="max-w-32 truncate">
                                           {value !== null && value !== undefined ? String(value) : '-'}
@@ -843,7 +843,7 @@ export default function DatabaseExplorer() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {schemaRelations.map((rel: any, index) => (
+                                {schemaRelations.map((rel: TableRelationship, index) => (
                                   <TableRow key={`${rel.constraint_name || rel.name}-${index}`}>
                                     <TableCell className="font-medium break-words max-w-48">{rel.constraint_name || rel.name}</TableCell>
                                     <TableCell>
@@ -947,7 +947,7 @@ export default function DatabaseExplorer() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {tableData.data.map((row: any, index: number) => (
+                                {tableData.data.map((row: Record<string, unknown>, index: number) => (
                                   <TableRow key={index}>
                                     {Object.keys(row).map((column) => (
                                       <TableCell key={column} className="max-w-48 truncate">
