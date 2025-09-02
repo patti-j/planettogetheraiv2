@@ -2003,62 +2003,6 @@ export interface IStorage {
   getDatabaseSchema(): Promise<any[]>;
 
   // Smart KPI Management System
-  getSmartKpiMeetings(organizerId?: number, meetingType?: string): Promise<SmartKpiMeeting[]>;
-  getSmartKpiMeeting(id: number): Promise<SmartKpiMeeting | undefined>;
-  createSmartKpiMeeting(meeting: InsertSmartKpiMeeting): Promise<SmartKpiMeeting>;
-  updateSmartKpiMeeting(id: number, meeting: Partial<InsertSmartKpiMeeting>): Promise<SmartKpiMeeting | undefined>;
-  deleteSmartKpiMeeting(id: number): Promise<boolean>;
-
-  getSmartKpiDefinitions(category?: string, businessStrategy?: string, isActive?: boolean): Promise<SmartKpiDefinition[]>;
-  getSmartKpiDefinition(id: number): Promise<SmartKpiDefinition | undefined>;
-  createSmartKpiDefinition(definition: InsertSmartKpiDefinition): Promise<SmartKpiDefinition>;
-  updateSmartKpiDefinition(id: number, definition: Partial<InsertSmartKpiDefinition>): Promise<SmartKpiDefinition | undefined>;
-  deleteSmartKpiDefinition(id: number): Promise<boolean>;
-
-  getSmartKpiTargets(kpiDefinitionId?: number, targetPeriod?: string, status?: string): Promise<SmartKpiTarget[]>;
-  getSmartKpiTarget(id: number): Promise<SmartKpiTarget | undefined>;
-  createSmartKpiTarget(target: InsertSmartKpiTarget): Promise<SmartKpiTarget>;
-  updateSmartKpiTarget(id: number, target: Partial<InsertSmartKpiTarget>): Promise<SmartKpiTarget | undefined>;
-  deleteSmartKpiTarget(id: number): Promise<boolean>;
-
-  getSmartKpiActuals(kpiDefinitionId?: number, startDate?: Date, endDate?: Date): Promise<SmartKpiActual[]>;
-  getSmartKpiActual(id: number): Promise<SmartKpiActual | undefined>;
-  createSmartKpiActual(actual: InsertSmartKpiActual): Promise<SmartKpiActual>;
-  updateSmartKpiActual(id: number, actual: Partial<InsertSmartKpiActual>): Promise<SmartKpiActual | undefined>;
-  deleteSmartKpiActual(id: number): Promise<boolean>;
-  validateSmartKpiActual(id: number, validatedBy: number): Promise<SmartKpiActual | undefined>;
-
-  getSmartKpiImprovements(kpiDefinitionId?: number, status?: string, priority?: string): Promise<SmartKpiImprovement[]>;
-  getSmartKpiImprovement(id: number): Promise<SmartKpiImprovement | undefined>;
-  createSmartKpiImprovement(improvement: InsertSmartKpiImprovement): Promise<SmartKpiImprovement>;
-  updateSmartKpiImprovement(id: number, improvement: Partial<InsertSmartKpiImprovement>): Promise<SmartKpiImprovement | undefined>;
-  deleteSmartKpiImprovement(id: number): Promise<boolean>;
-
-  getSmartKpiAlerts(kpiDefinitionId?: number, severity?: string, status?: string): Promise<SmartKpiAlert[]>;
-  getSmartKpiAlert(id: number): Promise<SmartKpiAlert | undefined>;
-  createSmartKpiAlert(alert: InsertSmartKpiAlert): Promise<SmartKpiAlert>;
-  updateSmartKpiAlert(id: number, alert: Partial<InsertSmartKpiAlert>): Promise<SmartKpiAlert | undefined>;
-  acknowledgeSmartKpiAlert(id: number, acknowledgedBy: number): Promise<SmartKpiAlert | undefined>;
-  resolveSmartKpiAlert(id: number, resolution: string, resolvedBy: number): Promise<SmartKpiAlert | undefined>;
-
-  getKpiPerformanceAnalysis(kpiDefinitionId: number, timeRange: { start: Date; end: Date }): Promise<{
-    currentValue: number;
-    targetValue: number;
-    performanceGap: number;
-    trend: 'improving' | 'declining' | 'stable';
-    projectedTarget: boolean;
-    recommendations: string[];
-  }>;
-  getKpiDashboardData(userId: number): Promise<{
-    activeKpis: number;
-    criticalAlerts: number;
-    improvementsInProgress: number;
-    targetAchievement: number;
-    kpisByCategory: Array<{ category: string; count: number; avgPerformance: number }>;
-    recentMeetings: SmartKpiMeeting[];
-    urgentActions: Array<{ type: string; description: string; dueDate: Date }>;
-  }>;
-
   // Collaborative Demand Management
   // Demand Change Requests
   getDemandChangeRequests(status?: string, requestType?: string): Promise<DemandChangeRequest[]>;
