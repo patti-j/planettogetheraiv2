@@ -123,6 +123,9 @@ import {
   playbooks, playbookCollaborators, playbookHistory, playbookUsage,
   type Playbook, type PlaybookCollaborator, type PlaybookUsage,
   type InsertPlaybook, type InsertPlaybookCollaborator, type InsertPlaybookUsage,
+  
+  // Max Chat Messages
+  maxChatMessages, type MaxChatMessage, type InsertMaxChatMessage,
   type PtJob, type PtResource, type PtJobOperation, type PtManufacturingOrder, type PtCapability, type PtMetric,
   // Import PT Insert types
   type InsertPtPlant, type InsertPtResource, type InsertPtCapability, type InsertPtManufacturingOrder,
@@ -652,6 +655,11 @@ export interface IStorage {
   getGoalKpis(goalId?: number): Promise<GoalKpi[]>;
   getGoalKpi(id: number): Promise<GoalKpi | undefined>;
   createGoalKpi(kpi: InsertGoalKpi): Promise<GoalKpi>;
+  
+  // Max Chat Messages
+  getMaxChatMessages(userId: number): Promise<MaxChatMessage[]>;
+  createMaxChatMessage(message: InsertMaxChatMessage): Promise<MaxChatMessage>;
+  deleteMaxChatMessages(userId: number): Promise<boolean>;
   updateGoalKpi(id: number, kpi: Partial<InsertGoalKpi>): Promise<GoalKpi | undefined>;
   deleteGoalKpi(id: number): Promise<boolean>;
 
@@ -18062,6 +18070,30 @@ export class DatabaseStorage {
 
   async getPlantsByResourceId(resourceId: number): Promise<any[]> {
     return [];
+  }
+
+  // Max Chat Messages implementation
+  async getMaxChatMessages(userId: number): Promise<MaxChatMessage[]> {
+    return await db
+      .select()
+      .from(maxChatMessages)
+      .where(eq(maxChatMessages.userId, userId))
+      .orderBy(maxChatMessages.createdAt);
+  }
+
+  async createMaxChatMessage(message: InsertMaxChatMessage): Promise<MaxChatMessage> {
+    const [newMessage] = await db
+      .insert(maxChatMessages)
+      .values(message)
+      .returning();
+    return newMessage;
+  }
+
+  async deleteMaxChatMessages(userId: number): Promise<boolean> {
+    const result = await db
+      .delete(maxChatMessages)
+      .where(eq(maxChatMessages.userId, userId));
+    return (result.rowCount || 0) > 0;
   }
 }
 

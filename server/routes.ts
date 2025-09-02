@@ -118,7 +118,7 @@ import smsService from "./services/sms-service";
 
 // Authentication middleware
 function requireAuth(req: any, res: any, next: any) {
-  let userId = req.session?.userId;
+  let userId: string | number | undefined = req.session?.userId;
   
   // Check for token in Authorization header if session fails
   if (!userId && req.headers.authorization) {
@@ -135,7 +135,10 @@ function requireAuth(req: any, res: any, next: any) {
     else if (token.startsWith('user_')) {
       const tokenParts = token.split('_');
       if (tokenParts.length >= 2) {
-        userId = parseInt(tokenParts[1]);
+        const parsedId = parseInt(tokenParts[1]);
+        if (!isNaN(parsedId)) {
+          userId = parsedId;
+        }
       }
     }
   }
@@ -28838,17 +28841,7 @@ Be careful to preserve data integrity and relationships.`;
       return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    const messages = await db.select({
-      id: schema.maxChatMessages.id,
-      role: schema.maxChatMessages.role,
-      content: schema.maxChatMessages.content,
-      source: schema.maxChatMessages.source,
-      createdAt: schema.maxChatMessages.createdAt
-    })
-    .from(schema.maxChatMessages)
-    .where(eq(schema.maxChatMessages.userId, userId))
-    .orderBy(schema.maxChatMessages.createdAt);
-
+    const messages = await storage.getMaxChatMessages(userId);
     res.json(messages);
   }));
 
@@ -28858,10 +28851,7 @@ Be careful to preserve data integrity and relationships.`;
       return res.status(400).json({ error: "Invalid message data", details: validation.error.errors });
     }
 
-    const [message] = await db.insert(schema.maxChatMessages)
-      .values(validation.data)
-      .returning();
-
+    const message = await storage.createMaxChatMessage(validation.data);
     res.status(201).json(message);
   }));
 
@@ -28872,9 +28862,7 @@ Be careful to preserve data integrity and relationships.`;
       return res.status(400).json({ error: "Invalid user ID" });
     }
 
-    await db.delete(schema.maxChatMessages)
-      .where(eq(schema.maxChatMessages.userId, userId));
-
+    await storage.deleteMaxChatMessages(userId);
     res.status(204).send();
   }));
 
