@@ -42,8 +42,11 @@ export async function apiRequest(
     await throwIfResNotOk(res);
     return res;
   } catch (error) {
-    console.error('Fetch error in apiRequest:', error);
+    console.error('Fetch error in apiRequest:', error instanceof Error ? error.message : error);
     console.error('Method:', method, 'URL:', url);
+    if (error instanceof Error && error.stack) {
+      console.error('Stack:', error.stack);
+    }
     throw error;
   }
 }

@@ -48,7 +48,7 @@ const loadChatHistory = async () => {
     // Notify all subscribers
     subscribers.forEach(callback => callback(globalChatMessages));
   } catch (error) {
-    console.error('Failed to load chat history:', error);
+    console.error('Failed to load chat history:', error instanceof Error ? error.message : error);
     // Fallback to default welcome message
     globalChatMessages = [
       {
@@ -96,7 +96,7 @@ const getCurrentUser = async () => {
     currentUserId = user.id;
     await loadChatHistory();
   } catch (error) {
-    console.error('Failed to get current user:', error);
+    console.error('Failed to get current user:', error instanceof Error ? error.message : error);
     // Set a fallback welcome message even if auth fails
     globalChatMessages = [
       {
@@ -166,7 +166,7 @@ export const useChatSync = () => {
 
       globalChatMessages = [...globalChatMessages, newMessage];
     } catch (error) {
-      console.error('Failed to save message to database:', error);
+      console.error('Failed to save message to database:', error instanceof Error ? error.message : error);
       // Fallback to local state
       const fallbackMessage: ChatMessage = {
         ...message,
@@ -199,7 +199,7 @@ export const useChatSync = () => {
       globalChatMessages = [];
       messagesLoaded = false; // Allow reloading
     } catch (error) {
-      console.error('Failed to clear chat history:', error);
+      console.error('Failed to clear chat history:', error instanceof Error ? error.message : error);
       // Still clear local state
       globalChatMessages = [];
     }
