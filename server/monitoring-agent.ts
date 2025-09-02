@@ -153,12 +153,12 @@ export class SystemMonitoringAgent {
       // Get total plants count from actual database table
       const activePlantsResult = await db.execute(sql.raw('select count(*) from ptplants'));
       
-      const activePlants = activePlantsResult[0]?.count || 0;
+      const activePlants = (activePlantsResult as any)[0]?.count || 0;
 
       // Get total operations count using raw query to match actual table name
       const totalOperationsResult = await db.execute(sql.raw('select count(*) from ptjoboperations'));
       
-      const totalOperations = totalOperationsResult[0]?.count || 0;
+      const totalOperations = (totalOperationsResult as any)[0]?.count || 0;
 
       // Get critical alerts count (last 24 hours)
       const criticalAlertsResult = await db
@@ -330,7 +330,12 @@ export class SystemMonitoringAgent {
     try {
       // Check if similar alert exists in last hour to avoid spam
       const recentAlerts = await db
-        .select()
+        .select({
+          id: alerts.id,
+          type: alerts.type,
+          description: alerts.description,
+          createdAt: alerts.createdAt
+        })
         .from(alerts)
         .where(
           and(

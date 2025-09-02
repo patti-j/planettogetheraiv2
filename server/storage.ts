@@ -1,5 +1,5 @@
 import { 
-  ptPlants, /* capabilities, resources, */ plantResources, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
+  ptPlants, plantResources, resourceViews, customTextLabels, kanbanConfigs, reportConfigs, dashboardConfigs, departments,
   productionOrders, ptJobs, ptResources, ptJobOperations, ptManufacturingOrders, ptCapabilities, ptMetrics,
   recipes, PTvendors, customers, salesOrders, formulations, formulationDetails, materialRequirements,
   bomProductOutputs,
@@ -2427,7 +2427,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createCapability(capability: InsertCapability): Promise<Capability> {
-    const [newCapability] = await db.insert(capabilities).values(capability).returning();
+    const [newCapability] = await db.insert(ptCapabilities).values(capability).returning();
     return newCapability;
   }
 
@@ -2441,7 +2441,7 @@ export class MemStorage implements Partial<IStorage> {
   }
 
   async createResource(resource: InsertResource): Promise<Resource> {
-    const [newResource] = await db.insert(resources).values(resource).returning();
+    const [newResource] = await db.insert(ptResources).values(resource).returning();
     return newResource;
   }
 
@@ -2672,7 +2672,7 @@ export class DatabaseStorage {
       
       if (!currentCapabilities.includes(capabilityId)) {
         currentCapabilities.push(capabilityId);
-        await db.update(resources)
+        await db.update(ptResources)
           .set({ capabilities: currentCapabilities })
           .where(eq(ptResources.id, resourceId));
       }
@@ -2816,7 +2816,7 @@ export class DatabaseStorage {
     // First remove all plant-resource associations
     await db.delete(plantResources).where(eq(plantResources.resourceId, id));
     
-    const result = await db.delete(resources).where(eq(ptResources.id, id));
+    const result = await db.delete(ptResources).where(eq(ptResources.id, id));
     return (result.rowCount || 0) > 0;
   }
 
@@ -2833,9 +2833,9 @@ export class DatabaseStorage {
 
   async getPlantsByResourceId(resourceId: number): Promise<Plant[]> {
     const result = await db
-      .select({ plant: plants })
+      .select({ plant: ptPlants })
       .from(plantResources)
-      .innerJoin(plants, eq(plantResources.plantId, plants.id))
+      .innerJoin(ptPlants, eq(plantResources.plantId, ptPlants.id))
       .where(eq(plantResources.resourceId, resourceId));
     
     return result.map(r => r.plant);
@@ -3074,7 +3074,7 @@ export class DatabaseStorage {
 
   async createPlannedOrder(order: any): Promise<any> {
     const [newOrder] = await db
-      .insert(plannedOrders)
+      .insert(ptPlannedOrders)
       .values(order)
       .returning();
     return newOrder;
@@ -3082,7 +3082,7 @@ export class DatabaseStorage {
 
   async updatePlannedOrder(id: number, order: any): Promise<any | undefined> {
     const [updatedOrder] = await db
-      .update(plannedOrders)
+      .update(ptPlannedOrders)
       .set(order)
       .where(eq(ptPlannedOrders.id, id))
       .returning();
@@ -3090,7 +3090,7 @@ export class DatabaseStorage {
   }
 
   async deletePlannedOrder(id: number): Promise<boolean> {
-    const result = await db.delete(plannedOrders).where(eq(ptPlannedOrders.id, id));
+    const result = await db.delete(ptPlannedOrders).where(eq(ptPlannedOrders.id, id));
     return (result.rowCount || 0) > 0;
   }
 

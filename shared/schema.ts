@@ -1552,108 +1552,49 @@ export const workspaceDashboards = pgTable("workspace_dashboards", {
 }));
 
 // Comprehensive Alerts System
-export const alerts: any = pgTable("alerts", {
+export const alerts = pgTable("alerts", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   severity: text("severity").notNull(), // critical, high, medium, low, info
   status: text("status").notNull().default("active"), // active, acknowledged, resolved, escalated, dismissed
   type: text("type").notNull(), // production, quality, maintenance, inventory, resource, schedule, ai_detected, custom
-  category: text("category"), // delay, breakdown, quality_issue, shortage, capacity, safety, performance
-  
-  // Entity associations
+  source: text("source"), // system, user, api, monitoring, etc.
+  userId: integer("user_id").references(() => users.id),
   plantId: integer("plant_id"),
   departmentId: integer("department_id"),
   resourceId: integer("resource_id"),
+  productionOrderId: integer("production_order_id"),
   jobId: integer("job_id"),
-  operationId: integer("operation_id"),
-  userId: integer("user_id").references(() => users.id), // Changed from itemId to userId
-  
-  // Alert metadata
+  triggerCondition: jsonb("trigger_condition").$type<Record<string, any>>().default({}),
+  actualValue: text("actual_value"),
+  thresholdValue: text("threshold_value"),
   metadata: jsonb("metadata").$type<Record<string, any>>().default({}),
-  metrics: jsonb("metrics").$type<{
-    currentValue?: number;
-    thresholdValue?: number;
-    deviation?: number;
-    trend?: 'up' | 'down' | 'stable';
-    impactScore?: number; // 1-100
-  }>().default({}),
-  
-  // AI-generated insights
   aiGenerated: boolean("ai_generated").default(false),
   aiConfidence: numeric("ai_confidence", { precision: 5, scale: 2 }), // 0-100%
-  aiInsights: text("ai_insights"),
   aiModel: text("ai_model"), // which AI model generated this
-  suggestedActions: jsonb("suggested_actions").$type<string[]>().default([]),
-  
-  // Learning and improvement
-  trainingData: jsonb("training_data").$type<{
-    userFeedback?: 'helpful' | 'not_helpful' | 'neutral';
-    actionTaken?: string;
-    outcomeEffective?: boolean;
-    improvementNotes?: string;
-  }>().default({}),
-  
-  // Alert rules and conditions
-  alertRule: jsonb("alert_rule").$type<{
-    condition: {
-      field: string;
-      operator: '>' | '<' | '=' | '!=' | 'between' | 'contains' | 'trend';
-      value: any;
-      value2?: any; // for between operator
-    };
-    frequency?: 'once' | 'recurring' | 'continuous';
-    cooldownMinutes?: number;
-  }>(),
-  
-  // Notification settings
-  notificationChannels: jsonb("notification_channels").$type<string[]>().default(['in_app']), // in_app, email, sms, teams, slack
-  notificationsSent: jsonb("notifications_sent").$type<Array<{
-    channel: string;
-    sentAt: string;
-    recipient: string;
-    status: 'sent' | 'failed' | 'pending';
-  }>>().default([]),
-  
-  // Alert lifecycle
-  createdAt: timestamp("created_at").defaultNow(),
-  createdBy: integer("created_by").references(() => users.id),
+  aiReasoning: text("ai_reasoning"),
+  detectedAt: timestamp("detected_at"),
   acknowledgedAt: timestamp("acknowledged_at"),
-  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
   resolvedAt: timestamp("resolved_at"),
-  resolvedBy: integer("resolved_by").references(() => users.id),
   escalatedAt: timestamp("escalated_at"),
+  expiresAt: timestamp("expires_at"),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  resolvedBy: integer("resolved_by").references(() => users.id),
   escalatedTo: integer("escalated_to").references(() => users.id),
-  dismissedAt: timestamp("dismissed_at"),
-  dismissedBy: integer("dismissed_by").references(() => users.id),
-  
-  // Resolution details
+  priority: integer("priority").default(50), // 1-100, higher is more urgent
+  isRecurring: boolean("is_recurring").default(false),
+  recurrencePattern: jsonb("recurrence_pattern").$type<Record<string, any>>().default({}),
+  actionsTaken: jsonb("actions_taken").$type<Record<string, any>>().default({}),
   resolution: text("resolution"),
   rootCause: text("root_cause"),
   preventiveMeasures: text("preventive_measures"),
-  estimatedDowntime: numeric("estimated_downtime", { precision: 10, scale: 2 }), // in minutes
-  actualDowntime: numeric("actual_downtime", { precision: 10, scale: 2 }), // in minutes
-  estimatedCost: numeric("estimated_cost", { precision: 15, scale: 2 }),
-  actualCost: numeric("actual_cost", { precision: 15, scale: 2 }),
-  
-  // Priority and scheduling
-  priority: integer("priority").default(50), // 1-100, higher is more urgent
-  dueDate: timestamp("due_date"),
-  slaMinutes: integer("sla_minutes"), // SLA for resolution in minutes
-  isRecurring: boolean("is_recurring").default(false),
-  recurringPattern: jsonb("recurring_pattern").$type<{
-    frequency: 'daily' | 'weekly' | 'monthly';
-    interval: number;
-    daysOfWeek?: number[]; // 0-6
-    dayOfMonth?: number;
-    endDate?: string;
-  }>(),
-  
-  // Related alerts
-  parentAlertId: integer("parent_alert_id").references(() => alerts.id),
-  relatedAlertIds: jsonb("related_alert_ids").$type<number[]>().default([]),
-  
+  createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+  category: text("category"), // delay, breakdown, quality_issue, shortage, capacity, safety, performance
+  operationId: integer("operation_id"),
+  metrics: jsonb("metrics").$type<Record<string, any>>().default({}),
+  aiInsights: text("ai_insights"),
 }, (table) => ({
   severityIdx: index().on(table.severity),
   statusIdx: index().on(table.status),
