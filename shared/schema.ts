@@ -351,13 +351,13 @@ export const agentActions = pgTable("agent_actions", {
 });
 
 // Schedule Scenarios for evaluation and comparison
-export const scheduleScenarios = pgTable("schedule_scenarios", {
+export const scheduleScenarios: any = pgTable("schedule_scenarios", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   description: text("description"),
   status: text("status").notNull().default("draft"), // draft, active, approved, rejected, archived
   createdBy: text("created_by").notNull(),
-  baselineScenarioId: integer("baseline_scenario_id").references(() => scheduleScenarios.id),
+  baselineScenarioId: integer("baseline_scenario_id").references((): any => scheduleScenarios.id),
   algorithmId: integer("algorithm_id"), // Reference to optimization algorithm used
   optimizationProfileId: integer("optimization_profile_id"), // Reference to optimization profile used
   configuration: jsonb("configuration").$type<{
@@ -1552,7 +1552,7 @@ export const workspaceDashboards = pgTable("workspace_dashboards", {
 }));
 
 // Comprehensive Alerts System
-export const alerts = pgTable("alerts", {
+export const alerts: any = pgTable("alerts", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
@@ -4502,7 +4502,6 @@ export const insertDemandForecastSchema = createInsertSchema(demandForecasts, {
   id: undefined,
   createdAt: undefined,
   updatedAt: undefined,
-}, {
   forecastDate: z.union([z.string().datetime(), z.date()]),
 });
 
@@ -4514,7 +4513,6 @@ export const insertDemandDriverSchema = createInsertSchema(demandDrivers, {
 export const insertDemandHistorySchema = createInsertSchema(demandHistory, { 
   id: undefined,
   createdAt: undefined,
-}, {
   period: z.union([z.string().datetime(), z.date()]),
 });
 
