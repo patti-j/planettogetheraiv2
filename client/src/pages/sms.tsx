@@ -236,7 +236,7 @@ export default function SMSPage() {
     buttonColor = "default"
   }: {
     data: SMSFormData;
-    setData: (data: SMSFormData) => void;
+    setData: React.Dispatch<React.SetStateAction<SMSFormData>>;
     onSubmit: () => void;
     isLoading: boolean;
     title: string;
@@ -261,7 +261,10 @@ export default function SMSPage() {
             type="tel"
             placeholder="+1 (555) 123-4567"
             value={data.to}
-            onChange={(e) => setData({ ...data, to: e.target.value })}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setData(prev => ({ ...prev, to: newValue }));
+            }}
           />
         </div>
         <div className="space-y-2">
@@ -270,7 +273,10 @@ export default function SMSPage() {
             id={`message-${title}`}
             placeholder={placeholder}
             value={data.message}
-            onChange={(e) => setData({ ...data, message: e.target.value })}
+            onChange={(e) => {
+              const newValue = e.target.value;
+              setData(prev => ({ ...prev, message: newValue }));
+            }}
             rows={3}
           />
         </div>

@@ -27,8 +27,16 @@ class SMSService {
 
       if (!accountSid || !authToken || !phoneNumber) {
         console.warn('🔶 SMS Service: Twilio credentials not configured');
+        console.warn('Account SID exists:', !!accountSid);
+        console.warn('Auth Token exists:', !!authToken);
+        console.warn('Phone Number exists:', !!phoneNumber);
         return;
       }
+
+      // Log partial credentials for debugging (first 10 chars only for security)
+      console.log('📱 Initializing SMS Service with Twilio...');
+      console.log('Account SID starts with:', accountSid.substring(0, 10) + '...');
+      console.log('Phone Number:', phoneNumber);
 
       this.client = twilio(accountSid, authToken);
       this.fromNumber = phoneNumber;
