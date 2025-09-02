@@ -627,13 +627,14 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   if (data?.template === 'jobs' || (!chartData || (Array.isArray(chartData) && chartData.length === 0))) {
     console.log('Using sample data because template is "jobs" or no chart data');
     
-    // For histograms, use proper frequency data
+    // For histograms, use proper frequency data with varied heights
     if (chartType === 'histogram') {
       chartData = [
-        { range: '0-10', count: 40, name: 'Production', value: 40 },
-        { range: '11-20', count: 30, name: 'Quality', value: 30 },
-        { range: '21-30', count: 20, name: 'Maintenance', value: 20 },
-        { range: '31-40', count: 10, name: 'Other', value: 10 }
+        { range: '1-10', count: 35, name: 'Manufacturing', value: 35 },
+        { range: '11-20', count: 25, name: 'Quality Control', value: 25 },
+        { range: '21-30', count: 20, name: 'Packaging', value: 20 },
+        { range: '31-40', count: 15, name: 'Maintenance', value: 15 },
+        { range: '41-50', count: 5, name: 'R&D', value: 5 }
       ];
     } else {
       chartData = [
@@ -764,8 +765,9 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
         console.log('Histogram data (original):', chartData);
         console.log('Histogram data (processed):', histogramData);
         
-        // Calculate domain for proper scaling
-        const maxCount = Math.max(...histogramData.map((d: any) => d.count));
+        // Calculate domain for proper scaling - ensure we have valid data
+        const counts = histogramData.map((d: any) => d.count).filter(count => !isNaN(count) && count > 0);
+        const maxCount = counts.length > 0 ? Math.max(...counts) : 100;
         const minCount = 0;
         
         return (
@@ -784,8 +786,9 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
                 interval={0}
               />
               <YAxis 
-                domain={[minCount, maxCount + (maxCount * 0.1)]}
+                domain={[minCount, 'dataMax']}
                 allowDataOverflow={false}
+                type="number"
               />
               <Tooltip 
                 formatter={(value, name) => [value, 'Frequency']}
