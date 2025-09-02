@@ -253,7 +253,18 @@ export default function DatabaseExplorer() {
             <SheetContent side="left" className="w-80">
               <div className="h-full flex flex-col">
                 <div className="p-4 border-b">
-                  <h2 className="text-lg font-semibold mb-3">Database Tables</h2>
+                  <div className="flex items-center justify-between mb-3">
+                    <h2 className="text-lg font-semibold">Database Tables</h2>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => refetchTables()}
+                      className="h-7 w-7 p-0"
+                      title="Refresh tables"
+                    >
+                      <RefreshCw className="h-3 w-3" />
+                    </Button>
+                  </div>
                   <Input
                     placeholder="Search tables..."
                     value={tableSearchTerm}
