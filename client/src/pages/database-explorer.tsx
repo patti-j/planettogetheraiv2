@@ -85,7 +85,7 @@ export default function DatabaseExplorer() {
   
   // State management
   const [selectedTable, setSelectedTable] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'schema' | 'relations' | 'data'>('list');
+  const [viewMode, setViewMode] = useState<'list' | 'schema' | 'constraints' | 'relations' | 'data'>('list');
   const [tableSearchTerm, setTableSearchTerm] = useState('');
   const [dataSearchTerm, setDataSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -116,12 +116,19 @@ export default function DatabaseExplorer() {
   });
   const tableData = tableDataRaw as TableData;
 
-  // Fetch table relationships when viewing relations
+  // Fetch table constraints when viewing constraints
   const { data: tableRelationshipsRaw = [], isLoading: relationshipsLoading } = useQuery({
     queryKey: [`/api/database/tables/${selectedTable}/relationships`],
-    enabled: !!selectedTable && viewMode === 'relations'
+    enabled: !!selectedTable && viewMode === 'constraints'
   });
   const tableRelationships = tableRelationshipsRaw as TableRelationship[];
+
+  // Fetch schema relations when viewing relations
+  const { data: schemaRelationsRaw = [], isLoading: schemaRelationsLoading } = useQuery({
+    queryKey: [`/api/database/tables/${selectedTable}/schema-relations`],
+    enabled: !!selectedTable && viewMode === 'relations'
+  });
+  const schemaRelations = schemaRelationsRaw as any[];
 
   // Export mutation
   const exportMutation = useMutation({
@@ -201,11 +208,26 @@ export default function DatabaseExplorer() {
   }, []);
 
   // Filter tables based on search
-  const filteredTables = useMemo(() => 
-    tables.filter((table: DatabaseTable) =>
+  const filteredTables = useMemo(() => {
+    console.log('Filter debug:', {
+      totalTables: tables.length,
+      searchTerm: tableSearchTerm,
+      searchTermLength: tableSearchTerm.length,
+      ptjobsExists: tables.some(t => t?.name?.toLowerCase()?.includes('ptjobs'))
+    });
+    
+    const filtered = tables.filter((table: DatabaseTable) =>
       table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
-    ), [tables, tableSearchTerm]
-  );
+    );
+    
+    console.log('Filtered result:', {
+      originalCount: tables.length,
+      filteredCount: filtered.length,
+      filteredNames: filtered.slice(0, 10).map(t => t.name)
+    });
+    
+    return filtered;
+  }, [tables, tableSearchTerm]);
 
   // Get data type badge color
   const getDataTypeBadgeColor = (dataType: string) => {
@@ -341,6 +363,10 @@ export default function DatabaseExplorer() {
                     <Info className="h-3 w-3" />
                     Schema
                   </TabsTrigger>
+                  <TabsTrigger value="constraints" className="flex items-center gap-2 text-xs h-7">
+                    <GitBranch className="h-3 w-3" />
+                    Constraints
+                  </TabsTrigger>
                   <TabsTrigger value="relations" className="flex items-center gap-2 text-xs h-7">
                     <GitBranch className="h-3 w-3" />
                     Relations
@@ -392,7 +418,7 @@ export default function DatabaseExplorer() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="relations" className="mt-0">
+                  <TabsContent value="constraints" className="mt-0">
                     {relationshipsLoading ? (
                       <div className="text-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4" />
@@ -442,6 +468,53 @@ export default function DatabaseExplorer() {
                             </UITable>
                           </div>
                         )}
+                      </div>
+                    )}
+                  </TabsContent>
+
+                  <TabsContent value="relations" className="mt-0">
+                    {schemaRelationsLoading ? (
+                      <div className="text-center py-8">
+                        <Loader2 className="h-6 w-6 animate-spin mx-auto mb-4" />
+                        <p className="text-sm">Loading table relations...</p>
+                      </div>
+                    ) : schemaRelations && schemaRelations.length > 0 ? (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-4 mb-4">
+                          <Badge variant="outline" className="text-xs">{schemaRelations.length} relations</Badge>
+                        </div>
+                        
+                        <div className="overflow-auto max-h-96 border rounded-md">
+                          <UITable>
+                            <TableHeader>
+                              <TableRow>
+                                <TableHead className="text-xs sticky top-0 bg-background">Related Table</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Join Type</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Local Column</TableHead>
+                                <TableHead className="text-xs sticky top-0 bg-background">Foreign Column</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {schemaRelations.map((rel: any, index) => (
+                                <TableRow key={`${rel.tableName}-${index}`}>
+                                  <TableCell className="font-medium text-xs break-words max-w-32">{rel.tableName}</TableCell>
+                                  <TableCell className="text-xs">
+                                    <Badge variant={rel.type === 'one' ? 'default' : 'secondary'} className="text-xs">
+                                      {rel.type === 'one' ? 'One-to-One' : 'One-to-Many'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs">{rel.localColumn}</TableCell>
+                                  <TableCell className="text-xs">{rel.foreignColumn}</TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </UITable>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500">
+                        <GitBranch className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                        <p className="text-sm">No schema relations found for this table</p>
                       </div>
                     )}
                   </TabsContent>
@@ -697,7 +770,7 @@ export default function DatabaseExplorer() {
               </CardHeader>
 
               <CardContent className="flex-1 overflow-hidden">
-                <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'relations' | 'data') => setViewMode(value)}>
+                <Tabs value={viewMode} onValueChange={(value: 'list' | 'schema' | 'constraints' | 'relations' | 'data') => setViewMode(value)}>
                   <TabsList className="mb-4">
                     <TabsTrigger value="schema" className="flex items-center gap-2">
                       <Info className="h-4 w-4" />
