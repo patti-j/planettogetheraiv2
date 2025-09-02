@@ -1170,19 +1170,37 @@ export const ptJobMaterialSupplyingActivities = pgTable("pt_job_material_supplyi
 // ============================================
 
 
+// Plant Relations
+export const ptPlantsRelations = relations(ptPlants, ({ many }) => ({
+  departments: many(ptDepartments),
+  resources: many(ptResources),
+  plantWarehouses: many(ptPlantWarehouses),
+  jobs: many(ptJobs),
+}));
+
 // Department Relations
 export const ptDepartmentsRelations = relations(ptDepartments, ({ one, many }) => ({
+  plant: one(ptPlants, {
+    fields: [ptDepartments.plantId],
+    references: [ptPlants.plantId],
+  }),
   resources: many(ptResources),
 }));
 
 // Resource Relations
 export const ptResourcesRelations = relations(ptResources, ({ one, many }) => ({
+  plant: one(ptPlants, {
+    fields: [ptResources.plantId],
+    references: [ptPlants.plantId],
+  }),
   department: one(ptDepartments, {
     fields: [ptResources.departmentId],
     references: [ptDepartments.departmentId],
   }),
   resourceCapabilities: many(ptResourceCapabilities),
   capacityIntervalAssignments: many(ptCapacityIntervalResourceAssignments),
+  jobResources: many(ptJobResources),
+  jobResourceBlocks: many(ptJobResourceBlocks),
 }));
 
 // Resource Capability Relations
@@ -1248,11 +1266,22 @@ export const ptLotsRelations = relations(ptLots, ({ one }) => ({
 export const ptJobsRelations = relations(ptJobs, ({ many }) => ({
   operations: many(ptJobOperations),
   materials: many(ptJobMaterials),
+  manufacturingOrders: many(ptManufacturingOrders),
+  activities: many(ptJobActivities),
+  jobResources: many(ptJobResources),
+  jobResourceBlocks: many(ptJobResourceBlocks),
+  jobResourceCapabilities: many(ptJobResourceCapabilities),
+  jobProducts: many(ptJobProducts),
 }));
 
 // Manufacturing Order Relations
-export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ many }) => ({
-  jobs: many(ptJobs),
+export const ptManufacturingOrdersRelations = relations(ptManufacturingOrders, ({ one, many }) => ({
+  job: one(ptJobs, {
+    fields: [ptManufacturingOrders.jobId],
+    references: [ptJobs.jobId],
+  }),
+  operations: many(ptJobOperations),
+  activities: many(ptJobActivities),
 }));
 
 // Job Operation Relations
@@ -1261,11 +1290,25 @@ export const ptJobOperationsRelations = relations(ptJobOperations, ({ one, many 
     fields: [ptJobOperations.jobId],
     references: [ptJobs.jobId],
   }),
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobOperations.jobId],
+    references: [ptManufacturingOrders.jobId],
+  }),
   activities: many(ptJobActivities),
+  jobResources: many(ptJobResources),
+  resourceBlocks: many(ptJobResourceBlocks),
 }));
 
 // Job Activity Relations
 export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobActivities.jobId],
+    references: [ptJobs.jobId],
+  }),
+  manufacturingOrder: one(ptManufacturingOrders, {
+    fields: [ptJobActivities.manufacturingOrderId],
+    references: [ptManufacturingOrders.jobId],
+  }),
   operation: one(ptJobOperations, {
     fields: [ptJobActivities.operationId],
     references: [ptJobOperations.operationId],
@@ -1276,6 +1319,141 @@ export const ptJobActivitiesRelations = relations(ptJobActivities, ({ one }) => 
 export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
   job: one(ptJobs, {
     fields: [ptJobMaterials.jobId],
+    references: [ptJobs.jobId],
+  }),
+  item: one(ptItems, {
+    fields: [ptJobMaterials.itemId],
+    references: [ptItems.itemId],
+  }),
+  warehouse: one(ptWarehouses, {
+    fields: [ptJobMaterials.warehouseId],
+    references: [ptWarehouses.warehouseId],
+  }),
+}));
+
+// Job Resources Relations
+export const ptJobResourcesRelations = relations(ptJobResources, ({ one, many }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobResources.jobId],
+    references: [ptJobs.jobId],
+  }),
+  operation: one(ptJobOperations, {
+    fields: [ptJobResources.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  resource: one(ptResources, {
+    fields: [ptJobResources.defaultResourceId],
+    references: [ptResources.resourceId],
+  }),
+  resourceBlocks: many(ptJobResourceBlocks),
+}));
+
+// Job Resource Blocks Relations
+export const ptJobResourceBlocksRelations = relations(ptJobResourceBlocks, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobResourceBlocks.jobId],
+    references: [ptJobs.jobId],
+  }),
+  operation: one(ptJobOperations, {
+    fields: [ptJobResourceBlocks.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  resource: one(ptResources, {
+    fields: [ptJobResourceBlocks.resourceId],
+    references: [ptResources.resourceId],
+  }),
+  plant: one(ptPlants, {
+    fields: [ptJobResourceBlocks.plantId],
+    references: [ptPlants.plantId],
+  }),
+  department: one(ptDepartments, {
+    fields: [ptJobResourceBlocks.departmentId],
+    references: [ptDepartments.departmentId],
+  }),
+}));
+
+// Job Resource Capabilities Relations
+export const ptJobResourceCapabilitiesRelations = relations(ptJobResourceCapabilities, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobResourceCapabilities.jobId],
+    references: [ptJobs.jobId],
+  }),
+  operation: one(ptJobOperations, {
+    fields: [ptJobResourceCapabilities.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  capability: one(ptCapabilities, {
+    fields: [ptJobResourceCapabilities.capabilityId],
+    references: [ptCapabilities.capabilityId],
+  }),
+}));
+
+// Job Products Relations
+export const ptJobProductsRelations = relations(ptJobProducts, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobProducts.jobId],
+    references: [ptJobs.jobId],
+  }),
+  item: one(ptItems, {
+    fields: [ptJobProducts.itemId],
+    references: [ptItems.itemId],
+  }),
+}));
+
+// Job Operation Attributes Relations
+export const ptJobOperationAttributesRelations = relations(ptJobOperationAttributes, ({ one }) => ({
+  operation: one(ptJobOperations, {
+    fields: [ptJobOperationAttributes.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  attribute: one(ptAttributes, {
+    fields: [ptJobOperationAttributes.attributeId],
+    references: [ptAttributes.attributeId],
+  }),
+}));
+
+// Attributes Relations
+export const ptAttributesRelations = relations(ptAttributes, ({ many }) => ({
+  jobOperationAttributes: many(ptJobOperationAttributes),
+}));
+
+// Job Paths Relations
+export const ptJobPathsRelations = relations(ptJobPaths, ({ one, many }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobPaths.jobId],
+    references: [ptJobs.jobId],
+  }),
+  pathNodes: many(ptJobPathNodes),
+}));
+
+// Job Path Nodes Relations
+export const ptJobPathNodesRelations = relations(ptJobPathNodes, ({ one }) => ({
+  path: one(ptJobPaths, {
+    fields: [ptJobPathNodes.pathId],
+    references: [ptJobPaths.pathId],
+  }),
+  predecessorOperation: one(ptJobOperations, {
+    fields: [ptJobPathNodes.predecessorOperationId],
+    references: [ptJobOperations.operationId],
+  }),
+  successorOperation: one(ptJobOperations, {
+    fields: [ptJobPathNodes.successorOperationId],
+    references: [ptJobOperations.operationId],
+  }),
+}));
+
+// Job Material Supplying Activities Relations
+export const ptJobMaterialSupplyingActivitiesRelations = relations(ptJobMaterialSupplyingActivities, ({ one }) => ({
+  job: one(ptJobs, {
+    fields: [ptJobMaterialSupplyingActivities.jobId],
+    references: [ptJobs.jobId],
+  }),
+  operation: one(ptJobOperations, {
+    fields: [ptJobMaterialSupplyingActivities.operationId],
+    references: [ptJobOperations.operationId],
+  }),
+  supplyingJob: one(ptJobs, {
+    fields: [ptJobMaterialSupplyingActivities.supplyingJobId],
     references: [ptJobs.jobId],
   }),
 }));
