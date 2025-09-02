@@ -106,11 +106,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       }
       
       // console.log(`Event ${op.operationName} dates:`, { 
-        startDate: startDate instanceof Date, 
-        endDate: endDate instanceof Date,
-        startType: typeof startDate,
-        endType: typeof endDate
-      });
+      //   startDate: startDate instanceof Date, 
+      //   endDate: endDate instanceof Date,
+      //   startType: typeof startDate,
+      //   endType: typeof endDate
+      // });
       
       return {
         id: `e_${op.id || op.operationId}`,
@@ -208,8 +208,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       // console.log('Sample operation:', effectiveOperations[0]);
       // console.log('Sample resource:', effectiveResources[0]);
       // console.log('Operations with resource IDs:', effectiveOperations.filter(op => 
-        op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId || op.defaultResourceId
-      ).length);
+      //   op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId || op.defaultResourceId
+      // ).length);
     }
     return assignments;
   }, [effectiveOperations, effectiveResources]);
@@ -381,13 +381,13 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                 const event = dragData?.eventRecord;
                 
                 // Log validation for debugging production scheduling constraints
-                // console.log('Validating production operation drag:', {
+                /* console.log('Validating production operation drag:', {
                   operation: event?.name,
                   targetResource: targetResourceRecord?.name,
                   resourceType: targetResourceRecord?.type,
                   isLocked: event?.readOnly,
                   resourceActive: targetResourceRecord?.active
-                });
+                }); */
                 
                 // Basic safety checks
                 if (!event) {
@@ -522,14 +522,14 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             return;
           }
           
-          // console.log('Operation moved:', {
+          /* console.log('Operation moved:', {
             operation: eventRecord?.name || 'Unknown',
             from: oldResource?.name,
             to: newResource?.name,
             newStart: eventRecord?.startDate,
             newEnd: eventRecord.endDate,
             assignmentType: eventRecord.assignmentType
-          });
+          }); */
           
           // Extract operation ID from event ID
           const operationId = parseInt(eventRecord.id.replace('e_', ''));
@@ -580,11 +580,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         
         onEventResizeEnd={({ eventRecord }: any) => {
           // console.log('Operation resized:', {
-            operation: eventRecord?.name || 'Unknown',
-            newStart: eventRecord?.startDate,
-            newEnd: eventRecord?.endDate,
-            newDuration: (eventRecord?.endDate && eventRecord?.startDate) ? eventRecord.endDate - eventRecord.startDate : 0
-          });
+          //   operation: eventRecord?.name || 'Unknown',
+          //   newStart: eventRecord?.startDate,
+          //   newEnd: eventRecord?.endDate,
+          //   newDuration: (eventRecord?.endDate && eventRecord?.startDate) ? eventRecord.endDate - eventRecord.startDate : 0
+          // });
           
           const operationId = parseInt(eventRecord.id.replace('e_', ''));
           const updates = {
@@ -605,16 +605,16 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
             const widget = schedulerRef.current.widget;
             // console.log('✅ Scheduler painted with ProjectModel:');
             // console.log('Store counts:', {
-              resources: widget.resourceStore?.count || 0,
-              events: widget.eventStore?.count || 0,
-              assignments: widget.assignmentStore?.count || 0,
-              dependencies: widget.dependencyStore?.count || 0
-            });
+            //   resources: widget.resourceStore?.count || 0,
+            //   events: widget.eventStore?.count || 0,
+            //   assignments: widget.assignmentStore?.count || 0,
+            //   dependencies: widget.dependencyStore?.count || 0
+            // });
           }
           // console.log('Assignment types:', {
-            scheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'scheduled').length,
-            unscheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'unscheduled').length
-          });
+          //   scheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'scheduled').length,
+          //   unscheduled: bryntumEvents.filter(e => e.data?.assignmentType === 'unscheduled').length
+          // });
         }}
         />
       </div>

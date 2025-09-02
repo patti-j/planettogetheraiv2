@@ -8576,10 +8576,6 @@ export const departmentResourcesRelations = relations(departmentResources, ({ on
 }));
 
 export const departmentsRelations = relations(departments, ({ one, many }) => ({
-  parentDepartment: one(departments, {
-    fields: [departments.parentDepartmentId],
-    references: [departments.id],
-  }),
   plant: one(ptPlants, {
     fields: [departments.plantId],
     references: [ptPlants.id],
