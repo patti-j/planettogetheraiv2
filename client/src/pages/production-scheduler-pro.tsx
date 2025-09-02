@@ -38,6 +38,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [favorites, setFavorites] = useState<any[]>([]);
   const [schedulerData, setSchedulerData] = useState<any>(null);
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const { toast } = useToast();
   
   // Services
@@ -75,17 +76,16 @@ const ProductionSchedulerProV2: React.FC = () => {
           }
         });
         
-        // Set scheduler configuration with shorter date range to prevent Bryntum error
+        // Set scheduler configuration starting with today's date
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const endDate = new Date(today);
-        endDate.setDate(endDate.getDate() + 7); // Show 1 week
+        endDate.setMonth(endDate.getMonth() + 1); // Show 1 month for better overview
         
         setSchedulerConfig({
           startDate: today,
           endDate: endDate,
           viewPreset: 'weekAndDayLetter',
-          zoomLevel: 10,  // Set initial zoom level like in HTML version
           rowHeight: 50,
           barMargin: 5,
           columns: config.columns,
@@ -140,8 +140,10 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
-  // Capture scheduler instance after mount
+  // Capture scheduler instance after mount and apply zoom to fit
   useEffect(() => {
+    if (!schedulerData || !schedulerConfig) return;
+    
     const timer = setInterval(() => {
       // Try to get the actual Bryntum instance from the React component
       if (schedulerRef.current) {
@@ -158,11 +160,36 @@ const ProductionSchedulerProV2: React.FC = () => {
           // Register with context service for Max AI integration
           contextService.setSchedulerInstance(instance);
           
-          // Apply initial zoom to fit
-          setTimeout(() => {
-            instance.zoomToFit();
-            console.log('Initial zoom to fit applied');
-          }, 100);
+          // Apply zoom to fit after a delay to ensure data is rendered
+          // Only do this on initial load
+          if (isInitialLoad) {
+            setTimeout(() => {
+              try {
+                // First, ensure we're showing today's date
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                // Scroll to today if scrollToDate method exists
+                if (typeof instance.scrollToDate === 'function') {
+                  instance.scrollToDate(today, { block: 'center', animate: true });
+                }
+                
+                // Then apply zoom to fit
+                instance.zoomToFit({
+                  leftMargin: 50,
+                  rightMargin: 50
+                });
+                
+                console.log('✅ Initial view set: Today\'s date with zoom to fit');
+                setIsInitialLoad(false); // Mark that initial load is complete
+              } catch (error) {
+                console.error('Error setting initial view:', error);
+                // Fallback to simple zoomToFit
+                instance.zoomToFit();
+                setIsInitialLoad(false);
+              }
+            }, 500); // Increased delay to ensure data is fully rendered
+          }
           
           clearInterval(timer);
         }
@@ -176,7 +203,7 @@ const ProductionSchedulerProV2: React.FC = () => {
       clearInterval(timer);
       clearTimeout(timeout);
     };
-  }, [schedulerData, schedulerConfig]);
+  }, [schedulerData, schedulerConfig, isInitialLoad]);
 
   // Toolbar actions - memoized with useCallback
   const handleZoomIn = useCallback(() => {
