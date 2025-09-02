@@ -602,16 +602,22 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
 const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   console.log('ChartWidget received data:', data);
   
-  const chartType = data?.chartType || 'bar';
+  let chartType = data?.chartType || data?.configuration?.visualization || 'bar';
   let chartData = data?.data || data || [];
   const title = data?.title || 'Production Chart';
 
   // Color scheme for charts
   const COLORS = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#0088fe', '#00c49f'];
 
+  // Check if this should be a histogram based on title or description
+  if (title.toLowerCase().includes('histogram') || data?.description?.toLowerCase().includes('histogram')) {
+    chartType = 'histogram';
+  }
+
   // Debug the template check
   console.log('Template check:', {
     'data?.template': data?.template,
+    'chartType': chartType,
     'chartData': chartData,
     'isArray': Array.isArray(chartData),
     'length': Array.isArray(chartData) ? chartData.length : 'not array'
@@ -620,13 +626,24 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   // Generate sample data if using template reference or no data
   if (data?.template === 'jobs' || (!chartData || (Array.isArray(chartData) && chartData.length === 0))) {
     console.log('Using sample data because template is "jobs" or no chart data');
-    chartData = [
-      { name: 'Manufacturing', value: 35 },
-      { name: 'Quality Control', value: 25 },
-      { name: 'Packaging', value: 20 },
-      { name: 'Maintenance', value: 15 },
-      { name: 'R&D', value: 5 }
-    ];
+    
+    // For histograms, use proper frequency data
+    if (chartType === 'histogram') {
+      chartData = [
+        { range: '0-10', count: 40, name: 'Production', value: 40 },
+        { range: '11-20', count: 30, name: 'Quality', value: 30 },
+        { range: '21-30', count: 20, name: 'Maintenance', value: 20 },
+        { range: '31-40', count: 10, name: 'Other', value: 10 }
+      ];
+    } else {
+      chartData = [
+        { name: 'Manufacturing', value: 35 },
+        { name: 'Quality Control', value: 25 },
+        { name: 'Packaging', value: 20 },
+        { name: 'Maintenance', value: 15 },
+        { name: 'R&D', value: 5 }
+      ];
+    }
     console.log('Generated sample chartData:', chartData);
   }
 
