@@ -88,6 +88,7 @@ import AgentHistory from "@/pages/agent-history";
 import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
 import ProductionSchedulerPro from "@/pages/production-scheduler-pro";
+import SMSPage from "@/pages/sms";
 
 // Import other application-specific components
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -391,6 +392,11 @@ export default function ApplicationApp() {
               <Route path="/alerts">
                 <ProtectedRoute feature="alerts" action="view">
                   <AlertsPage />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/sms">
+                <ProtectedRoute feature="notifications" action="send">
+                  <SMSPage />
                 </ProtectedRoute>
               </Route>
               <Route path="/ai-analysis-config">
