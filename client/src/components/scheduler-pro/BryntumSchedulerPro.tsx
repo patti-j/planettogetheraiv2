@@ -138,10 +138,13 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           postProcessingEnd: op.postProcessingEnd
         }
       };
-    }).filter(Boolean); // Remove null entries from invalid dates
+    });
     
-    // console.log('Created events:', events.length);
-    return events;
+    // Filter out null entries from invalid dates and ensure type safety
+    const validEvents = events.filter((event): event is NonNullable<typeof event> => event !== null);
+    
+    // console.log('Created events:', validEvents.length);
+    return validEvents;
   }, [effectiveOperations]);
 
   // Create assignments based on Jim's corrections - WITH PROPER RESOURCE VALIDATION
@@ -198,10 +201,12 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           // console.log(`❌ No matching resource found for operation ${op.operationName} (resourceId: ${resourceId})`);
           return null;
         }
-      })
-      .filter(Boolean); // Remove null assignments
+      });
     
-    // console.log(`Created ${assignments.length} valid assignments from ${effectiveOperations.length} operations`);
+    // Filter out null assignments and ensure type safety
+    const validAssignments = assignments.filter((assignment): assignment is NonNullable<typeof assignment> => assignment !== null);
+    
+    // console.log(`Created ${validAssignments.length} valid assignments from ${effectiveOperations.length} operations`);
     
     if (assignments.length === 0 && effectiveOperations.length > 0) {
       // console.log('DEBUG: No assignments created, checking data:');
@@ -211,7 +216,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       //   op.assignedResourceId || op.resourceId || op.resource_id || op.scheduledResourceId || op.defaultResourceId
       // ).length);
     }
-    return assignments;
+    return validAssignments;
   }, [effectiveOperations, effectiveResources]);
 
   // Dependencies removed to clean up visual clutter
@@ -432,7 +437,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
                 // Check for time conflicts (basic overlap detection)
                 if (startDate && endDate && schedulerRef.current?.eventStore) {
                   try {
-                    const conflictingEvents = schedulerRef.current.eventStore.query(record => {
+                    const conflictingEvents = schedulerRef.current.eventStore.query((record: any) => {
                       const isSameEvent = record === event || record.id === event.id;
                       const isOnTargetResource = record.resources?.some((r: any) => r === targetResourceRecord || r.id === targetResourceRecord.id);
                       const hasTimeOverlap = !(record.endDate <= startDate || record.startDate >= endDate);
