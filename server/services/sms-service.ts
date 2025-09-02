@@ -39,7 +39,8 @@ class SMSService {
       console.log('Phone Number:', phoneNumber);
 
       this.client = twilio(accountSid, authToken);
-      this.fromNumber = phoneNumber;
+      // Ensure phone number has + prefix for international format
+      this.fromNumber = phoneNumber.startsWith('+') ? phoneNumber : `+${phoneNumber}`;
       console.log('✅ SMS Service initialized with Twilio');
     } catch (error) {
       console.error('❌ Failed to initialize SMS Service:', error);

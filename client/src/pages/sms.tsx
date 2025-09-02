@@ -261,10 +261,7 @@ export default function SMSPage() {
             type="tel"
             placeholder="+1 (555) 123-4567"
             value={data.to}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setData(prev => ({ ...prev, to: newValue }));
-            }}
+            onChange={(e) => setData({ ...data, to: e.target.value })}
           />
         </div>
         <div className="space-y-2">
@@ -273,10 +270,7 @@ export default function SMSPage() {
             id={`message-${title}`}
             placeholder={placeholder}
             value={data.message}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              setData(prev => ({ ...prev, message: newValue }));
-            }}
+            onChange={(e) => setData({ ...data, message: e.target.value })}
             rows={3}
           />
         </div>
