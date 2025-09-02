@@ -2634,106 +2634,6 @@ export class DatabaseStorage {
     return (result.rowCount || 0) > 0;
   }
 
-  // Stub implementations for missing interface methods
-  // deleteOperation is already implemented above
-
-  async getIntegrations(): Promise<any[]> {
-    // Stub implementation - return empty array
-    return [];
-  }
-
-  async getIntegration(id: number): Promise<any | undefined> {
-    // Stub implementation
-    return undefined;
-  }
-
-  async createIntegration(integration: any): Promise<any> {
-    // Stub implementation
-    throw new Error("Not implemented");
-  }
-
-  async updateIntegration(id: number, integration: any): Promise<any | undefined> {
-    // Stub implementation
-    return undefined;
-  }
-
-  async deleteIntegration(id: number): Promise<boolean> {
-    // Stub implementation
-    return false;
-  }
-
-  // Add more missing methods as stubs
-  async getResourceRequirements(): Promise<ResourceRequirement[]> {
-    return [];
-  }
-
-  async getResourceRequirementsByOperationId(operationId: number): Promise<ResourceRequirement[]> {
-    return [];
-  }
-
-  async getResourceRequirement(id: number): Promise<ResourceRequirement | undefined> {
-    return undefined;
-  }
-
-  async createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement> {
-    throw new Error("Not implemented");
-  }
-
-  async updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined> {
-    return undefined;
-  }
-
-  async deleteResourceRequirement(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]> {
-    return [];
-  }
-
-  async getResourceRequirementAssignmentsByRequirementId(requirementId: number): Promise<ResourceRequirementAssignment[]> {
-    return [];
-  }
-
-  async getResourceRequirementAssignmentsByResourceId(resourceId: number): Promise<ResourceRequirementAssignment[]> {
-    return [];
-  }
-
-  async getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined> {
-    return undefined;
-  }
-
-  async createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment> {
-    throw new Error("Not implemented");
-  }
-
-  async updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined> {
-    return undefined;
-  }
-
-  async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getPlannedOrders(): Promise<PlannedOrder[]> {
-    return [];
-  }
-
-  async getPlannedOrder(id: number): Promise<PlannedOrder | undefined> {
-    return undefined;
-  }
-
-  async createPlannedOrder(order: InsertPlannedOrder): Promise<PlannedOrder> {
-    throw new Error("Not implemented");
-  }
-
-  async updatePlannedOrder(id: number, order: Partial<InsertPlannedOrder>): Promise<PlannedOrder | undefined> {
-    return undefined;
-  }
-
-  async deletePlannedOrder(id: number): Promise<boolean> {
-    return false;
-  }
 
   // Departments
   async getDepartments(): Promise<Department[]> {
@@ -2743,7 +2643,7 @@ export class DatabaseStorage {
 
   async getCapabilities(): Promise<Capability[]> {
     // Using PT Capabilities table (aliased as capabilities in schema)
-    const result = await db.select().from(capabilities).orderBy(asc(capabilities.name));
+    const result = await db.select().from(ptCapabilities).orderBy(asc(ptCapabilities.name));
     return result || [];
   }
 
@@ -2756,15 +2656,15 @@ export class DatabaseStorage {
   }
 
   async getCapabilityByName(name: string): Promise<Capability | undefined> {
-    const [capability] = await db.select().from(capabilities).where(eq(capabilities.name, name));
+    const [capability] = await db.select().from(ptCapabilities).where(eq(ptCapabilities.name, name));
     return capability || undefined;
   }
 
   async addResourceCapability(resourceId: number, capabilityId: number): Promise<void> {
     // Check if the relationship already exists to avoid duplicates
     const existing = await db.select()
-      .from(resources)
-      .where(eq(resources.id, resourceId));
+      .from(ptResources)
+      .where(eq(ptResources.id, resourceId));
     
     if (existing.length > 0) {
       const resource = existing[0];
@@ -2774,7 +2674,7 @@ export class DatabaseStorage {
         currentCapabilities.push(capabilityId);
         await db.update(resources)
           .set({ capabilities: currentCapabilities })
-          .where(eq(resources.id, resourceId));
+          .where(eq(ptResources.id, resourceId));
       }
     }
   }
@@ -2891,7 +2791,7 @@ export class DatabaseStorage {
   }
 
   async getResource(id: number): Promise<Resource | undefined> {
-    const [resource] = await db.select().from(resources).where(eq(resources.id, id));
+    const [resource] = await db.select().from(ptResources).where(eq(ptResources.id, id));
     return resource || undefined;
   }
 
@@ -2907,7 +2807,7 @@ export class DatabaseStorage {
     const [updatedResource] = await db
       .update(resources)
       .set(resource)
-      .where(eq(resources.id, id))
+      .where(eq(ptResources.id, id))
       .returning();
     return updatedResource || undefined;
   }
@@ -2916,7 +2816,7 @@ export class DatabaseStorage {
     // First remove all plant-resource associations
     await db.delete(plantResources).where(eq(plantResources.resourceId, id));
     
-    const result = await db.delete(resources).where(eq(resources.id, id));
+    const result = await db.delete(resources).where(eq(ptResources.id, id));
     return (result.rowCount || 0) > 0;
   }
 
@@ -3161,14 +3061,14 @@ export class DatabaseStorage {
 
   // Planned Orders CRUD Operations
   async getPlannedOrders(): Promise<any[]> {
-    return await db.select().from(plannedOrders).orderBy(desc(plannedOrders.createdAt));
+    return await db.select().from(ptPlannedOrders).orderBy(desc(ptPlannedOrders.createdAt));
   }
 
   async getPlannedOrder(id: number): Promise<any | undefined> {
     const [order] = await db
       .select()
-      .from(plannedOrders)
-      .where(eq(plannedOrders.id, id));
+      .from(ptPlannedOrders)
+      .where(eq(ptPlannedOrders.id, id));
     return order || undefined;
   }
 
@@ -3184,13 +3084,13 @@ export class DatabaseStorage {
     const [updatedOrder] = await db
       .update(plannedOrders)
       .set(order)
-      .where(eq(plannedOrders.id, id))
+      .where(eq(ptPlannedOrders.id, id))
       .returning();
     return updatedOrder || undefined;
   }
 
   async deletePlannedOrder(id: number): Promise<boolean> {
-    const result = await db.delete(plannedOrders).where(eq(plannedOrders.id, id));
+    const result = await db.delete(plannedOrders).where(eq(ptPlannedOrders.id, id));
     return (result.rowCount || 0) > 0;
   }
 
@@ -5364,8 +5264,8 @@ export class DatabaseStorage {
           // Find the plants this resource belongs to via junction table
           const resourceData = await db
             .select()
-            .from(resources)
-            .where(eq(resources.id, objectId))
+            .from(ptResources)
+            .where(eq(ptResources.id, objectId))
             .limit(1);
             
           const resourcePlantMappings = await db
@@ -5432,8 +5332,8 @@ export class DatabaseStorage {
           if (orderData[0]?.plantId) {
             const plant = await db
               .select()
-              .from(plants)
-              .where(eq(plants.id, orderData[0].plantId))
+              .from(ptPlants)
+              .where(eq(ptPlants.id, orderData[0].plantId))
               .limit(1);
             
             if (plant[0]) {
@@ -5477,8 +5377,8 @@ export class DatabaseStorage {
           if (operationData[0]?.setupResourceId) {
             const resource = await db
               .select()
-              .from(resources)
-              .where(eq(resources.id, operationData[0].setupResourceId))
+              .from(ptResources)
+              .where(eq(ptResources.id, operationData[0].setupResourceId))
               .limit(1);
             
             if (resource[0]) {
@@ -11775,7 +11675,7 @@ export class DatabaseStorage {
     const allCapabilities = await db.select({
       id: capabilities.id,
       name: capabilities.name
-    }).from(capabilities);
+    }).from(ptCapabilities);
     
     const capabilityMap = new Map(allCapabilities.map(cap => [cap.id, cap.name]));
     
@@ -11808,8 +11708,8 @@ export class DatabaseStorage {
         type: resources.type,
         capabilities: resources.capabilities
       })
-      .from(resources)
-      .where(eq(resources.status, 'active'));
+      .from(ptResources)
+      .where(eq(ptResources.status, 'active'));
 
     for (const operation of operationsWithCapabilities) {
       if (!operation.requiredCapabilities || operation.requiredCapabilities.length === 0) continue;
@@ -11897,9 +11797,9 @@ export class DatabaseStorage {
         type: resources.type,
         capabilities: resources.capabilities
       })
-      .from(resources)
+      .from(ptResources)
       .where(and(
-        eq(resources.status, 'active'),
+        eq(ptResources.status, 'active'),
         or(
           sql`${resources.capabilities} IS NULL`,
           sql`jsonb_array_length(${resources.capabilities}) = 0`
@@ -11997,8 +11897,8 @@ export class DatabaseStorage {
         plantId: resources.plantId,
         count: sql<number>`count(*)`.as('count')
       })
-      .from(resources)
-      .where(eq(resources.status, 'active'))
+      .from(ptResources)
+      .where(eq(ptResources.status, 'active'))
       .groupBy(resources.name, resources.plantId)
       .having(sql`count(*) > 1`);
 
@@ -12028,7 +11928,7 @@ export class DatabaseStorage {
       .from(operations)
       .where(sql`jsonb_array_length(${operations.requiredCapabilities}) > 0`);
 
-    const allCapabilities = await db.select({ id: capabilities.id }).from(capabilities);
+    const allCapabilities = await db.select({ id: capabilities.id }).from(ptCapabilities);
     const validCapabilityIds = new Set(allCapabilities.map(c => c.id));
 
     const invalidCapabilityOperations = operationsWithInvalidCapabilities.filter(op => {
@@ -12064,9 +11964,9 @@ export class DatabaseStorage {
         id: plants.id,
         name: plants.name
       })
-      .from(plants)
-      .leftJoin(resources, eq(plants.id, resources.plantId))
-      .where(and(eq(plants.isActive, true), isNull(resources.id)))
+      .from(ptPlants)
+      .leftJoin(resources, eq(ptPlants.id, resources.plantId))
+      .where(and(eq(ptPlants.isActive, true), isNull(resources.id)))
       .groupBy(plants.id, plants.name);
 
     if (plantsWithoutResources.length > 0) {
@@ -12135,10 +12035,10 @@ export class DatabaseStorage {
         plantId: resources.plantId,
         status: resources.status
       })
-      .from(resources)
-      .leftJoin(resourceShiftAssignments, eq(resources.id, resourceShiftAssignments.resourceId))
+      .from(ptResources)
+      .leftJoin(resourceShiftAssignments, eq(ptResources.id, resourceShiftAssignments.resourceId))
       .where(and(
-        eq(resources.status, 'active'),
+        eq(ptResources.status, 'active'),
         isNull(resourceShiftAssignments.resourceId)
       ))
       .groupBy(resources.id, resources.name, resources.plantId, resources.status);
@@ -12172,7 +12072,7 @@ export class DatabaseStorage {
       .innerJoin(resources, eq(resourceShiftAssignments.resourceId, resources.id))
       .innerJoin(shiftTemplates, eq(resourceShiftAssignments.shiftTemplateId, shiftTemplates.id))
       .where(and(
-        eq(resources.status, 'active'),
+        eq(ptResources.status, 'active'),
         or(
           isNull(shiftTemplates.startTime),
           isNull(shiftTemplates.endTime),
@@ -12201,9 +12101,9 @@ export class DatabaseStorage {
 
   private async getTotalRecordsCount(): Promise<number> {
     const counts = await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(plants),
-      db.select({ count: sql<number>`count(*)` }).from(resources),
-      db.select({ count: sql<number>`count(*)` }).from(capabilities),
+      db.select({ count: sql<number>`count(*)` }).from(ptPlants),
+      db.select({ count: sql<number>`count(*)` }).from(ptResources),
+      db.select({ count: sql<number>`count(*)` }).from(ptCapabilities),
       db.select({ count: sql<number>`count(*)` }).from(productionOrders),
       db.select({ count: sql<number>`count(*)` }).from(operations)
     ]);
@@ -15069,7 +14969,7 @@ export class DatabaseStorage {
         drumUpdatedAt: new Date(),
         drumUpdatedBy: method === 'manual' ? 'User' : 'System'
       })
-      .where(eq(resources.id, resourceId))
+      .where(eq(ptResources.id, resourceId))
       .returning();
 
     if (!updatedResource) {
@@ -15145,7 +15045,7 @@ export class DatabaseStorage {
     }>;
   }> {
     // Get all resources
-    const allResources = await db.select().from(resources);
+    const allResources = await db.select().from(ptResources);
     
     // Get resource utilization data
     const resourceUtilization = await db
@@ -15216,7 +15116,7 @@ export class DatabaseStorage {
                 drumDesignationReason: `High bottleneck score (${score})`,
                 drumDesignationMethod: 'automated'
               })
-              .where(eq(resources.id, resource.id));
+              .where(eq(ptResources.id, resource.id));
             drumsUpdated++;
           }
         } else if (score >= 50) {
@@ -15234,7 +15134,7 @@ export class DatabaseStorage {
                 drumDesignationReason: `Low bottleneck score (${score})`,
                 drumDesignationMethod: 'automated'
               })
-              .where(eq(resources.id, resource.id));
+              .where(eq(ptResources.id, resource.id));
             drumsUpdated++;
           }
         }
@@ -15283,8 +15183,8 @@ export class DatabaseStorage {
         reason: sql`COALESCE(${resources.drumDesignationReason}, 'Manual designation')`.as('reason'),
         utilization: sql`COALESCE(${resources.utilization}, 0)`.as('utilization')
       })
-      .from(resources)
-      .where(eq(resources.isDrum, true));
+      .from(ptResources)
+      .where(eq(ptResources.isDrum, true));
 
     return drumResources;
   }
@@ -15299,7 +15199,7 @@ export class DatabaseStorage {
         drumDesignationReason: reason || 'Manual designation',
         drumDesignationMethod: 'manual'
       })
-      .where(eq(resources.id, resourceId))
+      .where(eq(ptResources.id, resourceId))
       .returning();
 
     if (!updatedResource) {
@@ -17720,247 +17620,6 @@ export class DatabaseStorage {
     ];
   }
 
-  // Stub methods to satisfy interface - these can be implemented later as needed
-  async getIntegrations(): Promise<any[]> {
-    return [];
-  }
-
-  async getIntegration(id: number): Promise<any | undefined> {
-    return undefined;
-  }
-
-  async createIntegration(integration: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async updateIntegration(id: number, integration: any): Promise<any | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteIntegration(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getScheduleOptimizationProfiles(): Promise<any[]> {
-    return [];
-  }
-
-  async getScheduleOptimizationProfile(id: number): Promise<any | undefined> {
-    return undefined;
-  }
-
-  async createScheduleOptimizationProfile(profile: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async updateScheduleOptimizationProfile(id: number, profile: any): Promise<any | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteScheduleOptimizationProfile(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getJobsByOrderId(orderId: number): Promise<any[]> {
-    return [];
-  }
-
-  async getSchedulingDetails(): Promise<any> {
-    return {};
-  }
-
-  async getSchedulingAnalytics(): Promise<any> {
-    return {};
-  }
-
-  async optimizeSchedule(params: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async rescheduleOperation(id: number, params: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async getResourceAvailability(resourceId: number, startDate: Date, endDate: Date): Promise<any[]> {
-    return [];
-  }
-
-  async createSchedulingConstraint(constraint: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async getSchedulingConstraints(): Promise<any[]> {
-    return [];
-  }
-
-  async updateSchedulingConstraint(id: number, constraint: any): Promise<any | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteSchedulingConstraint(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getCapacityPlanningData(): Promise<any> {
-    return {};
-  }
-
-  async updateResourceCapacity(resourceId: number, capacity: any): Promise<any> {
-    throw new Error('Not implemented');
-  }
-
-  async getResourceUtilization(resourceId?: number, startDate?: Date, endDate?: Date): Promise<any[]> {
-    return [];
-  }
-
-  async getBottleneckAnalysis(): Promise<any[]> {
-    return [];
-  }
-
-  async getOperationsByJobId(jobId: number): Promise<any[]> {
-    const result = await db.select().from(ptJobOperations).where(eq(ptJobOperations.jobId, jobId));
-    return result;
-  }
-
-  async getProductionVersions(): Promise<ProductionVersion[]> {
-    return [];
-  }
-
-  async getProductionVersion(id: number): Promise<ProductionVersion | undefined> {
-    return undefined;
-  }
-
-  async createProductionVersion(version: InsertProductionVersion): Promise<ProductionVersion> {
-    throw new Error('Not implemented');
-  }
-
-  async updateProductionVersion(id: number, version: Partial<InsertProductionVersion>): Promise<ProductionVersion | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteProductionVersion(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getProductionVersionPhaseFormulationDetails(): Promise<ProductionVersionPhaseFormulationDetail[]> {
-    return [];
-  }
-
-  async getProductionVersionPhaseFormulationDetail(id: number): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
-    return undefined;
-  }
-
-  async createProductionVersionPhaseFormulationDetail(detail: InsertProductionVersionPhaseFormulationDetail): Promise<ProductionVersionPhaseFormulationDetail> {
-    throw new Error('Not implemented');
-  }
-
-  async updateProductionVersionPhaseFormulationDetail(id: number, detail: Partial<InsertProductionVersionPhaseFormulationDetail>): Promise<ProductionVersionPhaseFormulationDetail | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteProductionVersionPhaseFormulationDetail(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getProductionVersionPhaseRecipeProductOutputs(): Promise<ProductionVersionPhaseRecipeProductOutput[]> {
-    return [];
-  }
-
-  async getProductionVersionPhaseRecipeProductOutput(id: number): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
-    return undefined;
-  }
-
-  async createProductionVersionPhaseRecipeProductOutput(output: InsertProductionVersionPhaseRecipeProductOutput): Promise<ProductionVersionPhaseRecipeProductOutput> {
-    throw new Error('Not implemented');
-  }
-
-  async updateProductionVersionPhaseRecipeProductOutput(id: number, output: Partial<InsertProductionVersionPhaseRecipeProductOutput>): Promise<ProductionVersionPhaseRecipeProductOutput | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteProductionVersionPhaseRecipeProductOutput(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getPlannedOrders(): Promise<PlannedOrder[]> {
-    return [];
-  }
-
-  async getPlannedOrder(id: number): Promise<PlannedOrder | undefined> {
-    return undefined;
-  }
-
-  async createPlannedOrder(order: InsertPlannedOrder): Promise<PlannedOrder> {
-    throw new Error('Not implemented');
-  }
-
-  async updatePlannedOrder(id: number, order: Partial<InsertPlannedOrder>): Promise<PlannedOrder | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deletePlannedOrder(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getResourceRequirements(): Promise<ResourceRequirement[]> {
-    return [];
-  }
-
-  async getResourceRequirement(id: number): Promise<ResourceRequirement | undefined> {
-    return undefined;
-  }
-
-  async createResourceRequirement(requirement: InsertResourceRequirement): Promise<ResourceRequirement> {
-    throw new Error('Not implemented');
-  }
-
-  async updateResourceRequirement(id: number, requirement: Partial<InsertResourceRequirement>): Promise<ResourceRequirement | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteResourceRequirement(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async getResourceRequirementAssignments(): Promise<ResourceRequirementAssignment[]> {
-    return [];
-  }
-
-  async getResourceRequirementAssignment(id: number): Promise<ResourceRequirementAssignment | undefined> {
-    return undefined;
-  }
-
-  async createResourceRequirementAssignment(assignment: InsertResourceRequirementAssignment): Promise<ResourceRequirementAssignment> {
-    throw new Error('Not implemented');
-  }
-
-  async updateResourceRequirementAssignment(id: number, assignment: Partial<InsertResourceRequirementAssignment>): Promise<ResourceRequirementAssignment | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async deleteResourceRequirementAssignment(id: number): Promise<boolean> {
-    return false;
-  }
-
-  async assignResourceToPlant(plantId: number, resourceId: number, isPrimary?: boolean): Promise<PlantResource> {
-    throw new Error('Not implemented');
-  }
-
-  async removeResourceFromPlant(plantId: number, resourceId: number): Promise<boolean> {
-    return false;
-  }
-
-  async updatePlantResourceAssignment(plantId: number, resourceId: number, updates: Partial<InsertPlantResource>): Promise<PlantResource | undefined> {
-    throw new Error('Not implemented');
-  }
-
-  async getResourcesByPlantId(plantId: number): Promise<any[]> {
-    return [];
-  }
-
-  async getPlantsByResourceId(resourceId: number): Promise<any[]> {
-    return [];
-  }
 
   // Max Chat Messages implementation
   async getMaxChatMessages(userId: number): Promise<MaxChatMessage[]> {
