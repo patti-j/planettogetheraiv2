@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue
 } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { 
   ZoomIn, 
   ZoomOut, 
@@ -20,9 +21,22 @@ import {
   Calendar,
   Download,
   Upload,
-  Filter
+  Filter,
+  Menu,
+  X,
+  Send,
+  Sparkles,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  BarChart3,
+  Target,
+  Zap,
+  Moon,
+  Sun
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { Link } from 'wouter';
 import { GanttDataService } from '@/services/scheduler/GanttDataService';
 import { GanttConfigService } from '@/services/scheduler/GanttConfigService';
 import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesService';
@@ -34,11 +48,19 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [resourceCount, setResourceCount] = useState(0);
   const [operationCount, setOperationCount] = useState(0);
-  const [currentView, setCurrentView] = useState('weekAndDayLetter');
+  const [currentView, setCurrentView] = useState('dayAndWeek');
   const [favorites, setFavorites] = useState<any[]>([]);
   const [schedulerData, setSchedulerData] = useState<any>(null);
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
+  const [isMaxAIOpen, setIsMaxAIOpen] = useState(false);
+  const [maxAIMessages, setMaxAIMessages] = useState<Array<{role: string, content: string}>>([
+    { role: 'assistant', content: "Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?" }
+  ]);
+  const [maxAIInput, setMaxAIInput] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [resourceUtilization, setResourceUtilization] = useState('--');
   const { toast } = useToast();
   
   // Services
@@ -85,7 +107,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         setSchedulerConfig({
           startDate: today,
           endDate: endDate,
-          viewPreset: 'weekAndDayLetter',
+          viewPreset: 'dayAndWeek',
           rowHeight: 50,
           barMargin: 5,
           columns: config.columns,
@@ -118,6 +140,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         // Update counts
         setResourceCount(ganttData.resources.length);
         setOperationCount(ganttData.events.length);
+        updateResourceUtilization(ganttData.resources, ganttData.events);
         
         setIsLoading(false);
         
@@ -138,6 +161,15 @@ const ProductionSchedulerProV2: React.FC = () => {
     };
     
     loadData();
+  }, []);
+
+  // Load dark mode preference
+  useEffect(() => {
+    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
+    setIsDarkMode(savedDarkMode);
+    if (savedDarkMode) {
+      document.body.classList.add('dark');
+    }
   }, []);
 
   // Capture scheduler instance after mount and apply zoom to fit
@@ -205,6 +237,431 @@ const ProductionSchedulerProV2: React.FC = () => {
     };
   }, [schedulerData, schedulerConfig, isInitialLoad]);
 
+  // Update resource utilization
+  const updateResourceUtilization = (resources: any[], events: any[]) => {
+    if (!resources || !events) {
+      setResourceUtilization('--');
+      return;
+    }
+    
+    const usedResources = new Set(events.map(e => e.resourceId));
+    const utilizationPercent = Math.round((usedResources.size / resources.length) * 100);
+    setResourceUtilization(`Resource utilization: ${utilizationPercent}%`);
+  };
+
+  // Scheduling Algorithm Implementations
+  const runSchedulingAlgorithm = async (algorithm: string) => {
+    if (!schedulerInstance) {
+      toast({
+        title: "Error",
+        description: "Scheduler not initialized",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    // Store current view settings
+    const currentZoomLevel = schedulerInstance.zoomLevel;
+    const currentStartDate = schedulerInstance.startDate;
+    const currentEndDate = schedulerInstance.endDate;
+    
+    try {
+      let message = '';
+      
+      switch(algorithm) {
+        case 'ASAP':
+        case 'asap':
+          await asapScheduling();
+          message = 'ASAP scheduling applied - operations scheduled as early as possible!';
+          break;
+          
+        case 'ALAP':
+        case 'alap':
+          await alapScheduling();
+          message = 'ALAP scheduling applied - operations scheduled as late as possible!';
+          break;
+          
+        case 'CRITICAL_PATH':
+        case 'criticalPath':
+          await criticalPathScheduling();
+          message = 'Critical Path identified and optimized!';
+          break;
+          
+        case 'LEVEL_RESOURCES':
+        case 'levelResources':
+          await levelResourcesScheduling();
+          message = 'Resources leveled - workload balanced across resources!';
+          break;
+          
+        case 'DRUM_TOC':
+        case 'drum':
+          await drumScheduling();
+          message = 'Drum scheduling applied - optimized around bottleneck!';
+          break;
+      }
+      
+      // Refresh the scheduler
+      schedulerInstance.refresh();
+      
+      // Restore view settings
+      schedulerInstance.zoomLevel = currentZoomLevel;
+      schedulerInstance.setTimeSpan(currentStartDate, currentEndDate);
+      
+      // Update status
+      const events = schedulerInstance.eventStore.records || [];
+      const resources = schedulerInstance.resourceStore.records || [];
+      updateResourceUtilization(resources, events);
+      
+      toast({
+        title: "Optimization Complete",
+        description: message
+      });
+      
+    } catch (error) {
+      console.error('Scheduling error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to apply scheduling algorithm",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ASAP Scheduling Algorithm
+  const asapScheduling = async () => {
+    const events = [...schedulerInstance.eventStore.records].sort((a, b) => 
+      a.startDate.getTime() - b.startDate.getTime()
+    );
+    
+    const baseDate = new Date();
+    baseDate.setHours(7, 0, 0, 0);
+    
+    const resourceEvents: any = {};
+    events.forEach(event => {
+      if (!resourceEvents[event.resourceId]) {
+        resourceEvents[event.resourceId] = [];
+      }
+      resourceEvents[event.resourceId].push(event);
+    });
+    
+    Object.keys(resourceEvents).forEach(resourceId => {
+      const resEvents = resourceEvents[resourceId];
+      let nextAvailableTime = new Date(baseDate);
+      
+      resEvents.forEach((event: any) => {
+        event.startDate = new Date(nextAvailableTime);
+        const durationMs = event.duration * 60 * 60 * 1000;
+        event.endDate = new Date(nextAvailableTime.getTime() + durationMs);
+        nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+      });
+    });
+  };
+
+  // ALAP Scheduling Algorithm
+  const alapScheduling = async () => {
+    const events = [...schedulerInstance.eventStore.records].sort((a, b) => 
+      b.startDate.getTime() - a.startDate.getTime()
+    );
+    
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + 7);
+    endDate.setHours(18, 0, 0, 0);
+    
+    const resourceEvents: any = {};
+    events.forEach(event => {
+      if (!resourceEvents[event.resourceId]) {
+        resourceEvents[event.resourceId] = [];
+      }
+      resourceEvents[event.resourceId].push(event);
+    });
+    
+    Object.keys(resourceEvents).forEach(resourceId => {
+      const resEvents = resourceEvents[resourceId];
+      let latestEndTime = new Date(endDate);
+      
+      resEvents.forEach((event: any) => {
+        const durationMs = event.duration * 60 * 60 * 1000;
+        event.endDate = new Date(latestEndTime);
+        event.startDate = new Date(latestEndTime.getTime() - durationMs);
+        latestEndTime = new Date(event.startDate.getTime() - 30 * 60 * 1000);
+      });
+    });
+  };
+
+  // Critical Path Scheduling
+  const criticalPathScheduling = async () => {
+    const events = schedulerInstance.eventStore.records;
+    const dependencies = schedulerInstance.dependencyStore?.records || [];
+    
+    const criticalEvents = events.filter((event: any) => {
+      const hasPredecessors = dependencies.some((d: any) => d.to === event.id);
+      const hasSuccessors = dependencies.some((d: any) => d.from === event.id);
+      return hasPredecessors || hasSuccessors;
+    });
+    
+    criticalEvents.forEach((event: any) => {
+      event.eventColor = 'red';
+      event.cls = 'critical-path';
+    });
+    
+    const nonCriticalEvents = events.filter((event: any) => 
+      !criticalEvents.includes(event)
+    );
+    
+    nonCriticalEvents.forEach((event: any) => {
+      event.eventColor = 'gray';
+      event.cls = '';
+    });
+  };
+
+  // Level Resources Scheduling
+  const levelResourcesScheduling = async () => {
+    const events = [...schedulerInstance.eventStore.records];
+    const resources = schedulerInstance.resourceStore.records;
+    
+    const targetOpsPerResource = Math.ceil(events.length / resources.length);
+    const resourceAssignments: any = {};
+    
+    resources.forEach((resource: any) => {
+      resourceAssignments[resource.id] = [];
+    });
+    
+    events.sort((a: any, b: any) => b.duration - a.duration);
+    
+    events.forEach((event: any) => {
+      let minResource = null;
+      let minCount = Infinity;
+      
+      Object.entries(resourceAssignments).forEach(([resourceId, assignments]: any) => {
+        if (assignments.length < minCount) {
+          minCount = assignments.length;
+          minResource = resourceId;
+        }
+      });
+      
+      if (minResource) {
+        event.resourceId = minResource;
+        resourceAssignments[minResource].push(event);
+        
+        const baseTime = new Date();
+        baseTime.setHours(8, 0, 0, 0);
+        const offset = resourceAssignments[minResource].length - 1;
+        const startTime = new Date(baseTime.getTime() + offset * 4 * 60 * 60 * 1000);
+        
+        event.startDate = startTime;
+        const durationMs = event.duration * 60 * 60 * 1000;
+        event.endDate = new Date(startTime.getTime() + durationMs);
+      }
+    });
+  };
+
+  // Drum (Theory of Constraints) Scheduling
+  const drumScheduling = async () => {
+    const events = schedulerInstance.eventStore.records;
+    const resources = schedulerInstance.resourceStore.records;
+    
+    const resourceUsage: any = {};
+    resources.forEach((resource: any) => {
+      const resourceEvents = events.filter((e: any) => e.resourceId === resource.id);
+      let totalDuration = 0;
+      resourceEvents.forEach((event: any) => {
+        totalDuration += event.duration;
+      });
+      resourceUsage[resource.id] = {
+        resource,
+        events: resourceEvents,
+        totalDuration
+      };
+    });
+    
+    let bottleneck: any = null;
+    let maxDuration = 0;
+    Object.values(resourceUsage).forEach((usage: any) => {
+      if (usage.totalDuration > maxDuration) {
+        maxDuration = usage.totalDuration;
+        bottleneck = usage;
+      }
+    });
+    
+    if (bottleneck) {
+      const baseTime = new Date();
+      baseTime.setHours(8, 0, 0, 0);
+      let currentTime = new Date(baseTime);
+      
+      bottleneck.events.forEach((event: any) => {
+        event.startDate = new Date(currentTime);
+        const durationMs = event.duration * 60 * 60 * 1000;
+        event.endDate = new Date(currentTime.getTime() + durationMs);
+        event.eventColor = 'red';
+        currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+      });
+      
+      Object.values(resourceUsage).forEach((usage: any) => {
+        if (usage !== bottleneck) {
+          let bufferTime = new Date(baseTime);
+          bufferTime.setHours(bufferTime.getHours() + 2);
+          
+          usage.events.forEach((event: any) => {
+            event.startDate = new Date(bufferTime);
+            const durationMs = event.duration * 60 * 60 * 1000;
+            event.endDate = new Date(bufferTime.getTime() + durationMs);
+            event.eventColor = 'green';
+            bufferTime = new Date(event.endDate.getTime() + 45 * 60 * 1000);
+          });
+        }
+      });
+    }
+  };
+
+  // Analyze Schedule
+  const analyzeSchedule = () => {
+    if (!schedulerInstance) return '';
+    
+    const events = schedulerInstance.eventStore.records || [];
+    const resources = schedulerInstance.resourceStore.records || [];
+    
+    const resourceUsage: any = {};
+    resources.forEach((resource: any) => {
+      const resourceEvents = events.filter((e: any) => e.resourceId === resource.id);
+      let totalDuration = 0;
+      resourceEvents.forEach((event: any) => {
+        const duration = (event.endDate - event.startDate) / (1000 * 60 * 60);
+        totalDuration += duration;
+      });
+      resourceUsage[resource.name] = {
+        operations: resourceEvents.length,
+        hoursUsed: totalDuration.toFixed(1),
+        utilization: resourceEvents.length > 0 ? 100 : 0
+      };
+    });
+    
+    let bottleneck = null;
+    let maxOps = 0;
+    Object.entries(resourceUsage).forEach(([name, data]: any) => {
+      if (data.operations > maxOps) {
+        maxOps = data.operations;
+        bottleneck = name;
+      }
+    });
+    
+    let earliestStart: Date | null = null;
+    let latestEnd: Date | null = null;
+    events.forEach((event: any) => {
+      if (!earliestStart || event.startDate < earliestStart) {
+        earliestStart = event.startDate;
+      }
+      if (!latestEnd || event.endDate > latestEnd) {
+        latestEnd = event.endDate;
+      }
+    });
+    
+    const makespan = earliestStart && latestEnd ? 
+      ((latestEnd - earliestStart) / (1000 * 60 * 60)).toFixed(1) : 0;
+    
+    let response = '📊 **Production Schedule Analysis**\n\n';
+    response += `📈 **Overall Metrics:**\n`;
+    response += `• Total Operations: ${events.length}\n`;
+    response += `• Active Resources: ${Object.values(resourceUsage).filter((r: any) => r.operations > 0).length}/${resources.length}\n`;
+    response += `• Total Makespan: ${makespan} hours\n\n`;
+    
+    response += `🏭 **Resource Utilization:**\n`;
+    Object.entries(resourceUsage).forEach(([name, data]: any) => {
+      if (data.operations > 0) {
+        response += `• ${name}: ${data.operations} operations, ${data.hoursUsed} hours\n`;
+      }
+    });
+    
+    if (bottleneck) {
+      response += `\n⚠️ **Bottleneck Identified:**\n`;
+      response += `• ${bottleneck} has the highest load with ${maxOps} operations\n`;
+    }
+    
+    return response;
+  };
+
+  // Handle Max AI message
+  const handleMaxAISend = async () => {
+    if (!maxAIInput.trim()) return;
+    
+    const userMessage = maxAIInput.trim();
+    setMaxAIMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+    setMaxAIInput('');
+    
+    // Process message and determine response
+    const lowerMessage = userMessage.toLowerCase();
+    let response = '';
+    let executedAlgorithm = null;
+    
+    // Check for algorithm execution commands
+    if (lowerMessage.includes('run') || lowerMessage.includes('execute') || lowerMessage.includes('apply') || lowerMessage.includes('optimize')) {
+      if (lowerMessage.includes('asap') || lowerMessage.includes('forward')) {
+        executedAlgorithm = 'asap';
+        response = '🚀 Executing ASAP (Forward) scheduling algorithm...';
+      } else if (lowerMessage.includes('alap') || lowerMessage.includes('backward')) {
+        executedAlgorithm = 'alap';
+        response = '⏰ Executing ALAP (Backward) scheduling algorithm...';
+      } else if (lowerMessage.includes('critical path')) {
+        executedAlgorithm = 'criticalPath';
+        response = '🎯 Executing Critical Path optimization...';
+      } else if (lowerMessage.includes('level') || lowerMessage.includes('balance resource')) {
+        executedAlgorithm = 'levelResources';
+        response = '⚖️ Executing Resource Leveling algorithm...';
+      } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc') || lowerMessage.includes('constraint')) {
+        executedAlgorithm = 'drum';
+        response = '🥁 Executing Drum (Theory of Constraints) optimization...';
+      } else {
+        response = 'To optimize the schedule, please specify an algorithm. You can say:\n• "Run ASAP scheduling"\n• "Apply ALAP algorithm"\n• "Execute critical path optimization"\n• "Level resources"\n• "Apply drum scheduling"';
+      }
+    }
+    // Check for analysis requests
+    else if (lowerMessage.includes('analyze') || lowerMessage.includes('analysis') || lowerMessage.includes('insights')) {
+      response = analyzeSchedule();
+    }
+    // Information requests
+    else if (lowerMessage.includes('what') || lowerMessage.includes('explain') || lowerMessage.includes('tell me about')) {
+      if (lowerMessage.includes('asap')) {
+        response = 'ASAP (As Soon As Possible) pushes all operations to the earliest possible time slots. Best for urgent orders or maximizing early throughput. Say "Run ASAP" to apply it.';
+      } else if (lowerMessage.includes('alap')) {
+        response = 'ALAP (As Late As Possible) delays operations to the latest time that still meets due dates. Minimizes inventory holding costs. Say "Run ALAP" to apply it.';
+      } else if (lowerMessage.includes('critical path')) {
+        response = 'Critical Path identifies the longest sequence of dependent tasks and optimizes them first. Minimizes project completion time. Say "Execute critical path" to apply it.';
+      } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
+        response = 'Resource Leveling distributes work evenly across all resources. Prevents overloading and improves efficiency. Say "Level resources" to apply it.';
+      } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
+        response = 'Drum scheduling (TOC) identifies your bottleneck resource and optimizes around it. Maximizes throughput. Say "Apply drum scheduling" to apply it.';
+      } else {
+        response = 'I can help you optimize the schedule. Try asking:\n• "Run ASAP scheduling"\n• "Analyze the schedule"\n• "Explain critical path"\n• "Level the resources"';
+      }
+    }
+    // Help commands
+    else if (lowerMessage.includes('help') || lowerMessage.includes('commands')) {
+      response = '📊 **Schedule Optimization Commands:**\n\n**Execute Algorithms:**\n• Run ASAP\n• Apply ALAP\n• Execute critical path\n• Level resources\n• Apply drum scheduling\n\n**Get Information:**\n• What is ASAP?\n• Explain critical path\n• Analyze schedule\n\n**Analysis:**\n• Show insights\n• Check utilization';
+    }
+    else {
+      response = `I understand you're asking about "${userMessage}". I can help you optimize the schedule using different algorithms. Say "help" to see available commands.`;
+    }
+    
+    // Execute algorithm if requested
+    if (executedAlgorithm) {
+      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: response }]);
+      await runSchedulingAlgorithm(executedAlgorithm);
+      
+      const successMessage = `✅ Successfully applied ${executedAlgorithm === 'asap' ? 'ASAP' : 
+        executedAlgorithm === 'alap' ? 'ALAP' :
+        executedAlgorithm === 'criticalPath' ? 'Critical Path' :
+        executedAlgorithm === 'levelResources' ? 'Resource Leveling' :
+        'Drum (TOC)'} algorithm! The schedule has been optimized. Would you like to try a different algorithm?`;
+      
+      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: successMessage }]);
+    } else {
+      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: response }]);
+    }
+  };
+
   // Toolbar actions - memoized with useCallback
   const handleZoomIn = useCallback(() => {
     if (schedulerInstance && typeof schedulerInstance.zoomIn === 'function') {
@@ -249,63 +706,18 @@ const ProductionSchedulerProV2: React.FC = () => {
     }
   };
 
-  const handleRefresh = async () => {
-    if (schedulerInstance) {
-      setIsLoading(true);
-      const ganttData = await dataService.getProductionData();
-      schedulerInstance.project.loadInlineData(ganttData);
-      setIsLoading(false);
-      toast({
-        title: "Refreshed",
-        description: "Data refreshed successfully"
-      });
-    }
-  };
-
   const handleOptimize = (algorithm: string) => {
-    console.log('Optimizing with algorithm:', algorithm);
-    toast({
-      title: "Optimization Started",
-      description: `Running ${algorithm} optimization...`
-    });
+    runSchedulingAlgorithm(algorithm);
   };
 
-  const handleSaveFavorite = () => {
-    if (schedulerInstance) {
-      const name = prompt('Enter a name for this view:');
-      if (name) {
-        const favorite = {
-          id: Date.now().toString(),
-          name,
-          description: `Saved on ${new Date().toLocaleDateString()}`,
-          config: {
-            viewPreset: schedulerInstance.viewPreset,
-            startDate: schedulerInstance.startDate.toISOString(),
-            endDate: schedulerInstance.endDate.toISOString()
-          },
-          createdAt: new Date().toISOString(),
-          createdBy: '1'
-        };
-        favoritesService.saveFavorite(favorite);
-        setFavorites([...favorites, favorite]);
-        toast({
-          title: "Saved",
-          description: `View "${name}" saved successfully`
-        });
-      }
-    }
-  };
-
-  const handleLoadFavorite = (favoriteId: string) => {
-    const favorite = favoritesService.getFavorite(favoriteId);
-    if (schedulerInstance && favorite) {
-      schedulerInstance.viewPreset = favorite.config.viewPreset;
-      schedulerInstance.startDate = new Date(favorite.config.startDate);
-      schedulerInstance.endDate = new Date(favorite.config.endDate);
-      toast({
-        title: "Loaded",
-        description: `View "${favorite.name}" loaded`
-      });
+  const toggleDarkMode = () => {
+    const newDarkMode = !isDarkMode;
+    setIsDarkMode(newDarkMode);
+    localStorage.setItem('darkMode', String(newDarkMode));
+    if (newDarkMode) {
+      document.body.classList.add('dark');
+    } else {
+      document.body.classList.remove('dark');
     }
   };
 
@@ -353,105 +765,283 @@ const ProductionSchedulerProV2: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
-      {/* Toolbar */}
-      <div className="bg-white border-b px-4 py-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            {/* Zoom Controls */}
-            <div className="flex items-center gap-1 border-r pr-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleZoomIn}
-                title="Zoom In"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleZoomOut}
-                title="Zoom Out"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleZoomToFit}
-                title="Zoom to Fit"
-              >
-                <Maximize2 className="h-4 w-4" />
-              </Button>
-            </div>
-
-            {/* View Selector */}
-            <Select value={currentView} onValueChange={handleViewChange}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Select View" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="hourAndDay">Hour & Day</SelectItem>
-                <SelectItem value="dayAndWeek">Day & Week</SelectItem>
-                <SelectItem value="weekAndDay">Week & Day</SelectItem>
-                <SelectItem value="weekAndDayLetter">Week & Day (Letter)</SelectItem>
-                <SelectItem value="weekAndMonth">Week & Month</SelectItem>
-                <SelectItem value="monthAndYear">Month & Year</SelectItem>
-                <SelectItem value="year">Year</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Optimization Algorithms */}
-            <Select onValueChange={handleOptimize}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Optimization Algorithm" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="asap">ASAP</SelectItem>
-                <SelectItem value="alap">ALAP</SelectItem>
-                <SelectItem value="critical">Critical Path</SelectItem>
-                <SelectItem value="resource">Level Resources</SelectItem>
-                <SelectItem value="toc">Theory of Constraints</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Button variant="outline" onClick={handleRefresh}>
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-
-          <div className="flex items-center gap-2">
-            {/* Favorites */}
-            <Select onValueChange={handleLoadFavorite}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Load Favorite" />
-              </SelectTrigger>
-              <SelectContent>
-                {favorites.map(fav => (
-                  <SelectItem key={fav.id} value={fav.id}>
-                    <div className="flex items-center">
-                      <Star className="h-3 w-3 mr-2" />
-                      {fav.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            
-            <Button variant="outline" onClick={handleSaveFavorite}>
-              <Save className="h-4 w-4 mr-2" />
-              Save View
-            </Button>
-          </div>
+    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 to-blue-900 overflow-hidden">
+      {/* Header */}
+      <div className="bg-white/95 dark:bg-gray-900/95 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setIsNavMenuOpen(true)}
+            className="text-blue-600 dark:text-blue-400"
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Production Schedule</h1>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="default"
+            size="sm"
+            onClick={() => setIsMaxAIOpen(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-800 text-white"
+          >
+            <Sparkles className="h-4 w-4 mr-2" />
+            Max AI
+          </Button>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            Last updated: {new Date().toLocaleTimeString()}
+          </span>
         </div>
       </div>
 
+      {/* Navigation Menu */}
+      {isNavMenuOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsNavMenuOpen(false)} />
+          <div className="absolute left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center">
+              <h3 className="text-lg font-semibold">Navigation</h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsNavMenuOpen(false)}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            <div className="p-4 space-y-2">
+              <Link href="/">
+                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  🏠 Home
+                </a>
+              </Link>
+              <Link href="/production-scheduler-pro">
+                <a className="block px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium">
+                  📊 Production Scheduler
+                </a>
+              </Link>
+              <Link href="/business-goals">
+                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  📈 Business Goals
+                </a>
+              </Link>
+              <Link href="/implementation-projects">
+                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  💼 Projects
+                </a>
+              </Link>
+              <Link href="/control-tower">
+                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  🌐 Control Tower
+                </a>
+              </Link>
+              <Link href="/help">
+                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+                  📚 Help
+                </a>
+              </Link>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Max AI Assistant Panel */}
+      {isMaxAIOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMaxAIOpen(false)} />
+          <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-xl flex flex-col">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Sparkles className="h-5 w-5" />
+                Max AI Assistant
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setIsMaxAIOpen(false)}
+                className="text-white hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* Quick Actions */}
+            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-b">
+              <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1">
+                <Sparkles className="h-4 w-4" />
+                Quick Actions
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runSchedulingAlgorithm('ASAP')}
+                  className="text-xs"
+                >
+                  <TrendingUp className="h-3 w-3 mr-1" />
+                  Run ASAP
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runSchedulingAlgorithm('ALAP')}
+                  className="text-xs"
+                >
+                  <TrendingDown className="h-3 w-3 mr-1" />
+                  Run ALAP
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runSchedulingAlgorithm('CRITICAL_PATH')}
+                  className="text-xs"
+                >
+                  <AlertTriangle className="h-3 w-3 mr-1" />
+                  Critical Path
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runSchedulingAlgorithm('LEVEL_RESOURCES')}
+                  className="text-xs"
+                >
+                  <BarChart3 className="h-3 w-3 mr-1" />
+                  Level Resources
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runSchedulingAlgorithm('DRUM_TOC')}
+                  className="text-xs"
+                >
+                  <Target className="h-3 w-3 mr-1" />
+                  Drum (TOC)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const analysis = analyzeSchedule();
+                    setMaxAIMessages(prev => [...prev, { role: 'assistant', content: analysis }]);
+                  }}
+                  className="text-xs"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  Analyze Schedule
+                </Button>
+              </div>
+            </div>
+            
+            {/* Chat Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {maxAIMessages.map((msg, index) => (
+                <div
+                  key={index}
+                  className={`p-3 rounded-lg text-sm whitespace-pre-wrap ${
+                    msg.role === 'assistant'
+                      ? 'bg-gray-100 dark:bg-gray-800'
+                      : 'bg-blue-50 dark:bg-blue-900/20 ml-8'
+                  }`}
+                >
+                  {msg.content}
+                </div>
+              ))}
+            </div>
+            
+            {/* Input Area */}
+            <div className="p-4 border-t dark:border-gray-700">
+              <div className="flex gap-2">
+                <Input
+                  value={maxAIInput}
+                  onChange={(e) => setMaxAIInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleMaxAISend()}
+                  placeholder="Ask me anything about scheduling..."
+                  className="flex-1"
+                />
+                <Button onClick={handleMaxAISend} size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toolbar */}
+      <div className="bg-white/90 dark:bg-gray-900/90 px-4 py-2 flex items-center gap-3 border-b dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center gap-2 pr-3 border-r dark:border-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View:</label>
+          <Select value={currentView} onValueChange={handleViewChange}>
+            <SelectTrigger className="w-40 h-8">
+              <SelectValue placeholder="Select View" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="hourAndDay">Hour & Day</SelectItem>
+              <SelectItem value="dayAndWeek">Day & Week</SelectItem>
+              <SelectItem value="weekAndMonth">Week & Month</SelectItem>
+              <SelectItem value="monthAndYear">Month & Year</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="flex items-center gap-1 pr-3 border-r dark:border-gray-700">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomIn}
+            title="Zoom In"
+          >
+            Zoom In
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomOut}
+            title="Zoom Out"
+          >
+            Zoom Out
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleZoomToFit}
+            title="Fit to View"
+          >
+            Fit to View
+          </Button>
+        </div>
+
+        <div className="flex items-center gap-2 pr-3 border-r dark:border-gray-700">
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Algorithm:</label>
+          <Select onValueChange={handleOptimize}>
+            <SelectTrigger className="w-44 h-8">
+              <SelectValue placeholder="Select Algorithm" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="asap">ASAP (Forward)</SelectItem>
+              <SelectItem value="alap">ALAP (Backward)</SelectItem>
+              <SelectItem value="criticalPath">Critical Path</SelectItem>
+              <SelectItem value="levelResources">Level Resources</SelectItem>
+              <SelectItem value="drum">Drum (TOC)</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={toggleDarkMode}
+        >
+          {isDarkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
+          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+        </Button>
+      </div>
+
       {/* Scheduler Component */}
-      <div className="flex-1 relative flex flex-col" style={{ minHeight: 0, overflow: 'auto' }}>
-        <div className="flex-1 min-h-0" style={{ overflow: 'auto' }}>
-          <BryntumSchedulerPro
+      <div className="flex-1 m-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden relative">
+        <BryntumSchedulerPro
           ref={schedulerRef}
           {...schedulerConfig}
           project={schedulerData.project}
@@ -462,32 +1052,19 @@ const ProductionSchedulerProV2: React.FC = () => {
           onEventResizeEnd={handleEventResizeEnd}
           onDependencyAdd={handleDependencyAdd}
           onDependencyRemove={handleDependencyRemove}
-          />
-        </div>
+        />
+        {isLoading && (
+          <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        )}
       </div>
 
       {/* Status Bar */}
-      <div className="bg-white border-t px-4 py-2 flex-shrink-0">
-        <div className="flex items-center justify-between text-sm text-gray-600">
-          <div className="flex items-center gap-4">
-            <span>Resources: {resourceCount}</span>
-            <span>Operations: {operationCount}</span>
-            <span>View: {currentView}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm">
-              <Download className="h-4 w-4 mr-2" />
-              Export
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Upload className="h-4 w-4 mr-2" />
-              Import
-            </Button>
-            <Button variant="ghost" size="sm">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-          </div>
+      <div className="bg-white/95 dark:bg-gray-900/95 px-4 py-2 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 border-t dark:border-gray-700 flex-shrink-0">
+        <div className="flex items-center gap-4">
+          <span>{operationCount} operations scheduled</span>
+          <span>{resourceUtilization}</span>
         </div>
       </div>
     </div>
