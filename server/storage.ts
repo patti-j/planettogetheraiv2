@@ -2691,11 +2691,7 @@ export class DatabaseStorage {
   }
 
   // Stub implementations for missing interface methods
-  async deleteOperation(id: number): Promise<boolean> {
-    // Stub - using PT operations
-    const result = await db.delete(ptJobOperations).where(eq(ptJobOperations.id, id));
-    return (result.rowCount || 0) > 0;
-  }
+  // deleteOperation is already implemented above
 
   async getIntegrations(): Promise<any[]> {
     // Stub implementation - return empty array
@@ -8660,57 +8656,7 @@ export class DatabaseStorage {
     };
   }
 
-  // Plant Management Implementation
-  async createPlant(plant: InsertPlant): Promise<Plant> {
-    const [newPlant] = await db.insert(plants).values(plant).returning();
-    return newPlant;
-  }
-
-  async getPlants(): Promise<Plant[]> {
-    const result = await db.select({
-      id: plants.id,
-      name: plants.name,
-      location: sql<string>`CASE 
-        WHEN ${plants.city} IS NOT NULL AND ${plants.state} IS NOT NULL THEN CONCAT(${plants.city}, ', ', ${plants.state})
-        WHEN ${plants.city} IS NOT NULL THEN ${plants.city}
-        WHEN ${plants.country} IS NOT NULL THEN ${plants.country}
-        ELSE 'Location not specified'
-      END`,
-      address: plants.address,
-      city: plants.city,
-      state: plants.state,
-      country: plants.country,
-      postalCode: plants.postalCode,
-      latitude: plants.latitude,
-      longitude: plants.longitude,
-      timezone: plants.timezone,
-      isActive: plants.isActive,
-      plantType: plants.plantType,
-      capacity: plants.capacity,
-      operationalMetrics: plants.operationalMetrics
-    }).from(plants).orderBy(asc(plants.name));
-    
-    return result;
-  }
-
-  async getPlantById(id: number): Promise<Plant | null> {
-    const [plant] = await db.select().from(plants).where(eq(plants.id, id));
-    return plant || null;
-  }
-
-  async updatePlant(id: number, updates: Partial<InsertPlant>): Promise<Plant | null> {
-    const [updatedPlant] = await db
-      .update(plants)
-      .set(updates)
-      .where(eq(plants.id, id))
-      .returning();
-    return updatedPlant || null;
-  }
-
-  async deletePlant(id: number): Promise<boolean> {
-    const result = await db.delete(plants).where(eq(plants.id, id));
-    return result.rowCount! > 0;
-  }
+  // Plant Management Implementation removed - using PT Publish tables implementation above
 
   async deleteAllRecords(tableName: string): Promise<boolean> {
     try {
