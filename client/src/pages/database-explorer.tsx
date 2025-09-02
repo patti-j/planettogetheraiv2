@@ -208,26 +208,11 @@ export default function DatabaseExplorer() {
   }, []);
 
   // Filter tables based on search
-  const filteredTables = useMemo(() => {
-    console.log('Filter debug:', {
-      totalTables: tables.length,
-      searchTerm: tableSearchTerm,
-      searchTermLength: tableSearchTerm.length,
-      ptjobsExists: tables.some(t => t?.name?.toLowerCase()?.includes('ptjobs'))
-    });
-    
-    const filtered = tables.filter((table: DatabaseTable) =>
+  const filteredTables = useMemo(() => 
+    tables.filter((table: DatabaseTable) =>
       table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
-    );
-    
-    console.log('Filtered result:', {
-      originalCount: tables.length,
-      filteredCount: filtered.length,
-      filteredNames: filtered.slice(0, 10).map(t => t.name)
-    });
-    
-    return filtered;
-  }, [tables, tableSearchTerm]);
+    ), [tables, tableSearchTerm]
+  );
 
   // Get data type badge color
   const getDataTypeBadgeColor = (dataType: string) => {
@@ -833,7 +818,7 @@ export default function DatabaseExplorer() {
                   </TabsContent>
 
                   <TabsContent value="relations">
-                    {relationshipsLoading ? (
+                    {schemaRelationsLoading ? (
                       <div className="text-center py-8">
                         <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
                         <p>Loading table relationships...</p>
@@ -841,10 +826,10 @@ export default function DatabaseExplorer() {
                     ) : (
                       <div className="space-y-4">
                         <div className="flex items-center gap-4 mb-4">
-                          <Badge variant="outline">{tableRelationships.length} relationships</Badge>
+                          <Badge variant="outline">{schemaRelations.length} relationships</Badge>
                         </div>
                         
-                        {tableRelationships.length === 0 ? (
+                        {schemaRelations.length === 0 ? (
                           <div className="text-center py-8 text-gray-500">
                             <GitBranch className="h-12 w-12 mx-auto mb-4 opacity-50" />
                             <p className="text-lg font-medium mb-2">No relationships found</p>
@@ -862,19 +847,19 @@ export default function DatabaseExplorer() {
                                 </TableRow>
                               </TableHeader>
                               <TableBody>
-                                {tableRelationships.map((rel: TableRelationship, index) => (
-                                  <TableRow key={`${rel.constraint_name}-${index}`}>
-                                    <TableCell className="font-medium break-words max-w-48">{rel.constraint_name}</TableCell>
+                                {schemaRelations.map((rel: any, index) => (
+                                  <TableRow key={`${rel.constraint_name || rel.name}-${index}`}>
+                                    <TableCell className="font-medium break-words max-w-48">{rel.constraint_name || rel.name}</TableCell>
                                     <TableCell>
-                                      <Badge variant={rel.constraint_type === 'FOREIGN KEY' ? 'default' : 
-                                                    rel.constraint_type === 'PRIMARY KEY' ? 'secondary' : 'outline'}>
-                                        {rel.constraint_type}
+                                      <Badge variant={(rel.constraint_type === 'FOREIGN KEY' || rel.type === 'foreign_key') ? 'default' : 
+                                                    (rel.constraint_type === 'PRIMARY KEY' || rel.type === 'primary_key') ? 'secondary' : 'outline'}>
+                                        {rel.constraint_type || rel.type}
                                       </Badge>
                                     </TableCell>
-                                    <TableCell className="font-medium">{rel.column_name}</TableCell>
+                                    <TableCell className="font-medium">{rel.column_name || rel.column}</TableCell>
                                     <TableCell className="break-words max-w-64">
-                                      {rel.foreign_table_name && rel.foreign_column_name 
-                                        ? `${rel.foreign_table_name}.${rel.foreign_column_name}`
+                                      {(rel.foreign_table_name && rel.foreign_column_name) || (rel.references_table && rel.references_column)
+                                        ? `${rel.foreign_table_name || rel.references_table}.${rel.foreign_column_name || rel.references_column}`
                                         : '-'}
                                     </TableCell>
                                   </TableRow>
