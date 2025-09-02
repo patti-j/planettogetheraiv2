@@ -50,7 +50,16 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [operationCount, setOperationCount] = useState(0);
   const [currentView, setCurrentView] = useState('dayAndWeek');
   const [favorites, setFavorites] = useState<any[]>([]);
-  const [schedulerData, setSchedulerData] = useState<any>(null);
+  const [schedulerData, setSchedulerData] = useState<any>({
+    project: {
+      resources: [],
+      events: [],
+      dependencies: [],
+      assignments: [],
+      autoSync: false,
+      validateResponse: true
+    }
+  });
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
@@ -174,9 +183,20 @@ const ProductionSchedulerProV2: React.FC = () => {
 
   // Capture scheduler instance after mount and apply zoom to fit
   useEffect(() => {
-    if (!schedulerData || !schedulerConfig) return;
+    if (!schedulerConfig) return;
+    
+    let captureAttempts = 0;
+    const maxAttempts = 20;
     
     const timer = setInterval(() => {
+      captureAttempts++;
+      
+      // Stop trying after max attempts
+      if (captureAttempts >= maxAttempts) {
+        clearInterval(timer);
+        return;
+      }
+      
       // Try to get the actual Bryntum instance from the React component
       if (schedulerRef.current) {
         // The Bryntum React wrapper exposes the instance as schedulerInstance
@@ -217,25 +237,25 @@ const ProductionSchedulerProV2: React.FC = () => {
               } catch (error) {
                 console.error('Error setting initial view:', error);
                 // Fallback to simple zoomToFit
-                instance.zoomToFit();
+                try {
+                  instance.zoomToFit();
+                } catch (e) {
+                  console.error('Error with fallback zoomToFit:', e);
+                }
                 setIsInitialLoad(false);
               }
-            }, 500); // Increased delay to ensure data is fully rendered
+            }, 500); // Delay to ensure data is fully rendered
           }
           
           clearInterval(timer);
         }
       }
-    }, 100);
-    
-    // Clear interval after 5 seconds if not found
-    const timeout = setTimeout(() => clearInterval(timer), 5000);
+    }, 250); // Reduced frequency to avoid performance issues
     
     return () => {
       clearInterval(timer);
-      clearTimeout(timeout);
     };
-  }, [schedulerData, schedulerConfig, isInitialLoad]);
+  }, [schedulerConfig, isInitialLoad]);
 
   // Update resource utilization
   const updateResourceUtilization = (resources: any[], events: any[]) => {
@@ -250,7 +270,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   };
 
   // Scheduling Algorithm Implementations
-  const runSchedulingAlgorithm = async (algorithm: string) => {
+  const runSchedulingAlgorithm = useCallback(async (algorithm: string) => {
     if (!schedulerInstance) {
       toast({
         title: "Error",
@@ -329,10 +349,12 @@ const ProductionSchedulerProV2: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [schedulerInstance, toast]);
 
   // ASAP Scheduling Algorithm
-  const asapScheduling = async () => {
+  const asapScheduling = useCallback(async () => {
+    if (!schedulerInstance) return;
+    
     const events = [...schedulerInstance.eventStore.records].sort((a, b) => 
       a.startDate.getTime() - b.startDate.getTime()
     );
@@ -359,10 +381,12 @@ const ProductionSchedulerProV2: React.FC = () => {
         nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
       });
     });
-  };
+  }, [schedulerInstance]);
 
   // ALAP Scheduling Algorithm
-  const alapScheduling = async () => {
+  const alapScheduling = useCallback(async () => {
+    if (!schedulerInstance) return;
+    
     const events = [...schedulerInstance.eventStore.records].sort((a, b) => 
       b.startDate.getTime() - a.startDate.getTime()
     );
@@ -390,10 +414,12 @@ const ProductionSchedulerProV2: React.FC = () => {
         latestEndTime = new Date(event.startDate.getTime() - 30 * 60 * 1000);
       });
     });
-  };
+  }, [schedulerInstance]);
 
   // Critical Path Scheduling
-  const criticalPathScheduling = async () => {
+  const criticalPathScheduling = useCallback(async () => {
+    if (!schedulerInstance) return;
+    
     const events = schedulerInstance.eventStore.records;
     const dependencies = schedulerInstance.dependencyStore?.records || [];
     
@@ -416,10 +442,12 @@ const ProductionSchedulerProV2: React.FC = () => {
       event.eventColor = 'gray';
       event.cls = '';
     });
-  };
+  }, [schedulerInstance]);
 
   // Level Resources Scheduling
-  const levelResourcesScheduling = async () => {
+  const levelResourcesScheduling = useCallback(async () => {
+    if (!schedulerInstance) return;
+    
     const events = [...schedulerInstance.eventStore.records];
     const resources = schedulerInstance.resourceStore.records;
     
@@ -457,10 +485,12 @@ const ProductionSchedulerProV2: React.FC = () => {
         event.endDate = new Date(startTime.getTime() + durationMs);
       }
     });
-  };
+  }, [schedulerInstance]);
 
   // Drum (Theory of Constraints) Scheduling
-  const drumScheduling = async () => {
+  const drumScheduling = useCallback(async () => {
+    if (!schedulerInstance) return;
+    
     const events = schedulerInstance.eventStore.records;
     const resources = schedulerInstance.resourceStore.records;
     
@@ -515,10 +545,10 @@ const ProductionSchedulerProV2: React.FC = () => {
         }
       });
     }
-  };
+  }, [schedulerInstance]);
 
   // Analyze Schedule
-  const analyzeSchedule = () => {
+  const analyzeSchedule = useCallback(() => {
     if (!schedulerInstance) return '';
     
     const events = schedulerInstance.eventStore.records || [];
@@ -581,7 +611,7 @@ const ProductionSchedulerProV2: React.FC = () => {
     }
     
     return response;
-  };
+  }, [schedulerInstance]);
 
   // Handle Max AI message
   const handleMaxAISend = async () => {
@@ -1041,18 +1071,20 @@ const ProductionSchedulerProV2: React.FC = () => {
 
       {/* Scheduler Component */}
       <div className="flex-1 m-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden relative">
-        <BryntumSchedulerPro
-          ref={schedulerRef}
-          {...schedulerConfig}
-          project={schedulerData.project}
-          onBeforeEventEdit={handleBeforeEventEdit}
-          onBeforeEventSave={handleBeforeEventSave}
-          onBeforeEventDelete={handleBeforeEventDelete}
-          onEventDrop={handleEventDrop}
-          onEventResizeEnd={handleEventResizeEnd}
-          onDependencyAdd={handleDependencyAdd}
-          onDependencyRemove={handleDependencyRemove}
-        />
+        {schedulerConfig && (
+          <BryntumSchedulerPro
+            ref={schedulerRef}
+            {...schedulerConfig}
+            project={schedulerData.project}
+            onBeforeEventEdit={handleBeforeEventEdit}
+            onBeforeEventSave={handleBeforeEventSave}
+            onBeforeEventDelete={handleBeforeEventDelete}
+            onEventDrop={handleEventDrop}
+            onEventResizeEnd={handleEventResizeEnd}
+            onDependencyAdd={handleDependencyAdd}
+            onDependencyRemove={handleDependencyRemove}
+          />
+        )}
         {isLoading && (
           <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
