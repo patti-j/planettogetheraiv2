@@ -554,7 +554,7 @@ const masterDataTables = [
       { key: 'plannedEndDate', header: 'Planned End', type: 'date' as const },
       { key: 'actualStartDate', header: 'Actual Start', type: 'date' as const },
       { key: 'actualEndDate', header: 'Actual End', type: 'date' as const },
-      { key: 'quantity', header: 'Quantity', type: 'number' as const },
+      { key: 'qty', header: 'Quantity', type: 'number' as const },
       { key: 'unitOfMeasure', header: 'UOM', type: 'text' as const },
     ]
   },
