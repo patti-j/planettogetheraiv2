@@ -735,15 +735,52 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
         );
 
       case 'histogram':
+        // Process data to ensure proper histogram format - convert name/value to range/count
+        const histogramData = chartData.map((item: any) => ({
+          range: item.range || item.name || item.label || 'Unknown',
+          count: Number(item.count) || Number(item.value) || 0,
+          // Keep original fields for backwards compatibility
+          name: item.name,
+          value: item.value
+        }));
+        
+        console.log('Histogram data (original):', chartData);
+        console.log('Histogram data (processed):', histogramData);
+        
+        // Calculate domain for proper scaling
+        const maxCount = Math.max(...histogramData.map((d: any) => d.count));
+        const minCount = 0;
+        
         return (
           <ResponsiveContainer width="100%" height="100%">
-            <RechartsBarChart data={chartData}>
+            <RechartsBarChart 
+              data={histogramData}
+              margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+              barCategoryGap="20%"
+            >
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="range" />
-              <YAxis />
-              <Tooltip />
+              <XAxis 
+                dataKey="range" 
+                angle={-45}
+                textAnchor="end"
+                height={60}
+                interval={0}
+              />
+              <YAxis 
+                domain={[minCount, maxCount + (maxCount * 0.1)]}
+                allowDataOverflow={false}
+              />
+              <Tooltip 
+                formatter={(value, name) => [value, 'Frequency']}
+                labelFormatter={(label) => `Range: ${label}`}
+              />
               <Legend />
-              <Bar dataKey="count" fill="#82ca9d" />
+              <Bar 
+                dataKey="count" 
+                fill="#82ca9d"
+                stroke="#22c55e"
+                strokeWidth={1}
+              />
             </RechartsBarChart>
           </ResponsiveContainer>
         );
