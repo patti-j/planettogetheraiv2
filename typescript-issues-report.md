@@ -1,8 +1,23 @@
 # TypeScript Issues Analysis Report
 Generated: September 2, 2025
+Last Updated: September 2, 2025 - 7:45 PM
+
+## Current Task List Status
+| Task ID | Description | Status |
+|---------|-------------|--------|
+| 1 | Remove all references to old manufacturing tables (plants, plannedOrders, etc.) and replace with PT tables | **IN PROGRESS** |
+| 2 | Fix type mismatches in server/storage.ts - ensure PT tables use string types except for dates and measurable quantities | PENDING |
+| 3 | Remove or comment out DiscreteOperations and related old manufacturing table references | PENDING |
+| 4 | Fix duplicate function implementations in server/storage.ts (130 duplicates) | PENDING |
+| 5 | Fix type mismatches in server/routes.ts - align with PT table string types | PENDING |
+| 6 | Clean up database-explorer.tsx TypeScript issues | PENDING |
+| 7 | Update IStorage interface to remove old table methods | PENDING |
+| 8 | Test all changes and verify no runtime errors | PENDING |
 
 ## Executive Summary
 The codebase has **7,180 TypeScript issues** across three critical files that need addressing. While these are mostly non-breaking warnings due to TypeScript strict mode, they impact code maintainability, type safety, and developer experience.
+
+**Key Issue Identified**: Many references to old manufacturing tables (non-PT tables) still exist. All manufacturing tables should use PT-prefixed tables as per the migration completed on August 29, 2025.
 
 ## File-by-File Analysis
 
