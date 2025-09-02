@@ -20,6 +20,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
+import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
 
 interface AIInsight {
   id: string;
@@ -132,6 +133,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { canvasItems, setCanvasItems, isCanvasVisible, setCanvasVisible } = useMaxDock();
   const previousMessageCountRef = useRef(0);
+  
+  // Scheduler context service for enhanced context awareness
+  const schedulerContextService = SchedulerContextService.getInstance();
+  const [schedulerContext, setSchedulerContext] = useState<any>(null);
+  const [schedulerInsights, setSchedulerInsights] = useState<AIInsight[]>([]);
 
   // Monitor for new messages and show floating notification when collapsed
   useEffect(() => {
@@ -157,6 +163,122 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     
     previousMessageCountRef.current = currentMessageCount;
   }, [chatMessages, isCollapsed]);
+  
+  // Capture scheduler context when on scheduler page
+  useEffect(() => {
+    const currentPage = location;
+    
+    // Generate page-specific insights
+    generatePageInsights(currentPage);
+    
+    // Capture scheduler context if on scheduler page
+    if (currentPage === '/production-scheduler-pro') {
+      const context = schedulerContextService.getContext();
+      setSchedulerContext(context);
+      
+      // Update context periodically while on scheduler page
+      const interval = setInterval(() => {
+        const newContext = schedulerContextService.getContext();
+        setSchedulerContext(newContext);
+        generateSchedulerInsights(newContext);
+      }, 5000); // Update every 5 seconds
+      
+      return () => clearInterval(interval);
+    } else {
+      setSchedulerContext(null);
+      setSchedulerInsights([]);
+    }
+  }, [location]);
+  
+  // Generate scheduler-specific insights
+  const generateSchedulerInsights = (context: any) => {
+    if (!context) return;
+    
+    const insights: AIInsight[] = [];
+    
+    // Check for scheduling conflicts
+    if (context.events?.conflicts?.length > 0) {
+      insights.push({
+        id: 'conflicts-' + Date.now(),
+        type: 'conflict',
+        title: 'Scheduling Conflicts Detected',
+        description: `${context.events.conflicts.length} scheduling conflicts need resolution`,
+        priority: 'high',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        impact: 'Production delays possible',
+        recommendation: 'Resolve conflicts to maintain schedule'
+      });
+    }
+    
+    // Check resource utilization
+    if (context.metrics?.resourceUtilization > 90) {
+      insights.push({
+        id: 'utilization-' + Date.now(),
+        type: 'bottleneck',
+        title: 'High Resource Utilization',
+        description: `Resources at ${Math.round(context.metrics.resourceUtilization)}% capacity`,
+        priority: 'high',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        impact: 'Limited scheduling flexibility',
+        recommendation: 'Consider resource leveling or capacity expansion'
+      });
+    }
+    
+    // Check for overdue operations
+    if (context.events?.overdue > 0) {
+      insights.push({
+        id: 'overdue-' + Date.now(),
+        type: 'anomaly',
+        title: 'Overdue Operations',
+        description: `${context.events.overdue} operations are behind schedule`,
+        priority: 'high',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        impact: 'Customer delivery at risk',
+        recommendation: 'Prioritize overdue operations'
+      });
+    }
+    
+    // Check dependency violations
+    if (context.dependencies?.violated > 0) {
+      insights.push({
+        id: 'dependencies-' + Date.now(),
+        type: 'anomaly',
+        title: 'Dependency Violations',
+        description: `${context.dependencies.violated} dependency constraints violated`,
+        priority: 'medium',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        impact: 'Schedule integrity compromised',
+        recommendation: 'Review and fix dependency links'
+      });
+    }
+    
+    // Check schedule compliance
+    if (context.metrics?.scheduleCompliance < 80) {
+      insights.push({
+        id: 'compliance-' + Date.now(),
+        type: 'optimization',
+        title: 'Low Schedule Compliance',
+        description: `Schedule compliance at ${Math.round(context.metrics.scheduleCompliance)}%`,
+        priority: 'medium',
+        timestamp: new Date().toISOString(),
+        actionable: true,
+        impact: 'Production efficiency reduced',
+        recommendation: 'Run optimization to improve compliance'
+      });
+    }
+    
+    setSchedulerInsights(insights);
+  };
+  
+  // Generate general page insights
+  const generatePageInsights = (page: string) => {
+    // This function can be expanded for other pages as needed
+    // For now, focusing on scheduler-specific insights
+  };
 
   // Save AI settings to localStorage whenever they change
   useEffect(() => {
@@ -363,7 +485,23 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           context: {
             currentPage: location,
             selectedData: null,
-            recentActions: []
+            recentActions: [],
+            // Include scheduler context when on scheduler page
+            ...(location === '/production-scheduler-pro' && schedulerContext ? {
+              schedulerContext: {
+                currentView: schedulerContext.currentView,
+                dateRange: schedulerContext.dateRange,
+                resourceUtilization: schedulerContext.metrics?.resourceUtilization,
+                scheduleCompliance: schedulerContext.metrics?.scheduleCompliance,
+                totalEvents: schedulerContext.events?.total,
+                pendingEvents: schedulerContext.events?.pending,
+                conflicts: schedulerContext.events?.conflicts,
+                selectedEvent: schedulerContext.selectedEvent,
+                selectedResource: schedulerContext.selectedResource,
+                criticalResources: schedulerContext.resources?.criticalResources,
+                suggestions: schedulerContextService.getSuggestions()
+              }
+            } : {})
           }
         }),
         signal: controller.signal
