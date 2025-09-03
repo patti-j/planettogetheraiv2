@@ -172,7 +172,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     generatePageInsights(currentPage);
     
     // Capture scheduler context if on scheduler page
-    if (currentPage === '/production-scheduler-pro') {
+    if (currentPage === '/production-scheduler') {
       const context = schedulerContextService.getContext();
       setSchedulerContext(context);
       
@@ -487,7 +487,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             selectedData: null,
             recentActions: [],
             // Include scheduler context when on scheduler page
-            ...(location === '/production-scheduler-pro' && schedulerContext ? {
+            ...(location === '/production-scheduler' && schedulerContext ? {
               schedulerContext: {
                 currentView: schedulerContext.currentView,
                 dateRange: schedulerContext.dateRange,

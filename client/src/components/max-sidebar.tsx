@@ -317,7 +317,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     generatePageInsights(currentPage);
     
     // Capture scheduler context if on scheduler page
-    if (currentPage === '/production-scheduler-pro') {
+    if (currentPage === '/production-scheduler') {
       const context = schedulerContextService.getContext();
       setSchedulerContext(context);
       
@@ -356,7 +356,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           actionable: true
         });
         break;
-      case '/production-scheduler-pro':
+      case '/production-scheduler':
         // Generate scheduler-specific insights
         if (schedulerContext) {
           if (schedulerContext.events.conflicts.length > 0) {
@@ -454,7 +454,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     };
     
     // Add scheduler context if on scheduler page
-    if (window.location.pathname === '/production-scheduler-pro' && schedulerContext) {
+    if (window.location.pathname === '/production-scheduler' && schedulerContext) {
       return {
         ...baseContext,
         schedulerContext: {
@@ -1359,7 +1359,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           )}
 
           {/* Scheduler Context Display - When on Scheduler Pro page */}
-          {schedulerContext && window.location.pathname === '/production-scheduler-pro' && (
+          {schedulerContext && window.location.pathname === '/production-scheduler' && (
             <div className="space-y-2 mb-3">
               <div className="text-xs font-semibold text-gray-700 flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
