@@ -67,6 +67,7 @@ export default function GanttChart({
   });
   // Note: No longer using expandedJobs since we show resources directly
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
+  const [expandedResourceTypes, setExpandedResourceTypes] = useState<Set<string>>(new Set(['equipment', 'machine', 'operator', 'facility']));
   const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
@@ -973,6 +974,7 @@ export default function GanttChart({
 
   const getResourceTypeIcon = (type: string) => {
     switch (type.toLowerCase()) {
+      case 'equipment':
       case 'machine':
         return <Wrench className="w-4 h-4 text-gray-500" />;
       case 'person':
@@ -2070,14 +2072,39 @@ export default function GanttChart({
     );
   };
 
+  // Function to toggle resource type expansion
+  const toggleResourceTypeExpansion = (resourceType: string) => {
+    const newExpanded = new Set(expandedResourceTypes);
+    if (newExpanded.has(resourceType)) {
+      newExpanded.delete(resourceType);
+    } else {
+      newExpanded.add(resourceType);
+    }
+    setExpandedResourceTypes(newExpanded);
+  };
+
+  // Group resources by type
+  const resourcesByType = useMemo(() => {
+    const groups: { [type: string]: Resource[] } = {};
+    getOrderedResources().forEach(resource => {
+      const type = resource.type?.toLowerCase() || "other";
+      if (!groups[type]) {
+        groups[type] = [];
+      }
+      groups[type].push(resource);
+    });
+    return groups;
+  }, [resources, selectedResourceView, selectedResourceViewId, view]);
+
   const renderResourcesView = () => (
     <div className="flex flex-col h-full">
       {/* Fixed Header */}
       <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
         <div className="flex">
           <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
-            <div className="flex flex-col space-y-2 px-2 md:px-4 py-2">
+            <div className="flex items-center justify-between px-4 py-2">
               <div className="flex items-center space-x-2">
+                <span className="font-medium text-gray-700 dark:text-gray-300">RESOURCE</span>
                 <Select 
                   value={selectedResourceViewId?.toString() || "all"} 
                   onValueChange={(value) => {
@@ -2089,7 +2116,7 @@ export default function GanttChart({
                     }
                   }}
                 >
-                  <SelectTrigger className="w-24 md:w-32 h-6 md:h-7 text-xs md:text-sm">
+                  <SelectTrigger className="w-24 h-6 text-xs">
                     <SelectValue placeholder="Select view" />
                   </SelectTrigger>
                   <SelectContent>
@@ -2104,70 +2131,21 @@ export default function GanttChart({
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <div className="flex items-center space-x-1 text-xs text-gray-500">
-                  <span>H:</span>
-                  <input
-                    type="range"
-                    min="20"
-                    max="200"
-                    step="5"
-                    value={rowHeight}
-                    onChange={(e) => onRowHeightChange?.(parseInt(e.target.value))}
-                    className="w-16 md:w-20 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-                    style={{
-                      background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb 100%)`
-                    }}
-                  />
-                </div>
               </div>
-              <div className="flex items-center space-x-1">
-                <Select 
-                  value={selectedResourceView?.colorScheme || defaultColorScheme} 
-                  onValueChange={(value) => {
-                    handleViewSettingChange(value, "colorScheme");
+              <div className="flex items-center space-x-1 text-xs text-gray-500">
+                <span>H:</span>
+                <input
+                  type="range"
+                  min="20"
+                  max="200"
+                  step="5"
+                  value={rowHeight}
+                  onChange={(e) => onRowHeightChange?.(parseInt(e.target.value))}
+                  className="w-16 h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #3b82f6 0%, #3b82f6 ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb ${((rowHeight - 20) / (200 - 20)) * 100}%, #e5e7eb 100%)`
                   }}
-                >
-                  <SelectTrigger className="w-20 md:w-28 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="priority">Priority</SelectItem>
-                    <SelectItem value="status">Status</SelectItem>
-                    <SelectItem value="job">Job</SelectItem>
-                    <SelectItem value="resource">Resource</SelectItem>
-                    <SelectItem value="duration">Duration</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select 
-                  value={selectedResourceView?.textLabeling || defaultTextLabeling} 
-                  onValueChange={(value) => {
-                    if (value === "configure") {
-                      setCustomTextLabelManagerOpen(true);
-                    } else {
-                      handleViewSettingChange(value, "textLabeling");
-                    }
-                  }}
-                >
-                  <SelectTrigger className="w-24 md:w-32 h-6 text-xs">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customTextLabels.length === 0 && (
-                      <SelectItem value="no_labels" disabled>
-                        No custom labels - create one below
-                      </SelectItem>
-                    )}
-                    {customTextLabels.map((label: any) => (
-                      <SelectItem key={label.id} value={`custom_${label.id}`}>
-                        {label.name}
-                      </SelectItem>
-                    ))}
-                    <div className="border-t border-gray-200 my-1"></div>
-                    <SelectItem value="configure" className="text-blue-600 font-medium">
-                      Configure Labels...
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+                />
               </div>
             </div>
           </div>
@@ -2289,13 +2267,53 @@ export default function GanttChart({
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}>
-        {getOrderedResources().map((resource, index) => (
-          <DraggableResourceRow 
-            key={resource.id} 
-            resource={resource} 
-            index={index}
-          />
-        ))}
+        {Object.entries(resourcesByType).map(([resourceType, typeResources]) => {
+          const isExpanded = expandedResourceTypes.has(resourceType);
+          const displayType = resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
+          
+          return (
+            <div key={resourceType}>
+              {/* Resource Type Header */}
+              <div className="flex bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700" style={{ height: `${Math.max(40, rowHeight * 0.7)}px` }}>
+                <div className="border-r border-gray-200 dark:border-gray-700" style={{ width: `${leftPanelWidth}px` }}>
+                  <div className="flex items-center px-4 py-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleResourceTypeExpansion(resourceType)}
+                      className="p-0 h-6 w-6 mr-2"
+                    >
+                      {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                    </Button>
+                    <div className="flex items-center space-x-2">
+                      {getResourceTypeIcon(resourceType)}
+                      <span className="font-medium text-gray-900 dark:text-gray-100 uppercase text-sm">
+                        {displayType} ({typeResources.length})
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 relative overflow-hidden">
+                  <div
+                    className="absolute inset-0 flex items-center bg-gray-50 dark:bg-gray-800"
+                    style={{ transform: `translateX(-${timelineScrollLeft}px)` }}
+                  >
+                    <div className="bg-gray-100 dark:bg-gray-700 h-full flex-1 border-r border-gray-300 dark:border-gray-600"></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Individual Resources (when expanded) */}
+              {isExpanded && typeResources.map((resource, index) => (
+                <DraggableResourceRow 
+                  key={resource.id} 
+                  resource={resource} 
+                  index={index}
+                />
+              ))}
+            </div>
+          );
+        })}
       </div>
 
       {/* Unscheduled Operations */}
