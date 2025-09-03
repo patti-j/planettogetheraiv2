@@ -690,39 +690,100 @@ const ProductionSchedulerProV2: React.FC = () => {
 
   // Toolbar actions - memoized with useCallback
   const handleZoomIn = useCallback(() => {
-    if (schedulerInstance && typeof schedulerInstance.zoomIn === 'function') {
-      schedulerInstance.zoomIn();
-      console.log('Zoomed in');
-    } else if (schedulerInstance && schedulerInstance.zoomLevel !== undefined) {
-      // Fallback to direct property access
-      schedulerInstance.zoomLevel = Math.min((schedulerInstance.zoomLevel || 10) + 2, 20);
-      console.log('Zoomed in to level:', schedulerInstance.zoomLevel);
-    } else {
-      console.log('Scheduler not ready for zoom in');
+    if (!schedulerInstance) {
+      toast({
+        title: "Scheduler Loading",
+        description: "Please wait for the scheduler to initialize",
+        variant: "default"
+      });
+      return;
     }
-  }, [schedulerInstance]);
+    
+    try {
+      if (typeof schedulerInstance.zoomIn === 'function') {
+        schedulerInstance.zoomIn();
+        console.log('Zoomed in');
+      } else if (schedulerInstance.zoomLevel !== undefined) {
+        // Fallback to direct property access
+        schedulerInstance.zoomLevel = Math.min((schedulerInstance.zoomLevel || 10) + 2, 20);
+        schedulerInstance.refresh && schedulerInstance.refresh();
+        console.log('Zoomed in to level:', schedulerInstance.zoomLevel);
+      }
+    } catch (error) {
+      console.error('Error zooming in:', error);
+      toast({
+        title: "Zoom Error",
+        description: "Unable to zoom in. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [schedulerInstance, toast]);
 
   const handleZoomOut = useCallback(() => {
-    if (schedulerInstance && typeof schedulerInstance.zoomOut === 'function') {
-      schedulerInstance.zoomOut();
-      console.log('Zoomed out');
-    } else if (schedulerInstance && schedulerInstance.zoomLevel !== undefined) {
-      // Fallback to direct property access
-      schedulerInstance.zoomLevel = Math.max((schedulerInstance.zoomLevel || 10) - 2, 0);
-      console.log('Zoomed out to level:', schedulerInstance.zoomLevel);
-    } else {
-      console.log('Scheduler not ready for zoom out');
+    if (!schedulerInstance) {
+      toast({
+        title: "Scheduler Loading",
+        description: "Please wait for the scheduler to initialize",
+        variant: "default"
+      });
+      return;
     }
-  }, [schedulerInstance]);
+    
+    try {
+      if (typeof schedulerInstance.zoomOut === 'function') {
+        schedulerInstance.zoomOut();
+        console.log('Zoomed out');
+      } else if (schedulerInstance.zoomLevel !== undefined) {
+        // Fallback to direct property access
+        schedulerInstance.zoomLevel = Math.max((schedulerInstance.zoomLevel || 10) - 2, 0);
+        schedulerInstance.refresh && schedulerInstance.refresh();
+        console.log('Zoomed out to level:', schedulerInstance.zoomLevel);
+      }
+    } catch (error) {
+      console.error('Error zooming out:', error);
+      toast({
+        title: "Zoom Error",
+        description: "Unable to zoom out. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [schedulerInstance, toast]);
 
   const handleZoomToFit = useCallback(() => {
-    if (schedulerInstance && typeof schedulerInstance.zoomToFit === 'function') {
-      schedulerInstance.zoomToFit();
-      console.log('Zoomed to fit');
-    } else {
-      console.log('Scheduler not ready for zoom to fit');
+    if (!schedulerInstance) {
+      toast({
+        title: "Scheduler Loading",
+        description: "Please wait for the scheduler to initialize",
+        variant: "default"
+      });
+      return;
     }
-  }, [schedulerInstance]);
+    
+    try {
+      if (typeof schedulerInstance.zoomToFit === 'function') {
+        schedulerInstance.zoomToFit({
+          leftMargin: 50,
+          rightMargin: 50
+        });
+        console.log('Zoomed to fit');
+      } else {
+        // Fallback - adjust view to show all events
+        const events = schedulerInstance.eventStore?.records || [];
+        if (events.length > 0) {
+          const minDate = new Date(Math.min(...events.map((e: any) => e.startDate)));
+          const maxDate = new Date(Math.max(...events.map((e: any) => e.endDate)));
+          schedulerInstance.setTimeSpan(minDate, maxDate);
+        }
+      }
+    } catch (error) {
+      console.error('Error zooming to fit:', error);
+      toast({
+        title: "Zoom Error",
+        description: "Unable to fit view. Please try again.",
+        variant: "destructive"
+      });
+    }
+  }, [schedulerInstance, toast]);
 
   const handleViewChange = (preset: string) => {
     if (schedulerInstance) {
@@ -995,74 +1056,96 @@ const ProductionSchedulerProV2: React.FC = () => {
         </div>
       )}
 
-      {/* Toolbar */}
-      <div className="bg-white/90 dark:bg-gray-900/90 px-4 py-2 flex items-center gap-3 border-b dark:border-gray-700 flex-shrink-0">
-        <div className="flex items-center gap-2 pr-3 border-r dark:border-gray-700">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View:</label>
-          <Select value={currentView} onValueChange={handleViewChange}>
-            <SelectTrigger className="w-40 h-8">
-              <SelectValue placeholder="Select View" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="hourAndDay">Hour & Day</SelectItem>
-              <SelectItem value="dayAndWeek">Day & Week</SelectItem>
-              <SelectItem value="weekAndMonth">Week & Month</SelectItem>
-              <SelectItem value="monthAndYear">Month & Year</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      {/* Toolbar - Responsive */}
+      <div className="bg-white/90 dark:bg-gray-900/90 px-2 sm:px-4 py-2 border-b dark:border-gray-700 flex-shrink-0 overflow-x-auto">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-fit">
+          {/* View Selector - Hidden on mobile */}
+          <div className="hidden sm:flex items-center gap-2 pr-3 border-r dark:border-gray-700">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View:</label>
+            <Select value={currentView} onValueChange={handleViewChange}>
+              <SelectTrigger className="w-40 h-8">
+                <SelectValue placeholder="Select View" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hourAndDay">Hour & Day</SelectItem>
+                <SelectItem value="dayAndWeek">Day & Week</SelectItem>
+                <SelectItem value="weekAndMonth">Week & Month</SelectItem>
+                <SelectItem value="monthAndYear">Month & Year</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-        <div className="flex items-center gap-1 pr-3 border-r dark:border-gray-700">
+          {/* Zoom Controls - Always visible, responsive sizing */}
+          <div className="flex items-center gap-1 pr-2 sm:pr-3 border-r dark:border-gray-700">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomIn}
+              title="Zoom In"
+              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              disabled={!schedulerInstance}
+            >
+              <ZoomIn className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomOut}
+              title="Zoom Out"
+              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              disabled={!schedulerInstance}
+            >
+              <ZoomOut className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleZoomToFit}
+              title="Fit to View"
+              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              disabled={!schedulerInstance}
+            >
+              <Maximize2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {/* Algorithm Selector - Simplified on mobile */}
+          <div className="flex items-center gap-2">
+            <label className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">Algorithm:</label>
+            <Select onValueChange={handleOptimize}>
+              <SelectTrigger className="w-32 sm:w-44 h-8">
+                <SelectValue placeholder="Optimize" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asap">ASAP (Forward)</SelectItem>
+                <SelectItem value="alap">ALAP (Backward)</SelectItem>
+                <SelectItem value="criticalPath">Critical Path</SelectItem>
+                <SelectItem value="levelResources">Level Resources</SelectItem>
+                <SelectItem value="drum">Drum (TOC)</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Dark Mode Toggle - Icon only on mobile */}
           <Button
             variant="outline"
             size="sm"
-            onClick={handleZoomIn}
-            title="Zoom In"
+            onClick={toggleDarkMode}
+            className="ml-auto"
           >
-            Zoom In
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-            title="Zoom Out"
-          >
-            Zoom Out
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomToFit}
-            title="Fit to View"
-          >
-            Fit to View
+            {isDarkMode ? (
+              <>
+                <Sun className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Light Mode</span>
+              </>
+            ) : (
+              <>
+                <Moon className="h-4 w-4 sm:mr-2" />
+                <span className="hidden sm:inline">Dark Mode</span>
+              </>
+            )}
           </Button>
         </div>
-
-        <div className="flex items-center gap-2 pr-3 border-r dark:border-gray-700">
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Algorithm:</label>
-          <Select onValueChange={handleOptimize}>
-            <SelectTrigger className="w-44 h-8">
-              <SelectValue placeholder="Select Algorithm" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="asap">ASAP (Forward)</SelectItem>
-              <SelectItem value="alap">ALAP (Backward)</SelectItem>
-              <SelectItem value="criticalPath">Critical Path</SelectItem>
-              <SelectItem value="levelResources">Level Resources</SelectItem>
-              <SelectItem value="drum">Drum (TOC)</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={toggleDarkMode}
-        >
-          {isDarkMode ? <Sun className="h-4 w-4 mr-2" /> : <Moon className="h-4 w-4 mr-2" />}
-          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
-        </Button>
       </div>
 
       {/* Scheduler Component */}

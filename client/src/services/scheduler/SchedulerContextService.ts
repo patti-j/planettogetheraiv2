@@ -103,11 +103,18 @@ export class SchedulerContextService {
     }
     
     try {
+      // Check if the scheduler instance has the required properties
+      if (!this.schedulerInstance.project && !this.schedulerInstance.eventStore) {
+        // Instance exists but not fully initialized yet
+        return null;
+      }
+      
+      // Try to access stores from project or directly from scheduler instance
       const project = this.schedulerInstance.project;
-      const resources = project?.resourceStore?.records || [];
-      const events = project?.eventStore?.records || [];
-      const dependencies = project?.dependencyStore?.records || [];
-      const assignments = project?.assignmentStore?.records || [];
+      const resources = project?.resourceStore?.records || this.schedulerInstance.resourceStore?.records || [];
+      const events = project?.eventStore?.records || this.schedulerInstance.eventStore?.records || [];
+      const dependencies = project?.dependencyStore?.records || this.schedulerInstance.dependencyStore?.records || [];
+      const assignments = project?.assignmentStore?.records || this.schedulerInstance.assignmentStore?.records || [];
       
       // Calculate resource utilization
       const resourceUtilization = this.calculateResourceUtilization(resources, assignments, events);
@@ -174,7 +181,8 @@ export class SchedulerContextService {
         } : undefined
       };
     } catch (error) {
-      console.error('Error getting scheduler context:', error);
+      // Silent fail - scheduler may not be fully initialized yet
+      // This is normal during initial load
       return null;
     }
   }
