@@ -2086,13 +2086,42 @@ export default function GanttChart({
   // Group resources by type
   const resourcesByType = useMemo(() => {
     const groups: { [type: string]: Resource[] } = {};
-    getOrderedResources().forEach(resource => {
+    
+    // Use all resources for grouping, not just the filtered ones
+    const resourcesToGroup = view === "resources" ? resources : resources;
+    
+    resourcesToGroup.forEach(resource => {
       const type = resource.type?.toLowerCase() || "other";
       if (!groups[type]) {
         groups[type] = [];
       }
       groups[type].push(resource);
     });
+    
+    // Apply resource view ordering within each group if a view is selected
+    if (selectedResourceView && view === "resources") {
+      Object.keys(groups).forEach(type => {
+        const orderedGroupResources: Resource[] = [];
+        
+        // First add resources in the view's sequence order
+        selectedResourceView.resourceSequence.forEach(resourceId => {
+          const resource = groups[type].find(r => r.id === resourceId);
+          if (resource) {
+            orderedGroupResources.push(resource);
+          }
+        });
+        
+        // Then add any remaining resources in the group
+        groups[type].forEach(resource => {
+          if (!selectedResourceView.resourceSequence.includes(resource.id)) {
+            orderedGroupResources.push(resource);
+          }
+        });
+        
+        groups[type] = orderedGroupResources;
+      });
+    }
+    
     return groups;
   }, [resources, selectedResourceView, selectedResourceViewId, view]);
 
