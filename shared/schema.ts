@@ -11017,22 +11017,22 @@ export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturi
 
 // Types for PT Publish tables
 export type PtJob = typeof ptJobs.$inferSelect;
-export type InsertPtPublishJob = z.infer<typeof insertPtPublishJobSchema>;
+export type InsertPtPublishJob = z.infer<typeof insertPtJobSchema>;
 
 export type PtResource = typeof ptResources.$inferSelect;
-export type InsertPtPublishResource = z.infer<typeof insertPtPublishResourceSchema>;
+export type InsertPtPublishResource = z.infer<typeof insertPtResourceSchema>;
 
 export type PtJobOperation = typeof ptJobOperations.$inferSelect;
-export type InsertPtPublishJobOperation = z.infer<typeof insertPtPublishJobOperationSchema>;
+export type InsertPtPublishJobOperation = z.infer<typeof insertPtJobOperationSchema>;
 
 export type PtCapability = typeof ptCapabilities.$inferSelect;
-export type InsertPtPublishCapability = z.infer<typeof insertPtPublishCapabilitySchema>;
+export type InsertPtPublishCapability = z.infer<typeof insertPtCapabilitySchema>;
 
 export type PtMetric = typeof ptMetrics.$inferSelect;
-export type InsertPtPublishMetric = z.infer<typeof insertPtPublishMetricSchema>;
+export type InsertPtPublishMetric = z.infer<typeof insertPtMetricSchema>;
 
 export type PtManufacturingOrder = typeof ptManufacturingOrders.$inferSelect;
-export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtPublishManufacturingOrderSchema>;
+export type InsertPtPublishManufacturingOrder = z.infer<typeof insertPtManufacturingOrderSchema>;
 
 // Max AI Chat Messages - Store persistent chat history
 export const maxChatMessages = pgTable("max_chat_messages", {

@@ -2411,6 +2411,7 @@ export default function GanttChart({
       </Dialog>
     </div>
   );
+}; // Close renderResourcesView function
 
   return (
     <DndProvider backend={HTML5Backend}>

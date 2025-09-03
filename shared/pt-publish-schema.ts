@@ -1321,14 +1321,15 @@ export const ptJobMaterialsRelations = relations(ptJobMaterials, ({ one }) => ({
     fields: [ptJobMaterials.jobId],
     references: [ptJobs.jobId],
   }),
-  item: one(ptItems, {
-    fields: [ptJobMaterials.itemId],
-    references: [ptItems.itemId],
-  }),
-  warehouse: one(ptWarehouses, {
-    fields: [ptJobMaterials.warehouseId],
-    references: [ptWarehouses.warehouseId],
-  }),
+  // TODO: Fix relations - itemId and warehouseId don't exist on ptJobMaterials
+  // item: one(ptItems, {
+  //   fields: [ptJobMaterials.itemId],
+  //   references: [ptItems.itemId],
+  // }),
+  // warehouse: one(ptWarehouses, {
+  //   fields: [ptJobMaterials.warehouseId],
+  //   references: [ptWarehouses.warehouseId],
+  // }),
 }));
 
 // Job Resources Relations
@@ -1406,10 +1407,11 @@ export const ptJobOperationAttributesRelations = relations(ptJobOperationAttribu
     fields: [ptJobOperationAttributes.operationId],
     references: [ptJobOperations.operationId],
   }),
-  attribute: one(ptAttributes, {
-    fields: [ptJobOperationAttributes.attributeId],
-    references: [ptAttributes.attributeId],
-  }),
+  // TODO: Fix relation - attributeId doesn't exist on ptJobOperationAttributes
+  // attribute: one(ptAttributes, {
+  //   fields: [ptJobOperationAttributes.attributeId],
+  //   references: [ptAttributes.attributeId],
+  // }),
 }));
 
 // Attributes Relations

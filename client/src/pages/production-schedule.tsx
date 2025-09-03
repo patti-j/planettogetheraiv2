@@ -118,12 +118,14 @@ export default function ProductionSchedulePage() {
 
   // Debug resources at the page level
   useEffect(() => {
-    if (resources) {
+    if (Array.isArray(resources)) {
       console.log('🔍 RESOURCES DEBUG - Total received:', resources.length);
       console.log('🔍 RESOURCES DEBUG - Names:', resources.map((r: any) => `${r.name} (${r.type || 'no-type'})`));
       if (resources.length > 0) {
         console.log('🔍 RESOURCES DEBUG - First resource full object:', resources[0]);
       }
+    } else {
+      console.log('🔍 RESOURCES DEBUG - Not an array:', typeof resources, resources);
     }
   }, [resources]);
 
@@ -671,8 +673,8 @@ export default function ProductionSchedulePage() {
                     {/* Bryntum Scheduler Pro - Main Panel */}
                     <div className="flex-1">
                       <BryntumSchedulerProComponent
-                        operations={ptOperations || []}
-                        resources={resources || []}
+                        operations={Array.isArray(ptOperations) ? ptOperations : []}
+                        resources={Array.isArray(resources) ? resources : []}
                         onOperationUpdate={(operationId, updates) => {
                           console.log('Operation update requested:', operationId, updates);
                           // This will trigger a refetch of operations
