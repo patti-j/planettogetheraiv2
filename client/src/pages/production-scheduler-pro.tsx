@@ -22,7 +22,6 @@ import {
   Download,
   Upload,
   Filter,
-  Menu,
   X,
   Send,
   Sparkles,
@@ -62,7 +61,6 @@ const ProductionSchedulerProV2: React.FC = () => {
   });
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isNavMenuOpen, setIsNavMenuOpen] = useState(false);
   const [isMaxAIOpen, setIsMaxAIOpen] = useState(false);
   const [maxAIMessages, setMaxAIMessages] = useState<Array<{role: string, content: string}>>([
     { role: 'assistant', content: "Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?" }
@@ -923,15 +921,7 @@ const ProductionSchedulerProV2: React.FC = () => {
       {/* Header */}
       <div className="bg-white/95 dark:bg-gray-900/95 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsNavMenuOpen(true)}
-            className="text-purple-600 dark:text-purple-400"
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
-          <h1 className="text-xl font-semibold text-gray-800 dark:text-gray-100">Production Schedule</h1>
+          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Production Schedule</h1>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -949,57 +939,6 @@ const ProductionSchedulerProV2: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Menu */}
-      {isNavMenuOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsNavMenuOpen(false)} />
-          <div className="absolute left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl">
-            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 flex justify-between items-center">
-              <h3 className="text-lg font-semibold">Navigation</h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsNavMenuOpen(false)}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            <div className="p-4 space-y-2">
-              <Link href="/">
-                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  🏠 Home
-                </a>
-              </Link>
-              <Link href="/production-scheduler-pro">
-                <a className="block px-4 py-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-medium">
-                  📊 Production Scheduler
-                </a>
-              </Link>
-              <Link href="/business-goals">
-                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  📈 Business Goals
-                </a>
-              </Link>
-              <Link href="/implementation-projects">
-                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  💼 Projects
-                </a>
-              </Link>
-              <Link href="/control-tower">
-                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  🌐 Control Tower
-                </a>
-              </Link>
-              <Link href="/help">
-                <a className="block px-4 py-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                  📚 Help
-                </a>
-              </Link>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Max AI Assistant Panel */}
       {isMaxAIOpen && (
