@@ -131,13 +131,20 @@ function requireAuth(req: any, res: any, next: any) {
         userId = 'demo_' + tokenParts[1]; // Reconstruct as demo_user, demo_exec, etc.
       }
     }
-    // Extract user ID from regular token (format: user_ID_timestamp_random)
+    // Extract user ID from regular token (format: user_ID_expiresAt_random)
     else if (token.startsWith('user_')) {
       const tokenParts = token.split('_');
-      if (tokenParts.length >= 2) {
+      if (tokenParts.length >= 3) {
         const parsedId = parseInt(tokenParts[1]);
-        if (!isNaN(parsedId)) {
-          userId = parsedId;
+        const expiresAt = parseInt(tokenParts[2]);
+        
+        // Check if token is expired
+        if (!isNaN(parsedId) && !isNaN(expiresAt)) {
+          if (Date.now() <= expiresAt) {
+            userId = parsedId;
+            // Also set session for better persistence
+            req.session.userId = parsedId;
+          }
         }
       }
     }
@@ -1773,9 +1780,15 @@ Rules:
       const expiresAt = Date.now() + tokenDuration;
       const token = `user_${user.id}_${expiresAt}_${Math.random().toString(36).substr(2, 9)}`;
       
+      // Also update session cookie expiry for admin user
+      if (isDevelopment && isAdminUser) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      }
+      
       console.log("Generated token:", token);
       console.log(`Token expires at: ${new Date(expiresAt).toISOString()} (${isDevelopment && isAdminUser ? '30 days' : '24 hours'})`);
       console.log("Session userId set to:", user.id);
+      console.log("Session cookie maxAge:", req.session.cookie.maxAge);
       
       // Return user data with token
       const { passwordHash, ...userData } = user;
