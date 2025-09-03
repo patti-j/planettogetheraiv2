@@ -50,6 +50,8 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [operationCount, setOperationCount] = useState(0);
   const [currentView, setCurrentView] = useState('dayAndWeek');
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [isZooming, setIsZooming] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(10);
   const [schedulerData, setSchedulerData] = useState<any>({
     project: {
       resources: [],
@@ -689,7 +691,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   };
 
   // Toolbar actions - memoized with useCallback
-  const handleZoomIn = useCallback(() => {
+  const handleZoomIn = useCallback(async () => {
     if (!schedulerInstance) {
       toast({
         title: "Scheduler Loading",
@@ -699,16 +701,29 @@ const ProductionSchedulerProV2: React.FC = () => {
       return;
     }
     
+    setIsZooming(true);
     try {
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for visual feedback
+      
       if (typeof schedulerInstance.zoomIn === 'function') {
         schedulerInstance.zoomIn();
+        const newLevel = Math.min((schedulerInstance.zoomLevel || zoomLevel) + 2, 20);
+        setZoomLevel(newLevel);
         console.log('Zoomed in');
       } else if (schedulerInstance.zoomLevel !== undefined) {
         // Fallback to direct property access
-        schedulerInstance.zoomLevel = Math.min((schedulerInstance.zoomLevel || 10) + 2, 20);
+        const newLevel = Math.min((schedulerInstance.zoomLevel || zoomLevel) + 2, 20);
+        schedulerInstance.zoomLevel = newLevel;
+        setZoomLevel(newLevel);
         schedulerInstance.refresh && schedulerInstance.refresh();
-        console.log('Zoomed in to level:', schedulerInstance.zoomLevel);
+        console.log('Zoomed in to level:', newLevel);
       }
+      
+      toast({
+        title: "Zoomed In",
+        description: `Zoom level: ${Math.round((zoomLevel + 2) / 20 * 100)}%`,
+        duration: 1000
+      });
     } catch (error) {
       console.error('Error zooming in:', error);
       toast({
@@ -716,10 +731,12 @@ const ProductionSchedulerProV2: React.FC = () => {
         description: "Unable to zoom in. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsZooming(false);
     }
-  }, [schedulerInstance, toast]);
+  }, [schedulerInstance, toast, zoomLevel]);
 
-  const handleZoomOut = useCallback(() => {
+  const handleZoomOut = useCallback(async () => {
     if (!schedulerInstance) {
       toast({
         title: "Scheduler Loading",
@@ -729,16 +746,29 @@ const ProductionSchedulerProV2: React.FC = () => {
       return;
     }
     
+    setIsZooming(true);
     try {
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for visual feedback
+      
       if (typeof schedulerInstance.zoomOut === 'function') {
         schedulerInstance.zoomOut();
+        const newLevel = Math.max((schedulerInstance.zoomLevel || zoomLevel) - 2, 0);
+        setZoomLevel(newLevel);
         console.log('Zoomed out');
       } else if (schedulerInstance.zoomLevel !== undefined) {
         // Fallback to direct property access
-        schedulerInstance.zoomLevel = Math.max((schedulerInstance.zoomLevel || 10) - 2, 0);
+        const newLevel = Math.max((schedulerInstance.zoomLevel || zoomLevel) - 2, 0);
+        schedulerInstance.zoomLevel = newLevel;
+        setZoomLevel(newLevel);
         schedulerInstance.refresh && schedulerInstance.refresh();
-        console.log('Zoomed out to level:', schedulerInstance.zoomLevel);
+        console.log('Zoomed out to level:', newLevel);
       }
+      
+      toast({
+        title: "Zoomed Out",
+        description: `Zoom level: ${Math.round((zoomLevel - 2) / 20 * 100)}%`,
+        duration: 1000
+      });
     } catch (error) {
       console.error('Error zooming out:', error);
       toast({
@@ -746,10 +776,12 @@ const ProductionSchedulerProV2: React.FC = () => {
         description: "Unable to zoom out. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsZooming(false);
     }
-  }, [schedulerInstance, toast]);
+  }, [schedulerInstance, toast, zoomLevel]);
 
-  const handleZoomToFit = useCallback(() => {
+  const handleZoomToFit = useCallback(async () => {
     if (!schedulerInstance) {
       toast({
         title: "Scheduler Loading",
@@ -759,12 +791,16 @@ const ProductionSchedulerProV2: React.FC = () => {
       return;
     }
     
+    setIsZooming(true);
     try {
+      await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for visual feedback
+      
       if (typeof schedulerInstance.zoomToFit === 'function') {
         schedulerInstance.zoomToFit({
           leftMargin: 50,
           rightMargin: 50
         });
+        setZoomLevel(10); // Reset to default
         console.log('Zoomed to fit');
       } else {
         // Fallback - adjust view to show all events
@@ -773,8 +809,15 @@ const ProductionSchedulerProV2: React.FC = () => {
           const minDate = new Date(Math.min(...events.map((e: any) => e.startDate)));
           const maxDate = new Date(Math.max(...events.map((e: any) => e.endDate)));
           schedulerInstance.setTimeSpan(minDate, maxDate);
+          setZoomLevel(10);
         }
       }
+      
+      toast({
+        title: "Fit to View",
+        description: "Schedule adjusted to show all operations",
+        duration: 1000
+      });
     } catch (error) {
       console.error('Error zooming to fit:', error);
       toast({
@@ -782,6 +825,8 @@ const ProductionSchedulerProV2: React.FC = () => {
         description: "Unable to fit view. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsZooming(false);
     }
   }, [schedulerInstance, toast]);
 
@@ -1082,31 +1127,41 @@ const ProductionSchedulerProV2: React.FC = () => {
               size="icon"
               onClick={handleZoomIn}
               title="Zoom In"
-              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              disabled={!schedulerInstance}
+              className={`h-8 w-8 sm:h-8 sm:w-8 transition-all ${
+                isZooming ? 'scale-95 bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              disabled={!schedulerInstance || isZooming || zoomLevel >= 20}
             >
-              <ZoomIn className="h-4 w-4" />
+              <ZoomIn className={`h-4 w-4 ${isZooming ? 'animate-pulse' : ''}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={handleZoomOut}
               title="Zoom Out"
-              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              disabled={!schedulerInstance}
+              className={`h-8 w-8 sm:h-8 sm:w-8 transition-all ${
+                isZooming ? 'scale-95 bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              disabled={!schedulerInstance || isZooming || zoomLevel <= 0}
             >
-              <ZoomOut className="h-4 w-4" />
+              <ZoomOut className={`h-4 w-4 ${isZooming ? 'animate-pulse' : ''}`} />
             </Button>
             <Button
               variant="outline"
               size="icon"
               onClick={handleZoomToFit}
               title="Fit to View"
-              className="h-8 w-8 sm:h-8 sm:w-8 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              disabled={!schedulerInstance}
+              className={`h-8 w-8 sm:h-8 sm:w-8 transition-all ${
+                isZooming ? 'scale-95 bg-gray-100 dark:bg-gray-800' : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+              }`}
+              disabled={!schedulerInstance || isZooming}
             >
-              <Maximize2 className="h-4 w-4" />
+              <Maximize2 className={`h-4 w-4 ${isZooming ? 'animate-pulse' : ''}`} />
             </Button>
+            {/* Zoom Level Indicator */}
+            <span className="hidden sm:inline-block px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded">
+              {Math.round(zoomLevel / 20 * 100)}%
+            </span>
           </div>
 
           {/* Algorithm Selector - Simplified on mobile */}
