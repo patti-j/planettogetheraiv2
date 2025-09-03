@@ -232,20 +232,41 @@ const ProductionSchedulerProV2: React.FC = () => {
                   instance.scrollToDate(today, { block: 'center', animate: true });
                 }
                 
-                // Then apply zoom to fit
-                instance.zoomToFit({
-                  leftMargin: 50,
-                  rightMargin: 50
-                });
+                // For Scheduler Pro, manually calculate and set time span
+                const eventStore = instance.eventStore;
+                const events = eventStore?.records || [];
+                
+                if (events.length > 0) {
+                  const startDates = events
+                    .map((e: any) => e.startDate)
+                    .filter((date: any) => date && !isNaN(date.getTime()));
+                  const endDates = events
+                    .map((e: any) => e.endDate)
+                    .filter((date: any) => date && !isNaN(date.getTime()));
+                  
+                  if (startDates.length > 0 && endDates.length > 0) {
+                    const minDate = new Date(Math.min(...startDates.map((d: Date) => d.getTime())));
+                    const maxDate = new Date(Math.max(...endDates.map((d: Date) => d.getTime())));
+                    
+                    // Add 10% padding for better visibility
+                    const duration = maxDate.getTime() - minDate.getTime();
+                    const padding = duration * 0.1;
+                    const paddedStart = new Date(minDate.getTime() - padding);
+                    const paddedEnd = new Date(maxDate.getTime() + padding);
+                    
+                    instance.setTimeSpan(paddedStart, paddedEnd);
+                    console.log(`Initial fit to view: showing from ${paddedStart.toLocaleDateString()} to ${paddedEnd.toLocaleDateString()}`);
+                  }
+                } else {
+                  // No events - show current month
+                  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+                  const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+                  instance.setTimeSpan(monthStart, monthEnd);
+                }
                 
                 setIsInitialLoad(false); // Mark that initial load is complete
               } catch (error) {
-                // Fallback to simple zoomToFit
-                try {
-                  instance.zoomToFit();
-                } catch (e) {
-                  // Silent fallback
-                }
+                console.error('Error during initial fit to view:', error);
                 setIsInitialLoad(false);
               }
             }, 1000); // Increased delay for better stability
@@ -801,22 +822,69 @@ const ProductionSchedulerProV2: React.FC = () => {
     try {
       await new Promise(resolve => setTimeout(resolve, 50)); // Small delay for visual feedback
       
-      if (typeof schedulerInstance.zoomToFit === 'function') {
-        schedulerInstance.zoomToFit({
-          leftMargin: 50,
-          rightMargin: 50
-        });
-        setZoomLevel(10); // Reset to default
-        console.log('Zoomed to fit');
-      } else {
-        // Fallback - adjust view to show all events
-        const events = schedulerInstance.eventStore?.records || [];
-        if (events.length > 0) {
-          const minDate = new Date(Math.min(...events.map((e: any) => e.startDate)));
-          const maxDate = new Date(Math.max(...events.map((e: any) => e.endDate)));
-          schedulerInstance.setTimeSpan(minDate, maxDate);
-          setZoomLevel(10);
+      // For Scheduler Pro, we always need to manually calculate the time span
+      const eventStore = schedulerInstance.eventStore;
+      const events = eventStore?.records || [];
+      
+      if (events.length > 0) {
+        // Get all valid start and end dates
+        const startDates = events
+          .map((e: any) => e.startDate)
+          .filter((date: any) => date && !isNaN(date.getTime()));
+        const endDates = events
+          .map((e: any) => e.endDate)
+          .filter((date: any) => date && !isNaN(date.getTime()));
+        
+        if (startDates.length > 0 && endDates.length > 0) {
+          const minDate = new Date(Math.min(...startDates.map((d: Date) => d.getTime())));
+          const maxDate = new Date(Math.max(...endDates.map((d: Date) => d.getTime())));
+          
+          // Add 10% padding on each side for better visibility
+          const duration = maxDate.getTime() - minDate.getTime();
+          const padding = duration * 0.1;
+          const paddedStart = new Date(minDate.getTime() - padding);
+          const paddedEnd = new Date(maxDate.getTime() + padding);
+          
+          // Set the time span to show all events
+          schedulerInstance.setTimeSpan(paddedStart, paddedEnd);
+          
+          // Auto-select appropriate view preset based on duration
+          const days = duration / (1000 * 60 * 60 * 24);
+          let preset = 'weekAndDay';
+          
+          if (days <= 2) {
+            preset = 'hourAndDay';
+          } else if (days <= 14) {
+            preset = 'dayAndWeek';
+          } else if (days <= 60) {
+            preset = 'weekAndMonth';
+          } else {
+            preset = 'monthAndYear';
+          }
+          
+          try {
+            schedulerInstance.viewPreset = preset;
+            setCurrentView(preset);
+          } catch (e) {
+            // Preset might not be available, keep current
+            console.log('Could not set preset:', preset);
+          }
+          
+          // Scroll to start of events
+          if (typeof schedulerInstance.scrollToDate === 'function') {
+            schedulerInstance.scrollToDate(paddedStart, { block: 'start' });
+          }
+          
+          console.log(`Fit to view: showing ${days.toFixed(1)} days from ${paddedStart.toLocaleDateString()} to ${paddedEnd.toLocaleDateString()}`);
+          setZoomLevel(10); // Reset zoom level indicator
         }
+      } else {
+        // No events - show current month
+        const today = new Date();
+        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+        const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0, 23, 59, 59);
+        schedulerInstance.setTimeSpan(monthStart, monthEnd);
+        console.log('No events found - showing current month');
       }
       
       toast({
