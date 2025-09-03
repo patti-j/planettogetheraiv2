@@ -232,34 +232,27 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
         </div>
       </div>
 
-      {/* Recent Pages Section - Only show in list mode */}
-      {layoutMode === 'list' && (
+      {/* Recent Pages Section - Only show in list mode and when there are recent pages */}
+      {layoutMode === 'list' && recentPages.length > 0 && (
         <div className="px-3 py-2 border-b">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3 text-muted-foreground" />
               <p className="text-xs font-medium text-muted-foreground">Recent Pages</p>
             </div>
-            {recentPages.length > 0 && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearRecentPages}
-                className="h-5 px-1 text-xs"
-              >
-                Clear
-              </Button>
-            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearRecentPages}
+              className="h-5 px-1 text-xs"
+            >
+              Clear
+            </Button>
           </div>
           
           <ScrollArea className="h-32 w-full">
             <div className="space-y-0.5 pr-2">
-              {recentPages.length === 0 ? (
-                <p className="text-xs text-muted-foreground text-center py-1">
-                  No recent pages
-                </p>
-              ) : (
-                recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
+              {recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
@@ -316,16 +309,15 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                     </TooltipContent>
                   </Tooltip>
                 );
-              })
-              )}
+              })}
             </div>
           </ScrollArea>
         </div>
       )}
 
       {/* Menu Content */}
-      <ScrollArea className="flex-1 h-[calc(100vh-120px)]">
-        <div className="py-3">
+      <ScrollArea className="flex-1" style={{ touchAction: 'pan-y' }}>
+        <div className="py-3 px-3">
           {layoutMode === 'list' ? (
             // List Layout - Show items grouped by category with headers
             <div className="px-3">
@@ -411,25 +403,25 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           ) : (
             // Hierarchical Layout - Show collapsible categories
             <>
-              {/* Recent Pages as Collapsible Category */}
-              <div className="px-3 py-2 border-b border-border/40">
-                {/* Recent Pages Header - Clickable to expand/collapse */}
-                <Button
-                  variant="ghost"
-                  className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
-                  onClick={() => toggleGroup('Recent Pages')}
-                >
-                  <div className="flex items-center gap-2">
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">
-                      Recent Pages
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs text-muted-foreground">
-                      {recentPages.length}
-                    </span>
-                    {recentPages.length > 0 && (
+              {/* Recent Pages as Collapsible Category - Only show when there are recent pages */}
+              {recentPages.length > 0 && (
+                <div className="px-3 py-2 border-b border-border/40">
+                  {/* Recent Pages Header - Clickable to expand/collapse */}
+                  <Button
+                    variant="ghost"
+                    className="w-full justify-between h-9 px-2 font-medium hover:bg-accent/50"
+                    onClick={() => toggleGroup('Recent Pages')}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">
+                        Recent Pages
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {recentPages.length}
+                      </span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -442,19 +434,13 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                       >
                         <X className="h-3 w-3" />
                       </Button>
-                    )}
-                  </div>
-                </Button>
+                    </div>
+                  </Button>
 
-                {/* Recent Pages Items - Only shown when expanded */}
-                {expandedGroups.has('Recent Pages') && (
-                  <div className="mt-1 ml-3 space-y-0.5">
-                    {recentPages.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-2 ml-3">
-                        No recent pages
-                      </p>
-                    ) : (
-                      recentPages.map((page, pageIndex) => {
+                  {/* Recent Pages Items - Only shown when expanded */}
+                  {expandedGroups.has('Recent Pages') && (
+                    <div className="mt-1 ml-3 space-y-0.5">
+                      {recentPages.map((page, pageIndex) => {
                         const IconComponent = getIconComponent(page.icon || 'FileText');
                         const isActive = location === page.path;
                         
@@ -520,12 +506,11 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                             </Button>
                           </Button>
                         );
-                      })
-                    )}
-                  </div>
-                )}
-              </div>
-              
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
               {filteredGroups.map((group, index) => {
                 const isExpanded = expandedGroups.has(group.title);
                 const priorityBg = group.priority === 'high' 
