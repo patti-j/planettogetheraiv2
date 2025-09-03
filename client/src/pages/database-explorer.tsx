@@ -125,7 +125,9 @@ export default function DatabaseExplorer() {
   
   // Filter relationships for different views
   const tableRelationships = relationships; // All constraints
-  const schemaRelations = relationships.filter(rel => rel.constraint_type === 'FOREIGN KEY'); // Only foreign keys for relations
+  const schemaRelations = relationships.filter(rel => 
+    rel.constraint_type === 'FOREIGN KEY' || rel.constraint_type === 'LOGICAL FOREIGN KEY'
+  ); // Include both formal and logical foreign keys for relations
 
   // Export mutation
   const exportMutation = useMutation({
@@ -867,7 +869,7 @@ export default function DatabaseExplorer() {
                                   <TableRow key={`${rel.constraint_name || rel.name}-${index}`}>
                                     <TableCell className="font-medium break-words max-w-48">{rel.constraint_name || rel.name}</TableCell>
                                     <TableCell>
-                                      <Badge variant={(rel.constraint_type === 'FOREIGN KEY' || rel.type === 'foreign_key') ? 'default' : 
+                                      <Badge variant={(rel.constraint_type === 'FOREIGN KEY' || rel.type === 'foreign_key' || rel.constraint_type === 'LOGICAL FOREIGN KEY') ? 'default' : 
                                                     (rel.constraint_type === 'PRIMARY KEY' || rel.type === 'primary_key') ? 'secondary' : 'outline'}>
                                         {rel.constraint_type || rel.type}
                                       </Badge>
