@@ -466,11 +466,11 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       
       // Handle job-related queries
       if (lowerQuery.includes('job') || lowerQuery.includes('operation')) {
-        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjoboperations`);
+        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
         const totalJobs = Number(jobCountResult.rows[0]?.count || 0);
         
         if (lowerQuery.includes('how many') || lowerQuery.includes('count') || lowerQuery.includes('total')) {
-          return `We currently have ${totalJobs} jobs in the system. These are production operations from our PT Publish data. Would you like me to show you the production schedule or analyze these jobs further?`;
+          return `We currently have ${totalJobs} jobs in the system. These are production jobs from our PT jobs data. Would you like me to show you the production schedule or analyze these jobs further?`;
         }
       }
       
