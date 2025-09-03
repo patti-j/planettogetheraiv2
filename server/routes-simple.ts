@@ -737,8 +737,8 @@ export function registerSimpleRoutes(app: express.Application): Server {
   // Get all operations (for Gantt chart)
   app.get("/api/operations", async (req, res) => {
     try {
-      console.log("Fetching operations for Gantt chart...");
-      const operations = await db.select().from(schema.discreteOperations);
+      console.log("Fetching operations from ptjoboperations...");
+      const operations = await db.select().from(schema.ptJobOperations);
       console.log("Operations fetched successfully:", operations.length);
       if (operations.length > 0) {
         console.log("First operation sample:", operations[0]);
