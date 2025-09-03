@@ -28827,11 +28827,13 @@ Be careful to preserve data integrity and relationships.`;
 
       // Add PT table logical relationships for better discovery
       if (tableName.startsWith('pt')) {
+        console.log(`Database Explorer: Getting logical relationships for PT table ${tableName}`);
         const ptRelationships = getPtTableLogicalRelationships(tableName);
+        console.log(`Database Explorer: Found ${ptRelationships.length} logical relationships for ${tableName}:`, ptRelationships.map(r => `${r.column_name} -> ${r.foreign_table_name}.${r.foreign_column_name}`));
         relationships = [...relationships, ...ptRelationships];
       }
       
-      console.log(`Database Explorer: Found ${relationships.length} relationships for table ${tableName} (${formalResult.length} formal + ${relationships.length - formalResult.length} logical)`);
+      console.log(`Database Explorer: Found ${relationships.length} total relationships for table ${tableName} (${formalResult.length} formal + ${relationships.length - formalResult.length} logical)`);
       res.json(relationships);
     } catch (error) {
       console.error('Error fetching table relationships:', error);

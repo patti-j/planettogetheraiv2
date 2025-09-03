@@ -71,13 +71,14 @@ interface TableData {
 
 interface TableRelationship {
   constraint_name: string;
-  constraint_type: 'FOREIGN KEY' | 'PRIMARY KEY' | 'UNIQUE';
+  constraint_type: 'FOREIGN KEY' | 'PRIMARY KEY' | 'UNIQUE' | 'LOGICAL FOREIGN KEY';
   table_name: string;
   column_name: string;
   foreign_table_name?: string;
   foreign_column_name?: string;
   is_deferrable?: string;
   initially_deferred?: string;
+  description?: string;
 }
 
 export default function DatabaseExplorer() {
@@ -866,19 +867,22 @@ export default function DatabaseExplorer() {
                               </TableHeader>
                               <TableBody>
                                 {schemaRelations.map((rel: TableRelationship, index) => (
-                                  <TableRow key={`${rel.constraint_name || rel.name}-${index}`}>
-                                    <TableCell className="font-medium break-words max-w-48">{rel.constraint_name || rel.name}</TableCell>
+                                  <TableRow key={`${rel.constraint_name}-${index}`}>
+                                    <TableCell className="font-medium break-words max-w-48">{rel.constraint_name}</TableCell>
                                     <TableCell>
-                                      <Badge variant={(rel.constraint_type === 'FOREIGN KEY' || rel.type === 'foreign_key' || rel.constraint_type === 'LOGICAL FOREIGN KEY') ? 'default' : 
-                                                    (rel.constraint_type === 'PRIMARY KEY' || rel.type === 'primary_key') ? 'secondary' : 'outline'}>
-                                        {rel.constraint_type || rel.type}
+                                      <Badge variant={(rel.constraint_type === 'FOREIGN KEY' || rel.constraint_type === 'LOGICAL FOREIGN KEY') ? 'default' : 
+                                                    (rel.constraint_type === 'PRIMARY KEY') ? 'secondary' : 'outline'}>
+                                        {rel.constraint_type}
                                       </Badge>
                                     </TableCell>
-                                    <TableCell className="font-medium">{rel.column_name || rel.column}</TableCell>
+                                    <TableCell className="font-medium">{rel.column_name}</TableCell>
                                     <TableCell className="break-words max-w-64">
-                                      {(rel.foreign_table_name && rel.foreign_column_name) || (rel.references_table && rel.references_column)
-                                        ? `${rel.foreign_table_name || rel.references_table}.${rel.foreign_column_name || rel.references_column}`
+                                      {(rel.foreign_table_name && rel.foreign_column_name)
+                                        ? `${rel.foreign_table_name}.${rel.foreign_column_name}`
                                         : '-'}
+                                      {rel.description && (
+                                        <div className="text-xs text-muted-foreground mt-1">{rel.description}</div>
+                                      )}
                                     </TableCell>
                                   </TableRow>
                                 ))}
