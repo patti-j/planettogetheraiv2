@@ -209,10 +209,26 @@ export default function DatabaseExplorer() {
       return tables;
     }
     
+    const searchTerm = tableSearchTerm.toLowerCase().trim();
+    
+    // Debug logging for ptjobs specifically
+    if (searchTerm === 'ptjobs') {
+      console.log('=== PTJOBS SEARCH DEBUG ===');
+      console.log('Total tables:', tables.length);
+      console.log('Search term:', searchTerm);
+      console.log('Tables array:', tables.slice(0, 10));
+      
+      const ptjobsTable = tables.find(t => t && t.name === 'ptjobs');
+      console.log('Found ptjobs table:', ptjobsTable);
+      
+      const allJobTables = tables.filter(t => t && t.name && t.name.includes('job'));
+      console.log('All job-related tables:', allJobTables);
+    }
+    
     return tables.filter((table: DatabaseTable) => {
       return table && 
              table.name && 
-             table.name.toLowerCase().includes(tableSearchTerm.toLowerCase().trim());
+             table.name.toLowerCase().includes(searchTerm);
     });
   }, [tables, tableSearchTerm]);
 

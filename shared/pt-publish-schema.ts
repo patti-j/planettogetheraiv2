@@ -512,7 +512,7 @@ export const ptJobOperations = pgTable("ptjoboperations", {
   materialsNotAvailable: text("materials_not_available"),
 });
 
-export const ptJobActivities = pgTable("pt_job_activities", {
+export const ptJobActivities = pgTable("ptjobactivities", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -644,7 +644,7 @@ export const ptJobMaterials = pgTable("pt_job_materials", {
   materialAllocation: text("material_allocation"),
 });
 
-export const ptJobResources = pgTable("pt_job_resources", {
+export const ptJobResources = pgTable("ptjobresources", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
@@ -1057,7 +1057,7 @@ export const ptSystemData = pgTable("pt_system_data", {
 });
 
 
-export const ptJobProducts = pgTable("pt_job_products", {
+export const ptJobProducts = pgTable("ptjobproducts", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id").notNull(),
@@ -1125,7 +1125,7 @@ export const ptJobPaths = pgTable("pt_job_paths", {
   autoUsePathReleaseOffsetDays: numeric("auto_use_path_release_offset_days"),
 });
 
-export const ptJobPathNodes = pgTable("pt_job_path_nodes", {
+export const ptJobPathNodes = pgTable("ptjobpathnodes", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
   instanceId: varchar("instance_id", { length: 38 }).notNull(),
