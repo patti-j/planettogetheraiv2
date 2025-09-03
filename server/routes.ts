@@ -28579,6 +28579,61 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
+  // Jobs API for Max AI (alias to pt-jobs data)
+  app.get("/api/jobs", async (req, res) => {
+    try {
+      // Use same authentication logic as other endpoints
+      let userId: string | number | undefined = req.session?.userId;
+      let isDemo = (req.session as any)?.isDemo;
+      
+      // Auto-login as demo user if no session exists for development
+      if (!userId && !req.headers.authorization) {
+        userId = 'demo_user';
+        isDemo = true;
+        if (req.session) {
+          (req.session as any).userId = 'demo_user';
+          (req.session as any).isDemo = true;
+        }
+      }
+      
+      // Check for token in Authorization header if session fails
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        
+        if (token.startsWith('demo_')) {
+          isDemo = true;
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 3) {
+            userId = tokenParts[0] + '_' + tokenParts[1];
+          }
+        } else if (token.startsWith('user_')) {
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 2) {
+            const parsedId = parseInt(tokenParts[1]);
+            if (!isNaN(parsedId)) {
+              userId = parsedId;
+            }
+          }
+        }
+      }
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get ptjobs data directly from database (same as pt-jobs)
+      const { directSql } = await import('./db');
+      
+      const result = await directSql`SELECT * FROM ptjobs ORDER BY id`;
+      
+      console.log(`Jobs API for Max AI: Found ${result.length} job records`);
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching jobs for Max AI:', error);
+      res.status(500).json({ error: 'Failed to fetch jobs' });
+    }
+  });
+
   // PT Jobs API that works correctly with 49 records
   app.get("/api/pt-jobs", async (req, res) => {
     try {
