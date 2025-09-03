@@ -2903,7 +2903,11 @@ Rules:
   // Updated PT-based operations endpoint following Jim's corrections
   app.get("/api/pt-operations", async (req, res) => {
     try {
-      console.log("Fetching PT operations using simplified resource assignments via ptjobresources...");
+      // Check if demo mode is requested (limit operations for demo)
+      const isDemoMode = req.query.demo !== 'false';
+      const limit = isDemoMode ? 50 : null; // Show only 50 operations for demo
+      
+      console.log(`Fetching PT operations ${isDemoMode ? '(DEMO MODE - LIMITED TO 50)' : '(FULL SET)'} using simplified resource assignments via ptjobresources...`);
       
       // Simplified approach: Use ptjobresources for all resource assignments (since ptjobresourceblocks doesn't exist)
       const ptOperationsQuery = `
@@ -2972,6 +2976,7 @@ Rules:
         ORDER BY 
           jo.scheduled_start ASC NULLS LAST,
           jo.id ASC
+        ${limit ? `LIMIT ${limit}` : ''}
       `;
       
       const ptOperations = await storage.db.execute(ptOperationsQuery);
@@ -3129,7 +3134,7 @@ Rules:
         };
       });
       
-      console.log(`PT Operations fetched successfully: ${ganttOperations.length}`);
+      console.log(`PT Operations fetched successfully: ${ganttOperations.length}${isDemoMode ? ' (DEMO MODE)' : ''}`);
       if (ganttOperations.length > 0) {
         console.log("First PT operation sample:", {
           name: ganttOperations[0].name,
