@@ -940,7 +940,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 to-blue-900 overflow-auto">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-pink-500 to-purple-600 overflow-auto">
       {/* Header */}
       <div className="bg-white/95 dark:bg-gray-900/95 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
@@ -948,7 +948,7 @@ const ProductionSchedulerProV2: React.FC = () => {
             variant="ghost"
             size="icon"
             onClick={() => setIsNavMenuOpen(true)}
-            className="text-blue-600 dark:text-blue-400"
+            className="text-purple-600 dark:text-purple-400"
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -959,7 +959,7 @@ const ProductionSchedulerProV2: React.FC = () => {
             variant="default"
             size="sm"
             onClick={() => setIsMaxAIOpen(true)}
-            className="bg-gradient-to-r from-blue-600 to-blue-800 text-white"
+            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white"
           >
             <Sparkles className="h-4 w-4 mr-2" />
             Max AI
@@ -975,7 +975,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsNavMenuOpen(false)} />
           <div className="absolute left-0 top-0 h-full w-80 bg-white dark:bg-gray-900 shadow-xl">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 flex justify-between items-center">
               <h3 className="text-lg font-semibold">Navigation</h3>
               <Button
                 variant="ghost"
@@ -993,7 +993,7 @@ const ProductionSchedulerProV2: React.FC = () => {
                 </a>
               </Link>
               <Link href="/production-scheduler-pro">
-                <a className="block px-4 py-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium">
+                <a className="block px-4 py-3 rounded-lg bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 font-medium">
                   📊 Production Scheduler
                 </a>
               </Link>
@@ -1027,7 +1027,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         <div className="fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/50" onClick={() => setIsMaxAIOpen(false)} />
           <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-xl flex flex-col">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-4 flex justify-between items-center">
+            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 flex justify-between items-center">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Sparkles className="h-5 w-5" />
                 Max AI Assistant
@@ -1043,7 +1043,7 @@ const ProductionSchedulerProV2: React.FC = () => {
             </div>
             
             {/* Quick Actions */}
-            <div className="p-3 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-b">
+            <div className="p-3 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-b">
               <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1">
                 <Sparkles className="h-4 w-4" />
                 Quick Actions
@@ -1117,7 +1117,7 @@ const ProductionSchedulerProV2: React.FC = () => {
                   className={`p-3 rounded-lg text-sm whitespace-pre-wrap ${
                     msg.role === 'assistant'
                       ? 'bg-gray-100 dark:bg-gray-800'
-                      : 'bg-blue-50 dark:bg-blue-900/20 ml-8'
+                      : 'bg-purple-50 dark:bg-purple-900/20 ml-8'
                   }`}
                 >
                   {msg.content}
@@ -1254,7 +1254,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         />
         {isLoading && (
           <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
           </div>
         )}
       </div>
