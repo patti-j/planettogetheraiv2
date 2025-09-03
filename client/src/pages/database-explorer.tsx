@@ -888,20 +888,22 @@ export default function DatabaseExplorer() {
                     )}
                   </TabsContent>
 
-                  <TabsContent value="data">
-                    <div className="space-y-4">
+                  <TabsContent value="data" className="h-full">
+                    <div className="space-y-4 h-full flex flex-col">
                       {/* Data Controls */}
-                      <div className="flex flex-wrap gap-4 items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <Search className="h-4 w-4 text-gray-500" />
-                          <Input
-                            placeholder="Search data..."
-                            value={dataSearchTerm}
-                            onChange={handleDataSearchChange}
-                            className="w-64"
-                          />
+                      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between flex-shrink-0">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 min-w-0">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <Search className="h-4 w-4 text-gray-500 flex-shrink-0" />
+                            <Input
+                              placeholder="Search data..."
+                              value={dataSearchTerm}
+                              onChange={handleDataSearchChange}
+                              className="w-full sm:w-48 min-w-0"
+                            />
+                          </div>
                           <Select value={pageSize.toString()} onValueChange={(value) => setPageSize(Number(value))}>
-                            <SelectTrigger className="w-20">
+                            <SelectTrigger className="w-20 flex-shrink-0">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -917,6 +919,7 @@ export default function DatabaseExplorer() {
                           variant="outline"
                           size="sm"
                           onClick={() => refetchData()}
+                          className="flex-shrink-0"
                         >
                           <RefreshCw className="h-4 w-4 mr-1" />
                           Refresh
@@ -924,79 +927,82 @@ export default function DatabaseExplorer() {
                       </div>
 
                       {/* Data Table */}
-                      {dataLoading ? (
-                        <div className="text-center py-8">
-                          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-                          <p>Loading table data...</p>
-                        </div>
-                      ) : tableData && tableData.data.length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="overflow-x-auto border rounded-lg">
-                            <UITable>
-                              <TableHeader>
-                                <TableRow>
-                                  {Object.keys(tableData.data[0]).map((column) => (
-                                    <TableHead 
-                                      key={column}
-                                      className="cursor-pointer hover:bg-gray-50"
-                                      onClick={() => handleSort(column)}
-                                    >
-                                      <div className="flex items-center gap-1">
-                                        {column}
-                                        {sortBy === column && (
-                                          <span className="text-xs">
-                                            {sortOrder === 'asc' ? '↑' : '↓'}
-                                          </span>
-                                        )}
-                                      </div>
-                                    </TableHead>
-                                  ))}
-                                </TableRow>
-                                {/* Filter Row */}
-                                <TableRow className="bg-gray-50/50">
-                                  {Object.keys(tableData.data[0]).map((column) => (
-                                    <TableHead key={`filter-${column}`} className="p-2">
-                                      <Input
-                                        placeholder={`Filter ${column}...`}
-                                        value={filters[column] || ''}
-                                        onChange={(e) => handleFilterChange(column, e.target.value)}
-                                        className="h-7 text-xs"
-                                      />
-                                    </TableHead>
-                                  ))}
-                                </TableRow>
-                              </TableHeader>
-                              <TableBody>
-                                {tableData.data.map((row: Record<string, unknown>, index: number) => (
-                                  <TableRow key={index}>
-                                    {Object.keys(row).map((column) => (
-                                      <TableCell key={column} className="max-w-48 truncate">
-                                        {row[column] !== null && row[column] !== undefined 
-                                          ? String(row[column])
-                                          : '-'
-                                        }
-                                      </TableCell>
-                                    ))}
-                                  </TableRow>
-                                ))}
-                              </TableBody>
-                            </UITable>
+                      <div className="flex-1 min-h-0">
+                        {dataLoading ? (
+                          <div className="text-center py-8">
+                            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+                            <p>Loading table data...</p>
                           </div>
-
-                          {/* Pagination */}
-                          {tableData.pagination.totalPages > 1 && (
-                            <div className="flex items-center justify-between">
-                              <div className="text-sm text-gray-500">
-                                Showing {((tableData.pagination.page - 1) * tableData.pagination.limit) + 1} to{' '}
-                                {Math.min(tableData.pagination.page * tableData.pagination.limit, tableData.pagination.total)} of{' '}
-                                {tableData.pagination.total} records
+                        ) : tableData && tableData.data.length > 0 ? (
+                          <div className="space-y-4 h-full flex flex-col">
+                            <div className="flex-1 min-h-0 border rounded-lg overflow-hidden">
+                              <div className="h-full overflow-auto">
+                                <UITable>
+                                  <TableHeader>
+                                    <TableRow>
+                                      {Object.keys(tableData.data[0]).map((column) => (
+                                        <TableHead 
+                                          key={column}
+                                          className="cursor-pointer hover:bg-gray-50 sticky top-0 bg-background whitespace-nowrap"
+                                          onClick={() => handleSort(column)}
+                                        >
+                                          <div className="flex items-center gap-1">
+                                            {column}
+                                            {sortBy === column && (
+                                              <span className="text-xs">
+                                                {sortOrder === 'asc' ? '↑' : '↓'}
+                                              </span>
+                                            )}
+                                          </div>
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                    {/* Filter Row */}
+                                    <TableRow className="bg-gray-50/50">
+                                      {Object.keys(tableData.data[0]).map((column) => (
+                                        <TableHead key={`filter-${column}`} className="p-2 sticky top-10 bg-gray-50">
+                                          <Input
+                                            placeholder={`Filter ${column}...`}
+                                            value={filters[column] || ''}
+                                            onChange={(e) => handleFilterChange(column, e.target.value)}
+                                            className="h-7 text-xs w-full min-w-24"
+                                          />
+                                        </TableHead>
+                                      ))}
+                                    </TableRow>
+                                  </TableHeader>
+                                  <TableBody>
+                                    {tableData.data.map((row: Record<string, unknown>, index: number) => (
+                                      <TableRow key={index}>
+                                        {Object.keys(row).map((column) => (
+                                          <TableCell key={column} className="max-w-48 truncate whitespace-nowrap">
+                                            {row[column] !== null && row[column] !== undefined 
+                                              ? String(row[column])
+                                              : '-'
+                                            }
+                                          </TableCell>
+                                        ))}
+                                      </TableRow>
+                                    ))}
+                                  </TableBody>
+                                </UITable>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
-                                  disabled={currentPage === 1}
+                            </div>
+
+                            {/* Pagination */}
+                            {tableData.pagination.totalPages > 1 && (
+                              <div className="flex flex-col sm:flex-row items-center justify-between gap-2 flex-shrink-0">
+                                <div className="text-sm text-gray-500 order-2 sm:order-1">
+                                  Showing {((tableData.pagination.page - 1) * tableData.pagination.limit) + 1} to{' '}
+                                  {Math.min(tableData.pagination.page * tableData.pagination.limit, tableData.pagination.total)} of{' '}
+                                  {tableData.pagination.total} records
+                                </div>
+                                <div className="flex items-center gap-2 order-1 sm:order-2">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                    disabled={currentPage === 1}
                                 >
                                   <ChevronLeft className="h-4 w-4" />
                                   Previous
@@ -1016,14 +1022,15 @@ export default function DatabaseExplorer() {
                               </div>
                             </div>
                           )}
-                        </div>
-                      ) : (
-                        <div className="text-center py-8">
-                          <Eye className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                          <h3 className="text-lg font-semibold mb-2">No Data Found</h3>
-                          <p className="text-gray-500">This table appears to be empty or your filters don't match any records</p>
-                        </div>
-                      )}
+                          </div>
+                        ) : (
+                          <div className="text-center py-8">
+                            <Eye className="h-16 w-16 mx-auto mb-4 text-gray-400" />
+                            <h3 className="text-lg font-semibold mb-2">No Data Found</h3>
+                            <p className="text-gray-500">This table appears to be empty or your filters don't match any records</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </TabsContent>
                 </Tabs>

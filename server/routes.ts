@@ -28800,7 +28800,7 @@ Be careful to preserve data integrity and relationships.`;
       // Use direct SQL connection to fetch table relationships
       const { directSql } = await import('./db');
       
-      const result = await directSql`
+      const formalResult = await directSql`
         SELECT 
           tc.constraint_name,
           tc.constraint_type,
@@ -28822,14 +28822,91 @@ Be careful to preserve data integrity and relationships.`;
           AND tc.constraint_type IN ('FOREIGN KEY', 'PRIMARY KEY', 'UNIQUE')
         ORDER BY tc.constraint_type, tc.constraint_name
       `;
+
+      let relationships = [...formalResult];
+
+      // Add PT table logical relationships for better discovery
+      if (tableName.startsWith('pt')) {
+        const ptRelationships = getPtTableLogicalRelationships(tableName);
+        relationships = [...relationships, ...ptRelationships];
+      }
       
-      console.log(`Database Explorer: Found ${result.length} relationships for table ${tableName}`);
-      res.json(result);
+      console.log(`Database Explorer: Found ${relationships.length} relationships for table ${tableName} (${formalResult.length} formal + ${relationships.length - formalResult.length} logical)`);
+      res.json(relationships);
     } catch (error) {
       console.error('Error fetching table relationships:', error);
       res.status(500).json({ error: 'Failed to fetch table relationships' });
     }
   });
+
+  // Helper function to get PT table logical relationships
+  function getPtTableLogicalRelationships(tableName: string) {
+    const ptRelationships: any[] = [];
+    
+    // Define PT table logical relationships based on documentation
+    const ptRelationshipMap: Record<string, Array<{column: string, referencesTable: string, referencesColumn: string, description: string}>> = {
+      'ptjobs': [
+        { column: 'manufacturing_order_id', referencesTable: 'ptmanufacturingorders', referencesColumn: 'id', description: 'Jobs belong to manufacturing orders' },
+        { column: 'customer_external_id', referencesTable: 'ptcustomers', referencesColumn: 'external_id', description: 'Jobs reference customers' }
+      ],
+      'ptjoboperations': [
+        { column: 'job_id', referencesTable: 'ptjobs', referencesColumn: 'id', description: 'Operations belong to jobs' },
+        { column: 'manufacturing_order_external_id', referencesTable: 'ptmanufacturingorders', referencesColumn: 'external_id', description: 'Operations reference manufacturing orders' }
+      ],
+      'ptjobactivities': [
+        { column: 'operation_id', referencesTable: 'ptjoboperations', referencesColumn: 'id', description: 'Activities belong to operations' },
+        { column: 'job_external_id', referencesTable: 'ptjobs', referencesColumn: 'external_id', description: 'Activities reference jobs' }
+      ],
+      'ptjobresources': [
+        { column: 'operation_id', referencesTable: 'ptjoboperations', referencesColumn: 'id', description: 'Resource assignments belong to operations' },
+        { column: 'default_resource_id', referencesTable: 'ptresources', referencesColumn: 'resource_id', description: 'Default resource preference' },
+        { column: 'job_external_id', referencesTable: 'ptjobs', referencesColumn: 'external_id', description: 'Resource assignments reference jobs' }
+      ],
+      'ptjobresourceblocks': [
+        { column: 'job_resource_id', referencesTable: 'ptjobresources', referencesColumn: 'resource_requirement_id', description: 'Resource blocks implement resource requirements' },
+        { column: 'resource_id', referencesTable: 'ptresources', referencesColumn: 'resource_id', description: 'Blocks are scheduled on specific resources' }
+      ],
+      'ptjobresourceblockintervals': [
+        { column: 'block_id', referencesTable: 'ptjobresourceblocks', referencesColumn: 'block_id', description: 'Intervals belong to resource blocks' }
+      ],
+      'ptresources': [
+        { column: 'plant_external_id', referencesTable: 'ptplants', referencesColumn: 'external_id', description: 'Resources belong to plants' },
+        { column: 'department_external_id', referencesTable: 'ptdepartments', referencesColumn: 'external_id', description: 'Resources belong to departments' }
+      ],
+      'ptdepartments': [
+        { column: 'plant_external_id', referencesTable: 'ptplants', referencesColumn: 'external_id', description: 'Departments belong to plants' }
+      ],
+      'ptmanufacturingorders': [
+        { column: 'customer_external_id', referencesTable: 'ptcustomers', referencesColumn: 'external_id', description: 'Manufacturing orders reference customers' },
+        { column: 'item_external_id', referencesTable: 'ptitems', referencesColumn: 'external_id', description: 'Manufacturing orders produce items' }
+      ],
+      'ptinventories': [
+        { column: 'item_external_id', referencesTable: 'ptitems', referencesColumn: 'external_id', description: 'Inventory tracks items' },
+        { column: 'warehouse_external_id', referencesTable: 'ptwarehouses', referencesColumn: 'external_id', description: 'Inventory stored in warehouses' }
+      ],
+      'ptsalesorders': [
+        { column: 'customer_external_id', referencesTable: 'ptcustomers', referencesColumn: 'external_id', description: 'Sales orders belong to customers' }
+      ]
+    };
+
+    const relationships = ptRelationshipMap[tableName] || [];
+    
+    relationships.forEach((rel, index) => {
+      ptRelationships.push({
+        constraint_name: `logical_fk_${tableName}_${rel.column}_${index}`,
+        constraint_type: 'LOGICAL FOREIGN KEY',
+        table_name: tableName,
+        column_name: rel.column,
+        foreign_table_name: rel.referencesTable,
+        foreign_column_name: rel.referencesColumn,
+        is_deferrable: null,
+        initially_deferred: null,
+        description: rel.description
+      });
+    });
+
+    return ptRelationships;
+  }
 
   app.get("/api/database/tables/:tableName/data", async (req, res) => {
     try {
