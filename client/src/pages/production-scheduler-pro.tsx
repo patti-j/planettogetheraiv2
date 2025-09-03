@@ -31,9 +31,7 @@ import {
   AlertTriangle,
   BarChart3,
   Target,
-  Zap,
-  Moon,
-  Sun
+  Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Link } from 'wouter';
@@ -70,7 +68,6 @@ const ProductionSchedulerProV2: React.FC = () => {
     { role: 'assistant', content: "Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?" }
   ]);
   const [maxAIInput, setMaxAIInput] = useState('');
-  const [isDarkMode, setIsDarkMode] = useState(false);
   const [resourceUtilization, setResourceUtilization] = useState('--');
   const { toast } = useToast();
   
@@ -179,14 +176,6 @@ const ProductionSchedulerProV2: React.FC = () => {
     loadData();
   }, []);
 
-  // Load dark mode preference
-  useEffect(() => {
-    const savedDarkMode = localStorage.getItem('darkMode') === 'true';
-    setIsDarkMode(savedDarkMode);
-    if (savedDarkMode) {
-      document.body.classList.add('dark');
-    }
-  }, []);
 
   // Capture scheduler instance after mount and apply zoom to fit
   useEffect(() => {
@@ -916,16 +905,6 @@ const ProductionSchedulerProV2: React.FC = () => {
     runSchedulingAlgorithm(algorithm);
   };
 
-  const toggleDarkMode = () => {
-    const newDarkMode = !isDarkMode;
-    setIsDarkMode(newDarkMode);
-    localStorage.setItem('darkMode', String(newDarkMode));
-    if (newDarkMode) {
-      document.body.classList.add('dark');
-    } else {
-      document.body.classList.remove('dark');
-    }
-  };
 
 
   if (isLoading || !schedulerData || !schedulerConfig) {
@@ -1225,24 +1204,6 @@ const ProductionSchedulerProV2: React.FC = () => {
           </div>
 
           {/* Dark Mode Toggle - Icon only on mobile */}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={toggleDarkMode}
-            className="ml-auto"
-          >
-            {isDarkMode ? (
-              <>
-                <Sun className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Light Mode</span>
-              </>
-            ) : (
-              <>
-                <Moon className="h-4 w-4 sm:mr-2" />
-                <span className="hidden sm:inline">Dark Mode</span>
-              </>
-            )}
-          </Button>
         </div>
       </div>
 
