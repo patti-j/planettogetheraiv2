@@ -17,6 +17,7 @@ export interface GanttData {
   dependencies: any[];
   assignments: any[];
   segments?: SegmentData[];
+  calendars?: any[];
 }
 
 export class GanttDataService {
@@ -36,16 +37,110 @@ export class GanttDataService {
    * Get demo data from Bryntum stores for testing
    */
   async getDemoData(): Promise<GanttData> {
-    // Using Bryntum's demo data structure
+    // Calendar definitions for resource availability
+    const calendars = [
+      {
+        id: 'day_shift',
+        name: 'Day Shift (6 AM - 6 PM)',
+        unspecifiedTimeIsWorking: false,
+        intervals: [
+          // Monday to Friday working hours
+          {
+            recurrentStartDate: 'on Monday at 06:00',
+            recurrentEndDate: 'on Monday at 18:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Tuesday at 06:00',
+            recurrentEndDate: 'on Tuesday at 18:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Wednesday at 06:00',
+            recurrentEndDate: 'on Wednesday at 18:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Thursday at 06:00',
+            recurrentEndDate: 'on Thursday at 18:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Friday at 06:00',
+            recurrentEndDate: 'on Friday at 18:00',
+            isWorking: true
+          },
+          // Saturday half day
+          {
+            recurrentStartDate: 'on Saturday at 06:00',
+            recurrentEndDate: 'on Saturday at 12:00',
+            isWorking: true
+          }
+        ]
+      },
+      {
+        id: 'night_shift',
+        name: 'Night Shift (6 PM - 6 AM)',
+        unspecifiedTimeIsWorking: false,
+        intervals: [
+          // Night shift Monday-Friday
+          {
+            recurrentStartDate: 'on Monday at 18:00',
+            recurrentEndDate: 'on Tuesday at 06:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Tuesday at 18:00',
+            recurrentEndDate: 'on Wednesday at 06:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Wednesday at 18:00',
+            recurrentEndDate: 'on Thursday at 06:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Thursday at 18:00',
+            recurrentEndDate: 'on Friday at 06:00',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'on Friday at 18:00',
+            recurrentEndDate: 'on Saturday at 06:00',
+            isWorking: true
+          }
+        ]
+      },
+      {
+        id: '24_7',
+        name: '24/7 Operation',
+        unspecifiedTimeIsWorking: true // Always available
+      },
+      {
+        id: 'maintenance_window',
+        name: 'Maintenance Schedule',
+        unspecifiedTimeIsWorking: true,
+        intervals: [
+          // Sunday maintenance window
+          {
+            recurrentStartDate: 'on Sunday at 00:00',
+            recurrentEndDate: 'on Sunday at 12:00',
+            isWorking: false
+          }
+        ]
+      }
+    ];
+    
+    // Using Bryntum's demo data structure with calendar assignments
     const resources = [
-      { id: 'r1', name: 'Brew Kettle 1', type: 'Equipment', capacity: 100 },
-      { id: 'r2', name: 'Brew Kettle 2', type: 'Equipment', capacity: 100 },
-      { id: 'r3', name: 'Fermentation Tank 1', type: 'Equipment', capacity: 150 },
-      { id: 'r4', name: 'Fermentation Tank 2', type: 'Equipment', capacity: 150 },
-      { id: 'r5', name: 'Packaging Line 1', type: 'Equipment', capacity: 200 },
-      { id: 'r6', name: 'Quality Lab', type: 'Facility', capacity: 50 },
-      { id: 'r7', name: 'Operator Team A', type: 'Human', capacity: 100 },
-      { id: 'r8', name: 'Operator Team B', type: 'Human', capacity: 100 }
+      { id: 'r1', name: 'Brew Kettle 1', type: 'Equipment', capacity: 100, calendar: 'maintenance_window' },
+      { id: 'r2', name: 'Brew Kettle 2', type: 'Equipment', capacity: 100, calendar: 'maintenance_window' },
+      { id: 'r3', name: 'Fermentation Tank 1', type: 'Equipment', capacity: 150, calendar: '24_7' },
+      { id: 'r4', name: 'Fermentation Tank 2', type: 'Equipment', capacity: 150, calendar: '24_7' },
+      { id: 'r5', name: 'Packaging Line 1', type: 'Equipment', capacity: 200, calendar: 'day_shift' },
+      { id: 'r6', name: 'Quality Lab', type: 'Facility', capacity: 50, calendar: 'day_shift' },
+      { id: 'r7', name: 'Operator Team A', type: 'Human', capacity: 100, calendar: 'day_shift' },
+      { id: 'r8', name: 'Operator Team B', type: 'Human', capacity: 100, calendar: 'night_shift' }
     ];
     
     // Use August 28, 2025 as base date to match scheduler configuration
@@ -130,7 +225,8 @@ export class GanttDataService {
       resources,
       events,
       dependencies,
-      assignments
+      assignments,
+      calendars
     };
   }
   

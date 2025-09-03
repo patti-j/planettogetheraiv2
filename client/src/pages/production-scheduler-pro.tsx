@@ -96,9 +96,11 @@ const ProductionSchedulerProV2: React.FC = () => {
         // Get default configuration
         const config = configService.getDefaultConfig();
         
-        // Set scheduler data
+        // Set scheduler data with calendars
         setSchedulerData({
           project: {
+            calendarsData: ganttData.calendars || [],
+            calendar: 'day_shift', // Set default project calendar
             resources: ganttData.resources,
             events: ganttData.events,
             dependencies: ganttData.dependencies,
@@ -136,6 +138,7 @@ const ProductionSchedulerProV2: React.FC = () => {
             columnResize: true,
             filterBar: false,
             nonWorkingTime: true,
+            resourceNonWorkingTime: true, // Enable resource calendar visualization
             percentBar: true,
             regionResize: true,
             sort: 'name',
@@ -143,7 +146,10 @@ const ProductionSchedulerProV2: React.FC = () => {
             tree: true,
             timeRanges: {
               showCurrentTimeLine: true
-            }
+            },
+            // Enable scheduling engine for resource constraint handling
+            eventDragSelect: true,
+            scheduleTooltip: true
           }
         });
         
