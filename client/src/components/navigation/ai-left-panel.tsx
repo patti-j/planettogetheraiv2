@@ -935,7 +935,81 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               </TabsTrigger>
             </TabsList>
 
-
+            {/* Scheduler-specific quick actions when on production scheduler page */}
+            {location === '/production-scheduler' && activeTab === 'chat' && (
+              <div className="px-4 py-3 border-b">
+                <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Quick Scheduler Actions
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'RUN_ALGORITHM', 
+                          algorithm: 'ASAP' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    📈 Run ASAP
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'RUN_ALGORITHM', 
+                          algorithm: 'ALAP' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    📉 Run ALAP
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'RUN_ALGORITHM', 
+                          algorithm: 'CRITICAL_PATH' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    ⚠️ Critical Path
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'RUN_ALGORITHM', 
+                          algorithm: 'LEVEL_RESOURCES' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    ⚖️ Level Resources
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">

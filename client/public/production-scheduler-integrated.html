@@ -559,13 +559,14 @@
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
-            <button id="maxAIBtn" class="max-ai-btn">🤖 Hide AI</button>
+            <!-- Max AI button removed - use main app's left panel -->
+            <!-- <button id="maxAIBtn" class="max-ai-btn">🤖 Hide AI</button> -->
             <span id="lastUpdate">Last updated: --</span>
         </div>
     </div>
     
-    <!-- Max AI Assistant -->
-    <div id="maxAI" class="max-ai-panel">
+    <!-- Max AI Assistant - removed, using main app's left panel -->
+    <!-- <div id="maxAI" class="max-ai-panel">
         <div class="max-ai-header">
             <h3>✨ Max AI Scheduler Assistant</h3>
             <button id="closeMaxAI" class="close-max-ai">×</button>
@@ -619,7 +620,7 @@
                 <button id="maxSend">Send</button>
             </div>
         </div>
-    </div>
+    </div> -->
 
     <div class="toolbar">
         <div class="toolbar-group">
@@ -1015,23 +1016,31 @@
 
                 // Hamburger menu removed - clean navigation
                 
-                // Max AI Handler
-                const maxAIBtn = document.getElementById('maxAIBtn');
-                const maxAI = document.getElementById('maxAI');
-                const closeMaxAI = document.getElementById('closeMaxAI');
-                const maxInput = document.getElementById('maxInput');
-                const maxSend = document.getElementById('maxSend');
-                const maxMessages = document.getElementById('maxMessages');
+                // Max AI Handler - removed, using main app's left panel
+                // const maxAIBtn = document.getElementById('maxAIBtn');
+                // const maxAI = document.getElementById('maxAI');
+                // const closeMaxAI = document.getElementById('closeMaxAI');
+                // const maxInput = document.getElementById('maxInput');
+                // const maxSend = document.getElementById('maxSend');
+                // const maxMessages = document.getElementById('maxMessages');
                 
-                maxAIBtn.addEventListener('click', () => {
-                    maxAI.classList.toggle('closed');
-                    const btnText = maxAI.classList.contains('closed') ? '🤖 Max AI' : '🤖 Hide AI';
-                    maxAIBtn.textContent = btnText;
-                });
+                // maxAIBtn.addEventListener('click', () => {
+                //     maxAI.classList.toggle('closed');
+                //     const btnText = maxAI.classList.contains('closed') ? '🤖 Max AI' : '🤖 Hide AI';
+                //     maxAIBtn.textContent = btnText;
+                // });
                 
-                closeMaxAI.addEventListener('click', () => {
-                    maxAI.classList.add('closed');
-                    maxAIBtn.textContent = '🤖 Max AI';
+                // closeMaxAI.addEventListener('click', () => {
+                //     maxAI.classList.add('closed');
+                //     maxAIBtn.textContent = '🤖 Max AI';
+                // });
+                
+                // Listen for messages from parent window (main app's Max AI panel)
+                window.addEventListener('message', (event) => {
+                    // Handle algorithm run requests from parent
+                    if (event.data && event.data.type === 'RUN_ALGORITHM') {
+                        runSchedulerAlgorithm(event.data.algorithm);
+                    }
                 });
                 
                 // Function to run scheduler algorithms from quick actions
