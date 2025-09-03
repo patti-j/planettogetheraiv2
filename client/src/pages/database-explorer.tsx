@@ -204,11 +204,17 @@ export default function DatabaseExplorer() {
   }, []);
 
   // Filter tables based on search
-  const filteredTables = useMemo(() => 
-    tables.filter((table: DatabaseTable) =>
-      table && table.name && table.name.toLowerCase().includes(tableSearchTerm.toLowerCase())
-    ), [tables, tableSearchTerm]
-  );
+  const filteredTables = useMemo(() => {
+    if (!tableSearchTerm.trim()) {
+      return tables;
+    }
+    
+    return tables.filter((table: DatabaseTable) => {
+      return table && 
+             table.name && 
+             table.name.toLowerCase().includes(tableSearchTerm.toLowerCase().trim());
+    });
+  }, [tables, tableSearchTerm]);
 
   // Get data type badge color
   const getDataTypeBadgeColor = (dataType: string) => {
