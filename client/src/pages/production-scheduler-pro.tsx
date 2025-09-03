@@ -107,16 +107,16 @@ const ProductionSchedulerProV2: React.FC = () => {
           }
         });
         
-        // Set scheduler configuration starting with today's date
+        // Set scheduler configuration starting with today's date (September 3, 2025)
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const endDate = new Date(today);
-        endDate.setMonth(endDate.getMonth() + 1); // Show 1 month for better overview
+        endDate.setDate(endDate.getDate() + 14); // Show 2 weeks to match demo operations
         
         setSchedulerConfig({
           startDate: today,
           endDate: endDate,
-          viewPreset: 'dayAndWeek',
+          viewPreset: 'weekAndMonth',
           rowHeight: 50,
           barMargin: 5,
           columns: config.columns,
@@ -237,11 +237,11 @@ const ProductionSchedulerProV2: React.FC = () => {
                     const minDate = new Date(Math.min(...startDates.map((d: Date) => d.getTime())));
                     const maxDate = new Date(Math.max(...endDates.map((d: Date) => d.getTime())));
                     
-                    // Add 10% padding for better visibility
-                    const duration = maxDate.getTime() - minDate.getTime();
-                    const padding = duration * 0.1;
-                    const paddedStart = new Date(minDate.getTime() - padding);
-                    const paddedEnd = new Date(maxDate.getTime() + padding);
+                    // Add small padding for better visibility (2 days on each side)
+                    const paddedStart = new Date(minDate);
+                    paddedStart.setDate(paddedStart.getDate() - 2);
+                    const paddedEnd = new Date(maxDate);
+                    paddedEnd.setDate(paddedEnd.getDate() + 2);
                     
                     instance.setTimeSpan(paddedStart, paddedEnd);
                     console.log(`Initial fit to view: showing from ${paddedStart.toLocaleDateString()} to ${paddedEnd.toLocaleDateString()}`);
