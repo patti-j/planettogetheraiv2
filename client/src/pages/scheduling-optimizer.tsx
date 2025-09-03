@@ -474,7 +474,7 @@ const SchedulingOptimizer: React.FC = () => {
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: productionOrders } = useQuery<ProductionOrder[]>({ 
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
     refetchOnWindowFocus: false,
     refetchInterval: false
   });
@@ -972,7 +972,7 @@ const SchedulingOptimizer: React.FC = () => {
       });
 
       // Update job with optimized dates
-      const jobResponse = await fetch(`/api/pt-jobs/${selectedExistingProductionOrder.id}`, {
+      const jobResponse = await fetch(`/api/jobs/${selectedExistingProductionOrder.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

@@ -28579,8 +28579,8 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
-  // PT Jobs API that was working correctly
-  app.get("/api/pt-jobs", async (req, res) => {
+  // Jobs API for Max AI (references ptjobs table)
+  app.get("/api/jobs", async (req, res) => {
     try {
       // Use same authentication logic as other endpoints
       let userId: string | number | undefined = req.session?.userId;
@@ -28626,11 +28626,11 @@ Be careful to preserve data integrity and relationships.`;
       
       const result = await directSql`SELECT * FROM ptjobs ORDER BY id`;
       
-      console.log(`PT Jobs API: Found ${result.length} ptjobs records`);
+      console.log(`Jobs API: Found ${result.length} job records`);
       res.json(result);
     } catch (error) {
-      console.error('Error fetching PT jobs:', error);
-      res.status(500).json({ error: 'Failed to fetch PT jobs' });
+      console.error('Error fetching jobs:', error);
+      res.status(500).json({ error: 'Failed to fetch jobs' });
     }
   });
 

@@ -69,7 +69,7 @@ export default function AtpCtpPage() {
   });
 
   const { data: productionOrders } = useQuery<ProductionOrder[]>({
-    queryKey: ['/api/pt-jobs']
+    queryKey: ['/api/jobs']
   });
 
   const calculateAtpCtp = async () => {

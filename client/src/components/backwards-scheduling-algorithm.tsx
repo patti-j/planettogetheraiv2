@@ -152,7 +152,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
 
   // Fetch production orders, planned orders, and resources for scheduling
   const { data: productionOrders = [] } = useQuery<ProductionOrder[]>({
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
     refetchOnWindowFocus: false
   });
 

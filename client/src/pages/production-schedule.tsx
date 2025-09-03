@@ -101,7 +101,7 @@ export default function ProductionSchedulePage() {
 
   // Fetch job templates and operations for the widgets
   const { data: jobTemplates, isLoading: jobTemplatesLoading } = useQuery({
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
     enabled: canViewSchedule
   });
 
