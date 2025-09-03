@@ -937,16 +937,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
             {/* Scheduler-specific quick actions when on production scheduler page */}
             {location === '/production-scheduler' && activeTab === 'chat' && (
-              <div className="px-4 py-3 border-b">
+              <div className="px-3 py-2 border-b bg-background/50" style={{ width: '100%', maxWidth: panelWidth }}>
                 <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
                   Quick Scheduler Actions
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-1.5" style={{ maxWidth: '100%' }}>
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs"
+                    className="text-xs px-2 py-1.5 h-auto"
                     onClick={() => {
                       const iframe = document.querySelector('iframe') as HTMLIFrameElement;
                       if (iframe?.contentWindow) {
@@ -962,7 +962,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs"
+                    className="text-xs px-2 py-1.5 h-auto"
                     onClick={() => {
                       const iframe = document.querySelector('iframe') as HTMLIFrameElement;
                       if (iframe?.contentWindow) {
@@ -978,7 +978,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs"
+                    className="text-xs px-2 py-1.5 h-auto"
                     onClick={() => {
                       const iframe = document.querySelector('iframe') as HTMLIFrameElement;
                       if (iframe?.contentWindow) {
@@ -994,7 +994,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="text-xs"
+                    className="text-xs px-2 py-1.5 h-auto"
                     onClick={() => {
                       const iframe = document.querySelector('iframe') as HTMLIFrameElement;
                       if (iframe?.contentWindow) {
