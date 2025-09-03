@@ -15,20 +15,20 @@ const BEER_PRODUCTS = [
   { name: 'Tiger Beer', sku: 'TIG-001', batchSize: 9000, unit: 'liters', brewTime: 13 }
 ];
 
-// Brewery production stages
+// Brewery production stages - More uniform durations for better display
 const BREWING_STAGES = [
-  { name: 'Milling', duration: 2, resourceType: 'Grain Mill' },
-  { name: 'Mashing', duration: 4, resourceType: 'Mash Tun' },
-  { name: 'Lautering', duration: 2, resourceType: 'Lauter Tun' },
-  { name: 'Boiling', duration: 1.5, resourceType: 'Brew Kettle' },
-  { name: 'Whirlpool', duration: 0.5, resourceType: 'Whirlpool' },
-  { name: 'Cooling', duration: 1, resourceType: 'Heat Exchanger' },
-  { name: 'Fermentation', duration: 168, resourceType: 'Fermentation Tank' }, // 7 days
-  { name: 'Maturation', duration: 336, resourceType: 'Maturation Tank' }, // 14 days
-  { name: 'Filtration', duration: 3, resourceType: 'Filter' },
-  { name: 'Carbonation', duration: 2, resourceType: 'Bright Tank' },
-  { name: 'Packaging', duration: 8, resourceType: 'Packaging Line' },
-  { name: 'Quality Testing', duration: 4, resourceType: 'Lab' }
+  { name: 'Milling', duration: 8, resourceType: 'Grain Mill' },
+  { name: 'Mashing', duration: 12, resourceType: 'Mash Tun' },
+  { name: 'Lautering', duration: 10, resourceType: 'Lauter Tun' },
+  { name: 'Boiling', duration: 8, resourceType: 'Brew Kettle' },
+  { name: 'Whirlpool', duration: 6, resourceType: 'Whirlpool' },
+  { name: 'Cooling', duration: 6, resourceType: 'Heat Exchanger' },
+  { name: 'Fermentation', duration: 24, resourceType: 'Fermentation Tank' }, // Reduced from 7 days for display
+  { name: 'Maturation', duration: 24, resourceType: 'Maturation Tank' }, // Reduced from 14 days for display
+  { name: 'Filtration', duration: 10, resourceType: 'Filter' },
+  { name: 'Carbonation', duration: 8, resourceType: 'Bright Tank' },
+  { name: 'Packaging', duration: 16, resourceType: 'Packaging Line' },
+  { name: 'Quality Testing', duration: 12, resourceType: 'Lab' }
 ];
 
 // Brewery resources/equipment
