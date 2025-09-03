@@ -46,7 +46,7 @@ export default function HomePage() {
 
   // Query for production metrics
   const { data: productionOrders } = useQuery({
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
     refetchInterval: 60000 // Refresh every minute
   });
 

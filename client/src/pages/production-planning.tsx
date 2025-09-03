@@ -67,7 +67,7 @@ export default function ProductionPlanningPage() {
   });
 
   const { data: productionOrders = [] } = useQuery<ProductionOrder[]>({
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
   });
 
   const { data: plannedOrders = [] } = useQuery<PlannedOrder[]>({

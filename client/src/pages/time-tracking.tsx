@@ -82,7 +82,7 @@ export default function TimeTracking() {
 
   // Get jobs for dropdown
   const { data: jobs } = useQuery({
-    queryKey: ['/api/pt-jobs'],
+    queryKey: ['/api/jobs'],
   });
 
   // Get users for team selection
