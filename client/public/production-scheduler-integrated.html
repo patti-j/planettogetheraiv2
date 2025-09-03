@@ -303,7 +303,7 @@
         .max-ai-panel {
             position: fixed;
             top: 0;
-            right: -400px;
+            right: 0; /* Visible by default to showcase scheduler features */
             width: 400px;
             height: 100vh;
             background: white;
@@ -314,8 +314,8 @@
             flex-direction: column;
         }
         
-        .max-ai-panel.open {
-            right: 0;
+        .max-ai-panel.closed {
+            right: -400px;
         }
         
         .max-ai-header {
@@ -559,7 +559,7 @@
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
-            <button id="maxAIBtn" class="max-ai-btn">🤖 Max AI</button>
+            <button id="maxAIBtn" class="max-ai-btn">🤖 Hide AI</button>
             <span id="lastUpdate">Last updated: --</span>
         </div>
     </div>
@@ -567,7 +567,7 @@
     <!-- Max AI Assistant -->
     <div id="maxAI" class="max-ai-panel">
         <div class="max-ai-header">
-            <h3>🤖 Max AI Assistant</h3>
+            <h3>✨ Max AI Scheduler Assistant</h3>
             <button id="closeMaxAI" class="close-max-ai">×</button>
         </div>
         
@@ -600,7 +600,19 @@
         
         <div class="max-ai-content">
             <div class="max-ai-messages" id="maxMessages">
-                <div class="max-ai-message assistant">Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?</div>
+                <div class="max-ai-message assistant">👋 Welcome to the Production Scheduler! I'm Max, your AI assistant specialized in scheduling optimization.
+                    <br><br>
+                    <strong>🎯 Quick Actions Available:</strong><br>
+                    • Run ASAP/ALAP algorithms<br>
+                    • Analyze critical paths<br>
+                    • Level resources<br>
+                    • Apply Theory of Constraints<br>
+                    <br>
+                    <strong>💡 Try asking me:</strong><br>
+                    • "What's the bottleneck resource?"<br>
+                    • "Optimize for minimal lead time"<br>
+                    • "Show resource utilization"<br>
+                    • "Find schedule conflicts"</div>
             </div>
             <div class="max-ai-input">
                 <input type="text" id="maxInput" placeholder="Ask me anything about scheduling..." />
@@ -1012,11 +1024,14 @@
                 const maxMessages = document.getElementById('maxMessages');
                 
                 maxAIBtn.addEventListener('click', () => {
-                    maxAI.classList.add('open');
+                    maxAI.classList.toggle('closed');
+                    const btnText = maxAI.classList.contains('closed') ? '🤖 Max AI' : '🤖 Hide AI';
+                    maxAIBtn.textContent = btnText;
                 });
                 
                 closeMaxAI.addEventListener('click', () => {
-                    maxAI.classList.remove('open');
+                    maxAI.classList.add('closed');
+                    maxAIBtn.textContent = '🤖 Max AI';
                 });
                 
                 // Function to run scheduler algorithms from quick actions
@@ -1656,6 +1671,16 @@
                     await asapScheduling();
                     updateStatus();
                     console.log('✅ ASAP scheduling applied successfully');
+                    
+                    // Add welcome message to Max AI
+                    const maxMessages = document.getElementById('maxMessages');
+                    if (maxMessages) {
+                        const welcomeMsg = document.createElement('div');
+                        welcomeMsg.className = 'max-ai-message assistant';
+                        welcomeMsg.innerHTML = '✅ <strong>ASAP scheduling applied!</strong> The schedule has been optimized for earliest completion times with resource constraints.';
+                        maxMessages.appendChild(welcomeMsg);
+                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }
                 }, 500);
                 
                 // Periodic status refresh
