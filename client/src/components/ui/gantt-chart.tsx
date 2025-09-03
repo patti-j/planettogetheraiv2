@@ -2292,10 +2292,23 @@ export default function GanttChart({
       </div>
 
       {/* Scrollable Resource List */}
-      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing min-h-0" 
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
-           ref={resourceListRef}>
+           ref={resourceListRef}
+           style={{ maxHeight: 'calc(100vh - 200px)' }}>
+        {(() => {
+          console.log('🔧 Resource grouping debug:', {
+            totalResources: resources.length,
+            resourcesByType: Object.keys(resourcesByType).map(type => ({
+              type,
+              count: resourcesByType[type].length,
+              resources: resourcesByType[type].map(r => r.name)
+            })),
+            expandedTypes: Array.from(expandedResourceTypes)
+          });
+          return null;
+        })()}
         {Object.entries(resourcesByType).map(([resourceType, typeResources]) => {
           const isExpanded = expandedResourceTypes.has(resourceType);
           const displayType = resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
