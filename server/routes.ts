@@ -28579,6 +28579,61 @@ Be careful to preserve data integrity and relationships.`;
     res.json({ success: true, message: 'Hints seeded successfully' });
   }));
 
+  // PT Jobs API for Max AI
+  app.get("/api/pt-jobs", async (req, res) => {
+    try {
+      // Use same authentication logic as other endpoints
+      let userId: string | number | undefined = req.session?.userId;
+      let isDemo = (req.session as any)?.isDemo;
+      
+      // Auto-login as demo user if no session exists for development
+      if (!userId && !req.headers.authorization) {
+        userId = 'demo_user';
+        isDemo = true;
+        if (req.session) {
+          (req.session as any).userId = 'demo_user';
+          (req.session as any).isDemo = true;
+        }
+      }
+      
+      // Check for token in Authorization header if session fails
+      if (!userId && req.headers.authorization) {
+        const token = req.headers.authorization.replace('Bearer ', '');
+        
+        if (token.startsWith('demo_')) {
+          isDemo = true;
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 3) {
+            userId = tokenParts[0] + '_' + tokenParts[1];
+          }
+        } else if (token.startsWith('user_')) {
+          const tokenParts = token.split('_');
+          if (tokenParts.length >= 2) {
+            const parsedId = parseInt(tokenParts[1]);
+            if (!isNaN(parsedId)) {
+              userId = parsedId;
+            }
+          }
+        }
+      }
+      
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // Get ptjobs data directly from database
+      const { directSql } = await import('./db');
+      
+      const result = await directSql`SELECT * FROM ptjobs ORDER BY id`;
+      
+      console.log(`PT Jobs API: Found ${result.length} ptjobs records`);
+      res.json(result);
+    } catch (error) {
+      console.error('Error fetching PT jobs:', error);
+      res.status(500).json({ error: 'Failed to fetch PT jobs' });
+    }
+  });
+
   // Database Explorer API endpoints  
   app.get("/api/database/tables", async (req, res) => {
     try {
