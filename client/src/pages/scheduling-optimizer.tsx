@@ -474,7 +474,7 @@ const SchedulingOptimizer: React.FC = () => {
 
   // Fetch data with disabled refetch to prevent form re-renders
   const { data: productionOrders } = useQuery<ProductionOrder[]>({ 
-    queryKey: ['/api/jobs'],
+    queryKey: ['/api/pt-jobs'],
     refetchOnWindowFocus: false,
     refetchInterval: false
   });
@@ -972,7 +972,7 @@ const SchedulingOptimizer: React.FC = () => {
       });
 
       // Update job with optimized dates
-      const jobResponse = await fetch(`/api/jobs/${selectedExistingProductionOrder.id}`, {
+      const jobResponse = await fetch(`/api/pt-jobs/${selectedExistingProductionOrder.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -989,7 +989,7 @@ const SchedulingOptimizer: React.FC = () => {
       await Promise.all(updatePromises);
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pt-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
 
       toast({
@@ -1071,7 +1071,7 @@ const SchedulingOptimizer: React.FC = () => {
       await Promise.all(operationPromises);
 
       // Invalidate queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['/api/jobs'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/pt-jobs'] });
       queryClient.invalidateQueries({ queryKey: ['/api/operations'] });
 
       toast({

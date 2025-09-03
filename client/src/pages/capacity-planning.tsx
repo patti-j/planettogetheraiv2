@@ -326,7 +326,7 @@ export default function CapacityPlanning() {
   });
 
   const { data: productionOrders = [] } = useQuery<ProductionOrder[]>({
-    queryKey: ["/api/jobs"],
+    queryKey: ["/api/pt-jobs"],
   });
 
   const { data: scenarios = [], isLoading: loadingScenarios } = useQuery<CapacityPlanningScenario[]>({

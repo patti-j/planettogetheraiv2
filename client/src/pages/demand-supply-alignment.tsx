@@ -125,7 +125,7 @@ export default function DemandSupplyAlignmentPage() {
   });
 
   const { data: productionOrders = [] } = useQuery<any[]>({
-    queryKey: ["/api/jobs"],
+    queryKey: ["/api/pt-jobs"],
   });
 
   // Generate mock supply-demand alignment data (replace with real API data)
