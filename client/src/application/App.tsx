@@ -37,6 +37,7 @@ import Onboarding from "@/pages/onboarding";
 import OptimizationStudio from "@/pages/optimization-studio";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
+import MasterProductionSchedule from "@/pages/master-production-schedule";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
@@ -197,6 +198,11 @@ export default function ApplicationApp() {
               <Route path="/production-scheduler">
                 <ProtectedRoute feature="schedule" action="view">
                   <ProductionSchedulerWrapper />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/master-production-schedule">
+                <ProtectedRoute feature="master-production-schedule" action="view">
+                  <MasterProductionSchedule />
                 </ProtectedRoute>
               </Route>
 
