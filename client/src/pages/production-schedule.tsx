@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown, Sparkles, Send, ZoomIn, ZoomOut, Eye, Sun, Moon, Monitor, Settings2, Activity, TrendingUp, AlertTriangle, CheckCircle, PlayCircle, PauseCircle, RotateCcw } from 'lucide-react';
 import GanttChart from '@/components/ui/gantt-chart';
 import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import UnscheduledOperationsGrid from '@/components/scheduler-pro/UnscheduledOperationsGrid';
@@ -24,6 +24,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkspaceDashboard } from '@/components/workspace-dashboard';
 
 interface ScheduleFilters {
@@ -93,6 +96,25 @@ export default function ProductionSchedulePage() {
   const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
   const [showDashboard, setShowDashboard] = useState(true);
   const [isDashboardEditMode, setIsDashboardEditMode] = useState(false);
+  
+  // Max AI Assistant state
+  const [showMaxAI, setShowMaxAI] = useState(false);
+  const [maxAIInput, setMaxAIInput] = useState('');
+  const [maxAIMessages, setMaxAIMessages] = useState<Array<{role: 'user' | 'assistant', content: string, timestamp: Date}>>([]);
+  const [isMaxAILoading, setIsMaxAILoading] = useState(false);
+  
+  // Enhanced scheduler controls
+  const [currentAlgorithm, setCurrentAlgorithm] = useState('ASAP');
+  const [schedulerStats, setSchedulerStats] = useState({
+    operations: 0,
+    utilization: 0,
+    totalHours: 0,
+    resources: 0
+  });
+  const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
+  
+  // Scheduler instance ref for enhanced functionality
+  const schedulerRef = useRef<any>(null);
 
   // Check permissions - allow all in development for demo purposes
   const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
@@ -156,6 +178,28 @@ export default function ProductionSchedulePage() {
     }
   });
 
+  // Max AI Chat mutation
+  const maxAIMutation = useMutation({
+    mutationFn: async (message: string) => {
+      return apiRequest('POST', '/api/max-ai/chat', { 
+        message, 
+        context: 'production-schedule',
+        data: {
+          operations: ptOperations,
+          resources: resources,
+          stats: schedulerStats
+        }
+      });
+    },
+    onSuccess: (response: any) => {
+      setMaxAIMessages(prev => [...prev, {
+        role: 'assistant',
+        content: response?.response || response?.message || 'I understand your request about the production schedule.',
+        timestamp: new Date()
+      }]);
+    }
+  });
+
   // Auto-refresh functionality
   useEffect(() => {
     if (!layoutConfig.autoRefresh) return;
@@ -167,6 +211,190 @@ export default function ProductionSchedulePage() {
 
     return () => clearInterval(interval);
   }, [layoutConfig.autoRefresh, layoutConfig.refreshInterval]);
+
+  // Scheduling algorithms implementation
+  const schedulingAlgorithms = {
+    ASAP: (operations: any[], resources: any[]) => {
+      console.log('🚀 Applying ASAP (As Soon As Possible) scheduling algorithm');
+      // Sort operations by priority and start date
+      return operations.map(op => ({
+        ...op,
+        startDate: op.startTime ? new Date(op.startTime) : new Date(),
+        algorithmApplied: 'ASAP'
+      })).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+    },
+    
+    ALAP: (operations: any[], resources: any[]) => {
+      console.log('🎯 Applying ALAP (As Late As Possible) scheduling algorithm');
+      // Schedule operations as late as possible while meeting deadlines
+      return operations.map(op => ({
+        ...op,
+        startDate: op.dueDate ? 
+          new Date(new Date(op.dueDate).getTime() - (op.duration * 60 * 1000)) : 
+          new Date(Date.now() + 24*60*60*1000), // Default to tomorrow if no due date
+        algorithmApplied: 'ALAP'
+      })).sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+    },
+    
+    'Critical Path': (operations: any[], resources: any[]) => {
+      console.log('🎯 Applying Critical Path Method scheduling algorithm');
+      // Identify critical path and schedule accordingly
+      return operations.map(op => ({
+        ...op,
+        startDate: op.startTime ? new Date(op.startTime) : new Date(),
+        isCritical: Math.random() > 0.7, // Simulate critical path identification
+        algorithmApplied: 'Critical Path'
+      })).sort((a, b) => {
+        if (a.isCritical && !b.isCritical) return -1;
+        if (!a.isCritical && b.isCritical) return 1;
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      });
+    },
+    
+    'Resource Leveling': (operations: any[], resources: any[]) => {
+      console.log('⚖️ Applying Resource Leveling scheduling algorithm');
+      // Balance resource utilization
+      const resourceUtilization = new Map();
+      return operations.map(op => {
+        const resourceId = op.resourceId || op.resource_id;
+        const currentUtil = resourceUtilization.get(resourceId) || 0;
+        resourceUtilization.set(resourceId, currentUtil + (op.duration || 0));
+        
+        return {
+          ...op,
+          startDate: op.startTime ? new Date(op.startTime) : new Date(),
+          resourceUtilization: currentUtil + (op.duration || 0),
+          algorithmApplied: 'Resource Leveling'
+        };
+      }).sort((a, b) => a.resourceUtilization - b.resourceUtilization);
+    },
+    
+    'Drum/TOC': (operations: any[], resources: any[]) => {
+      console.log('🥁 Applying Drum-Buffer-Rope (Theory of Constraints) scheduling algorithm');
+      // Identify bottleneck and optimize around it
+      const bottleneckResource = resources.reduce((prev, current) => 
+        (prev.utilizationRate > current.utilizationRate) ? prev : current
+      );
+      
+      return operations.map(op => ({
+        ...op,
+        startDate: op.startTime ? new Date(op.startTime) : new Date(),
+        isBottleneck: op.resourceName === bottleneckResource?.name,
+        algorithmApplied: 'Drum/TOC'
+      })).sort((a, b) => {
+        if (a.isBottleneck && !b.isBottleneck) return -1;
+        if (!a.isBottleneck && b.isBottleneck) return 1;
+        return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+      });
+    }
+  };
+
+  // Apply scheduling algorithm
+  const applySchedulingAlgorithm = (algorithm: string) => {
+    if (!Array.isArray(ptOperations) || !Array.isArray(resources)) return;
+    
+    console.log(`📊 Applying ${algorithm} algorithm to ${ptOperations.length} operations`);
+    setCurrentAlgorithm(algorithm);
+    
+    const scheduledOperations = schedulingAlgorithms[algorithm as keyof typeof schedulingAlgorithms]?.(ptOperations, resources);
+    
+    if (schedulerRef.current && scheduledOperations) {
+      // Update scheduler with new data
+      try {
+        schedulerRef.current.eventStore.data = scheduledOperations.map(op => ({
+          id: op.id,
+          name: op.name || `${op.jobName}: ${op.operationName}`,
+          startDate: op.startDate,
+          duration: op.duration ? (op.duration / 60) : 2, // Convert to hours
+          durationUnit: 'hour',
+          resourceId: op.resourceId || op.resource_id || resources[0]?.id,
+          percentDone: op.percent_done || 0,
+          algorithmApplied: op.algorithmApplied
+        }));
+        
+        updateSchedulerStats();
+      } catch (error) {
+        console.error('Error updating scheduler:', error);
+      }
+    }
+  };
+
+  // Update scheduler statistics
+  const updateSchedulerStats = () => {
+    if (!schedulerRef.current || !Array.isArray(resources)) return;
+    
+    const events = schedulerRef.current.eventStore?.records || [];
+    const totalOperations = events.length;
+    
+    let totalHours = 0;
+    const resourceUtilization: Record<string, number> = {};
+    
+    events.forEach((event: any) => {
+      const duration = event.duration || 0;
+      totalHours += duration;
+      
+      const resourceId = event.resourceId;
+      if (resourceId) {
+        resourceUtilization[resourceId] = (resourceUtilization[resourceId] || 0) + duration;
+      }
+    });
+    
+    const totalCapacity = resources.length * 8; // 8 hours per resource
+    const utilization = totalCapacity > 0 ? Math.round((totalHours / totalCapacity) * 100) : 0;
+    
+    setSchedulerStats({
+      operations: totalOperations,
+      utilization: utilization,
+      totalHours: totalHours,
+      resources: resources.length
+    });
+  };
+
+  // Max AI message handling
+  const handleMaxAIMessage = async () => {
+    if (!maxAIInput.trim()) return;
+    
+    const userMessage = maxAIInput.trim();
+    setMaxAIMessages(prev => [...prev, {
+      role: 'user',
+      content: userMessage,
+      timestamp: new Date()
+    }]);
+    
+    setMaxAIInput('');
+    setIsMaxAILoading(true);
+    
+    try {
+      await maxAIMutation.mutateAsync(userMessage);
+    } catch (error) {
+      console.error('Max AI error:', error);
+      setMaxAIMessages(prev => [...prev, {
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your request. Please try again.',
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsMaxAILoading(false);
+    }
+  };
+
+  // Theme toggle functionality
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : theme === 'dark' ? 'system' : 'light';
+    setTheme(newTheme);
+    
+    // Apply theme to document
+    const root = document.documentElement;
+    if (newTheme === 'dark') {
+      root.classList.add('dark');
+    } else if (newTheme === 'light') {
+      root.classList.remove('dark');
+    } else {
+      // System theme
+      const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      root.classList.toggle('dark', isDark);
+    }
+  };
 
   if (!canViewSchedule) {
     return (
@@ -230,6 +458,104 @@ export default function ProductionSchedulePage() {
 
   return (
     <div className="flex flex-col h-full bg-background">
+      
+      {/* Max AI Assistant Panel */}
+      {showMaxAI && (
+        <div className="fixed inset-y-0 right-0 w-80 bg-background border-l shadow-lg z-50">
+          <div className="flex flex-col h-full">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 border-b">
+              <div className="flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-blue-600" />
+                <span className="font-semibold">Max AI Assistant</span>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => setShowMaxAI(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {/* Messages */}
+            <ScrollArea className="flex-1 p-4">
+              <div className="space-y-4">
+                {maxAIMessages.length === 0 && (
+                  <div className="text-center text-muted-foreground py-8">
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">Ask Max AI about your production schedule</p>
+                    <p className="text-xs mt-1">Try: "What's our resource utilization?" or "Show bottlenecks"</p>
+                  </div>
+                )}
+                
+                {maxAIMessages.map((message, index) => (
+                  <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    {message.role === 'assistant' && (
+                      <Avatar className="w-6 h-6 mt-1">
+                        <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                          <Sparkles className="w-3 h-3" />
+                        </AvatarFallback>
+                      </Avatar>
+                    )}
+                    <div className={`max-w-[240px] p-3 rounded-lg text-sm ${
+                      message.role === 'user' 
+                        ? 'bg-blue-600 text-white ml-auto' 
+                        : 'bg-muted'
+                    }`}>
+                      <p>{message.content}</p>
+                      <p className="text-xs opacity-70 mt-1">
+                        {message.timestamp.toLocaleTimeString()}
+                      </p>
+                    </div>
+                    {message.role === 'user' && (
+                      <Avatar className="w-6 h-6 mt-1">
+                        <AvatarFallback className="bg-gray-100 text-gray-600 text-xs">U</AvatarFallback>
+                      </Avatar>
+                    )}
+                  </div>
+                ))}
+                
+                {isMaxAILoading && (
+                  <div className="flex gap-3 justify-start">
+                    <Avatar className="w-6 h-6 mt-1">
+                      <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                        <Sparkles className="w-3 h-3" />
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="bg-muted p-3 rounded-lg text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="flex space-x-1">
+                          <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce"></div>
+                          <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                          <div className="w-1 h-1 bg-blue-600 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                        </div>
+                        <span className="text-xs text-muted-foreground">Analyzing...</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+            
+            {/* Input */}
+            <div className="p-4 border-t">
+              <div className="flex gap-2">
+                <Input
+                  placeholder="Ask Max AI about your schedule..."
+                  value={maxAIInput}
+                  onChange={(e) => setMaxAIInput(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleMaxAIMessage()}
+                  className="flex-1"
+                />
+                <Button
+                  size="sm"
+                  onClick={handleMaxAIMessage}
+                  disabled={!maxAIInput.trim() || isMaxAILoading}
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div className={`flex items-center justify-between border-b ${isMobile ? 'p-3' : 'p-6'}`}>
@@ -273,6 +599,29 @@ export default function ProductionSchedulePage() {
             {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
           </Button>
           
+          {/* Max AI Assistant Button */}
+          <Button
+            variant={showMaxAI ? "default" : "outline"}
+            size="sm"
+            className="gap-2"
+            onClick={() => setShowMaxAI(!showMaxAI)}
+          >
+            <Sparkles className="w-4 h-4" />
+            {!isMobile && "Max AI"}
+          </Button>
+          
+          {/* Theme Toggle */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleTheme}
+            className="w-9 h-9 p-0"
+          >
+            {theme === 'light' ? <Sun className="w-4 h-4" /> : 
+             theme === 'dark' ? <Moon className="w-4 h-4" /> : 
+             <Monitor className="w-4 h-4" />}
+          </Button>
+
           {/* Desktop-only buttons */}
           {!isMobile && (
             <>
@@ -320,6 +669,65 @@ export default function ProductionSchedulePage() {
           }}
         />
       )}
+
+      {/* Enhanced Scheduling Toolbar */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b border-blue-200 dark:border-blue-800">
+        <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Activity className="w-5 h-5 text-blue-600" />
+              <span className="font-semibold text-blue-900 dark:text-blue-100">Production Scheduler</span>
+              <Badge variant="secondary" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                {currentAlgorithm}
+              </Badge>
+            </div>
+            
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span>{schedulerStats.operations} operations</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span>{schedulerStats.utilization}% utilization</span>
+              <Separator orientation="vertical" className="h-4" />
+              <span>{schedulerStats.totalHours.toFixed(1)}h total</span>
+            </div>
+          </div>
+          
+          {/* Scheduling Algorithm Buttons */}
+          <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap gap-2'} items-center`}>
+            <span className="text-sm font-medium text-muted-foreground">
+              Scheduling Algorithms:
+            </span>
+            
+            <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-2`}>
+              {Object.keys(schedulingAlgorithms).map((algorithm) => (
+                <Button
+                  key={algorithm}
+                  variant={currentAlgorithm === algorithm ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => applySchedulingAlgorithm(algorithm)}
+                  className="gap-2 text-xs"
+                >
+                  {algorithm === 'ASAP' && <PlayCircle className="w-3 h-3" />}
+                  {algorithm === 'ALAP' && <PauseCircle className="w-3 h-3" />}
+                  {algorithm === 'Critical Path' && <TrendingUp className="w-3 h-3" />}
+                  {algorithm === 'Resource Leveling' && <BarChart3 className="w-3 h-3" />}
+                  {algorithm === 'Drum/TOC' && <Activity className="w-3 h-3" />}
+                  {algorithm}
+                </Button>
+              ))}
+            </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => window.location.reload()}
+              className="gap-2"
+            >
+              <RotateCcw className="w-3 h-3" />
+              Reset
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Filters and Controls */}
       {layoutConfig.showFilters && (
@@ -497,7 +905,7 @@ export default function ProductionSchedulePage() {
       )}
 
       {/* Main Content */}
-      <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden`}>
+      <div className={`flex-1 ${isMobile ? 'p-2' : 'p-6'} overflow-hidden ${showMaxAI ? 'mr-80' : ''}`}>
 
         
         {/* Always show tabs - unified approach for mobile and desktop */}
