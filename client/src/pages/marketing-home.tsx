@@ -196,7 +196,7 @@ const MarketingHome: React.FC = () => {
   return (
     <div className="fixed inset-0 min-h-screen bg-background z-[9999] overflow-auto">
       {/* Hero Section - Enhanced Modern Design */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 text-white">
+      <section className="relative overflow-hidden bg-black text-white">
         {/* Background Effects */}
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-cyan-600/20" />
         <div className="absolute inset-0 bg-grid-white/5" />
@@ -251,12 +251,14 @@ const MarketingHome: React.FC = () => {
               
               <Button 
                 size="lg"
-                variant="outline"
                 onClick={handleWatchDemo}
-                className="group w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold border-2 border-white/30 text-white hover:bg-white/10 hover:border-white/50 shadow-lg backdrop-blur-sm transition-all duration-300 rounded-xl"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 hover:from-blue-600 hover:via-purple-600 hover:to-cyan-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
-                <Play className="mr-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform duration-300" />
-                Watch 3-Min Demo
+                <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <span className="relative z-10 flex items-center justify-center">
+                  <Play className="mr-3 w-5 h-5 sm:w-6 sm:h-6 group-hover:scale-110 transition-transform duration-300" />
+                  Watch 3-Min Demo
+                </span>
               </Button>
             </div>
             
