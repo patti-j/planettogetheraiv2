@@ -116,6 +116,15 @@ export default function ProductionSchedulePage() {
     enabled: canViewSchedule
   });
 
+  // Debug resources at the page level
+  useEffect(() => {
+    if (resources) {
+      console.log('🔍 Production Schedule Debug - Total resources received:', resources.length);
+      console.log('🔍 Resource names:', resources.map((r: any) => `${r.name} (${r.type})`));
+      console.log('🔍 First 5 resources:', resources.slice(0, 5));
+    }
+  }, [resources]);
+
   const { data: capabilities, isLoading: capabilitiesLoading } = useQuery({
     queryKey: ['/api/capabilities'],
     enabled: canViewSchedule
