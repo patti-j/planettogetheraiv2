@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
+import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -853,37 +853,6 @@ const ProductionSchedulerProV2: React.FC = () => {
     }
   };
 
-  // Event handlers - properly memoized with useCallback
-  const handleBeforeEventEdit = useCallback(({ eventRecord }: any) => {
-    console.log('Editing event:', eventRecord);
-    return true;
-  }, []);
-
-  const handleBeforeEventSave = useCallback(({ eventRecord, values }: any) => {
-    console.log('Saving event:', eventRecord, values);
-    return true;
-  }, []);
-
-  const handleBeforeEventDelete = useCallback(({ eventRecords }: any) => {
-    console.log('Deleting events:', eventRecords);
-    return true;
-  }, []);
-
-  const handleEventDrop = useCallback(({ eventRecords, targetResourceRecord, startDate }: any) => {
-    console.log('Event dropped:', eventRecords, targetResourceRecord, startDate);
-  }, []);
-
-  const handleEventResizeEnd = useCallback(({ eventRecord, startDate, endDate }: any) => {
-    console.log('Event resized:', eventRecord, startDate, endDate);
-  }, []);
-
-  const handleDependencyAdd = useCallback(({ dependency }: any) => {
-    console.log('Dependency added:', dependency);
-  }, []);
-
-  const handleDependencyRemove = useCallback(({ dependency }: any) => {
-    console.log('Dependency removed:', dependency);
-  }, []);
 
   if (isLoading || !schedulerData || !schedulerConfig) {
     return (
@@ -1205,20 +1174,10 @@ const ProductionSchedulerProV2: React.FC = () => {
 
       {/* Scheduler Component */}
       <div className="flex-1 m-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden relative">
-        {schedulerConfig && (
-          <BryntumSchedulerPro
-            ref={schedulerRef}
-            {...schedulerConfig}
-            project={schedulerData.project}
-            onBeforeEventEdit={handleBeforeEventEdit}
-            onBeforeEventSave={handleBeforeEventSave}
-            onBeforeEventDelete={handleBeforeEventDelete}
-            onEventDrop={handleEventDrop}
-            onEventResizeEnd={handleEventResizeEnd}
-            onDependencyAdd={handleDependencyAdd}
-            onDependencyRemove={handleDependencyRemove}
-          />
-        )}
+        <BryntumSchedulerProComponent
+          ref={schedulerRef}
+          project={schedulerData.project}
+        />
         {isLoading && (
           <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

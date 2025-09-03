@@ -2942,11 +2942,6 @@ Rules:
           j.need_date_time as job_due_date,
           j.scheduled_status as job_status,
           
-          -- Manufacturing Order information
-          mo.id as mo_id,
-          mo.external_id as mo_external_id,
-          mo.name as mo_name,
-          mo.description as mo_description,
           
           -- Activity information from ptjobactivities
           ja.id as activity_id,
@@ -2980,7 +2975,6 @@ Rules:
           
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
-        LEFT JOIN ptmanufacturingorders mo ON jo.manufacturing_order_id = mo.id
         LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
         LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
         LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id

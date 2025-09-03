@@ -341,8 +341,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         ref={schedulerRef}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
-        startDate={new Date(2025, 7, 28)} // August 28, 2025
-        endDate={new Date(2025, 7, 30)}   // 2 days view to prevent timeline error
+        startDate={new Date(2025, 8, 1)}  // September 1, 2025
+        endDate={new Date(2025, 8, 7)}    // September 7, 2025 - 1 week view
         viewPreset="hourAndDay"
         rowHeight={60}
         barMargin={8}
