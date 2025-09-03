@@ -26,6 +26,7 @@ import {
   MessageSquare, 
   Lightbulb,
   TrendingUp,
+  TrendingDown,
   AlertTriangle,
   Brain,
   Settings,
@@ -44,6 +45,8 @@ import {
   BarChart3,
   Clock,
   AlertCircle,
+  Target,
+  Zap,
 } from "lucide-react";
 // import WidgetStudioButton from "./widget-studio-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1408,6 +1411,96 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   </div>
                 </div>
               )}
+
+              {/* Scheduling Algorithms Quick Actions */}
+              <div className="space-y-1">
+                <div className="text-[10px] font-medium text-gray-600 flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  Scheduling Algorithms
+                </div>
+                <div className="grid grid-cols-2 gap-1">
+                  <button
+                    onClick={async () => {
+                      const result = await schedulerContextService.executeSchedulingAlgorithm('ASAP');
+                      toast({
+                        title: result.success ? "ASAP Algorithm Applied" : "Algorithm Failed",
+                        description: result.message,
+                        variant: result.success ? "default" : "destructive",
+                      });
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1"
+                  >
+                    <TrendingUp className="h-3 w-3" />
+                    ASAP
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const result = await schedulerContextService.executeSchedulingAlgorithm('ALAP');
+                      toast({
+                        title: result.success ? "ALAP Algorithm Applied" : "Algorithm Failed",
+                        description: result.message,
+                        variant: result.success ? "default" : "destructive",
+                      });
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1"
+                  >
+                    <TrendingDown className="h-3 w-3" />
+                    ALAP
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const result = await schedulerContextService.executeSchedulingAlgorithm('CRITICAL_PATH');
+                      toast({
+                        title: result.success ? "Critical Path Applied" : "Algorithm Failed",
+                        description: result.message,
+                        variant: result.success ? "default" : "destructive",
+                      });
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    Critical Path
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const result = await schedulerContextService.executeSchedulingAlgorithm('LEVEL_RESOURCES');
+                      toast({
+                        title: result.success ? "Resources Leveled" : "Algorithm Failed",
+                        description: result.message,
+                        variant: result.success ? "default" : "destructive",
+                      });
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1"
+                  >
+                    <BarChart3 className="h-3 w-3" />
+                    Level Resources
+                  </button>
+                  <button
+                    onClick={async () => {
+                      const result = await schedulerContextService.executeSchedulingAlgorithm('DRUM_TOC');
+                      toast({
+                        title: result.success ? "TOC Applied" : "Algorithm Failed",
+                        description: result.message,
+                        variant: result.success ? "default" : "destructive",
+                      });
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1 col-span-2"
+                  >
+                    <Target className="h-3 w-3" />
+                    Drum (Theory of Constraints)
+                  </button>
+                  <button
+                    onClick={() => {
+                      setInputMessage("Analyze the current schedule");
+                      handleSendMessage();
+                    }}
+                    className="text-[10px] p-1.5 bg-white hover:bg-gradient-to-r hover:from-pink-50 hover:to-purple-50 border rounded transition-colors flex items-center gap-1 col-span-2"
+                  >
+                    <Zap className="h-3 w-3" />
+                    Analyze Schedule
+                  </button>
+                </div>
+              </div>
 
               {/* Quick Actions */}
               {schedulerContext.suggestions && schedulerContext.suggestions.length > 0 && (

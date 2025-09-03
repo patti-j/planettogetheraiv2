@@ -22,9 +22,6 @@ import {
   Download,
   Upload,
   Filter,
-  X,
-  Send,
-  Sparkles,
   TrendingUp,
   TrendingDown,
   AlertTriangle,
@@ -61,11 +58,6 @@ const ProductionSchedulerProV2: React.FC = () => {
   });
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isMaxAIOpen, setIsMaxAIOpen] = useState(false);
-  const [maxAIMessages, setMaxAIMessages] = useState<Array<{role: string, content: string}>>([
-    { role: 'assistant', content: "Hello! I'm Max, your AI scheduling assistant. How can I help optimize your production schedule today?" }
-  ]);
-  const [maxAIInput, setMaxAIInput] = useState('');
   const [resourceUtilization, setResourceUtilization] = useState('--');
   const { toast } = useToast();
   
@@ -204,6 +196,15 @@ const ProductionSchedulerProV2: React.FC = () => {
           
           // Register with context service for Max AI integration
           contextService.setSchedulerInstance(instance);
+          
+          // Register scheduling algorithms with context service
+          contextService.setSchedulingAlgorithms({
+            'ASAP': asapScheduling,
+            'ALAP': alapScheduling,
+            'CRITICAL_PATH': criticalPathScheduling,
+            'LEVEL_RESOURCES': levelResourcesScheduling,
+            'DRUM_TOC': drumScheduling
+          });
           
           // Apply zoom to fit after a delay to ensure data is rendered
           // Only do this on initial load
@@ -625,84 +626,6 @@ const ProductionSchedulerProV2: React.FC = () => {
     return response;
   }, [schedulerInstance]);
 
-  // Handle Max AI message
-  const handleMaxAISend = async () => {
-    if (!maxAIInput.trim()) return;
-    
-    const userMessage = maxAIInput.trim();
-    setMaxAIMessages(prev => [...prev, { role: 'user', content: userMessage }]);
-    setMaxAIInput('');
-    
-    // Process message and determine response
-    const lowerMessage = userMessage.toLowerCase();
-    let response = '';
-    let executedAlgorithm = null;
-    
-    // Check for algorithm execution commands
-    if (lowerMessage.includes('run') || lowerMessage.includes('execute') || lowerMessage.includes('apply') || lowerMessage.includes('optimize')) {
-      if (lowerMessage.includes('asap') || lowerMessage.includes('forward')) {
-        executedAlgorithm = 'asap';
-        response = '🚀 Executing ASAP (Forward) scheduling algorithm...';
-      } else if (lowerMessage.includes('alap') || lowerMessage.includes('backward')) {
-        executedAlgorithm = 'alap';
-        response = '⏰ Executing ALAP (Backward) scheduling algorithm...';
-      } else if (lowerMessage.includes('critical path')) {
-        executedAlgorithm = 'criticalPath';
-        response = '🎯 Executing Critical Path optimization...';
-      } else if (lowerMessage.includes('level') || lowerMessage.includes('balance resource')) {
-        executedAlgorithm = 'levelResources';
-        response = '⚖️ Executing Resource Leveling algorithm...';
-      } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc') || lowerMessage.includes('constraint')) {
-        executedAlgorithm = 'drum';
-        response = '🥁 Executing Drum (Theory of Constraints) optimization...';
-      } else {
-        response = 'To optimize the schedule, please specify an algorithm. You can say:\n• "Run ASAP scheduling"\n• "Apply ALAP algorithm"\n• "Execute critical path optimization"\n• "Level resources"\n• "Apply drum scheduling"';
-      }
-    }
-    // Check for analysis requests
-    else if (lowerMessage.includes('analyze') || lowerMessage.includes('analysis') || lowerMessage.includes('insights')) {
-      response = analyzeSchedule();
-    }
-    // Information requests
-    else if (lowerMessage.includes('what') || lowerMessage.includes('explain') || lowerMessage.includes('tell me about')) {
-      if (lowerMessage.includes('asap')) {
-        response = 'ASAP (As Soon As Possible) pushes all operations to the earliest possible time slots. Best for urgent orders or maximizing early throughput. Say "Run ASAP" to apply it.';
-      } else if (lowerMessage.includes('alap')) {
-        response = 'ALAP (As Late As Possible) delays operations to the latest time that still meets due dates. Minimizes inventory holding costs. Say "Run ALAP" to apply it.';
-      } else if (lowerMessage.includes('critical path')) {
-        response = 'Critical Path identifies the longest sequence of dependent tasks and optimizes them first. Minimizes project completion time. Say "Execute critical path" to apply it.';
-      } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
-        response = 'Resource Leveling distributes work evenly across all resources. Prevents overloading and improves efficiency. Say "Level resources" to apply it.';
-      } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
-        response = 'Drum scheduling (TOC) identifies your bottleneck resource and optimizes around it. Maximizes throughput. Say "Apply drum scheduling" to apply it.';
-      } else {
-        response = 'I can help you optimize the schedule. Try asking:\n• "Run ASAP scheduling"\n• "Analyze the schedule"\n• "Explain critical path"\n• "Level the resources"';
-      }
-    }
-    // Help commands
-    else if (lowerMessage.includes('help') || lowerMessage.includes('commands')) {
-      response = '📊 **Schedule Optimization Commands:**\n\n**Execute Algorithms:**\n• Run ASAP\n• Apply ALAP\n• Execute critical path\n• Level resources\n• Apply drum scheduling\n\n**Get Information:**\n• What is ASAP?\n• Explain critical path\n• Analyze schedule\n\n**Analysis:**\n• Show insights\n• Check utilization';
-    }
-    else {
-      response = `I understand you're asking about "${userMessage}". I can help you optimize the schedule using different algorithms. Say "help" to see available commands.`;
-    }
-    
-    // Execute algorithm if requested
-    if (executedAlgorithm) {
-      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: response }]);
-      await runSchedulingAlgorithm(executedAlgorithm);
-      
-      const successMessage = `✅ Successfully applied ${executedAlgorithm === 'asap' ? 'ASAP' : 
-        executedAlgorithm === 'alap' ? 'ALAP' :
-        executedAlgorithm === 'criticalPath' ? 'Critical Path' :
-        executedAlgorithm === 'levelResources' ? 'Resource Leveling' :
-        'Drum (TOC)'} algorithm! The schedule has been optimized. Would you like to try a different algorithm?`;
-      
-      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: successMessage }]);
-    } else {
-      setMaxAIMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    }
-  };
 
   // Toolbar actions - memoized with useCallback
   const handleZoomIn = useCallback(async () => {
@@ -924,143 +847,12 @@ const ProductionSchedulerProV2: React.FC = () => {
           <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Production Schedule</h1>
         </div>
         <div className="flex items-center gap-3">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setIsMaxAIOpen(true)}
-            className="bg-gradient-to-r from-pink-500 to-purple-600 text-white"
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            Max AI
-          </Button>
           <span className="text-sm text-gray-600 dark:text-gray-400">
             Last updated: {new Date().toLocaleTimeString()}
           </span>
         </div>
       </div>
 
-
-      {/* Max AI Assistant Panel */}
-      {isMaxAIOpen && (
-        <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMaxAIOpen(false)} />
-          <div className="absolute right-0 top-0 h-full w-96 bg-white dark:bg-gray-900 shadow-xl flex flex-col">
-            <div className="bg-gradient-to-r from-pink-500 to-purple-600 text-white p-4 flex justify-between items-center">
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Sparkles className="h-5 w-5" />
-                Max AI Assistant
-              </h3>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setIsMaxAIOpen(false)}
-                className="text-white hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
-            
-            {/* Quick Actions */}
-            <div className="p-3 bg-gradient-to-r from-pink-50 to-purple-50 dark:from-gray-800 dark:to-gray-700 border-b">
-              <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 flex items-center gap-1">
-                <Sparkles className="h-4 w-4" />
-                Quick Actions
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runSchedulingAlgorithm('ASAP')}
-                  className="text-xs"
-                >
-                  <TrendingUp className="h-3 w-3 mr-1" />
-                  Run ASAP
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runSchedulingAlgorithm('ALAP')}
-                  className="text-xs"
-                >
-                  <TrendingDown className="h-3 w-3 mr-1" />
-                  Run ALAP
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runSchedulingAlgorithm('CRITICAL_PATH')}
-                  className="text-xs"
-                >
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  Critical Path
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runSchedulingAlgorithm('LEVEL_RESOURCES')}
-                  className="text-xs"
-                >
-                  <BarChart3 className="h-3 w-3 mr-1" />
-                  Level Resources
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runSchedulingAlgorithm('DRUM_TOC')}
-                  className="text-xs"
-                >
-                  <Target className="h-3 w-3 mr-1" />
-                  Drum (TOC)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    const analysis = analyzeSchedule();
-                    setMaxAIMessages(prev => [...prev, { role: 'assistant', content: analysis }]);
-                  }}
-                  className="text-xs"
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Analyze Schedule
-                </Button>
-              </div>
-            </div>
-            
-            {/* Chat Messages */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {maxAIMessages.map((msg, index) => (
-                <div
-                  key={index}
-                  className={`p-3 rounded-lg text-sm whitespace-pre-wrap ${
-                    msg.role === 'assistant'
-                      ? 'bg-gray-100 dark:bg-gray-800'
-                      : 'bg-purple-50 dark:bg-purple-900/20 ml-8'
-                  }`}
-                >
-                  {msg.content}
-                </div>
-              ))}
-            </div>
-            
-            {/* Input Area */}
-            <div className="p-4 border-t dark:border-gray-700">
-              <div className="flex gap-2">
-                <Input
-                  value={maxAIInput}
-                  onChange={(e) => setMaxAIInput(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleMaxAISend()}
-                  placeholder="Ask me anything about scheduling..."
-                  className="flex-1"
-                />
-                <Button onClick={handleMaxAISend} size="icon">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Toolbar - Responsive */}
       <div className="bg-white/90 dark:bg-gray-900/90 px-2 sm:px-4 py-2 border-b dark:border-gray-700 flex-shrink-0 overflow-x-auto">

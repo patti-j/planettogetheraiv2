@@ -80,6 +80,7 @@ export interface SchedulerContext {
 export class SchedulerContextService {
   private static instance: SchedulerContextService;
   private schedulerInstance: any = null;
+  private schedulingAlgorithms: any = null;
   
   private constructor() {}
   
@@ -94,6 +95,30 @@ export class SchedulerContextService {
   setSchedulerInstance(instance: any) {
     this.schedulerInstance = instance;
     console.log('Scheduler instance registered with context service');
+  }
+  
+  // Set scheduling algorithm functions
+  setSchedulingAlgorithms(algorithms: any) {
+    this.schedulingAlgorithms = algorithms;
+    console.log('Scheduling algorithms registered with context service');
+  }
+  
+  // Execute a scheduling algorithm
+  async executeSchedulingAlgorithm(algorithm: string): Promise<{ success: boolean; message: string }> {
+    if (!this.schedulingAlgorithms || !this.schedulingAlgorithms[algorithm]) {
+      return { 
+        success: false, 
+        message: `Scheduling algorithm '${algorithm}' not available. Please ensure you're on the Production Scheduler page.` 
+      };
+    }
+    
+    try {
+      await this.schedulingAlgorithms[algorithm]();
+      return { success: true, message: `${algorithm} algorithm executed successfully!` };
+    } catch (error) {
+      console.error(`Error executing ${algorithm} algorithm:`, error);
+      return { success: false, message: `Failed to execute ${algorithm} algorithm.` };
+    }
   }
   
   // Get current scheduler context
