@@ -232,7 +232,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
       // Reset force-show when going back to larger screen
-      if (window.innerWidth >= 480) {
+      if (window.innerWidth >= 768) {
         setForcePanelsVisible(false);
       }
     };
@@ -253,8 +253,11 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullScreen, toggleFullScreen]);
 
-  // Determine if panels should be hidden due to small screen
-  const shouldHidePanels = windowWidth < 480 && !forcePanelsVisible;
+  // Determine if panels should be hidden - only hide on actual mobile devices (touch + small screen)
+  // Never hide panels on desktop, regardless of window size
+  const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
+  const isActualMobile = isTouchDevice && windowWidth < 768;
+  const shouldHidePanels = isActualMobile && !forcePanelsVisible;
   const showPanels = !isFullScreen && !shouldHidePanels;
 
   // For very small screens (actual mobile), render content directly without TopMenu
@@ -318,7 +321,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {/* Bottom drawer for notifications - hidden in full screen */}
       {!isFullScreen && <BottomDrawer />}
 
-      {/* Panel Toggle Button - Show when panels are hidden due to small screen */}
+      {/* Panel Toggle Button - Show when panels are hidden due to mobile device */}
       {!isFullScreen && shouldHidePanels && (
         <div className="fixed top-4 left-4 z-50">
           <TooltipProvider>
@@ -342,8 +345,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         </div>
       )}
 
-      {/* Panel Hide Button - Show when panels are force-visible on small screen */}
-      {!isFullScreen && forcePanelsVisible && windowWidth < 480 && (
+      {/* Panel Hide Button - Show when panels are force-visible on mobile */}
+      {!isFullScreen && forcePanelsVisible && isActualMobile && (
         <div className="fixed top-4 left-4 z-50">
           <TooltipProvider>
             <Tooltip>
