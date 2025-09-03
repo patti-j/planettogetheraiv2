@@ -518,15 +518,15 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       let totalJobs = 0;
       let runningOperations = 0;
       try {
-        // Query PT Publish job operations table directly
-        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjoboperations`);
+        // Query PT jobs table directly (the working table with 49 records)
+        const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
         totalJobs = Number(jobCountResult.rows[0]?.count) || 0;
         
-        // Count operations in progress
+        // Count jobs in progress (using different criteria for ptjobs)
         const runningOpsResult = await db.execute(sql`
           SELECT COUNT(*) as count 
-          FROM ptjoboperations 
-          WHERE scheduled_start <= NOW() AND scheduled_end >= NOW()
+          FROM ptjobs 
+          WHERE scheduled_start_date_time <= NOW() AND scheduled_end_date_time >= NOW()
         `);
         runningOperations = Number(runningOpsResult.rows[0]?.count) || 0;
       } catch (jobError) {

@@ -2872,43 +2872,45 @@ export class DatabaseStorage {
   }
 
   async getJobs(): Promise<any[]> {
-    console.log("getJobs: Redirecting to PT Publish Jobs table");
+    console.log("getJobs: Using working ptjobs table");
     
     try {
-      // Get jobs from PT Publish tables 
+      // Get jobs directly from ptjobs table (the working table with 49 records)
       const result = await this.db.execute(sql`
-        SELECT DISTINCT 
-          job_id as id,
-          job_id as order_number,
-          MAX(name) as name,
-          MAX(description) as description,
-          'active' as status,
-          MIN(scheduled_start) as start_date,
-          MAX(scheduled_end) as due_date,
-          COUNT(*) as operation_count,
+        SELECT 
+          id,
+          job_id,
+          order_number,
+          name,
+          description,
+          priority,
+          scheduled_start_date_time as start_date,
+          scheduled_end_date_time as due_date,
+          product,
+          qty,
           publish_date
-        FROM ptjoboperations
-        WHERE instance_id = 'BREW-SIM-001'
-        GROUP BY job_id, publish_date
-        ORDER BY job_id ASC
+        FROM ptjobs
+        ORDER BY order_number ASC
       `);
       
-      console.log(`PT Publish jobs count: ${result.rows.length}`);
+      console.log(`PT Jobs count: ${result.rows.length}`);
       
       return result.rows.map((row: any) => ({
         id: parseInt(row.id) || 0,
         orderNumber: row.order_number || '',
         name: row.name || `Job ${row.id}`,
         description: row.description || '',
-        status: row.status || 'active',
+        status: 'active',
         startDate: row.start_date,
         dueDate: row.due_date,
-        operationCount: row.operation_count,
+        priority: row.priority,
+        product: row.product,
+        quantity: row.qty,
         publishDate: row.publish_date
       }));
       
     } catch (error) {
-      console.error('Error fetching jobs from PT tables:', error);
+      console.error('Error fetching jobs from ptjobs table:', error);
       return [];
     }
   }
@@ -3096,24 +3098,28 @@ export class DatabaseStorage {
 
   // PT Publish Methods - Reading from PT Publish tables
   async getPtJobs(): Promise<any[]> {
-    // Using PT Manufacturing Orders since ptJobs table doesn't exist
-    const orders = await db
+    console.log("getPtJobs: Using working ptjobs table");
+    // Get data directly from ptjobs table (the working table with 49 records)
+    const jobs = await db
       .select()
-      .from(ptManufacturingOrders)
-      .orderBy(asc(ptManufacturingOrders.needDate));
+      .from(ptJobs)
+      .orderBy(asc(ptJobs.orderNumber));
     
-    // Map manufacturing orders to job format
-    return orders.map(order => ({
-      jobId: order.jobId,
-      name: order.name,
-      product: order.productName,
-      description: order.description,
-      quantity: order.requiredQty,
-      needDateTime: order.needDate,
-      scheduledStart: order.scheduledStart,
-      scheduledEnd: order.scheduledEnd,
-      externalId: order.externalId,
-      manufacturingOrderId: order.manufacturingOrderId
+    console.log(`PT Jobs from storage: ${jobs.length}`);
+    
+    // Map ptjobs to job format
+    return jobs.map(job => ({
+      jobId: job.jobId,
+      name: job.name,
+      product: job.product,
+      description: job.description,
+      quantity: job.qty,
+      needDateTime: job.needDateTime,
+      scheduledStart: job.scheduledStartDateTime,
+      scheduledEnd: job.scheduledEndDateTime,
+      orderNumber: job.orderNumber,
+      priority: job.priority,
+      publishDate: job.publishDate
     }));
   }
 
