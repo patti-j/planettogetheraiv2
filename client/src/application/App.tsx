@@ -88,6 +88,7 @@ import AgentHistory from "@/pages/agent-history";
 import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
 import ProductionSchedulerPro from "@/pages/production-scheduler-pro";
+import ProductionSchedulerWrapper from "@/pages/production-scheduler-wrapper";
 import SMSPage from "@/pages/sms";
 
 // Import other application-specific components
@@ -263,6 +264,11 @@ export default function ApplicationApp() {
               <Route path="/production-scheduler-pro">
                 <ProtectedRoute feature="schedule" action="view">
                   <ProductionSchedulerPro />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/production-scheduler-js">
+                <ProtectedRoute feature="schedule" action="view">
+                  <ProductionSchedulerWrapper />
                 </ProtectedRoute>
               </Route>
               <Route path="/shift-management">
