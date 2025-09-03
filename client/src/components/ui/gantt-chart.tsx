@@ -25,11 +25,11 @@ import ActivityBlockSegments, { ActivitySegment } from "./activity-block-segment
 import GanttActivityLinks, { ActivityLink } from "./gantt-activity-links";
 import GanttSchedulingHints, { SchedulingHint, generateSchedulingHints } from "./gantt-scheduling-hints";
 import { GanttExportUtility } from "./gantt-export-utility";
-import type { ProductionOrder, DiscreteOperation, Resource, Capability, ResourceView } from "@shared/schema";
+import type { ProductionOrder, PtJobOperation, Resource, Capability, ResourceView } from "@shared/schema";
 
 interface GanttChartProps {
   jobs: ProductionOrder[];
-  operations: DiscreteOperation[];
+  operations: PtJobOperation[];
   resources: Resource[];
   capabilities: Capability[];
   view: "operations" | "resources" | "customers";
@@ -62,13 +62,13 @@ export default function GanttChart({
     resourcesCount: resources?.length,
     firstOperation: operations?.[0],
     firstResource: resources?.[0],
-    operationsWithWorkCenterId: operations?.filter(op => op.workCenterId)?.length,
-    operationsWithTimes: operations?.filter(op => op.startTime && op.endTime)?.length
+    operationsWithWorkCenterId: operations?.filter(op => op.scheduledPrimaryWorkCenterExternalId)?.length,
+    operationsWithTimes: operations?.filter(op => op.scheduledStart && op.scheduledEnd)?.length
   });
   // Note: No longer using expandedJobs since we show resources directly
   const [expandedCustomers, setExpandedCustomers] = useState<Set<string>>(new Set());
   const [expandedResourceTypes, setExpandedResourceTypes] = useState<Set<string>>(new Set(['equipment', 'machine', 'operator', 'facility']));
-  const [selectedOperation, setSelectedOperation] = useState<DiscreteOperation | null>(null);
+  const [selectedOperation, setSelectedOperation] = useState<PtJobOperation | null>(null);
   const [operationDialogOpen, setOperationDialogOpen] = useState(false);
   const [selectedResource, setSelectedResource] = useState<Resource | null>(null);
   const [resourceDialogOpen, setResourceDialogOpen] = useState(false);
@@ -130,7 +130,7 @@ export default function GanttChart({
   // Generate activity links from operations
   useEffect(() => {
     const links: ActivityLink[] = [];
-    const opsByJob = new Map<number, DiscreteOperation[]>();
+    const opsByJob = new Map<number, PtJobOperation[]>();
     
     // Group operations by job
     operations.forEach(op => {
@@ -483,7 +483,7 @@ export default function GanttChart({
   const lastMousePos = useRef({ x: 0, y: 0 });
 
   // Handle operation drag start for unscheduled operations
-  const handleOperationDrag = useCallback((e: React.DragEvent, operation: DiscreteOperation) => {
+  const handleOperationDrag = useCallback((e: React.DragEvent, operation: PtJobOperation) => {
     e.dataTransfer.setData("application/json", JSON.stringify({
       type: "operation",
       operation: operation
