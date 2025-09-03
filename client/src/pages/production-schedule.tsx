@@ -119,9 +119,11 @@ export default function ProductionSchedulePage() {
   // Debug resources at the page level
   useEffect(() => {
     if (resources) {
-      console.log('🔍 Production Schedule Debug - Total resources received:', resources.length);
-      console.log('🔍 Resource names:', resources.map((r: any) => `${r.name} (${r.type})`));
-      console.log('🔍 First 5 resources:', resources.slice(0, 5));
+      console.log('🔍 RESOURCES DEBUG - Total received:', resources.length);
+      console.log('🔍 RESOURCES DEBUG - Names:', resources.map((r: any) => `${r.name} (${r.type || 'no-type'})`));
+      if (resources.length > 0) {
+        console.log('🔍 RESOURCES DEBUG - First resource full object:', resources[0]);
+      }
     }
   }, [resources]);
 

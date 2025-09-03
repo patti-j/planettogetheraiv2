@@ -2125,7 +2125,16 @@ export default function GanttChart({
     return groups;
   }, [resources, selectedResourceView, selectedResourceViewId, view]);
 
-  const renderResourcesView = () => (
+  const renderResourcesView = () => {
+    // Force debugging to show in console immediately
+    console.log('🚨 FORCED DEBUG - Resources view rendering with:', {
+      totalResources: resources.length,
+      resourceNames: resources.map(r => r.name),
+      resourceTypes: [...new Set(resources.map(r => r.type))],
+      groupedTypes: Object.keys(resourcesByType)
+    });
+    
+    return (
     <div className="flex flex-col h-full">
       {/* Fixed Header */}
       <div className="flex-none bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 z-10">
@@ -2292,23 +2301,14 @@ export default function GanttChart({
       </div>
 
       {/* Scrollable Resource List */}
-      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing min-h-0" 
+      <div className="flex-1 overflow-y-auto cursor-grab active:cursor-grabbing" 
            onMouseDown={handleResourceListMouseDown}
            onScroll={handleResourceListScroll}
            ref={resourceListRef}
-           style={{ maxHeight: 'calc(100vh - 200px)' }}>
-        {(() => {
-          console.log('🔧 Resource grouping debug:', {
-            totalResources: resources.length,
-            resourcesByType: Object.keys(resourcesByType).map(type => ({
-              type,
-              count: resourcesByType[type].length,
-              resources: resourcesByType[type].map(r => r.name)
-            })),
-            expandedTypes: Array.from(expandedResourceTypes)
-          });
-          return null;
-        })()}
+           style={{ 
+             height: 'calc(100vh - 300px)',
+             minHeight: '400px'
+           }}>
         {Object.entries(resourcesByType).map(([resourceType, typeResources]) => {
           const isExpanded = expandedResourceTypes.has(resourceType);
           const displayType = resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
