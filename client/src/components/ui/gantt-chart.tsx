@@ -1462,7 +1462,7 @@ export default function GanttChart({
                     </div>
                   </div>
                   <div 
-                    className="flex-1 relative overflow-hidden bg-gray-25 dark:bg-gray-900/50"
+                    className="flex-1 relative overflow-auto bg-gray-25 dark:bg-gray-900/50"
                     style={{ minHeight: `${rowHeight}px` }}
                   >
                     <div
@@ -1638,7 +1638,7 @@ export default function GanttChart({
           <div 
             ref={dropRef}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 overflow-hidden ${
+            className={`flex-1 relative p-2 overflow-auto ${
               isOver ? 'bg-blue-50 dark:bg-blue-950/30 border-2 border-blue-300 dark:border-blue-600 border-dashed' : ''
             }`}
             style={{ minHeight: `${rowHeight}px` }}
@@ -1705,7 +1705,7 @@ export default function GanttChart({
           <div 
             ref={drop}
             data-resource-id={resource.id}
-            className={`flex-1 relative p-2 transition-colors overflow-hidden ${
+            className={`flex-1 relative p-2 transition-colors overflow-auto ${
               isOver ? (canDrop ? "bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-600" : "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-600") : ""
             }`}
             style={{ minHeight: `${rowHeight}px` }}
@@ -2026,7 +2026,7 @@ export default function GanttChart({
                 <span className="text-xs text-gray-600 dark:text-gray-400 px-2 capitalize">{timeUnit}</span>
               </div>
             </div>
-            <div className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-auto">
               <div style={{ width: `${timelineWidth}px`, transform: `translateX(-${timelineScrollLeft}px)` }}>
                 <div className="flex h-full bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
                   {timeScale.periods.map((period, index) => {
