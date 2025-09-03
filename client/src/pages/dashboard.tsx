@@ -948,7 +948,7 @@ export default function Dashboard() {
 
   return (
     <TooltipProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="h-screen flex flex-col overflow-auto">
         <main className="flex-1 overflow-y-auto">
           {/* Header */}
           <header className="bg-white shadow-sm border-b border-gray-200 p-3 sm:p-6">

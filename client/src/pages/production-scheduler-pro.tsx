@@ -866,7 +866,7 @@ const ProductionSchedulerProV2: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 to-blue-900 overflow-hidden">
+    <div className="flex flex-col h-screen bg-gradient-to-br from-blue-600 to-blue-900 overflow-auto">
       {/* Header */}
       <div className="bg-white/95 dark:bg-gray-900/95 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center gap-3">
