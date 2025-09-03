@@ -1761,13 +1761,20 @@ Rules:
         req.session.isDemo = false;
       }
       
-      // Generate a simple token for token-based authentication with 24-hour expiration
+      // Generate a simple token for token-based authentication
       console.log("=== LOGIN SUCCESS ===");
-      const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours from now
+      // For development: Give admin user (ID 1) a 30-day token, others get 24 hours
+      const isDevelopment = process.env.NODE_ENV === 'development';
+      const isAdminUser = user.id === 1 || username === 'admin';
+      const tokenDuration = (isDevelopment && isAdminUser) 
+        ? (30 * 24 * 60 * 60 * 1000) // 30 days for admin in development
+        : (24 * 60 * 60 * 1000); // 24 hours for others
+      
+      const expiresAt = Date.now() + tokenDuration;
       const token = `user_${user.id}_${expiresAt}_${Math.random().toString(36).substr(2, 9)}`;
       
       console.log("Generated token:", token);
-      console.log("Token expires at:", new Date(expiresAt).toISOString());
+      console.log(`Token expires at: ${new Date(expiresAt).toISOString()} (${isDevelopment && isAdminUser ? '30 days' : '24 hours'})`);
       console.log("Session userId set to:", user.id);
       
       // Return user data with token
