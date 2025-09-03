@@ -840,14 +840,14 @@ const ProductionSchedulerProV2: React.FC = () => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gradient-to-br from-pink-500 to-purple-600 overflow-auto">
+    <div className="flex flex-col h-screen bg-black overflow-auto">
       {/* Header */}
-      <div className="bg-white/95 dark:bg-gray-900/95 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0">
+      <div className="bg-gray-900 shadow-lg px-4 py-3 flex items-center justify-between flex-shrink-0 border-b border-gray-800">
         <div className="flex items-center gap-3">
-          <h1 className="text-xl font-bold text-gray-800 dark:text-gray-100">Production Schedule</h1>
+          <h1 className="text-xl font-bold text-white">Production Schedule</h1>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-600 dark:text-gray-400">
+          <span className="text-sm text-gray-400">
             Last updated: {new Date().toLocaleTimeString()}
           </span>
         </div>
@@ -855,11 +855,11 @@ const ProductionSchedulerProV2: React.FC = () => {
 
 
       {/* Toolbar - Responsive */}
-      <div className="bg-white/90 dark:bg-gray-900/90 px-2 sm:px-4 py-2 border-b dark:border-gray-700 flex-shrink-0 overflow-x-auto">
+      <div className="bg-gray-900 px-2 sm:px-4 py-2 border-b border-gray-700 flex-shrink-0 overflow-x-auto">
         <div className="flex items-center gap-2 sm:gap-3 min-w-fit">
           {/* View Selector - Hidden on mobile */}
-          <div className="hidden sm:flex items-center gap-2 pr-3 border-r dark:border-gray-700">
-            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">View:</label>
+          <div className="hidden sm:flex items-center gap-2 pr-3 border-r border-gray-700">
+            <label className="text-sm font-medium text-gray-300">View:</label>
             <Select value={currentView} onValueChange={handleViewChange}>
               <SelectTrigger className="w-40 h-8">
                 <SelectValue placeholder="Select View" />
@@ -874,7 +874,7 @@ const ProductionSchedulerProV2: React.FC = () => {
           </div>
 
           {/* Zoom Controls - Always visible, responsive sizing */}
-          <div className="flex items-center gap-1 pr-2 sm:pr-3 border-r dark:border-gray-700">
+          <div className="flex items-center gap-1 pr-2 sm:pr-3 border-r border-gray-700">
             <Button
               variant="outline"
               size="icon"
@@ -912,14 +912,14 @@ const ProductionSchedulerProV2: React.FC = () => {
               <Maximize2 className={`h-4 w-4 ${isZooming ? 'animate-pulse' : ''}`} />
             </Button>
             {/* Zoom Level Indicator */}
-            <span className="hidden sm:inline-block px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 rounded">
+            <span className="hidden sm:inline-block px-2 py-1 text-xs font-medium text-gray-400 bg-gray-800 rounded">
               {Math.round(zoomLevel / 20 * 100)}%
             </span>
           </div>
 
           {/* Algorithm Selector - Simplified on mobile */}
           <div className="flex items-center gap-2">
-            <label className="hidden sm:inline text-sm font-medium text-gray-700 dark:text-gray-300">Algorithm:</label>
+            <label className="hidden sm:inline text-sm font-medium text-gray-300">Algorithm:</label>
             <Select onValueChange={handleOptimize}>
               <SelectTrigger className="w-32 sm:w-44 h-8">
                 <SelectValue placeholder="Optimize" />
@@ -937,20 +937,20 @@ const ProductionSchedulerProV2: React.FC = () => {
       </div>
 
       {/* Scheduler Component */}
-      <div className="flex-1 m-4 bg-white dark:bg-gray-900 rounded-lg shadow-xl overflow-hidden relative">
+      <div className="flex-1 m-4 bg-gray-800 rounded-lg shadow-xl overflow-hidden relative border border-gray-700">
         <BryntumSchedulerProComponent
           ref={schedulerRef}
           project={schedulerData.project}
         />
         {isLoading && (
-          <div className="absolute inset-0 bg-white/90 dark:bg-gray-900/90 flex items-center justify-center">
+          <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
           </div>
         )}
       </div>
 
       {/* Status Bar */}
-      <div className="bg-white/95 dark:bg-gray-900/95 px-4 py-2 flex justify-between items-center text-sm text-gray-600 dark:text-gray-400 border-t dark:border-gray-700 flex-shrink-0">
+      <div className="bg-gray-900 px-4 py-2 flex justify-between items-center text-sm text-gray-400 border-t border-gray-700 flex-shrink-0">
         <div className="flex items-center gap-4">
           <span>{operationCount} operations scheduled</span>
           <span>{resourceUtilization}</span>

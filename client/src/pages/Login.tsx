@@ -130,13 +130,9 @@ export default function Login() {
 
     try {
       // Call portal login API
-      const response = await apiRequest('/api/portal/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: portalEmail,
-          password: portalPassword
-        })
+      const response = await apiRequest('POST', '/api/portal/login', {
+        email: portalEmail,
+        password: portalPassword
       });
       
       const result = await response.json();
@@ -177,13 +173,9 @@ export default function Login() {
 
     try {
       // Create trial account
-      const response = await apiRequest('/api/auth/create-trial', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: trialEmail,
-          companyName: trialCompanyName
-        })
+      const response = await apiRequest('POST', '/api/auth/create-trial', {
+        email: trialEmail,
+        companyName: trialCompanyName
       });
       
       const result = await response.json();
