@@ -154,7 +154,7 @@
             width: 50px;
             height: 50px;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #3b82f6;
+            border-top: 3px solid #764ba2;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -221,7 +221,7 @@
         }
         
         .hamburger-btn, .max-ai-btn {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
             color: white;
             padding: 0.5rem 1rem;
@@ -254,7 +254,7 @@
         }
         
         .nav-menu-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem;
             display: flex;
@@ -295,7 +295,7 @@
         
         .nav-item.active {
             background: rgba(59, 130, 246, 0.1);
-            color: #3b82f6;
+            color: #764ba2;
             font-weight: 500;
         }
         
@@ -319,7 +319,7 @@
         }
         
         .max-ai-header {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             padding: 1rem;
             display: flex;
@@ -369,7 +369,7 @@
         
         .max-ai-message strong {
             font-weight: 600;
-            color: #3b82f6;
+            color: #764ba2;
         }
         
         .max-ai-input {
@@ -389,7 +389,7 @@
         
         .max-ai-input button {
             padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
             border-radius: 4px;
@@ -509,14 +509,14 @@
         
         .quick-action-btn:hover {
             background: #edf2f7;
-            border-color: #3b82f6;
+            border-color: #764ba2;
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         
         .dark-theme .quick-action-btn:hover {
             background: #374151;
-            border-color: #3b82f6;
+            border-color: #764ba2;
         }
         
         .quick-action-btn.full-width {
@@ -557,27 +557,10 @@
 </head>
 <body>
     <div class="header">
-        <button id="hamburgerMenu" class="hamburger-btn">☰</button>
         <h1>Production Schedule</h1>
         <div class="header-actions">
             <button id="maxAIBtn" class="max-ai-btn">🤖 Max AI</button>
             <span id="lastUpdate">Last updated: --</span>
-        </div>
-    </div>
-    
-    <!-- Navigation Menu -->
-    <div id="navMenu" class="nav-menu">
-        <div class="nav-menu-header">
-            <h3>Navigation</h3>
-            <button id="closeMenu" class="close-menu">×</button>
-        </div>
-        <div class="nav-menu-items">
-            <a href="/" class="nav-item">🏠 Home</a>
-            <a href="/production-scheduler.html" class="nav-item active">📊 Production Scheduler</a>
-            <a href="/business-goals" class="nav-item">📈 Business Goals</a>
-            <a href="/implementation-projects" class="nav-item">💼 Projects</a>
-            <a href="/control-tower" class="nav-item">🌐 Control Tower</a>
-            <a href="/help" class="nav-item">📚 Help</a>
         </div>
     </div>
     
@@ -988,27 +971,7 @@
                     };
                 }
 
-                // Hamburger Menu Handler
-                const hamburgerBtn = document.getElementById('hamburgerMenu');
-                const navMenu = document.getElementById('navMenu');
-                const closeMenu = document.getElementById('closeMenu');
-                
-                hamburgerBtn.addEventListener('click', () => {
-                    navMenu.classList.add('open');
-                });
-                
-                closeMenu.addEventListener('click', () => {
-                    navMenu.classList.remove('open');
-                });
-                
-                // Handle navigation links - just close the menu
-                const navLinks = document.querySelectorAll('.nav-item');
-                navLinks.forEach(link => {
-                    link.addEventListener('click', () => {
-                        navMenu.classList.remove('open');
-                        // Let the browser handle the navigation naturally
-                    });
-                });
+                // Hamburger menu removed - clean navigation
                 
                 // Max AI Handler
                 const maxAIBtn = document.getElementById('maxAIBtn');
