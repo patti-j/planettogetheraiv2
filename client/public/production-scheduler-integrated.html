@@ -731,7 +731,7 @@
                     resourceMap.set(resource.name, resource);
                 });
                 
-                // Transform PT operations into Bryntum events format
+                // Transform PT operations into Bryntum events format with ASAP constraints
                 let events = ptOperations.map(operation => {
                     // Convert operation dates to September 2025 timeframe
                     const originalDate = new Date(operation.startTime || operation.start_date);
@@ -750,6 +750,10 @@
                         resourceId: findResourceId(operation, resourceMap, resources),
                         percentDone: operation.percent_done || 0,
                         eventColor: operation.eventColor || getOperationColor(operation.operationName),
+                        // ASAP scheduling constraints
+                        constraintType: 'startnoearlierthan', // ASAP with earliest start constraint
+                        constraintDate: startDate, // Use current start as earliest possible
+                        manuallyScheduled: false, // Allow automatic scheduling
                         // Additional PT operation data
                         jobName: operation.jobName,
                         operationName: operation.operationName,
@@ -796,32 +800,41 @@
                         {
                             id: 1,
                             name: 'Sample Operation - Demo',
-                            startDate: createDate(0), // Today 8 AM
+                            startDate: createDate(0), // Sept 3, 8 AM
                             duration: 4,
                             durationUnit: 'hour',
                             resourceId: resources[0]?.id || 'cnc1',
                             percentDone: 25,
-                            eventColor: 'blue'
+                            eventColor: 'blue',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(0),
+                            manuallyScheduled: false
                         },
                         {
                             id: 2,
                             name: 'Assembly Process - Demo',
-                            startDate: createDate(5), // Today 1 PM
+                            startDate: createDate(5), // Sept 3, 1 PM
                             duration: 3,
                             durationUnit: 'hour',
                             resourceId: resources[1]?.id || 'assembly1',
                             percentDone: 60,
-                            eventColor: 'green'
+                            eventColor: 'green',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(5),
+                            manuallyScheduled: false
                         },
                         {
                             id: 3,
                             name: 'Quality Control - Demo',
-                            startDate: createDate(8), // Today 4 PM
+                            startDate: createDate(26), // Sept 4, 10 AM
                             duration: 2,
                             durationUnit: 'hour',
                             resourceId: resources[2]?.id || 'qc1',
                             percentDone: 0,
-                            eventColor: 'purple'
+                            eventColor: 'purple',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(26),
+                            manuallyScheduled: false
                         }
                     ];
                 }
@@ -829,7 +842,7 @@
                 // Create dependencies array (can be enhanced based on PT data)
                 const dependencies = [];
 
-                // Create scheduler instance
+                // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
@@ -842,6 +855,17 @@
                     viewPreset: 'dayAndWeek',
                     rowHeight: 60,
                     barMargin: 8,
+
+                    // Project configuration for ASAP scheduling
+                    project: {
+                        autoLoad: false,
+                        autoSync: false,
+                        // Use ASAP scheduling with resource constraints
+                        schedulingEngine: {
+                            multiplePerResource: true, // Allow multiple tasks per resource
+                            allowOverlap: false // Prevent overlapping on same resource
+                        }
+                    },
 
                     features: {
                         // Dependencies feature for showing task relationships
@@ -1375,13 +1399,14 @@
                 
                 // Scheduling Algorithm Implementations
                 async function asapScheduling() {
-                    // Forward scheduling - pack operations as early as possible
+                    // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
                     const events = [...scheduler.eventStore.records].sort((a, b) => 
                         a.startDate.getTime() - b.startDate.getTime()
                     );
                     
-                    const baseDate = new Date();
-                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
+                    // Use September 3, 2025 as the base scheduling date
+                    const baseDate = new Date(2025, 8, 3);
+                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
                     
                     const resourceEvents = {};
                     events.forEach(event => {
@@ -1396,7 +1421,14 @@
                         let nextAvailableTime = new Date(baseDate);
                         
                         resEvents.forEach(event => {
-                            event.startDate = new Date(nextAvailableTime);
+                            // Respect constraint dates if set
+                            const earliestStart = event.constraintDate || nextAvailableTime;
+                            const actualStart = new Date(Math.max(earliestStart.getTime(), nextAvailableTime.getTime()));
+                            
+                            event.startDate = actualStart;
+                            event.constraintType = 'startnoearlierthan';
+                            event.constraintDate = actualStart;
+                            event.manuallyScheduled = false;
                             const durationMs = event.duration * 60 * 60 * 1000;
                             event.endDate = new Date(event.startDate.getTime() + durationMs);
                             nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
@@ -1407,10 +1439,10 @@
                 }
                 
                 async function alapScheduling() {
-                    // Backward scheduling - pack operations as late as possible
+                    // ALAP (As Late As Possible) - Backward scheduling from due date
                     const events = [...scheduler.eventStore.records];
-                    const dueDate = new Date();
-                    dueDate.setDate(dueDate.getDate() + 5); // 5 days from now
+                    // Schedule backwards from September 17, 2025 (end of 2-week window)
+                    const dueDate = new Date(2025, 8, 17);
                     dueDate.setHours(17, 0, 0, 0); // 5 PM
                     
                     const resourceEvents = {};
@@ -1618,6 +1650,14 @@
                 // Initialize status updates
                 updateStatus();
                 
+                // Apply ASAP scheduling on initial load
+                setTimeout(async () => {
+                    console.log('🚀 Applying initial ASAP scheduling...');
+                    await asapScheduling();
+                    updateStatus();
+                    console.log('✅ ASAP scheduling applied successfully');
+                }, 500);
+                
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
                 
@@ -1626,7 +1666,7 @@
                     scheduler.zoomToFit();
                     // Center on today's date
                     scheduler.scrollToDate(new Date(2025, 8, 3), { block: 'center' });
-                }, 250);
+                }, 750);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
