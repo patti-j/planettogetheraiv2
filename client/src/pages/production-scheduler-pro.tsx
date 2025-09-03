@@ -933,8 +933,6 @@ const ProductionSchedulerProV2: React.FC = () => {
               </SelectContent>
             </Select>
           </div>
-
-          {/* Dark Mode Toggle - Icon only on mobile */}
         </div>
       </div>
 
