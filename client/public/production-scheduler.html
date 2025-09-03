@@ -680,6 +680,8 @@
         // Wait for DOM and Bryntum to load
         document.addEventListener('DOMContentLoaded', async () => {
             try {
+                // Mark first task as in progress
+                
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
@@ -694,84 +696,154 @@
                     return date;
                 }
                 
-                // Sample data for production scheduling
-                const resources = [
-                    { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-                    { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
-                    { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
-                    { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
-                    { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
-                    { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
-                ];
-
-                const events = [
-                    {
-                        id: 1,
-                        name: 'Part Machining - Order #1001',
-                        startDate: createDate(0), // Today 8 AM
-                        duration: 4,
-                        durationUnit: 'hour',
-                        resourceId: 'cnc1',
-                        percentDone: 25,
-                        eventColor: 'blue'
-                    },
-                    {
-                        id: 2,
-                        name: 'Part Machining - Order #1002',
-                        startDate: createDate(5), // Today 1 PM
-                        duration: 3,
-                        durationUnit: 'hour',
-                        resourceId: 'cnc1',
-                        percentDone: 0,
-                        eventColor: 'blue'
-                    },
-                    {
-                        id: 3,
-                        name: 'Component Assembly - Order #1001',
-                        startDate: createDate(6), // Today 2 PM
-                        duration: 5,
-                        durationUnit: 'hour',
-                        resourceId: 'assembly1',
-                        percentDone: 0,
-                        eventColor: 'green'
-                    },
-                    {
-                        id: 4,
-                        name: 'Quality Inspection - Order #1001',
-                        startDate: createDate(25), // Tomorrow 9 AM
-                        duration: 2,
-                        durationUnit: 'hour',
-                        resourceId: 'qc1',
-                        percentDone: 0,
-                        eventColor: 'orange'
-                    },
-                    {
-                        id: 5,
-                        name: 'Packaging - Order #1001',
-                        startDate: createDate(27.5), // Tomorrow 11:30 AM
-                        duration: 1.5,
-                        durationUnit: 'hour',
-                        resourceId: 'packaging1',
-                        percentDone: 0,
-                        eventColor: 'blue'
-                    },
-                    {
-                        id: 6,
-                        name: 'Part Machining - Order #1003',
-                        startDate: createDate(24), // Tomorrow 8 AM
-                        duration: 6,
-                        durationUnit: 'hour',
-                        resourceId: 'cnc2',
-                        percentDone: 10,
-                        eventColor: 'blue'
+                // Fetch real PT operations and resources from the backend
+                let resources = [];
+                let ptOperations = [];
+                
+                try {
+                    // Fetch resources and PT operations from the backend APIs
+                    const [resourcesResponse, operationsResponse] = await Promise.all([
+                        fetch('/api/resources'),
+                        fetch('/api/pt-operations')
+                    ]);
+                    
+                    if (resourcesResponse.ok) {
+                        resources = await resourcesResponse.json();
+                        console.log('✅ Resources fetched successfully:', resources.length);
+                    } else {
+                        console.error('❌ Failed to fetch resources:', resourcesResponse.status);
+                        // Fallback sample data
+                        resources = [
+                            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
+                            { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
+                            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
+                            { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
+                            { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
+                            { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
+                        ];
                     }
-                ];
+                    
+                    if (operationsResponse.ok) {
+                        ptOperations = await operationsResponse.json();
+                        console.log('✅ PT Operations fetched successfully:', ptOperations.length);
+                        if (ptOperations.length > 0) {
+                            console.log('✅ First PT operation sample:', ptOperations[0]);
+                        }
+                    } else {
+                        console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error fetching data:', error);
+                    // Use fallback sample data
+                    resources = [
+                        { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
+                        { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
+                        { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
+                        { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
+                        { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
+                        { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
+                    ];
+                }
 
-                const dependencies = [
-                    { id: 1, fromEvent: 1, toEvent: 3, type: 2 }, // Finish-to-Start
-                    { id: 2, fromEvent: 3, toEvent: 4, type: 2 },
-                    { id: 3, fromEvent: 4, toEvent: 5, type: 2 }
-                ];
+                // Map resources to create resource lookup
+                const resourceMap = new Map();
+                resources.forEach(resource => {
+                    resourceMap.set(resource.id, resource);
+                    resourceMap.set(resource.name, resource);
+                });
+                
+                // Transform PT operations into Bryntum events format
+                let events = ptOperations.map(operation => {
+                    const startDate = new Date(operation.startTime || operation.start_date);
+                    const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
+                    
+                    return {
+                        id: operation.id,
+                        name: operation.name || `${operation.jobName || 'Job'}: ${operation.operationName || 'Operation'}`,
+                        startDate: startDate,
+                        duration: duration,
+                        durationUnit: 'hour',
+                        resourceId: findResourceId(operation, resourceMap, resources),
+                        percentDone: operation.percent_done || 0,
+                        eventColor: operation.eventColor || getOperationColor(operation.operationName),
+                        // Additional PT operation data
+                        jobName: operation.jobName,
+                        operationName: operation.operationName,
+                        resourceName: operation.resourceName,
+                        ptData: operation // Keep original PT data for algorithms
+                    };
+                }).filter(event => event.resourceId); // Only include operations with valid resources
+                
+                // Helper function to find the correct resource ID
+                function findResourceId(operation, resourceMap, resources) {
+                    // Try various ways to match the resource
+                    if (operation.resourceId && resourceMap.has(operation.resourceId)) {
+                        return operation.resourceId;
+                    }
+                    if (operation.resource_id && resourceMap.has(operation.resource_id)) {
+                        return operation.resource_id;
+                    }
+                    if (operation.resourceName && resourceMap.has(operation.resourceName)) {
+                        return resourceMap.get(operation.resourceName).id;
+                    }
+                    // Fallback to first available resource
+                    return resources[0]?.id || 'resource1';
+                }
+                
+                // Helper function to assign colors based on operation type
+                function getOperationColor(operationName) {
+                    if (!operationName) return 'blue';
+                    const name = operationName.toLowerCase();
+                    if (name.includes('milling') || name.includes('machining')) return 'blue';
+                    if (name.includes('assembly')) return 'green';
+                    if (name.includes('packaging')) return 'orange';
+                    if (name.includes('quality') || name.includes('testing')) return 'purple';
+                    if (name.includes('filtration')) return 'teal';
+                    if (name.includes('carbonation')) return 'yellow';
+                    return 'blue'; // default
+                }
+                
+                console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
+                
+                // If we have no PT operations, create sample events for demo
+                if (events.length === 0) {
+                    console.log('🔧 No PT operations found, creating sample data for demo');
+                    events = [
+                        {
+                            id: 1,
+                            name: 'Sample Operation - Demo',
+                            startDate: createDate(0), // Today 8 AM
+                            duration: 4,
+                            durationUnit: 'hour',
+                            resourceId: resources[0]?.id || 'cnc1',
+                            percentDone: 25,
+                            eventColor: 'blue'
+                        },
+                        {
+                            id: 2,
+                            name: 'Assembly Process - Demo',
+                            startDate: createDate(5), // Today 1 PM
+                            duration: 3,
+                            durationUnit: 'hour',
+                            resourceId: resources[1]?.id || 'assembly1',
+                            percentDone: 60,
+                            eventColor: 'green'
+                        },
+                        {
+                            id: 3,
+                            name: 'Quality Control - Demo',
+                            startDate: createDate(8), // Today 4 PM
+                            duration: 2,
+                            durationUnit: 'hour',
+                            resourceId: resources[2]?.id || 'qc1',
+                            percentDone: 0,
+                            eventColor: 'purple'
+                        }
+                    ];
+                }
+
+                // Create dependencies array (can be enhanced based on PT data)
+                const dependencies = [];
 
                 // Create scheduler instance
                 // Make scheduler globally accessible for Max AI
@@ -876,16 +948,48 @@
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
                 
+                // Enhanced status update function using real PT data
                 function updateStatus() {
                     const operationCount = scheduler.eventStore.count || 0;
                     document.getElementById('operationCount').textContent = `${operationCount} operations scheduled`;
                     
-                    const totalResources = scheduler.resourceStore.count || 0;
-                    const busyResources = new Set(scheduler.eventStore.records.map(e => e.resourceId)).size;
-                    const utilization = totalResources > 0 ? Math.round((busyResources / totalResources) * 100) : 0;
+                    // Calculate detailed resource utilization using PT operations data
+                    const events = scheduler.eventStore.records || [];
+                    const resources = scheduler.resourceStore.records || [];
                     
-                    document.getElementById('resourceUtilization').textContent = `Resource utilization: ${utilization}%`;
+                    let totalOperationHours = 0;
+                    const resourceUtilization = {};
+                    
+                    // Calculate utilization per resource
+                    resources.forEach(resource => {
+                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
+                        let resourceHours = 0;
+                        resourceEvents.forEach(event => {
+                            resourceHours += event.duration || 0;
+                        });
+                        resourceUtilization[resource.id] = {
+                            name: resource.name,
+                            hours: resourceHours,
+                            operationCount: resourceEvents.length
+                        };
+                        totalOperationHours += resourceHours;
+                    });
+                    
+                    // Calculate overall utilization (assuming 8-hour workdays)
+                    const totalResourceCapacity = resources.length * 8; // 8 hours per resource
+                    const utilization = totalResourceCapacity > 0 ? Math.round((totalOperationHours / totalResourceCapacity) * 100) : 0;
+                    
+                    document.getElementById('resourceUtilization').textContent = `Resource utilization: ${utilization}% (${totalOperationHours.toFixed(1)}h total)`;
                     document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                    
+                    // Store utilization data for Max AI analysis
+                    window.currentUtilization = resourceUtilization;
+                    window.currentStats = {
+                        operations: operationCount,
+                        utilization: utilization,
+                        totalHours: totalOperationHours,
+                        resources: resources.length
+                    };
                 }
 
                 // Hamburger Menu Handler
