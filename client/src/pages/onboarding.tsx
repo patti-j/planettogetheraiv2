@@ -1389,7 +1389,7 @@ export default function OnboardingPage() {
               </div>
               
               <div className="flex justify-center gap-4">
-                <Link href="/production-schedule">
+                <Link href="/production-scheduler">
                   <Button size="lg">
                     Go to Dashboard
                     <ArrowRight className="w-4 h-4 ml-2" />

@@ -328,7 +328,7 @@ function QuickLinksWidget({ widget }: { widget: DashboardWidget }) {
   const [, setLocation] = useLocation();
   
   const defaultLinks = [
-    { label: 'Production Schedule', href: '/production-schedule', icon: 'Calendar' },
+    { label: 'Production Schedule', href: '/production-scheduler', icon: 'Calendar' },
     { label: 'Analytics', href: '/analytics', icon: 'BarChart3' },
     { label: 'Shop Floor', href: '/shop-floor', icon: 'Factory' },
     { label: 'Reports', href: '/reports', icon: 'FileText' }

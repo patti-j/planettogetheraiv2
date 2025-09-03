@@ -110,7 +110,7 @@ const WIDGET_TEMPLATES = [
     defaultSize: { width: 300, height: 250 },
     config: {
       links: [
-        { label: 'Production Schedule', href: '/production-schedule', icon: 'Calendar' },
+        { label: 'Production Schedule', href: '/production-scheduler', icon: 'Calendar' },
         { label: 'Analytics', href: '/analytics', icon: 'BarChart3' },
         { label: 'Shop Floor', href: '/shop-floor', icon: 'Factory' },
         { label: 'Reports', href: '/reports', icon: 'FileText' }

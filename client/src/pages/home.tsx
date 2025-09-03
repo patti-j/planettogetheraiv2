@@ -83,7 +83,7 @@ export default function HomePage() {
   // Quick access links based on user role
   const getQuickLinks = () => {
     const links = [
-      { icon: BarChart3, label: 'Production Scheduling', href: '/production-schedule', color: 'bg-blue-500' },
+      { icon: BarChart3, label: 'Production Scheduling', href: '/production-scheduler', color: 'bg-blue-500' },
       { icon: Activity, label: 'Analytics', href: '/analytics', color: 'bg-purple-500' },
       { icon: Package, label: 'Shop Floor', href: '/shop-floor', color: 'bg-orange-500' },
       { icon: Briefcase, label: 'Capacity Planning', href: '/capacity-planning', color: 'bg-green-500' },
