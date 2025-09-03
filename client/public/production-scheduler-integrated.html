@@ -664,14 +664,14 @@
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
-                // Get today's date
-                const today = new Date();
+                // Set today's date to September 3, 2025
+                const today = new Date(2025, 8, 3); // September 3, 2025
                 today.setHours(8, 0, 0, 0); // Start at 8 AM
                 
-                // Helper to create a date relative to today
+                // Helper to create a date relative to September 3, 2025
                 function createDate(hoursFromNow) {
-                    const date = new Date(today);
-                    date.setHours(date.getHours() + hoursFromNow);
+                    const date = new Date(2025, 8, 3); // September 3, 2025
+                    date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
                     return date;
                 }
                 
@@ -733,7 +733,12 @@
                 
                 // Transform PT operations into Bryntum events format
                 let events = ptOperations.map(operation => {
-                    const startDate = new Date(operation.startTime || operation.start_date);
+                    // Convert operation dates to September 2025 timeframe
+                    const originalDate = new Date(operation.startTime || operation.start_date);
+                    // Map dates from late August to early September
+                    const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
+                    const startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
+                    startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
                     const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
                     
                     return {
@@ -911,13 +916,14 @@
                     },
 
                     startDate: (() => {
-                        const start = new Date();
+                        // Start from today (September 3, 2025)
+                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
                         start.setHours(0, 0, 0, 0);
                         return start;
                     })(),
                     endDate: (() => {
-                        const end = new Date();
-                        end.setDate(end.getDate() + 7); // Show 1 week
+                        // Show 2 weeks from today
+                        const end = new Date(2025, 8, 17); // September 17, 2025
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
@@ -1615,10 +1621,12 @@
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
                 
-                // Initial zoom to fit
+                // Initial zoom to fit with better timing
                 setTimeout(() => {
                     scheduler.zoomToFit();
-                }, 100);
+                    // Center on today's date
+                    scheduler.scrollToDate(new Date(2025, 8, 3), { block: 'center' });
+                }, 250);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
