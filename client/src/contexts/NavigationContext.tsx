@@ -48,7 +48,7 @@ const DEFAULT_MAX_RECENT_PAGES = 5;
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
-  '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
+  '/production-scheduler': { label: 'Production Schedule', icon: 'Calendar' },
   '/schedule-sequences': { label: 'Schedule Sequences', icon: 'ArrowUpDown' },
   '/planning-overview': { label: 'Planning Process Guide', icon: 'Workflow' },
 
@@ -104,8 +104,6 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/alerts': { label: 'Alerts & Notifications', icon: 'AlertTriangle' },
   '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Sparkles' },
   '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Sparkles' },
-  '/production-scheduler-js': { label: 'Production Scheduler JS', icon: 'Calendar' },
-  '/production-schedule-simple': { label: 'Production Schedule Simple', icon: 'Calendar' },
   '#max': { label: 'Max AI Assistant', icon: 'Sparkles' }
 };
 

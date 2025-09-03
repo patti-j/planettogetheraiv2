@@ -59,13 +59,11 @@ export const navigationGroups: NavigationGroup[] = [
       // 4. Material and production requirements
       { icon: FileSearch, label: "Material Requirements Planning", href: "/mrp", feature: "schedule", action: "view", color: "bg-violet-600" },
       { icon: Sparkles, label: "Demand-Driven MRP (DDMRP)", href: "/ddmrp", feature: "schedule", action: "view", color: "bg-gradient-to-r from-blue-500 to-green-600" },
-      { icon: BarChart3, label: "Master Production Schedule", href: "/master-production-schedule", feature: "master-production-schedule", action: "view", color: "bg-blue-600" },
       { icon: Target, label: "Production Planning", href: "/production-planning", feature: "production-planning", action: "view", color: "bg-green-500" },
       
       // 5. Scheduling and execution
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "production-scheduling", action: "view", color: "bg-teal-500" },
-      { icon: Calendar, label: "Production Scheduler (HTML)", href: "/production-scheduler.html", feature: "schedule", action: "view", color: "bg-indigo-600" },
-      { icon: Calendar, label: "Production Scheduler Pro", href: "/production-scheduler-pro", feature: "schedule", action: "view", color: "bg-indigo-700" },
+      { icon: Calendar, label: "Production Schedule", href: "/production-scheduler", feature: "schedule", action: "view", color: "bg-indigo-600" },
       { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "schedule", action: "view", color: "bg-purple-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "planning-scheduling", action: "view", color: "bg-cyan-500" },
       

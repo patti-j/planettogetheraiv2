@@ -74,7 +74,7 @@ const defaultHeaderItemsByRole = {
   'Production Manager': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'role-switcher', label: 'Role Switcher', icon: 'User', action: 'role-switcher', alwaysVisible: true },
-    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
+    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-scheduler' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor' },
     { id: 'capacity', label: 'Capacity', icon: 'Briefcase', href: '/capacity-planning' },
     { id: 'alerts', label: 'Alerts', icon: 'AlertTriangle', action: 'alerts' },
@@ -94,7 +94,7 @@ const defaultHeaderItemsByRole = {
   'Operator': [
     { id: 'workspace-switcher', label: 'Workspace Switcher', icon: 'Building2', action: 'workspace-switcher', alwaysVisible: true },
     { id: 'operator-dash', label: 'My Tasks', icon: 'Clock', href: '/operator-dashboard' },
-    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule' },
+    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-scheduler' },
     { id: 'chat', label: 'Chat', icon: 'MessageSquare', href: '/chat' },
     { id: 'help', label: 'Help', icon: 'HelpCircle', href: '/help' },
     { id: 'search', label: 'Search', icon: 'Search', action: 'search', alwaysVisible: true },
@@ -134,7 +134,7 @@ const generateAvailableItems = (): HeaderItem[] => {
   // Base navigation items
   const baseItems: HeaderItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', type: 'page' },
-    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-schedule', type: 'page' },
+    { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-scheduler', type: 'page' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor', type: 'page' },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics', type: 'page' },
     { id: 'reports', label: 'Reports', icon: 'BarChart3', href: '/reports', type: 'page' },

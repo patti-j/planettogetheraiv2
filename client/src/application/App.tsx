@@ -37,8 +37,6 @@ import Onboarding from "@/pages/onboarding";
 import OptimizationStudio from "@/pages/optimization-studio";
 import CapacityPlanning from "@/pages/capacity-planning";
 import BusinessGoals from "@/pages/business-goals";
-import ProductionScheduleSimple from "@/pages/production-schedule-simple";
-import MasterProductionSchedule from "@/pages/master-production-schedule";
 import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
@@ -87,7 +85,6 @@ import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
 import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
-import ProductionSchedulerPro from "@/pages/production-scheduler-pro";
 import ProductionSchedulerWrapper from "@/pages/production-scheduler-wrapper";
 import SMSPage from "@/pages/sms";
 
@@ -197,19 +194,9 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
-              <Route path="/production-schedule">
+              <Route path="/production-scheduler">
                 <ProtectedRoute feature="schedule" action="view">
-                  <ProductionScheduleSimple />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/production-schedule-simple">
-                <ProtectedRoute feature="schedule" action="view">
-                  <ProductionScheduleSimple />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/master-production-schedule">
-                <ProtectedRoute feature="master-production-schedule" action="view">
-                  <MasterProductionSchedule />
+                  <ProductionSchedulerWrapper />
                 </ProtectedRoute>
               </Route>
 
@@ -259,16 +246,6 @@ export default function ApplicationApp() {
               <Route path="/schedule-sequences">
                 <ProtectedRoute feature="schedule" action="view">
                   <ScheduleSequences />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/production-scheduler-pro">
-                <ProtectedRoute feature="schedule" action="view">
-                  <ProductionSchedulerPro />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/production-scheduler-js">
-                <ProtectedRoute feature="schedule" action="view">
-                  <ProductionSchedulerWrapper />
                 </ProtectedRoute>
               </Route>
               <Route path="/shift-management">
