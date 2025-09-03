@@ -26,7 +26,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -46,7 +46,7 @@
         .header h1 {
             color: #333;
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: bold;
         }
 
         .toolbar {
@@ -95,14 +95,14 @@
         }
 
         .toolbar button {
-            background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white !important;
             border: none;
             font-weight: 500;
         }
 
         .toolbar button:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
             transform: translateY(-1px);
             color: white !important;
         }
@@ -653,10 +653,6 @@
                 <option value="drum">Drum (TOC)</option>
             </select>
             <button id="applyScheduling">Apply Algorithm</button>
-        </div>
-        
-        <div class="toolbar-group">
-            <button id="themeToggle">🌙 Dark Mode</button>
         </div>
     </div>
 
@@ -1297,28 +1293,7 @@
                     if (e.key === 'Enter') sendMaxMessage();
                 });
                 
-                // Theme toggle handler
-                const themeToggle = document.getElementById('themeToggle');
-                let isDarkMode = localStorage.getItem('darkMode') === 'true';
-                
-                // Apply saved theme on load
-                if (isDarkMode) {
-                    document.body.classList.add('dark-theme');
-                    themeToggle.textContent = '☀️ Light Mode';
-                }
-                
-                themeToggle.addEventListener('click', () => {
-                    isDarkMode = !isDarkMode;
-                    document.body.classList.toggle('dark-theme');
-                    
-                    if (isDarkMode) {
-                        themeToggle.textContent = '☀️ Light Mode';
-                        localStorage.setItem('darkMode', 'true');
-                    } else {
-                        themeToggle.textContent = '🌙 Dark Mode';
-                        localStorage.setItem('darkMode', 'false');
-                    }
-                });
+                // Theme toggle removed - using consistent light theme with blue-purple gradient
                 
                 // View preset selector
                 document.getElementById('viewPreset').addEventListener('change', (e) => {
@@ -1773,27 +1748,8 @@
                             }
                         }
                     } else if (event.data?.type === 'SET_THEME') {
-                        // Handle theme change message from parent React app
-                        const theme = event.data.theme;
-                        const body = document.body;
-                        const themeToggle = document.getElementById('themeToggle');
-                        
-                        if (theme === 'dark') {
-                            body.classList.add('dark-theme');
-                            if (themeToggle) themeToggle.textContent = '☀️ Light Mode';
-                        } else {
-                            body.classList.remove('dark-theme');
-                            if (themeToggle) themeToggle.textContent = '🌙 Dark Mode';
-                        }
-                        
-                        // Update scheduler theme CSS
-                        const themeLink = document.getElementById('scheduler-theme');
-                        if (themeLink) {
-                            const isDark = theme === 'dark';
-                            themeLink.setAttribute('href', isDark ? '/schedulerpro.classic-dark.css?v=3' : '/schedulerpro.classic-light.css?v=3');
-                        }
-                        
-                        console.log('Theme updated to:', theme);
+                        // Theme toggle removed - using consistent light theme with blue-purple gradient
+                        console.log('Theme toggle disabled - using consistent light theme');
                     }
                 });
                 
