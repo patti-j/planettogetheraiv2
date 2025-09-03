@@ -1005,7 +1005,6 @@ export default function ProductionSchedulePage() {
                 )}
               </CardHeader>
               <CardContent className="p-0">
-                {/* PT Operations Summary - Enhanced with Jobs, Operations, Activities breakdown */}
                 {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources && (
                   <div className="px-4 py-3 bg-gradient-to-r from-blue-50 via-purple-50 to-green-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-green-950/30 border-b">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
