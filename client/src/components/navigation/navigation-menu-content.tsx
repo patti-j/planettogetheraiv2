@@ -250,7 +250,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
             </Button>
           </div>
           
-          <ScrollArea className="h-32 w-full">
+          <ScrollArea className="h-32 w-full navigation-menu-scroll" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
             <div className="space-y-0.5 pr-2">
               {recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
@@ -316,8 +316,16 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       )}
 
       {/* Menu Content */}
-      <ScrollArea className="flex-1" style={{ touchAction: 'pan-y' }}>
-        <div className="py-3 px-3">
+      <ScrollArea className="flex-1 overflow-y-auto navigation-menu-scroll"
+        style={{ 
+          height: 'calc(100vh - 200px)',
+          maxHeight: '600px'
+        }}>
+        <div className="py-3" style={{ 
+          touchAction: 'pan-y', 
+          WebkitOverflowScrolling: 'touch', 
+          overscrollBehavior: 'contain' 
+        }}>
           {layoutMode === 'list' ? (
             // List Layout - Show items grouped by category with headers
             <div className="px-3">
