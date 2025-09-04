@@ -671,7 +671,7 @@ export default function ProductionSchedulePage() {
       )}
 
       {/* Enhanced Scheduling Toolbar */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b border-blue-200 dark:border-blue-800">
+      <div className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800">
         <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -994,7 +994,7 @@ export default function ProductionSchedulePage() {
                     <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     Resource-Centered Production Schedule
                   </div>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-purple-500 text-white">
+                  <Badge variant="secondary" className="bg-blue-500 text-white">
                     Primary View
                   </Badge>
                 </CardTitle>
@@ -1006,7 +1006,7 @@ export default function ProductionSchedulePage() {
               </CardHeader>
               <CardContent className="p-0">
                 {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources && (
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-50 via-purple-50 to-green-50 dark:from-blue-950/30 dark:via-purple-950/30 dark:to-green-950/30 border-b">
+                  <div className="px-4 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-200 dark:border-gray-800">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
                         <div className="text-lg font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set(ptOperations.map(op => op.jobId)).size : 0}</div>
@@ -1033,7 +1033,7 @@ export default function ProductionSchedulePage() {
                           <span className="ml-2">{Array.isArray(resources) ? resources.filter((r: any) => r.status === 'active' || !r.status).length : 0} / {Array.isArray(resources) ? resources.length : 0}</span>
                         </div>
                         <div className="text-sm">
-                          <span className="font-semibold text-purple-600">Avg Load:</span> 
+                          <span className="font-semibold text-blue-600">Avg Load:</span> 
                           <span className="ml-2">{Math.round((Array.isArray(ptOperations) ? ptOperations.length : 0) / (Array.isArray(resources) ? resources.length : 1) * 100 / 8)}%</span>
                         </div>
                       </div>
