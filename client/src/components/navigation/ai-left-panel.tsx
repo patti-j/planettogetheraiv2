@@ -1007,6 +1007,37 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   >
                     ⚖️ Level Resources
                   </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs px-2 py-1.5 h-auto"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'RUN_ALGORITHM', 
+                          algorithm: 'DRUM_TOC' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    🎯 Drum (TOC)
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs px-2 py-1.5 h-auto col-span-2"
+                    onClick={() => {
+                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
+                      if (iframe?.contentWindow) {
+                        iframe.contentWindow.postMessage({ 
+                          type: 'ANALYZE_SCHEDULE' 
+                        }, '*');
+                      }
+                    }}
+                  >
+                    ✨ Analyze Schedule
+                  </Button>
                 </div>
               </div>
             )}
