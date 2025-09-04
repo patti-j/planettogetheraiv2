@@ -464,6 +464,38 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     try {
       const lowerQuery = query.toLowerCase();
       
+      // Handle late/overdue job queries specifically
+      if ((lowerQuery.includes('late') || lowerQuery.includes('overdue') || lowerQuery.includes('past due')) && 
+          (lowerQuery.includes('job') || lowerQuery.includes('order'))) {
+        // Query PT jobs with their due dates
+        const jobsResult = await db.execute(sql`
+          SELECT id, name, external_id, description, status, 
+                 start_date, due_date, priority, publish_date
+          FROM ptjobs 
+          WHERE status = 'active'
+          ORDER BY due_date
+        `);
+        
+        const now = new Date();
+        const lateJobs = jobsResult.rows.filter(job => {
+          if (job.due_date) {
+            const dueDate = new Date(job.due_date as string);
+            return dueDate < now;
+          }
+          return false;
+        });
+        
+        if (lateJobs.length > 0) {
+          const jobList = lateJobs.slice(0, 5).map(job => 
+            `- ${job.name || job.external_id}: Due ${new Date(job.due_date as string).toLocaleDateString()} (Priority: ${job.priority || 'Normal'})`
+          ).join('\n');
+          
+          return `Found ${lateJobs.length} late jobs:\n${jobList}${lateJobs.length > 5 ? `\n...and ${lateJobs.length - 5} more` : ''}\n\nWould you like me to show you the production schedule to help reschedule these jobs?`;
+        } else {
+          return `Good news! No jobs are currently late. All ${jobsResult.rows.length} active jobs are on schedule or don't have specified due dates. Would you like to see the production schedule for more details?`;
+        }
+      }
+      
       // Handle job-related queries
       if (lowerQuery.includes('job') || lowerQuery.includes('operation')) {
         const jobCountResult = await db.execute(sql`SELECT COUNT(*) as count FROM ptjobs`);
@@ -577,6 +609,7 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       { route: '/', label: 'Home', description: 'Main dashboard and homepage' },
       { route: '/control-tower', label: 'Global Control Tower', description: 'Enterprise-wide monitoring and insights' },
       { route: '/production-scheduler', label: 'Production Scheduler', description: 'Production scheduling with Gantt chart and operations timeline' },
+      { route: '/production-scheduler', label: 'Production Schedule', description: 'Production schedule view - main scheduling interface' },
       { route: '/master-production-schedule', label: 'Master Production Schedule', description: 'Master Production Schedule (MPS) for high-level production planning and demand management' },
       { route: '/shop-floor', label: 'Shop Floor', description: 'Shop floor monitoring and real-time production' },
       { route: '/analytics', label: 'Analytics', description: 'Analytics and performance metrics' },
@@ -1679,7 +1712,8 @@ Available pages:
 ${availablePages}
 
 IMPORTANT RULES:
-- For "production schedule", "production scheduling", "scheduler" requests → use "/production-scheduler"
+- For "production schedule", "production scheduling", "scheduler", "show production schedule", "go to production schedule" requests → ALWAYS use "/production-scheduler"
+- NEVER use "scheduler.html", "production-scheduler.html" or any HTML file paths - only use route paths like "/production-scheduler"
 - For other requests, match to the most relevant available page
 - Respond with just the route path (e.g., "/production-scheduler") or "NONE" if no navigation is needed
 - Focus on the most relevant page that matches the user's intent`
