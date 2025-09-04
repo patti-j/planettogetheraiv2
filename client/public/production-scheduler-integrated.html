@@ -178,11 +178,17 @@
         /* Compact icon-only buttons */
         #zoomOut, #zoomIn, #zoomToFit,
         #applyScheduling, #toggleDisplayOptions, 
-        #saveSchedule, #refreshSchedule {
+        #saveSchedule, #refreshSchedule, #rowSizeBtn {
             padding: 0.375rem 0.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        #rowSizeBtn.active {
+            background: var(--primary);
+            color: var(--primary-foreground);
+            border-color: transparent;
         }
 
         .toolbar button:hover {
@@ -289,6 +295,33 @@
         .display-options-close svg {
             width: 16px;
             height: 16px;
+        }
+        
+        /* Row resize handle styling */
+        .b-row-reorderer,
+        .b-grid-row-resizer {
+            cursor: row-resize !important;
+        }
+        
+        .b-grid-row-resizer {
+            position: absolute;
+            height: 5px;
+            right: 0;
+            left: 0;
+            bottom: -3px;
+            cursor: row-resize;
+            z-index: 10;
+        }
+        
+        .b-grid-row-resizer:hover::after {
+            content: '';
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary);
+            opacity: 0.5;
+            top: 1px;
         }
 
         .display-options-title {
@@ -1533,13 +1566,13 @@
         </div>
 
         <div class="toolbar-group">
-            <select id="rowSizeSelect" title="Row Height">
-                <option value="30">XS</option>
-                <option value="40">S</option>
-                <option value="50" selected>M</option>
-                <option value="70">L</option>
-                <option value="90">XL</option>
-            </select>
+            <button id="rowSizeBtn" title="Row Height">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="3" x2="12" y2="21"></line>
+                    <line x1="8" y1="3" x2="8" y2="21"></line>
+                    <line x1="16" y1="3" x2="16" y2="21"></line>
+                </svg>
+            </button>
         </div>
 
         <div class="toolbar-group">
@@ -2047,7 +2080,19 @@
                         { text: 'Category', field: 'category', width: 150 }
                     ],
 
-                    viewPreset: isMobile ? 'dayAndWeek' : 'dayAndWeek',
+                    viewPreset: {
+                        base: 'dayAndWeek',
+                        headers: [
+                            {
+                                unit: 'week',
+                                dateFormat: 'MMM DD YYYY'
+                            },
+                            {
+                                unit: 'day',
+                                dateFormat: 'ddd DD'
+                            }
+                        ]
+                    },
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
@@ -2065,6 +2110,29 @@
                     // Enable pinch zoom on mobile
                     zoomOnMouseWheel: !isMobile,
                     zoomOnTimeAxisDoubleClick: !isMobile,
+                    
+                    // Enable row resizing
+                    features: {
+                        rowResize: {
+                            enabled: true
+                        },
+                        dependencies: true,
+                        eventDrag: true,
+                        eventResize: true,
+                        scheduleTooltip: true,
+                        eventTooltip: {
+                            template: (data) => {
+                                const event = data.eventRecord;
+                                return `
+                                    <div class="custom-tooltip">
+                                        <div><strong>${event.name}</strong></div>
+                                        <div>Duration: ${event.duration} hours</div>
+                                        <div>Progress: ${event.percentDone || 0}%</div>
+                                    </div>
+                                `;
+                            }
+                        }
+                    },
                     
                     // Mobile-optimized event renderer
                     eventRenderer: isMobile ? ({ eventRecord, renderData }) => {
@@ -2865,7 +2933,37 @@
                 
                 // View preset selector
                 document.getElementById('viewPreset').addEventListener('change', (e) => {
-                    scheduler.viewPreset = e.target.value;
+                    const presets = {
+                        hourAndDay: {
+                            base: 'hourAndDay',
+                            headers: [
+                                { unit: 'day', dateFormat: 'ddd MM/DD' },
+                                { unit: 'hour', dateFormat: 'HH' }
+                            ]
+                        },
+                        dayAndWeek: {
+                            base: 'dayAndWeek',
+                            headers: [
+                                { unit: 'week', dateFormat: 'MMM DD YYYY' },
+                                { unit: 'day', dateFormat: 'ddd DD' }
+                            ]
+                        },
+                        weekAndMonth: {
+                            base: 'weekAndMonth',
+                            headers: [
+                                { unit: 'month', dateFormat: 'MMM YYYY' },
+                                { unit: 'week', dateFormat: 'DD MMM' }
+                            ]
+                        },
+                        monthAndYear: {
+                            base: 'monthAndYear',
+                            headers: [
+                                { unit: 'year', dateFormat: 'YYYY' },
+                                { unit: 'month', dateFormat: 'MMM' }
+                            ]
+                        }
+                    };
+                    scheduler.viewPreset = presets[e.target.value] || e.target.value;
                 });
                 
                 // Zoom controls
@@ -2881,13 +2979,24 @@
                     scheduler.zoomToFit();
                 });
                 
-                // Row size control
-                const rowSizeSelect = document.getElementById('rowSizeSelect');
-                if (rowSizeSelect) {
-                    rowSizeSelect.addEventListener('change', (e) => {
-                        const size = parseInt(e.target.value);
-                        scheduler.rowHeight = size;
+                // Row size button - cycles through preset row sizes
+                const rowSizeBtn = document.getElementById('rowSizeBtn');
+                if (rowSizeBtn) {
+                    rowSizeBtn.addEventListener('click', () => {
+                        // Toggle visual indicator
+                        rowSizeBtn.classList.toggle('active');
+                        
+                        // Cycle through preset sizes
+                        const sizes = [30, 40, 50, 70, 90];
+                        const currentHeight = scheduler.rowHeight;
+                        const currentIndex = sizes.indexOf(currentHeight);
+                        const nextIndex = (currentIndex + 1) % sizes.length;
+                        scheduler.rowHeight = sizes[nextIndex];
                         scheduler.refreshWithTransition();
+                        
+                        // Show a tooltip with the new size
+                        const sizeNames = ['XS', 'S', 'M', 'L', 'XL'];
+                        rowSizeBtn.title = `Row Height: ${sizeNames[nextIndex]}`;
                     });
                 }
                 
