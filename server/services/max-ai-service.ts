@@ -321,7 +321,9 @@ Only include playbooks with relevance_score > 0.5. Return empty array if none ar
     playbooks: PlaybookReference[]
   ): Promise<void> {
     try {
-      const sessionId = `max_${context.userId}_${Date.now()}`;
+      // Ensure userId is valid (use 1 as default for demo/unauthenticated users)
+      const userId = context.userId || 1;
+      const sessionId = `max_${userId}_${Date.now()}`;
       const reasoning = this.buildReasoningExplanation(userPrompt, playbooks, aiResponse);
       
       await db.insert(agentActions).values({
@@ -343,7 +345,7 @@ Only include playbooks with relevance_score > 0.5. Return empty array if none ar
         batchId: null,
         executionTime: 0,
         success: true,
-        createdBy: context.userId
+        createdBy: userId // Use the validated userId
       });
     } catch (error) {
       console.error('Error tracking AI action:', error);
