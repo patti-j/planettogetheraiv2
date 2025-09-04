@@ -396,6 +396,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
 
+  // Auto-scroll to bottom when panel opens or chat tab becomes active
+  useEffect(() => {
+    if (!isCollapsed && activeTab === 'chat' && scrollAreaRef.current) {
+      // Small delay to ensure DOM is updated
+      setTimeout(() => {
+        if (scrollAreaRef.current) {
+          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        }
+      }, 100);
+    }
+  }, [isCollapsed, activeTab]);
+
   // Scroll detection for scroll button
   const handleScroll = useCallback(() => {
     if (!scrollAreaRef.current) return;
