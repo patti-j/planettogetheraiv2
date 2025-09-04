@@ -1129,6 +1129,54 @@
         .dark .b-sch-simple-timeaxis div {
             color: var(--foreground) !important;
         }
+        
+        /* Fix timeline header dates visibility - both light and dark mode */
+        .b-sch-header-row {
+            background: var(--card) !important;
+            border-bottom: 1px solid var(--border) !important;
+        }
+        
+        /* Timeline date headers - Light mode specific */
+        .b-sch-header-timeaxis-cell {
+            background: white !important;
+            color: hsl(240, 10%, 3.9%) !important;
+            font-weight: 600 !important;
+            font-size: 13px !important;
+            padding: 6px 8px !important;
+            border-right: 1px solid hsl(240, 5.9%, 90%) !important;
+            border-bottom: 1px solid hsl(240, 5.9%, 90%) !important;
+        }
+        
+        .b-sch-header-timeaxis-cell div,
+        .b-sch-header-timeaxis-cell span,
+        .b-sch-timeaxis-cell-text {
+            color: hsl(240, 10%, 3.9%) !important;
+            opacity: 1 !important;
+        }
+        
+        /* Dark mode timeline headers */
+        .dark .b-sch-header-timeaxis-cell {
+            background: hsl(240, 10%, 15%) !important;
+            color: hsl(0, 0%, 98%) !important;
+            border-right: 1px solid hsl(240, 3.7%, 25%) !important;
+            border-bottom: 1px solid hsl(240, 3.7%, 25%) !important;
+        }
+        
+        .dark .b-sch-header-timeaxis-cell div,
+        .dark .b-sch-header-timeaxis-cell span,
+        .dark .b-sch-timeaxis-cell-text {
+            color: hsl(0, 0%, 98%) !important;
+        }
+        
+        /* Ensure proper z-index for timeline headers */
+        .b-sch-timeaxiscolumn {
+            z-index: 2 !important;
+        }
+        
+        .b-sch-header-container {
+            background: var(--card) !important;
+            z-index: 2 !important;
+        }
 
         /* ==================== Mobile Responsive Styles ==================== */
         
@@ -1451,6 +1499,27 @@
                         /* Force text visibility in timeline headers */
                         .b-sch-header-row * {
                             color: hsl(0, 0%, 98%) !important;
+                        }
+                        
+                        /* Additional fixes for timeline date headers */
+                        .b-sch-timeaxis-column,
+                        .b-sch-timeaxiscolumn {
+                            opacity: 1 !important;
+                            visibility: visible !important;
+                        }
+                        
+                        .b-sch-header-row-0,
+                        .b-sch-header-row-1 {
+                            background: hsl(240, 10%, 15%) !important;
+                            height: auto !important;
+                            min-height: 30px !important;
+                        }
+                        
+                        .b-sch-header-row-0 .b-sch-header-timeaxis-cell,
+                        .b-sch-header-row-1 .b-sch-header-timeaxis-cell {
+                            color: hsl(0, 0%, 98%) !important;
+                            font-size: 12px !important;
+                            padding: 4px 8px !important;
                         }
                     `;
                 }
