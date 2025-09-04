@@ -396,18 +396,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
 
-  // Auto-scroll to bottom when panel opens or chat tab becomes active
-  useEffect(() => {
-    if (!isCollapsed && activeTab === 'chat' && scrollAreaRef.current) {
-      // Small delay to ensure DOM is updated
-      setTimeout(() => {
-        if (scrollAreaRef.current) {
-          scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-        }
-      }, 100);
-    }
-  }, [isCollapsed, activeTab]);
-
   // Scroll detection for scroll button
   const handleScroll = useCallback(() => {
     if (!scrollAreaRef.current) return;
@@ -940,12 +928,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         <>
           {/* Tabs */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-            <TabsList className="grid grid-cols-4 mx-4 mt-2 text-xs">
+            <TabsList className="grid grid-cols-3 mx-4 mt-2 text-xs">
               <TabsTrigger value="chat" className="px-2" title="Chat">
                 <MessageSquare className="w-4 h-4" />
-              </TabsTrigger>
-              <TabsTrigger value="insights" className="px-2" title="AI Insights">
-                <TrendingUp className="w-4 h-4" />
               </TabsTrigger>
               <TabsTrigger value="simulations" className="px-2" title="Simulations">
                 <Activity className="w-4 h-4" />
@@ -1043,61 +1028,41 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   >
                     🎯 Drum (TOC)
                   </Button>
-                </div>
-              </div>
-            )}
-
-            {/* AI Insights Tab */}
-            <TabsContent value="insights" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
-              <ScrollArea className="h-full px-4">
-                <div className="space-y-3 pt-2 pb-4">
-                  {/* Schedule Analysis Card */}
-                  <Card className="border-dashed">
-                    <CardHeader>
-                      <CardTitle className="text-sm flex items-center gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        Schedule Analysis
-                      </CardTitle>
-                      <CardDescription className="text-xs">
-                        AI-powered schedule insights and optimization
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="w-full justify-start bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                        onClick={async () => {
-                          // Switch to chat tab to show analysis
-                          setActiveTab('chat');
-                          
-                          try {
-                            // Fetch actual scheduler data from the backend
-                            const [operationsRes, resourcesRes] = await Promise.all([
-                              fetch('/api/pt-operations'),
-                              fetch('/api/resources')
-                            ]);
-                            
-                            const operations = await operationsRes.json();
-                            const resources = await resourcesRes.json();
-                            
-                            // Calculate actual metrics from the data
-                            const scheduledOps = operations.filter((op: any) => op.startTime && op.resourceName);
-                            const resourceUtilization = new Map();
-                            
-                            // Calculate resource utilization
-                            resources.forEach((resource: any) => {
-                              const resourceOps = scheduledOps.filter((op: any) => 
-                                op.resourceName === resource.name || op.resourceId === resource.id
-                              );
-                              resourceUtilization.set(resource.name || resource.id, {
-                                operationCount: resourceOps.length,
-                                totalDuration: resourceOps.reduce((sum: number, op: any) => sum + (op.duration || 0), 0)
-                              });
-                            });
-                            
-                            // Build the analysis prompt with actual data
-                            const analysisPrompt = `Analyze the current production schedule with the following actual data:
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="text-xs px-2 py-1.5 h-auto col-span-2"
+                    onClick={async () => {
+                      // Switch to chat tab
+                      setActiveTab('chat');
+                      
+                      try {
+                        // Fetch actual scheduler data from the backend
+                        const [operationsRes, resourcesRes] = await Promise.all([
+                          fetch('/api/pt-operations'),
+                          fetch('/api/resources')
+                        ]);
+                        
+                        const operations = await operationsRes.json();
+                        const resources = await resourcesRes.json();
+                        
+                        // Calculate actual metrics from the data
+                        const scheduledOps = operations.filter((op: any) => op.startTime && op.resourceName);
+                        const resourceUtilization = new Map();
+                        
+                        // Calculate resource utilization
+                        resources.forEach((resource: any) => {
+                          const resourceOps = scheduledOps.filter((op: any) => 
+                            op.resourceName === resource.name || op.resourceId === resource.id
+                          );
+                          resourceUtilization.set(resource.name || resource.id, {
+                            operationCount: resourceOps.length,
+                            totalDuration: resourceOps.reduce((sum: number, op: any) => sum + (op.duration || 0), 0)
+                          });
+                        });
+                        
+                        // Build the analysis prompt with actual data
+                        const analysisPrompt = `Analyze the current production schedule with the following actual data:
 
 CURRENT SCHEDULE DATA:
 - Total Operations: ${operations.length}
@@ -1120,104 +1085,28 @@ Please provide insights on:
 3. Schedule efficiency and estimated completion times
 4. Recommendations for optimization (which algorithms would help)
 5. Critical path analysis`;
-                            
-                            // Send the message with actual data
-                            setTimeout(() => {
-                              handleSendMessage(analysisPrompt);
-                            }, 100);
-                            
-                          } catch (error) {
-                            console.error('Error fetching scheduler data:', error);
-                            
-                            // Fallback to basic prompt if data fetch fails
-                            const basicPrompt = `Analyze the current production schedule and provide insights on resource utilization, bottlenecks, and optimization recommendations.`;
-                            setTimeout(() => {
-                              handleSendMessage(basicPrompt);
-                            }, 100);
-                          }
-                        }}
-                      >
-                        <TrendingUp className="w-3 h-3 mr-2" />
-                        Analyze Schedule
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  {/* Scheduler Insights */}
-                  {schedulerInsights.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="text-sm font-medium mb-2">Current Insights</h3>
-                      {schedulerInsights.map(insight => (
-                        <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {(() => {
-                                  const Icon = getTypeIcon(insight.type);
-                                  return <Icon className="w-4 h-4 text-primary" />;
-                                })()}
-                                <CardTitle className="text-sm">{insight.title}</CardTitle>
-                              </div>
-                              <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
-                                {insight.priority}
-                              </Badge>
-                            </div>
-                          </CardHeader>
-                          <CardContent className="pt-0">
-                            <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
-                            {insight.impact && (
-                              <div className="text-xs bg-muted p-2 rounded mb-2">
-                                <strong>Impact:</strong> {insight.impact}
-                              </div>
-                            )}
-                            {insight.recommendation && (
-                              <div className="text-xs bg-primary/10 p-2 rounded">
-                                <strong>Recommendation:</strong> {insight.recommendation}
-                              </div>
-                            )}
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* General AI Insights */}
-                  {displayInsights
-                    .filter(i => i.type !== 'simulation')
-                    .map(insight => (
-                      <Card key={insight.id} className="cursor-pointer hover:bg-muted/50 transition-colors">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {(() => {
-                                const Icon = getTypeIcon(insight.type);
-                                return <Icon className="w-4 h-4 text-primary" />;
-                              })()}
-                              <CardTitle className="text-sm">{insight.title}</CardTitle>
-                            </div>
-                            <Badge variant={getPriorityColor(insight.priority)} className="text-xs">
-                              {insight.priority}
-                            </Badge>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="pt-0">
-                          <p className="text-xs text-muted-foreground mb-2">{insight.description}</p>
-                          {insight.impact && (
-                            <div className="text-xs bg-muted p-2 rounded mb-2">
-                              <strong>Impact:</strong> {insight.impact}
-                            </div>
-                          )}
-                          {insight.recommendation && (
-                            <div className="text-xs bg-primary/10 p-2 rounded">
-                              <strong>Recommendation:</strong> {insight.recommendation}
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                        
+                        // Send the message with actual data
+                        setTimeout(() => {
+                          handleSendMessage(analysisPrompt);
+                        }, 100);
+                        
+                      } catch (error) {
+                        console.error('Error fetching scheduler data:', error);
+                        
+                        // Fallback to basic prompt if data fetch fails
+                        const basicPrompt = `Analyze the current production schedule and provide insights on resource utilization, bottlenecks, and optimization recommendations.`;
+                        setTimeout(() => {
+                          handleSendMessage(basicPrompt);
+                        }, 100);
+                      }
+                    }}
+                  >
+                    ✨ Analyze Schedule
+                  </Button>
                 </div>
-              </ScrollArea>
-            </TabsContent>
+              </div>
+            )}
 
             {/* Chat Tab with its own layout */}
             <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
@@ -1322,58 +1211,7 @@ Please provide insights on:
                 )}
               </div>
 
-              {/* Chat Input */}
-              <div className="p-3 border-t">
-                <div className="flex gap-2">
-                  <Input
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    placeholder="Ask Max anything..."
-                    className="flex-1 text-sm"
-                    disabled={sendMessageMutation.isPending}
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => handleSendMessage()}
-                    disabled={!prompt.trim() || sendMessageMutation.isPending}
-                    className={cn(
-                      "px-3",
-                      getThemeGradient(aiSettings.aiThemeColor),
-                      "text-white"
-                    )}
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-                
-                {/* Max Thinking Indicator */}
-                {showMaxThinking && (
-                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground animate-pulse">
-                    <span className="flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" />
-                      Max is thinking...
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={cancelMaxRequest}
-                      className="h-5 px-2 text-xs"
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </div>
+
 
             </TabsContent>
 

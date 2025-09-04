@@ -13,52 +13,6 @@
     <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
     <style>
-        /* CSS Variables from main app */
-        :root {
-            --background: hsl(0, 0%, 100%);
-            --foreground: hsl(20, 14.3%, 4.1%);
-            --muted: hsl(60, 4.8%, 95.9%);
-            --muted-foreground: hsl(25, 5.3%, 44.7%);
-            --popover: hsl(0, 0%, 100%);
-            --popover-foreground: hsl(20, 14.3%, 4.1%);
-            --card: hsl(0, 0%, 100%);
-            --card-foreground: hsl(20, 14.3%, 4.1%);
-            --border: hsl(20, 5.9%, 90%);
-            --input: hsl(20, 5.9%, 90%);
-            --primary: hsl(207, 90%, 54%);
-            --primary-foreground: hsl(211, 100%, 99%);
-            --secondary: hsl(60, 4.8%, 95.9%);
-            --secondary-foreground: hsl(24, 9.8%, 10%);
-            --accent: hsl(120, 61%, 50%);
-            --accent-foreground: hsl(120, 100%, 99%);
-            --destructive: hsl(0, 84.2%, 60.2%);
-            --destructive-foreground: hsl(60, 9.1%, 97.8%);
-            --ring: hsl(20, 14.3%, 4.1%);
-            --radius: 0.5rem;
-        }
-
-        .dark {
-            --background: hsl(240, 10%, 3.9%);
-            --foreground: hsl(0, 0%, 98%);
-            --muted: hsl(240, 3.7%, 15.9%);
-            --muted-foreground: hsl(240, 5%, 64.9%);
-            --popover: hsl(240, 10%, 3.9%);
-            --popover-foreground: hsl(0, 0%, 98%);
-            --card: hsl(240, 10%, 3.9%);
-            --card-foreground: hsl(0, 0%, 98%);
-            --border: hsl(240, 3.7%, 15.9%);
-            --input: hsl(240, 3.7%, 15.9%);
-            --primary: hsl(207, 90%, 54%);
-            --primary-foreground: hsl(211, 100%, 99%);
-            --secondary: hsl(240, 3.7%, 15.9%);
-            --secondary-foreground: hsl(0, 0%, 98%);
-            --accent: hsl(120, 61%, 50%);
-            --accent-foreground: hsl(120, 100%, 99%);
-            --destructive: hsl(0, 84.2%, 60.2%);
-            --destructive-foreground: hsl(60, 9.1%, 97.8%);
-            --ring: hsl(240, 3.7%, 15.9%);
-        }
-
         * {
             margin: 0;
             padding: 0;
@@ -72,8 +26,7 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: var(--background);
-            color: var(--foreground);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex;
             flex-direction: column;
             height: 100vh;
@@ -81,8 +34,8 @@
         }
 
         .header {
-            background: var(--card);
-            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
             padding: 1rem 2rem;
             display: flex;
             align-items: center;
@@ -91,18 +44,18 @@
         }
 
         .header h1 {
-            color: var(--foreground);
+            color: #333;
             font-size: 1.5rem;
-            font-weight: 600;
+            font-weight: bold;
         }
 
         .toolbar {
-            background: var(--muted);
+            background: rgba(255, 255, 255, 0.9);
             padding: 0.75rem 2rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 1px solid #e0e0e0;
             flex-shrink: 0;
             flex-wrap: wrap;
         }
@@ -112,7 +65,7 @@
             align-items: center;
             gap: 0.5rem;
             padding-right: 1rem;
-            border-right: 1px solid var(--border);
+            border-right: 1px solid #e0e0e0;
         }
 
         .toolbar-group:last-child {
@@ -121,18 +74,18 @@
 
         .toolbar label {
             font-size: 0.875rem;
-            color: var(--muted-foreground);
+            color: #666;
             font-weight: 500;
         }
 
         .toolbar select,
+        .toolbar button,
         .toolbar input[type="text"],
         .toolbar input[type="checkbox"] {
             padding: 0.375rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--background);
-            color: var(--foreground);
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
@@ -146,195 +99,59 @@
         }
 
         .toolbar select:hover,
+        .toolbar button:hover,
         .toolbar input[type="text"]:hover {
-            background: var(--muted);
-            border-color: var(--muted-foreground);
+            background: #f5f5f5;
+            border-color: #999;
         }
 
-        /* Default secondary button style for toolbar */
         .toolbar button {
-            padding: 0.375rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--background);
-            color: var(--foreground);
-            font-size: 0.875rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white !important;
+            border: none;
             font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s;
         }
 
         .toolbar button:hover {
-            background: var(--muted);
-            border-color: var(--muted-foreground);
-        }
-
-        /* Primary action buttons */
-        .toolbar button.primary,
-        .toolbar button#applyScheduling {
-            background: var(--primary);
-            color: var(--primary-foreground);
-            border: 1px solid transparent;
-        }
-
-        .toolbar button.primary:hover,
-        .toolbar button#applyScheduling:hover {
-            background: hsl(207, 90%, 48%);
+            background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px hsl(207 90% 54% / 0.3);
-        }
-
-        /* Save button as primary action */
-        .toolbar button#saveSchedule {
-            background: var(--primary);
-            color: var(--primary-foreground);
-            border: 1px solid transparent;
-        }
-        
-        .toolbar button#saveSchedule:hover {
-            background: hsl(207, 90%, 48%);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px hsl(207 90% 54% / 0.3);
-        }
-
-        /* Algorithm toggle buttons */
-        .toolbar button.algorithm-btn {
-            background: var(--background);
-            color: var(--muted-foreground);
-            border: 1px solid var(--border);
-            min-width: 80px;
-        }
-
-        .toolbar button.algorithm-btn:hover {
-            background: var(--muted);
-            color: var(--foreground);
-            border-color: var(--muted-foreground);
-        }
-
-        .toolbar button.algorithm-btn.active {
-            background: var(--primary);
-            color: var(--primary-foreground);
-            border-color: transparent;
-        }
-
-        .toolbar button.algorithm-btn.active:hover {
-            background: hsl(207, 90%, 48%);
+            color: white !important;
         }
 
         /* Display Options Panel */
         .display-options-panel {
-            background: var(--card);
+            background: rgba(255, 255, 255, 0.95);
             padding: 1rem 2rem;
-            border-bottom: 1px solid var(--border);
+            border-bottom: 2px solid #e0e0e0;
             display: none;
+            gap: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .display-options-panel.active {
             display: flex;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .display-options-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .display-options-title {
-            font-size: 1rem;
-            font-weight: 600;
-            color: var(--foreground);
-        }
-
-        .display-options-ai-prompt {
-            display: flex;
-            gap: 0.5rem;
-            align-items: center;
-            flex: 1;
-            max-width: 500px;
-        }
-
-        .display-options-ai-input {
-            flex: 1;
-            padding: 0.375rem 0.75rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--background);
-            color: var(--foreground);
-            font-size: 0.875rem;
-        }
-
-        .display-options-ai-input:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px hsl(207 90% 54% / 0.1);
-        }
-
-        .display-options-ai-btn {
-            padding: 0.375rem 0.75rem;
-            background: var(--primary);
-            color: var(--primary-foreground);
-            border: none;
-            border-radius: var(--radius);
-            font-size: 0.875rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.25rem;
-            transition: all 0.2s;
-        }
-
-        .display-options-ai-btn:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-
-        .display-options-content {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
         }
 
         .display-option-group {
             display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .display-option-group h3 {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--foreground);
-            margin-bottom: 0.25rem;
+            color: #444;
+            margin-right: 0.5rem;
         }
 
         .display-option-item {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.25rem;
             font-size: 0.875rem;
-            color: var(--muted-foreground);
-            cursor: pointer;
-            padding: 0.25rem;
-            border-radius: var(--radius);
-            transition: background 0.2s;
-        }
-
-        .display-option-item:hover {
-            background: var(--muted);
-        }
-
-        .display-option-item input[type="checkbox"] {
-            width: 16px;
-            height: 16px;
-            cursor: pointer;
-        }
-
-        .display-option-item label {
-            cursor: pointer;
-            flex: 1;
+            color: #666;
         }
 
         /* AI Prompt Bar */
@@ -349,22 +166,20 @@
         .ai-prompt-input {
             flex: 1;
             padding: 0.5rem 1rem !important;
-            border: 2px solid var(--border) !important;
+            border: 2px solid #ddd !important;
             border-radius: 20px !important;
             font-size: 0.875rem !important;
-            background: var(--background);
-            color: var(--foreground);
             transition: all 0.2s;
         }
 
         .ai-prompt-input:focus {
             outline: none;
-            border-color: var(--primary) !important;
-            box-shadow: 0 0 0 3px hsl(207 90% 54% / 0.1);
+            border-color: #764ba2 !important;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
         }
 
         .ai-prompt-btn {
-            background: var(--primary) !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
             border: none !important;
             border-radius: 50% !important;
             width: 36px !important;
@@ -379,330 +194,26 @@
 
         .ai-prompt-btn:hover {
             transform: scale(1.1);
-            opacity: 0.9;
-            box-shadow: 0 4px 12px hsl(207 90% 54% / 0.3);
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
         }
 
         .ai-prompt-btn svg {
             width: 20px;
             height: 20px;
-            fill: var(--primary-foreground);
+            fill: white;
         }
 
         .scheduler-container {
             flex: 1;
             margin: 1rem;
-            background: var(--card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             position: relative;
             display: flex;
             flex-direction: column;
             min-height: 0;
-        }
-
-        /* Bryntum Scheduler Dark Mode Overrides */
-        .dark .b-schedulerpro,
-        .dark .b-grid-subgrid,
-        .dark .b-grid-body-container,
-        .dark .b-grid-row,
-        .dark .b-sch-background-canvas,
-        .dark .b-sch-foreground-canvas {
-            background: var(--background) !important;
-        }
-
-        .dark .b-grid-cell,
-        .dark .b-sch-header-row {
-            background: transparent !important;
-            color: var(--foreground) !important;
-        }
-
-        .dark .b-grid-header {
-            background: var(--muted) !important;
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-grid-header-text {
-            color: var(--foreground) !important;
-        }
-
-        .dark .b-sch-event {
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-grid-row:hover {
-            background: var(--muted) !important;
-        }
-
-        .dark .b-sch-timeaxis-cell {
-            background: var(--background) !important;
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-sch-header-timeaxis-cell {
-            background: var(--muted) !important;
-            border-color: var(--border) !important;
-            color: var(--foreground) !important;
-        }
-        
-        /* Fix timeline header text visibility in dark mode */
-        .dark .b-sch-header-row-main .b-sch-header-timeaxis-cell,
-        .dark .b-sch-header-row-bottom .b-sch-header-timeaxis-cell {
-            color: var(--foreground) !important;
-        }
-        
-        .dark .b-sch-header-row .b-sch-simple-timeaxis-cell {
-            color: var(--foreground) !important;
-        }
-        
-        .dark .b-sch-header-timeaxis-cell span {
-            color: var(--foreground) !important;
-        }
-        
-        .dark .b-sch-header-row-1 .b-sch-header-timeaxis-cell,
-        .dark .b-sch-header-row-0 .b-sch-header-timeaxis-cell {
-            color: var(--foreground) !important;
-            background: var(--muted) !important;
-        }
-        
-        /* Ensure all text in timeline headers is visible */
-        .dark .b-sch-timeaxis-cell-text {
-            color: var(--foreground) !important;
-        }
-        
-        .dark .b-sch-timeaxis-tick {
-            color: var(--foreground) !important;
-        }
-
-        .dark .b-toolbar {
-            background: var(--card) !important;
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-widget {
-            color: var(--foreground) !important;
-        }
-
-        /* Dark mode grid lines and borders */
-        .dark .b-grid-row {
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-grid-cell {
-            border-color: var(--border) !important;
-        }
-
-        .dark .b-sch-timerange {
-            background: var(--muted) !important;
-            opacity: 0.3;
-        }
-
-        .dark .b-grid-splitter {
-            background: var(--border) !important;
-        }
-
-        .dark .b-sch-dependency {
-            stroke: var(--muted-foreground) !important;
-        }
-
-        /* Ensure scheduler container itself has dark background */
-        .dark #scheduler {
-            background: var(--background) !important;
-        }
-
-        /* Dark mode scrollbars */
-        .dark .b-grid-vertical-scroller,
-        .dark .b-grid-horizontal-scroller {
-            background: var(--background) !important;
-        }
-
-        .dark .b-scrollbar-thumb {
-            background: var(--muted-foreground) !important;
-        }
-        
-        /* Native scrollbar styling for dark mode - more aggressive override */
-        .dark ::-webkit-scrollbar {
-            width: 12px !important;
-            height: 12px !important;
-            background: var(--background) !important;
-        }
-        
-        .dark ::-webkit-scrollbar-track {
-            background: var(--background) !important;
-            border: 1px solid var(--border) !important;
-            border-radius: 0 !important;
-        }
-        
-        .dark ::-webkit-scrollbar-thumb {
-            background: hsl(240, 5%, 30%) !important;
-            border-radius: 6px !important;
-            border: 2px solid var(--background) !important;
-        }
-        
-        .dark ::-webkit-scrollbar-thumb:hover {
-            background: hsl(240, 5%, 40%) !important;
-        }
-        
-        .dark ::-webkit-scrollbar-corner {
-            background: var(--background) !important;
-        }
-        
-        /* Override Bryntum's scrollbar styles */
-        .dark .b-widget ::-webkit-scrollbar {
-            background: var(--background) !important;
-        }
-        
-        .dark .b-widget ::-webkit-scrollbar-track {
-            background: var(--background) !important;
-        }
-        
-        .dark .b-widget ::-webkit-scrollbar-thumb {
-            background: hsl(240, 5%, 30%) !important;
-        }
-        
-        /* More aggressive dark mode scrollbar overrides for Bryntum components */
-        .dark .b-schedulerpro ::-webkit-scrollbar,
-        .dark .b-grid ::-webkit-scrollbar,
-        .dark .b-grid-vertical-scroller ::-webkit-scrollbar,
-        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar,
-        .dark #scheduler ::-webkit-scrollbar {
-            width: 12px !important;
-            height: 12px !important;
-            background-color: hsl(240, 10%, 10%) !important;
-        }
-        
-        .dark .b-schedulerpro ::-webkit-scrollbar-track,
-        .dark .b-grid ::-webkit-scrollbar-track,
-        .dark .b-grid-vertical-scroller ::-webkit-scrollbar-track,
-        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar-track,
-        .dark #scheduler ::-webkit-scrollbar-track {
-            background-color: hsl(240, 10%, 10%) !important;
-            border: none !important;
-        }
-        
-        .dark .b-schedulerpro ::-webkit-scrollbar-thumb,
-        .dark .b-grid ::-webkit-scrollbar-thumb,
-        .dark .b-grid-vertical-scroller ::-webkit-scrollbar-thumb,
-        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar-thumb,
-        .dark #scheduler ::-webkit-scrollbar-thumb {
-            background-color: hsl(240, 5%, 25%) !important;
-            border-radius: 6px !important;
-            border: 2px solid hsl(240, 10%, 10%) !important;
-        }
-        
-        .dark .b-schedulerpro ::-webkit-scrollbar-thumb:hover,
-        .dark .b-grid ::-webkit-scrollbar-thumb:hover,
-        .dark #scheduler ::-webkit-scrollbar-thumb:hover {
-            background-color: hsl(240, 5%, 35%) !important;
-        }
-        
-        .dark .b-schedulerpro ::-webkit-scrollbar-corner,
-        .dark .b-grid ::-webkit-scrollbar-corner,
-        .dark #scheduler ::-webkit-scrollbar-corner {
-            background-color: hsl(240, 10%, 10%) !important;
-        }
-        
-        /* Firefox scrollbar support */
-        .dark * {
-            scrollbar-width: thin;
-            scrollbar-color: hsl(240, 5%, 30%) var(--background);
-        }
-        
-        /* Ultimate override for ALL scrollbars in dark mode */
-        .dark body ::-webkit-scrollbar,
-        .dark div::-webkit-scrollbar,
-        .dark *::-webkit-scrollbar {
-            width: 12px !important;
-            height: 12px !important;
-            background: hsl(240, 10%, 10%) !important;
-        }
-        
-        .dark body ::-webkit-scrollbar-track,
-        .dark div::-webkit-scrollbar-track,
-        .dark *::-webkit-scrollbar-track {
-            background: hsl(240, 10%, 10%) !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-        
-        .dark body ::-webkit-scrollbar-thumb,
-        .dark div::-webkit-scrollbar-thumb,
-        .dark *::-webkit-scrollbar-thumb {
-            background: hsl(240, 5%, 25%) !important;
-            border: 2px solid hsl(240, 10%, 10%) !important;
-            border-radius: 6px !important;
-        }
-        
-        .dark body ::-webkit-scrollbar-thumb:hover,
-        .dark div::-webkit-scrollbar-thumb:hover,
-        .dark *::-webkit-scrollbar-thumb:hover {
-            background: hsl(240, 5%, 35%) !important;
-        }
-
-        /* Fix white areas in scheduler panels */
-        .dark .b-panel,
-        .dark .b-panel-content,
-        .dark .b-grid-body {
-            background: var(--background) !important;
-        }
-
-        /* Resource panel and timeline area backgrounds */
-        .dark .b-sch-resourcecolumn-cell,
-        .dark .b-resourceheader {
-            background: var(--background) !important;
-            color: var(--foreground) !important;
-        }
-
-        /* Ensure all text is visible in dark mode */
-        .dark .b-sch-event-content,
-        .dark .b-grid-cell-value {
-            color: inherit !important;
-        }
-        
-        /* Fix alignment between resource panel and timeline */
-        .b-sch-timeaxiscolumn .b-sch-header-row {
-            height: 60px !important;
-        }
-        
-        .b-grid-headers {
-            height: 60px !important;
-        }
-        
-        .b-grid-header {
-            height: 60px !important;
-        }
-        
-        /* Align the headers properly */
-        .b-sch-header-row-main {
-            height: 30px !important;
-        }
-        
-        .b-sch-header-row-bottom {
-            height: 30px !important;
-        }
-        
-        /* Ensure resource header matches timeline header */
-        .b-grid-headers-normal .b-grid-header {
-            height: 60px !important;
-            display: flex;
-            align-items: center;
-        }
-        
-        /* Keep row heights consistent */
-        .b-grid-row {
-            height: 45px !important;
-        }
-        
-        .b-schedulerpro .b-grid-row {
-            height: 45px !important;
-        }
-        
-        /* Fix vertical alignment of resource cells */
-        .b-grid-cell {
-            display: flex;
-            align-items: center;
         }
 
         #scheduler {
@@ -711,14 +222,14 @@
         }
 
         .status-bar {
-            background: var(--muted);
+            background: rgba(255, 255, 255, 0.95);
             padding: 0.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 0.875rem;
-            color: var(--muted-foreground);
-            border-top: 1px solid var(--border);
+            color: #666;
+            border-top: 1px solid #e0e0e0;
             flex-shrink: 0;
         }
 
@@ -728,8 +239,7 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: var(--background);
-            opacity: 0.9;
+            background: rgba(255, 255, 255, 0.9);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -739,8 +249,8 @@
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid var(--muted);
-            border-top: 3px solid var(--primary);
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #764ba2;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -751,15 +261,53 @@
         }
 
         .error-message {
-            background: var(--destructive);
-            color: var(--destructive-foreground);
+            background: #ff4444;
+            color: white;
             padding: 1rem;
-            border-radius: var(--radius);
+            border-radius: 4px;
             margin: 1rem;
             text-align: center;
         }
         
-        /* Dark theme is handled by CSS variables - removed duplicate styles */
+        /* Dark theme overrides */
+        .dark-theme .header {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+        
+        .dark-theme .header h1 {
+            color: white;
+        }
+        
+        .dark-theme .toolbar {
+            background: rgba(40, 40, 40, 0.9);
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .toolbar label {
+            color: #ccc;
+        }
+        
+        .dark-theme .status-bar {
+            background: rgba(30, 30, 30, 0.95);
+            color: #ccc;
+            border-top-color: #444;
+        }
+        
+        .dark-theme .scheduler-container {
+            background: #2a2a2a;
+        }
+        
+        /* Dark theme for scheduler using filter */
+        .dark-theme #scheduler {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+        
+        /* Re-invert images and icons in dark mode */
+        .dark-theme #scheduler img,
+        .dark-theme #scheduler .b-icon {
+            filter: invert(1) hue-rotate(-180deg);
+        }
         
         /* Header updates for hamburger and Max AI */
         .header-actions {
@@ -769,18 +317,18 @@
         }
         
         .hamburger-btn, .max-ai-btn {
-            background: var(--primary);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            color: var(--primary-foreground);
+            color: white;
             padding: 0.5rem 1rem;
-            border-radius: var(--radius);
+            border-radius: 4px;
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.2s;
         }
         
         .hamburger-btn:hover, .max-ai-btn:hover {
-            opacity: 0.9;
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
             transform: translateY(-1px);
         }
         
@@ -791,7 +339,7 @@
             left: -300px;
             width: 300px;
             height: 100vh;
-            background: var(--card);
+            background: white;
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             transition: left 0.3s ease;
             z-index: 2000;
@@ -802,8 +350,8 @@
         }
         
         .nav-menu-header {
-            background: var(--primary);
-            color: var(--primary-foreground);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 1rem;
             display: flex;
             justify-content: space-between;
@@ -817,7 +365,7 @@
         .close-menu, .close-max-ai {
             background: transparent;
             border: none;
-            color: var(--primary-foreground);
+            color: white;
             font-size: 2rem;
             cursor: pointer;
             line-height: 1;
@@ -830,20 +378,20 @@
         .nav-item {
             display: block;
             padding: 0.75rem 1rem;
-            color: var(--foreground);
+            color: #333;
             text-decoration: none;
-            border-radius: var(--radius);
+            border-radius: 4px;
             transition: background 0.2s;
             margin-bottom: 0.5rem;
         }
         
         .nav-item:hover {
-            background: var(--muted);
+            background: #f5f5f5;
         }
         
         .nav-item.active {
-            background: hsl(207 90% 54% / 0.1);
-            color: var(--primary);
+            background: rgba(59, 130, 246, 0.1);
+            color: #764ba2;
             font-weight: 500;
         }
         
@@ -854,7 +402,7 @@
             right: 0; /* Visible by default to showcase scheduler features */
             width: 400px;
             height: 100vh;
-            background: var(--card);
+            background: white;
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
             transition: right 0.3s ease;
             z-index: 2000;
@@ -867,8 +415,8 @@
         }
         
         .max-ai-header {
-            background: var(--primary);
-            color: var(--primary-foreground);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 1rem;
             display: flex;
             justify-content: space-between;
@@ -895,19 +443,18 @@
         .max-ai-message {
             margin-bottom: 1rem;
             padding: 0.75rem;
-            border-radius: var(--radius);
+            border-radius: 8px;
             white-space: pre-wrap;
             line-height: 1.5;
         }
         
         .max-ai-message.assistant {
-            background: var(--muted);
-            color: var(--foreground);
+            background: #f0f0f0;
             font-size: 0.9rem;
         }
         
         .max-ai-message.user {
-            background: hsl(207 90% 54% / 0.1);
+            background: rgba(59, 130, 246, 0.1);
             margin-left: 2rem;
         }
         
@@ -918,57 +465,101 @@
         
         .max-ai-message strong {
             font-weight: 600;
-            color: var(--primary);
+            color: #764ba2;
         }
         
         .max-ai-input {
             display: flex;
             padding: 1rem;
-            border-top: 1px solid var(--border);
+            border-top: 1px solid #e0e0e0;
             gap: 0.5rem;
         }
         
         .max-ai-input input {
             flex: 1;
             padding: 0.5rem;
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            background: var(--background);
-            color: var(--foreground);
+            border: 1px solid #ddd;
+            border-radius: 4px;
             font-size: 0.875rem;
         }
         
         .max-ai-input button {
             padding: 0.5rem 1rem;
-            background: var(--primary);
-            color: var(--primary-foreground);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             border: none;
-            border-radius: var(--radius);
+            border-radius: 4px;
             cursor: pointer;
             font-weight: 500;
         }
         
         .max-ai-input button:hover {
-            opacity: 0.9;
+            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
         }
         
-        /* Dark theme is handled by CSS variables - removed duplicate styles */
+        /* Dark theme for nav menu and Max AI */
+        .dark-theme .nav-menu,
+        .dark-theme .max-ai-panel {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .dark-theme .nav-item {
+            color: #ccc;
+        }
+        
+        .dark-theme .nav-item:hover {
+            background: #333;
+        }
+        
+        .dark-theme .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .dark-theme .max-ai-message.assistant {
+            background: #333;
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-message.user {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-input {
+            border-top-color: #444;
+        }
+        
+        .dark-theme .max-ai-input input {
+            background: #333;
+            color: white;
+            border-color: #444;
+        }
         
         /* Quick Actions Styles */
         .max-ai-quick-actions {
             padding: 0.75rem;
-            background: var(--muted);
-            border-bottom: 1px solid var(--border);
+            background: linear-gradient(to right, #eff6ff, #e0e7ff);
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .dark-theme .max-ai-quick-actions {
+            background: linear-gradient(to right, #1a2332, #202842);
+            border-bottom: 1px solid #444;
         }
         
         .quick-actions-title {
             font-size: 0.875rem;
             font-weight: 600;
-            color: var(--foreground);
+            color: #4a5568;
             margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
             gap: 0.25rem;
+        }
+        
+        .dark-theme .quick-actions-title {
+            color: #cbd5e0;
         }
         
         .quick-actions-section {
@@ -977,8 +568,12 @@
         
         .quick-actions-label {
             font-size: 0.75rem;
-            color: var(--muted-foreground);
+            color: #718096;
             margin-bottom: 0.5rem;
+        }
+        
+        .dark-theme .quick-actions-label {
+            color: #a0aec0;
         }
         
         .quick-actions-grid {
@@ -991,10 +586,9 @@
         .quick-action-btn {
             padding: 0.5rem;
             font-size: 0.75rem;
-            background: var(--background);
-            color: var(--foreground);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -1003,11 +597,22 @@
             gap: 0.25rem;
         }
         
+        .dark-theme .quick-action-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
         .quick-action-btn:hover {
-            background: var(--muted);
-            border-color: var(--primary);
+            background: #edf2f7;
+            border-color: #764ba2;
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .dark-theme .quick-action-btn:hover {
+            background: #374151;
+            border-color: #764ba2;
         }
         
         .quick-action-btn.full-width {
@@ -1023,172 +628,28 @@
             flex: 1;
             padding: 0.4rem;
             font-size: 0.7rem;
-            background: var(--background);
-            color: var(--foreground);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
             cursor: pointer;
             transition: all 0.2s;
         }
         
+        .dark-theme .view-control-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
         .view-control-btn:hover {
-            background: var(--muted);
-            border-color: var(--muted-foreground);
-        }
-        /* FINAL AGGRESSIVE DARK MODE OVERRIDES - Must be last! */
-        html.dark ::-webkit-scrollbar,
-        html.dark body ::-webkit-scrollbar,
-        html.dark #scheduler ::-webkit-scrollbar,
-        .dark ::-webkit-scrollbar {
-            width: 12px !important;
-            height: 12px !important;
-            background-color: hsl(240, 10%, 10%) !important;
+            background: #f7fafc;
+            border-color: #a0aec0;
         }
         
-        html.dark ::-webkit-scrollbar-track,
-        html.dark body ::-webkit-scrollbar-track,
-        html.dark #scheduler ::-webkit-scrollbar-track,
-        .dark ::-webkit-scrollbar-track {
-            background-color: hsl(240, 10%, 10%) !important;
-            box-shadow: none !important;
-            border: none !important;
-        }
-        
-        html.dark ::-webkit-scrollbar-thumb,
-        html.dark body ::-webkit-scrollbar-thumb,
-        html.dark #scheduler ::-webkit-scrollbar-thumb,
-        .dark ::-webkit-scrollbar-thumb {
-            background-color: hsl(240, 5%, 25%) !important;
-            border: 2px solid hsl(240, 10%, 10%) !important;
-            border-radius: 6px !important;
-            box-shadow: none !important;
-        }
-        
-        html.dark ::-webkit-scrollbar-thumb:hover,
-        .dark ::-webkit-scrollbar-thumb:hover {
-            background-color: hsl(240, 5%, 35%) !important;
-        }
-        
-        html.dark ::-webkit-scrollbar-corner,
-        .dark ::-webkit-scrollbar-corner {
-            background-color: hsl(240, 10%, 10%) !important;
-        }
-        
-        /* Timeline header text contrast fix */
-        .dark .b-sch-header-row div,
-        .dark .b-sch-header-row span,
-        .dark .b-sch-simple-timeaxis div {
-            color: var(--foreground) !important;
+        .dark-theme .view-control-btn:hover {
+            background: #374151;
         }
     </style>
-    
-    <script>
-        // Detect and apply theme from main app settings
-        (function() {
-            // Check localStorage for theme preference
-            const storedTheme = localStorage.getItem('theme');
-            
-            // Also check for system preference
-            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            
-            // Apply theme: prioritize stored theme, then system preference
-            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
-            
-            // Apply the appropriate class to body
-            if (theme === 'dark') {
-                document.documentElement.classList.add('dark');
-            }
-            
-            // Listen for theme changes from the main app
-            window.addEventListener('storage', function(e) {
-                if (e.key === 'theme') {
-                    if (e.newValue === 'dark') {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                }
-            });
-            
-            // Also listen for messages from parent window (if in iframe)
-            window.addEventListener('message', function(e) {
-                if (e.data && e.data.type === 'THEME_CHANGE') {
-                    if (e.data.theme === 'dark') {
-                        document.documentElement.classList.add('dark');
-                    } else {
-                        document.documentElement.classList.remove('dark');
-                    }
-                }
-            });
-            
-            // Force dark scrollbars with dynamic style injection
-            function forceDarkScrollbars() {
-                if (document.documentElement.classList.contains('dark')) {
-                    const styleId = 'forced-dark-scrollbars';
-                    let style = document.getElementById(styleId);
-                    if (!style) {
-                        style = document.createElement('style');
-                        style.id = styleId;
-                        document.head.appendChild(style);
-                    }
-                    style.textContent = `
-                        /* FORCE DARK SCROLLBARS EVERYWHERE */
-                        *::-webkit-scrollbar {
-                            width: 12px !important;
-                            height: 12px !important;
-                            background-color: hsl(240, 10%, 10%) !important;
-                        }
-                        *::-webkit-scrollbar-track {
-                            background-color: hsl(240, 10%, 10%) !important;
-                            box-shadow: none !important;
-                            border: none !important;
-                        }
-                        *::-webkit-scrollbar-thumb {
-                            background-color: hsl(240, 5%, 25%) !important;
-                            border: 2px solid hsl(240, 10%, 10%) !important;
-                            border-radius: 6px !important;
-                        }
-                        *::-webkit-scrollbar-thumb:hover {
-                            background-color: hsl(240, 5%, 35%) !important;
-                        }
-                        *::-webkit-scrollbar-corner {
-                            background-color: hsl(240, 10%, 10%) !important;
-                        }
-                        /* Force text visibility in timeline headers */
-                        .b-sch-header-row * {
-                            color: hsl(0, 0%, 98%) !important;
-                        }
-                    `;
-                }
-            }
-            
-            // Apply on load and after short delay for async content
-            window.addEventListener('load', () => {
-                forceDarkScrollbars();
-                setTimeout(forceDarkScrollbars, 100);
-                setTimeout(forceDarkScrollbars, 500);
-                setTimeout(forceDarkScrollbars, 1000);
-                setTimeout(forceDarkScrollbars, 2000);
-                setTimeout(forceDarkScrollbars, 3000);
-            });
-            
-            // Watch for DOM changes and reapply styles
-            const observer = new MutationObserver(() => {
-                forceDarkScrollbars();
-            });
-            
-            // Start observing after page loads
-            window.addEventListener('DOMContentLoaded', () => {
-                observer.observe(document.body, {
-                    childList: true,
-                    subtree: true,
-                    attributes: true,
-                    attributeFilter: ['class', 'style']
-                });
-                forceDarkScrollbars();
-            });
-        })();
-    </script>
 </head>
 <body>
     <div class="header">
@@ -1232,134 +693,8 @@
         </div>
 
         <div class="toolbar-group">
-            <button id="toggleDisplayOptions">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m4.22-13.22l4.24 4.24M1.54 1.54l4.24 4.24M20.46 20.46l-4.24-4.24M1.54 20.46l4.24-4.24"></path>
-                </svg>
-                Display Options
-            </button>
-            <button id="saveSchedule">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                Save Schedule
-            </button>
-            <button id="refreshSchedule">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; vertical-align: middle; margin-right: 8px;">
-                    <polyline points="23 4 23 10 17 10"></polyline>
-                    <polyline points="1 20 1 14 7 14"></polyline>
-                    <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"></path>
-                </svg>
-                Refresh
-            </button>
-        </div>
-    </div>
-
-    <div class="display-options-panel" id="displayOptionsPanel">
-        <div class="display-options-header">
-            <span class="display-options-title">Display Options</span>
-            <div class="display-options-ai-prompt">
-                <input type="text" 
-                       id="displayPromptInput" 
-                       class="display-options-ai-input" 
-                       placeholder="Try: 'highlight late jobs' or 'show setup times'">
-                <button id="applyDisplayPrompt" class="display-options-ai-btn">
-                    ✨ Apply
-                </button>
-            </div>
-        </div>
-        
-        <div class="display-options-content">
-            <div class="display-option-group">
-                <h3>Operation Display</h3>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showOperationNames" checked>
-                    <label for="showOperationNames">Operation Names</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showJobNames" checked>
-                    <label for="showJobNames">Job/Order Names</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showProgress" checked>
-                    <label for="showProgress">Progress Percentage</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showSetupTime">
-                    <label for="showSetupTime">Setup Times</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showDuration">
-                    <label for="showDuration">Duration</label>
-                </div>
-            </div>
-
-            <div class="display-option-group">
-                <h3>Visual Highlights</h3>
-                <div class="display-option-item">
-                    <input type="checkbox" id="highlightLateJobs">
-                    <label for="highlightLateJobs">Highlight Late Jobs</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="highlightCriticalPath">
-                    <label for="highlightCriticalPath">Show Critical Path</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="highlightBottlenecks">
-                    <label for="highlightBottlenecks">Highlight Bottlenecks</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showDependencies" checked>
-                    <label for="showDependencies">Show Dependencies</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showConflicts">
-                    <label for="showConflicts">Show Conflicts</label>
-                </div>
-            </div>
-
-            <div class="display-option-group">
-                <h3>Filtering</h3>
-                <div class="display-option-item">
-                    <input type="checkbox" id="hideCompletedOps">
-                    <label for="hideCompletedOps">Hide Completed</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showOnlyToday">
-                    <label for="showOnlyToday">Today Only</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="showOnlyThisWeek">
-                    <label for="showOnlyThisWeek">This Week Only</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="filterByResource">
-                    <label for="filterByResource">Filter by Resource</label>
-                </div>
-            </div>
-
-            <div class="display-option-group">
-                <h3>Interactive Features</h3>
-                <div class="display-option-item">
-                    <input type="checkbox" id="enableTooltips" checked>
-                    <label for="enableTooltips">Show Tooltips</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="enableDragDrop" checked>
-                    <label for="enableDragDrop">Enable Drag & Drop</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="enableResize" checked>
-                    <label for="enableResize">Enable Resize</label>
-                </div>
-                <div class="display-option-item">
-                    <input type="checkbox" id="autoRefresh">
-                    <label for="autoRefresh">Auto Refresh (30s)</label>
-                </div>
-            </div>
+            <button id="saveSchedule" style="background: #10b981; font-weight: 600;">💾 Save Schedule</button>
+            <button id="refreshSchedule">↻ Refresh</button>
         </div>
     </div>
 
@@ -1388,13 +723,13 @@
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
-                // Always use the actual current date
-                const today = new Date();
+                // Set today's date to September 3, 2025
+                const today = new Date(2025, 8, 3); // September 3, 2025
                 today.setHours(8, 0, 0, 0); // Start at 8 AM
                 
-                // Helper to create a date relative to today
+                // Helper to create a date relative to September 3, 2025
                 function createDate(hoursFromNow) {
-                    const date = new Date();
+                    const date = new Date(2025, 8, 3); // September 3, 2025
                     date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
                     return date;
                 }
@@ -1402,14 +737,12 @@
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
                 let ptOperations = [];
-                let ptDependencies = [];
                 
                 try {
-                    // Fetch resources, PT operations, and dependencies from the backend APIs
-                    const [resourcesResponse, operationsResponse, dependenciesResponse] = await Promise.all([
+                    // Fetch resources and PT operations from the backend APIs
+                    const [resourcesResponse, operationsResponse] = await Promise.all([
                         fetch('/api/resources'),
-                        fetch('/api/pt-operations'),
-                        fetch('/api/dependencies')
+                        fetch('/api/pt-operations')
                     ]);
                     
                     if (resourcesResponse.ok) {
@@ -1444,16 +777,6 @@
                         }
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
-                    }
-                    
-                    if (dependenciesResponse.ok) {
-                        ptDependencies = await dependenciesResponse.json();
-                        console.log('✅ Dependencies fetched successfully:', ptDependencies.length);
-                        if (ptDependencies.length > 0) {
-                            console.log('✅ First dependency sample:', ptDependencies[0]);
-                        }
-                    } else {
-                        console.error('❌ Failed to fetch dependencies:', dependenciesResponse.status);
                     }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
@@ -1634,67 +957,8 @@
                     ];
                 }
 
-                // Create dependencies array from PT dependency data
-                const dependencies = ptDependencies.map((dep, index) => {
-                    // Map fromOperationId and toOperationId to the event IDs we created
-                    // PT operations have IDs that we prefixed with 'op-'
-                    const fromEventId = dep.fromOperationId ? `op-${dep.fromOperationId}` : null;
-                    const toEventId = dep.toOperationId ? `op-${dep.toOperationId}` : null;
-                    
-                    // Only create dependency if both events exist
-                    if (!fromEventId || !toEventId) {
-                        console.warn(`⚠️ Skipping dependency: missing operation IDs`, dep);
-                        return null;
-                    }
-                    
-                    return {
-                        id: dep.id || `dep-${index}`,
-                        fromEvent: fromEventId,
-                        toEvent: toEventId,
-                        type: dep.dependencyType || 2, // Default to Finish-to-Start (2)
-                        lag: dep.lag || 0,
-                        lagUnit: 'hour'
-                    };
-                }).filter(dep => dep !== null);
-                
-                // If no dependencies were fetched, create some sample dependencies for visualization
-                if (dependencies.length === 0 && events.length > 3) {
-                    console.log('⚠️ No dependencies found, creating sample dependencies for demonstration');
-                    
-                    // Create sample dependencies between consecutive operations
-                    for (let i = 0; i < Math.min(5, events.length - 1); i++) {
-                        dependencies.push({
-                            id: `sample-dep-${i}`,
-                            fromEvent: events[i].id,
-                            toEvent: events[i + 1].id,
-                            type: 2, // Finish-to-Start
-                            lag: 0,
-                            lagUnit: 'hour'
-                        });
-                    }
-                    
-                    // Create a few more dependencies for better visualization
-                    if (events.length > 10) {
-                        dependencies.push({
-                            id: 'sample-dep-cross-1',
-                            fromEvent: events[2].id,
-                            toEvent: events[7].id,
-                            type: 2,
-                            lag: 0,
-                            lagUnit: 'hour'
-                        });
-                        dependencies.push({
-                            id: 'sample-dep-cross-2',
-                            fromEvent: events[5].id,
-                            toEvent: events[9].id,
-                            type: 2,
-                            lag: 0,
-                            lagUnit: 'hour'
-                        });
-                    }
-                }
-                
-                console.log(`✅ Created ${dependencies.length} dependencies for scheduler`);
+                // Create dependencies array (can be enhanced based on PT data)
+                const dependencies = [];
 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
@@ -1723,17 +987,7 @@
 
                     features: {
                         // Dependencies feature for showing task relationships
-                        dependencies: {
-                            disabled: false,
-                            // Style for dependency lines
-                            style: {
-                                strokeWidth: 2,
-                                strokeColor: '#4b5563',
-                                arrowSize: 8
-                            },
-                            // Show dependency lines by default
-                            showTooltip: true
-                        },
+                        dependencies: true,
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -1813,15 +1067,14 @@
                     },
 
                     startDate: (() => {
-                        // Always start from today's actual date
-                        const start = new Date();
+                        // Start from today (September 3, 2025)
+                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
                         start.setHours(0, 0, 0, 0);
                         return start;
                     })(),
                     endDate: (() => {
                         // Show 2 weeks from today
-                        const end = new Date();
-                        end.setDate(end.getDate() + 14);
+                        const end = new Date(2025, 8, 17); // September 17, 2025
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
@@ -1830,271 +1083,6 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
-                
-                // Display Options Panel Handler
-                const displayOptionsBtn = document.getElementById('toggleDisplayOptions');
-                const displayOptionsPanel = document.getElementById('displayOptionsPanel');
-                
-                displayOptionsBtn.addEventListener('click', () => {
-                    displayOptionsPanel.classList.toggle('active');
-                });
-                
-                // Handle display option changes
-                const displayOptions = {
-                    showOperationNames: true,
-                    showJobNames: true,
-                    showProgress: true,
-                    showSetupTime: false,
-                    showDuration: false,
-                    highlightLateJobs: false,
-                    highlightCriticalPath: false,
-                    highlightBottlenecks: false,
-                    showDependencies: true,
-                    showConflicts: false,
-                    hideCompletedOps: false,
-                    showOnlyToday: false,
-                    showOnlyThisWeek: false,
-                    filterByResource: false,
-                    enableTooltips: true,
-                    enableDragDrop: true,
-                    enableResize: true,
-                    autoRefresh: false
-                };
-                
-                // Function to apply display options to scheduler
-                function applyDisplayOptions() {
-                    // Update event renderer based on display options
-                    scheduler.eventRenderer = ({ eventRecord, renderData }) => {
-                        renderData.eventColor = eventRecord.eventColor;
-                        
-                        // Build event content based on display options
-                        let contentHtml = '<div style="padding: 4px;">';
-                        
-                        // Job name
-                        if (displayOptions.showJobNames && eventRecord.jobName) {
-                            contentHtml += `<div style="font-weight: 600; font-size: 11px; opacity: 0.7;">${eventRecord.jobName}</div>`;
-                        }
-                        
-                        // Operation name
-                        if (displayOptions.showOperationNames) {
-                            contentHtml += `<div style="font-weight: 500; font-size: 12px;">${eventRecord.name || eventRecord.operationName || 'Operation'}</div>`;
-                        }
-                        
-                        // Progress
-                        if (displayOptions.showProgress) {
-                            contentHtml += `<div style="font-size: 11px; opacity: 0.8;">${eventRecord.percentDone || 0}% complete</div>`;
-                        }
-                        
-                        // Duration
-                        if (displayOptions.showDuration) {
-                            contentHtml += `<div style="font-size: 10px; opacity: 0.7;">${eventRecord.duration}h</div>`;
-                        }
-                        
-                        // Setup time (if available)
-                        if (displayOptions.showSetupTime && eventRecord.setupTime) {
-                            contentHtml += `<div style="font-size: 10px; opacity: 0.7;">Setup: ${eventRecord.setupTime}h</div>`;
-                        }
-                        
-                        contentHtml += '</div>';
-                        
-                        // Highlight late jobs
-                        if (displayOptions.highlightLateJobs && eventRecord.isLate) {
-                            renderData.eventColor = '#ff4444';
-                        }
-                        
-                        // Highlight critical path
-                        if (displayOptions.highlightCriticalPath && eventRecord.isCritical) {
-                            renderData.cls = 'critical-path';
-                        }
-                        
-                        return { html: contentHtml };
-                    };
-                    
-                    // Toggle features
-                    scheduler.features.dependencies.disabled = !displayOptions.showDependencies;
-                    scheduler.features.eventTooltip.disabled = !displayOptions.enableTooltips;
-                    scheduler.features.eventDrag.disabled = !displayOptions.enableDragDrop;
-                    scheduler.features.eventResize.disabled = !displayOptions.enableResize;
-                    
-                    // Apply filters
-                    scheduler.eventStore.filter(event => {
-                        // Hide completed operations
-                        if (displayOptions.hideCompletedOps && event.percentDone >= 100) {
-                            return false;
-                        }
-                        
-                        // Show only today
-                        if (displayOptions.showOnlyToday) {
-                            const today = new Date(2025, 8, 3); // Sept 3, 2025
-                            const eventDate = new Date(event.startDate);
-                            if (eventDate.toDateString() !== today.toDateString()) {
-                                return false;
-                            }
-                        }
-                        
-                        // Show only this week
-                        if (displayOptions.showOnlyThisWeek) {
-                            const weekStart = new Date(2025, 8, 1); // Sept 1
-                            const weekEnd = new Date(2025, 8, 7); // Sept 7
-                            const eventDate = new Date(event.startDate);
-                            if (eventDate < weekStart || eventDate > weekEnd) {
-                                return false;
-                            }
-                        }
-                        
-                        return true;
-                    });
-                    
-                    // Handle dependency visibility
-                    if (scheduler.features.dependencies) {
-                        scheduler.features.dependencies.disabled = !displayOptions.showDependencies;
-                    }
-                    
-                    // Refresh the scheduler
-                    scheduler.refresh();
-                }
-                
-                // Add event listeners to all display option checkboxes
-                document.querySelectorAll('#displayOptionsPanel input[type="checkbox"]').forEach(checkbox => {
-                    checkbox.addEventListener('change', (e) => {
-                        const optionName = e.target.id;
-                        displayOptions[optionName] = e.target.checked;
-                        applyDisplayOptions();
-                        
-                        // Handle auto-refresh
-                        if (optionName === 'autoRefresh') {
-                            if (e.target.checked) {
-                                window.autoRefreshInterval = setInterval(() => {
-                                    document.getElementById('refreshSchedule').click();
-                                }, 30000);
-                            } else {
-                                clearInterval(window.autoRefreshInterval);
-                            }
-                        }
-                    });
-                });
-                
-                // AI-powered display prompt handler
-                const promptInput = document.getElementById('displayPromptInput');
-                const applyPromptBtn = document.getElementById('applyDisplayPrompt');
-                
-                async function interpretDisplayPrompt(prompt) {
-                    try {
-                        // Call server endpoint to interpret the prompt using OpenAI
-                        const response = await fetch('/api/ai/interpret-display-options', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify({
-                                prompt: prompt,
-                                availableOptions: Object.keys(displayOptions)
-                            })
-                        });
-                        
-                        if (!response.ok) {
-                            // Fallback to simple keyword matching if API fails
-                            return interpretPromptLocally(prompt);
-                        }
-                        
-                        const data = await response.json();
-                        if (data.options) {
-                            return data.options;
-                        }
-                        
-                        // If no options returned, use local interpretation
-                        return interpretPromptLocally(prompt);
-                    } catch (error) {
-                        console.error('Display options AI interpretation error:', error);
-                        // Fallback to local interpretation
-                        return interpretPromptLocally(prompt);
-                    }
-                }
-                
-                // Local fallback prompt interpretation
-                function interpretPromptLocally(prompt) {
-                    const lower = prompt.toLowerCase();
-                    const changes = {};
-                    
-                    // Highlight commands
-                    if (lower.includes('highlight')) {
-                        if (lower.includes('late')) changes.highlightLateJobs = true;
-                        if (lower.includes('critical')) changes.highlightCriticalPath = true;
-                        if (lower.includes('bottleneck')) changes.highlightBottlenecks = true;
-                    }
-                    
-                    // Show/Hide commands
-                    if (lower.includes('show')) {
-                        if (lower.includes('setup')) changes.showSetupTime = true;
-                        if (lower.includes('duration')) changes.showDuration = true;
-                        if (lower.includes('progress')) changes.showProgress = true;
-                        if (lower.includes('job')) changes.showJobNames = true;
-                        if (lower.includes('operation')) changes.showOperationNames = true;
-                        if (lower.includes('dependencies')) changes.showDependencies = true;
-                        if (lower.includes('conflict')) changes.showConflicts = true;
-                    }
-                    
-                    if (lower.includes('hide')) {
-                        if (lower.includes('completed')) changes.hideCompletedOps = true;
-                        if (lower.includes('progress')) changes.showProgress = false;
-                        if (lower.includes('job')) changes.showJobNames = false;
-                        if (lower.includes('operation')) changes.showOperationNames = false;
-                    }
-                    
-                    // Filter commands
-                    if (lower.includes('today')) changes.showOnlyToday = true;
-                    if (lower.includes('week')) changes.showOnlyThisWeek = true;
-                    
-                    // Feature toggles
-                    if (lower.includes('disable drag')) changes.enableDragDrop = false;
-                    if (lower.includes('enable drag')) changes.enableDragDrop = true;
-                    if (lower.includes('auto refresh')) changes.autoRefresh = true;
-                    
-                    return changes;
-                }
-                
-                applyPromptBtn.addEventListener('click', async () => {
-                    const prompt = promptInput.value.trim();
-                    if (!prompt) return;
-                    
-                    applyPromptBtn.disabled = true;
-                    applyPromptBtn.textContent = '⏳ Processing...';
-                    
-                    try {
-                        const changes = await interpretDisplayPrompt(prompt);
-                        
-                        // Apply the changes
-                        Object.keys(changes).forEach(key => {
-                            if (key in displayOptions) {
-                                displayOptions[key] = changes[key];
-                                const checkbox = document.getElementById(key);
-                                if (checkbox) {
-                                    checkbox.checked = changes[key];
-                                }
-                            }
-                        });
-                        
-                        // Apply the display options
-                        applyDisplayOptions();
-                        
-                        // Clear input
-                        promptInput.value = '';
-                        
-                        // Close the display options panel
-                        displayOptionsPanel.classList.remove('active');
-                        
-                    } finally {
-                        applyPromptBtn.disabled = false;
-                        applyPromptBtn.textContent = '✨ Apply';
-                    }
-                });
-                
-                // Allow Enter key to apply prompt
-                promptInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        applyPromptBtn.click();
-                    }
-                });
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
@@ -2894,13 +1882,6 @@
                     await asapScheduling();
                     updateStatus();
                     console.log('✅ ASAP scheduling applied successfully');
-                    
-                    // Auto fit to view after scheduling
-                    scheduler.zoomToFit({
-                        leftMargin: 50,
-                        rightMargin: 50
-                    });
-                    console.log('📐 Auto-fit to view applied');
                     
                     // Add welcome message to Max AI
                     const maxMessages = document.getElementById('maxMessages');
