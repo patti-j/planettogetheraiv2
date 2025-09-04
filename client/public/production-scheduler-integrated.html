@@ -690,25 +690,26 @@
                     ];
                 }
 
-                // Map resources to create resource lookup
+                // Map resources to create resource lookup by both ID and name
                 const resourceMap = new Map();
+                const resourceByName = new Map();
                 resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
+                    // Also create a name-based lookup for better matching
+                    resourceByName.set(resource.name?.toLowerCase(), resource);
                 });
                 
                 // Transform PT operations into Bryntum events format with ASAP constraints
                 let events = ptOperations.map((operation, index) => {
                     // First try to find a matching resource
-                    let resourceId = findResourceId(operation, resourceMap, resources);
+                    let resourceId = findResourceId(operation, resourceMap, resourceByName, resources);
                     
-                    // Check if operation is truly unscheduled (no resource assignment or explicitly unscheduled)
-                    const isUnscheduled = !resourceId || 
-                                        operation.assignmentType === 'unscheduled' ||
-                                        operation.isActuallyScheduled === false ||
+                    // Check if operation is truly unscheduled (no scheduled start time OR no valid resource)
+                    const isUnscheduled = (!operation.startTime && !operation.scheduled_start) ||
                                         operation.resourceName === 'Resource null' ||
-                                        operation.resourceName === null ||
-                                        !operation.resourceName;
+                                        operation.resourceName === 'Unassigned' ||
+                                        (!resourceId && !operation.resourceName);
                     
                     let startDate;
                     
@@ -753,7 +754,7 @@
                 }).filter(event => event.resourceId); // Only include operations with valid resources
                 
                 // Helper function to find the correct resource ID
-                function findResourceId(operation, resourceMap, resources) {
+                function findResourceId(operation, resourceMap, resourceByName, resources) {
                     // Try various ways to match the resource
                     if (operation.resourceId && resourceMap.has(operation.resourceId)) {
                         return operation.resourceId;
@@ -761,11 +762,37 @@
                     if (operation.resource_id && resourceMap.has(operation.resource_id)) {
                         return operation.resource_id;
                     }
-                    if (operation.resourceName && resourceMap.has(operation.resourceName)) {
-                        return resourceMap.get(operation.resourceName).id;
+                    // Try to match by exact name
+                    if (operation.resourceName) {
+                        if (resourceMap.has(operation.resourceName)) {
+                            return resourceMap.get(operation.resourceName).id;
+                        }
+                        // Try case-insensitive match
+                        const lowerName = operation.resourceName.toLowerCase();
+                        if (resourceByName.has(lowerName)) {
+                            return resourceByName.get(lowerName).id;
+                        }
+                        // If resource name exists but not found in map, create a new resource entry
+                        if (operation.resourceName !== 'Resource null' && operation.resourceName !== 'Unassigned') {
+                            // Create a dynamic resource ID based on the name
+                            const dynamicId = `resource_${operation.resourceName.replace(/\s+/g, '_').toLowerCase()}`;
+                            // Add it to resources if not already there
+                            if (!resourceMap.has(dynamicId)) {
+                                const newResource = {
+                                    id: dynamicId,
+                                    name: operation.resourceName,
+                                    category: 'Manufacturing'
+                                };
+                                resources.push(newResource);
+                                resourceMap.set(dynamicId, newResource);
+                                resourceMap.set(operation.resourceName, newResource);
+                                resourceByName.set(operation.resourceName.toLowerCase(), newResource);
+                            }
+                            return dynamicId;
+                        }
                     }
-                    // Fallback to first available resource
-                    return resources[0]?.id || 'resource1';
+                    // Don't fallback to a random resource if not found - return null for unscheduled
+                    return null;
                 }
                 
                 // Helper function to assign colors based on operation type
