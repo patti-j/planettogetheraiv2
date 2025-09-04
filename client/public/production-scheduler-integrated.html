@@ -302,14 +302,14 @@
             position: relative;
         }
         
+        /* Keep grid lines visible and ensure proper borders */
         .b-grid-row {
             position: relative;
-            border-bottom: 1px solid transparent;
-            transition: border-color 0.2s;
+            border-bottom: 1px solid var(--border) !important;
         }
         
-        .b-grid-row:hover {
-            border-bottom-color: var(--border);
+        .b-grid-cell {
+            border-right: 1px solid var(--border) !important;
         }
         
         /* Visual indicator for row height button */
