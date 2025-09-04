@@ -1518,6 +1518,9 @@
                         // Clear input
                         promptInput.value = '';
                         
+                        // Close the display options panel
+                        displayOptionsPanel.classList.remove('active');
+                        
                     } finally {
                         applyPromptBtn.disabled = false;
                         applyPromptBtn.textContent = '✨ Apply';
