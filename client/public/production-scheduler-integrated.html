@@ -261,6 +261,34 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 0.5rem;
+            position: relative;
+        }
+        
+        .display-options-close {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 0.25rem;
+            cursor: pointer;
+            color: var(--muted-foreground);
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .display-options-close:hover {
+            background: var(--muted);
+            color: var(--foreground);
+            border-color: var(--muted-foreground);
+        }
+        
+        .display-options-close svg {
+            width: 16px;
+            height: 16px;
         }
 
         .display-options-title {
@@ -1565,6 +1593,12 @@
                     ✨ Apply
                 </button>
             </div>
+            <button id="closeDisplayOptions" class="display-options-close" title="Close">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
         </div>
         
         <div class="display-options-content">
@@ -2166,6 +2200,14 @@
                 displayOptionsBtn.addEventListener('click', () => {
                     displayOptionsPanel.classList.toggle('active');
                 });
+                
+                // Close Display Options button
+                const closeDisplayOptionsBtn = document.getElementById('closeDisplayOptions');
+                if (closeDisplayOptionsBtn) {
+                    closeDisplayOptionsBtn.addEventListener('click', () => {
+                        displayOptionsPanel.classList.remove('active');
+                    });
+                }
                 
                 // Handle display option changes
                 const displayOptions = {
