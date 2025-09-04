@@ -66,13 +66,13 @@
 
 /* Toolbar styling */
 .b-toolbar {
-  background: #f9fafb;
+  background: linear-gradient(to right, #f3f4f6, #ffffff);
   border-bottom: 1px solid #e5e7eb;
   padding: 8px;
 }
 
 .dark .b-toolbar {
-  background: #1f2937;
+  background: linear-gradient(to right, #1f2937, #374151);
   border-bottom: 1px solid #4b5563;
 }
 

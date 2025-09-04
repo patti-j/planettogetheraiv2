@@ -944,7 +944,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         />
         {isLoading && (
           <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600"></div>
           </div>
         )}
       </div>
