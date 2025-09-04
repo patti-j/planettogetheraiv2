@@ -1028,12 +1028,23 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     size="sm" 
                     className="text-xs px-2 py-1.5 h-auto col-span-2"
                     onClick={() => {
-                      const iframe = document.querySelector('iframe') as HTMLIFrameElement;
-                      if (iframe?.contentWindow) {
-                        iframe.contentWindow.postMessage({ 
-                          type: 'ANALYZE_SCHEDULE' 
-                        }, '*');
-                      }
+                      // Switch to chat tab
+                      setActiveTab('chat');
+                      
+                      // Set the analysis prompt
+                      const analysisPrompt = `Analyze the current production schedule and provide insights on:
+1. Resource utilization across all machines
+2. Potential bottlenecks or resource conflicts  
+3. Overall schedule efficiency and completion time
+4. Recommendations for optimization (which algorithms to run)
+5. Critical path analysis`;
+                      
+                      setPrompt(analysisPrompt);
+                      
+                      // Trigger send after a brief delay to ensure UI updates
+                      setTimeout(() => {
+                        handleSendMessage();
+                      }, 100);
                     }}
                   >
                     ✨ Analyze Schedule

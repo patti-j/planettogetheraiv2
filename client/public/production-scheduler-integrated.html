@@ -986,11 +986,6 @@
                     if (event.data && event.data.type === 'RUN_ALGORITHM') {
                         runSchedulerAlgorithm(event.data.algorithm);
                     }
-                    
-                    // Handle analyze schedule request from parent
-                    if (event.data && event.data.type === 'ANALYZE_SCHEDULE') {
-                        analyzeSchedule();
-                    }
                 });
                 
                 // Function to run scheduler algorithms from quick actions
@@ -1021,45 +1016,8 @@
                     }
                 }
                 
-                // Function to analyze the schedule
-                function analyzeSchedule() {
-                    // Gather schedule metrics
-                    const operationCount = document.getElementById('operationCount')?.textContent || 'N/A';
-                    const utilization = document.getElementById('resourceUtilization')?.textContent || 'N/A';
-                    const completionDate = document.getElementById('completionDate')?.textContent || 'N/A';
-                    
-                    // Create analysis summary
-                    const analysisMessage = `Schedule Analysis Summary:
-                    
-📊 Current Metrics:
-• ${operationCount}
-• ${utilization}
-• ${completionDate}
-
-🔍 Analysis:
-• The schedule has been loaded with operations
-• Resources are being utilized across multiple time periods
-• Consider running optimization algorithms (ASAP, ALAP, Critical Path) to improve efficiency
-• Use the Drum (TOC) algorithm to identify and optimize bottleneck resources
-
-💡 Recommendations:
-• Run ASAP to minimize lead times
-• Apply Resource Leveling to balance workload
-• Check Critical Path for schedule compression opportunities`;
-                    
-                    // Send analysis message to parent window for display in Max AI
-                    window.parent.postMessage({
-                        type: 'SCHEDULE_ANALYSIS',
-                        message: analysisMessage
-                    }, '*');
-                    
-                    // Also log to console for debugging
-                    console.log('Schedule Analysis:', analysisMessage);
-                }
-                
                 // Make functions available globally for onclick handlers
                 window.runSchedulerAlgorithm = runSchedulerAlgorithm;
-                window.analyzeSchedule = analyzeSchedule;
                 
                 // Max AI chat functionality removed - handled by main app's AI panel
                 function sendMaxMessage() {
