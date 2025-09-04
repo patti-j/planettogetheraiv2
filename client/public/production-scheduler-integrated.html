@@ -2108,7 +2108,7 @@
                             }
                         ]
                     },
-                    rowHeight: isMobile ? 50 : 50,
+                    rowHeight: 50,
                     barMargin: isMobile ? 5 : 8,
                     
                     // Mobile-specific settings
@@ -2999,86 +2999,42 @@
                     const sizes = [30, 40, 50, 60, 90];
                     const sizeNames = ['XS', 'S', 'M', 'L', 'XL'];
                     let currentSizeIndex = 2; // Start at 'M' (50px) to match initial rowHeight
-                    let currentRowHeight = 50;
-                    let rowObserver = null;
-                    
-                    // Function to force row heights
-                    const forceRowHeight = (height) => {
-                        // Apply to all row elements
-                        const selectors = [
-                            '.b-grid-row',
-                            '.b-sch-row', 
-                            '.b-grid-cell',
-                            '.b-sch-timeaxis-cell',
-                            '.b-grid-subgrid-normal .b-grid-row',
-                            '.b-grid-subgrid-locked .b-grid-row',
-                            '.b-timeline-subgrid .b-grid-row'
-                        ];
-                        
-                        selectors.forEach(selector => {
-                            document.querySelectorAll(selector).forEach(el => {
-                                el.style.setProperty('height', `${height}px`, 'important');
-                                el.style.setProperty('min-height', `${height}px`, 'important');
-                                el.style.setProperty('max-height', `${height}px`, 'important');
-                                el.style.setProperty('line-height', `${height}px`, 'important');
-                            });
-                        });
-                        
-                        // Update events
-                        document.querySelectorAll('.b-sch-event').forEach(el => {
-                            const eventHeight = Math.max(20, height - 10);
-                            el.style.setProperty('height', `${eventHeight}px`, 'important');
-                        });
-                    };
-                    
-                    // Set up MutationObserver to maintain row heights
-                    const setupRowObserver = (height) => {
-                        if (rowObserver) {
-                            rowObserver.disconnect();
-                        }
-                        
-                        rowObserver = new MutationObserver(() => {
-                            forceRowHeight(height);
-                        });
-                        
-                        const schedulerEl = document.getElementById('scheduler');
-                        if (schedulerEl) {
-                            rowObserver.observe(schedulerEl, {
-                                childList: true,
-                                subtree: true,
-                                attributes: true,
-                                attributeFilter: ['style']
-                            });
-                        }
-                    };
                     
                     rowSizeBtn.addEventListener('click', () => {
                         // Cycle to next size
                         currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
                         const newHeight = sizes[currentSizeIndex];
-                        currentRowHeight = newHeight;
                         
-                        // Apply new height to scheduler
+                        // Set the row height using Bryntum's setter
                         scheduler.rowHeight = newHeight;
                         
-                        // Force refresh
+                        // Force update via config object which triggers internal refresh
+                        scheduler.setConfig({
+                            rowHeight: newHeight
+                        });
+                        
+                        // Additionally update each subgrid's row height directly
+                        const updateSubGridHeight = (subGrid) => {
+                            if (subGrid) {
+                                subGrid.rowHeight = newHeight;
+                                if (subGrid._rowHeight !== newHeight) {
+                                    subGrid._rowHeight = newHeight;
+                                }
+                            }
+                        };
+                        
+                        // Update all possible subgrids
+                        if (scheduler.subGrids) {
+                            Object.values(scheduler.subGrids).forEach(updateSubGridHeight);
+                        }
+                        
+                        // Call Bryntum's internal row height update
+                        if (scheduler.refreshRows) {
+                            scheduler.refreshRows();
+                        }
+                        
+                        // Final refresh to ensure everything is updated
                         scheduler.refresh();
-                        
-                        // Apply heights immediately
-                        forceRowHeight(newHeight);
-                        
-                        // Setup observer to maintain heights
-                        setupRowObserver(newHeight);
-                        
-                        // Apply again after short delay to catch any late renders
-                        setTimeout(() => {
-                            forceRowHeight(newHeight);
-                        }, 100);
-                        
-                        // And once more after animations complete
-                        setTimeout(() => {
-                            forceRowHeight(newHeight);
-                        }, 500);
                         
                         // Also update the CSS for consistent row heights - target all Bryntum row elements
                         const styleElement = document.getElementById('dynamic-row-height') || document.createElement('style');
