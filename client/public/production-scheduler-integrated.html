@@ -492,6 +492,38 @@
         .dark .b-scrollbar-thumb {
             background: var(--muted-foreground) !important;
         }
+        
+        /* Native scrollbar styling for dark mode */
+        .dark ::-webkit-scrollbar {
+            width: 12px;
+            height: 12px;
+            background: var(--background);
+        }
+        
+        .dark ::-webkit-scrollbar-track {
+            background: var(--background);
+            border: 1px solid var(--border);
+        }
+        
+        .dark ::-webkit-scrollbar-thumb {
+            background: var(--muted-foreground);
+            border-radius: 6px;
+            border: 2px solid var(--background);
+        }
+        
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background: hsl(240, 5%, 50%);
+        }
+        
+        .dark ::-webkit-scrollbar-corner {
+            background: var(--background);
+        }
+        
+        /* Firefox scrollbar support */
+        .dark * {
+            scrollbar-width: thin;
+            scrollbar-color: var(--muted-foreground) var(--background);
+        }
 
         /* Fix white areas in scheduler panels */
         .dark .b-panel,
