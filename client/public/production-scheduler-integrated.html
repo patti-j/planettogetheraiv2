@@ -493,36 +493,92 @@
             background: var(--muted-foreground) !important;
         }
         
-        /* Native scrollbar styling for dark mode */
+        /* Native scrollbar styling for dark mode - more aggressive override */
         .dark ::-webkit-scrollbar {
-            width: 12px;
-            height: 12px;
-            background: var(--background);
+            width: 12px !important;
+            height: 12px !important;
+            background: var(--background) !important;
         }
         
         .dark ::-webkit-scrollbar-track {
-            background: var(--background);
-            border: 1px solid var(--border);
+            background: var(--background) !important;
+            border: 1px solid var(--border) !important;
+            border-radius: 0 !important;
         }
         
         .dark ::-webkit-scrollbar-thumb {
-            background: var(--muted-foreground);
-            border-radius: 6px;
-            border: 2px solid var(--background);
+            background: hsl(240, 5%, 30%) !important;
+            border-radius: 6px !important;
+            border: 2px solid var(--background) !important;
         }
         
         .dark ::-webkit-scrollbar-thumb:hover {
-            background: hsl(240, 5%, 50%);
+            background: hsl(240, 5%, 40%) !important;
         }
         
         .dark ::-webkit-scrollbar-corner {
-            background: var(--background);
+            background: var(--background) !important;
+        }
+        
+        /* Override Bryntum's scrollbar styles */
+        .dark .b-widget ::-webkit-scrollbar {
+            background: var(--background) !important;
+        }
+        
+        .dark .b-widget ::-webkit-scrollbar-track {
+            background: var(--background) !important;
+        }
+        
+        .dark .b-widget ::-webkit-scrollbar-thumb {
+            background: hsl(240, 5%, 30%) !important;
+        }
+        
+        /* More aggressive dark mode scrollbar overrides for Bryntum components */
+        .dark .b-schedulerpro ::-webkit-scrollbar,
+        .dark .b-grid ::-webkit-scrollbar,
+        .dark .b-grid-vertical-scroller ::-webkit-scrollbar,
+        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar,
+        .dark #scheduler ::-webkit-scrollbar {
+            width: 12px !important;
+            height: 12px !important;
+            background-color: hsl(240, 10%, 10%) !important;
+        }
+        
+        .dark .b-schedulerpro ::-webkit-scrollbar-track,
+        .dark .b-grid ::-webkit-scrollbar-track,
+        .dark .b-grid-vertical-scroller ::-webkit-scrollbar-track,
+        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar-track,
+        .dark #scheduler ::-webkit-scrollbar-track {
+            background-color: hsl(240, 10%, 10%) !important;
+            border: none !important;
+        }
+        
+        .dark .b-schedulerpro ::-webkit-scrollbar-thumb,
+        .dark .b-grid ::-webkit-scrollbar-thumb,
+        .dark .b-grid-vertical-scroller ::-webkit-scrollbar-thumb,
+        .dark .b-grid-horizontal-scroller ::-webkit-scrollbar-thumb,
+        .dark #scheduler ::-webkit-scrollbar-thumb {
+            background-color: hsl(240, 5%, 25%) !important;
+            border-radius: 6px !important;
+            border: 2px solid hsl(240, 10%, 10%) !important;
+        }
+        
+        .dark .b-schedulerpro ::-webkit-scrollbar-thumb:hover,
+        .dark .b-grid ::-webkit-scrollbar-thumb:hover,
+        .dark #scheduler ::-webkit-scrollbar-thumb:hover {
+            background-color: hsl(240, 5%, 35%) !important;
+        }
+        
+        .dark .b-schedulerpro ::-webkit-scrollbar-corner,
+        .dark .b-grid ::-webkit-scrollbar-corner,
+        .dark #scheduler ::-webkit-scrollbar-corner {
+            background-color: hsl(240, 10%, 10%) !important;
         }
         
         /* Firefox scrollbar support */
         .dark * {
             scrollbar-width: thin;
-            scrollbar-color: var(--muted-foreground) var(--background);
+            scrollbar-color: hsl(240, 5%, 30%) var(--background);
         }
 
         /* Fix white areas in scheduler panels */
@@ -543,6 +599,50 @@
         .dark .b-sch-event-content,
         .dark .b-grid-cell-value {
             color: inherit !important;
+        }
+        
+        /* Fix alignment between resource panel and timeline */
+        .b-sch-timeaxiscolumn .b-sch-header-row {
+            height: 60px !important;
+        }
+        
+        .b-grid-headers {
+            height: 60px !important;
+        }
+        
+        .b-grid-header {
+            height: 60px !important;
+        }
+        
+        /* Align the headers properly */
+        .b-sch-header-row-main {
+            height: 30px !important;
+        }
+        
+        .b-sch-header-row-bottom {
+            height: 30px !important;
+        }
+        
+        /* Ensure resource header matches timeline header */
+        .b-grid-headers-normal .b-grid-header {
+            height: 60px !important;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Keep row heights consistent */
+        .b-grid-row {
+            height: 45px !important;
+        }
+        
+        .b-schedulerpro .b-grid-row {
+            height: 45px !important;
+        }
+        
+        /* Fix vertical alignment of resource cells */
+        .b-grid-cell {
+            display: flex;
+            align-items: center;
         }
 
         #scheduler {
