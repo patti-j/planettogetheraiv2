@@ -1007,39 +1007,38 @@
                         algorithmDropdown.value = algorithmMap[algorithm];
                         applyButton.click();
                         
-                        // Add a feedback message in Max AI
-                        const aiMsg = document.createElement('div');
-                        aiMsg.className = 'max-ai-message assistant';
-                        aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
-                        maxMessages.appendChild(aiMsg);
-                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                        // Max AI feedback removed - handled by main app's AI panel
+                        // const aiMsg = document.createElement('div');
+                        // aiMsg.className = 'max-ai-message assistant';
+                        // aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
+                        // maxMessages.appendChild(aiMsg);
+                        // maxMessages.scrollTop = maxMessages.scrollHeight;
                     }
                 }
                 
-                // Function to analyze the schedule
+                // Function to analyze the schedule - removed, using main app's AI panel
                 function analyzeSchedule() {
-                    const maxInput = document.getElementById('maxInput');
-                    const maxSend = document.getElementById('maxSend');
-                    
-                    // Set the analysis message and send it
-                    maxInput.value = 'Analyze the current production schedule and provide insights on bottlenecks, resource utilization, and optimization opportunities';
-                    maxSend.click();
+                    // This function is now handled by the main app's Max AI panel
+                    console.log('Analyze schedule should be triggered from Max AI panel');
                 }
                 
                 // Make functions available globally for onclick handlers
                 window.runSchedulerAlgorithm = runSchedulerAlgorithm;
                 window.analyzeSchedule = analyzeSchedule;
                 
-                // Max AI chat functionality with algorithm execution
+                // Max AI chat functionality removed - handled by main app's AI panel
                 function sendMaxMessage() {
-                    const message = maxInput.value.trim();
-                    if (!message) return;
+                    // This function is now handled by the main app's Max AI panel
+                    console.log('Max AI chat is handled by the main app panel');
+                    return;
                     
-                    // Add user message
-                    const userMsg = document.createElement('div');
-                    userMsg.className = 'max-ai-message user';
-                    userMsg.textContent = message;
-                    maxMessages.appendChild(userMsg);
+                    // Removed code that references deleted elements
+                    // const message = maxInput.value.trim();
+                    // if (!message) return;
+                    // const userMsg = document.createElement('div');
+                    // userMsg.className = 'max-ai-message user';
+                    // userMsg.textContent = message;
+                    // maxMessages.appendChild(userMsg);
                     
                     // Clear input
                     maxInput.value = '';
@@ -1250,10 +1249,11 @@
                     maxMessages.scrollTop = maxMessages.scrollHeight;
                 }
                 
-                maxSend.addEventListener('click', sendMaxMessage);
-                maxInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') sendMaxMessage();
-                });
+                // Max AI event listeners removed - using main app's AI panel
+                // maxSend.addEventListener('click', sendMaxMessage);
+                // maxInput.addEventListener('keypress', (e) => {
+                //     if (e.key === 'Enter') sendMaxMessage();
+                // });
                 
                 // Theme toggle removed - using consistent light theme with blue-purple gradient
                 
