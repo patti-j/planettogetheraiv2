@@ -69,7 +69,29 @@ Note on concurrent work:
 - **Mobile Responsiveness**: Mobile-first design with enhanced login page accessibility and proper viewport handling.
 - **AI Alert System**: Configurable AI analysis triggers (scheduled, event-based, threshold-based, continuous) with OpenAI GPT-4o integration.
 - **Data Schema Visualization**: Interactive lasso selection tool for focused analysis of table groups.
-- **PT Table Structure Integrity**: **CRITICAL: We EXCLUSIVELY use PT (PlanetTogether) tables for ALL manufacturing-related data**. The legacy non-PT tables (operations, dependencies, discrete_operations, process_operations, etc.) are DEPRECATED and must not be used. All manufacturing logic must reference PT tables only (ptjoboperations, ptjobs, ptresources, ptjobresources, etc.). It is acceptable to add columns to PT tables when needed for additional functionality. However, DO NOT delete any PT tables or columns without asking for approval. Minimize modifications to PT Publish table structures; maintain original structure with documented variations. Dependencies between operations should use PT tables like ptjobsuccessormanufacturingorders. Map to PT column names, accept complex joins, and use PT's specific timestamp names and external_id fields when integrating with PT Publish tables.
+- **PT Table Structure Integrity**: 
+  - **🚨 CRITICAL RULE**: **We EXCLUSIVELY use PT (PlanetTogether) tables for ALL manufacturing-related data. NO EXCEPTIONS.**
+  - **DEPRECATED TABLES TO IGNORE**: The following legacy tables are COMPLETELY DEPRECATED and MUST NEVER BE USED:
+    - `operations` → use `ptjoboperations`
+    - `dependencies` → use `ptjobsuccessormanufacturingorders`
+    - `discrete_operations` → use `ptjoboperations`
+    - `process_operations` → use `ptjoboperations`
+    - `production_orders` → use `ptjobs`
+    - `work_centers` → use `ptresources`
+    - ANY non-PT manufacturing table → find the PT equivalent
+  - **REQUIRED PT TABLES FOR MANUFACTURING**:
+    - Operations: `ptjoboperations`
+    - Jobs/Orders: `ptjobs`
+    - Resources: `ptresources`
+    - Resource Assignments: `ptjobresources`
+    - Dependencies: `ptjobsuccessormanufacturingorders`
+    - Manufacturing Orders: `ptmanufacturingorders`
+    - Activities: `ptjobactivities`
+  - **MODIFICATION RULES**: 
+    - ✅ OK: Add columns to PT tables for additional functionality
+    - ❌ FORBIDDEN: Delete any PT tables or columns without explicit approval
+    - ❌ FORBIDDEN: Use any non-PT table for manufacturing data
+  - **INTEGRATION NOTES**: Map to PT column names, accept complex joins, use PT's specific timestamp names and external_id fields when integrating with PT Publish tables.
 - **External Partners Portal**: Single multi-tenant portal architecture serving suppliers, customers, and OEM partners with an AI-first approach (intelligent onboarding, natural language interfaces, predictive analytics, role-based experiences).
 - **AI Agents Control Panel**: Centralized management interface for all AI agents (Max AI Assistant, System Monitoring Agent, Production Optimization Agent, Quality Analysis Agent, Predictive Maintenance Agent) with status, configuration, frequency, and performance controls.
 - **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization configuration, performance visualization, and real-time plant monitoring with automated algorithm selection and parameter tuning.
