@@ -660,6 +660,14 @@
                         ];
                     }
                     
+                    // Add an "Unscheduled" resource at the top to hold unscheduled operations
+                    resources.unshift({
+                        id: 'unscheduled',
+                        name: '🔄 Unscheduled Operations',
+                        category: 'Unscheduled',
+                        eventColor: '#808080' // Gray color for unscheduled items
+                    });
+                    
                     if (operationsResponse.ok) {
                         ptOperations = await operationsResponse.json();
                         console.log('✅ PT Operations fetched successfully:', ptOperations.length);
@@ -690,13 +698,33 @@
                 });
                 
                 // Transform PT operations into Bryntum events format with ASAP constraints
-                let events = ptOperations.map(operation => {
-                    // Convert operation dates to September 2025 timeframe
-                    const originalDate = new Date(operation.startTime || operation.start_date);
-                    // Map dates from late August to early September
-                    const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
-                    const startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
-                    startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                let events = ptOperations.map((operation, index) => {
+                    // Check if operation is unscheduled (no startTime or invalid date)
+                    const isUnscheduled = !operation.startTime || 
+                                        !operation.start_date || 
+                                        operation.startTime === null || 
+                                        operation.start_date === null ||
+                                        isNaN(new Date(operation.startTime || operation.start_date).getTime());
+                    
+                    let startDate;
+                    let resourceId;
+                    
+                    if (isUnscheduled) {
+                        // Place unscheduled operations on the unscheduled resource line
+                        // Spread them out horizontally for visibility
+                        const hoursOffset = (index % 10) * 3; // Spread operations every 3 hours
+                        const daysOffset = Math.floor(index / 10); // New row every 10 operations
+                        startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset); // Sept 3+, starting at 8 AM
+                        resourceId = 'unscheduled'; // Place on unscheduled resource line
+                    } else {
+                        // Convert operation dates to September 2025 timeframe
+                        const originalDate = new Date(operation.startTime || operation.start_date);
+                        const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
+                        startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
+                        startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                        resourceId = findResourceId(operation, resourceMap, resources);
+                    }
+                    
                     const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
                     
                     return {
@@ -705,17 +733,19 @@
                         startDate: startDate,
                         duration: duration,
                         durationUnit: 'hour',
-                        resourceId: findResourceId(operation, resourceMap, resources),
+                        resourceId: resourceId,
                         percentDone: operation.percent_done || 0,
-                        eventColor: operation.eventColor || getOperationColor(operation.operationName),
-                        // ASAP scheduling constraints
-                        constraintType: 'startnoearlierthan', // ASAP with earliest start constraint
-                        constraintDate: startDate, // Use current start as earliest possible
+                        eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.operationName)),
+                        // ASAP scheduling constraints (not for unscheduled operations)
+                        constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
+                        constraintDate: isUnscheduled ? null : startDate,
                         manuallyScheduled: false, // Allow automatic scheduling
+                        draggable: true, // Allow dragging to schedule
                         // Additional PT operation data
                         jobName: operation.jobName,
                         operationName: operation.operationName,
                         resourceName: operation.resourceName,
+                        isUnscheduled: isUnscheduled,
                         ptData: operation // Keep original PT data for algorithms
                     };
                 }).filter(event => event.resourceId); // Only include operations with valid resources
@@ -831,7 +861,13 @@
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
-                            showTooltip: true
+                            showTooltip: true,
+                            constrainDragToResource: false, // Allow dragging between resources
+                            // Enable dragging from unscheduled to other resources
+                            validatorFn({ draggedRecords, targetRecord }) {
+                                // Allow all drag operations
+                                return true;
+                            }
                         },
                         
                         // Enable resize with tooltip
@@ -847,6 +883,9 @@
                                     Start: ${eventRecord.startDate.toLocaleString()}<br>
                                     Duration: ${eventRecord.duration} ${eventRecord.durationUnit}<br>
                                     Progress: ${eventRecord.percentDone}%
+                                    ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                    ${eventRecord.jobName ? `<br>Job: ${eventRecord.jobName}` : ''}
+                                    ${eventRecord.operationName ? `<br>Operation: ${eventRecord.operationName}` : ''}
                                 </div>
                             `
                         },
@@ -914,6 +953,32 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
+                
+                // Add event listeners to handle dragging from unscheduled resource
+                scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
+                    eventRecords.forEach(eventRecord => {
+                        // Check if the event was dragged from unscheduled to a real resource
+                        if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
+                            // Mark as scheduled now
+                            eventRecord.isUnscheduled = false;
+                            // Update color to match the operation type
+                            eventRecord.eventColor = getOperationColor(eventRecord.operationName);
+                            // Apply ASAP constraint now that it's scheduled
+                            eventRecord.constraintType = 'startnoearlierthan';
+                            eventRecord.constraintDate = eventRecord.startDate;
+                            console.log(`✅ Operation "${eventRecord.name}" scheduled to resource: ${targetResourceRecord.name}`);
+                            updateStatus(); // Update metrics
+                        } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
+                            // Mark as unscheduled if dragged back to unscheduled
+                            eventRecord.isUnscheduled = true;
+                            eventRecord.eventColor = '#808080';
+                            eventRecord.constraintType = null;
+                            eventRecord.constraintDate = null;
+                            console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
+                            updateStatus(); // Update metrics
+                        }
+                    });
+                });
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
