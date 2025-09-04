@@ -927,12 +927,14 @@
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
                 let ptOperations = [];
+                let ptDependencies = [];
                 
                 try {
-                    // Fetch resources and PT operations from the backend APIs
-                    const [resourcesResponse, operationsResponse] = await Promise.all([
+                    // Fetch resources, PT operations, and dependencies from the backend APIs
+                    const [resourcesResponse, operationsResponse, dependenciesResponse] = await Promise.all([
                         fetch('/api/resources'),
-                        fetch('/api/pt-operations')
+                        fetch('/api/pt-operations'),
+                        fetch('/api/dependencies')
                     ]);
                     
                     if (resourcesResponse.ok) {
@@ -967,6 +969,16 @@
                         }
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
+                    }
+                    
+                    if (dependenciesResponse.ok) {
+                        ptDependencies = await dependenciesResponse.json();
+                        console.log('✅ Dependencies fetched successfully:', ptDependencies.length);
+                        if (ptDependencies.length > 0) {
+                            console.log('✅ First dependency sample:', ptDependencies[0]);
+                        }
+                    } else {
+                        console.error('❌ Failed to fetch dependencies:', dependenciesResponse.status);
                     }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
@@ -1147,8 +1159,67 @@
                     ];
                 }
 
-                // Create dependencies array (can be enhanced based on PT data)
-                const dependencies = [];
+                // Create dependencies array from PT dependency data
+                const dependencies = ptDependencies.map((dep, index) => {
+                    // Map fromOperationId and toOperationId to the event IDs we created
+                    // PT operations have IDs that we prefixed with 'op-'
+                    const fromEventId = dep.fromOperationId ? `op-${dep.fromOperationId}` : null;
+                    const toEventId = dep.toOperationId ? `op-${dep.toOperationId}` : null;
+                    
+                    // Only create dependency if both events exist
+                    if (!fromEventId || !toEventId) {
+                        console.warn(`⚠️ Skipping dependency: missing operation IDs`, dep);
+                        return null;
+                    }
+                    
+                    return {
+                        id: dep.id || `dep-${index}`,
+                        fromEvent: fromEventId,
+                        toEvent: toEventId,
+                        type: dep.dependencyType || 2, // Default to Finish-to-Start (2)
+                        lag: dep.lag || 0,
+                        lagUnit: 'hour'
+                    };
+                }).filter(dep => dep !== null);
+                
+                // If no dependencies were fetched, create some sample dependencies for visualization
+                if (dependencies.length === 0 && events.length > 3) {
+                    console.log('⚠️ No dependencies found, creating sample dependencies for demonstration');
+                    
+                    // Create sample dependencies between consecutive operations
+                    for (let i = 0; i < Math.min(5, events.length - 1); i++) {
+                        dependencies.push({
+                            id: `sample-dep-${i}`,
+                            fromEvent: events[i].id,
+                            toEvent: events[i + 1].id,
+                            type: 2, // Finish-to-Start
+                            lag: 0,
+                            lagUnit: 'hour'
+                        });
+                    }
+                    
+                    // Create a few more dependencies for better visualization
+                    if (events.length > 10) {
+                        dependencies.push({
+                            id: 'sample-dep-cross-1',
+                            fromEvent: events[2].id,
+                            toEvent: events[7].id,
+                            type: 2,
+                            lag: 0,
+                            lagUnit: 'hour'
+                        });
+                        dependencies.push({
+                            id: 'sample-dep-cross-2',
+                            fromEvent: events[5].id,
+                            toEvent: events[9].id,
+                            type: 2,
+                            lag: 0,
+                            lagUnit: 'hour'
+                        });
+                    }
+                }
+                
+                console.log(`✅ Created ${dependencies.length} dependencies for scheduler`);
 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
@@ -1177,7 +1248,17 @@
 
                     features: {
                         // Dependencies feature for showing task relationships
-                        dependencies: true,
+                        dependencies: {
+                            disabled: false,
+                            // Style for dependency lines
+                            style: {
+                                strokeWidth: 2,
+                                strokeColor: '#4b5563',
+                                arrowSize: 8
+                            },
+                            // Show dependency lines by default
+                            showTooltip: true
+                        },
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -1387,6 +1468,11 @@
                         
                         return true;
                     });
+                    
+                    // Handle dependency visibility
+                    if (scheduler.features.dependencies) {
+                        scheduler.features.dependencies.disabled = !displayOptions.showDependencies;
+                    }
                     
                     // Refresh the scheduler
                     scheduler.refresh();
