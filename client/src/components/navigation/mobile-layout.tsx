@@ -455,7 +455,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       {/* Max AI Response Display - shows below header when there's a response */}
       {showMaxResponse && maxResponse && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: '200px', overflow: 'hidden' }}>
+        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gray-200 dark:bg-gray-800 shadow-xl" style={{ maxHeight: '200px', overflow: 'hidden' }}>
           <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg h-full overflow-y-auto p-4" style={{ maxHeight: '176px' }}>
             {/* Close button */}
             <button
@@ -468,8 +468,8 @@ export function MobileLayout({ children }: MobileLayoutProps) {
             
             <div className="flex items-start gap-3">
               <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-gray-600 dark:text-gray-400" />
                 </div>
               </div>
               <div className="flex-1 min-w-0 pr-6">
@@ -552,7 +552,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                             });
                             sendMessageMutation.mutate(suggestion);
                           }}
-                          className="text-xs px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
+                          className="text-xs px-3 py-1.5 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
                         >
                           {suggestion}
                         </button>
@@ -920,7 +920,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           >
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex items-center justify-center">
                   <Sparkles className="w-4 h-4 text-white" />
                 </div>
                 Max AI Settings
@@ -940,10 +940,10 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               <div>
                 <label className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 block">AI Theme</label>
                 <div className="flex gap-2">
-                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 border-2 border-gray-300 dark:border-gray-600 hover:border-purple-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-500 transition-colors"></button>
                   <button className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-teal-600 border-2 border-gray-300 dark:border-gray-600 hover:border-green-500 transition-colors"></button>
                   <button className="w-8 h-8 rounded-full bg-gradient-to-r from-orange-500 to-red-600 border-2 border-gray-300 dark:border-gray-600 hover:border-orange-500 transition-colors"></button>
-                  <button className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors"></button>
+                  <button className="w-8 h-8 rounded-full bg-blue-500 dark:bg-blue-600 border-2 border-gray-300 dark:border-gray-600 hover:border-blue-500 transition-colors"></button>
                   <button className="w-8 h-8 rounded-full bg-gradient-to-r from-gray-600 to-gray-800 border-2 border-gray-300 dark:border-gray-600 hover:border-gray-500 transition-colors"></button>
                 </div>
               </div>
@@ -957,7 +957,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                   <input 
                     type="checkbox" 
                     defaultChecked={isVoiceEnabled}
-                    className="rounded text-purple-600 focus:ring-purple-500" 
+                    className="rounded text-gray-600 focus:ring-gray-500" 
                   />
                 </div>
 
@@ -998,23 +998,23 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Show Action Buttons</span>
-                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                  <input type="checkbox" defaultChecked className="rounded text-gray-600 focus:ring-gray-500" />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Auto-create Widgets</span>
-                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                  <input type="checkbox" defaultChecked className="rounded text-gray-600 focus:ring-gray-500" />
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-gray-700 dark:text-gray-300">Show Suggestions</span>
-                  <input type="checkbox" defaultChecked className="rounded text-purple-600 focus:ring-purple-500" />
+                  <input type="checkbox" defaultChecked className="rounded text-gray-600 focus:ring-gray-500" />
                 </div>
               </div>
 
               {/* Save Button */}
               <Button 
-                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white"
+                className="w-full bg-gray-600 hover:bg-gray-700 dark:bg-gray-700 dark:hover:bg-gray-800 text-white"
                 onClick={() => {
                   toast({
                     title: "Settings Saved",

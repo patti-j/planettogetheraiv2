@@ -371,9 +371,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       {/* Floating Max AI Prompt - always visible, positioned higher to avoid Activity Center */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
+        <div className="bg-gray-300 dark:bg-gray-700 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
           <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex-shrink-0">
+            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gray-500 dark:bg-gray-600 flex-shrink-0">
               <Sparkles className="w-4 h-4 text-white" />
             </div>
             <Input
