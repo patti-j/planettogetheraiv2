@@ -1789,25 +1789,37 @@
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
                     const [resourcesResponse, operationsResponse, dependenciesResponse] = await Promise.all([
-                        fetch('/api/resources'),
+                        fetch('/api/pt-resources-clean'),  // Use PT resources clean endpoint
                         fetch('/api/pt-operations'),
-                        fetch('/api/dependencies')
+                        fetch('/api/dependencies')  // Keep original dependencies endpoint for now
                     ]);
                     
                     if (resourcesResponse.ok) {
-                        resources = await resourcesResponse.json();
-                        console.log('✅ Resources fetched successfully:', resources.length);
+                        const ptResources = await resourcesResponse.json();
+                        // Map PT resources to the format expected by Bryntum
+                        resources = ptResources.map(r => ({
+                            id: r.external_id || r.id,
+                            name: r.name,
+                            category: r.description || 'Production'
+                        }));
+                        console.log('✅ PT Resources fetched successfully:', resources.length);
                     } else {
-                        console.error('❌ Failed to fetch resources:', resourcesResponse.status);
-                        // Fallback sample data
-                        resources = [
-                            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-                            { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
-                            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
-                            { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
-                            { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
-                            { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
-                        ];
+                        console.error('❌ Failed to fetch PT resources:', resourcesResponse.status);
+                        // Try alternative endpoint
+                        const altResourcesResponse = await fetch('/api/pt-publish/resources');
+                        if (altResourcesResponse.ok) {
+                            const ptResources = await altResourcesResponse.json();
+                            resources = ptResources.map(r => ({
+                                id: r.external_id || r.id,
+                                name: r.name,
+                                category: r.description || 'Production'
+                            }));
+                            console.log('✅ PT Resources fetched from alternative endpoint:', resources.length);
+                        } else {
+                            console.error('❌ Failed to fetch resources from alternative endpoint');
+                            // Empty resources will show only operations assigned to the Unscheduled section
+                            resources = [];
+                        }
                     }
                     
                     // Add an "Unscheduled" resource at the top to hold unscheduled operations
@@ -1839,15 +1851,24 @@
                     }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
-                    // Use fallback sample data
-                    resources = [
-                        { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-                        { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
-                        { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
-                        { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
-                        { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
-                        { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
-                    ];
+                    // Try to at least get some resources
+                    try {
+                        const altResourcesResponse = await fetch('/api/pt-publish/resources');
+                        if (altResourcesResponse.ok) {
+                            const ptResources = await altResourcesResponse.json();
+                            resources = ptResources.map(r => ({
+                                id: r.external_id || r.id,
+                                name: r.name,
+                                category: r.description || 'Production'
+                            }));
+                            console.log('✅ PT Resources fetched from fallback endpoint:', resources.length);
+                        } else {
+                            resources = [];
+                        }
+                    } catch (fallbackError) {
+                        console.error('❌ Failed to fetch resources even from fallback:', fallbackError);
+                        resources = [];
+                    }
                 }
 
                 // Map resources to create resource lookup by both ID and name
