@@ -1577,7 +1577,7 @@
         </div>
 
         <div class="toolbar-group">
-            <button id="rowSizeBtn" title="Row Height: M">
+            <button id="rowSizeBtn" title="Row Height: M (50px)">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <!-- Horizontal lines representing rows -->
                     <line x1="4" y1="6" x2="20" y2="6"></line>
@@ -2096,18 +2096,19 @@
 
                     viewPreset: {
                         base: 'dayAndWeek',
+                        displayDateFormat: 'MMM DD YYYY',
                         headers: [
                             {
                                 unit: 'week',
-                                dateFormat: 'MMM DD YYYY'
+                                dateFormat: 'Week of MMM DD'
                             },
                             {
                                 unit: 'day',
-                                dateFormat: 'ddd DD'
+                                dateFormat: 'ddd MM/DD'
                             }
                         ]
                     },
-                    rowHeight: isMobile ? 50 : 60,
+                    rowHeight: isMobile ? 50 : 50,
                     barMargin: isMobile ? 5 : 8,
                     
                     // Mobile-specific settings
@@ -2997,16 +2998,34 @@
                     // Set initial state
                     const sizes = [30, 40, 50, 60, 90];
                     const sizeNames = ['XS', 'S', 'M', 'L', 'XL'];
-                    let currentSizeIndex = 3; // Start at 'L' (60px) to match initial rowHeight
+                    let currentSizeIndex = 2; // Start at 'M' (50px) to match initial rowHeight
                     
                     rowSizeBtn.addEventListener('click', () => {
                         // Cycle to next size
                         currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
                         const newHeight = sizes[currentSizeIndex];
                         
-                        // Apply new height with smooth transition
+                        // Apply new height to scheduler
                         scheduler.rowHeight = newHeight;
-                        scheduler.refreshWithTransition();
+                        
+                        // Force refresh to apply height to all grids
+                        scheduler.refresh();
+                        
+                        // Also update the CSS for consistent row heights
+                        const styleElement = document.getElementById('dynamic-row-height') || document.createElement('style');
+                        styleElement.id = 'dynamic-row-height';
+                        styleElement.innerHTML = `
+                            .b-grid-row, 
+                            .b-sch-timeaxis-cell,
+                            .b-resourceinfo-cell {
+                                height: ${newHeight}px !important;
+                                min-height: ${newHeight}px !important;
+                                max-height: ${newHeight}px !important;
+                            }
+                        `;
+                        if (!document.getElementById('dynamic-row-height')) {
+                            document.head.appendChild(styleElement);
+                        }
                         
                         // Update button appearance and tooltip
                         rowSizeBtn.title = `Row Height: ${sizeNames[currentSizeIndex]} (${newHeight}px)`;
