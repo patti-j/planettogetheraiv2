@@ -699,15 +699,18 @@
                 
                 // Transform PT operations into Bryntum events format with ASAP constraints
                 let events = ptOperations.map((operation, index) => {
-                    // Check if operation is unscheduled (no startTime or invalid date)
-                    const isUnscheduled = !operation.startTime || 
-                                        !operation.start_date || 
-                                        operation.startTime === null || 
-                                        operation.start_date === null ||
-                                        isNaN(new Date(operation.startTime || operation.start_date).getTime());
+                    // First try to find a matching resource
+                    let resourceId = findResourceId(operation, resourceMap, resources);
+                    
+                    // Check if operation is truly unscheduled (no resource assignment or explicitly unscheduled)
+                    const isUnscheduled = !resourceId || 
+                                        operation.assignmentType === 'unscheduled' ||
+                                        operation.isActuallyScheduled === false ||
+                                        operation.resourceName === 'Resource null' ||
+                                        operation.resourceName === null ||
+                                        !operation.resourceName;
                     
                     let startDate;
-                    let resourceId;
                     
                     if (isUnscheduled) {
                         // Place unscheduled operations on the unscheduled resource line
@@ -717,12 +720,11 @@
                         startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset); // Sept 3+, starting at 8 AM
                         resourceId = 'unscheduled'; // Place on unscheduled resource line
                     } else {
-                        // Convert operation dates to September 2025 timeframe
+                        // Use the operation's actual scheduled time
                         const originalDate = new Date(operation.startTime || operation.start_date);
                         const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
                         startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
                         startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
-                        resourceId = findResourceId(operation, resourceMap, resources);
                     }
                     
                     const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
