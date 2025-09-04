@@ -57,6 +57,7 @@
             gap: 1rem;
             border-bottom: 1px solid #e0e0e0;
             flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .toolbar-group {
@@ -78,7 +79,9 @@
         }
 
         .toolbar select,
-        .toolbar button {
+        .toolbar button,
+        .toolbar input[type="text"],
+        .toolbar input[type="checkbox"] {
             padding: 0.375rem 0.75rem;
             border: 1px solid #ddd;
             border-radius: 4px;
@@ -88,8 +91,16 @@
             transition: all 0.2s;
         }
 
+        .toolbar input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            padding: 0;
+            margin-right: 0.25rem;
+        }
+
         .toolbar select:hover,
-        .toolbar button:hover {
+        .toolbar button:hover,
+        .toolbar input[type="text"]:hover {
             background: #f5f5f5;
             border-color: #999;
         }
@@ -105,6 +116,91 @@
             background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
             transform: translateY(-1px);
             color: white !important;
+        }
+
+        /* Display Options Panel */
+        .display-options-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 2rem;
+            border-bottom: 2px solid #e0e0e0;
+            display: none;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .display-options-panel.active {
+            display: flex;
+        }
+
+        .display-option-group {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .display-option-group h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #444;
+            margin-right: 0.5rem;
+        }
+
+        .display-option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+            font-size: 0.875rem;
+            color: #666;
+        }
+
+        /* AI Prompt Bar */
+        .ai-prompt-bar {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-width: 300px;
+        }
+
+        .ai-prompt-input {
+            flex: 1;
+            padding: 0.5rem 1rem !important;
+            border: 2px solid #ddd !important;
+            border-radius: 20px !important;
+            font-size: 0.875rem !important;
+            transition: all 0.2s;
+        }
+
+        .ai-prompt-input:focus {
+            outline: none;
+            border-color: #764ba2 !important;
+            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+        }
+
+        .ai-prompt-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 36px !important;
+            height: 36px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            padding: 0 !important;
+        }
+
+        .ai-prompt-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+        }
+
+        .ai-prompt-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
         }
 
         .scheduler-container {
