@@ -1322,7 +1322,58 @@ Please provide insights on:
                 )}
               </div>
 
-
+              {/* Chat Input */}
+              <div className="p-3 border-t">
+                <div className="flex gap-2">
+                  <Input
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                    placeholder="Ask Max anything..."
+                    className="flex-1 text-sm"
+                    disabled={sendMessageMutation.isPending}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => handleSendMessage()}
+                    disabled={!prompt.trim() || sendMessageMutation.isPending}
+                    className={cn(
+                      "px-3",
+                      getThemeGradient(aiSettings.aiThemeColor),
+                      "text-white"
+                    )}
+                  >
+                    {sendMessageMutation.isPending ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
+                </div>
+                
+                {/* Max Thinking Indicator */}
+                {showMaxThinking && (
+                  <div className="mt-2 flex items-center justify-between text-xs text-muted-foreground animate-pulse">
+                    <span className="flex items-center gap-1">
+                      <Sparkles className="h-3 w-3" />
+                      Max is thinking...
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={cancelMaxRequest}
+                      className="h-5 px-2 text-xs"
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                )}
+              </div>
 
             </TabsContent>
 
