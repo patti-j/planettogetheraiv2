@@ -1136,10 +1136,10 @@
             border-bottom: 1px solid var(--border) !important;
         }
         
-        /* Timeline date headers - Light mode specific */
+        /* Timeline date headers - CRITICAL FIX for visibility */
         .b-sch-header-timeaxis-cell {
             background: white !important;
-            color: hsl(240, 10%, 3.9%) !important;
+            color: black !important;
             font-weight: 600 !important;
             font-size: 13px !important;
             padding: 6px 8px !important;
@@ -1147,25 +1147,43 @@
             border-bottom: 1px solid hsl(240, 5.9%, 90%) !important;
         }
         
+        /* Force all timeline header text to be visible */
+        .b-sch-header-timeaxis-cell *,
         .b-sch-header-timeaxis-cell div,
         .b-sch-header-timeaxis-cell span,
-        .b-sch-timeaxis-cell-text {
-            color: hsl(240, 10%, 3.9%) !important;
+        .b-sch-timeaxis-cell-text,
+        .b-sch-simple-timeaxis-cell {
+            color: black !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        /* Timeline container headers */
+        .b-sch-header-row div {
+            color: black !important;
             opacity: 1 !important;
         }
         
         /* Dark mode timeline headers */
         .dark .b-sch-header-timeaxis-cell {
             background: hsl(240, 10%, 15%) !important;
-            color: hsl(0, 0%, 98%) !important;
+            color: white !important;
             border-right: 1px solid hsl(240, 3.7%, 25%) !important;
             border-bottom: 1px solid hsl(240, 3.7%, 25%) !important;
         }
         
+        .dark .b-sch-header-timeaxis-cell *,
         .dark .b-sch-header-timeaxis-cell div,
         .dark .b-sch-header-timeaxis-cell span,
-        .dark .b-sch-timeaxis-cell-text {
-            color: hsl(0, 0%, 98%) !important;
+        .dark .b-sch-timeaxis-cell-text,
+        .dark .b-sch-simple-timeaxis-cell {
+            color: white !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        .dark .b-sch-header-row div {
+            color: white !important;
         }
         
         /* Ensure proper z-index for timeline headers */
@@ -1176,6 +1194,31 @@
         .b-sch-header-container {
             background: var(--card) !important;
             z-index: 2 !important;
+        }
+        
+        /* ULTIMATE FIX - Force timeline date text to show no matter what */
+        .b-sch-timeaxis-column .b-sch-simple-timeaxis,
+        .b-sch-timeaxiscolumn .b-sch-simple-timeaxis,
+        .b-grid-header-container .b-sch-simple-timeaxis {
+            color: black !important;
+            opacity: 1 !important;
+        }
+        
+        .b-sch-header-row .b-sch-simple-timeaxis-cell {
+            color: black !important;
+            font-weight: 600 !important;
+            font-size: 13px !important;
+        }
+        
+        /* Dark mode version */
+        .dark .b-sch-timeaxis-column .b-sch-simple-timeaxis,
+        .dark .b-sch-timeaxiscolumn .b-sch-simple-timeaxis,
+        .dark .b-grid-header-container .b-sch-simple-timeaxis {
+            color: white !important;
+        }
+        
+        .dark .b-sch-header-row .b-sch-simple-timeaxis-cell {
+            color: white !important;
         }
 
         /* ==================== Mobile Responsive Styles ==================== */
@@ -1496,31 +1539,7 @@
                         *::-webkit-scrollbar-corner {
                             background-color: hsl(240, 10%, 10%) !important;
                         }
-                        /* Force text visibility in timeline headers */
-                        .b-sch-header-row * {
-                            color: hsl(0, 0%, 98%) !important;
-                        }
-                        
-                        /* Additional fixes for timeline date headers */
-                        .b-sch-timeaxis-column,
-                        .b-sch-timeaxiscolumn {
-                            opacity: 1 !important;
-                            visibility: visible !important;
-                        }
-                        
-                        .b-sch-header-row-0,
-                        .b-sch-header-row-1 {
-                            background: hsl(240, 10%, 15%) !important;
-                            height: auto !important;
-                            min-height: 30px !important;
-                        }
-                        
-                        .b-sch-header-row-0 .b-sch-header-timeaxis-cell,
-                        .b-sch-header-row-1 .b-sch-header-timeaxis-cell {
-                            color: hsl(0, 0%, 98%) !important;
-                            font-size: 12px !important;
-                            padding: 4px 8px !important;
-                        }
+                        /* REMOVED - These dark mode overrides were breaking light mode timeline headers */
                     `;
                 }
             }
