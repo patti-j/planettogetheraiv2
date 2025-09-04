@@ -800,11 +800,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   };
 
-  const handleSendMessage = () => {
-    if (!prompt.trim()) return;
-
-    const currentPrompt = prompt;
-    setPrompt('');
+  const handleSendMessage = (messageToSend?: string) => {
+    // Use provided message or fall back to prompt state
+    const currentPrompt = messageToSend || prompt;
+    
+    if (!currentPrompt.trim()) return;
+    
+    // Only clear the prompt state if we're using it (not a provided message)
+    if (!messageToSend) {
+      setPrompt('');
+    }
 
     // Add user message immediately to chat UI
     addMessage({
@@ -1039,11 +1044,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 4. Recommendations for optimization (which algorithms to run)
 5. Critical path analysis`;
                       
-                      setPrompt(analysisPrompt);
-                      
-                      // Trigger send after a brief delay to ensure UI updates
+                      // Send the message directly with the prompt
                       setTimeout(() => {
-                        handleSendMessage();
+                        handleSendMessage(analysisPrompt);
                       }, 100);
                     }}
                   >
