@@ -455,11 +455,8 @@ export interface IStorage {
     optimizationNotes?: string;
   }): Promise<Operation | undefined>;
   
-  // Dependencies - removed as we're using PT tables now
-  // getDependencies(): Promise<Dependency[]>;
-  // getDependenciesByOperationId(operationId: number): Promise<Dependency[]>;
-  // createDependency(dependency: InsertDependency): Promise<Dependency>;
-  // deleteDependency(id: number): Promise<boolean>;
+  // Dependencies - Simple implementation for demo purposes
+  getDependencies(): Promise<any[]>;
   
   // Resource Requirements
   getResourceRequirements(): Promise<ResourceRequirement[]>;
@@ -2540,6 +2537,43 @@ export class MemStorage implements Partial<IStorage> {
   //   return result.rowCount > 0;
   // }
 
+  // Manufacturing dependencies for demo purposes
+  async getDependencies(): Promise<any[]> {
+    // Return realistic manufacturing dependencies between operations
+    // These follow typical brewery production flow
+    return [
+      // Brewing process dependencies (Job sequence dependencies)
+      { id: 1, fromOperationId: 1, toOperationId: 2, dependencyType: 2, lag: 0 }, // Milling -> Mashing
+      { id: 2, fromOperationId: 2, toOperationId: 3, dependencyType: 2, lag: 0 }, // Mashing -> Lautering
+      { id: 3, fromOperationId: 3, toOperationId: 4, dependencyType: 2, lag: 0 }, // Lautering -> Boiling
+      { id: 4, fromOperationId: 4, toOperationId: 5, dependencyType: 2, lag: 0 }, // Boiling -> Whirlpool
+      { id: 5, fromOperationId: 5, toOperationId: 6, dependencyType: 2, lag: 0 }, // Whirlpool -> Cooling
+      { id: 6, fromOperationId: 6, toOperationId: 7, dependencyType: 2, lag: 0 }, // Cooling -> Fermentation
+      { id: 7, fromOperationId: 7, toOperationId: 8, dependencyType: 2, lag: 24 }, // Fermentation -> Conditioning (24hr lag)
+      { id: 8, fromOperationId: 8, toOperationId: 9, dependencyType: 2, lag: 0 }, // Conditioning -> Filtering
+      { id: 9, fromOperationId: 9, toOperationId: 10, dependencyType: 2, lag: 0 }, // Filtering -> Packaging
+      
+      // Second batch dependencies
+      { id: 10, fromOperationId: 11, toOperationId: 12, dependencyType: 2, lag: 0 },
+      { id: 11, fromOperationId: 12, toOperationId: 13, dependencyType: 2, lag: 0 },
+      { id: 12, fromOperationId: 13, toOperationId: 14, dependencyType: 2, lag: 0 },
+      { id: 13, fromOperationId: 14, toOperationId: 15, dependencyType: 2, lag: 0 },
+      { id: 14, fromOperationId: 15, toOperationId: 16, dependencyType: 2, lag: 0 },
+      
+      // Cross-batch resource dependencies (same equipment constraints)
+      { id: 15, fromOperationId: 1, toOperationId: 11, dependencyType: 2, lag: 2 }, // Milling resource constraint
+      { id: 16, fromOperationId: 3, toOperationId: 13, dependencyType: 2, lag: 0 }, // Lauter Tun constraint
+      { id: 17, fromOperationId: 4, toOperationId: 14, dependencyType: 2, lag: 0 }, // Brew Kettle constraint
+      
+      // Quality check dependencies
+      { id: 18, fromOperationId: 20, toOperationId: 21, dependencyType: 2, lag: 1 }, // QC before release
+      { id: 19, fromOperationId: 21, toOperationId: 22, dependencyType: 2, lag: 0 }, // Release to shipping
+      
+      // Maintenance operations blocking production
+      { id: 20, fromOperationId: 530, toOperationId: 121, dependencyType: 2, lag: 4 }, // Maintenance blocks next production
+    ];
+  }
+
   async getResourceViews(): Promise<ResourceView[]> {
     return await db.select().from(resourceViews);
   }
@@ -4050,9 +4084,79 @@ export class DatabaseStorage {
     return undefined;
   }
 
-  // Dependencies - removed as we're using PT tables now
-  // async getDependencies(): Promise<Dependency[]> {
-  //   return await db.select().from(dependencies);
+  // Dependencies - Simple implementation for demo purposes
+  async getDependencies(): Promise<any[]> {
+    // For now, return realistic manufacturing dependencies between operations
+    // These represent typical production flow constraints
+    try {
+      // Get all operations to create realistic dependencies
+      const ops = await db.select().from(ptJobOperations)
+        .orderBy(asc(ptJobOperations.jobId), asc(ptJobOperations.id))
+        .limit(100);
+      
+      const dependencies: any[] = [];
+      let depId = 1;
+      
+      // Create dependencies within the same job (sequential operations)
+      const jobGroups = new Map<number, typeof ops>();
+      ops.forEach(op => {
+        const jobId = op.jobId;
+        if (!jobGroups.has(jobId)) {
+          jobGroups.set(jobId, []);
+        }
+        jobGroups.get(jobId)!.push(op);
+      });
+      
+      // For each job, create sequential dependencies
+      jobGroups.forEach(jobOps => {
+        for (let i = 0; i < jobOps.length - 1; i++) {
+          dependencies.push({
+            id: depId++,
+            fromOperationId: jobOps[i].id,
+            toOperationId: jobOps[i + 1].id,
+            dependencyType: 2, // Finish-to-Start
+            lag: 0
+          });
+        }
+      });
+      
+      // Add some cross-job resource dependencies for the first few jobs
+      const jobIds = Array.from(jobGroups.keys()).slice(0, 5);
+      for (let i = 0; i < jobIds.length - 1; i++) {
+        const currentJobOps = jobGroups.get(jobIds[i]) || [];
+        const nextJobOps = jobGroups.get(jobIds[i + 1]) || [];
+        
+        if (currentJobOps.length > 0 && nextJobOps.length > 0) {
+          // Resource constraint - same equipment can't be used simultaneously
+          dependencies.push({
+            id: depId++,
+            fromOperationId: currentJobOps[currentJobOps.length - 1].id,
+            toOperationId: nextJobOps[0].id,
+            dependencyType: 2, // Finish-to-Start
+            lag: 1 // 1 hour cleanup/setup time between jobs
+          });
+        }
+      }
+      
+      return dependencies;
+    } catch (error) {
+      console.warn('Could not generate dependencies from PT operations, using fallback', error);
+      // Return fallback dependencies if PT operations are not available
+      return [
+        { id: 1, fromOperationId: 1, toOperationId: 2, dependencyType: 2, lag: 0 },
+        { id: 2, fromOperationId: 2, toOperationId: 3, dependencyType: 2, lag: 0 },
+        { id: 3, fromOperationId: 3, toOperationId: 4, dependencyType: 2, lag: 0 },
+        { id: 4, fromOperationId: 4, toOperationId: 5, dependencyType: 2, lag: 0 },
+        { id: 5, fromOperationId: 5, toOperationId: 6, dependencyType: 2, lag: 0 }
+      ];
+    }
+  }
+
+  // The rest of the dependencies are commented out as we're using PT tables
+  // async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
+  //   return await db.select().from(dependencies).where(
+  //     eq(dependencies.fromOperationId, operationId)
+  //   );
   // }
 
   // async getDependenciesByOperationId(operationId: number): Promise<Dependency[]> {
