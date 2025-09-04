@@ -13,6 +13,52 @@
     <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
     <style>
+        /* CSS Variables from main app */
+        :root {
+            --background: hsl(0, 0%, 100%);
+            --foreground: hsl(20, 14.3%, 4.1%);
+            --muted: hsl(60, 4.8%, 95.9%);
+            --muted-foreground: hsl(25, 5.3%, 44.7%);
+            --popover: hsl(0, 0%, 100%);
+            --popover-foreground: hsl(20, 14.3%, 4.1%);
+            --card: hsl(0, 0%, 100%);
+            --card-foreground: hsl(20, 14.3%, 4.1%);
+            --border: hsl(20, 5.9%, 90%);
+            --input: hsl(20, 5.9%, 90%);
+            --primary: hsl(207, 90%, 54%);
+            --primary-foreground: hsl(211, 100%, 99%);
+            --secondary: hsl(60, 4.8%, 95.9%);
+            --secondary-foreground: hsl(24, 9.8%, 10%);
+            --accent: hsl(120, 61%, 50%);
+            --accent-foreground: hsl(120, 100%, 99%);
+            --destructive: hsl(0, 84.2%, 60.2%);
+            --destructive-foreground: hsl(60, 9.1%, 97.8%);
+            --ring: hsl(20, 14.3%, 4.1%);
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: hsl(240, 10%, 3.9%);
+            --foreground: hsl(0, 0%, 98%);
+            --muted: hsl(240, 3.7%, 15.9%);
+            --muted-foreground: hsl(240, 5%, 64.9%);
+            --popover: hsl(240, 10%, 3.9%);
+            --popover-foreground: hsl(0, 0%, 98%);
+            --card: hsl(240, 10%, 3.9%);
+            --card-foreground: hsl(0, 0%, 98%);
+            --border: hsl(240, 3.7%, 15.9%);
+            --input: hsl(240, 3.7%, 15.9%);
+            --primary: hsl(207, 90%, 54%);
+            --primary-foreground: hsl(211, 100%, 99%);
+            --secondary: hsl(240, 3.7%, 15.9%);
+            --secondary-foreground: hsl(0, 0%, 98%);
+            --accent: hsl(120, 61%, 50%);
+            --accent-foreground: hsl(120, 100%, 99%);
+            --destructive: hsl(0, 84.2%, 60.2%);
+            --destructive-foreground: hsl(60, 9.1%, 97.8%);
+            --ring: hsl(240, 3.7%, 15.9%);
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -26,20 +72,17 @@
 
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            background: #ffffff;
+            background: var(--background);
+            color: var(--foreground);
             display: flex;
             flex-direction: column;
             height: 100vh;
             font-size: 14px;
         }
 
-        body.dark {
-            background: #020817;
-        }
-
         .header {
-            background: #ffffff;
-            border-bottom: 1px solid #e5e7eb;
+            background: var(--card);
+            border-bottom: 1px solid var(--border);
             padding: 1rem 2rem;
             display: flex;
             align-items: center;
@@ -47,35 +90,21 @@
             flex-shrink: 0;
         }
 
-        body.dark .header {
-            background: #0f172a;
-            border-bottom-color: #334155;
-        }
-
         .header h1 {
-            color: #1f2937;
+            color: var(--foreground);
             font-size: 1.5rem;
             font-weight: 600;
         }
 
-        body.dark .header h1 {
-            color: #f9fafb;
-        }
-
         .toolbar {
-            background: #f9fafb;
+            background: var(--muted);
             padding: 0.75rem 2rem;
             display: flex;
             align-items: center;
             gap: 1rem;
-            border-bottom: 1px solid #e5e7eb;
+            border-bottom: 1px solid var(--border);
             flex-shrink: 0;
             flex-wrap: wrap;
-        }
-
-        body.dark .toolbar {
-            background: #1e293b;
-            border-bottom-color: #334155;
         }
 
         .toolbar-group {
@@ -83,11 +112,7 @@
             align-items: center;
             gap: 0.5rem;
             padding-right: 1rem;
-            border-right: 1px solid #e5e7eb;
-        }
-
-        body.dark .toolbar-group {
-            border-right-color: #475569;
+            border-right: 1px solid var(--border);
         }
 
         .toolbar-group:last-child {
@@ -96,32 +121,21 @@
 
         .toolbar label {
             font-size: 0.875rem;
-            color: #6b7280;
+            color: var(--muted-foreground);
             font-weight: 500;
         }
 
-        body.dark .toolbar label {
-            color: #9ca3af;
-        }
-
         .toolbar select,
-        .toolbar button,
         .toolbar input[type="text"],
         .toolbar input[type="checkbox"] {
             padding: 0.375rem 0.75rem;
-            border: 1px solid #d1d5db;
-            border-radius: 6px;
-            background: white;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--background);
+            color: var(--foreground);
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
-        }
-
-        body.dark .toolbar select,
-        body.dark .toolbar input[type="text"] {
-            background: #1e293b;
-            border-color: #475569;
-            color: #f1f5f9;
         }
 
         .toolbar input[type="checkbox"] {
@@ -133,50 +147,37 @@
 
         .toolbar select:hover,
         .toolbar input[type="text"]:hover {
-            background: #f3f4f6;
-            border-color: #9ca3af;
-        }
-
-        body.dark .toolbar select:hover,
-        body.dark .toolbar input[type="text"]:hover {
-            background: #334155;
-            border-color: #64748b;
+            background: var(--muted);
+            border-color: var(--muted-foreground);
         }
 
         .toolbar button {
-            background: #3b82f6;
-            color: white !important;
-            border: 1px solid #3b82f6;
+            padding: 0.375rem 0.75rem;
+            border: 1px solid transparent;
+            border-radius: var(--radius);
+            background: var(--primary);
+            color: var(--primary-foreground);
+            font-size: 0.875rem;
             font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
         .toolbar button:hover {
-            background: #2563eb;
-            border-color: #2563eb;
+            opacity: 0.9;
             transform: translateY(-1px);
-            color: white !important;
         }
 
-        body.dark .toolbar button {
-            background: #3b82f6;
-            border-color: #3b82f6;
-        }
-
-        body.dark .toolbar button:hover {
-            background: #2563eb;
-            border-color: #2563eb;
+        .toolbar button#saveSchedule {
+            background: var(--accent);
+            color: var(--accent-foreground);
         }
 
         /* Display Options Panel */
         .display-options-panel {
-            background: #ffffff;
+            background: var(--card);
             padding: 1rem 2rem;
-            border-bottom: 1px solid #e5e7eb;
-        }
-
-        body.dark .display-options-panel {
-            background: #1e293b;
-            border-bottom-color: #334155;
+            border-bottom: 1px solid var(--border);
         }
 
         .display-options-panel.active {
@@ -219,20 +220,22 @@
         .ai-prompt-input {
             flex: 1;
             padding: 0.5rem 1rem !important;
-            border: 2px solid #ddd !important;
+            border: 2px solid var(--border) !important;
             border-radius: 20px !important;
             font-size: 0.875rem !important;
+            background: var(--background);
+            color: var(--foreground);
             transition: all 0.2s;
         }
 
         .ai-prompt-input:focus {
             outline: none;
-            border-color: #764ba2 !important;
-            box-shadow: 0 0 0 3px rgba(118, 75, 162, 0.1);
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px hsl(207 90% 54% / 0.1);
         }
 
         .ai-prompt-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+            background: var(--primary) !important;
             border: none !important;
             border-radius: 50% !important;
             width: 36px !important;
@@ -247,21 +250,23 @@
 
         .ai-prompt-btn:hover {
             transform: scale(1.1);
-            box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+            opacity: 0.9;
+            box-shadow: 0 4px 12px hsl(207 90% 54% / 0.3);
         }
 
         .ai-prompt-btn svg {
             width: 20px;
             height: 20px;
-            fill: white;
+            fill: var(--primary-foreground);
         }
 
         .scheduler-container {
             flex: 1;
             margin: 1rem;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
             overflow: hidden;
             position: relative;
             display: flex;
@@ -275,14 +280,14 @@
         }
 
         .status-bar {
-            background: rgba(255, 255, 255, 0.95);
+            background: var(--muted);
             padding: 0.5rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-size: 0.875rem;
-            color: #666;
-            border-top: 1px solid #e0e0e0;
+            color: var(--muted-foreground);
+            border-top: 1px solid var(--border);
             flex-shrink: 0;
         }
 
@@ -292,7 +297,8 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
+            background: var(--background);
+            opacity: 0.9;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -302,8 +308,8 @@
         .loading-spinner {
             width: 50px;
             height: 50px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #764ba2;
+            border: 3px solid var(--muted);
+            border-top: 3px solid var(--primary);
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -314,53 +320,15 @@
         }
 
         .error-message {
-            background: #ff4444;
-            color: white;
+            background: var(--destructive);
+            color: var(--destructive-foreground);
             padding: 1rem;
-            border-radius: 4px;
+            border-radius: var(--radius);
             margin: 1rem;
             text-align: center;
         }
         
-        /* Dark theme overrides */
-        .dark-theme .header {
-            background: rgba(30, 30, 30, 0.95);
-            color: white;
-        }
-        
-        .dark-theme .header h1 {
-            color: white;
-        }
-        
-        .dark-theme .toolbar {
-            background: rgba(40, 40, 40, 0.9);
-            border-bottom-color: #444;
-        }
-        
-        .dark-theme .toolbar label {
-            color: #ccc;
-        }
-        
-        .dark-theme .status-bar {
-            background: rgba(30, 30, 30, 0.95);
-            color: #ccc;
-            border-top-color: #444;
-        }
-        
-        .dark-theme .scheduler-container {
-            background: #2a2a2a;
-        }
-        
-        /* Dark theme for scheduler using filter */
-        .dark-theme #scheduler {
-            filter: invert(0.9) hue-rotate(180deg);
-        }
-        
-        /* Re-invert images and icons in dark mode */
-        .dark-theme #scheduler img,
-        .dark-theme #scheduler .b-icon {
-            filter: invert(1) hue-rotate(-180deg);
-        }
+        /* Dark theme is handled by CSS variables - removed duplicate styles */
         
         /* Header updates for hamburger and Max AI */
         .header-actions {
@@ -370,18 +338,18 @@
         }
         
         .hamburger-btn, .max-ai-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--primary);
             border: none;
-            color: white;
+            color: var(--primary-foreground);
             padding: 0.5rem 1rem;
-            border-radius: 4px;
+            border-radius: var(--radius);
             cursor: pointer;
             font-size: 1rem;
             transition: all 0.2s;
         }
         
         .hamburger-btn:hover, .max-ai-btn:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+            opacity: 0.9;
             transform: translateY(-1px);
         }
         
@@ -392,7 +360,7 @@
             left: -300px;
             width: 300px;
             height: 100vh;
-            background: white;
+            background: var(--card);
             box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
             transition: left 0.3s ease;
             z-index: 2000;
@@ -403,8 +371,8 @@
         }
         
         .nav-menu-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary);
+            color: var(--primary-foreground);
             padding: 1rem;
             display: flex;
             justify-content: space-between;
@@ -418,7 +386,7 @@
         .close-menu, .close-max-ai {
             background: transparent;
             border: none;
-            color: white;
+            color: var(--primary-foreground);
             font-size: 2rem;
             cursor: pointer;
             line-height: 1;
@@ -431,20 +399,20 @@
         .nav-item {
             display: block;
             padding: 0.75rem 1rem;
-            color: #333;
+            color: var(--foreground);
             text-decoration: none;
-            border-radius: 4px;
+            border-radius: var(--radius);
             transition: background 0.2s;
             margin-bottom: 0.5rem;
         }
         
         .nav-item:hover {
-            background: #f5f5f5;
+            background: var(--muted);
         }
         
         .nav-item.active {
-            background: rgba(59, 130, 246, 0.1);
-            color: #764ba2;
+            background: hsl(207 90% 54% / 0.1);
+            color: var(--primary);
             font-weight: 500;
         }
         
@@ -455,7 +423,7 @@
             right: 0; /* Visible by default to showcase scheduler features */
             width: 400px;
             height: 100vh;
-            background: white;
+            background: var(--card);
             box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
             transition: right 0.3s ease;
             z-index: 2000;
@@ -468,8 +436,8 @@
         }
         
         .max-ai-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary);
+            color: var(--primary-foreground);
             padding: 1rem;
             display: flex;
             justify-content: space-between;
@@ -496,18 +464,19 @@
         .max-ai-message {
             margin-bottom: 1rem;
             padding: 0.75rem;
-            border-radius: 8px;
+            border-radius: var(--radius);
             white-space: pre-wrap;
             line-height: 1.5;
         }
         
         .max-ai-message.assistant {
-            background: #f0f0f0;
+            background: var(--muted);
+            color: var(--foreground);
             font-size: 0.9rem;
         }
         
         .max-ai-message.user {
-            background: rgba(59, 130, 246, 0.1);
+            background: hsl(207 90% 54% / 0.1);
             margin-left: 2rem;
         }
         
@@ -518,101 +487,57 @@
         
         .max-ai-message strong {
             font-weight: 600;
-            color: #764ba2;
+            color: var(--primary);
         }
         
         .max-ai-input {
             display: flex;
             padding: 1rem;
-            border-top: 1px solid #e0e0e0;
+            border-top: 1px solid var(--border);
             gap: 0.5rem;
         }
         
         .max-ai-input input {
             flex: 1;
             padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--background);
+            color: var(--foreground);
             font-size: 0.875rem;
         }
         
         .max-ai-input button {
             padding: 0.5rem 1rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: var(--primary);
+            color: var(--primary-foreground);
             border: none;
-            border-radius: 4px;
+            border-radius: var(--radius);
             cursor: pointer;
             font-weight: 500;
         }
         
         .max-ai-input button:hover {
-            background: linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%);
+            opacity: 0.9;
         }
         
-        /* Dark theme for nav menu and Max AI */
-        .dark-theme .nav-menu,
-        .dark-theme .max-ai-panel {
-            background: #2a2a2a;
-            color: white;
-        }
-        
-        .dark-theme .nav-item {
-            color: #ccc;
-        }
-        
-        .dark-theme .nav-item:hover {
-            background: #333;
-        }
-        
-        .dark-theme .nav-item.active {
-            background: rgba(59, 130, 246, 0.2);
-        }
-        
-        .dark-theme .max-ai-message.assistant {
-            background: #333;
-            color: #ccc;
-        }
-        
-        .dark-theme .max-ai-message.user {
-            background: rgba(59, 130, 246, 0.2);
-            color: #ccc;
-        }
-        
-        .dark-theme .max-ai-input {
-            border-top-color: #444;
-        }
-        
-        .dark-theme .max-ai-input input {
-            background: #333;
-            color: white;
-            border-color: #444;
-        }
+        /* Dark theme is handled by CSS variables - removed duplicate styles */
         
         /* Quick Actions Styles */
         .max-ai-quick-actions {
             padding: 0.75rem;
-            background: linear-gradient(to right, #eff6ff, #e0e7ff);
-            border-bottom: 1px solid #e0e0e0;
-        }
-        
-        .dark-theme .max-ai-quick-actions {
-            background: linear-gradient(to right, #1a2332, #202842);
-            border-bottom: 1px solid #444;
+            background: var(--muted);
+            border-bottom: 1px solid var(--border);
         }
         
         .quick-actions-title {
             font-size: 0.875rem;
             font-weight: 600;
-            color: #4a5568;
+            color: var(--foreground);
             margin-bottom: 0.5rem;
             display: flex;
             align-items: center;
             gap: 0.25rem;
-        }
-        
-        .dark-theme .quick-actions-title {
-            color: #cbd5e0;
         }
         
         .quick-actions-section {
@@ -621,12 +546,8 @@
         
         .quick-actions-label {
             font-size: 0.75rem;
-            color: #718096;
+            color: var(--muted-foreground);
             margin-bottom: 0.5rem;
-        }
-        
-        .dark-theme .quick-actions-label {
-            color: #a0aec0;
         }
         
         .quick-actions-grid {
@@ -639,9 +560,10 @@
         .quick-action-btn {
             padding: 0.5rem;
             font-size: 0.75rem;
-            background: white;
-            border: 1px solid #cbd5e0;
-            border-radius: 6px;
+            background: var(--background);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             cursor: pointer;
             transition: all 0.2s;
             display: flex;
@@ -650,22 +572,11 @@
             gap: 0.25rem;
         }
         
-        .dark-theme .quick-action-btn {
-            background: #2d3748;
-            border: 1px solid #4a5568;
-            color: #e0e0e0;
-        }
-        
         .quick-action-btn:hover {
-            background: #edf2f7;
-            border-color: #764ba2;
+            background: var(--muted);
+            border-color: var(--primary);
             transform: translateY(-1px);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .dark-theme .quick-action-btn:hover {
-            background: #374151;
-            border-color: #764ba2;
         }
         
         .quick-action-btn.full-width {
@@ -681,28 +592,60 @@
             flex: 1;
             padding: 0.4rem;
             font-size: 0.7rem;
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
+            background: var(--background);
+            color: var(--foreground);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
             cursor: pointer;
             transition: all 0.2s;
         }
         
-        .dark-theme .view-control-btn {
-            background: #2d3748;
-            border: 1px solid #4a5568;
-            color: #e0e0e0;
-        }
-        
         .view-control-btn:hover {
-            background: #f7fafc;
-            border-color: #a0aec0;
-        }
-        
-        .dark-theme .view-control-btn:hover {
-            background: #374151;
+            background: var(--muted);
+            border-color: var(--muted-foreground);
         }
     </style>
+    
+    <script>
+        // Detect and apply theme from main app settings
+        (function() {
+            // Check localStorage for theme preference
+            const storedTheme = localStorage.getItem('theme');
+            
+            // Also check for system preference
+            const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            
+            // Apply theme: prioritize stored theme, then system preference
+            const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+            
+            // Apply the appropriate class to body
+            if (theme === 'dark') {
+                document.documentElement.classList.add('dark');
+            }
+            
+            // Listen for theme changes from the main app
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'theme') {
+                    if (e.newValue === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            });
+            
+            // Also listen for messages from parent window (if in iframe)
+            window.addEventListener('message', function(e) {
+                if (e.data && e.data.type === 'THEME_CHANGE') {
+                    if (e.data.theme === 'dark') {
+                        document.documentElement.classList.add('dark');
+                    } else {
+                        document.documentElement.classList.remove('dark');
+                    }
+                }
+            });
+        })();
+    </script>
 </head>
 <body>
     <div class="header">
@@ -746,7 +689,7 @@
         </div>
 
         <div class="toolbar-group">
-            <button id="saveSchedule" style="background: #10b981; font-weight: 600;">💾 Save Schedule</button>
+            <button id="saveSchedule">💾 Save Schedule</button>
             <button id="refreshSchedule">↻ Refresh</button>
         </div>
     </div>
