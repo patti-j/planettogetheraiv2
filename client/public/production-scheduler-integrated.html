@@ -446,6 +446,35 @@
             border-color: var(--border) !important;
             color: var(--foreground) !important;
         }
+        
+        /* Fix timeline header text visibility in dark mode */
+        .dark .b-sch-header-row-main .b-sch-header-timeaxis-cell,
+        .dark .b-sch-header-row-bottom .b-sch-header-timeaxis-cell {
+            color: var(--foreground) !important;
+        }
+        
+        .dark .b-sch-header-row .b-sch-simple-timeaxis-cell {
+            color: var(--foreground) !important;
+        }
+        
+        .dark .b-sch-header-timeaxis-cell span {
+            color: var(--foreground) !important;
+        }
+        
+        .dark .b-sch-header-row-1 .b-sch-header-timeaxis-cell,
+        .dark .b-sch-header-row-0 .b-sch-header-timeaxis-cell {
+            color: var(--foreground) !important;
+            background: var(--muted) !important;
+        }
+        
+        /* Ensure all text in timeline headers is visible */
+        .dark .b-sch-timeaxis-cell-text {
+            color: var(--foreground) !important;
+        }
+        
+        .dark .b-sch-timeaxis-tick {
+            color: var(--foreground) !important;
+        }
 
         .dark .b-toolbar {
             background: var(--card) !important;
@@ -579,6 +608,37 @@
         .dark * {
             scrollbar-width: thin;
             scrollbar-color: hsl(240, 5%, 30%) var(--background);
+        }
+        
+        /* Ultimate override for ALL scrollbars in dark mode */
+        .dark body ::-webkit-scrollbar,
+        .dark div::-webkit-scrollbar,
+        .dark *::-webkit-scrollbar {
+            width: 12px !important;
+            height: 12px !important;
+            background: hsl(240, 10%, 10%) !important;
+        }
+        
+        .dark body ::-webkit-scrollbar-track,
+        .dark div::-webkit-scrollbar-track,
+        .dark *::-webkit-scrollbar-track {
+            background: hsl(240, 10%, 10%) !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        
+        .dark body ::-webkit-scrollbar-thumb,
+        .dark div::-webkit-scrollbar-thumb,
+        .dark *::-webkit-scrollbar-thumb {
+            background: hsl(240, 5%, 25%) !important;
+            border: 2px solid hsl(240, 10%, 10%) !important;
+            border-radius: 6px !important;
+        }
+        
+        .dark body ::-webkit-scrollbar-thumb:hover,
+        .dark div::-webkit-scrollbar-thumb:hover,
+        .dark *::-webkit-scrollbar-thumb:hover {
+            background: hsl(240, 5%, 35%) !important;
         }
 
         /* Fix white areas in scheduler panels */
@@ -975,6 +1035,51 @@
             background: var(--muted);
             border-color: var(--muted-foreground);
         }
+        /* FINAL AGGRESSIVE DARK MODE OVERRIDES - Must be last! */
+        html.dark ::-webkit-scrollbar,
+        html.dark body ::-webkit-scrollbar,
+        html.dark #scheduler ::-webkit-scrollbar,
+        .dark ::-webkit-scrollbar {
+            width: 12px !important;
+            height: 12px !important;
+            background-color: hsl(240, 10%, 10%) !important;
+        }
+        
+        html.dark ::-webkit-scrollbar-track,
+        html.dark body ::-webkit-scrollbar-track,
+        html.dark #scheduler ::-webkit-scrollbar-track,
+        .dark ::-webkit-scrollbar-track {
+            background-color: hsl(240, 10%, 10%) !important;
+            box-shadow: none !important;
+            border: none !important;
+        }
+        
+        html.dark ::-webkit-scrollbar-thumb,
+        html.dark body ::-webkit-scrollbar-thumb,
+        html.dark #scheduler ::-webkit-scrollbar-thumb,
+        .dark ::-webkit-scrollbar-thumb {
+            background-color: hsl(240, 5%, 25%) !important;
+            border: 2px solid hsl(240, 10%, 10%) !important;
+            border-radius: 6px !important;
+            box-shadow: none !important;
+        }
+        
+        html.dark ::-webkit-scrollbar-thumb:hover,
+        .dark ::-webkit-scrollbar-thumb:hover {
+            background-color: hsl(240, 5%, 35%) !important;
+        }
+        
+        html.dark ::-webkit-scrollbar-corner,
+        .dark ::-webkit-scrollbar-corner {
+            background-color: hsl(240, 10%, 10%) !important;
+        }
+        
+        /* Timeline header text contrast fix */
+        .dark .b-sch-header-row div,
+        .dark .b-sch-header-row span,
+        .dark .b-sch-simple-timeaxis div {
+            color: var(--foreground) !important;
+        }
     </style>
     
     <script>
@@ -1014,6 +1119,73 @@
                         document.documentElement.classList.remove('dark');
                     }
                 }
+            });
+            
+            // Force dark scrollbars with dynamic style injection
+            function forceDarkScrollbars() {
+                if (document.documentElement.classList.contains('dark')) {
+                    const styleId = 'forced-dark-scrollbars';
+                    let style = document.getElementById(styleId);
+                    if (!style) {
+                        style = document.createElement('style');
+                        style.id = styleId;
+                        document.head.appendChild(style);
+                    }
+                    style.textContent = `
+                        /* FORCE DARK SCROLLBARS EVERYWHERE */
+                        *::-webkit-scrollbar {
+                            width: 12px !important;
+                            height: 12px !important;
+                            background-color: hsl(240, 10%, 10%) !important;
+                        }
+                        *::-webkit-scrollbar-track {
+                            background-color: hsl(240, 10%, 10%) !important;
+                            box-shadow: none !important;
+                            border: none !important;
+                        }
+                        *::-webkit-scrollbar-thumb {
+                            background-color: hsl(240, 5%, 25%) !important;
+                            border: 2px solid hsl(240, 10%, 10%) !important;
+                            border-radius: 6px !important;
+                        }
+                        *::-webkit-scrollbar-thumb:hover {
+                            background-color: hsl(240, 5%, 35%) !important;
+                        }
+                        *::-webkit-scrollbar-corner {
+                            background-color: hsl(240, 10%, 10%) !important;
+                        }
+                        /* Force text visibility in timeline headers */
+                        .b-sch-header-row * {
+                            color: hsl(0, 0%, 98%) !important;
+                        }
+                    `;
+                }
+            }
+            
+            // Apply on load and after short delay for async content
+            window.addEventListener('load', () => {
+                forceDarkScrollbars();
+                setTimeout(forceDarkScrollbars, 100);
+                setTimeout(forceDarkScrollbars, 500);
+                setTimeout(forceDarkScrollbars, 1000);
+                setTimeout(forceDarkScrollbars, 2000);
+                setTimeout(forceDarkScrollbars, 3000);
+            });
+            
+            // Watch for DOM changes and reapply styles
+            const observer = new MutationObserver(() => {
+                forceDarkScrollbars();
+            });
+            
+            // Start observing after page loads
+            window.addEventListener('DOMContentLoaded', () => {
+                observer.observe(document.body, {
+                    childList: true,
+                    subtree: true,
+                    attributes: true,
+                    attributeFilter: ['class', 'style']
+                });
+                forceDarkScrollbars();
             });
         })();
     </script>
