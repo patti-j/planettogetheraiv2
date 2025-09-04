@@ -403,6 +403,116 @@
             min-height: 0;
         }
 
+        /* Bryntum Scheduler Dark Mode Overrides */
+        .dark .b-schedulerpro,
+        .dark .b-grid-subgrid,
+        .dark .b-grid-body-container,
+        .dark .b-grid-row,
+        .dark .b-sch-background-canvas,
+        .dark .b-sch-foreground-canvas {
+            background: var(--background) !important;
+        }
+
+        .dark .b-grid-cell,
+        .dark .b-sch-header-row {
+            background: transparent !important;
+            color: var(--foreground) !important;
+        }
+
+        .dark .b-grid-header {
+            background: var(--muted) !important;
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-grid-header-text {
+            color: var(--foreground) !important;
+        }
+
+        .dark .b-sch-event {
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-grid-row:hover {
+            background: var(--muted) !important;
+        }
+
+        .dark .b-sch-timeaxis-cell {
+            background: var(--background) !important;
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-sch-header-timeaxis-cell {
+            background: var(--muted) !important;
+            border-color: var(--border) !important;
+            color: var(--foreground) !important;
+        }
+
+        .dark .b-toolbar {
+            background: var(--card) !important;
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-widget {
+            color: var(--foreground) !important;
+        }
+
+        /* Dark mode grid lines and borders */
+        .dark .b-grid-row {
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-grid-cell {
+            border-color: var(--border) !important;
+        }
+
+        .dark .b-sch-timerange {
+            background: var(--muted) !important;
+            opacity: 0.3;
+        }
+
+        .dark .b-grid-splitter {
+            background: var(--border) !important;
+        }
+
+        .dark .b-sch-dependency {
+            stroke: var(--muted-foreground) !important;
+        }
+
+        /* Ensure scheduler container itself has dark background */
+        .dark #scheduler {
+            background: var(--background) !important;
+        }
+
+        /* Dark mode scrollbars */
+        .dark .b-grid-vertical-scroller,
+        .dark .b-grid-horizontal-scroller {
+            background: var(--background) !important;
+        }
+
+        .dark .b-scrollbar-thumb {
+            background: var(--muted-foreground) !important;
+        }
+
+        /* Fix white areas in scheduler panels */
+        .dark .b-panel,
+        .dark .b-panel-content,
+        .dark .b-grid-body {
+            background: var(--background) !important;
+        }
+
+        /* Resource panel and timeline area backgrounds */
+        .dark .b-sch-resourcecolumn-cell,
+        .dark .b-resourceheader {
+            background: var(--background) !important;
+            color: var(--foreground) !important;
+        }
+
+        /* Ensure all text is visible in dark mode */
+        .dark .b-sch-event-content,
+        .dark .b-grid-cell-value {
+            color: inherit !important;
+        }
+
         #scheduler {
             flex: 1;
             min-height: 0;
