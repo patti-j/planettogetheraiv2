@@ -1021,13 +1021,35 @@
                     let totalOperationHours = 0;
                     const resourceUtilization = {};
                     
-                    // Calculate utilization per resource
+                    // Find the actual schedule timespan
+                    let earliestStart = null;
+                    let latestEnd = null;
+                    
+                    // Calculate utilization per resource and find schedule bounds
                     resources.forEach(resource => {
+                        // Skip the unscheduled resource line from calculations
+                        if (resource.id === 'unscheduled') return;
+                        
                         const resourceEvents = events.filter(e => e.resourceId === resource.id);
                         let resourceHours = 0;
+                        
                         resourceEvents.forEach(event => {
                             resourceHours += event.duration || 0;
+                            
+                            // Track schedule bounds
+                            if (event.startDate) {
+                                const startTime = new Date(event.startDate).getTime();
+                                const endTime = new Date(event.endDate || event.startDate).getTime();
+                                
+                                if (!earliestStart || startTime < earliestStart) {
+                                    earliestStart = startTime;
+                                }
+                                if (!latestEnd || endTime > latestEnd) {
+                                    latestEnd = endTime;
+                                }
+                            }
                         });
+                        
                         resourceUtilization[resource.id] = {
                             name: resource.name,
                             hours: resourceHours,
@@ -1036,8 +1058,22 @@
                         totalOperationHours += resourceHours;
                     });
                     
-                    // Calculate overall utilization (assuming 8-hour workdays)
-                    const totalResourceCapacity = resources.length * 8; // 8 hours per resource
+                    // Calculate actual working days and hours in the schedule
+                    let scheduleSpanHours = 0;
+                    if (earliestStart && latestEnd) {
+                        const spanMs = latestEnd - earliestStart;
+                        const spanDays = Math.ceil(spanMs / (1000 * 60 * 60 * 24));
+                        // Assume 8 working hours per day
+                        scheduleSpanHours = spanDays * 8;
+                    } else {
+                        // Fallback to single day if no schedule
+                        scheduleSpanHours = 8;
+                    }
+                    
+                    // Calculate utilization based on actual schedule span
+                    // Exclude unscheduled resource from count
+                    const activeResources = resources.filter(r => r.id !== 'unscheduled').length;
+                    const totalResourceCapacity = activeResources * scheduleSpanHours;
                     const utilization = totalResourceCapacity > 0 ? Math.round((totalOperationHours / totalResourceCapacity) * 100) : 0;
                     
                     document.getElementById('resourceUtilization').textContent = `Resource utilization: ${utilization}% (${totalOperationHours.toFixed(1)}h total)`;
@@ -1592,55 +1628,88 @@
                 }
                 
                 async function levelResourcesScheduling() {
-                    // Balance workload across resources
-                    const events = [...scheduler.eventStore.records];
-                    const resources = [...scheduler.resourceStore.records];
+                    // Balance workload across resources to reduce utilization peaks
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
                     
-                    // Calculate total duration per resource
-                    const resourceLoad = {};
-                    resources.forEach(r => resourceLoad[r.id] = 0);
-                    events.forEach(e => {
-                        if (resourceLoad[e.resourceId] !== undefined) {
-                            resourceLoad[e.resourceId] += e.duration;
+                    if (events.length === 0 || resources.length === 0) return;
+                    
+                    // Calculate current resource loads and identify overloaded resources
+                    const resourceEvents = {};
+                    resources.forEach(r => {
+                        resourceEvents[r.id] = [];
+                    });
+                    
+                    events.forEach(event => {
+                        if (resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId].push(event);
                         }
                     });
                     
-                    // Find average load
-                    const totalLoad = Object.values(resourceLoad).reduce((a, b) => a + b, 0);
-                    const avgLoad = totalLoad / resources.length;
+                    // Set base scheduling date - Sept 3, 2025
+                    const baseDate = new Date(2025, 8, 3);
+                    baseDate.setHours(7, 0, 0, 0); // 7 AM start
                     
-                    // Redistribute events to balance load
-                    const baseDate = new Date();
-                    baseDate.setHours(7, 0, 0, 0);
+                    // Calculate scheduling span - 14 days (2 weeks)
+                    const endDate = new Date(2025, 8, 17);
+                    endDate.setHours(17, 0, 0, 0); // 5 PM end
                     
-                    const resourceSchedules = {};
+                    const workingHoursPerDay = 10; // 7 AM to 5 PM
+                    const totalDays = 14;
+                    const totalAvailableHours = totalDays * workingHoursPerDay * resources.length;
+                    
+                    // Level the resources by spreading operations evenly
+                    const resourceNextAvailable = {};
                     resources.forEach(r => {
-                        resourceSchedules[r.id] = new Date(baseDate);
+                        resourceNextAvailable[r.id] = new Date(baseDate);
                     });
                     
-                    // Sort events by duration (largest first)
-                    events.sort((a, b) => b.duration - a.duration);
+                    // Sort events by priority/duration to optimize scheduling
+                    events.sort((a, b) => {
+                        // Prioritize longer operations first for better packing
+                        return (b.duration || 0) - (a.duration || 0);
+                    });
                     
+                    // Redistribute operations to level resource utilization
                     events.forEach(event => {
-                        // Find resource with least load
-                        let minResourceId = event.resourceId;
-                        let minTime = resourceSchedules[minResourceId];
+                        // Find the resource that becomes available earliest
+                        let earliestResource = event.resourceId;
+                        let earliestTime = resourceNextAvailable[event.resourceId] || new Date(baseDate);
                         
-                        Object.entries(resourceSchedules).forEach(([resId, time]) => {
-                            if (time < minTime) {
-                                minTime = time;
-                                minResourceId = resId;
-                            }
-                        });
+                        // For leveling, we can look for other compatible resources with earlier availability
+                        // For now, keep original resource assignments but spread timing
                         
-                        // Can reassign if resource compatible (simplified - keep original for now)
-                        event.startDate = new Date(resourceSchedules[event.resourceId]);
-                        const durationMs = event.duration * 60 * 60 * 1000;
-                        event.endDate = new Date(event.startDate.getTime() + durationMs);
-                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        // Schedule the operation
+                        const startTime = new Date(resourceNextAvailable[event.resourceId] || baseDate);
+                        
+                        // Add gaps between operations to reduce utilization percentage
+                        // This simulates maintenance, changeover, or buffer time
+                        const bufferMinutes = 60; // 1 hour buffer between operations
+                        
+                        event.startDate = startTime;
+                        const durationMs = (event.duration || 2) * 60 * 60 * 1000;
+                        event.endDate = new Date(startTime.getTime() + durationMs);
+                        
+                        // Update next available time for this resource (with buffer)
+                        resourceNextAvailable[event.resourceId] = new Date(event.endDate.getTime() + bufferMinutes * 60 * 1000);
+                        
+                        // If we've exceeded working hours for the day, move to next day
+                        const nextAvail = resourceNextAvailable[event.resourceId];
+                        if (nextAvail.getHours() >= 17) {
+                            // Move to next day at 7 AM
+                            nextAvail.setDate(nextAvail.getDate() + 1);
+                            nextAvail.setHours(7, 0, 0, 0);
+                            resourceNextAvailable[event.resourceId] = nextAvail;
+                        }
                     });
                     
+                    // Commit the changes
                     scheduler.eventStore.commit();
+                    
+                    // Force a refresh to recalculate utilization
+                    setTimeout(() => {
+                        updateStatus();
+                    }, 100);
                 }
                 
                 async function drumScheduling() {

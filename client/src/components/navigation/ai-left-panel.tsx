@@ -1032,22 +1032,74 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     variant="outline" 
                     size="sm" 
                     className="text-xs px-2 py-1.5 h-auto col-span-2"
-                    onClick={() => {
+                    onClick={async () => {
                       // Switch to chat tab
                       setActiveTab('chat');
                       
-                      // Set the analysis prompt
-                      const analysisPrompt = `Analyze the current production schedule and provide insights on:
-1. Resource utilization across all machines
+                      try {
+                        // Fetch actual scheduler data from the backend
+                        const [operationsRes, resourcesRes] = await Promise.all([
+                          fetch('/api/pt-operations'),
+                          fetch('/api/resources')
+                        ]);
+                        
+                        const operations = await operationsRes.json();
+                        const resources = await resourcesRes.json();
+                        
+                        // Calculate actual metrics from the data
+                        const scheduledOps = operations.filter((op: any) => op.startTime && op.resourceName);
+                        const resourceUtilization = new Map();
+                        
+                        // Calculate resource utilization
+                        resources.forEach((resource: any) => {
+                          const resourceOps = scheduledOps.filter((op: any) => 
+                            op.resourceName === resource.name || op.resourceId === resource.id
+                          );
+                          resourceUtilization.set(resource.name || resource.id, {
+                            operationCount: resourceOps.length,
+                            totalDuration: resourceOps.reduce((sum: number, op: any) => sum + (op.duration || 0), 0)
+                          });
+                        });
+                        
+                        // Build the analysis prompt with actual data
+                        const analysisPrompt = `Analyze the current production schedule with the following actual data:
+
+CURRENT SCHEDULE DATA:
+- Total Operations: ${operations.length}
+- Scheduled Operations: ${scheduledOps.length}
+- Resources Available: ${resources.length}
+
+RESOURCE UTILIZATION:
+${Array.from(resourceUtilization.entries()).map(([resource, data]) => 
+  `- ${resource}: ${data.operationCount} operations, ${data.totalDuration} minutes total`
+).join('\n')}
+
+SAMPLE OPERATIONS:
+${operations.slice(0, 5).map((op: any) => 
+  `- ${op.name}: ${op.resourceName || 'Unassigned'} (${op.startTime ? new Date(op.startTime).toLocaleString() : 'Not scheduled'})`
+).join('\n')}
+
+Please provide insights on:
+1. Resource utilization and load balancing
 2. Potential bottlenecks or resource conflicts  
-3. Overall schedule efficiency and completion time
-4. Recommendations for optimization (which algorithms to run)
+3. Schedule efficiency and estimated completion times
+4. Recommendations for optimization (which algorithms would help)
 5. Critical path analysis`;
-                      
-                      // Send the message directly with the prompt
-                      setTimeout(() => {
-                        handleSendMessage(analysisPrompt);
-                      }, 100);
+                        
+                        // Send the message with actual data
+                        setTimeout(() => {
+                          handleSendMessage(analysisPrompt);
+                        }, 100);
+                        
+                      } catch (error) {
+                        console.error('Error fetching scheduler data:', error);
+                        
+                        // Fallback to basic prompt if data fetch fails
+                        const basicPrompt = `Analyze the current production schedule and provide insights on resource utilization, bottlenecks, and optimization recommendations.`;
+                        setTimeout(() => {
+                          handleSendMessage(basicPrompt);
+                        }, 100);
+                      }
                     }}
                   >
                     ✨ Analyze Schedule
