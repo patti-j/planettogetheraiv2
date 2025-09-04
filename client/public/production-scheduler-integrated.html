@@ -1388,13 +1388,13 @@
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
-                // Set today's date to September 3, 2025
-                const today = new Date(2025, 8, 3); // September 3, 2025
+                // Always use the actual current date
+                const today = new Date();
                 today.setHours(8, 0, 0, 0); // Start at 8 AM
                 
-                // Helper to create a date relative to September 3, 2025
+                // Helper to create a date relative to today
                 function createDate(hoursFromNow) {
-                    const date = new Date(2025, 8, 3); // September 3, 2025
+                    const date = new Date();
                     date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
                     return date;
                 }
@@ -1813,14 +1813,15 @@
                     },
 
                     startDate: (() => {
-                        // Start from today (September 3, 2025)
-                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
+                        // Always start from today's actual date
+                        const start = new Date();
                         start.setHours(0, 0, 0, 0);
                         return start;
                     })(),
                     endDate: (() => {
                         // Show 2 weeks from today
-                        const end = new Date(2025, 8, 17); // September 17, 2025
+                        const end = new Date();
+                        end.setDate(end.getDate() + 14);
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
@@ -2893,6 +2894,13 @@
                     await asapScheduling();
                     updateStatus();
                     console.log('✅ ASAP scheduling applied successfully');
+                    
+                    // Auto fit to view after scheduling
+                    scheduler.zoomToFit({
+                        leftMargin: 50,
+                        rightMargin: 50
+                    });
+                    console.log('📐 Auto-fit to view applied');
                     
                     // Add welcome message to Max AI
                     const maxMessages = document.getElementById('maxMessages');
