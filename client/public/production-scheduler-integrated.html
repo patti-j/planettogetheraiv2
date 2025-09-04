@@ -297,31 +297,42 @@
             height: 16px;
         }
         
-        /* Row resize handle styling */
-        .b-row-reorderer,
-        .b-grid-row-resizer {
-            cursor: row-resize !important;
+        /* Row resize handle styling - Bryntum specific */
+        .b-sch-timeaxis-cell {
+            position: relative;
         }
         
-        .b-grid-row-resizer {
+        .b-grid-row {
+            position: relative;
+            border-bottom: 1px solid transparent;
+            transition: border-color 0.2s;
+        }
+        
+        .b-grid-row:hover {
+            border-bottom-color: var(--border);
+        }
+        
+        /* Visual indicator for row height button */
+        .row-resize-indicator {
             position: absolute;
-            height: 5px;
-            right: 0;
+            width: 100%;
+            height: 4px;
+            bottom: -2px;
             left: 0;
-            bottom: -3px;
             cursor: row-resize;
-            z-index: 10;
+            z-index: 100;
+            background: transparent;
         }
         
-        .b-grid-row-resizer:hover::after {
-            content: '';
-            position: absolute;
-            left: 0;
-            right: 0;
-            height: 3px;
+        .row-resize-indicator:hover {
             background: var(--primary);
-            opacity: 0.5;
-            top: 1px;
+            opacity: 0.3;
+        }
+        
+        /* Style for when dragging to resize rows */
+        .b-resizing-rows .b-grid-row {
+            opacity: 0.8;
+            transition: height 0.2s ease;
         }
 
         .display-options-title {
@@ -1566,11 +1577,14 @@
         </div>
 
         <div class="toolbar-group">
-            <button id="rowSizeBtn" title="Row Height">
+            <button id="rowSizeBtn" title="Row Height: M">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="3" x2="12" y2="21"></line>
-                    <line x1="8" y1="3" x2="8" y2="21"></line>
-                    <line x1="16" y1="3" x2="16" y2="21"></line>
+                    <!-- Horizontal lines representing rows -->
+                    <line x1="4" y1="6" x2="20" y2="6"></line>
+                    <line x1="4" y1="12" x2="20" y2="12"></line>
+                    <line x1="4" y1="18" x2="20" y2="18"></line>
+                    <!-- Vertical resize indicator -->
+                    <path d="M12 3v3m0 12v3m0-12v6" stroke-dasharray="2 1"></path>
                 </svg>
             </button>
         </div>
@@ -2111,11 +2125,9 @@
                     zoomOnMouseWheel: !isMobile,
                     zoomOnTimeAxisDoubleClick: !isMobile,
                     
-                    // Enable row resizing
+                    // Enable features including row resizing
                     features: {
-                        rowResize: {
-                            enabled: true
-                        },
+                        rowReorder: false,
                         dependencies: true,
                         eventDrag: true,
                         eventResize: true,
@@ -2982,21 +2994,47 @@
                 // Row size button - cycles through preset row sizes
                 const rowSizeBtn = document.getElementById('rowSizeBtn');
                 if (rowSizeBtn) {
+                    // Set initial state
+                    const sizes = [30, 40, 50, 60, 90];
+                    const sizeNames = ['XS', 'S', 'M', 'L', 'XL'];
+                    let currentSizeIndex = 3; // Start at 'L' (60px) to match initial rowHeight
+                    
                     rowSizeBtn.addEventListener('click', () => {
-                        // Toggle visual indicator
-                        rowSizeBtn.classList.toggle('active');
+                        // Cycle to next size
+                        currentSizeIndex = (currentSizeIndex + 1) % sizes.length;
+                        const newHeight = sizes[currentSizeIndex];
                         
-                        // Cycle through preset sizes
-                        const sizes = [30, 40, 50, 70, 90];
-                        const currentHeight = scheduler.rowHeight;
-                        const currentIndex = sizes.indexOf(currentHeight);
-                        const nextIndex = (currentIndex + 1) % sizes.length;
-                        scheduler.rowHeight = sizes[nextIndex];
+                        // Apply new height with smooth transition
+                        scheduler.rowHeight = newHeight;
                         scheduler.refreshWithTransition();
                         
-                        // Show a tooltip with the new size
-                        const sizeNames = ['XS', 'S', 'M', 'L', 'XL'];
-                        rowSizeBtn.title = `Row Height: ${sizeNames[nextIndex]}`;
+                        // Update button appearance and tooltip
+                        rowSizeBtn.title = `Row Height: ${sizeNames[currentSizeIndex]} (${newHeight}px)`;
+                        
+                        // Add visual feedback
+                        rowSizeBtn.classList.add('active');
+                        setTimeout(() => rowSizeBtn.classList.remove('active'), 200);
+                        
+                        // Show temporary overlay indicating row size change
+                        const overlay = document.createElement('div');
+                        overlay.className = 'row-size-overlay';
+                        overlay.textContent = `Row Height: ${sizeNames[currentSizeIndex]}`;
+                        overlay.style.cssText = `
+                            position: fixed;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            background: var(--primary);
+                            color: white;
+                            padding: 12px 24px;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            font-weight: 600;
+                            z-index: 10000;
+                            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+                        `;
+                        document.body.appendChild(overlay);
+                        setTimeout(() => overlay.remove(), 1000);
                     });
                 }
                 
