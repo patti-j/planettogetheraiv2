@@ -197,6 +197,9 @@ export default function SchedulerPro() {
       schedulerRef.current = new SchedulerPro({
         appendTo: containerRef.current,
       
+      // Disable ResizeObserver to prevent loop errors
+      monitorResize: false,
+      
       // Project configuration (removed in favor of direct stores)
       
       // Time axis configuration
