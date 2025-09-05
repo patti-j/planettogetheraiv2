@@ -1,9 +1,8 @@
-import React, { useRef, useEffect, useState, useMemo } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import { ProjectModel } from '@bryntum/schedulerpro';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { 
   Calendar, 
   Users, 
@@ -12,8 +11,6 @@ import {
   ZoomIn, 
   ZoomOut,
   RotateCcw,
-  Play,
-  Pause,
   ChevronLeft,
   ChevronRight,
   Home
@@ -21,15 +18,11 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
-// Scheduler Pro Page based on official Bryntum documentation
-// https://bryntum.com/products/schedulerpro/docs/api/widgets/SchedulerPro/view/SchedulerPro
-
 export default function SchedulerPro() {
   const schedulerRef = useRef<any>(null);
   const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [currentViewPreset, setCurrentViewPreset] = useState('weekAndDay');
   const [isLoading, setIsLoading] = useState(true);
-  const [projectModel, setProjectModel] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch PT data for the scheduler
@@ -38,310 +31,106 @@ export default function SchedulerPro() {
     enabled: true
   });
 
-  // Initialize project data
-  useEffect(() => {
-    if (ptOperations) {
-      // Extract unique resources from PT operations
-      const resources = extractResourcesFromOperations(ptOperations || []);
-      const events = transformEvents(ptOperations || []);
-      const assignments = createAssignments(ptOperations || [], resources);
-      const dependencies = createDependencies(ptOperations || []);
-      const calendars = createCalendars();
-
-      // Create a ProjectModel instance with non-deprecated property names
-      const project = new ProjectModel({
-        calendars: calendars,
-        calendar: 'business', // Set default project calendar
-        resources: resources,
-        events: events,
-        assignments: assignments,
-        dependencies: dependencies,
-        autoSync: false,
-        validateResponse: true
-      });
-      
-      console.log('Created ProjectModel with:', {
-        resources: resources.length,
-        events: events.length,
-        assignments: assignments.length,
-        dependencies: dependencies.length
-      });
-      
-      setProjectModel(project);
-      setIsLoading(false);
-    }
-  }, [ptOperations]);
-
-  // Extract unique resources from PT operations
-  function extractResourcesFromOperations(ptOperations: any[]): any[] {
-    if (!Array.isArray(ptOperations)) return [];
+  // Simple project configuration object
+  const projectConfig = React.useMemo(() => {
+    if (!ptOperations || ptOperations.length === 0) return null;
     
-    // Create unique resources from operations data
+    // Extract unique resources from operations
     const resourceMap = new Map();
+    const eventList: any[] = [];
+    const assignmentList: any[] = [];
     
-    ptOperations.forEach((op: any) => {
-      const resourceId = op.assignedResourceId || op.resourceId;
-      const resourceName = op.assignedResourceName || op.resourceName;
+    ptOperations.forEach((op: any, index: number) => {
+      const resourceId = String(op.assignedResourceId || op.resourceId || '1');
+      const resourceName = op.assignedResourceName || op.resourceName || 'Resource';
       
-      if (resourceId && !resourceMap.has(resourceId)) {
+      // Add resource if not already in map
+      if (!resourceMap.has(resourceId)) {
         resourceMap.set(resourceId, {
           id: resourceId,
-          name: resourceName || `Resource ${resourceId}`,
-          type: op.resourceType || 'Machine',
-          calendar: determineCalendarFromResource(resourceName),
-          efficiency: 100,
-          department: op.workCenterName || 'Production',
-          image: false // Disable images for cleaner look
+          name: resourceName,
+          type: 'Machine'
         });
       }
-    });
-    
-    // Ensure we have at least some resources
-    const resourceArray = Array.from(resourceMap.values());
-    console.log('Extracted resources:', resourceArray.length, 'unique resources from', ptOperations.length, 'operations');
-    
-    return resourceArray;
-  }
-  
-  // Determine calendar based on resource name or type
-  function determineCalendarFromResource(resourceName: string): string {
-    if (!resourceName) return 'business';
-    const name = resourceName.toLowerCase();
-    if (name.includes('night') || name.includes('3rd shift')) return 'night';
-    if (name.includes('24/7') || name.includes('continuous')) return '24/7';
-    if (name.includes('day') || name.includes('1st shift')) return 'day';
-    return 'business';
-  }
-
-  // Transform events (operations) to Bryntum format
-  function transformEvents(ptOperations: any[]): any[] {
-    if (!Array.isArray(ptOperations)) return [];
-    
-    return ptOperations.map((op: any) => {
-      const startDate = new Date(op.startTime);
-      const duration = op.duration || 4; // Default 4 hours
-      const endDate = op.endTime ? 
-        new Date(op.endTime) : 
-        new Date(startDate.getTime() + duration * 60 * 60 * 1000);
       
-      return {
-        id: op.id || op.operationId,
+      // Create event
+      const eventId = String(op.id || index);
+      const startDate = new Date(op.startTime);
+      const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
+      
+      eventList.push({
+        id: eventId,
         name: `${op.jobName}: ${op.operationName}`,
         startDate: startDate,
         endDate: endDate,
-        duration: duration,
-        durationUnit: 'hour',
-        percentDone: op.percentComplete || 0,
-        effort: duration,
-        effortUnit: 'hour',
-        constraintType: op.constraintType || 'startnoearlierthan',
-        constraintDate: startDate,
-        // Custom fields
-        priority: op.priority || 5,
-        status: op.status || 'scheduled',
-        jobId: op.jobId,
-        operationId: op.operationId,
-        cls: getEventClass(op)
-      };
-    });
-  }
-
-  // Create assignments linking events to resources
-  function createAssignments(operations: any[], resources: any[]): any[] {
-    if (!operations || !resources || resources.length === 0) return [];
-    
-    const assignments: any[] = [];
-    
-    operations.forEach((op: any) => {
-      const resourceId = op.assignedResourceId || op.resourceId || op.resource_id;
-      if (resourceId) {
-        // Find resource by ID (convert to string for comparison)
-        const resource = resources.find(r => String(r.id) === String(resourceId));
-        if (resource) {
-          assignments.push({
-            id: `${op.id || op.operationId}_${resourceId}`,
-            eventId: op.id || op.operationId,
-            resourceId: String(resourceId),
-            units: 100 // 100% allocation
-          });
-        } else {
-          console.log(`Resource not found for operation ${op.operationName} with resourceId ${resourceId}`);
-        }
-      }
+        duration: op.duration || 4,
+        durationUnit: 'hour'
+      });
+      
+      // Create assignment
+      assignmentList.push({
+        id: `${eventId}_${resourceId}`,
+        event: eventId,
+        resource: resourceId
+      });
     });
     
-    console.log('Created assignments:', assignments.length, 'from', operations.length, 'operations');
-    return assignments;
-  }
-
-  // Create dependencies between operations
-  function createDependencies(operations: any[]): any[] {
-    // Create sample dependencies for demonstration
-    // In production, these would come from actual PT data
-    const dependencies: any[] = [];
+    const resources = Array.from(resourceMap.values());
     
-    // Create dependencies based on job sequence
-    const jobGroups = new Map();
-    operations.forEach(op => {
-      const jobId = op.jobId;
-      if (!jobGroups.has(jobId)) {
-        jobGroups.set(jobId, []);
-      }
-      jobGroups.get(jobId).push(op);
-    });
+    console.log(`Prepared data: ${resources.length} resources, ${eventList.length} events`);
     
-    // Link operations within same job
-    jobGroups.forEach((ops) => {
-      ops.sort((a: any, b: any) => new Date(a.startTime).getTime() - new Date(b.startTime).getTime());
-      for (let i = 0; i < ops.length - 1; i++) {
-        dependencies.push({
-          id: `dep_${ops[i].id}_${ops[i + 1].id}`,
-          fromEvent: ops[i].id || ops[i].operationId,
-          toEvent: ops[i + 1].id || ops[i + 1].operationId,
-          type: 2, // Finish-to-Start
-          lag: 0,
-          lagUnit: 'hour'
-        });
-      }
-    });
-    
-    return dependencies;
-  }
+    return {
+      resources: resources,
+      events: eventList,
+      assignments: assignmentList
+    };
+  }, [ptOperations]);
 
-  // Create calendars for working/non-working time
-  function createCalendars(): any[] {
-    return [
-      {
-        id: 'business',
-        name: 'Business Hours',
-        intervals: [
-          {
-            recurrentStartDate: 'on Mon-Fri at 08:00',
-            recurrentEndDate: 'on Mon-Fri at 17:00',
-            isWorking: true
-          },
-          {
-            recurrentStartDate: 'on Sat at 00:00',
-            recurrentEndDate: 'on Sat at 23:59',
-            isWorking: false
-          },
-          {
-            recurrentStartDate: 'on Sun at 00:00',
-            recurrentEndDate: 'on Sun at 23:59',
-            isWorking: false
-          }
-        ]
-      },
-      {
-        id: 'day',
-        name: 'Day Shift',
-        intervals: [
-          {
-            recurrentStartDate: 'every day at 06:00',
-            recurrentEndDate: 'every day at 14:00',
-            isWorking: true
-          }
-        ]
-      },
-      {
-        id: 'night',
-        name: 'Night Shift',
-        intervals: [
-          {
-            recurrentStartDate: 'every day at 22:00',
-            recurrentEndDate: 'every day at 23:59',
-            isWorking: true
-          },
-          {
-            recurrentStartDate: 'every day at 00:00',
-            recurrentEndDate: 'every day at 06:00',
-            isWorking: true
-          }
-        ]
-      },
-      {
-        id: '24/7',
-        name: '24/7 Operations',
-        intervals: [
-          {
-            recurrentStartDate: 'every day at 00:00',
-            recurrentEndDate: 'every day at 23:59',
-            isWorking: true
-          }
-        ]
-      }
-    ];
-  }
-
-  // Get CSS class for event styling
-  function getEventClass(operation: any): string {
-    if (operation.priority > 8) return 'high-priority';
-    if (operation.status === 'delayed') return 'delayed';
-    if (operation.status === 'completed') return 'completed';
-    return 'normal';
-  }
+  // Set loading state based on data
+  useEffect(() => {
+    if (projectConfig) {
+      setIsLoading(false);
+    }
+  }, [projectConfig]);
 
   // Capture scheduler instance after mount
   useEffect(() => {
-    if (!projectModel) return;
+    if (!schedulerRef.current) return;
     
-    const checkInterval = setInterval(() => {
-      if (schedulerRef.current) {
-        const instance = schedulerRef.current.schedulerProInstance || 
-                        schedulerRef.current.instance;
-        
-        if (instance) {
-          setSchedulerInstance(instance);
-          clearInterval(checkInterval);
-          
-          // Initial view setup
-          setTimeout(() => {
-            if (instance.zoomToFit) {
-              instance.zoomToFit();
-            }
-          }, 500);
-        }
+    const timer = setTimeout(() => {
+      const instance = schedulerRef.current?.instance;
+      if (instance) {
+        setSchedulerInstance(instance);
+        console.log('Scheduler instance captured');
       }
-    }, 100);
+    }, 1000);
     
-    return () => clearInterval(checkInterval);
-  }, [projectModel]);
+    return () => clearTimeout(timer);
+  }, [isLoading]);
 
   // Toolbar actions
   const handleZoomIn = () => {
-    if (schedulerInstance?.zoomIn) {
-      schedulerInstance.zoomIn();
-    }
+    schedulerInstance?.zoomIn?.();
   };
 
   const handleZoomOut = () => {
-    if (schedulerInstance?.zoomOut) {
-      schedulerInstance.zoomOut();
-    }
+    schedulerInstance?.zoomOut?.();
   };
 
   const handleZoomToFit = () => {
-    if (schedulerInstance?.zoomToFit) {
-      schedulerInstance.zoomToFit();
-    }
+    schedulerInstance?.zoomToFit?.();
   };
 
   const handlePreviousTimeSpan = () => {
-    if (schedulerInstance?.shiftPrevious) {
-      schedulerInstance.shiftPrevious();
-    }
+    schedulerInstance?.shiftPrevious?.();
   };
 
   const handleNextTimeSpan = () => {
-    if (schedulerInstance?.shiftNext) {
-      schedulerInstance.shiftNext();
-    }
+    schedulerInstance?.shiftNext?.();
   };
 
   const handleToday = () => {
-    if (schedulerInstance?.scrollToDate) {
-      schedulerInstance.scrollToDate(new Date(), { block: 'center' });
-    }
+    schedulerInstance?.scrollToDate?.(new Date(), { block: 'center' });
   };
 
   const changeViewPreset = (preset: string) => {
@@ -351,32 +140,12 @@ export default function SchedulerPro() {
     }
   };
 
-  const runSchedulingEngine = async () => {
-    if (!schedulerInstance) return;
-    
-    toast({
-      title: "Scheduling Engine",
-      description: "Running automatic scheduling optimization...",
-    });
-    
-    // The scheduling engine runs automatically in SchedulerPro
-    // Here we can trigger a project commit to ensure all calculations are complete
-    if (schedulerInstance.project) {
-      await schedulerInstance.project.commitAsync();
-      
-      toast({
-        title: "Scheduling Complete",
-        description: "All operations have been optimized according to constraints and dependencies.",
-      });
-    }
-  };
-
-  if (isLoading || !projectModel) {
+  if (isLoading || !projectConfig) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading scheduler...</p>
+          <p className="text-muted-foreground">Loading scheduler data...</p>
         </div>
       </div>
     );
@@ -415,13 +184,6 @@ export default function SchedulerPro() {
               onClick={() => changeViewPreset('weekAndMonth')}
             >
               Week
-            </Button>
-            <Button
-              variant={currentViewPreset === 'monthAndYear' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => changeViewPreset('monthAndYear')}
-            >
-              Month
             </Button>
           </div>
         </div>
@@ -483,18 +245,6 @@ export default function SchedulerPro() {
               <RotateCcw className="h-4 w-4" />
             </Button>
           </div>
-          
-          {/* Actions */}
-          <div className="flex items-center gap-2">
-            <Button
-              variant="default"
-              onClick={runSchedulingEngine}
-              className="gap-2"
-            >
-              <Activity className="h-4 w-4" />
-              Run Scheduling Engine
-            </Button>
-          </div>
         </div>
       </div>
 
@@ -505,12 +255,14 @@ export default function SchedulerPro() {
             <BryntumSchedulerPro
               ref={schedulerRef}
               
-              // Project configuration - use the ProjectModel instance
-              project={projectModel}
+              // Simple inline project configuration
+              resources={projectConfig.resources}
+              events={projectConfig.events}
+              assignments={projectConfig.assignments}
               
               // Time axis configuration
-              startDate={new Date(2025, 8, 1)} // September 1, 2025
-              endDate={new Date(2025, 8, 30)}   // September 30, 2025
+              startDate="2025-08-22"
+              endDate="2025-09-05"
               viewPreset={currentViewPreset}
               
               // Layout configuration
@@ -522,131 +274,26 @@ export default function SchedulerPro() {
                 {
                   type: 'resourceInfo',
                   text: 'Resource',
-                  width: 200,
-                  showEventCount: true,
-                  showRole: true
+                  width: 250,
+                  showEventCount: true
                 },
                 {
                   text: 'Type',
                   field: 'type',
                   width: 100
-                },
-                {
-                  text: 'Calendar',
-                  field: 'calendar',
-                  width: 100
-                },
-                {
-                  text: 'Efficiency %',
-                  field: 'efficiency',
-                  width: 100,
-                  type: 'number'
                 }
               ]}
               
-              // Features configuration based on documentation
-              {...{ features: {
-                // Core scheduling features
-                dependencies: true,
-                dependencyEdit: {
-                  showTooltip: true
-                },
-                
-                // Event manipulation
-                eventDrag: {
-                  constrainDragToTimeline: true,
-                  showTooltip: true
-                },
-                eventDragCreate: true,
-                eventEdit: {
-                  items: {
-                    generalTab: {
-                      items: {
-                        // Define which fields are editable
-                        nameField: { label: 'Operation' },
-                        percentDoneField: { label: 'Progress %' },
-                        effortField: { label: 'Effort (hours)' }
-                      }
-                    },
-                    predecessorsTab: true,
-                    successorsTab: true,
-                    advancedTab: true
-                  }
-                },
+              // Basic features only
+              features={{
+                eventDrag: true,
                 eventResize: true,
-                eventTooltip: {
-                  template: ({ eventRecord }: any) => `
-                    <div class="b-sch-event-tooltip">
-                      <h3>${eventRecord.name}</h3>
-                      <dl>
-                        <dt>Start:</dt><dd>${eventRecord.startDate?.toLocaleString()}</dd>
-                        <dt>End:</dt><dd>${eventRecord.endDate?.toLocaleString()}</dd>
-                        <dt>Duration:</dt><dd>${eventRecord.duration} ${eventRecord.durationUnit}</dd>
-                        <dt>Progress:</dt><dd>${eventRecord.percentDone || 0}%</dd>
-                        <dt>Priority:</dt><dd>${eventRecord.priority || 'Normal'}</dd>
-                        <dt>Status:</dt><dd>${eventRecord.status || 'Scheduled'}</dd>
-                      </dl>
-                    </div>
-                  `
-                },
-                
-                // Progress tracking
-                percentBar: true,
-                
-                // Timeline features
+                eventTooltip: true,
                 timeRanges: {
                   showCurrentTimeLine: true
                 },
-                nonWorkingTime: true,
-                
-                // Grid features
-                cellEdit: false,
                 columnLines: true,
-                columnReorder: true,
-                columnResize: true,
-                filterBar: true,
-                group: false,
-                headerMenu: true,
-                sort: 'name',
-                stripe: true,
-                tree: true,
-                
-                // Critical path highlighting
-                criticalPaths: true,
-                
-                // Resource histogram can be added as a partner widget
-                resourceTimeRanges: true,
-                
-                // Schedule tooltip showing conflicts
-                scheduleTooltip: true
-              }}}
-              
-              // Event handlers
-              onBeforeEventEdit={({ eventRecord }: any) => {
-                console.log('Editing event:', eventRecord.name);
-                return true; // Allow edit
-              }}
-              
-              onEventDrop={({ eventRecords, targetResourceRecord, valid }: any) => {
-                if (valid) {
-                  const eventNames = eventRecords.map((r: any) => r.name).join(', ');
-                  toast({
-                    title: "Operation Rescheduled",
-                    description: `${eventNames} moved to ${targetResourceRecord.name}`,
-                  });
-                }
-              }}
-              
-              onDependencyAdd={({ fromEvent, toEvent }: any) => {
-                toast({
-                  title: "Dependency Created",
-                  description: `${fromEvent.name} → ${toEvent.name}`,
-                });
-              }}
-              
-              onBeforeEventDelete={({ eventRecords }: any) => {
-                const eventNames = eventRecords.map((r: any) => r.name).join(', ');
-                return confirm(`Delete ${eventNames}?`);
+                stripe: true
               }}
             />
           </CardContent>
@@ -659,72 +306,15 @@ export default function SchedulerPro() {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {projectModel?.resourceStore?.count || 0} Resources
+              {projectConfig.resources.length} Resources
             </span>
             <span className="flex items-center gap-1">
               <Activity className="h-4 w-4" />
-              {projectModel?.eventStore?.count || 0} Operations
-            </span>
-            <span className="flex items-center gap-1">
-              <Settings className="h-4 w-4" />
-              {projectModel?.dependencyStore?.count || 0} Dependencies
-            </span>
-          </div>
-          
-          {/* Legend */}
-          <div className="flex items-center gap-3 text-sm">
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-500 rounded"></div>
-              On Schedule
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-yellow-500 rounded"></div>
-              At Risk
-            </span>
-            <span className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-red-500 rounded"></div>
-              Delayed
+              {projectConfig.events.length} Operations
             </span>
           </div>
         </div>
       </div>
-
-      {/* Custom styles for event classes */}
-      <style>{`
-        .b-sch-event.high-priority {
-          background-color: #ef4444 !important;
-        }
-        .b-sch-event.delayed {
-          background-color: #f59e0b !important;
-        }
-        .b-sch-event.completed {
-          background-color: #10b981 !important;
-          opacity: 0.8;
-        }
-        .b-sch-event.normal {
-          background-color: #3b82f6 !important;
-        }
-        .b-sch-event-tooltip {
-          padding: 10px;
-        }
-        .b-sch-event-tooltip h3 {
-          margin: 0 0 10px 0;
-          font-size: 14px;
-          font-weight: bold;
-        }
-        .b-sch-event-tooltip dl {
-          display: grid;
-          grid-template-columns: auto 1fr;
-          gap: 5px 10px;
-          margin: 0;
-        }
-        .b-sch-event-tooltip dt {
-          font-weight: 600;
-        }
-        .b-sch-event-tooltip dd {
-          margin: 0;
-        }
-      `}</style>
     </div>
   );
 }
