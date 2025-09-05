@@ -346,6 +346,69 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         <BryntumSchedulerPro
         ref={schedulerRef}
         cls={themeClass}
+        // Toolbar configuration with proper button styling
+        tbar={{
+          cls: 'scheduler-toolbar',
+          items: [
+            {
+              type: 'button',
+              text: 'Zoom In',
+              cls: 'b-green',
+              onAction: () => {
+                if (schedulerRef.current?.widget) {
+                  schedulerRef.current.widget.zoomIn && schedulerRef.current.widget.zoomIn();
+                }
+              }
+            },
+            {
+              type: 'button',
+              text: 'Zoom Out',
+              cls: 'b-green',
+              onAction: () => {
+                if (schedulerRef.current?.widget) {
+                  schedulerRef.current.widget.zoomOut && schedulerRef.current.widget.zoomOut();
+                }
+              }
+            },
+            {
+              type: 'button',
+              text: 'Fit to View',
+              cls: 'b-green',
+              onAction: () => {
+                if (schedulerRef.current?.widget) {
+                  schedulerRef.current.widget.zoomToFit && schedulerRef.current.widget.zoomToFit();
+                }
+              }
+            },
+            '->',
+            {
+              type: 'button',
+              text: 'Apply Algorithm',
+              cls: 'b-green',
+              onAction: () => {
+                console.log('Apply Algorithm clicked');
+              }
+            },
+            {
+              type: 'button', 
+              text: 'Save Schedule',
+              cls: 'b-green',
+              icon: 'b-fa b-fa-save',
+              onAction: () => {
+                console.log('Save Schedule clicked');
+              }
+            },
+            {
+              type: 'button',
+              text: 'Refresh',
+              cls: 'b-green',
+              icon: 'b-fa b-fa-sync',
+              onAction: () => {
+                window.location.reload();
+              }
+            }
+          ]
+        }}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
         startDate={new Date(2025, 8, 1)}  // September 1, 2025
