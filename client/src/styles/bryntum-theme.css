@@ -80,11 +80,34 @@
 .b-button {
   border-radius: 6px;
   transition: all 0.2s;
+  background: white;
+  border: 1px solid #d0d0d0;
+  color: #333;
 }
 
 .b-button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
+}
+
+/* Ensure consistent styling for all button variants */
+.b-button.b-blue,
+.b-button.b-purple,
+.b-button.b-primary {
+  background: white;
+  border: 1px solid #d0d0d0;
+  color: #333;
+}
+
+.b-button.b-blue:hover,
+.b-button.b-purple:hover,
+.b-button.b-primary:hover {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
 }
 
 /* Tooltip styling */

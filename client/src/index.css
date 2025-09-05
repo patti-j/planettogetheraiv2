@@ -1785,11 +1785,32 @@ div[data-radix-tooltip-content] {
   font-size: 12px !important;
   padding: 4px 12px !important;
   border-radius: 3px !important;
+  transition: all 0.2s ease !important;
 }
 
 .bryntum-scheduler-container .b-button:hover {
-  background: #f5f5f5 !important;
-  border-color: #999 !important;
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Override any purple/blue button styles */
+.bryntum-scheduler-container .b-button.b-blue,
+.bryntum-scheduler-container .b-button.b-purple,
+.bryntum-scheduler-container .b-button.b-primary {
+  background: white !important;
+  border: 1px solid #d0d0d0 !important;
+  color: #333 !important;
+}
+
+.bryntum-scheduler-container .b-button.b-blue:hover,
+.bryntum-scheduler-container .b-button.b-purple:hover,
+.bryntum-scheduler-container .b-button.b-primary:hover {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
 }
 
 /* Event selection */
