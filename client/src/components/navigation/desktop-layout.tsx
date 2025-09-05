@@ -46,6 +46,17 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   });
 
+  // Navigation panel width state
+  const [navPanelWidth, setNavPanelWidth] = useState(() => {
+    try {
+      const savedWidth = localStorage.getItem('navigationPanelWidth');
+      return savedWidth ? parseInt(savedWidth) : 320; // Default 320px (w-80)
+    } catch {
+      return 320;
+    }
+  });
+  const [isDraggingNav, setIsDraggingNav] = useState(false);
+
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
   // Get AI settings for voice functionality
@@ -196,6 +207,48 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
+  // Handle navigation panel resizing
+  const handleNavMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDraggingNav(true);
+  };
+
+  const handleNavMouseMove = (e: MouseEvent) => {
+    if (!isDraggingNav) return;
+    
+    // Calculate new width from the right edge
+    const newWidth = window.innerWidth - e.clientX;
+    const minWidth = 200;
+    const maxWidth = window.innerWidth * 0.5; // Max 50% of window width
+    const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
+    
+    setNavPanelWidth(constrainedWidth);
+    
+    // Save to localStorage
+    try {
+      localStorage.setItem('navigationPanelWidth', constrainedWidth.toString());
+    } catch {
+      // Ignore localStorage errors
+    }
+  };
+
+  const handleNavMouseUp = () => {
+    setIsDraggingNav(false);
+  };
+
+  // Add event listeners for navigation panel dragging
+  useEffect(() => {
+    if (isDraggingNav) {
+      document.addEventListener('mousemove', handleNavMouseMove);
+      document.addEventListener('mouseup', handleNavMouseUp);
+      
+      return () => {
+        document.removeEventListener('mousemove', handleNavMouseMove);
+        document.removeEventListener('mouseup', handleNavMouseUp);
+      };
+    }
+  }, [isDraggingNav]);
+
   // Toggle pin functionality
   const handleTogglePin = () => {
     const newPinned = !isNavigationPinned;
@@ -301,12 +354,27 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         {showPanels && (
           <>
             {isNavigationPinned ? (
-              <div className="h-full flex flex-col bg-background border-l border-border w-80">
-                <SlideOutMenu 
-                  isOpen={true}
-                  onClose={() => {}}
-                />
-              </div>
+              <>
+                {/* Resizer for navigation panel */}
+                <div
+                  className="w-1 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors relative group"
+                  onMouseDown={handleNavMouseDown}
+                >
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-8 w-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
+                  </div>
+                </div>
+                {/* Navigation panel with dynamic width */}
+                <div 
+                  className="h-full flex flex-col bg-background border-l border-border"
+                  style={{ width: `${navPanelWidth}px` }}
+                >
+                  <SlideOutMenu 
+                    isOpen={true}
+                    onClose={() => {}}
+                  />
+                </div>
+              </>
             ) : (
               <MinimizedNavPanel 
                 onExpand={() => setIsNavigationOpen(true)}
