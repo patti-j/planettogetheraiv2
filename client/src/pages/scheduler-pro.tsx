@@ -7,7 +7,6 @@ import {
   Calendar, 
   Users, 
   Activity, 
-  Settings, 
   ZoomIn, 
   ZoomOut,
   RotateCcw,
@@ -22,85 +21,99 @@ export default function SchedulerPro() {
   const schedulerRef = useRef<any>(null);
   const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [currentViewPreset, setCurrentViewPreset] = useState('weekAndDay');
-  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   // Fetch PT data for the scheduler
-  const { data: ptOperations } = useQuery({
+  const { data: ptOperations, isLoading } = useQuery({
     queryKey: ['/api/pt-operations'],
     enabled: true
   });
 
-  // Simple project configuration object
-  const projectConfig = React.useMemo(() => {
-    if (!ptOperations || ptOperations.length === 0) return null;
-    
-    // Extract unique resources from operations
-    const resourceMap = new Map();
-    const eventList: any[] = [];
-    const assignmentList: any[] = [];
-    
-    // Debug: log first operation to see structure
-    if (ptOperations.length > 0) {
-      console.log('Sample operation:', ptOperations[0]);
+  // Prepare scheduler config with inline data
+  const schedulerConfig = React.useMemo(() => {
+    if (!ptOperations || ptOperations.length === 0) {
+      return null;
     }
     
+    // Extract unique resources
+    const resourceMap = new Map();
+    const events: any[] = [];
+    const assignments: any[] = [];
+    
     ptOperations.forEach((op: any, index: number) => {
-      // Use resourceName as the unique identifier for resources
-      const resourceName = op.resourceName || op.assignedResourceName || `Resource ${index}`;
-      const resourceId = resourceName; // Use resource name as ID for uniqueness
+      // Use resourceName as unique key
+      const resourceName = op.resourceName || `Resource ${index}`;
       
-      // Add resource if not already in map
+      // Add unique resource
       if (!resourceMap.has(resourceName)) {
         resourceMap.set(resourceName, {
-          id: resourceId,
-          name: resourceName,
-          type: op.resourceType || 'Machine'
+          id: resourceName,
+          name: resourceName
         });
       }
       
       // Create event
-      const eventId = String(op.id || index);
+      const eventId = `event_${op.id || index}`;
       const startDate = new Date(op.startTime);
-      const endDate = op.endTime ? new Date(op.endTime) : new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
+      const endDate = op.endTime ? new Date(op.endTime) : 
+                      new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
-      eventList.push({
+      events.push({
         id: eventId,
-        name: `${op.jobName}: ${op.operationName}`,
-        startDate: startDate,
-        endDate: endDate,
-        duration: op.duration || 4,
-        durationUnit: 'hour'
+        name: `${op.operationName}`,
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
       });
       
-      // Create assignment linking event to resource
-      assignmentList.push({
-        id: `assignment_${eventId}`,
+      // Create assignment
+      assignments.push({
+        id: `assign_${index}`,
         event: eventId,
-        resource: resourceId
+        resource: resourceName
       });
     });
     
     const resources = Array.from(resourceMap.values());
     
-    console.log(`Prepared data: ${resources.length} resources, ${eventList.length} events`);
-    console.log('Resources:', resources.map(r => r.name));
+    console.log('Scheduler Config:', {
+      resources: resources.length,
+      events: events.length,
+      assignments: assignments.length
+    });
     
     return {
-      resources: resources,
-      events: eventList,
-      assignments: assignmentList
+      project: {
+        resources: resources,
+        events: events,
+        assignments: assignments
+      },
+      startDate: '2025-08-22',
+      endDate: '2025-09-05',
+      viewPreset: currentViewPreset,
+      rowHeight: 50,
+      barMargin: 5,
+      columns: [
+        {
+          text: 'Resource',
+          field: 'name',
+          width: 200
+        }
+      ],
+      features: {
+        eventDrag: false,
+        eventResize: false,
+        eventEdit: false,
+        cellEdit: false,
+        taskEdit: false,
+        dependencies: false,
+        timeRanges: {
+          showCurrentTimeLine: true
+        }
+      }
     };
-  }, [ptOperations]);
+  }, [ptOperations, currentViewPreset]);
 
-  // Set loading state based on data
-  useEffect(() => {
-    if (projectConfig) {
-      setIsLoading(false);
-    }
-  }, [projectConfig]);
-
-  // Capture scheduler instance after mount
+  // Capture scheduler instance
   useEffect(() => {
     if (!schedulerRef.current) return;
     
@@ -108,12 +121,12 @@ export default function SchedulerPro() {
       const instance = schedulerRef.current?.instance;
       if (instance) {
         setSchedulerInstance(instance);
-        console.log('Scheduler instance captured');
+        console.log('Scheduler instance ready');
       }
-    }, 1000);
+    }, 500);
     
     return () => clearTimeout(timer);
-  }, [isLoading]);
+  }, [schedulerConfig]);
 
   // Toolbar actions
   const handleZoomIn = () => {
@@ -143,16 +156,15 @@ export default function SchedulerPro() {
   const changeViewPreset = (preset: string) => {
     if (schedulerInstance) {
       schedulerInstance.viewPreset = preset;
-      setCurrentViewPreset(preset);
     }
   };
 
-  if (isLoading || !projectConfig) {
+  if (isLoading || !schedulerConfig) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading scheduler data...</p>
+          <p className="text-muted-foreground">Loading scheduler...</p>
         </div>
       </div>
     );
@@ -261,47 +273,7 @@ export default function SchedulerPro() {
           <CardContent className="p-0 h-full">
             <BryntumSchedulerPro
               ref={schedulerRef}
-              
-              // Simple inline project configuration
-              resources={projectConfig.resources}
-              events={projectConfig.events}
-              assignments={projectConfig.assignments}
-              
-              // Time axis configuration
-              startDate="2025-08-22"
-              endDate="2025-09-05"
-              viewPreset={currentViewPreset}
-              
-              // Layout configuration
-              rowHeight={50}
-              barMargin={5}
-              
-              // Resource columns
-              columns={[
-                {
-                  type: 'resourceInfo',
-                  text: 'Resource',
-                  width: 250,
-                  showEventCount: true
-                },
-                {
-                  text: 'Type',
-                  field: 'type',
-                  width: 100
-                }
-              ]}
-              
-              // Basic features only
-              features={{
-                eventDrag: true,
-                eventResize: true,
-                eventTooltip: true,
-                timeRanges: {
-                  showCurrentTimeLine: true
-                },
-                columnLines: true,
-                stripe: true
-              }}
+              {...schedulerConfig}
             />
           </CardContent>
         </Card>
@@ -313,11 +285,11 @@ export default function SchedulerPro() {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {projectConfig.resources.length} Resources
+              {schedulerConfig.project.resources.length} Resources
             </span>
             <span className="flex items-center gap-1">
               <Activity className="h-4 w-4" />
-              {projectConfig.events.length} Operations
+              {schedulerConfig.project.events.length} Operations
             </span>
           </div>
         </div>
