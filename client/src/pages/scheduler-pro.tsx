@@ -220,22 +220,9 @@ export default function SchedulerPro() {
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        // Remove resourceId - will use assignments instead
+        resourceId: resourceId, // Include resourceId directly on event
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
-      };
-    });
-    
-    // Create assignments to link events to resources with proper prefixes
-    const assignments = (ptOperations as any[]).map((op: any, index: number) => {
-      const eventId = `e_${op.id || index + 1}`;
-      const resourceId = findResourceId(op);
-      
-      return {
-        id: `a_${op.id || index + 1}_${index}`, // Prefixed assignment ID
-        eventId: eventId,
-        resourceId: resourceId,
-        units: 100 // Add units property like the wrapper component
       };
     });
     
@@ -258,12 +245,12 @@ export default function SchedulerPro() {
       events: events.length
     });
     
-    // Log resource distribution for debugging using assignments
+    // Log resource distribution for debugging using events
     const resourceDistribution: any = {};
     const resourceNameDistribution: any = {};
-    assignments.forEach(assignment => {
-      resourceDistribution[assignment.resourceId] = (resourceDistribution[assignment.resourceId] || 0) + 1;
-      const resource = bryntumResources.find(r => r.id === assignment.resourceId);
+    events.forEach(event => {
+      resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
+      const resource = bryntumResources.find(r => r.id === event.resourceId);
       if (resource) {
         resourceNameDistribution[resource.name] = (resourceNameDistribution[resource.name] || 0) + 1;
       }
@@ -295,15 +282,16 @@ export default function SchedulerPro() {
         }
       },
       
-      // Create project with data and assignments
+      // Create project with data (no assignments needed)
       project: {
         autoLoad: false,
         autoSync: false,
         resources: bryntumResources,
         events: events,
-        assignments: assignments, // Add assignments to project
         dependencies: dependencies, // Add dependencies for visual lines
-        // Remove single assignment mode - use assignments instead
+        // Enable automatic scheduling
+        autoCalculateStartDate: true,
+        autoCalculateEndDate: true
       },
       
       // Time axis configuration
