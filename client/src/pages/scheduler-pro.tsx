@@ -210,6 +210,16 @@ export default function SchedulerPro() {
         containerRef.current.style.minHeight = '600px';
       }
       
+      // Create a ProjectModel first with the data
+      const ProjectModel = window.bryntum.schedulerpro.ProjectModel;
+      const projectModel = new ProjectModel({
+        resources: bryntumResources,
+        events: events,
+        assignments: assignments,
+        autoLoad: true,
+        autoSync: false
+      });
+      
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
         appendTo: containerRef.current,
@@ -227,7 +237,8 @@ export default function SchedulerPro() {
         }
       },
       
-      // Project configuration (removed in favor of direct stores)
+      // Use the project model instance
+      project: projectModel,
       
       // Time axis configuration
       startDate: new Date('2025-08-20'),
@@ -258,29 +269,22 @@ export default function SchedulerPro() {
         }
       ],
       
-      // Use project model with assignments for proper resource mapping
-      project: {
-        resources: bryntumResources,
-        events: events,
-        assignments: assignments
-      },
-      
       // Features configuration
       features: {
-          eventDrag: true,
-          eventResize: true,
-          eventTooltip: true,
-          timeRanges: {
-            showCurrentTimeLine: true
-          },
-          columnLines: true,
-          stripe: true,
-          dependencies: false, // Disable for performance
-          criticalPaths: false, // Disable for performance
-          filterBar: false,
-          tree: false
-        }
-      });
+        eventDrag: true,
+        eventResize: true,
+        eventTooltip: true,
+        timeRanges: {
+          showCurrentTimeLine: true
+        },
+        columnLines: true,
+        stripe: true,
+        dependencies: false, // Disable for performance
+        criticalPaths: false, // Disable for performance
+        filterBar: false,
+        tree: false
+      }
+    });
       
       // Force refresh and log resource store after initialization
       setTimeout(() => {
