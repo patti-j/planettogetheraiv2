@@ -93,6 +93,20 @@
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2);
 }
 
+/* Dark mode button styling */
+.dark .b-button {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #f3f4f6;
+}
+
+.dark .b-button:hover {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
 /* Ensure consistent styling for all button variants */
 .b-button.b-blue,
 .b-button.b-purple,
@@ -105,6 +119,23 @@
 .b-button.b-blue:hover,
 .b-button.b-purple:hover,
 .b-button.b-primary:hover {
+  background: #10b981;
+  border-color: #10b981;
+  color: white;
+}
+
+/* Dark mode variants */
+.dark .b-button.b-blue,
+.dark .b-button.b-purple,
+.dark .b-button.b-primary {
+  background: #1f2937;
+  border: 1px solid #374151;
+  color: #f3f4f6;
+}
+
+.dark .b-button.b-blue:hover,
+.dark .b-button.b-purple:hover,
+.dark .b-button.b-primary:hover {
   background: #10b981;
   border-color: #10b981;
   color: white;

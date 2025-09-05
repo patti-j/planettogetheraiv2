@@ -1724,6 +1724,11 @@ div[data-radix-tooltip-content] {
   line-height: 1.2 !important;
 }
 
+/* Dark mode events - maintain visibility */
+.dark .bryntum-scheduler-container .b-sch-event {
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
 .bryntum-scheduler-container .b-sch-event-content {
   padding: 2px 4px !important;
 }
@@ -1732,14 +1737,32 @@ div[data-radix-tooltip-content] {
   border-bottom: 1px solid #e0e0e0 !important;
 }
 
+/* Dark mode grid row */
+.dark .bryntum-scheduler-container .b-grid-row {
+  border-bottom: 1px solid #374151 !important;
+}
+
 .bryntum-scheduler-container .b-grid-cell {
   border-right: 1px solid #f0f0f0 !important;
   font-size: 12px !important;
 }
 
+/* Dark mode grid cell */
+.dark .bryntum-scheduler-container .b-grid-cell {
+  border-right: 1px solid #1f2937 !important;
+  color: #d1d5db !important;
+}
+
 .bryntum-scheduler-container .b-sch-timeaxis-cell {
   border-right: 1px solid #e0e0e0 !important;
   border-bottom: 1px solid #e0e0e0 !important;
+}
+
+/* Dark mode time axis cell */
+.dark .bryntum-scheduler-container .b-sch-timeaxis-cell {
+  border-right: 1px solid #374151 !important;
+  border-bottom: 1px solid #374151 !important;
+  background: #0f172a !important;
 }
 
 .bryntum-scheduler-container .b-grid-header {
@@ -1748,6 +1771,13 @@ div[data-radix-tooltip-content] {
   font-weight: 600 !important;
   font-size: 12px !important;
   color: #333 !important;
+}
+
+/* Dark mode grid header */
+.dark .bryntum-scheduler-container .b-grid-header {
+  background: #1f2937 !important;
+  border-bottom: 2px solid #374151 !important;
+  color: #f3f4f6 !important;
 }
 
 .bryntum-scheduler-container .b-sch-header-timeaxis-cell {
@@ -1762,6 +1792,17 @@ div[data-radix-tooltip-content] {
   background: #f9f9f9 !important;
 }
 
+/* Dark mode time axis header */
+.dark .bryntum-scheduler-container .b-sch-header-timeaxis-cell {
+  background: #1f2937 !important;
+  border-right: 1px solid #374151 !important;
+  color: #d1d5db !important;
+}
+
+.dark .bryntum-scheduler-container .b-sch-nonworkingtime {
+  background: #111827 !important;
+}
+
 /* Resource rows alternating colors */
 .bryntum-scheduler-container .b-grid-row:nth-child(even) {
   background: #fafafa !important;
@@ -1771,11 +1812,26 @@ div[data-radix-tooltip-content] {
   background: #f0f7ff !important;
 }
 
+/* Dark mode row styling */
+.dark .bryntum-scheduler-container .b-grid-row:nth-child(even) {
+  background: #111827 !important;
+}
+
+.dark .bryntum-scheduler-container .b-grid-row:hover {
+  background: #1f2937 !important;
+}
+
 /* Clean toolbar styling */
 .bryntum-scheduler-container .b-toolbar {
   background: white !important;
   border-bottom: 1px solid #e0e0e0 !important;
   padding: 8px !important;
+}
+
+/* Dark mode toolbar */
+.dark .bryntum-scheduler-container .b-toolbar {
+  background: hsl(var(--card)) !important;
+  border-bottom: 1px solid hsl(var(--border)) !important;
 }
 
 .bryntum-scheduler-container .b-button {
@@ -1796,6 +1852,20 @@ div[data-radix-tooltip-content] {
   box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
 }
 
+/* Dark mode button styles */
+.dark .bryntum-scheduler-container .b-button {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+.dark .bryntum-scheduler-container .b-button:hover {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+}
+
 /* Override any purple/blue button styles */
 .bryntum-scheduler-container .b-button.b-blue,
 .bryntum-scheduler-container .b-button.b-purple,
@@ -1813,10 +1883,32 @@ div[data-radix-tooltip-content] {
   color: white !important;
 }
 
+/* Dark mode overrides for colored buttons */
+.dark .bryntum-scheduler-container .b-button.b-blue,
+.dark .bryntum-scheduler-container .b-button.b-purple,
+.dark .bryntum-scheduler-container .b-button.b-primary {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--card-foreground)) !important;
+}
+
+.dark .bryntum-scheduler-container .b-button.b-blue:hover,
+.dark .bryntum-scheduler-container .b-button.b-purple:hover,
+.dark .bryntum-scheduler-container .b-button.b-primary:hover {
+  background: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
+}
+
 /* Event selection */
 .bryntum-scheduler-container .b-sch-event-selected {
   outline: 2px solid #1976D2 !important;
   outline-offset: 1px !important;
+}
+
+/* Dark mode event selection */
+.dark .bryntum-scheduler-container .b-sch-event-selected {
+  outline: 2px solid #10b981 !important;
 }
 
 /* Hide scrollbar for tabs overflow */
