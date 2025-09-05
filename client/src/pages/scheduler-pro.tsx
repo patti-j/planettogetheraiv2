@@ -140,14 +140,69 @@ export default function SchedulerPro() {
     
     // Helper function to find the correct resource ID
     const findResourceId = (operation: any) => {
-      // Try to match by resource name first (most reliable)
-      if (operation.resourceName) {
-        const resource = resourceByName.get(operation.resourceName.toLowerCase());
-        if (resource) return resource.id;
+      const resourceName = operation.resourceName || operation.resource || '';
+      
+      // Debug log for first few operations
+      if (debuggedOps < 5) {
+        console.log(`Finding resource for operation "${operation.operationName}":`, {
+          resourceName,
+          availableResources: Array.from(resourceByName.keys())
+        });
+        debuggedOps++;
       }
-      // Fallback to first available resource
-      return bryntumResources[0]?.id || '1';
+      
+      // Try exact match first (case insensitive)
+      if (resourceName) {
+        const resource = resourceByName.get(resourceName.toLowerCase());
+        if (resource) {
+          return resource.id;
+        }
+      }
+      
+      // Fallback based on operation type
+      const operationName = operation.operationName?.toLowerCase() || '';
+      
+      // Map operations to specific resource types
+      if (operationName.includes('mill')) {
+        const mill = bryntumResources.find(r => r.name.toLowerCase().includes('grain mill'));
+        if (mill) return mill.id;
+      }
+      if (operationName.includes('mash')) {
+        const mash = bryntumResources.find(r => r.name.toLowerCase().includes('mash tun'));
+        if (mash) return mash.id;
+      }
+      if (operationName.includes('lauter')) {
+        const lauter = bryntumResources.find(r => r.name.toLowerCase().includes('lauter'));
+        if (lauter) return lauter.id;
+      }
+      if (operationName.includes('boil')) {
+        const kettle = bryntumResources.find(r => r.name.toLowerCase().includes('brew kettle'));
+        if (kettle) return kettle.id;
+      }
+      if (operationName.includes('whirlpool')) {
+        const whirlpool = bryntumResources.find(r => r.name.toLowerCase().includes('whirlpool'));
+        if (whirlpool) return whirlpool.id;
+      }
+      if (operationName.includes('cool')) {
+        const exchanger = bryntumResources.find(r => r.name.toLowerCase().includes('heat exchanger'));
+        if (exchanger) return exchanger.id;
+      }
+      if (operationName.includes('ferment')) {
+        const tank = bryntumResources.find(r => r.name.toLowerCase().includes('fermentation'));
+        if (tank) return tank.id;
+      }
+      if (operationName.includes('maintenance')) {
+        // Distribute maintenance across resources
+        const resourceIndex = Math.floor(Math.random() * bryntumResources.length);
+        return bryntumResources[resourceIndex]?.id;
+      }
+      
+      // Last fallback - distribute evenly
+      const resourceIndex = Math.floor(Math.random() * bryntumResources.length);
+      return bryntumResources[resourceIndex]?.id || bryntumResources[0]?.id || 'r_1';
     };
+    
+    let debuggedOps = 0;
     
     // Transform PT operations into events with proper ID prefixing
     const events = (ptOperations as any[]).map((op: any, index: number) => {
@@ -228,10 +283,12 @@ export default function SchedulerPro() {
         }
       },
       
-      // Create an empty project with single assignment mode enabled
+      // Create project with data and single assignment mode enabled
       project: {
         autoLoad: false,
         autoSync: false,
+        resources: bryntumResources,
+        events: events,
         eventStore: {
           singleAssignment: true  // Critical: Enable single assignment mode
         }
@@ -283,21 +340,7 @@ export default function SchedulerPro() {
       }
     });
       
-      // Load the data directly into stores after scheduler is created
-      if (schedulerRef.current) {
-        // Access the stores directly
-        const resourceStore = schedulerRef.current.resourceStore;
-        const eventStore = schedulerRef.current.eventStore;
-        
-        // Load data into stores (no assignments needed in single assignment mode)
-        if (resourceStore) {
-          resourceStore.data = bryntumResources;
-        }
-        if (eventStore) {
-          eventStore.data = events;
-        }
-        // Don't load assignments - using resourceId directly with single assignment mode
-      }
+      // Data is now loaded via project configuration, no need for separate loading
       
       // Force refresh and log resource store after initialization
       setTimeout(() => {
