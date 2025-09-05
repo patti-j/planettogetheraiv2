@@ -560,33 +560,81 @@ export default function ProductionSchedulePage() {
           </div>
         </div>
         
-        {/* Right side: Dashboard, Export and Refresh buttons with proper spacing */}
-        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
+        {/* Right side: All buttons consolidated on one line */}
+        <div className="flex items-center gap-1 flex-shrink-0 flex-wrap">
           
-          {/* Dashboard toggle button - always visible */}
+          {/* Dashboard toggle button */}
           <Button 
             variant={showDashboard ? "default" : "outline"} 
             size="sm" 
-            className="gap-2"
+            className="h-8"
             onClick={() => {
               console.log('Dashboard button clicked, showDashboard:', showDashboard);
               setShowDashboard(!showDashboard);
             }}
           >
             <BarChart3 className="w-4 h-4" />
-            {!isMobile && "Dashboard"}
-            {showDashboard ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {!isMobile && <span className="ml-1">Dashboard</span>}
           </Button>
           
           {/* Max AI Assistant Button */}
           <Button
             variant={showMaxAI ? "default" : "outline"}
             size="sm"
-            className="gap-2"
+            className="h-8"
             onClick={() => setShowMaxAI(!showMaxAI)}
           >
             <Sparkles className="w-4 h-4" />
-            {!isMobile && "Max AI"}
+            {!isMobile && <span className="ml-1">Max AI</span>}
+          </Button>
+          
+          {/* Scheduling Algorithm Buttons */}
+          {Object.keys(schedulingAlgorithms).map((algorithm) => (
+            <Button
+              key={algorithm}
+              variant={currentAlgorithm === algorithm ? "default" : "outline"}
+              size="sm"
+              onClick={() => applySchedulingAlgorithm(algorithm)}
+              className="h-8"
+              title={algorithm}
+            >
+              {algorithm === 'ASAP' && <PlayCircle className="w-3 h-3" />}
+              {algorithm === 'ALAP' && <PauseCircle className="w-3 h-3" />}
+              {algorithm === 'Critical Path' && <TrendingUp className="w-3 h-3" />}
+              {algorithm === 'Resource Leveling' && <BarChart3 className="w-3 h-3" />}
+              {algorithm === 'Drum/TOC' && <Activity className="w-3 h-3" />}
+              {!isMobile && <span className="ml-1">{algorithm}</span>}
+            </Button>
+          ))}
+          
+          {/* Export button */}
+          {!isMobile && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8"
+              onClick={async () => {
+                if (exportHandlerRef.current) {
+                  await exportHandlerRef.current();
+                } else {
+                  alert("Please wait for the Gantt Chart to load");
+                }
+              }}
+            >
+              <Download className="w-4 h-4" />
+              <span className="ml-1">Export</span>
+            </Button>
+          )}
+          
+          {/* Refresh button */}
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="h-8"
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCw className="w-4 h-4" />
+            {!isMobile && <span className="ml-1">Refresh</span>}
           </Button>
           
           {/* Theme Toggle */}
@@ -594,42 +642,12 @@ export default function ProductionSchedulePage() {
             variant="outline"
             size="sm"
             onClick={toggleTheme}
-            className="w-9 h-9 p-0"
+            className="h-8 w-8 p-0"
           >
             {theme === 'light' ? <Sun className="w-4 h-4" /> : 
              theme === 'dark' ? <Moon className="w-4 h-4" /> : 
              <Monitor className="w-4 h-4" />}
           </Button>
-
-          {/* Desktop-only buttons */}
-          {!isMobile && (
-            <>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={async () => {
-                  if (exportHandlerRef.current) {
-                    await exportHandlerRef.current();
-                  } else {
-                    alert("Please wait for the Gantt Chart to load");
-                  }
-                }}
-              >
-                <Download className="w-4 h-4" />
-                Export
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => window.location.reload()}
-              >
-                <RefreshCw className="w-4 h-4" />
-                Refresh
-              </Button>
-            </>
-          )}
         </div>
       </div>
 
@@ -649,10 +667,10 @@ export default function ProductionSchedulePage() {
         />
       )}
 
-      {/* Enhanced Scheduling Toolbar */}
+      {/* Enhanced Scheduling Stats Bar */}
       <div className="bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800">
-        <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
-          <div className="flex items-center justify-between mb-3">
+        <div className={`${isMobile ? 'p-2' : 'p-3'}`}>
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Activity className="w-5 h-5 text-blue-600" />
               <span className="font-semibold text-blue-900 dark:text-blue-100">Production Scheduler</span>
@@ -668,42 +686,6 @@ export default function ProductionSchedulePage() {
               <Separator orientation="vertical" className="h-4" />
               <span>{schedulerStats.totalHours.toFixed(1)}h total</span>
             </div>
-          </div>
-          
-          {/* Scheduling Algorithm Buttons */}
-          <div className={`flex ${isMobile ? 'flex-col space-y-2' : 'flex-wrap gap-2'} items-center`}>
-            <span className="text-sm font-medium text-muted-foreground">
-              Scheduling Algorithms:
-            </span>
-            
-            <div className={`flex ${isMobile ? 'flex-wrap' : ''} gap-2`}>
-              {Object.keys(schedulingAlgorithms).map((algorithm) => (
-                <Button
-                  key={algorithm}
-                  variant={currentAlgorithm === algorithm ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => applySchedulingAlgorithm(algorithm)}
-                  className="gap-2 text-xs"
-                >
-                  {algorithm === 'ASAP' && <PlayCircle className="w-3 h-3" />}
-                  {algorithm === 'ALAP' && <PauseCircle className="w-3 h-3" />}
-                  {algorithm === 'Critical Path' && <TrendingUp className="w-3 h-3" />}
-                  {algorithm === 'Resource Leveling' && <BarChart3 className="w-3 h-3" />}
-                  {algorithm === 'Drum/TOC' && <Activity className="w-3 h-3" />}
-                  {algorithm}
-                </Button>
-              ))}
-            </div>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => window.location.reload()}
-              className="gap-2"
-            >
-              <RotateCcw className="w-3 h-3" />
-              Reset
-            </Button>
           </div>
         </div>
       </div>
