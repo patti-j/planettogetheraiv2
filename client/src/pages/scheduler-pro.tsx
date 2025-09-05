@@ -84,9 +84,9 @@ export default function SchedulerPro() {
     (ptOperations as any[]).forEach((op: any) => {
       const resourceName = op.resourceName || 'Unassigned';
       if (!resourceMap.has(resourceName)) {
-        const resourceId = `resource_${resourceMap.size + 1}`;
+        // Use the resource name as the ID for proper mapping
         resourceMap.set(resourceName, {
-          id: resourceId,
+          id: resourceName,
           name: resourceName
         });
       }
@@ -95,7 +95,6 @@ export default function SchedulerPro() {
     // Second pass: create events with correct resourceId
     (ptOperations as any[]).forEach((op: any, index: number) => {
       const resourceName = op.resourceName || 'Unassigned';
-      const resource = resourceMap.get(resourceName);
       const startDate = new Date(op.startTime);
       const endDate = op.endTime ? new Date(op.endTime) : 
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
@@ -107,7 +106,7 @@ export default function SchedulerPro() {
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        resourceId: resource.id, // Directly assign resourceId to event
+        resourceId: resourceName, // Use resource name as ID directly
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
       });
@@ -126,6 +125,8 @@ export default function SchedulerPro() {
       resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
     });
     console.log('Resource distribution:', resourceDistribution);
+    console.log('Sample resources:', resources.slice(0, 3));
+    console.log('Sample events:', events.slice(0, 3));
 
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
