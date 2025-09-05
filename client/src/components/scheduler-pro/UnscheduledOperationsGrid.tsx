@@ -1,7 +1,9 @@
 import React, { useEffect, useRef, useMemo } from 'react';
 import { BryntumGrid } from '@bryntum/schedulerpro-react';
 import { useQuery } from '@tanstack/react-query';
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+// Import both light and dark themes
+import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
+import '@bryntum/schedulerpro/schedulerpro.classic-dark.css';
 
 interface UnscheduledOperationsGridProps {
   onOperationDragStart?: (operation: any) => void;

@@ -4,7 +4,9 @@ import { ProjectModel } from '@bryntum/schedulerpro';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+// Import both light and dark themes
+import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
+import '@bryntum/schedulerpro/schedulerpro.classic-dark.css';
 
 interface BryntumSchedulerProComponentProps {
   operations?: any[];
@@ -334,11 +336,16 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     );
   }
 
+  // Get theme class based on dark mode
+  const isDarkMode = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
+  const themeClass = isDarkMode ? 'b-theme-classic-dark' : 'b-theme-classic-light';
+  
   return (
-    <div className="h-full w-full flex flex-col" style={{ minHeight: 0, overflow: 'hidden' }}>
+    <div className={`h-full w-full flex flex-col ${themeClass}`} style={{ minHeight: 0, overflow: 'hidden' }}>
       <div className="flex-1 min-h-0">
         <BryntumSchedulerPro
         ref={schedulerRef}
+        cls={themeClass}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
         startDate={new Date(2025, 8, 1)}  // September 1, 2025

@@ -1712,6 +1712,106 @@ div[data-radix-tooltip-content] {
   min-width: 1px !important;
 }
 
+/* Theme switching for Bryntum Classic themes */
+/* Light mode uses classic-light theme */
+body:not(.dark) .b-theme-classic-light {
+  display: block;
+}
+
+body:not(.dark) .b-theme-classic-dark {
+  display: none;
+}
+
+/* Dark mode uses classic-dark theme */
+body.dark .b-theme-classic-light,
+.dark .b-theme-classic-light {
+  display: none;
+}
+
+body.dark .b-theme-classic-dark,
+.dark .b-theme-classic-dark {
+  display: block;
+}
+
+/* Override ALL Bryntum button styles with higher specificity */
+.b-button,
+.b-widget.b-button,
+.b-toolbar .b-button,
+.b-toolbar .b-widget.b-button,
+.b-theme-classic .b-button,
+.b-theme-classic-light .b-button,
+.b-theme-classic-dark .b-button,
+.b-schedulerpro .b-button,
+.b-schedulerpro .b-toolbar .b-button,
+.b-schedulerpro-tbar .b-button,
+.b-grid .b-button {
+  background: white !important;
+  background-color: white !important;
+  border: 1px solid #d0d0d0 !important;
+  color: #333 !important;
+  font-size: 12px !important;
+  padding: 6px 12px !important;
+  border-radius: 4px !important;
+  transition: all 0.2s ease !important;
+  font-weight: 500 !important;
+}
+
+.b-button:hover,
+.b-widget.b-button:hover,
+.b-toolbar .b-button:hover,
+.b-toolbar .b-widget.b-button:hover,
+.b-theme-classic .b-button:hover,
+.b-theme-classic-light .b-button:hover,
+.b-theme-classic-dark .b-button:hover,
+.b-schedulerpro .b-button:hover,
+.b-schedulerpro .b-toolbar .b-button:hover,
+.b-schedulerpro-tbar .b-button:hover,
+.b-grid .b-button:hover,
+.b-button:not(.b-disabled):hover {
+  background: #10b981 !important;
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.2) !important;
+}
+
+/* Dark mode button overrides with higher specificity */
+.dark .b-button,
+.dark .b-widget.b-button,
+.dark .b-toolbar .b-button,
+.dark .b-toolbar .b-widget.b-button,
+.dark .b-theme-classic .b-button,
+.dark .b-theme-classic-dark .b-button,
+.dark .b-schedulerpro .b-button,
+.dark .b-schedulerpro .b-toolbar .b-button,
+.dark .b-schedulerpro-tbar .b-button,
+.dark .b-grid .b-button,
+body.dark .b-button {
+  background: #1f2937 !important;
+  background-color: #1f2937 !important;
+  border: 1px solid #374151 !important;
+  color: #f3f4f6 !important;
+}
+
+.dark .b-button:hover,
+.dark .b-widget.b-button:hover,
+.dark .b-toolbar .b-button:hover,
+.dark .b-toolbar .b-widget.b-button:hover,
+.dark .b-theme-classic .b-button:hover,
+.dark .b-theme-classic-dark .b-button:hover,
+.dark .b-schedulerpro .b-button:hover,
+.dark .b-schedulerpro .b-toolbar .b-button:hover,
+.dark .b-schedulerpro-tbar .b-button:hover,
+.dark .b-grid .b-button:hover,
+body.dark .b-button:not(.b-disabled):hover {
+  background: #10b981 !important;
+  background-color: #10b981 !important;
+  border-color: #10b981 !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3) !important;
+}
+
 /* Bryntum Scheduler Pro Custom Styles - Match Core App */
 .bryntum-scheduler-container .b-sch-event {
   border-radius: 2px !important;
