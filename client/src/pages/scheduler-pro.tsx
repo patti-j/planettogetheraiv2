@@ -59,42 +59,57 @@ export default function SchedulerPro() {
 
       const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro;
 
+    // Helper function to assign colors based on operation type
+    const getOperationColor = (operationName: string) => {
+      const colors: any = {
+        'Milling': '#4CAF50',
+        'Mashing': '#2196F3',
+        'Lautering': '#FF9800',
+        'Boiling': '#F44336',
+        'Whirlpool': '#9C27B0',
+        'Cooling': '#00BCD4',
+        'Fermentation': '#795548',
+        'Equipment Maintenance': '#607D8B',
+        'Packaging': '#FFEB3B',
+        'Assembly': '#3F51B5'
+      };
+      return colors[operationName] || '#9E9E9E';
+    };
+
     // Extract unique resources from PT operations
     const resourceMap = new Map();
     const events: any[] = [];
-    const assignments: any[] = [];
     
-    (ptOperations as any[]).forEach((op: any, index: number) => {
-      const resourceName = op.resourceName || `Resource ${index}`;
-      
-      // Add unique resources
+    // First pass: collect all unique resources
+    (ptOperations as any[]).forEach((op: any) => {
+      const resourceName = op.resourceName || 'Unassigned';
       if (!resourceMap.has(resourceName)) {
+        const resourceId = `resource_${resourceMap.size + 1}`;
         resourceMap.set(resourceName, {
-          id: resourceName,
+          id: resourceId,
           name: resourceName
         });
       }
-      
-      // Create event
-      const eventId = `event_${op.id || index}`;
+    });
+    
+    // Second pass: create events with correct resourceId
+    (ptOperations as any[]).forEach((op: any, index: number) => {
+      const resourceName = op.resourceName || 'Unassigned';
+      const resource = resourceMap.get(resourceName);
       const startDate = new Date(op.startTime);
       const endDate = op.endTime ? new Date(op.endTime) : 
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
       events.push({
-        id: eventId,
+        id: `event_${op.id || index}`,
         name: `${op.jobName}: ${op.operationName}`,
         startDate: startDate,
         endDate: endDate,
         duration: op.duration || 4,
-        durationUnit: 'hour'
-      });
-      
-      // Create assignment
-      assignments.push({
-        id: `assign_${index}`,
-        event: eventId,
-        resource: resourceName
+        durationUnit: 'hour',
+        resourceId: resource.id, // Directly assign resourceId to event
+        percentDone: op.percentDone || 0,
+        eventColor: getOperationColor(op.operationName)
       });
     });
     
@@ -102,9 +117,15 @@ export default function SchedulerPro() {
     
     console.log('Initializing Bryntum with:', {
       resources: resources.length,
-      events: events.length,
-      assignments: assignments.length
+      events: events.length
     });
+    
+    // Log resource distribution for debugging
+    const resourceDistribution: any = {};
+    events.forEach(event => {
+      resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
+    });
+    console.log('Resource distribution:', resourceDistribution);
 
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
@@ -113,8 +134,7 @@ export default function SchedulerPro() {
       // Project configuration
       project: {
         resources: resources,
-        events: events,
-        assignments: assignments
+        events: events
       },
       
       // Time axis configuration
