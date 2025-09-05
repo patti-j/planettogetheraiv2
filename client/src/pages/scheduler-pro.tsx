@@ -54,7 +54,7 @@ export default function SchedulerPro() {
       const calendars = createCalendars();
 
       setProjectData({
-        calendarsData: calendars,
+        calendars: calendars,  // Use 'calendars' instead of deprecated 'calendarsData'
         calendar: 'business', // Set default project calendar
         resources: resources,
         events: events,
@@ -194,8 +194,13 @@ export default function SchedulerPro() {
             isWorking: true
           },
           {
-            recurrentStartDate: 'on Sat-Sun at 00:00',
-            recurrentEndDate: 'on Sat-Sun at 24:00',
+            recurrentStartDate: 'on Sat at 00:00',
+            recurrentEndDate: 'on Sat at 23:59',
+            isWorking: false
+          },
+          {
+            recurrentStartDate: 'on Sun at 00:00',
+            recurrentEndDate: 'on Sun at 23:59',
             isWorking: false
           }
         ]
@@ -217,6 +222,11 @@ export default function SchedulerPro() {
         intervals: [
           {
             recurrentStartDate: 'every day at 22:00',
+            recurrentEndDate: 'every day at 23:59',
+            isWorking: true
+          },
+          {
+            recurrentStartDate: 'every day at 00:00',
             recurrentEndDate: 'every day at 06:00',
             isWorking: true
           }
@@ -228,7 +238,7 @@ export default function SchedulerPro() {
         intervals: [
           {
             recurrentStartDate: 'every day at 00:00',
-            recurrentEndDate: 'every day at 24:00',
+            recurrentEndDate: 'every day at 23:59',
             isWorking: true
           }
         ]
