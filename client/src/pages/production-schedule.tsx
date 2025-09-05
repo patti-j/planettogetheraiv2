@@ -466,7 +466,7 @@ export default function ProductionSchedulePage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 ai-gradient-text" />
+                <Sparkles className="w-5 h-5 text-blue-600" />
                 <span className="font-semibold">Max AI Assistant</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowMaxAI(false)}>
@@ -479,7 +479,7 @@ export default function ProductionSchedulePage() {
               <div className="space-y-4">
                 {maxAIMessages.length === 0 && (
                   <div className="text-center text-muted-foreground py-8">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50 ai-gradient-text" />
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50 text-blue-600" />
                     <p className="text-sm">Ask Max AI about your production schedule</p>
                     <p className="text-xs mt-1">Try: "What's our resource utilization?" or "Show bottlenecks"</p>
                   </div>
@@ -489,7 +489,7 @@ export default function ProductionSchedulePage() {
                   <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {message.role === 'assistant' && (
                       <Avatar className="w-6 h-6 mt-1">
-                        <AvatarFallback className="ai-gradient-bg text-white text-xs">
+                        <AvatarFallback className="bg-blue-600 text-white text-xs">
                           <Sparkles className="w-3 h-3" />
                         </AvatarFallback>
                       </Avatar>
@@ -515,7 +515,7 @@ export default function ProductionSchedulePage() {
                 {isMaxAILoading && (
                   <div className="flex gap-3 justify-start">
                     <Avatar className="w-6 h-6 mt-1">
-                      <AvatarFallback className="ai-gradient-bg text-white text-xs">
+                      <AvatarFallback className="bg-blue-600 text-white text-xs">
                         <Sparkles className="w-3 h-3" />
                       </AvatarFallback>
                     </Avatar>
@@ -671,7 +671,7 @@ export default function ProductionSchedulePage() {
       )}
 
       {/* Enhanced Scheduling Toolbar */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 border-b border-blue-200 dark:border-blue-800">
+      <div className="bg-blue-50 dark:bg-blue-950/30 border-b border-blue-200 dark:border-blue-800">
         <div className={`${isMobile ? 'p-3' : 'p-4'}`}>
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
@@ -994,7 +994,7 @@ export default function ProductionSchedulePage() {
                     <Calendar className={`${isMobile ? 'w-4 h-4' : 'w-5 h-5'}`} />
                     Resource-Centered Production Schedule
                   </div>
-                  <Badge variant="secondary" className="bg-gradient-to-r from-blue-500 to-blue-600 text-white">
+                  <Badge variant="secondary" className="bg-blue-600 text-white">
                     Primary View
                   </Badge>
                 </CardTitle>
@@ -1006,7 +1006,7 @@ export default function ProductionSchedulePage() {
               </CardHeader>
               <CardContent className="p-0">
                 {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources && (
-                  <div className="px-4 py-3 bg-gradient-to-r from-blue-50 via-blue-50/50 to-green-50 dark:from-blue-950/30 dark:via-blue-950/20 dark:to-green-950/30 border-b">
+                  <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
                         <div className="text-lg font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set(ptOperations.map(op => op.jobId)).size : 0}</div>
