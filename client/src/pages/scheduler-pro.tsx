@@ -220,7 +220,7 @@ export default function SchedulerPro() {
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        resourceId: resourceId, // Include resourceId for single assignment mode
+        // Remove resourceId - will use assignments instead
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
       };
@@ -238,6 +238,18 @@ export default function SchedulerPro() {
         units: 100 // Add units property like the wrapper component
       };
     });
+    
+    // Create sample dependencies to show lines between operations
+    const dependencies = [];
+    for (let i = 0; i < Math.min(10, events.length - 1); i++) {
+      // Create finish-to-start dependencies for sequential operations
+      dependencies.push({
+        id: `d_${i + 1}`,
+        fromEvent: events[i].id,
+        toEvent: events[i + 1].id,
+        type: 2 // Finish-to-Start
+      });
+    }
     
     console.log('Initializing Bryntum with:', {
       resources: bryntumResources.length,
@@ -283,15 +295,15 @@ export default function SchedulerPro() {
         }
       },
       
-      // Create project with data and single assignment mode enabled
+      // Create project with data and assignments
       project: {
         autoLoad: false,
         autoSync: false,
         resources: bryntumResources,
         events: events,
-        eventStore: {
-          singleAssignment: true  // Critical: Enable single assignment mode
-        }
+        assignments: assignments, // Add assignments to project
+        dependencies: dependencies, // Add dependencies for visual lines
+        // Remove single assignment mode - use assignments instead
       },
       
       // Time axis configuration
