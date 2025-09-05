@@ -88,6 +88,7 @@ import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
 import ProductionSchedulerWrapper from "@/pages/production-scheduler-wrapper";
 import SchedulerPro from "@/pages/scheduler-pro";
+import SchedulerProNew from "@/pages/scheduler-pro-new";
 import SMSPage from "@/pages/sms";
 
 // Import other application-specific components
@@ -203,7 +204,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/scheduler-pro">
                 <ProtectedRoute feature="schedule" action="view">
-                  <SchedulerPro />
+                  <SchedulerProNew />
                 </ProtectedRoute>
               </Route>
               <Route path="/master-production-schedule">
