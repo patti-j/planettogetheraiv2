@@ -6,11 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown, Sparkles, Send, ZoomIn, ZoomOut, Eye, Sun, Moon, Monitor, Settings2, Activity, TrendingUp, AlertTriangle, CheckCircle, PlayCircle, PauseCircle, RotateCcw } from 'lucide-react';
 import GanttChart from '@/components/ui/gantt-chart';
-import BryntumSchedulerProComponent from '@/components/scheduler-pro/BryntumSchedulerPro';
-import UnscheduledOperationsGrid from '@/components/scheduler-pro/UnscheduledOperationsGrid';
-
-// Import PT Gantt styles
-import '../styles/pt-gantt.css';
+// Removed Bryntum-specific imports
 
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { usePermissions } from '@/hooks/useAuth';
@@ -114,7 +110,6 @@ export default function ProductionSchedulePage() {
   const [theme, setTheme] = useState<'light' | 'dark' | 'system'>('light');
   
   // Scheduler instance ref for enhanced functionality
-  const schedulerRef = useRef<any>(null);
 
   // Check permissions - allow all in development for demo purposes
   const canViewSchedule = import.meta.env.DEV ? true : hasPermission('schedule', 'view');
@@ -298,42 +293,26 @@ export default function ProductionSchedulePage() {
     
     const scheduledOperations = schedulingAlgorithms[algorithm as keyof typeof schedulingAlgorithms]?.(ptOperations, resources);
     
-    if (schedulerRef.current && scheduledOperations) {
-      // Update scheduler with new data
-      try {
-        schedulerRef.current.eventStore.data = scheduledOperations.map(op => ({
-          id: op.id,
-          name: op.name || `${op.jobName}: ${op.operationName}`,
-          startDate: op.startDate,
-          duration: op.duration ? (op.duration / 60) : 2, // Convert to hours
-          durationUnit: 'hour',
-          resourceId: op.resourceId || op.resource_id || resources[0]?.id,
-          percentDone: op.percent_done || 0,
-          algorithmApplied: op.algorithmApplied
-        }));
-        
-        updateSchedulerStats();
-      } catch (error) {
-        console.error('Error updating scheduler:', error);
-      }
+    if (scheduledOperations) {
+      // Schedule operations updated
+      updateSchedulerStats();
     }
   };
 
   // Update scheduler statistics
   const updateSchedulerStats = () => {
-    if (!schedulerRef.current || !Array.isArray(resources)) return;
+    if (!Array.isArray(resources) || !Array.isArray(ptOperations)) return;
     
-    const events = schedulerRef.current.eventStore?.records || [];
-    const totalOperations = events.length;
+    const totalOperations = ptOperations.length;
     
     let totalHours = 0;
     const resourceUtilization: Record<string, number> = {};
     
-    events.forEach((event: any) => {
-      const duration = event.duration || 0;
+    ptOperations.forEach((op: any) => {
+      const duration = op.duration ? (op.duration / 60) : 0; // Convert minutes to hours
       totalHours += duration;
       
-      const resourceId = event.resourceId;
+      const resourceId = op.resourceId || op.resource_id;
       if (resourceId) {
         resourceUtilization[resourceId] = (resourceUtilization[resourceId] || 0) + duration;
       }
@@ -345,7 +324,7 @@ export default function ProductionSchedulePage() {
     setSchedulerStats({
       operations: totalOperations,
       utilization: utilization,
-      totalHours: totalHours,
+      totalHours: Math.round(totalHours),
       resources: resources.length
     });
   };
@@ -1004,12 +983,12 @@ export default function ProductionSchedulePage() {
                   </p>
                 )}
               </CardHeader>
-              <CardContent className="p-0">
-                {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources && (
+              <CardContent>
+                {!ordersLoading && !operationsLoading && !resourcesLoading && ptOperations && resources ? (
                   <div className="px-4 py-3 bg-blue-50 dark:bg-blue-950/30 border-b">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-3">
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                        <div className="text-lg font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set(ptOperations.map(op => op.jobId)).size : 0}</div>
+                        <div className="text-lg font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set((ptOperations as any[]).map(op => op.jobId)).size : 0}</div>
                         <div className="text-xs text-muted-foreground">Unique Jobs</div>
                       </div>
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
@@ -1017,11 +996,11 @@ export default function ProductionSchedulePage() {
                         <div className="text-xs text-muted-foreground">Operations</div>
                       </div>
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                        <div className="text-lg font-bold text-orange-600">{Array.isArray(ptOperations) ? ptOperations.filter(op => op.setupTime > 0 || op.cycleTime > 0).length : 0}</div>
+                        <div className="text-lg font-bold text-orange-600">{Array.isArray(ptOperations) ? (ptOperations as any[]).filter(op => op.setupTime > 0 || op.cycleTime > 0).length : 0}</div>
                         <div className="text-xs text-muted-foreground">Activities</div>
                       </div>
                       <div className="text-center p-2 bg-white/60 dark:bg-gray-800/60 rounded-lg">
-                        <div className="text-lg font-bold text-red-600">{Array.isArray(ptOperations) ? ptOperations.filter(op => op.onHold).length : 0}</div>
+                        <div className="text-lg font-bold text-red-600">{Array.isArray(ptOperations) ? (ptOperations as any[]).filter(op => op.onHold).length : 0}</div>
                         <div className="text-xs text-muted-foreground">On Hold</div>
                       </div>
                     </div>
@@ -1057,37 +1036,33 @@ export default function ProductionSchedulePage() {
                       </div>
                     </div>
                   </div>
-                )}
+                ) : null}
                 {!ordersLoading && !operationsLoading && !resourcesLoading ? (
-                  <div className="flex h-full">
-                    {/* Unscheduled Operations Grid - Left Panel */}
-                    <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
-                      <UnscheduledOperationsGrid
-                        onOperationDragStart={(operation) => {
-                          console.log('🎯 Drag started:', operation.name);
-                        }}
-                        onOperationDrag={(operation, targetResource) => {
-                          console.log('🎯 Dragging to:', targetResource?.name);
-                        }}
-                        onOperationDrop={(operation, targetResource, startDate) => {
-                          console.log('🎯 Dropped:', operation.name, 'on', targetResource?.name, 'at', startDate);
-                          // This will trigger a refetch of operations after assignment
-                          refetchOperations();
-                        }}
-                      />
-                    </div>
-                    
-                    {/* Bryntum Scheduler Pro - Main Panel */}
-                    <div className="flex-1">
-                      <BryntumSchedulerProComponent
-                        operations={Array.isArray(ptOperations) ? ptOperations : []}
-                        resources={Array.isArray(resources) ? resources : []}
-                        onOperationUpdate={(operationId, updates) => {
-                          console.log('Operation update requested:', operationId, updates);
-                          // This will trigger a refetch of operations
-                          refetchOperations();
-                        }}
-                      />
+                  <div className="p-6">
+                    <div className="text-center py-8">
+                      <Calendar className="w-12 h-12 mx-auto mb-4 text-blue-600" />
+                      <h3 className="text-xl font-semibold mb-4">Resource-Centered Production Schedule</h3>
+                      <p className="text-gray-600 mb-6">
+                        The production scheduler view displays operations organized by resource.
+                      </p>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto">
+                        <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/30 rounded-lg">
+                          <div className="text-2xl font-bold text-blue-600">{Array.isArray(ptOperations) ? new Set((ptOperations as any[]).map(op => op.jobId)).size : 0}</div>
+                          <div className="text-sm text-muted-foreground">Unique Jobs</div>
+                        </div>
+                        <div className="text-center p-4 bg-green-50 dark:bg-green-950/30 rounded-lg">
+                          <div className="text-2xl font-bold text-green-600">{Array.isArray(ptOperations) ? ptOperations.length : 0}</div>
+                          <div className="text-sm text-muted-foreground">Operations</div>
+                        </div>
+                        <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/30 rounded-lg">
+                          <div className="text-2xl font-bold text-orange-600">{Array.isArray(resources) ? resources.filter((r: any) => r.status === 'active' || !r.status).length : 0}</div>
+                          <div className="text-sm text-muted-foreground">Active Resources</div>
+                        </div>
+                        <div className="text-center p-4 bg-red-50 dark:bg-red-950/30 rounded-lg">
+                          <div className="text-2xl font-bold text-red-600">{Array.isArray(ptOperations) ? (ptOperations as any[]).filter(op => op.onHold).length : 0}</div>
+                          <div className="text-sm text-muted-foreground">On Hold</div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 ) : (
