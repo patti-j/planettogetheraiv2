@@ -45,16 +45,11 @@ export default function SchedulerPro() {
   useEffect(() => {
     if (!containerRef.current || !resources || !ptOperations || isLoading) return;
 
-    // Add unhandled rejection handler for debugging
-    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
-      console.error('Unhandled rejection in scheduler:', {
-        message: event.reason?.message || 'Unknown error',
-        type: event.reason?.constructor?.name || 'Unknown type',
-        stack: event.reason?.stack
-      });
-      event.preventDefault(); // Prevent default console error
-    };
-    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+    // Cleanup function for previous instance
+    if (schedulerRef.current) {
+      schedulerRef.current.destroy();
+      schedulerRef.current = null;
+    }
 
     try {
       // Check if Bryntum is loaded
@@ -152,22 +147,36 @@ export default function SchedulerPro() {
       return bryntumResources[0]?.id || '1';
     };
     
-    // Transform PT operations into events with correct resourceId
+    // Transform PT operations into events WITHOUT resourceId for multi-assignment mode
     const events = (ptOperations as any[]).map((op: any, index: number) => {
       const startDate = new Date(op.startTime);
       const endDate = op.endTime ? new Date(op.endTime) : 
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
+      const eventId = index + 1; // Use numeric IDs
+      
       return {
-        id: `event_${op.id || index}`,
+        id: eventId,
         name: `${op.jobName}: ${op.operationName}`,
         startDate: startDate,
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        resourceId: findResourceId(op),
+        // No resourceId here - will be set via assignments
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
+      };
+    });
+    
+    // Create assignments to link events to resources
+    const assignments = (ptOperations as any[]).map((op: any, index: number) => {
+      const eventId = index + 1;
+      const resourceId = findResourceId(op);
+      
+      return {
+        id: index + 1,
+        eventId: eventId,
+        resourceId: resourceId
       };
     });
     
@@ -178,12 +187,12 @@ export default function SchedulerPro() {
       events: events.length
     });
     
-    // Log resource distribution for debugging
+    // Log resource distribution for debugging using assignments
     const resourceDistribution: any = {};
     const resourceNameDistribution: any = {};
-    events.forEach(event => {
-      resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
-      const resource = bryntumResources.find(r => r.id === event.resourceId);
+    assignments.forEach(assignment => {
+      resourceDistribution[assignment.resourceId] = (resourceDistribution[assignment.resourceId] || 0) + 1;
+      const resource = bryntumResources.find(r => r.id === assignment.resourceId);
       if (resource) {
         resourceNameDistribution[resource.name] = (resourceNameDistribution[resource.name] || 0) + 1;
       }
@@ -208,13 +217,10 @@ export default function SchedulerPro() {
       // Add error handlers
       listeners: {
         exception: (event: any) => {
-          console.error('Scheduler exception:', event);
+          console.error('Scheduler exception:', event.message || 'Unknown error');
         },
         dataError: (event: any) => {
-          console.error('Scheduler data error:', event);
-        },
-        catchAll: (event: any) => {
-          console.error('Scheduler event:', event.type, event);
+          console.error('Scheduler data error:', event.message || 'Unknown error');
         }
       },
       
@@ -252,21 +258,12 @@ export default function SchedulerPro() {
       // Use project model with assignments for proper resource mapping
       project: {
         resources: bryntumResources,
-        // Remove resourceId from events for multi-assignment mode
-        events: events.map(e => {
-          const { resourceId, ...eventWithoutResourceId } = e;
-          return eventWithoutResourceId;
-        }),
-        // Create assignments to properly link events to resources
-        assignments: events.map((e, idx) => ({
-          id: `assignment_${idx + 1}`,
-          eventId: e.id,
-          resourceId: e.resourceId
-        }))
+        events: events,
+        assignments: assignments
       },
       
-        // Features configuration
-        features: {
+      // Features configuration
+      features: {
           eventDrag: true,
           eventResize: true,
           eventTooltip: true,
