@@ -1,6 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
-import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
@@ -17,34 +15,58 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 
+// Add Bryntum CSS
+import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+
+// Extend Window interface for Bryntum UMD
+interface BryntumWindow extends Window {
+  bryntum?: {
+    schedulerpro?: {
+      SchedulerPro: any;
+    };
+  };
+}
+
 export default function SchedulerPro() {
+  const containerRef = useRef<HTMLDivElement>(null);
   const schedulerRef = useRef<any>(null);
-  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [currentViewPreset, setCurrentViewPreset] = useState('weekAndDay');
+  const [isSchedulerReady, setIsSchedulerReady] = useState(false);
   const { toast } = useToast();
 
-  // Fetch PT data for the scheduler
+  // Fetch PT operations data
   const { data: ptOperations, isLoading } = useQuery({
     queryKey: ['/api/pt-operations'],
     enabled: true
   });
 
-  // Prepare scheduler config with inline data
-  const schedulerConfig = React.useMemo(() => {
-    if (!ptOperations || ptOperations.length === 0) {
-      return null;
+  // Initialize the vanilla JavaScript Bryntum SchedulerPro
+  useEffect(() => {
+    if (!containerRef.current || !ptOperations || isLoading) return;
+
+    // Check if Bryntum is loaded
+    const bryntumWindow = window as BryntumWindow;
+    if (!bryntumWindow.bryntum?.schedulerpro) {
+      console.error('Bryntum SchedulerPro not loaded');
+      toast({
+        title: "Error",
+        description: "Scheduler library not loaded. Please refresh the page.",
+        variant: "destructive"
+      });
+      return;
     }
-    
-    // Extract unique resources
+
+    const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro;
+
+    // Extract unique resources from PT operations
     const resourceMap = new Map();
     const events: any[] = [];
     const assignments: any[] = [];
     
-    ptOperations.forEach((op: any, index: number) => {
-      // Use resourceName as unique key
+    (ptOperations as any[]).forEach((op: any, index: number) => {
       const resourceName = op.resourceName || `Resource ${index}`;
       
-      // Add unique resource
+      // Add unique resources
       if (!resourceMap.has(resourceName)) {
         resourceMap.set(resourceName, {
           id: resourceName,
@@ -60,9 +82,11 @@ export default function SchedulerPro() {
       
       events.push({
         id: eventId,
-        name: `${op.operationName}`,
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
+        name: `${op.jobName}: ${op.operationName}`,
+        startDate: startDate,
+        endDate: endDate,
+        duration: op.duration || 4,
+        durationUnit: 'hour'
       });
       
       // Create assignment
@@ -75,23 +99,49 @@ export default function SchedulerPro() {
     
     const resources = Array.from(resourceMap.values());
     
-    console.log('Scheduler Config:', {
+    console.log('Initializing Bryntum with:', {
       resources: resources.length,
       events: events.length,
       assignments: assignments.length
     });
-    
-    return {
+
+    // Create the SchedulerPro instance using vanilla JavaScript
+    schedulerRef.current = new SchedulerPro({
+      appendTo: containerRef.current,
+      
+      // Project configuration
       project: {
         resources: resources,
         events: events,
-        assignments: assignments
+        assignments: assignments,
+        calendar: 'general'
       },
-      startDate: '2025-08-22',
-      endDate: '2025-09-05',
+      
+      // Define a simple calendar
+      calendars: [
+        {
+          id: 'general',
+          name: 'General',
+          intervals: [
+            {
+              recurrentStartDate: 'on Mon-Fri at 00:00',
+              recurrentEndDate: 'on Mon-Fri at 24:00',
+              isWorking: true
+            }
+          ]
+        }
+      ],
+      
+      // Time axis configuration
+      startDate: '2025-08-20',
+      endDate: '2025-09-10',
       viewPreset: currentViewPreset,
+      
+      // Layout configuration
       rowHeight: 50,
       barMargin: 5,
+      
+      // Resource columns
       columns: [
         {
           text: 'Resource',
@@ -99,72 +149,89 @@ export default function SchedulerPro() {
           width: 200
         }
       ],
+      
+      // Features configuration
       features: {
-        eventDrag: false,
-        eventResize: false,
-        eventEdit: false,
-        cellEdit: false,
-        taskEdit: false,
-        dependencies: false,
+        eventDrag: true,
+        eventResize: true,
+        eventTooltip: true,
         timeRanges: {
           showCurrentTimeLine: true
-        }
+        },
+        columnLines: true,
+        stripe: true,
+        dependencies: false, // Disable for performance
+        criticalPaths: false // Disable for performance
+      }
+    });
+    
+    setIsSchedulerReady(true);
+    console.log('Bryntum SchedulerPro initialized successfully');
+
+    // Cleanup function
+    return () => {
+      if (schedulerRef.current) {
+        schedulerRef.current.destroy();
+        schedulerRef.current = null;
+        setIsSchedulerReady(false);
       }
     };
-  }, [ptOperations, currentViewPreset]);
+  }, [ptOperations, isLoading]);
 
-  // Capture scheduler instance
+  // Update view preset when state changes
   useEffect(() => {
-    if (!schedulerRef.current) return;
-    
-    const timer = setTimeout(() => {
-      const instance = schedulerRef.current?.instance;
-      if (instance) {
-        setSchedulerInstance(instance);
-        console.log('Scheduler instance ready');
-      }
-    }, 500);
-    
-    return () => clearTimeout(timer);
-  }, [schedulerConfig]);
+    if (schedulerRef.current && isSchedulerReady) {
+      schedulerRef.current.viewPreset = currentViewPreset;
+    }
+  }, [currentViewPreset, isSchedulerReady]);
 
   // Toolbar actions
   const handleZoomIn = () => {
-    schedulerInstance?.zoomIn?.();
-  };
-
-  const handleZoomOut = () => {
-    schedulerInstance?.zoomOut?.();
-  };
-
-  const handleZoomToFit = () => {
-    schedulerInstance?.zoomToFit?.();
-  };
-
-  const handlePreviousTimeSpan = () => {
-    schedulerInstance?.shiftPrevious?.();
-  };
-
-  const handleNextTimeSpan = () => {
-    schedulerInstance?.shiftNext?.();
-  };
-
-  const handleToday = () => {
-    schedulerInstance?.scrollToDate?.(new Date(), { block: 'center' });
-  };
-
-  const changeViewPreset = (preset: string) => {
-    if (schedulerInstance) {
-      schedulerInstance.viewPreset = preset;
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomIn();
     }
   };
 
-  if (isLoading || !schedulerConfig) {
+  const handleZoomOut = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomOut();
+    }
+  };
+
+  const handleZoomToFit = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.zoomToFit();
+    }
+  };
+
+  const handlePreviousTimeSpan = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.shiftPrevious();
+    }
+  };
+
+  const handleNextTimeSpan = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.shiftNext();
+    }
+  };
+
+  const handleToday = () => {
+    if (schedulerRef.current) {
+      schedulerRef.current.scrollToDate(new Date(), { block: 'center' });
+    }
+  };
+
+  const changeViewPreset = (preset: string) => {
+    setCurrentViewPreset(preset);
+  };
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading scheduler...</p>
+          <p className="text-muted-foreground">Loading scheduler data...</p>
         </div>
       </div>
     );
@@ -187,6 +254,7 @@ export default function SchedulerPro() {
               variant={currentViewPreset === 'hourAndDay' ? 'default' : 'outline'}
               size="sm"
               onClick={() => changeViewPreset('hourAndDay')}
+              disabled={!isSchedulerReady}
             >
               Hour
             </Button>
@@ -194,6 +262,7 @@ export default function SchedulerPro() {
               variant={currentViewPreset === 'weekAndDay' ? 'default' : 'outline'}
               size="sm"
               onClick={() => changeViewPreset('weekAndDay')}
+              disabled={!isSchedulerReady}
             >
               Day
             </Button>
@@ -201,6 +270,7 @@ export default function SchedulerPro() {
               variant={currentViewPreset === 'weekAndMonth' ? 'default' : 'outline'}
               size="sm"
               onClick={() => changeViewPreset('weekAndMonth')}
+              disabled={!isSchedulerReady}
             >
               Week
             </Button>
@@ -216,6 +286,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handlePreviousTimeSpan}
               title="Previous time span"
+              disabled={!isSchedulerReady}
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -224,6 +295,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handleToday}
               title="Go to today"
+              disabled={!isSchedulerReady}
             >
               <Home className="h-4 w-4" />
             </Button>
@@ -232,6 +304,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handleNextTimeSpan}
               title="Next time span"
+              disabled={!isSchedulerReady}
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
@@ -244,6 +317,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handleZoomIn}
               title="Zoom in"
+              disabled={!isSchedulerReady}
             >
               <ZoomIn className="h-4 w-4" />
             </Button>
@@ -252,6 +326,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handleZoomOut}
               title="Zoom out"
+              disabled={!isSchedulerReady}
             >
               <ZoomOut className="h-4 w-4" />
             </Button>
@@ -260,6 +335,7 @@ export default function SchedulerPro() {
               size="icon"
               onClick={handleZoomToFit}
               title="Zoom to fit"
+              disabled={!isSchedulerReady}
             >
               <RotateCcw className="h-4 w-4" />
             </Button>
@@ -270,11 +346,19 @@ export default function SchedulerPro() {
       {/* Scheduler Container */}
       <div className="flex-1 overflow-hidden p-4">
         <Card className="h-full">
-          <CardContent className="p-0 h-full">
-            <BryntumSchedulerPro
-              ref={schedulerRef}
-              {...schedulerConfig}
-            />
+          <CardContent className="p-0 h-full relative">
+            {/* This div will contain the vanilla JS Bryntum SchedulerPro */}
+            <div ref={containerRef} className="w-full h-full" />
+            
+            {/* Show loading overlay while scheduler initializes */}
+            {!isSchedulerReady && ptOperations && (
+              <div className="absolute inset-0 flex items-center justify-center bg-background/80">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">Initializing scheduler...</p>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -285,11 +369,11 @@ export default function SchedulerPro() {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {schedulerConfig.project.resources.length} Resources
+              {ptOperations ? `${new Set((ptOperations as any[]).map((op: any) => op.resourceName)).size} Resources` : '0 Resources'}
             </span>
             <span className="flex items-center gap-1">
               <Activity className="h-4 w-4" />
-              {schedulerConfig.project.events.length} Operations
+              {ptOperations ? `${(ptOperations as any[]).length} Operations` : '0 Operations'}
             </span>
           </div>
         </div>
