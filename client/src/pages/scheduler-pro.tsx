@@ -138,7 +138,7 @@ export default function SchedulerPro() {
     // Filter to only include resources that have operations
     const bryntumResources = allResources.filter(r => resourcesWithOps.has(r.id));
     
-    // Helper function to find the correct resource ID
+    // Helper function to find the correct resource ID - matches working HTML implementation
     const findResourceId = (operation: any) => {
       const resourceName = operation.resourceName || operation.resource || '';
       
@@ -152,54 +152,40 @@ export default function SchedulerPro() {
       }
       
       // Try exact match first (case insensitive)
-      if (resourceName) {
-        const resource = resourceByName.get(resourceName.toLowerCase());
-        if (resource) {
-          return resource.id;
+      if (resourceName && resourceName !== 'Resource null' && resourceName !== 'Unassigned') {
+        const lowerName = resourceName.toLowerCase();
+        
+        // Check if resource exists in our map
+        if (resourceByName.has(lowerName)) {
+          return resourceByName.get(lowerName).id;
         }
+        
+        // If resource name exists but not found in map, create a new resource entry dynamically
+        const dynamicId = `r_dynamic_${resourceName.replace(/\s+/g, '_').toLowerCase()}`;
+        
+        // Check if we already created this dynamic resource
+        if (!resourceMap.has(dynamicId)) {
+          const newResource = {
+            id: dynamicId,
+            name: resourceName,
+            category: 'machine',
+            originalId: -1
+          };
+          
+          // Add to all collections
+          bryntumResources.push(newResource);
+          resourceMap.set(dynamicId, newResource);
+          resourceMap.set(resourceName, newResource);
+          resourceByName.set(lowerName, newResource);
+          
+          console.log(`Created dynamic resource: ${resourceName} with id: ${dynamicId}`);
+        }
+        
+        return dynamicId;
       }
       
-      // Fallback based on operation type
-      const operationName = operation.operationName?.toLowerCase() || '';
-      
-      // Map operations to specific resource types
-      if (operationName.includes('mill')) {
-        const mill = bryntumResources.find(r => r.name.toLowerCase().includes('grain mill'));
-        if (mill) return mill.id;
-      }
-      if (operationName.includes('mash')) {
-        const mash = bryntumResources.find(r => r.name.toLowerCase().includes('mash tun'));
-        if (mash) return mash.id;
-      }
-      if (operationName.includes('lauter')) {
-        const lauter = bryntumResources.find(r => r.name.toLowerCase().includes('lauter'));
-        if (lauter) return lauter.id;
-      }
-      if (operationName.includes('boil')) {
-        const kettle = bryntumResources.find(r => r.name.toLowerCase().includes('brew kettle'));
-        if (kettle) return kettle.id;
-      }
-      if (operationName.includes('whirlpool')) {
-        const whirlpool = bryntumResources.find(r => r.name.toLowerCase().includes('whirlpool'));
-        if (whirlpool) return whirlpool.id;
-      }
-      if (operationName.includes('cool')) {
-        const exchanger = bryntumResources.find(r => r.name.toLowerCase().includes('heat exchanger'));
-        if (exchanger) return exchanger.id;
-      }
-      if (operationName.includes('ferment')) {
-        const tank = bryntumResources.find(r => r.name.toLowerCase().includes('fermentation'));
-        if (tank) return tank.id;
-      }
-      if (operationName.includes('maintenance')) {
-        // Distribute maintenance across resources
-        const resourceIndex = Math.floor(Math.random() * bryntumResources.length);
-        return bryntumResources[resourceIndex]?.id;
-      }
-      
-      // Last fallback - distribute evenly
-      const resourceIndex = Math.floor(Math.random() * bryntumResources.length);
-      return bryntumResources[resourceIndex]?.id || bryntumResources[0]?.id || 'r_1';
+      // Don't fallback to a random resource if not found - return null for unscheduled
+      return null;
     };
     
     let debuggedOps = 0;
@@ -211,7 +197,13 @@ export default function SchedulerPro() {
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
       const eventId = `e_${op.id || index + 1}`; // Use prefixed IDs
-      const resourceId = findResourceId(op); // Get the resource ID for single assignment mode
+      const resourceId = findResourceId(op); // Get the resource ID
+      
+      // Skip operations without valid resources
+      if (!resourceId) {
+        console.warn(`Skipping operation without resource: ${op.operationName}`);
+        return null;
+      }
       
       return {
         id: eventId,
@@ -224,7 +216,7 @@ export default function SchedulerPro() {
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
       };
-    });
+    }).filter(event => event !== null); // Filter out null events
     
     // Create sample dependencies to show lines between operations
     const dependencies = [];
