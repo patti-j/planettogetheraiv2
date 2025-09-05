@@ -210,16 +210,6 @@ export default function SchedulerPro() {
         containerRef.current.style.minHeight = '600px';
       }
       
-      // Create a ProjectModel first with the data
-      const ProjectModel = window.bryntum.schedulerpro.ProjectModel;
-      const projectModel = new ProjectModel({
-        resources: bryntumResources,
-        events: events,
-        assignments: assignments,
-        autoLoad: true,
-        autoSync: false
-      });
-      
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
         appendTo: containerRef.current,
@@ -237,8 +227,11 @@ export default function SchedulerPro() {
         }
       },
       
-      // Use the project model instance
-      project: projectModel,
+      // Create an empty project that we'll populate after
+      project: {
+        autoLoad: false,
+        autoSync: false
+      },
       
       // Time axis configuration
       startDate: new Date('2025-08-20'),
@@ -285,6 +278,25 @@ export default function SchedulerPro() {
         tree: false
       }
     });
+      
+      // Load the data directly into stores after scheduler is created
+      if (schedulerRef.current) {
+        // Access the stores directly
+        const resourceStore = schedulerRef.current.resourceStore;
+        const eventStore = schedulerRef.current.eventStore;
+        const assignmentStore = schedulerRef.current.assignmentStore;
+        
+        // Load data into stores
+        if (resourceStore) {
+          resourceStore.data = bryntumResources;
+        }
+        if (eventStore) {
+          eventStore.data = events;
+        }
+        if (assignmentStore) {
+          assignmentStore.data = assignments;
+        }
+      }
       
       // Force refresh and log resource store after initialization
       setTimeout(() => {
