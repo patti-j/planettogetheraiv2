@@ -38,16 +38,11 @@ export default function SchedulerPro() {
     enabled: true
   });
 
-  const { data: ptResources } = useQuery({
-    queryKey: ['/api/resources'],
-    enabled: true
-  });
-
   // Initialize project data
   useEffect(() => {
-    if (ptOperations && ptResources) {
-      // Transform PT data to Bryntum format following documentation structure
-      const resources = transformResources(ptResources || []);
+    if (ptOperations) {
+      // Extract unique resources from PT operations
+      const resources = extractResourcesFromOperations(ptOperations || []);
       const events = transformEvents(ptOperations || []);
       const assignments = createAssignments(ptOperations || [], resources);
       const dependencies = createDependencies(ptOperations || []);
@@ -64,30 +59,47 @@ export default function SchedulerPro() {
       
       setIsLoading(false);
     }
-  }, [ptOperations, ptResources]);
+  }, [ptOperations]);
 
-  // Transform resources to Bryntum format
-  function transformResources(ptResources: any[]): any[] {
-    if (!Array.isArray(ptResources)) return [];
+  // Extract unique resources from PT operations
+  function extractResourcesFromOperations(ptOperations: any[]): any[] {
+    if (!Array.isArray(ptOperations)) return [];
     
-    // Create unique resources
+    // Create unique resources from operations data
     const resourceMap = new Map();
     
-    ptResources.forEach((resource: any) => {
-      const id = resource.id || resource.resource_id;
-      if (!resourceMap.has(id)) {
-        resourceMap.set(id, {
-          id: id,
-          name: resource.name || `Resource ${id}`,
-          type: resource.type || 'Machine',
-          calendar: resource.shift === 'night' ? 'night' : 'day', // Assign calendar based on shift
-          efficiency: resource.efficiency || 100,
+    ptOperations.forEach((op: any) => {
+      const resourceId = op.assignedResourceId || op.resourceId;
+      const resourceName = op.assignedResourceName || op.resourceName;
+      
+      if (resourceId && !resourceMap.has(resourceId)) {
+        resourceMap.set(resourceId, {
+          id: resourceId,
+          name: resourceName || `Resource ${resourceId}`,
+          type: op.resourceType || 'Machine',
+          calendar: determineCalendarFromResource(resourceName),
+          efficiency: 100,
+          department: op.workCenterName || 'Production',
           image: false // Disable images for cleaner look
         });
       }
     });
     
-    return Array.from(resourceMap.values());
+    // Ensure we have at least some resources
+    const resourceArray = Array.from(resourceMap.values());
+    console.log('Extracted resources:', resourceArray.length, 'unique resources from', ptOperations.length, 'operations');
+    
+    return resourceArray;
+  }
+  
+  // Determine calendar based on resource name or type
+  function determineCalendarFromResource(resourceName: string): string {
+    if (!resourceName) return 'business';
+    const name = resourceName.toLowerCase();
+    if (name.includes('night') || name.includes('3rd shift')) return 'night';
+    if (name.includes('24/7') || name.includes('continuous')) return '24/7';
+    if (name.includes('day') || name.includes('1st shift')) return 'day';
+    return 'business';
   }
 
   // Transform events (operations) to Bryntum format
@@ -125,25 +137,29 @@ export default function SchedulerPro() {
 
   // Create assignments linking events to resources
   function createAssignments(operations: any[], resources: any[]): any[] {
-    if (!operations || !resources) return [];
+    if (!operations || !resources || resources.length === 0) return [];
     
     const assignments: any[] = [];
     
     operations.forEach((op: any) => {
       const resourceId = op.assignedResourceId || op.resourceId || op.resource_id;
       if (resourceId) {
-        const resource = resources.find(r => r.id === resourceId);
+        // Find resource by ID (convert to string for comparison)
+        const resource = resources.find(r => String(r.id) === String(resourceId));
         if (resource) {
           assignments.push({
-            id: `${op.id}_${resourceId}`,
+            id: `${op.id || op.operationId}_${resourceId}`,
             eventId: op.id || op.operationId,
-            resourceId: resourceId,
+            resourceId: String(resourceId),
             units: 100 // 100% allocation
           });
+        } else {
+          console.log(`Resource not found for operation ${op.operationName} with resourceId ${resourceId}`);
         }
       }
     });
     
+    console.log('Created assignments:', assignments.length, 'from', operations.length, 'operations');
     return assignments;
   }
 
