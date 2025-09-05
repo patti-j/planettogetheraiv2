@@ -18,14 +18,8 @@ import { useQuery } from '@tanstack/react-query';
 // Add Bryntum CSS
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
-// Extend Window interface for Bryntum UMD
-interface BryntumWindow extends Window {
-  bryntum?: {
-    schedulerpro?: {
-      SchedulerPro: any;
-    };
-  };
-}
+// Type assertion for Bryntum UMD global  
+type BryntumGlobal = any;
 
 export default function SchedulerPro() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -51,9 +45,20 @@ export default function SchedulerPro() {
   useEffect(() => {
     if (!containerRef.current || !resources || !ptOperations || isLoading) return;
 
+    // Add unhandled rejection handler for debugging
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      console.error('Unhandled rejection in scheduler:', {
+        message: event.reason?.message || 'Unknown error',
+        type: event.reason?.constructor?.name || 'Unknown type',
+        stack: event.reason?.stack
+      });
+      event.preventDefault(); // Prevent default console error
+    };
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
     try {
       // Check if Bryntum is loaded
-      const bryntumWindow = window as BryntumWindow;
+      const bryntumWindow = window as any;
       if (!bryntumWindow.bryntum?.schedulerpro) {
         console.error('Bryntum SchedulerPro not loaded');
         toast({
@@ -64,7 +69,7 @@ export default function SchedulerPro() {
         return;
       }
 
-      const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro;
+      const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro as BryntumGlobal;
 
     // Helper function to assign colors based on operation type
     const getOperationColor = (operationName: string) => {
@@ -200,6 +205,19 @@ export default function SchedulerPro() {
       // Disable ResizeObserver to prevent loop errors
       monitorResize: false,
       
+      // Add error handlers
+      listeners: {
+        exception: (event: any) => {
+          console.error('Scheduler exception:', event);
+        },
+        dataError: (event: any) => {
+          console.error('Scheduler data error:', event);
+        },
+        catchAll: (event: any) => {
+          console.error('Scheduler event:', event.type, event);
+        }
+      },
+      
       // Project configuration (removed in favor of direct stores)
       
       // Time axis configuration
@@ -234,14 +252,15 @@ export default function SchedulerPro() {
       // Use project model with assignments for proper resource mapping
       project: {
         resources: bryntumResources,
-        events: events.map((e, idx) => ({
-          ...e,
-          id: e.id || idx + 1  // Ensure numeric IDs for events
-        })),
+        // Remove resourceId from events for multi-assignment mode
+        events: events.map(e => {
+          const { resourceId, ...eventWithoutResourceId } = e;
+          return eventWithoutResourceId;
+        }),
         // Create assignments to properly link events to resources
         assignments: events.map((e, idx) => ({
           id: `assignment_${idx + 1}`,
-          eventId: e.id || idx + 1,
+          eventId: e.id,
           resourceId: e.resourceId
         }))
       },
