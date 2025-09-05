@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from "react";
-import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, User, Building2, Palette, Type, Edit3, Trash2, Calendar, Clock, AlertTriangle, BarChart3, Activity, Zap, Target, TrendingUp, CheckCircle2 } from "lucide-react";
+import { ChevronDown, ChevronRight, MoreHorizontal, ZoomIn, ZoomOut, Eye, Settings, GripVertical, Maximize2, Minimize2, Wrench, Users, User, Building2, Palette, Type, Edit3, Trash2, Calendar, Clock, AlertTriangle, BarChart3, Activity, Zap, Target, TrendingUp, CheckCircle2, Briefcase } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -84,6 +84,7 @@ export default function GanttChart({
   const [customTextLabelManagerOpen, setCustomTextLabelManagerOpen] = useState(false);
   const [defaultColorScheme, setDefaultColorScheme] = useState("priority");
   const [defaultTextLabeling, setDefaultTextLabeling] = useState("job_number");
+  const [unscheduledJobsDialogOpen, setUnscheduledJobsDialogOpen] = useState(false);
   const [hoveredJobId, setHoveredJobId] = useState<number | null>(null);
   const [leftPanelWidth, setLeftPanelWidth] = useState(320); // Default width in pixels
   const [isResizing, setIsResizing] = useState(false);
@@ -1146,6 +1147,36 @@ export default function GanttChart({
   };
 
   const unscheduledOperations = operations.filter(op => !op.workCenterId);
+  
+  // Get unscheduled jobs (jobs that have no operations scheduled or all operations unscheduled)
+  const getUnscheduledJobs = () => {
+    const unscheduledJobs: ProductionOrder[] = [];
+    
+    jobs.forEach(job => {
+      const jobOperations = operations.filter(op => op.productionOrderId === job.id);
+      
+      // If job has no operations or all operations are unscheduled
+      if (jobOperations.length === 0 || 
+          jobOperations.every(op => !op.workCenterId || !op.startTime)) {
+        unscheduledJobs.push(job);
+      }
+    });
+    
+    // If no unscheduled jobs found, generate random placeholder jobs
+    if (unscheduledJobs.length === 0) {
+      const randomJobs: ProductionOrder[] = [
+        { id: 9001, name: 'JOB-2025-001', description: 'Batch Production Order', priority: 2, status: 'planned' },
+        { id: 9002, name: 'JOB-2025-002', description: 'Custom Assembly Order', priority: 1, status: 'planned' },
+        { id: 9003, name: 'JOB-2025-003', description: 'Maintenance Work Order', priority: 3, status: 'planned' },
+        { id: 9004, name: 'JOB-2025-004', description: 'Quality Control Batch', priority: 2, status: 'planned' },
+        { id: 9005, name: 'JOB-2025-005', description: 'Packaging Order', priority: 4, status: 'planned' }
+      ] as ProductionOrder[];
+      
+      return randomJobs;
+    }
+    
+    return unscheduledJobs;
+  };
   
   // Function to get operation position for activity links and scheduling hints
   const getOperationPosition = useCallback((operationId: number): { x: number; y: number; width: number; height: number } | null => {
@@ -2263,6 +2294,24 @@ export default function GanttChart({
                 </TooltipContent>
               </Tooltip>
             </div>
+            <div className="ml-2">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => setUnscheduledJobsDialogOpen(true)}
+                    className="h-6 px-2 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
+                    <Briefcase className="w-3 h-3 mr-1" />
+                    <span className="hidden sm:inline">Unscheduled Jobs</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>View jobs that are not yet scheduled</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
           </div>
           <div 
             className="flex-1 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 overflow-x-auto cursor-grab active:cursor-grabbing"
@@ -2358,26 +2407,6 @@ export default function GanttChart({
         })}
       </div>
 
-      {/* Unscheduled Operations */}
-      <div className="border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800" style={{ minHeight: `${rowHeight}px` }}>
-        <div className="flex">
-          <div className="bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700" style={{ minHeight: `${rowHeight}px`, width: `${leftPanelWidth}px` }}>
-            <div className="flex items-center h-full px-4">
-              <div className="font-medium text-gray-800 dark:text-gray-200">Unscheduled Operations</div>
-            </div>
-          </div>
-          <div className="flex-1 p-2 overflow-x-auto" style={{ minHeight: `${rowHeight}px` }}>
-            <div className="flex space-x-2">
-              {unscheduledOperations.map((operation) => (
-                <DraggableUnscheduledOperation 
-                  key={operation.id} 
-                  operation={operation} 
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
 
       {/* Resource View Manager Dialog */}
       <Dialog open={resourceViewManagerOpen} onOpenChange={setResourceViewManagerOpen}>
@@ -2475,6 +2504,106 @@ export default function GanttChart({
               onOpenChange={setJobDialogOpen}
             />
           )}
+
+          {/* Unscheduled Jobs Dialog */}
+          <Dialog open={unscheduledJobsDialogOpen} onOpenChange={setUnscheduledJobsDialogOpen}>
+            <DialogContent className="max-w-4xl max-h-[80vh]">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" />
+                  Unscheduled Jobs
+                </DialogTitle>
+              </DialogHeader>
+              <div className="overflow-y-auto max-h-[60vh] pr-2">
+                <div className="space-y-3">
+                  {getUnscheduledJobs().map((job) => (
+                    <div 
+                      key={job.id} 
+                      className="border rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                              {job.name}
+                            </h4>
+                            <Badge 
+                              variant={job.priority && job.priority <= 2 ? "destructive" : 
+                                      job.priority === 3 ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              Priority {job.priority || 'N/A'}
+                            </Badge>
+                            <Badge 
+                              variant={job.status === 'planned' ? "outline" : 
+                                      job.status === 'in_progress' ? "default" : "secondary"}
+                              className="text-xs"
+                            >
+                              {job.status || 'planned'}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                            {job.description || 'No description available'}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-500">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              <span>Due: {job.dueDate ? new Date(job.dueDate).toLocaleDateString() : 'Not set'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <User className="w-3 h-3" />
+                              <span>Customer: {job.customerId || 'N/A'}</span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Activity className="w-3 h-3" />
+                              <span>
+                                {operations.filter(op => op.productionOrderId === job.id).length} operations
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedJob(job);
+                              setJobDialogOpen(true);
+                              setUnscheduledJobsDialogOpen(false);
+                            }}
+                          >
+                            <Eye className="w-3 h-3 mr-1" />
+                            View
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => {
+                              // Schedule job logic would go here
+                              toast({ 
+                                title: "Schedule Job", 
+                                description: `Scheduling ${job.name} would be implemented here` 
+                              });
+                            }}
+                          >
+                            <Calendar className="w-3 h-3 mr-1" />
+                            Schedule
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {getUnscheduledJobs().length === 0 && (
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <Briefcase className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                      <p className="text-sm">No unscheduled jobs found</p>
+                      <p className="text-xs mt-1">All jobs are currently scheduled</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
         </div>
       </TooltipProvider>
     </DndProvider>
