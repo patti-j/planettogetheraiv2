@@ -213,6 +213,40 @@
             filter: invert(1) hue-rotate(-180deg);
         }
         
+        /* Dependency lines styling */
+        .b-sch-dependency {
+            stroke: #764ba2 !important;
+            stroke-width: 2 !important;
+            opacity: 0.8 !important;
+        }
+        
+        .b-sch-dependency-arrow {
+            fill: #764ba2 !important;
+            stroke: #764ba2 !important;
+        }
+        
+        .b-sch-dependency:hover {
+            stroke: #667eea !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+        
+        .b-sch-dependency-arrow:hover {
+            fill: #667eea !important;
+            stroke: #667eea !important;
+        }
+        
+        /* Critical path dependency styling */
+        .b-sch-dependency.b-critical {
+            stroke: #ff4444 !important;
+            stroke-width: 3 !important;
+        }
+        
+        .b-sch-dependency.b-critical .b-sch-dependency-arrow {
+            fill: #ff4444 !important;
+            stroke: #ff4444 !important;
+        }
+        
         /* Header updates for hamburger and Max AI */
         .header-actions {
             display: flex;
@@ -861,8 +895,101 @@
                     ];
                 }
 
-                // Create dependencies array (can be enhanced based on PT data)
+                // Create dependencies array for brewery process sequences
                 const dependencies = [];
+                
+                // Create dependencies between sequential brewery operations
+                // Find operations that are part of brewery processes
+                const breweryOps = events.filter(event => {
+                    const opName = (event.operationName || event.name || '').toLowerCase();
+                    return opName.includes('milling') || 
+                           opName.includes('mashing') || 
+                           opName.includes('lautering') || 
+                           opName.includes('boiling') || 
+                           opName.includes('whirlpool') || 
+                           opName.includes('cooling') || 
+                           opName.includes('fermentation');
+                });
+                
+                // Group operations by job/product to find sequences
+                const jobGroups = {};
+                breweryOps.forEach(op => {
+                    const jobKey = op.jobName || 'default';
+                    if (!jobGroups[jobKey]) {
+                        jobGroups[jobKey] = [];
+                    }
+                    jobGroups[jobKey].push(op);
+                });
+                
+                // Define the correct brewery process sequence
+                const processSequence = ['milling', 'mashing', 'lautering', 'boiling', 'whirlpool', 'cooling', 'fermentation'];
+                
+                // Create dependencies for each job's operations
+                Object.keys(jobGroups).forEach(jobKey => {
+                    const jobOps = jobGroups[jobKey];
+                    
+                    // Sort operations by their process sequence order
+                    jobOps.sort((a, b) => {
+                        const aName = (a.operationName || a.name || '').toLowerCase();
+                        const bName = (b.operationName || b.name || '').toLowerCase();
+                        
+                        let aIndex = processSequence.findIndex(step => aName.includes(step));
+                        let bIndex = processSequence.findIndex(step => bName.includes(step));
+                        
+                        // If not found in sequence, put at the end
+                        if (aIndex === -1) aIndex = 999;
+                        if (bIndex === -1) bIndex = 999;
+                        
+                        // If same process type, sort by start date
+                        if (aIndex === bIndex) {
+                            return new Date(a.startDate) - new Date(b.startDate);
+                        }
+                        
+                        return aIndex - bIndex;
+                    });
+                    
+                    // Create dependencies between sequential operations
+                    for (let i = 0; i < jobOps.length - 1; i++) {
+                        const fromOp = jobOps[i];
+                        const toOp = jobOps[i + 1];
+                        
+                        // Only create dependency if operations are on different resources (realistic constraint)
+                        if (fromOp.resourceId !== toOp.resourceId) {
+                            dependencies.push({
+                                id: `dep_${fromOp.id}_${toOp.id}`,
+                                from: fromOp.id,
+                                to: toOp.id,
+                                type: 2, // Finish-to-Start dependency
+                                lag: 0, // No lag time
+                                lagUnit: 'hour'
+                            });
+                        }
+                    }
+                });
+                
+                // Add some demo dependencies if we're using demo data
+                if (events.length <= 3 && events[0]?.name?.includes('Demo')) {
+                    dependencies.push(
+                        {
+                            id: 'dep1',
+                            from: 1,
+                            to: 2,
+                            type: 2, // Finish-to-Start
+                            lag: 1,
+                            lagUnit: 'hour'
+                        },
+                        {
+                            id: 'dep2',
+                            from: 2,
+                            to: 3,
+                            type: 2, // Finish-to-Start
+                            lag: 0,
+                            lagUnit: 'hour'
+                        }
+                    );
+                }
+                
+                console.log(`🔗 Created ${dependencies.length} dependencies between operations`);
 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
