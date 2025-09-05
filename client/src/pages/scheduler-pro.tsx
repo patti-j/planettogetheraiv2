@@ -114,24 +114,8 @@ export default function SchedulerPro() {
       project: {
         resources: resources,
         events: events,
-        assignments: assignments,
-        calendar: 'general'
+        assignments: assignments
       },
-      
-      // Define a simple calendar
-      calendars: [
-        {
-          id: 'general',
-          name: 'General',
-          intervals: [
-            {
-              recurrentStartDate: 'on Mon-Fri at 00:00',
-              recurrentEndDate: 'on Mon-Fri at 24:00',
-              isWorking: true
-            }
-          ]
-        }
-      ],
       
       // Time axis configuration
       startDate: '2025-08-20',
