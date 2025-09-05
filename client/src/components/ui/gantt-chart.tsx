@@ -135,20 +135,20 @@ export default function GanttChart({
     
     // Group operations by job
     operations.forEach(op => {
-      if (op.productionOrderId) {
-        if (!opsByJob.has(op.productionOrderId)) {
-          opsByJob.set(op.productionOrderId, []);
+      if (op.jobId) {
+        if (!opsByJob.has(op.jobId)) {
+          opsByJob.set(op.jobId, []);
         }
-        opsByJob.get(op.productionOrderId)!.push(op);
+        opsByJob.get(op.jobId)!.push(op);
       }
     });
     
     // Generate links for operations in the same job
     opsByJob.forEach((jobOps, jobId) => {
-      const sortedOps = jobOps.sort((a, b) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+      const sortedOps = jobOps.sort((a, b) => (a.id || 0) - (b.id || 0));
       
       for (let i = 0; i < sortedOps.length - 1; i++) {
-        if (sortedOps[i].startTime && sortedOps[i + 1].startTime) {
+        if (sortedOps[i].scheduledStart && sortedOps[i + 1].scheduledStart) {
           links.push({
             fromId: sortedOps[i].id,
             toId: sortedOps[i + 1].id,
@@ -191,12 +191,12 @@ export default function GanttChart({
         break;
       case 'job':
         operations
-          .filter(op => op.productionOrderId === selectedOp.productionOrderId)
+          .filter(op => op.jobId === selectedOp.jobId)
           .forEach(op => highlighted.add(op.id));
         break;
       case 'operation':
         operations
-          .filter(op => op.operationName === selectedOp.operationName)
+          .filter(op => op.name === selectedOp.name)
           .forEach(op => highlighted.add(op.id));
         break;
       case 'all-relations':
@@ -334,7 +334,7 @@ export default function GanttChart({
 
     resources.forEach(resource => {
       const resourceOperations = operations.filter(op => 
-        op.workCenterId === resource.id && op.startTime && op.endTime
+        op.scheduledPrimaryWorkCenterExternalId === resource.externalId && op.scheduledStart && op.scheduledEnd
       );
 
       // Calculate scheduled hours for this resource
@@ -347,14 +347,14 @@ export default function GanttChart({
       const timeSlots: Array<{start: Date, end: Date}> = [];
 
       resourceOperations.forEach(op => {
-        const startTime = new Date(op.startTime!);
-        const endTime = new Date(op.endTime!);
+        const startTime = new Date(op.scheduledStart!);
+        const endTime = new Date(op.scheduledEnd!);
         const durationHours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
         
         scheduledHours += durationHours;
 
         // Check for overdue operations
-        if (endTime < now && op.status !== 'completed') {
+        if (endTime < now && !op.completed) {
           overdueOperations++;
         }
 
@@ -379,7 +379,7 @@ export default function GanttChart({
       const utilization = Math.min((scheduledHours / availableHours) * 100, 100);
       
       // Calculate efficiency based on completed vs scheduled operations
-      const completedOps = resourceOperations.filter(op => op.status === 'completed').length;
+      const completedOps = resourceOperations.filter(op => op.completed).length;
       const efficiency = resourceOperations.length > 0 ? (completedOps / resourceOperations.length) * 100 : 0;
 
       metrics.set(resource.id, {
@@ -514,12 +514,12 @@ export default function GanttChart({
       maxDate = today;
       
       operations.forEach(op => {
-        if (op.startTime) {
-          const startDate = new Date(op.startTime);
+        if (op.scheduledStart) {
+          const startDate = new Date(op.scheduledStart);
           if (startDate < minDate) minDate = startDate;
           
-          if (op.endTime) {
-            const endDate = new Date(op.endTime);
+          if (op.scheduledEnd) {
+            const endDate = new Date(op.scheduledEnd);
             if (endDate > maxDate) maxDate = endDate;
           }
         }
@@ -1058,8 +1058,8 @@ export default function GanttChart({
     // Small delay to ensure DOM elements are rendered
     const updateConnections = () => {
       const jobOperations = getOperationsByJob(hoveredJobId)
-        .filter(op => op.startTime && op.endTime && op.workCenterId)
-        .sort((a, b) => new Date(a.startTime!).getTime() - new Date(b.startTime!).getTime());
+        .filter(op => op.scheduledStart && op.scheduledEnd && op.scheduledPrimaryWorkCenterExternalId)
+        .sort((a, b) => new Date(a.scheduledStart!).getTime() - new Date(b.scheduledStart!).getTime());
 
       console.log('Connection lines debug:', {
         hoveredJobId,
@@ -1146,31 +1146,31 @@ export default function GanttChart({
     return connectionLines;
   };
 
-  const unscheduledOperations = operations.filter(op => !op.workCenterId);
+  const unscheduledOperations = operations.filter(op => !op.scheduledPrimaryWorkCenterExternalId && !op.scheduledStart);
   
   // Get unscheduled jobs (jobs that have no operations scheduled or all operations unscheduled)
   const getUnscheduledJobs = () => {
     const unscheduledJobs: ProductionOrder[] = [];
     
     jobs.forEach(job => {
-      const jobOperations = operations.filter(op => op.productionOrderId === job.id);
+      const jobOperations = operations.filter(op => op.jobId === job.id);
       
       // If job has no operations or all operations are unscheduled
       if (jobOperations.length === 0 || 
-          jobOperations.every(op => !op.workCenterId || !op.startTime)) {
+          jobOperations.every(op => !op.scheduledPrimaryWorkCenterExternalId || !op.scheduledStart)) {
         unscheduledJobs.push(job);
       }
     });
     
     // If no unscheduled jobs found, generate random placeholder jobs
     if (unscheduledJobs.length === 0) {
-      const randomJobs: ProductionOrder[] = [
-        { id: 9001, name: 'JOB-2025-001', description: 'Batch Production Order', priority: 2, status: 'planned' },
-        { id: 9002, name: 'JOB-2025-002', description: 'Custom Assembly Order', priority: 1, status: 'planned' },
-        { id: 9003, name: 'JOB-2025-003', description: 'Maintenance Work Order', priority: 3, status: 'planned' },
-        { id: 9004, name: 'JOB-2025-004', description: 'Quality Control Batch', priority: 2, status: 'planned' },
-        { id: 9005, name: 'JOB-2025-005', description: 'Packaging Order', priority: 4, status: 'planned' }
-      ] as ProductionOrder[];
+      const randomJobs = [
+        { id: 9001, name: 'JOB-2025-001', description: 'Batch Production Order', priority: 2, status: 'planned', split: false, jobId: 9001, publishDate: new Date(), instanceId: '1' },
+        { id: 9002, name: 'JOB-2025-002', description: 'Custom Assembly Order', priority: 1, status: 'planned', split: false, jobId: 9002, publishDate: new Date(), instanceId: '1' },
+        { id: 9003, name: 'JOB-2025-003', description: 'Maintenance Work Order', priority: 3, status: 'planned', split: false, jobId: 9003, publishDate: new Date(), instanceId: '1' },
+        { id: 9004, name: 'JOB-2025-004', description: 'Quality Control Batch', priority: 2, status: 'planned', split: false, jobId: 9004, publishDate: new Date(), instanceId: '1' },
+        { id: 9005, name: 'JOB-2025-005', description: 'Packaging Order', priority: 4, status: 'planned', split: false, jobId: 9005, publishDate: new Date(), instanceId: '1' }
+      ] as any[];
       
       return randomJobs;
     }
@@ -2557,7 +2557,7 @@ export default function GanttChart({
                             <div className="flex items-center gap-1">
                               <Activity className="w-3 h-3" />
                               <span>
-                                {operations.filter(op => op.productionOrderId === job.id).length} operations
+                                {operations.filter(op => op.jobId === job.id).length} operations
                               </span>
                             </div>
                           </div>
