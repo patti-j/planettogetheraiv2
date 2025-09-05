@@ -231,9 +231,20 @@ export default function SchedulerPro() {
         }
       ],
       
-      // Use direct data configuration
-      resources: bryntumResources,
-      events: events,
+      // Use project model with assignments for proper resource mapping
+      project: {
+        resources: bryntumResources,
+        events: events.map((e, idx) => ({
+          ...e,
+          id: e.id || idx + 1  // Ensure numeric IDs for events
+        })),
+        // Create assignments to properly link events to resources
+        assignments: events.map((e, idx) => ({
+          id: `assignment_${idx + 1}`,
+          eventId: e.id || idx + 1,
+          resourceId: e.resourceId
+        }))
+      },
       
         // Features configuration
         features: {
