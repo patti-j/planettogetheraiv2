@@ -85,29 +85,63 @@ export default function SchedulerPro() {
 
     // Map resources to create resource lookup
     const resourceMap = new Map();
-    const bryntumResources = (resources as any[]).map((resource: any) => {
+    const resourceByName = new Map();
+    
+    // First, map existing resources from API
+    const apiResources = (resources as any[]).map((resource: any) => {
       const resourceObj = {
         id: resource.id.toString(),
         name: resource.name,
         category: resource.type || 'General'
       };
-      // Create lookup by both ID and name
       resourceMap.set(resource.id.toString(), resourceObj);
-      resourceMap.set(resource.name, resourceObj);
+      resourceByName.set(resource.name.toLowerCase(), resourceObj);
       return resourceObj;
     });
     
+    // Collect unique resource names from operations that don't exist in API
+    const missingResources = new Set<string>();
+    (ptOperations as any[]).forEach((op: any) => {
+      if (op.resourceName && !resourceByName.has(op.resourceName.toLowerCase())) {
+        missingResources.add(op.resourceName);
+      }
+    });
+    
+    // Create resources for missing ones from operations
+    let nextId = 1000; // Start with a high ID to avoid conflicts
+    const additionalResources = Array.from(missingResources).map(name => {
+      const resourceObj = {
+        id: `res_${nextId++}`,
+        name: name,
+        category: 'Operations'
+      };
+      resourceByName.set(name.toLowerCase(), resourceObj);
+      return resourceObj;
+    });
+    
+    // Combine all resources and only include ones that have operations
+    const allResources = [...apiResources, ...additionalResources];
+    
+    // Get resource IDs that actually have operations
+    const resourcesWithOps = new Set<string>();
+    (ptOperations as any[]).forEach((op: any) => {
+      if (op.resourceName) {
+        const resource = resourceByName.get(op.resourceName.toLowerCase());
+        if (resource) {
+          resourcesWithOps.add(resource.id);
+        }
+      }
+    });
+    
+    // Filter to only include resources that have operations
+    const bryntumResources = allResources.filter(r => resourcesWithOps.has(r.id));
+    
     // Helper function to find the correct resource ID
     const findResourceId = (operation: any) => {
-      // Try various ways to match the resource
-      if (operation.resourceId && resourceMap.has(operation.resourceId.toString())) {
-        return operation.resourceId.toString();
-      }
-      if (operation.resource_id && resourceMap.has(operation.resource_id.toString())) {
-        return operation.resource_id.toString();
-      }
-      if (operation.resourceName && resourceMap.has(operation.resourceName)) {
-        return resourceMap.get(operation.resourceName).id;
+      // Try to match by resource name first (most reliable)
+      if (operation.resourceName) {
+        const resource = resourceByName.get(operation.resourceName.toLowerCase());
+        if (resource) return resource.id;
       }
       // Fallback to first available resource
       return bryntumResources[0]?.id || '1';
@@ -130,21 +164,28 @@ export default function SchedulerPro() {
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
       };
-    }).filter(event => event.resourceId); // Only include operations with valid resources
+    });
     
     console.log('Initializing Bryntum with:', {
       resources: bryntumResources.length,
+      apiResources: apiResources.length,
+      additionalResources: additionalResources.length,
       events: events.length
     });
     
     // Log resource distribution for debugging
     const resourceDistribution: any = {};
+    const resourceNameDistribution: any = {};
     events.forEach(event => {
       resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
+      const resource = bryntumResources.find(r => r.id === event.resourceId);
+      if (resource) {
+        resourceNameDistribution[resource.name] = (resourceNameDistribution[resource.name] || 0) + 1;
+      }
     });
-    console.log('Resource distribution:', resourceDistribution);
-    console.log('Sample resources:', bryntumResources.slice(0, 3));
-    console.log('Sample events:', events.slice(0, 3));
+    console.log('Resource distribution by ID:', resourceDistribution);
+    console.log('Resource distribution by name:', resourceNameDistribution);
+    console.log('Sample resources:', bryntumResources.slice(0, 5));
 
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
@@ -164,6 +205,7 @@ export default function SchedulerPro() {
       // Layout configuration
       rowHeight: 50,
       barMargin: 5,
+      autoHeight: false,
       
       // Resource columns
       columns: [
@@ -190,7 +232,9 @@ export default function SchedulerPro() {
           columnLines: true,
           stripe: true,
           dependencies: false, // Disable for performance
-          criticalPaths: false // Disable for performance
+          criticalPaths: false, // Disable for performance
+          filterBar: false,
+          tree: false
         }
       });
       
