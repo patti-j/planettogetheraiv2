@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState, useMemo } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import { ProjectModel } from '@bryntum/schedulerpro';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
@@ -29,7 +29,7 @@ export default function SchedulerPro() {
   const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
   const [currentViewPreset, setCurrentViewPreset] = useState('weekAndDay');
   const [isLoading, setIsLoading] = useState(true);
-  const [projectData, setProjectData] = useState<any>(null);
+  const [projectModel, setProjectModel] = useState<any>(null);
   const { toast } = useToast();
 
   // Fetch PT data for the scheduler
@@ -48,15 +48,26 @@ export default function SchedulerPro() {
       const dependencies = createDependencies(ptOperations || []);
       const calendars = createCalendars();
 
-      setProjectData({
-        calendars: calendars,  // Use 'calendars' instead of deprecated 'calendarsData'
+      // Create a ProjectModel instance
+      const project = new ProjectModel({
+        calendarsData: calendars,
         calendar: 'business', // Set default project calendar
-        resources: resources,
-        events: events,
-        assignments: assignments,
-        dependencies: dependencies
+        resourcesData: resources,
+        eventsData: events,
+        assignmentsData: assignments,
+        dependenciesData: dependencies,
+        autoSync: false,
+        validateResponse: true
       });
       
+      console.log('Created ProjectModel with:', {
+        resources: resources.length,
+        events: events.length,
+        assignments: assignments.length,
+        dependencies: dependencies.length
+      });
+      
+      setProjectModel(project);
       setIsLoading(false);
     }
   }, [ptOperations]);
@@ -272,7 +283,7 @@ export default function SchedulerPro() {
 
   // Capture scheduler instance after mount
   useEffect(() => {
-    if (!projectData) return;
+    if (!projectModel) return;
     
     const checkInterval = setInterval(() => {
       if (schedulerRef.current) {
@@ -294,7 +305,7 @@ export default function SchedulerPro() {
     }, 100);
     
     return () => clearInterval(checkInterval);
-  }, [projectData]);
+  }, [projectModel]);
 
   // Toolbar actions
   const handleZoomIn = () => {
@@ -360,7 +371,7 @@ export default function SchedulerPro() {
     }
   };
 
-  if (isLoading || !projectData) {
+  if (isLoading || !projectModel) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
@@ -494,12 +505,8 @@ export default function SchedulerPro() {
             <BryntumSchedulerPro
               ref={schedulerRef}
               
-              // Project configuration - the heart of SchedulerPro
-              project={{
-                ...projectData,
-                autoSync: false,
-                validateResponse: true
-              }}
+              // Project configuration - use the ProjectModel instance
+              project={projectModel}
               
               // Time axis configuration
               startDate={new Date(2025, 8, 1)} // September 1, 2025
@@ -652,15 +659,15 @@ export default function SchedulerPro() {
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {projectData.resources.length} Resources
+              {projectModel?.resourceStore?.count || 0} Resources
             </span>
             <span className="flex items-center gap-1">
               <Activity className="h-4 w-4" />
-              {projectData.events.length} Operations
+              {projectModel?.eventStore?.count || 0} Operations
             </span>
             <span className="flex items-center gap-1">
               <Settings className="h-4 w-4" />
-              {projectData.dependencies.length} Dependencies
+              {projectModel?.dependencyStore?.count || 0} Dependencies
             </span>
           </div>
           
