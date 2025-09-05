@@ -372,6 +372,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   <SlideOutMenu 
                     isOpen={true}
                     onClose={() => {}}
+                    width={navPanelWidth}
                   />
                 </div>
               </>

@@ -6,9 +6,10 @@ import { cn } from '@/lib/utils';
 interface SlideOutMenuProps {
   isOpen: boolean;
   onClose: () => void;
+  width?: number;
 }
 
-export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
+export function SlideOutMenu({ isOpen, onClose, width }: SlideOutMenuProps) {
   const [isPinned, setIsPinned] = useState(() => {
     try {
       return localStorage.getItem('navigationMenuPinned') === 'true';
@@ -79,7 +80,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
         ref={menuRef}
         className={cn(
           "fixed right-0 top-[72px] bg-background border-l shadow-xl z-50",
-          "w-80",
+          !width && "w-80", // Use default width if not provided
           isPinned 
             ? "translate-x-0 h-[calc(100vh-72px)]" // Always visible when pinned, height adjusted for header
             : cn(
@@ -87,6 +88,7 @@ export function SlideOutMenu({ isOpen, onClose }: SlideOutMenuProps) {
                 isOpen ? "translate-x-0" : "translate-x-full"
               )
         )}
+        style={width ? { width: `${width}px` } : undefined}
       >
         <NavigationMenuContent 
           isPinned={isPinned}
