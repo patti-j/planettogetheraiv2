@@ -34,15 +34,22 @@ export default function SchedulerPro() {
   const [isSchedulerReady, setIsSchedulerReady] = useState(false);
   const { toast } = useToast();
 
-  // Fetch PT operations data
-  const { data: ptOperations, isLoading } = useQuery({
+  // Fetch resources and PT operations data
+  const { data: resources, isLoading: resourcesLoading } = useQuery({
+    queryKey: ['/api/resources'],
+    enabled: true
+  });
+  
+  const { data: ptOperations, isLoading: operationsLoading } = useQuery({
     queryKey: ['/api/pt-operations'],
     enabled: true
   });
+  
+  const isLoading = resourcesLoading || operationsLoading;
 
   // Initialize the vanilla JavaScript Bryntum SchedulerPro
   useEffect(() => {
-    if (!containerRef.current || !ptOperations || isLoading) return;
+    if (!containerRef.current || !resources || !ptOperations || isLoading) return;
 
     try {
       // Check if Bryntum is loaded
@@ -76,46 +83,57 @@ export default function SchedulerPro() {
       return colors[operationName] || '#9E9E9E';
     };
 
-    // Extract unique resources from PT operations
+    // Map resources to create resource lookup
     const resourceMap = new Map();
-    const events: any[] = [];
-    
-    // First pass: collect all unique resources
-    (ptOperations as any[]).forEach((op: any) => {
-      const resourceName = op.resourceName || 'Unassigned';
-      if (!resourceMap.has(resourceName)) {
-        // Use the resource name as the ID for proper mapping
-        resourceMap.set(resourceName, {
-          id: resourceName,
-          name: resourceName
-        });
-      }
+    const bryntumResources = (resources as any[]).map((resource: any) => {
+      const resourceObj = {
+        id: resource.id.toString(),
+        name: resource.name,
+        category: resource.type || 'General'
+      };
+      // Create lookup by both ID and name
+      resourceMap.set(resource.id.toString(), resourceObj);
+      resourceMap.set(resource.name, resourceObj);
+      return resourceObj;
     });
     
-    // Second pass: create events with correct resourceId
-    (ptOperations as any[]).forEach((op: any, index: number) => {
-      const resourceName = op.resourceName || 'Unassigned';
+    // Helper function to find the correct resource ID
+    const findResourceId = (operation: any) => {
+      // Try various ways to match the resource
+      if (operation.resourceId && resourceMap.has(operation.resourceId.toString())) {
+        return operation.resourceId.toString();
+      }
+      if (operation.resource_id && resourceMap.has(operation.resource_id.toString())) {
+        return operation.resource_id.toString();
+      }
+      if (operation.resourceName && resourceMap.has(operation.resourceName)) {
+        return resourceMap.get(operation.resourceName).id;
+      }
+      // Fallback to first available resource
+      return bryntumResources[0]?.id || '1';
+    };
+    
+    // Transform PT operations into events with correct resourceId
+    const events = (ptOperations as any[]).map((op: any, index: number) => {
       const startDate = new Date(op.startTime);
       const endDate = op.endTime ? new Date(op.endTime) : 
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
-      events.push({
+      return {
         id: `event_${op.id || index}`,
         name: `${op.jobName}: ${op.operationName}`,
         startDate: startDate,
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        resourceId: resourceName, // Use resource name as ID directly
+        resourceId: findResourceId(op),
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
-      });
-    });
-    
-    const resources = Array.from(resourceMap.values());
+      };
+    }).filter(event => event.resourceId); // Only include operations with valid resources
     
     console.log('Initializing Bryntum with:', {
-      resources: resources.length,
+      resources: bryntumResources.length,
       events: events.length
     });
     
@@ -125,7 +143,7 @@ export default function SchedulerPro() {
       resourceDistribution[event.resourceId] = (resourceDistribution[event.resourceId] || 0) + 1;
     });
     console.log('Resource distribution:', resourceDistribution);
-    console.log('Sample resources:', resources.slice(0, 3));
+    console.log('Sample resources:', bryntumResources.slice(0, 3));
     console.log('Sample events:', events.slice(0, 3));
 
       // Create the SchedulerPro instance using vanilla JavaScript
@@ -134,7 +152,7 @@ export default function SchedulerPro() {
       
       // Project configuration
       project: {
-        resources: resources,
+        resources: bryntumResources,
         events: events
       },
       
@@ -153,6 +171,11 @@ export default function SchedulerPro() {
           text: 'Resource',
           field: 'name',
           width: 200
+        },
+        {
+          text: 'Category',
+          field: 'category',
+          width: 150
         }
       ],
       
@@ -194,7 +217,7 @@ export default function SchedulerPro() {
         console.error('Error destroying scheduler:', error);
       }
     };
-  }, [ptOperations, isLoading, toast]);
+  }, [resources, ptOperations, isLoading, toast]);
 
   // Update view preset when state changes
   useEffect(() => {
