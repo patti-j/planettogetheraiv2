@@ -65,7 +65,11 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     } else {
       // Desktop: horizontal split (Max on left)
       const newWidth = e.clientX - rect.left;
-      setMaxWidth(newWidth);
+      // Apply min/max constraints for desktop (same as in MaxDockContext)
+      const minWidth = 200;
+      const maxWidthLimit = window.innerWidth * 0.8;
+      const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidthLimit));
+      setMaxWidth(constrainedWidth);
     }
   };
 
@@ -87,7 +91,11 @@ export function SplitPaneLayout({ children, maxPanel }: SplitPaneLayoutProps) {
     } else {
       // Desktop: horizontal split (Max on left)  
       const newWidth = touch.clientX - rect.left;
-      setMaxWidth(newWidth);
+      // Apply min/max constraints for desktop (same as in MaxDockContext)
+      const minWidth = 200;
+      const maxWidthLimit = window.innerWidth * 0.8;
+      const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidthLimit));
+      setMaxWidth(constrainedWidth);
     }
   };
 
