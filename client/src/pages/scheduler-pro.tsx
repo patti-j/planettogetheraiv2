@@ -87,12 +87,13 @@ export default function SchedulerPro() {
     const resourceMap = new Map();
     const resourceByName = new Map();
     
-    // First, map existing resources from API
+    // First, map existing resources from API with proper prefixing
     const apiResources = (resources as any[]).map((resource: any) => {
       const resourceObj = {
-        id: resource.id.toString(),
+        id: `r_${resource.id}`, // Use prefixed IDs
         name: resource.name,
-        category: resource.type || 'General'
+        category: resource.type || 'General',
+        originalId: resource.id // Keep original ID for matching
       };
       resourceMap.set(resource.id.toString(), resourceObj);
       resourceByName.set(resource.name.toLowerCase(), resourceObj);
@@ -111,9 +112,10 @@ export default function SchedulerPro() {
     let nextId = 1000; // Start with a high ID to avoid conflicts
     const additionalResources = Array.from(missingResources).map(name => {
       const resourceObj = {
-        id: `res_${nextId++}`,
+        id: `r_${nextId++}`, // Use prefixed IDs
         name: name,
-        category: 'Operations'
+        category: 'Operations',
+        originalId: nextId - 1 // Keep original ID for matching
       };
       resourceByName.set(name.toLowerCase(), resourceObj);
       return resourceObj;
@@ -147,13 +149,13 @@ export default function SchedulerPro() {
       return bryntumResources[0]?.id || '1';
     };
     
-    // Transform PT operations into events WITHOUT resourceId for multi-assignment mode
+    // Transform PT operations into events with proper ID prefixing
     const events = (ptOperations as any[]).map((op: any, index: number) => {
       const startDate = new Date(op.startTime);
       const endDate = op.endTime ? new Date(op.endTime) : 
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
-      const eventId = index + 1; // Use numeric IDs
+      const eventId = `e_${op.id || index + 1}`; // Use prefixed IDs
       
       return {
         id: eventId,
@@ -168,15 +170,16 @@ export default function SchedulerPro() {
       };
     });
     
-    // Create assignments to link events to resources
+    // Create assignments to link events to resources with proper prefixes
     const assignments = (ptOperations as any[]).map((op: any, index: number) => {
-      const eventId = index + 1;
+      const eventId = `e_${op.id || index + 1}`;
       const resourceId = findResourceId(op);
       
       return {
-        id: index + 1,
+        id: `a_${op.id || index + 1}_${index}`, // Prefixed assignment ID
         eventId: eventId,
-        resourceId: resourceId
+        resourceId: resourceId,
+        units: 100 // Add units property like the wrapper component
       };
     });
     
