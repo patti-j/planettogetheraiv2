@@ -301,25 +301,48 @@
 
 /* Specifically style the Activity Center "Ask anything" text */
 .b-activitycenter .b-badge-text,
-.b-activitycenter-badge .b-badge-text {
-  background: linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to))) !important;
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+.b-activitycenter-badge .b-badge-text,
+.b-widget-badge .b-badge-text,
+.b-badge:has(.b-fa-sparkles) .b-badge-text,
+.b-badge-text:has(+ .b-fa-sparkles),
+.b-badge-text:contains('Ask'),
+[data-text*="Ask anything"] {
+  background: linear-gradient(135deg, hsl(213, 94%, 68%), hsl(239, 84%, 67%)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
+  color: transparent !important;
 }
 
 /* Activity Center container styling */
 .b-activitycenter,
-.b-activitycenter-badge {
+.b-activitycenter-badge,
+.b-widget-badge {
   background: white !important;
   border: 1px solid hsl(var(--border)) !important;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
 }
 
 .dark .b-activitycenter,
-.dark .b-activitycenter-badge {
+.dark .b-activitycenter-badge,
+.dark .b-widget-badge {
   background: hsl(var(--card)) !important;
   border: 1px solid hsl(var(--border)) !important;
+}
+
+/* Target the specific "Ask anything" text more aggressively */
+.b-badge-text {
+  font-weight: 500;
+}
+
+/* Force gradient on any element with sparkles icon followed by "Ask anything" */
+.b-fa-sparkles + .b-badge-text,
+.b-icon-sparkles + .b-badge-text,
+svg + .b-badge-text:first-of-type {
+  background: linear-gradient(135deg, hsl(213, 94%, 68%), hsl(239, 84%, 67%)) !important;
+  -webkit-background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  background-clip: text !important;
 }
 
 /* Responsive adjustments */
