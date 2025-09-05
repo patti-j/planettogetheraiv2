@@ -187,12 +187,10 @@ export default function SchedulerPro() {
     console.log('Resource distribution by name:', resourceNameDistribution);
     console.log('Sample resources:', bryntumResources.slice(0, 5));
 
-      // Ensure container has proper dimensions for all resources
+      // Ensure container has proper dimensions
       if (containerRef.current) {
-        // Calculate height based on number of resources
-        const minHeight = Math.max(600, (bryntumResources.length * 60) + 100);
-        containerRef.current.style.height = `${minHeight}px`;
-        containerRef.current.style.minHeight = `${minHeight}px`;
+        containerRef.current.style.height = '600px';
+        containerRef.current.style.minHeight = '600px';
       }
       
       // Create the SchedulerPro instance using vanilla JavaScript
@@ -210,12 +208,10 @@ export default function SchedulerPro() {
       autoCalculateStartDate: false,
       autoCalculateEndDate: false,
       
-      // Layout configuration - force all rows visible
+      // Layout configuration
       rowHeight: 60,
       barMargin: 5,
-      autoHeight: true,
-      minHeight: 800,
-      height: Math.max(800, (bryntumResources.length * 65) + 150),
+      autoHeight: false,
       
       // Resource columns
       columns: [
@@ -232,7 +228,7 @@ export default function SchedulerPro() {
         }
       ],
       
-      // Force resource visibility with explicit stores
+      // Use direct data configuration
       resources: bryntumResources,
       events: events,
       
@@ -268,10 +264,8 @@ export default function SchedulerPro() {
           // Try to force refresh and show all resources
           schedulerRef.current.scrollRowIntoView(0, { block: 'start' });
           
-          // Force rendering of all rows
-          if (schedulerRef.current.resourceStore) {
-            schedulerRef.current.resourceStore.filter();
-          }
+          // Log successful load
+          console.log('Scheduler fully loaded');
         }
       }, 100);
       
