@@ -48,14 +48,14 @@ export default function SchedulerPro() {
       const dependencies = createDependencies(ptOperations || []);
       const calendars = createCalendars();
 
-      // Create a ProjectModel instance
+      // Create a ProjectModel instance with non-deprecated property names
       const project = new ProjectModel({
-        calendarsData: calendars,
+        calendars: calendars,
         calendar: 'business', // Set default project calendar
-        resourcesData: resources,
-        eventsData: events,
-        assignmentsData: assignments,
-        dependenciesData: dependencies,
+        resources: resources,
+        events: events,
+        assignments: assignments,
+        dependencies: dependencies,
         autoSync: false,
         validateResponse: true
       });
