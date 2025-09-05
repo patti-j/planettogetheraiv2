@@ -40,16 +40,22 @@ export default function SchedulerPro() {
     const eventList: any[] = [];
     const assignmentList: any[] = [];
     
+    // Debug: log first operation to see structure
+    if (ptOperations.length > 0) {
+      console.log('Sample operation:', ptOperations[0]);
+    }
+    
     ptOperations.forEach((op: any, index: number) => {
-      const resourceId = String(op.assignedResourceId || op.resourceId || '1');
-      const resourceName = op.assignedResourceName || op.resourceName || 'Resource';
+      // Use resourceName as the unique identifier for resources
+      const resourceName = op.resourceName || op.assignedResourceName || `Resource ${index}`;
+      const resourceId = resourceName; // Use resource name as ID for uniqueness
       
       // Add resource if not already in map
-      if (!resourceMap.has(resourceId)) {
-        resourceMap.set(resourceId, {
+      if (!resourceMap.has(resourceName)) {
+        resourceMap.set(resourceName, {
           id: resourceId,
           name: resourceName,
-          type: 'Machine'
+          type: op.resourceType || 'Machine'
         });
       }
       
@@ -67,9 +73,9 @@ export default function SchedulerPro() {
         durationUnit: 'hour'
       });
       
-      // Create assignment
+      // Create assignment linking event to resource
       assignmentList.push({
-        id: `${eventId}_${resourceId}`,
+        id: `assignment_${eventId}`,
         event: eventId,
         resource: resourceId
       });
@@ -78,6 +84,7 @@ export default function SchedulerPro() {
     const resources = Array.from(resourceMap.values());
     
     console.log(`Prepared data: ${resources.length} resources, ${eventList.length} events`);
+    console.log('Resources:', resources.map(r => r.name));
     
     return {
       resources: resources,
