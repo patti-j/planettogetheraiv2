@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown, Sparkles, Send, ZoomIn, ZoomOut, Eye, Sun, Moon, Monitor, Settings2, Activity, TrendingUp, AlertTriangle, CheckCircle, PlayCircle, PauseCircle, RotateCcw } from 'lucide-react';
+import { Calendar, Clock, Settings, LayoutGrid, List, Filter, Search, RefreshCw, Plus, Download, Edit, Menu, X, Save, History, GitCompareArrows, UserCheck, MessageCircle, Bell, FlaskConical, BarChart3, ChevronUp, ChevronDown, Sparkles, Send, ZoomIn, ZoomOut, Eye, Sun, Moon, Monitor, Settings2, Activity, TrendingUp, AlertTriangle, CheckCircle, PlayCircle, PauseCircle, RotateCcw, ShieldCheck, Users, Timer, Package, DollarSign, Award, Gauge } from 'lucide-react';
 import GanttChart from '@/components/ui/gantt-chart';
 // Removed Bryntum-specific imports
 
@@ -24,6 +24,8 @@ import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkspaceDashboard } from '@/components/workspace-dashboard';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ScheduleFilters {
   dateRange: string;
@@ -39,6 +41,37 @@ interface LayoutConfig {
   showFilters: boolean;
   autoRefresh: boolean;
   refreshInterval: number;
+}
+
+interface SchedulingConstraints {
+  // Resource Management
+  limitOvertimeUsage: boolean;
+  skillBasedAssignment: boolean;
+  toolUsageOptimization: boolean;
+  // Time Flexibility
+  flexibleStartTimes: boolean;
+  weekendHolidayWork: boolean;
+  shiftBalancing: boolean;
+  // Process Flow
+  allowParallelProcessing: boolean;
+  relaxRoutingRules: boolean;
+  skipNonCriticalSteps: boolean;
+  // Material Handling
+  justInTimeDelivery: boolean;
+  allowSubstitutes: boolean;
+  partialMaterialAvailability: boolean;
+  // Cost Control
+  energyCostOptimization: boolean;
+  budgetBasedScheduling: boolean;
+  limitPremiumResourceUsage: boolean;
+  // Quality & Compliance
+  deferredInspections: boolean;
+  toleranceBasedScheduling: boolean;
+  auditTrailOptionality: boolean;
+  // Optimization Preferences
+  minimizeMakespan: boolean;
+  maximizeMachineUtilization: boolean;
+  prioritizeHighMarginOrders: boolean;
 }
 
 export default function ProductionSchedulePage() {
@@ -88,6 +121,37 @@ export default function ProductionSchedulePage() {
 
   const [activeTab, setActiveTab] = useState('scheduler-pro'); // Default to resource-centered view
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showConstraints, setShowConstraints] = useState(false);
+  const [constraints, setConstraints] = useState<SchedulingConstraints>({
+    // Resource Management
+    limitOvertimeUsage: false,
+    skillBasedAssignment: false,
+    toolUsageOptimization: false,
+    // Time Flexibility
+    flexibleStartTimes: false,
+    weekendHolidayWork: false,
+    shiftBalancing: false,
+    // Process Flow
+    allowParallelProcessing: false,
+    relaxRoutingRules: false,
+    skipNonCriticalSteps: false,
+    // Material Handling
+    justInTimeDelivery: false,
+    allowSubstitutes: false,
+    partialMaterialAvailability: false,
+    // Cost Control
+    energyCostOptimization: false,
+    budgetBasedScheduling: false,
+    limitPremiumResourceUsage: false,
+    // Quality & Compliance
+    deferredInspections: false,
+    toleranceBasedScheduling: false,
+    auditTrailOptionality: false,
+    // Optimization Preferences
+    minimizeMakespan: false,
+    maximizeMachineUtilization: false,
+    prioritizeHighMarginOrders: false
+  });
   const exportHandlerRef = useRef<(() => Promise<void>) | null>(null);
   const [ganttRowHeight, setGanttRowHeight] = useState(isMobile ? 50 : 80);
   const [showDashboard, setShowDashboard] = useState(true);
@@ -398,6 +462,10 @@ export default function ProductionSchedulePage() {
 
   const handleLayoutConfigChange = (key: keyof LayoutConfig, value: any) => {
     setLayoutConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const handleConstraintToggle = (constraint: keyof SchedulingConstraints) => {
+    setConstraints(prev => ({ ...prev, [constraint]: !prev[constraint] }));
   };
 
   const filteredWidgetConfig = {
@@ -782,10 +850,304 @@ export default function ProductionSchedulePage() {
                   </Select>
                 </div>
               )}
+
+              {/* Optional Constraint Toggles */}
+              <Collapsible open={showConstraints} onOpenChange={setShowConstraints}>
+                <CollapsibleTrigger className="w-full">
+                  <Button variant="outline" size="sm" className="w-full justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4" />
+                      Scheduling Constraints
+                    </div>
+                    {showConstraints ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-3 space-y-4 p-4 bg-background border rounded-lg">
+                  {/* Resource Management */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Users className="w-4 h-4" />
+                      Resource Management
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="limitOvertimeUsage"
+                          checked={constraints.limitOvertimeUsage}
+                          onCheckedChange={() => handleConstraintToggle('limitOvertimeUsage')}
+                        />
+                        <Label htmlFor="limitOvertimeUsage" className="text-sm cursor-pointer">
+                          Limit Overtime Usage
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="skillBasedAssignment"
+                          checked={constraints.skillBasedAssignment}
+                          onCheckedChange={() => handleConstraintToggle('skillBasedAssignment')}
+                        />
+                        <Label htmlFor="skillBasedAssignment" className="text-sm cursor-pointer">
+                          Skill-Based Assignment
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="toolUsageOptimization"
+                          checked={constraints.toolUsageOptimization}
+                          onCheckedChange={() => handleConstraintToggle('toolUsageOptimization')}
+                        />
+                        <Label htmlFor="toolUsageOptimization" className="text-sm cursor-pointer">
+                          Tool Usage Optimization
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Time Flexibility */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Timer className="w-4 h-4" />
+                      Time Flexibility
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="flexibleStartTimes"
+                          checked={constraints.flexibleStartTimes}
+                          onCheckedChange={() => handleConstraintToggle('flexibleStartTimes')}
+                        />
+                        <Label htmlFor="flexibleStartTimes" className="text-sm cursor-pointer">
+                          Flexible Start Times
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="weekendHolidayWork"
+                          checked={constraints.weekendHolidayWork}
+                          onCheckedChange={() => handleConstraintToggle('weekendHolidayWork')}
+                        />
+                        <Label htmlFor="weekendHolidayWork" className="text-sm cursor-pointer">
+                          Weekend/Holiday Work
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="shiftBalancing"
+                          checked={constraints.shiftBalancing}
+                          onCheckedChange={() => handleConstraintToggle('shiftBalancing')}
+                        />
+                        <Label htmlFor="shiftBalancing" className="text-sm cursor-pointer">
+                          Shift Balancing
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Process Flow */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Activity className="w-4 h-4" />
+                      Process Flow
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="allowParallelProcessing"
+                          checked={constraints.allowParallelProcessing}
+                          onCheckedChange={() => handleConstraintToggle('allowParallelProcessing')}
+                        />
+                        <Label htmlFor="allowParallelProcessing" className="text-sm cursor-pointer">
+                          Allow Parallel Processing
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="relaxRoutingRules"
+                          checked={constraints.relaxRoutingRules}
+                          onCheckedChange={() => handleConstraintToggle('relaxRoutingRules')}
+                        />
+                        <Label htmlFor="relaxRoutingRules" className="text-sm cursor-pointer">
+                          Relax Routing Rules
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="skipNonCriticalSteps"
+                          checked={constraints.skipNonCriticalSteps}
+                          onCheckedChange={() => handleConstraintToggle('skipNonCriticalSteps')}
+                        />
+                        <Label htmlFor="skipNonCriticalSteps" className="text-sm cursor-pointer">
+                          Skip Non-Critical Steps
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Material Handling */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Package className="w-4 h-4" />
+                      Material Handling
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="justInTimeDelivery"
+                          checked={constraints.justInTimeDelivery}
+                          onCheckedChange={() => handleConstraintToggle('justInTimeDelivery')}
+                        />
+                        <Label htmlFor="justInTimeDelivery" className="text-sm cursor-pointer">
+                          Just-in-Time Material Delivery
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="allowSubstitutes"
+                          checked={constraints.allowSubstitutes}
+                          onCheckedChange={() => handleConstraintToggle('allowSubstitutes')}
+                        />
+                        <Label htmlFor="allowSubstitutes" className="text-sm cursor-pointer">
+                          Allow Substitutes
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="partialMaterialAvailability"
+                          checked={constraints.partialMaterialAvailability}
+                          onCheckedChange={() => handleConstraintToggle('partialMaterialAvailability')}
+                        />
+                        <Label htmlFor="partialMaterialAvailability" className="text-sm cursor-pointer">
+                          Partial Material Availability
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Cost Control */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <DollarSign className="w-4 h-4" />
+                      Cost Control
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="energyCostOptimization"
+                          checked={constraints.energyCostOptimization}
+                          onCheckedChange={() => handleConstraintToggle('energyCostOptimization')}
+                        />
+                        <Label htmlFor="energyCostOptimization" className="text-sm cursor-pointer">
+                          Energy Cost Optimization
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="budgetBasedScheduling"
+                          checked={constraints.budgetBasedScheduling}
+                          onCheckedChange={() => handleConstraintToggle('budgetBasedScheduling')}
+                        />
+                        <Label htmlFor="budgetBasedScheduling" className="text-sm cursor-pointer">
+                          Budget-Based Scheduling
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="limitPremiumResourceUsage"
+                          checked={constraints.limitPremiumResourceUsage}
+                          onCheckedChange={() => handleConstraintToggle('limitPremiumResourceUsage')}
+                        />
+                        <Label htmlFor="limitPremiumResourceUsage" className="text-sm cursor-pointer">
+                          Limit Premium Resource Usage
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quality & Compliance */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Award className="w-4 h-4" />
+                      Quality & Compliance
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="deferredInspections"
+                          checked={constraints.deferredInspections}
+                          onCheckedChange={() => handleConstraintToggle('deferredInspections')}
+                        />
+                        <Label htmlFor="deferredInspections" className="text-sm cursor-pointer">
+                          Deferred Inspections
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="toleranceBasedScheduling"
+                          checked={constraints.toleranceBasedScheduling}
+                          onCheckedChange={() => handleConstraintToggle('toleranceBasedScheduling')}
+                        />
+                        <Label htmlFor="toleranceBasedScheduling" className="text-sm cursor-pointer">
+                          Tolerance-Based Scheduling
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="auditTrailOptionality"
+                          checked={constraints.auditTrailOptionality}
+                          onCheckedChange={() => handleConstraintToggle('auditTrailOptionality')}
+                        />
+                        <Label htmlFor="auditTrailOptionality" className="text-sm cursor-pointer">
+                          Audit Trail Optionality
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Optimization Preferences */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                      <Gauge className="w-4 h-4" />
+                      Optimization Preferences
+                    </div>
+                    <div className="space-y-2 pl-6">
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="minimizeMakespan"
+                          checked={constraints.minimizeMakespan}
+                          onCheckedChange={() => handleConstraintToggle('minimizeMakespan')}
+                        />
+                        <Label htmlFor="minimizeMakespan" className="text-sm cursor-pointer">
+                          Minimize Makespan
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="maximizeMachineUtilization"
+                          checked={constraints.maximizeMachineUtilization}
+                          onCheckedChange={() => handleConstraintToggle('maximizeMachineUtilization')}
+                        />
+                        <Label htmlFor="maximizeMachineUtilization" className="text-sm cursor-pointer">
+                          Maximize Machine Utilization
+                        </Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          id="prioritizeHighMarginOrders"
+                          checked={constraints.prioritizeHighMarginOrders}
+                          onCheckedChange={() => handleConstraintToggle('prioritizeHighMarginOrders')}
+                        />
+                        <Label htmlFor="prioritizeHighMarginOrders" className="text-sm cursor-pointer">
+                          Prioritize High-Margin Orders
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
             </div>
           ) : (
             // Desktop: Horizontal layout
-            <div className="flex flex-wrap items-center gap-4">
+            <><div className="flex flex-wrap items-center gap-4">
               <div className="flex items-center gap-2">
                 <Search className="w-4 h-4 text-muted-foreground" />
                 <Input
@@ -861,6 +1223,304 @@ export default function ProductionSchedulePage() {
                 </Button>
               </div>
             </div>
+
+            {/* Desktop Constraint Toggles */}
+            <Collapsible open={showConstraints} onOpenChange={setShowConstraints}>
+              <CollapsibleTrigger className="w-full mt-4">
+                <Button variant="outline" size="sm" className="w-full justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>Scheduling Constraints</span>
+                    <Badge variant="secondary" className="ml-2">
+                      {Object.values(constraints).filter(v => v).length} active
+                    </Badge>
+                  </div>
+                  {showConstraints ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </Button>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-4 bg-background border rounded-lg">
+                {/* Resource Management */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Users className="w-4 h-4" />
+                    <span>Resource Management</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="limitOvertimeUsage-desktop"
+                        checked={constraints.limitOvertimeUsage}
+                        onCheckedChange={() => handleConstraintToggle('limitOvertimeUsage')}
+                      />
+                      <Label htmlFor="limitOvertimeUsage-desktop" className="text-sm cursor-pointer">
+                        Limit Overtime Usage
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="skillBasedAssignment-desktop"
+                        checked={constraints.skillBasedAssignment}
+                        onCheckedChange={() => handleConstraintToggle('skillBasedAssignment')}
+                      />
+                      <Label htmlFor="skillBasedAssignment-desktop" className="text-sm cursor-pointer">
+                        Skill-Based Assignment
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="toolUsageOptimization-desktop"
+                        checked={constraints.toolUsageOptimization}
+                        onCheckedChange={() => handleConstraintToggle('toolUsageOptimization')}
+                      />
+                      <Label htmlFor="toolUsageOptimization-desktop" className="text-sm cursor-pointer">
+                        Tool Usage Optimization
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Time Flexibility */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Timer className="w-4 h-4" />
+                    <span>Time Flexibility</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="flexibleStartTimes-desktop"
+                        checked={constraints.flexibleStartTimes}
+                        onCheckedChange={() => handleConstraintToggle('flexibleStartTimes')}
+                      />
+                      <Label htmlFor="flexibleStartTimes-desktop" className="text-sm cursor-pointer">
+                        Flexible Start Times
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="weekendHolidayWork-desktop"
+                        checked={constraints.weekendHolidayWork}
+                        onCheckedChange={() => handleConstraintToggle('weekendHolidayWork')}
+                      />
+                      <Label htmlFor="weekendHolidayWork-desktop" className="text-sm cursor-pointer">
+                        Weekend/Holiday Work
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="shiftBalancing-desktop"
+                        checked={constraints.shiftBalancing}
+                        onCheckedChange={() => handleConstraintToggle('shiftBalancing')}
+                      />
+                      <Label htmlFor="shiftBalancing-desktop" className="text-sm cursor-pointer">
+                        Shift Balancing
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Process Flow */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Activity className="w-4 h-4" />
+                    <span>Process Flow</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="allowParallelProcessing-desktop"
+                        checked={constraints.allowParallelProcessing}
+                        onCheckedChange={() => handleConstraintToggle('allowParallelProcessing')}
+                      />
+                      <Label htmlFor="allowParallelProcessing-desktop" className="text-sm cursor-pointer">
+                        Allow Parallel Processing
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="relaxRoutingRules-desktop"
+                        checked={constraints.relaxRoutingRules}
+                        onCheckedChange={() => handleConstraintToggle('relaxRoutingRules')}
+                      />
+                      <Label htmlFor="relaxRoutingRules-desktop" className="text-sm cursor-pointer">
+                        Relax Routing Rules
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="skipNonCriticalSteps-desktop"
+                        checked={constraints.skipNonCriticalSteps}
+                        onCheckedChange={() => handleConstraintToggle('skipNonCriticalSteps')}
+                      />
+                      <Label htmlFor="skipNonCriticalSteps-desktop" className="text-sm cursor-pointer">
+                        Skip Non-Critical Steps
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Material Handling */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Package className="w-4 h-4" />
+                    <span>Material Handling</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="justInTimeDelivery-desktop"
+                        checked={constraints.justInTimeDelivery}
+                        onCheckedChange={() => handleConstraintToggle('justInTimeDelivery')}
+                      />
+                      <Label htmlFor="justInTimeDelivery-desktop" className="text-sm cursor-pointer">
+                        Just-in-Time Delivery
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="allowSubstitutes-desktop"
+                        checked={constraints.allowSubstitutes}
+                        onCheckedChange={() => handleConstraintToggle('allowSubstitutes')}
+                      />
+                      <Label htmlFor="allowSubstitutes-desktop" className="text-sm cursor-pointer">
+                        Allow Substitutes
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="partialMaterialAvailability-desktop"
+                        checked={constraints.partialMaterialAvailability}
+                        onCheckedChange={() => handleConstraintToggle('partialMaterialAvailability')}
+                      />
+                      <Label htmlFor="partialMaterialAvailability-desktop" className="text-sm cursor-pointer">
+                        Partial Material Availability
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Cost Control */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <DollarSign className="w-4 h-4" />
+                    <span>Cost Control</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="energyCostOptimization-desktop"
+                        checked={constraints.energyCostOptimization}
+                        onCheckedChange={() => handleConstraintToggle('energyCostOptimization')}
+                      />
+                      <Label htmlFor="energyCostOptimization-desktop" className="text-sm cursor-pointer">
+                        Energy Cost Optimization
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="budgetBasedScheduling-desktop"
+                        checked={constraints.budgetBasedScheduling}
+                        onCheckedChange={() => handleConstraintToggle('budgetBasedScheduling')}
+                      />
+                      <Label htmlFor="budgetBasedScheduling-desktop" className="text-sm cursor-pointer">
+                        Budget-Based Scheduling
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="limitPremiumResourceUsage-desktop"
+                        checked={constraints.limitPremiumResourceUsage}
+                        onCheckedChange={() => handleConstraintToggle('limitPremiumResourceUsage')}
+                      />
+                      <Label htmlFor="limitPremiumResourceUsage-desktop" className="text-sm cursor-pointer">
+                        Limit Premium Resources
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quality & Compliance */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Award className="w-4 h-4" />
+                    <span>Quality & Compliance</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="deferredInspections-desktop"
+                        checked={constraints.deferredInspections}
+                        onCheckedChange={() => handleConstraintToggle('deferredInspections')}
+                      />
+                      <Label htmlFor="deferredInspections-desktop" className="text-sm cursor-pointer">
+                        Deferred Inspections
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="toleranceBasedScheduling-desktop"
+                        checked={constraints.toleranceBasedScheduling}
+                        onCheckedChange={() => handleConstraintToggle('toleranceBasedScheduling')}
+                      />
+                      <Label htmlFor="toleranceBasedScheduling-desktop" className="text-sm cursor-pointer">
+                        Tolerance-Based Scheduling
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="auditTrailOptionality-desktop"
+                        checked={constraints.auditTrailOptionality}
+                        onCheckedChange={() => handleConstraintToggle('auditTrailOptionality')}
+                      />
+                      <Label htmlFor="auditTrailOptionality-desktop" className="text-sm cursor-pointer">
+                        Audit Trail Optionality
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Optimization Preferences */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
+                    <Gauge className="w-4 h-4" />
+                    <span>Optimization Preferences</span>
+                  </div>
+                  <div className="space-y-2 pl-6">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="minimizeMakespan-desktop"
+                        checked={constraints.minimizeMakespan}
+                        onCheckedChange={() => handleConstraintToggle('minimizeMakespan')}
+                      />
+                      <Label htmlFor="minimizeMakespan-desktop" className="text-sm cursor-pointer">
+                        Minimize Makespan
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="maximizeMachineUtilization-desktop"
+                        checked={constraints.maximizeMachineUtilization}
+                        onCheckedChange={() => handleConstraintToggle('maximizeMachineUtilization')}
+                      />
+                      <Label htmlFor="maximizeMachineUtilization-desktop" className="text-sm cursor-pointer">
+                        Maximize Machine Utilization
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="prioritizeHighMarginOrders-desktop"
+                        checked={constraints.prioritizeHighMarginOrders}
+                        onCheckedChange={() => handleConstraintToggle('prioritizeHighMarginOrders')}
+                      />
+                      <Label htmlFor="prioritizeHighMarginOrders-desktop" className="text-sm cursor-pointer">
+                        Prioritize High-Margin Orders
+                      </Label>
+                    </div>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+            </>
           )}
         </div>
       )}
