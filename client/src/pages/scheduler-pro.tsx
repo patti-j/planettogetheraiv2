@@ -44,19 +44,20 @@ export default function SchedulerPro() {
   useEffect(() => {
     if (!containerRef.current || !ptOperations || isLoading) return;
 
-    // Check if Bryntum is loaded
-    const bryntumWindow = window as BryntumWindow;
-    if (!bryntumWindow.bryntum?.schedulerpro) {
-      console.error('Bryntum SchedulerPro not loaded');
-      toast({
-        title: "Error",
-        description: "Scheduler library not loaded. Please refresh the page.",
-        variant: "destructive"
-      });
-      return;
-    }
+    try {
+      // Check if Bryntum is loaded
+      const bryntumWindow = window as BryntumWindow;
+      if (!bryntumWindow.bryntum?.schedulerpro) {
+        console.error('Bryntum SchedulerPro not loaded');
+        toast({
+          title: "Error",
+          description: "Scheduler library not loaded. Please refresh the page.",
+          variant: "destructive"
+        });
+        return;
+      }
 
-    const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro;
+      const { SchedulerPro } = bryntumWindow.bryntum.schedulerpro;
 
     // Extract unique resources from PT operations
     const resourceMap = new Map();
@@ -105,9 +106,9 @@ export default function SchedulerPro() {
       assignments: assignments.length
     });
 
-    // Create the SchedulerPro instance using vanilla JavaScript
-    schedulerRef.current = new SchedulerPro({
-      appendTo: containerRef.current,
+      // Create the SchedulerPro instance using vanilla JavaScript
+      schedulerRef.current = new SchedulerPro({
+        appendTo: containerRef.current,
       
       // Project configuration
       project: {
@@ -150,33 +151,45 @@ export default function SchedulerPro() {
         }
       ],
       
-      // Features configuration
-      features: {
-        eventDrag: true,
-        eventResize: true,
-        eventTooltip: true,
-        timeRanges: {
-          showCurrentTimeLine: true
-        },
-        columnLines: true,
-        stripe: true,
-        dependencies: false, // Disable for performance
-        criticalPaths: false // Disable for performance
-      }
-    });
-    
-    setIsSchedulerReady(true);
-    console.log('Bryntum SchedulerPro initialized successfully');
+        // Features configuration
+        features: {
+          eventDrag: true,
+          eventResize: true,
+          eventTooltip: true,
+          timeRanges: {
+            showCurrentTimeLine: true
+          },
+          columnLines: true,
+          stripe: true,
+          dependencies: false, // Disable for performance
+          criticalPaths: false // Disable for performance
+        }
+      });
+      
+      setIsSchedulerReady(true);
+      console.log('Bryntum SchedulerPro initialized successfully');
+    } catch (error) {
+      console.error('Failed to initialize Bryntum SchedulerPro:', error);
+      toast({
+        title: "Error",
+        description: "Failed to initialize scheduler. Please try refreshing the page.",
+        variant: "destructive"
+      });
+    }
 
     // Cleanup function
     return () => {
-      if (schedulerRef.current) {
-        schedulerRef.current.destroy();
-        schedulerRef.current = null;
-        setIsSchedulerReady(false);
+      try {
+        if (schedulerRef.current) {
+          schedulerRef.current.destroy();
+          schedulerRef.current = null;
+          setIsSchedulerReady(false);
+        }
+      } catch (error) {
+        console.error('Error destroying scheduler:', error);
       }
     };
-  }, [ptOperations, isLoading]);
+  }, [ptOperations, isLoading, toast]);
 
   // Update view preset when state changes
   useEffect(() => {
