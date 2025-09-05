@@ -156,6 +156,7 @@ export default function SchedulerPro() {
                       new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
       
       const eventId = `e_${op.id || index + 1}`; // Use prefixed IDs
+      const resourceId = findResourceId(op); // Get the resource ID for single assignment mode
       
       return {
         id: eventId,
@@ -164,7 +165,7 @@ export default function SchedulerPro() {
         endDate: endDate,
         duration: op.duration || 4,
         durationUnit: 'hour',
-        // No resourceId here - will be set via assignments
+        resourceId: resourceId, // Include resourceId for single assignment mode
         percentDone: op.percentDone || 0,
         eventColor: getOperationColor(op.operationName)
       };
@@ -227,10 +228,13 @@ export default function SchedulerPro() {
         }
       },
       
-      // Create an empty project that we'll populate after
+      // Create an empty project with single assignment mode enabled
       project: {
         autoLoad: false,
-        autoSync: false
+        autoSync: false,
+        eventStore: {
+          singleAssignment: true  // Critical: Enable single assignment mode
+        }
       },
       
       // Time axis configuration
@@ -284,18 +288,15 @@ export default function SchedulerPro() {
         // Access the stores directly
         const resourceStore = schedulerRef.current.resourceStore;
         const eventStore = schedulerRef.current.eventStore;
-        const assignmentStore = schedulerRef.current.assignmentStore;
         
-        // Load data into stores
+        // Load data into stores (no assignments needed in single assignment mode)
         if (resourceStore) {
           resourceStore.data = bryntumResources;
         }
         if (eventStore) {
           eventStore.data = events;
         }
-        if (assignmentStore) {
-          assignmentStore.data = assignments;
-        }
+        // Don't load assignments - using resourceId directly with single assignment mode
       }
       
       // Force refresh and log resource store after initialization
@@ -320,11 +321,12 @@ export default function SchedulerPro() {
       
       setIsSchedulerReady(true);
       console.log('Bryntum SchedulerPro initialized successfully');
-    } catch (error) {
-      console.error('Failed to initialize Bryntum SchedulerPro:', error);
+    } catch (error: any) {
+      console.error('Failed to initialize Bryntum SchedulerPro:', error?.message || error);
+      console.error('Error stack:', error?.stack);
       toast({
         title: "Error",
-        description: "Failed to initialize scheduler. Please try refreshing the page.",
+        description: error?.message || "Failed to initialize scheduler. Please try refreshing the page.",
         variant: "destructive"
       });
     }
