@@ -4,9 +4,8 @@ import { ProjectModel } from '@bryntum/schedulerpro';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-// Import both light and dark themes
-import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
-import '@bryntum/schedulerpro/schedulerpro.classic-dark.css';
+// Custom theme overrides are applied via bryntum-theme.css
+// No default Bryntum themes imported to maintain app consistency
 
 interface BryntumSchedulerProComponentProps {
   operations?: any[];

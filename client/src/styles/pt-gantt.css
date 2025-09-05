@@ -51,11 +51,12 @@
   border-left: 4px solid #D32F2F;
 }
 
-/* High Priority Events */
+/* High Priority Events - Using app's primary colors */
 .pt-event[data-priority="1"], 
 .pt-event[data-priority="2"] {
-  border-left: 4px solid #9C27B0 !important;
-  background: linear-gradient(135deg, #9C27B0 0%, #AB47BC 100%) !important;
+  border-left: 4px solid hsl(207, 90%, 54%) !important;
+  background: hsl(207, 90%, 54%) !important;
+  opacity: 0.95;
 }
 
 /* Resource Row Styling */
@@ -113,12 +114,12 @@
   margin-left: 4px;
 }
 
-/* Job Grouping Colors */
-.job-group-1 { border-top: 3px solid #4285F4; }
+/* Job Grouping Colors - Using app's primary color palette */
+.job-group-1 { border-top: 3px solid hsl(207, 90%, 54%); }
 .job-group-2 { border-top: 3px solid #DB4437; }
 .job-group-3 { border-top: 3px solid #F4B400; }
-.job-group-4 { border-top: 3px solid #0F9D58; }
-.job-group-5 { border-top: 3px solid #AB47BC; }
+.job-group-4 { border-top: 3px solid hsl(120, 61%, 50%); }
+.job-group-5 { border-top: 3px solid hsl(207, 90%, 44%); }
 
 /* Responsive Design */
 @media (max-width: 768px) {

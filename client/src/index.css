@@ -1,16 +1,21 @@
 /* React Flow styles */
 @import 'reactflow/dist/style.css';
 
-/* Bryntum Gantt styles */
-@import url('/gantt.stockholm.css');
+/* Bryntum Gantt styles - Removed Stockholm theme to use custom styling */
+/* @import url('/gantt.stockholm.css'); */
 
 /* Custom Bryntum theme integration */
-.bryntum-gantt-container {
-  --b-theme-background-color: var(--background);
-  --b-theme-text-color: var(--foreground);
-  --b-theme-accent-color: var(--primary);
-  --b-theme-border-color: var(--border);
-  --b-theme-header-background-color: var(--muted);
+.bryntum-gantt-container,
+.b-schedulerpro,
+.bryntum-scheduler-container {
+  --b-theme-background-color: hsl(var(--background));
+  --b-theme-text-color: hsl(var(--foreground));
+  --b-theme-accent-color: hsl(var(--primary));
+  --b-theme-border-color: hsl(var(--border));
+  --b-theme-header-background-color: hsl(var(--muted));
+  --b-purple: hsl(var(--primary));
+  --b-purple-light: hsl(var(--primary) / 0.8);
+  --b-purple-dark: hsl(var(--primary) / 1.2);
 }
 
 /* Bryntum dark theme overrides */
@@ -197,6 +202,9 @@
 .b-scheduler {
   font-family: inherit !important;
   font-size: 14px !important;
+  --b-purple: hsl(207, 90%, 54%) !important;
+  --b-purple-light: hsl(207, 90%, 64%) !important;
+  --b-purple-dark: hsl(207, 90%, 44%) !important;
 }
 
 /* Fix overlapping issues */
