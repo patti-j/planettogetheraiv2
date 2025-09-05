@@ -31,7 +31,6 @@ import ForkliftDriver from "@/pages/forklift-driver";
 import EmailSettings from "@/pages/email-settings";
 import Settings from "@/pages/settings";
 import LaborPlanning from "@/pages/labor-planning";
-import ResourceCapabilityDiagram from "@/pages/resource-capability-diagram";
 import EnterpriseMap from "@/pages/enterprise-map";
 // import DemoPage from "@/pages/demo"; // Commented out - file doesn't exist
 import Onboarding from "@/pages/onboarding";
@@ -189,9 +188,6 @@ export default function ApplicationApp() {
                 <ProtectedRoute feature="labor-planning" action="view">
                   <LaborPlanning />
                 </ProtectedRoute>
-              </Route>
-              <Route path="/resource-capability-diagram">
-                <ResourceCapabilityDiagram />
               </Route>
               <Route path="/optimization-studio">
                 <ProtectedRoute feature="optimization-studio" action="view">

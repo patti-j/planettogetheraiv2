@@ -4,8 +4,7 @@ import { ProjectModel } from '@bryntum/schedulerpro';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
-// Custom theme overrides are applied via bryntum-theme.css
-// No default Bryntum themes imported to maintain app consistency
+import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
 interface BryntumSchedulerProComponentProps {
   operations?: any[];
@@ -335,79 +334,11 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     );
   }
 
-  // Get theme class based on dark mode
-  const isDarkMode = document.documentElement.classList.contains('dark') || document.body.classList.contains('dark');
-  const themeClass = isDarkMode ? 'b-theme-classic-dark' : 'b-theme-classic-light';
-  
   return (
-    <div className={`h-full w-full flex flex-col ${themeClass}`} style={{ minHeight: 0, overflow: 'hidden' }}>
+    <div className="h-full w-full flex flex-col" style={{ minHeight: 0, overflow: 'hidden' }}>
       <div className="flex-1 min-h-0">
         <BryntumSchedulerPro
         ref={schedulerRef}
-        cls={themeClass}
-        // Toolbar configuration with proper button styling
-        tbar={{
-          cls: 'scheduler-toolbar',
-          items: [
-            {
-              type: 'button',
-              text: 'Zoom In',
-              cls: 'b-green',
-              onAction: () => {
-                if (schedulerRef.current?.widget) {
-                  schedulerRef.current.widget.zoomIn && schedulerRef.current.widget.zoomIn();
-                }
-              }
-            },
-            {
-              type: 'button',
-              text: 'Zoom Out',
-              cls: 'b-green',
-              onAction: () => {
-                if (schedulerRef.current?.widget) {
-                  schedulerRef.current.widget.zoomOut && schedulerRef.current.widget.zoomOut();
-                }
-              }
-            },
-            {
-              type: 'button',
-              text: 'Fit to View',
-              cls: 'b-green',
-              onAction: () => {
-                if (schedulerRef.current?.widget) {
-                  schedulerRef.current.widget.zoomToFit && schedulerRef.current.widget.zoomToFit();
-                }
-              }
-            },
-            '->',
-            {
-              type: 'button',
-              text: 'Apply Algorithm',
-              cls: 'b-green',
-              onAction: () => {
-                console.log('Apply Algorithm clicked');
-              }
-            },
-            {
-              type: 'button', 
-              text: 'Save Schedule',
-              cls: 'b-green',
-              icon: 'b-fa b-fa-save',
-              onAction: () => {
-                console.log('Save Schedule clicked');
-              }
-            },
-            {
-              type: 'button',
-              text: 'Refresh',
-              cls: 'b-green',
-              icon: 'b-fa b-fa-sync',
-              onAction: () => {
-                window.location.reload();
-              }
-            }
-          ]
-        }}
         // Pass ProjectModel instance - no inner store configs to avoid warning
         project={projectModel}
         startDate={new Date(2025, 8, 1)}  // September 1, 2025
