@@ -466,7 +466,7 @@ export default function ProductionSchedulePage() {
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b">
               <div className="flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-blue-600" />
+                <Sparkles className="w-5 h-5 ai-gradient-text" />
                 <span className="font-semibold">Max AI Assistant</span>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowMaxAI(false)}>
@@ -479,7 +479,7 @@ export default function ProductionSchedulePage() {
               <div className="space-y-4">
                 {maxAIMessages.length === 0 && (
                   <div className="text-center text-muted-foreground py-8">
-                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                    <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-50 ai-gradient-text" />
                     <p className="text-sm">Ask Max AI about your production schedule</p>
                     <p className="text-xs mt-1">Try: "What's our resource utilization?" or "Show bottlenecks"</p>
                   </div>
@@ -489,7 +489,7 @@ export default function ProductionSchedulePage() {
                   <div key={index} className={`flex gap-3 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     {message.role === 'assistant' && (
                       <Avatar className="w-6 h-6 mt-1">
-                        <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                        <AvatarFallback className="ai-gradient-bg text-white text-xs">
                           <Sparkles className="w-3 h-3" />
                         </AvatarFallback>
                       </Avatar>
@@ -515,7 +515,7 @@ export default function ProductionSchedulePage() {
                 {isMaxAILoading && (
                   <div className="flex gap-3 justify-start">
                     <Avatar className="w-6 h-6 mt-1">
-                      <AvatarFallback className="bg-blue-100 text-blue-600 text-xs">
+                      <AvatarFallback className="ai-gradient-bg text-white text-xs">
                         <Sparkles className="w-3 h-3" />
                       </AvatarFallback>
                     </Avatar>

@@ -83,28 +83,32 @@
 .b-button {
   border-radius: var(--radius);
   transition: all 0.2s;
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--foreground));
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+  background-image: none !important;
 }
 
 .b-button:hover {
-  background: hsl(var(--primary) / 0.1);
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.1) !important;
+  border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary)) !important;
+  background-image: none !important;
 }
 
 /* Dark mode button styling */
 .dark .b-button {
-  background: hsl(var(--background));
-  border: 1px solid hsl(var(--border));
-  color: hsl(var(--foreground));
+  background: hsl(var(--background)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  color: hsl(var(--foreground)) !important;
+  background-image: none !important;
 }
 
 .dark .b-button:hover {
-  background: hsl(var(--primary) / 0.2);
-  border-color: hsl(var(--primary));
-  color: hsl(var(--primary));
+  background: hsl(var(--primary) / 0.2) !important;
+  border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary)) !important;
+  background-image: none !important;
 }
 
 /* Ensure consistent styling for all button variants */
@@ -270,12 +274,52 @@
   color: hsl(var(--primary-foreground)) !important;
 }
 
-/* Override any purple gradient classes */
-[class*="purple"],
-[class*="b-purple"] {
+/* Override Bryntum purple buttons specifically */
+.b-button.b-purple,
+.b-button.b-blue.b-purple,
+.b-widget.b-button[class*="b-purple"] {
   background-image: none !important;
-  background-color: hsl(var(--primary)) !important;
+  background: hsl(var(--primary)) !important;
   border-color: hsl(var(--primary)) !important;
+  color: hsl(var(--primary-foreground)) !important;
+}
+
+.b-button.b-purple:hover,
+.b-button.b-blue.b-purple:hover,
+.b-widget.b-button[class*="b-purple"]:hover {
+  background: hsl(var(--primary) / 0.9) !important;
+  border-color: hsl(var(--primary)) !important;
+}
+
+/* Restore AI gradient for Max AI and Ask anything elements */
+.ai-gradient-bg,
+.ai-gradient-text,
+[class*="ai-gradient"] {
+  /* These should keep their gradients */
+  background-image: linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to))) !important;
+}
+
+/* Specifically style the Activity Center "Ask anything" text */
+.b-activitycenter .b-badge-text,
+.b-activitycenter-badge .b-badge-text {
+  background: linear-gradient(135deg, hsl(var(--ai-gradient-from)), hsl(var(--ai-gradient-to))) !important;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Activity Center container styling */
+.b-activitycenter,
+.b-activitycenter-badge {
+  background: white !important;
+  border: 1px solid hsl(var(--border)) !important;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1) !important;
+}
+
+.dark .b-activitycenter,
+.dark .b-activitycenter-badge {
+  background: hsl(var(--card)) !important;
+  border: 1px solid hsl(var(--border)) !important;
 }
 
 /* Responsive adjustments */
