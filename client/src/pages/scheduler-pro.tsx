@@ -187,32 +187,43 @@ export default function SchedulerPro() {
     console.log('Resource distribution by name:', resourceNameDistribution);
     console.log('Sample resources:', bryntumResources.slice(0, 5));
 
+      // Ensure container has proper dimensions for all resources
+      if (containerRef.current) {
+        // Calculate height based on number of resources
+        const minHeight = Math.max(600, (bryntumResources.length * 60) + 100);
+        containerRef.current.style.height = `${minHeight}px`;
+        containerRef.current.style.minHeight = `${minHeight}px`;
+      }
+      
       // Create the SchedulerPro instance using vanilla JavaScript
       schedulerRef.current = new SchedulerPro({
         appendTo: containerRef.current,
       
-      // Project configuration
-      project: {
-        resources: bryntumResources,
-        events: events
-      },
+      // Project configuration (removed in favor of direct stores)
       
       // Time axis configuration
-      startDate: '2025-08-20',
-      endDate: '2025-09-10',
+      startDate: new Date('2025-08-20'),
+      endDate: new Date('2025-09-10'),
       viewPreset: currentViewPreset,
       
-      // Layout configuration
-      rowHeight: 50,
+      // Auto calculate project dates
+      autoCalculateStartDate: false,
+      autoCalculateEndDate: false,
+      
+      // Layout configuration - force all rows visible
+      rowHeight: 60,
       barMargin: 5,
-      autoHeight: false,
+      autoHeight: true,
+      minHeight: 800,
+      height: Math.max(800, (bryntumResources.length * 65) + 150),
       
       // Resource columns
       columns: [
         {
           text: 'Resource',
           field: 'name',
-          width: 200
+          width: 200,
+          locked: true
         },
         {
           text: 'Category',
@@ -220,6 +231,10 @@ export default function SchedulerPro() {
           width: 150
         }
       ],
+      
+      // Force resource visibility with explicit stores
+      resources: bryntumResources,
+      events: events,
       
         // Features configuration
         features: {
@@ -237,6 +252,28 @@ export default function SchedulerPro() {
           tree: false
         }
       });
+      
+      // Force refresh and log resource store after initialization
+      setTimeout(() => {
+        if (schedulerRef.current) {
+          schedulerRef.current.refresh();
+          const resourceCount = schedulerRef.current.resourceStore?.count || 0;
+          const eventCount = schedulerRef.current.eventStore?.count || 0;
+          console.log('Scheduler refreshed - Resources in store:', resourceCount, 'Events in store:', eventCount);
+          
+          // Log first few resources to debug
+          const storeResources = schedulerRef.current.resourceStore?.records || [];
+          console.log('Resources in scheduler store:', storeResources.slice(0, 5).map((r: any) => ({ id: r.id, name: r.name })));
+          
+          // Try to force refresh and show all resources
+          schedulerRef.current.scrollRowIntoView(0, { block: 'start' });
+          
+          // Force rendering of all rows
+          if (schedulerRef.current.resourceStore) {
+            schedulerRef.current.resourceStore.filter();
+          }
+        }
+      }, 100);
       
       setIsSchedulerReady(true);
       console.log('Bryntum SchedulerPro initialized successfully');
