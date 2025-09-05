@@ -1770,23 +1770,23 @@ Rules:
       
       // Generate a simple token for token-based authentication
       console.log("=== LOGIN SUCCESS ===");
-      // Give all users 24 hours token (can be extended to 30 days for development)
+      // For development: Give admin user (ID 1) a 30-day token, others get 24 hours
       const isDevelopment = process.env.NODE_ENV === 'development';
       const isAdminUser = user.id === 1 || username === 'admin';
-      
-      // Always use 24 hours minimum, 30 days for development
-      const tokenDuration = isDevelopment 
-        ? (30 * 24 * 60 * 60 * 1000) // 30 days in development for all users
-        : (24 * 60 * 60 * 1000); // 24 hours in production
+      const tokenDuration = (isDevelopment && isAdminUser) 
+        ? (30 * 24 * 60 * 60 * 1000) // 30 days for admin in development
+        : (24 * 60 * 60 * 1000); // 24 hours for others
       
       const expiresAt = Date.now() + tokenDuration;
       const token = `user_${user.id}_${expiresAt}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Also update session cookie expiry to match token duration
-      req.session.cookie.maxAge = tokenDuration;
+      // Also update session cookie expiry for admin user
+      if (isDevelopment && isAdminUser) {
+        req.session.cookie.maxAge = 30 * 24 * 60 * 60 * 1000; // 30 days
+      }
       
       console.log("Generated token:", token);
-      console.log(`Token expires at: ${new Date(expiresAt).toISOString()} (${isDevelopment ? '30 days' : '24 hours'})`);
+      console.log(`Token expires at: ${new Date(expiresAt).toISOString()} (${isDevelopment && isAdminUser ? '30 days' : '24 hours'})`);
       console.log("Session userId set to:", user.id);
       console.log("Session cookie maxAge:", req.session.cookie.maxAge);
       
