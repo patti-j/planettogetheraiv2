@@ -783,13 +783,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   return (
     <div 
       className={cn(
-        "h-full bg-background flex flex-col",
+        "h-full bg-background flex flex-col w-full",
         isCollapsed && "transition-all duration-300"
       )}
-      style={{
-        width: isCollapsed ? '56px' : '100%',
-        transition: isCollapsed ? 'width 300ms' : undefined
-      }}
     >
       
       {/* Header */}
