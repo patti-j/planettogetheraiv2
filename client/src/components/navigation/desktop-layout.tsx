@@ -10,6 +10,7 @@ import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar } from 'lucide-react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -46,16 +47,24 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   });
 
-  // Navigation panel width state
-  const [navPanelWidth, setNavPanelWidth] = useState(() => {
+  // Panel width states for resizable panels
+  const [aiPanelSize, setAiPanelSize] = useState(() => {
     try {
-      const savedWidth = localStorage.getItem('navigationPanelWidth');
-      return savedWidth ? parseInt(savedWidth) : 320; // Default 320px (w-80)
+      const savedSize = localStorage.getItem('aiPanelSize');
+      return savedSize ? parseInt(savedSize) : 25; // Default 25% of screen width
     } catch {
-      return 320;
+      return 25;
     }
   });
-  const [isDraggingNav, setIsDraggingNav] = useState(false);
+  
+  const [navPanelSize, setNavPanelSize] = useState(() => {
+    try {
+      const savedSize = localStorage.getItem('navPanelSize');
+      return savedSize ? parseInt(savedSize) : 20; // Default 20% of screen width
+    } catch {
+      return 20;
+    }
+  });
 
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
@@ -207,47 +216,36 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
-  // Handle navigation panel resizing
-  const handleNavMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsDraggingNav(true);
-  };
-
-  const handleNavMouseMove = (e: MouseEvent) => {
-    if (!isDraggingNav) return;
-    
-    // Calculate new width from the right edge
-    const newWidth = window.innerWidth - e.clientX;
-    const minWidth = 200;
-    const maxWidth = window.innerWidth * 0.5; // Max 50% of window width
-    const constrainedWidth = Math.max(minWidth, Math.min(newWidth, maxWidth));
-    
-    setNavPanelWidth(constrainedWidth);
-    
-    // Save to localStorage
-    try {
-      localStorage.setItem('navigationPanelWidth', constrainedWidth.toString());
-    } catch {
-      // Ignore localStorage errors
-    }
-  };
-
-  const handleNavMouseUp = () => {
-    setIsDraggingNav(false);
-  };
-
-  // Add event listeners for navigation panel dragging
-  useEffect(() => {
-    if (isDraggingNav) {
-      document.addEventListener('mousemove', handleNavMouseMove);
-      document.addEventListener('mouseup', handleNavMouseUp);
+  // Handle panel size changes and persistence
+  const handlePanelResize = (sizes: number[]) => {
+    // Only handle AI panel size when navigation is pinned (3 panels)
+    if (isNavigationPinned && sizes.length === 3) {
+      const [aiSize, , navSize] = sizes; // [ai, main, nav]
       
-      return () => {
-        document.removeEventListener('mousemove', handleNavMouseMove);
-        document.removeEventListener('mouseup', handleNavMouseUp);
-      };
+      // Update states
+      setAiPanelSize(aiSize);
+      setNavPanelSize(navSize);
+      
+      // Save to localStorage
+      try {
+        localStorage.setItem('aiPanelSize', aiSize.toString());
+        localStorage.setItem('navPanelSize', navSize.toString());
+      } catch {
+        // Ignore localStorage errors
+      }
+    } else if (!isNavigationPinned && sizes.length === 2) {
+      // Only AI panel and main content when navigation is not pinned
+      const [aiSize] = sizes;
+      
+      setAiPanelSize(aiSize);
+      
+      try {
+        localStorage.setItem('aiPanelSize', aiSize.toString());
+      } catch {
+        // Ignore localStorage errors
+      }
     }
-  }, [isDraggingNav]);
+  };
 
   // Toggle pin functionality
   const handleTogglePin = () => {
@@ -328,14 +326,118 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         <CustomizableHeader />
       )}
       
-      {/* Main content area with AI panel on left and navigation on right */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* AI Panel - now on the left side - hidden in full screen or small screens unless forced */}
-        {showPanels && <AILeftPanel />}
-        
-        {/* Main content */}
+      {/* Main content area with resizable AI panel on left and navigation on right */}
+      {showPanels ? (
+        isNavigationPinned ? (
+          /* Layout with AI panel, main content, and pinned navigation (3 panels) */
+          <ResizablePanelGroup 
+            direction="horizontal" 
+            className="flex-1 overflow-hidden"
+            onLayout={handlePanelResize}
+          >
+            {/* AI Panel - resizable left panel */}
+            <ResizablePanel 
+              defaultSize={aiPanelSize} 
+              minSize={15} 
+              maxSize={40}
+              className="min-w-0"
+            >
+              <AILeftPanel />
+            </ResizablePanel>
+            
+            {/* Resizable handle for AI panel */}
+            <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+            
+            {/* Main content panel */}
+            <ResizablePanel minSize={30}>
+              <div className="flex flex-col h-full">
+                
+                {/* TopMenu for navigation menu - hidden in full screen */}
+                {!isFullScreen && (
+                  <TopMenu 
+                    onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+                    isNavPanelOpen={isNavigationOpen}
+                  />
+                )}
+                
+                {/* Main content area - with bottom padding for activity center */}
+                <div className="flex-1 overflow-auto pb-10">
+                  {children}
+                </div>
+              </div>
+            </ResizablePanel>
+            
+            {/* Resizable handle for navigation panel */}
+            <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+            
+            {/* Navigation panel - resizable */}
+            <ResizablePanel 
+              defaultSize={navPanelSize} 
+              minSize={15} 
+              maxSize={35}
+              className="min-w-0"
+            >
+              <div className="h-full flex flex-col bg-background border-l border-border">
+                <SlideOutMenu 
+                  isOpen={true}
+                  onClose={() => {}}
+                  width={undefined} // Let panel handle width
+                />
+              </div>
+            </ResizablePanel>
+          </ResizablePanelGroup>
+        ) : (
+          /* Layout with AI panel and main content only (2 panels) */
+          <div className="flex flex-1 overflow-hidden">
+            <ResizablePanelGroup 
+              direction="horizontal" 
+              className="flex-1 overflow-hidden"
+              onLayout={handlePanelResize}
+            >
+              {/* AI Panel - resizable left panel */}
+              <ResizablePanel 
+                defaultSize={aiPanelSize} 
+                minSize={15} 
+                maxSize={40}
+                className="min-w-0"
+              >
+                <AILeftPanel />
+              </ResizablePanel>
+              
+              {/* Resizable handle for AI panel */}
+              <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+              
+              {/* Main content panel */}
+              <ResizablePanel minSize={30}>
+                <div className="flex flex-col h-full">
+                  
+                  {/* TopMenu for navigation menu - hidden in full screen */}
+                  {!isFullScreen && (
+                    <TopMenu 
+                      onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+                      isNavPanelOpen={isNavigationOpen}
+                    />
+                  )}
+                  
+                  {/* Main content area - with bottom padding for activity center */}
+                  <div className="flex-1 overflow-auto pb-10">
+                    {children}
+                  </div>
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+            
+            {/* Minimized Navigation Panel - positioned absolutely */}
+            <MinimizedNavPanel 
+              onExpand={() => setIsNavigationOpen(true)}
+              isPinned={isNavigationPinned}
+              onTogglePin={handleTogglePin}
+            />
+          </div>
+        )
+      ) : (
+        /* Fallback layout when panels are hidden */
         <div className="flex-1 flex flex-col">
-          
           {/* TopMenu for navigation menu - hidden in full screen */}
           {!isFullScreen && (
             <TopMenu 
@@ -349,43 +451,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             {children}
           </div>
         </div>
-        
-        {/* Navigation Panel - Show full when pinned, minimized when not pinned - hidden in full screen or small screens unless forced */}
-        {showPanels && (
-          <>
-            {isNavigationPinned ? (
-              <>
-                {/* Resizer for navigation panel */}
-                <div
-                  className="w-1 bg-gray-300 hover:bg-blue-400 cursor-col-resize transition-colors relative group"
-                  onMouseDown={handleNavMouseDown}
-                >
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="h-8 w-0.5 bg-gray-500 group-hover:bg-blue-600 transition-colors"></div>
-                  </div>
-                </div>
-                {/* Navigation panel with dynamic width */}
-                <div 
-                  className="h-full flex flex-col bg-background border-l border-border"
-                  style={{ width: `${navPanelWidth}px` }}
-                >
-                  <SlideOutMenu 
-                    isOpen={true}
-                    onClose={() => {}}
-                    width={navPanelWidth}
-                  />
-                </div>
-              </>
-            ) : (
-              <MinimizedNavPanel 
-                onExpand={() => setIsNavigationOpen(true)}
-                isPinned={isNavigationPinned}
-                onTogglePin={handleTogglePin}
-              />
-            )}
-          </>
-        )}
-      </div>
+      )}
       
       {/* Bottom drawer for notifications - hidden in full screen */}
       {!isFullScreen && <BottomDrawer />}
@@ -475,6 +541,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         <SlideOutMenu 
           isOpen={isNavigationOpen}
           onClose={() => setIsNavigationOpen(false)}
+          width={undefined} // Use default width for overlay mode
         />
       )}
     </div>

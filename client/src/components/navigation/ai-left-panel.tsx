@@ -49,11 +49,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   });
   const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
-  const [panelWidth, setPanelWidth] = useState(() => {
-    const saved = localStorage.getItem('ai-panel-width');
-    return saved ? parseInt(saved, 10) : 320;
-  });
-  const [isResizing, setIsResizing] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [isNearBottom, setIsNearBottom] = useState(true);
@@ -61,7 +56,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
   const [showFloatingNotification, setShowFloatingNotification] = useState(false);
-  const panelRef = useRef<HTMLDivElement>(null);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -732,42 +726,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     return () => document.removeEventListener('toggle-ai-panel', handleToggle);
   }, []);
 
-  // Handle resize
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    e.preventDefault();
-    setIsResizing(true);
-  }, []);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!isResizing) return;
-      
-      const newWidth = window.innerWidth - e.clientX;
-      const clampedWidth = Math.min(Math.max(newWidth, 280), 600);
-      setPanelWidth(clampedWidth);
-    };
-
-    const handleMouseUp = () => {
-      if (isResizing) {
-        setIsResizing(false);
-        localStorage.setItem('ai-panel-width', panelWidth.toString());
-      }
-    };
-
-    if (isResizing) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = 'col-resize';
-      document.body.style.userSelect = 'none';
-    }
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-      document.body.style.cursor = '';
-      document.body.style.userSelect = '';
-    };
-  }, [isResizing, panelWidth]);
 
   // Transform Max AI insights to display format
   const displayInsights: AIInsight[] = (Array.isArray(maxInsights) ? maxInsights : []).map((insight: any, index: number) => ({
@@ -824,30 +782,15 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   return (
     <div 
-      ref={panelRef}
       className={cn(
-        "h-full bg-background border-l flex flex-col relative",
+        "h-full bg-background flex flex-col",
         isCollapsed && "transition-all duration-300"
       )}
       style={{
-        width: isCollapsed ? '56px' : `${panelWidth}px`,
+        width: isCollapsed ? '56px' : '100%',
         transition: isCollapsed ? 'width 300ms' : undefined
       }}
     >
-      {/* Resize Handle */}
-      {!isCollapsed && (
-        <div
-          className={cn(
-            "absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-primary/20 transition-colors",
-            "flex items-center justify-center group",
-            isResizing && "bg-primary/30"
-          )}
-          onMouseDown={handleMouseDown}
-        >
-          <div className="absolute inset-y-0 left-0 w-4 -translate-x-1/2" />
-          <GripVertical className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
-        </div>
-      )}
       
       {/* Header */}
       <div className={cn("px-4 py-2 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
@@ -942,7 +885,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
             {/* Scheduler-specific quick actions when on production scheduler page */}
             {location === '/production-scheduler' && activeTab === 'chat' && (
-              <div className="px-3 py-2 border-b bg-background/50" style={{ width: '100%', maxWidth: panelWidth }}>
+              <div className="px-3 py-2 border-b bg-background/50" style={{ width: '100%' }}>
                 <div className="text-xs font-medium text-muted-foreground mb-2 flex items-center gap-1">
                   <Sparkles className="h-3 w-3" />
                   Quick Scheduler Actions
