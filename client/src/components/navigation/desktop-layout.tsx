@@ -309,12 +309,52 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
   const isActualMobile = isTouchDevice && windowWidth < 768;
   const shouldHidePanels = isActualMobile && !forcePanelsVisible;
-  const showPanels = !isFullScreen && !shouldHidePanels;
+  
+  // Check if we're on production scheduler page (which uses an iframe and shouldn't have resizable panels)
+  const isProductionScheduler = location === '/production-scheduler';
+  const showPanels = !isFullScreen && !shouldHidePanels && !isProductionScheduler;
 
   // For very small screens (actual mobile), render content directly without TopMenu
   // Only do this for screens smaller than 320px (actual mobile devices)
   if (windowWidth < 320) {
     return <>{children}</>;
+  }
+
+  // Special layout for production scheduler (iframe page)
+  if (isProductionScheduler) {
+    return (
+      <div className="h-screen flex flex-col">
+        {!isFullScreen && <CustomizableHeader />}
+        <div className="flex-1 flex">
+          {/* Simple AI panel for production scheduler */}
+          <div className="w-80 border-r border-border bg-background">
+            <AILeftPanel />
+          </div>
+          {/* Main content with production scheduler iframe */}
+          <div className="flex-1 flex flex-col">
+            {!isFullScreen && (
+              <TopMenu 
+                onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+                isNavPanelOpen={isNavigationOpen}
+              />
+            )}
+            <div className="flex-1 overflow-auto">
+              {children}
+            </div>
+          </div>
+          {/* Navigation panel */}
+          {isNavigationPinned && (
+            <div className="w-80 border-l border-border bg-background">
+              <SlideOutMenu 
+                isOpen={true}
+                onClose={() => {}}
+                width={undefined}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
   }
 
   // For desktop, use the new enhanced navigation components
