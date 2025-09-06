@@ -66,6 +66,15 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   });
 
+  // Track AI panel collapse state
+  const [isAiPanelCollapsed, setIsAiPanelCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('ai-panel-collapsed') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
   // Get AI settings for voice functionality
@@ -278,6 +287,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     };
   }, []);
 
+  // Listen for AI panel collapse state changes
+  useEffect(() => {
+    const handleAiPanelStorageChange = () => {
+      try {
+        const collapsed = localStorage.getItem('ai-panel-collapsed') === 'true';
+        setIsAiPanelCollapsed(collapsed);
+      } catch {
+        // Ignore errors
+      }
+    };
+    
+    window.addEventListener('storage', handleAiPanelStorageChange);
+    const interval = setInterval(handleAiPanelStorageChange, 100);
+    
+    return () => {
+      window.removeEventListener('storage', handleAiPanelStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
+
   // Track window width for responsive panel hiding
   useEffect(() => {
     const handleResize = () => {
@@ -401,15 +430,16 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         isNavigationPinned ? (
           /* Layout with AI panel, main content, and pinned navigation (3 panels) */
           <ResizablePanelGroup 
+            key={`ai-panel-${isAiPanelCollapsed}`} // Force remount when collapse state changes
             direction="horizontal" 
             className="flex-1 overflow-hidden"
             onLayout={handlePanelResize}
           >
             {/* AI Panel - resizable left panel */}
             <ResizablePanel 
-              defaultSize={aiPanelSize} 
-              minSize={15} 
-              maxSize={40}
+              defaultSize={isAiPanelCollapsed ? 6 : aiPanelSize} 
+              minSize={isAiPanelCollapsed ? 4 : 15} 
+              maxSize={isAiPanelCollapsed ? 8 : 40}
               className="min-w-0"
             >
               <AILeftPanel />
@@ -460,15 +490,16 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           /* Layout with AI panel and main content only (2 panels) */
           <div className="flex flex-1 overflow-hidden">
             <ResizablePanelGroup 
+              key={`ai-panel-2-${isAiPanelCollapsed}`} // Force remount when collapse state changes
               direction="horizontal" 
               className="flex-1 overflow-hidden"
               onLayout={handlePanelResize}
             >
               {/* AI Panel - resizable left panel */}
               <ResizablePanel 
-                defaultSize={aiPanelSize} 
-                minSize={15} 
-                maxSize={40}
+                defaultSize={isAiPanelCollapsed ? 6 : aiPanelSize} 
+                minSize={isAiPanelCollapsed ? 4 : 15} 
+                maxSize={isAiPanelCollapsed ? 8 : 40}
                 className="min-w-0"
               >
                 <AILeftPanel />
