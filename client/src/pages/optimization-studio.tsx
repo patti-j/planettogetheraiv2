@@ -1990,7 +1990,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <span>Production Scheduling</span>
                     <span>v1.0.0</span>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-blue-700 dark:text-blue-200">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-blue-700 dark:text-blue-200 mb-4">
                     <div className="flex items-center gap-1">
                       <Target className="w-3 h-3" />
                       <span>Due Date Focus</span>
@@ -2004,6 +2004,63 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                       <span>Backwards Logic</span>
                     </div>
                   </div>
+
+                  {/* Constraint Settings */}
+                  <div className="border-t border-blue-200 dark:border-blue-700 pt-4 space-y-3">
+                    <div className="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-100">
+                      <Settings className="w-4 h-4" />
+                      <span>Constraint Settings</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Physical Constraints */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Physical Constraints</p>
+                        <div className="space-y-1">
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Resource Capacity</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Setup Times</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Material Availability</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Storage Capacity</span>
+                          </label>
+                        </div>
+                      </div>
+
+                      {/* Policy Constraints */}
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Policy Constraints</p>
+                        <div className="space-y-1">
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Due Date Compliance</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Batch Processing Rules</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Safety Stock Levels</span>
+                          </label>
+                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
+                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
+                            <span>Customer Priority</span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <Button 
                     className="w-full mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white"
                     onClick={(e) => {
