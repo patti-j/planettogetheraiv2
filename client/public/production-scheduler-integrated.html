@@ -97,15 +97,31 @@
         .toolbar button {
             background: white;
             color: #333 !important;
-            border: 1px solid #ddd;
-            font-weight: 500;
+            border: 1px solid #e0e0e0;
+            font-weight: 400;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
         }
 
         .toolbar button:hover {
-            background: #f5f5f5;
+            background: #e8f5e9;
             transform: translateY(-1px);
-            border-color: #999;
-            color: #333 !important;
+            border-color: #4CAF50;
+            color: #2e7d32 !important;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+        }
+        
+        .toolbar button.icon-only {
+            padding: 0.375rem 0.5rem;
+            min-width: 32px;
+        }
+        
+        .toolbar button svg {
+            width: 16px;
+            height: 16px;
         }
 
         .scheduler-container {
@@ -175,6 +191,10 @@
         }
         
         /* Dark theme overrides */
+        .dark-theme {
+            background: #1a1a1a;
+        }
+        
         .dark-theme .header {
             background: rgba(30, 30, 30, 0.95);
             color: white;
@@ -191,6 +211,30 @@
         
         .dark-theme .toolbar label {
             color: #ccc;
+        }
+        
+        .dark-theme .toolbar button {
+            background: #2a2a2a;
+            color: #e0e0e0 !important;
+            border-color: #444;
+        }
+        
+        .dark-theme .toolbar button:hover {
+            background: #1b5e20;
+            color: #a5d6a7 !important;
+            border-color: #4CAF50;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+        }
+        
+        .dark-theme .toolbar select {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        
+        .dark-theme .toolbar select:hover {
+            background: #333;
+            border-color: #666;
         }
         
         .dark-theme .status-bar {
@@ -444,6 +488,72 @@
             color: white;
         }
         
+        .dark-theme .constraint-modal-content {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .dark-theme .constraint-modal-header {
+            background: #333;
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-header h2 {
+            color: white;
+        }
+        
+        .dark-theme .constraint-modal-close {
+            color: #ccc;
+        }
+        
+        .dark-theme .constraint-modal-close:hover {
+            color: white;
+        }
+        
+        .dark-theme .constraint-section h3 {
+            color: white;
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .constraint-group h4 {
+            color: #ccc;
+        }
+        
+        .dark-theme .constraint-item:hover {
+            background: #333;
+        }
+        
+        .dark-theme .constraint-label {
+            color: #e0e0e0;
+        }
+        
+        .dark-theme .constraint-modal-footer {
+            background: #333;
+            border-top-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-footer button {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-footer button:hover {
+            background: #1b5e20;
+            color: #a5d6a7;
+            border-color: #4CAF50;
+        }
+        
+        .dark-theme .constraint-modal-footer button.apply {
+            background: #2e7d32;
+            color: white;
+            border-color: #2e7d32;
+        }
+        
+        .dark-theme .constraint-modal-footer button.apply:hover {
+            background: #4CAF50;
+        }
+        
         .dark-theme .nav-item {
             color: #ccc;
         }
@@ -556,21 +666,6 @@
         }
         
         /* Constraint Settings Styles */
-        .constraint-settings-btn {
-            padding: 0.25rem 0.5rem;
-            font-size: 0.75rem;
-            background: #f0f0f0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-left: 0.25rem;
-        }
-        
-        .constraint-settings-btn:hover {
-            background: #e0e0e0;
-            border-color: #999;
-        }
-        
         .constraint-modal {
             display: none;
             position: fixed;
@@ -819,9 +914,26 @@
         </div>
 
         <div class="toolbar-group" style="display: flex; gap: 0.25rem;">
-            <button id="zoomIn" title="Zoom In" style="padding: 0.375rem 0.5rem; font-size: 0.875rem;">➕</button>
-            <button id="zoomOut" title="Zoom Out" style="padding: 0.375rem 0.5rem; font-size: 0.875rem;">➖</button>
-            <button id="zoomToFit" title="Fit to View" style="padding: 0.375rem 0.5rem; font-size: 0.875rem;">⬚</button>
+            <button id="zoomIn" class="icon-only" title="Zoom In">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                    <line x1="11" y1="8" x2="11" y2="14"></line>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button id="zoomOut" class="icon-only" title="Zoom Out">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button id="zoomToFit" class="icon-only" title="Fit to View">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
         </div>
 
         <div class="toolbar-group">
@@ -833,13 +945,36 @@
                 <option value="levelResources">Level Resources</option>
                 <option value="drum">Drum (TOC)</option>
             </select>
-            <button id="constraintSettings" class="constraint-settings-btn" title="Configure Constraints">⚙️</button>
-            <button id="applyScheduling">Apply Algorithm</button>
+            <button id="constraintSettings" class="icon-only" title="Configure Constraints">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m4.22-13.22l-4.24 4.24m0 5.96l4.24 4.24M20 12h-6m-6 0H2m13.22 4.22l-4.24-4.24m0-5.96l-4.24-4.24"></path>
+                </svg>
+            </button>
+            <button id="applyScheduling">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Apply</span>
+            </button>
         </div>
 
         <div class="toolbar-group">
-            <button id="saveSchedule" style="font-weight: 600;">💾 Save Schedule</button>
-            <button id="refreshSchedule">↻ Refresh</button>
+            <button id="saveSchedule">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save</span>
+            </button>
+            <button id="refreshSchedule" class="icon-only" title="Refresh">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
         </div>
     </div>
 
@@ -2685,6 +2820,10 @@
         
         // Setup event listeners when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme from localStorage on page load
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
+            
             // Constraint settings button
             document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
             
@@ -2692,6 +2831,21 @@
             document.getElementById('constraintModal').addEventListener('click', function(e) {
                 if (e.target === this) {
                     closeConstraintModal();
+                }
+            });
+            
+            // Listen for theme changes from parent window
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'SET_THEME') {
+                    document.body.className = e.data.theme === 'dark' ? 'dark-theme' : '';
+                    localStorage.setItem('theme', e.data.theme);
+                }
+            });
+            
+            // Listen for storage changes (theme changes in main app)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'theme') {
+                    document.body.className = e.newValue === 'dark' ? 'dark-theme' : '';
                 }
             });
             
