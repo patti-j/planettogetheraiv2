@@ -76,7 +76,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   });
 
   // Calculate dynamic AI panel size based on collapse state
-  const currentAiPanelSize = isAiPanelCollapsed ? 6 : aiPanelSize;
+  const currentAiPanelSize = isAiPanelCollapsed ? Math.max(6, 4) : Math.max(aiPanelSize, 15);
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
 
@@ -292,12 +292,19 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     };
   }, []);
 
+  // Store reference to panel group for force updates
+  const [panelGroupKey, setPanelGroupKey] = useState(0);
+
   // Listen for AI panel collapse state changes
   useEffect(() => {
     const handleAiPanelStorageChange = () => {
       try {
         const collapsed = localStorage.getItem('ai-panel-collapsed') === 'true';
-        setIsAiPanelCollapsed(collapsed);
+        if (collapsed !== isAiPanelCollapsed) {
+          setIsAiPanelCollapsed(collapsed);
+          // Force panel groups to remount with updated sizes
+          setPanelGroupKey(prev => prev + 1);
+        }
       } catch {
         // Ignore errors
       }
@@ -310,7 +317,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       window.removeEventListener('storage', handleAiPanelStorageChange);
       clearInterval(interval);
     };
-  }, []);
+  }, [isAiPanelCollapsed]);
 
   // Track window width for responsive panel hiding
   useEffect(() => {
@@ -435,6 +442,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         isNavigationPinned ? (
           /* Layout with AI panel, main content, and pinned navigation (3 panels) */
           <ResizablePanelGroup 
+            key={`ai-3panel-${panelGroupKey}`}
             direction="horizontal" 
             className="flex-1 overflow-hidden"
             onLayout={handlePanelResize}
@@ -474,14 +482,18 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             {/* Resizable handle for navigation panel */}
             <ResizableHandle 
               withHandle 
-              className="w-1.5 bg-blue-500/20 hover:bg-blue-500 transition-colors cursor-col-resize border-x border-blue-300 relative flex items-center justify-center group"
+              className="w-2 bg-blue-500/30 hover:bg-blue-500/60 transition-all duration-200 cursor-col-resize border-2 border-blue-500/50 hover:border-blue-500 relative z-10"
+              style={{ 
+                boxShadow: 'inset 0 0 0 1px rgba(59, 130, 246, 0.5)', 
+                background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.4) 50%, rgba(59, 130, 246, 0.2) 100%)'
+              }}
             >
-              <div className="w-0.5 h-8 bg-blue-500 rounded-full group-hover:bg-white transition-colors" />
+              <div className="w-1 h-12 bg-blue-500 rounded-full opacity-80 shadow-sm" />
             </ResizableHandle>
             
             {/* Navigation panel - resizable */}
             <ResizablePanel 
-              defaultSize={navPanelSize} 
+              defaultSize={Math.max(navPanelSize, 15)} 
               minSize={15} 
               maxSize={35}
               className="min-w-0"
@@ -499,6 +511,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           /* Layout with AI panel and main content only (2 panels) */
           <div className="flex flex-1 overflow-hidden">
             <ResizablePanelGroup 
+              key={`ai-2panel-${panelGroupKey}`}
               direction="horizontal" 
               className="flex-1 overflow-hidden"
               onLayout={handlePanelResize}
