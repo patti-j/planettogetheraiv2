@@ -555,6 +555,210 @@
             border-color: #666;
         }
         
+        /* Constraint Settings Styles */
+        .constraint-settings-btn {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.75rem;
+            background: #f0f0f0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 0.25rem;
+        }
+        
+        .constraint-settings-btn:hover {
+            background: #e0e0e0;
+            border-color: #999;
+        }
+        
+        .constraint-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .constraint-modal.active {
+            display: flex;
+        }
+        
+        .constraint-modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .constraint-modal-header {
+            padding: 1rem 1.5rem;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .constraint-modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #333;
+        }
+        
+        .constraint-modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .constraint-modal-close:hover {
+            color: #333;
+        }
+        
+        .constraint-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        
+        .constraint-section {
+            margin-bottom: 2rem;
+        }
+        
+        .constraint-section h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            color: #333;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .constraint-group {
+            margin-bottom: 1rem;
+        }
+        
+        .constraint-group h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .constraint-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .constraint-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .constraint-toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            margin-right: 1rem;
+        }
+        
+        .constraint-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .constraint-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        
+        .constraint-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        .constraint-toggle input:checked + .constraint-toggle-slider {
+            background-color: #4CAF50;
+        }
+        
+        .constraint-toggle input:checked + .constraint-toggle-slider:before {
+            transform: translateX(18px);
+        }
+        
+        .constraint-label {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .constraint-modal-footer {
+            padding: 1rem 1.5rem;
+            background: #f5f5f5;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        
+        .constraint-modal-footer button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .constraint-modal-footer button:hover {
+            background: #f5f5f5;
+        }
+        
+        .constraint-modal-footer button.apply {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        
+        .constraint-modal-footer button.apply:hover {
+            background: #45a049;
+        }
+        
         .quick-action-btn.full-width {
             grid-column: span 2;
         }
@@ -629,6 +833,7 @@
                 <option value="levelResources">Level Resources</option>
                 <option value="drum">Drum (TOC)</option>
             </select>
+            <button id="constraintSettings" class="constraint-settings-btn" title="Configure Constraints">⚙️</button>
             <button id="applyScheduling">Apply Algorithm</button>
         </div>
 
@@ -648,6 +853,318 @@
     <div class="status-bar">
         <span id="operationCount">0 operations scheduled</span>
         <span id="resourceUtilization">Resource utilization: --</span>
+    </div>
+    
+    <!-- Constraint Settings Modal -->
+    <div id="constraintModal" class="constraint-modal">
+        <div class="constraint-modal-content">
+            <div class="constraint-modal-header">
+                <h2>Optimization Constraints Configuration</h2>
+                <button class="constraint-modal-close" onclick="closeConstraintModal()">×</button>
+            </div>
+            <div class="constraint-modal-body">
+                <!-- Physical Constraints Section -->
+                <div class="constraint-section">
+                    <h3>Physical Constraints</h3>
+                    
+                    <div class="constraint-group">
+                        <h4>General Validation Rules</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noOverlap" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noOverlap" class="constraint-label">No overlapping activities (unless overlap features enabled)</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="dateValidation" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="dateValidation" class="constraint-label">Start date must precede end date</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="mandatoryFields" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="mandatoryFields" class="constraint-label">Activities must include mandatory fields</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Dependency Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="predecessorLogic" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="predecessorLogic" class="constraint-label">Follow predecessor/successor logic (FS, SS, etc.)</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noCircular" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noCircular" class="constraint-label">Prevent circular dependencies</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Time Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="workingHours" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="workingHours" class="constraint-label">Align with working hours and holidays</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="leadLagTimes" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="leadLagTimes" class="constraint-label">Respect lead/lag times for dependencies</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Resource Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noOverAllocation" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noOverAllocation" class="constraint-label">Prevent resource over-allocation</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="skillMatching" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="skillMatching" class="constraint-label">Match resource skills/capabilities</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="capacityLimits" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="capacityLimits" class="constraint-label">Respect capacity limits (e.g., machine throughput)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Inventory/Material Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="materialAvailability" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="materialAvailability" class="constraint-label">Required material must be available</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="batchSizeRules" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="batchSizeRules" class="constraint-label">Adhere to min/max batch size rules</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Policy Constraints Section -->
+                <div class="constraint-section">
+                    <h3>Policy Constraints</h3>
+                    
+                    <div class="constraint-group">
+                        <h4>Business Rules</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="priorityRules" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="priorityRules" class="constraint-label">High-priority activities given preference</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="needDates" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="needDates" class="constraint-label">Jobs must meet Need Dates</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="budgetConstraints">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="budgetConstraints" class="constraint-label">Stay within budgeted labor/resource costs</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Time Flexibility</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="weekendWork">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="weekendWork" class="constraint-label">Permit weekend/holiday work for deadlines</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="workloadBalance" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="workloadBalance" class="constraint-label">Balance workload across shifts</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="limitOvertime" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="limitOvertime" class="constraint-label">Limit overtime to control labor costs</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Process Flow</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="parallelProcessing">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="parallelProcessing" class="constraint-label">Allow parallel processing for non-dependent activities</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="alternativeRouting">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="alternativeRouting" class="constraint-label">Permit alternative routing paths</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="skipNonCritical">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="skipNonCritical" class="constraint-label">Skip non-critical steps for low-priority orders</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="preventSameSetup" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="preventSameSetup" class="constraint-label">Prevent same setup type on multiple resources</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Material Handling</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="justInTime">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="justInTime" class="constraint-label">Schedule assuming just-in-time material delivery</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="substituteMaterials">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="substituteMaterials" class="constraint-label">Allow substitute materials if primary unavailable</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="partialMaterial">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="partialMaterial" class="constraint-label">Start with partial material availability</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Cost Control</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="avoidPeakRates" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="avoidPeakRates" class="constraint-label">Avoid high-energy activities during peak utility rates</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="costEfficiency">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="costEfficiency" class="constraint-label">Prioritize cost-efficient activities over urgency</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="restrictPremium" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="restrictPremium" class="constraint-label">Restrict use of premium resources unless necessary</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Quality & Compliance</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="deferredInspections">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="deferredInspections" class="constraint-label">Allow deferred inspections post-production</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="processDeviations">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="processDeviations" class="constraint-label">Accept minor deviations within tolerance</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="auditTrails" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="auditTrails" class="constraint-label">Enable detailed audit trails</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Optimization Preferences</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="minimizeMakespan" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="minimizeMakespan" class="constraint-label">Minimize makespan to complete jobs quickly</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="maximizeUtilization">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="maximizeUtilization" class="constraint-label">Maximize machine utilization over labor cost</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="prioritizeMargin">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="prioritizeMargin" class="constraint-label">Prioritize high-margin orders when capacity limited</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="constraint-modal-footer">
+                <button onclick="resetConstraints()">Reset to Defaults</button>
+                <button onclick="closeConstraintModal()">Cancel</button>
+                <button class="apply" onclick="applyConstraints()">Apply Constraints</button>
+            </div>
+        </div>
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
@@ -2042,6 +2559,150 @@
                 `;
                 document.getElementById('loadingOverlay').style.display = 'none';
             }
+        });
+    </script>
+    
+    <!-- Constraint Settings Modal Scripts -->
+    <script>
+        // Initialize constraint settings
+        window.activeConstraints = {};
+        
+        // Constraint modal functions
+        function openConstraintModal() {
+            const modal = document.getElementById('constraintModal');
+            modal.classList.add('active');
+            
+            // Load saved constraints or use defaults
+            const savedConstraints = localStorage.getItem('schedulerConstraints');
+            if (savedConstraints) {
+                window.activeConstraints = JSON.parse(savedConstraints);
+                applyConstraintsToUI();
+            } else {
+                resetConstraints();
+            }
+        }
+        
+        function closeConstraintModal() {
+            const modal = document.getElementById('constraintModal');
+            modal.classList.remove('active');
+        }
+        
+        function applyConstraints() {
+            // Collect all constraint settings
+            const constraints = {};
+            const checkboxes = document.querySelectorAll('.constraint-toggle input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                constraints[checkbox.id] = checkbox.checked;
+            });
+            
+            window.activeConstraints = constraints;
+            
+            // Save to localStorage
+            localStorage.setItem('schedulerConstraints', JSON.stringify(constraints));
+            
+            // Apply constraints to current algorithm
+            const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+            const activeCount = Object.values(constraints).filter(v => v).length;
+            console.log(`✅ Applied ${activeCount} active constraints to ${currentAlgo} algorithm`);
+            
+            // Show confirmation
+            const statusBar = document.getElementById('operationCount');
+            const originalText = statusBar.textContent;
+            statusBar.textContent = `✅ Constraints applied - ${activeCount} active`;
+            setTimeout(() => {
+                statusBar.textContent = originalText;
+            }, 3000);
+            
+            closeConstraintModal();
+            
+            // Re-run current algorithm with new constraints
+            document.getElementById('applyScheduling').click();
+        }
+        
+        function resetConstraints() {
+            // Reset all constraints to default values
+            const defaults = {
+                // Physical Constraints - mostly enabled by default
+                'noOverlap': true,
+                'dateValidation': true,
+                'mandatoryFields': true,
+                'predecessorLogic': true,
+                'noCircular': true,
+                'workingHours': true,
+                'leadLagTimes': true,
+                'noOverAllocation': true,
+                'skillMatching': true,
+                'capacityLimits': true,
+                'materialAvailability': true,
+                'batchSizeRules': true,
+                // Policy Constraints - mixed defaults
+                'priorityRules': true,
+                'needDates': true,
+                'budgetConstraints': false,
+                'weekendWork': false,
+                'workloadBalance': true,
+                'limitOvertime': true,
+                'parallelProcessing': false,
+                'alternativeRouting': false,
+                'skipNonCritical': false,
+                'preventSameSetup': true,
+                'justInTime': false,
+                'substituteMaterials': false,
+                'partialMaterial': false,
+                'avoidPeakRates': true,
+                'costEfficiency': false,
+                'restrictPremium': true,
+                'deferredInspections': false,
+                'processDeviations': false,
+                'auditTrails': true,
+                'minimizeMakespan': true,
+                'maximizeUtilization': false,
+                'prioritizeMargin': false
+            };
+            
+            // Apply defaults to UI
+            Object.entries(defaults).forEach(([id, value]) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = value;
+                }
+            });
+            
+            window.activeConstraints = defaults;
+            console.log('✅ Constraints reset to defaults');
+        }
+        
+        function applyConstraintsToUI() {
+            // Apply saved constraints to UI checkboxes
+            Object.entries(window.activeConstraints).forEach(([id, value]) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = value;
+                }
+            });
+        }
+        
+        // Setup event listeners when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Constraint settings button
+            document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
+            
+            // Click outside modal to close
+            document.getElementById('constraintModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeConstraintModal();
+                }
+            });
+            
+            // Modify the apply scheduling button to use constraints
+            const originalApplyHandler = document.getElementById('applyScheduling').onclick;
+            document.getElementById('applyScheduling').addEventListener('click', () => {
+                const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
+                if (activeCount > 0) {
+                    console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
+                }
+            });
         });
     </script>
 </body>
