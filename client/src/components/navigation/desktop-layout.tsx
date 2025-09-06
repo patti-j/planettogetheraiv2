@@ -468,7 +468,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             </ResizablePanel>
             
             {/* Resizable handle for navigation panel */}
-            <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+            <ResizableHandle 
+              withHandle 
+              className="w-2 bg-gray-400 dark:bg-gray-500 hover:bg-blue-500 dark:hover:bg-blue-400 transition-colors cursor-col-resize border-x border-gray-300 dark:border-gray-600"
+            />
             
             {/* Navigation panel - resizable */}
             <ResizablePanel 
