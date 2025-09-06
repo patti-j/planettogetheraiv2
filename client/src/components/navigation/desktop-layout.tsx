@@ -326,30 +326,60 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       <div className="h-screen flex flex-col">
         {!isFullScreen && <CustomizableHeader />}
         <div className="flex-1 flex">
-          {/* Simple AI panel for production scheduler */}
+          {/* Simple AI panel for production scheduler - fixed width to avoid iframe conflicts */}
           <div className="w-80 border-r border-border bg-background">
             <AILeftPanel />
           </div>
-          {/* Main content with production scheduler iframe */}
-          <div className="flex-1 flex flex-col">
-            {!isFullScreen && (
-              <TopMenu 
-                onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
-                isNavPanelOpen={isNavigationOpen}
-              />
-            )}
-            <div className="flex-1 overflow-auto">
-              {children}
-            </div>
-          </div>
-          {/* Navigation panel */}
-          {isNavigationPinned && (
-            <div className="w-80 border-l border-border bg-background">
-              <SlideOutMenu 
-                isOpen={true}
-                onClose={() => {}}
-                width={undefined}
-              />
+          
+          {/* Main content and navigation with resizable navigation panel */}
+          {isNavigationPinned ? (
+            <ResizablePanelGroup direction="horizontal" className="flex-1">
+              {/* Main content panel */}
+              <ResizablePanel minSize={50}>
+                <div className="flex flex-col h-full">
+                  {!isFullScreen && (
+                    <TopMenu 
+                      onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+                      isNavPanelOpen={isNavigationOpen}
+                    />
+                  )}
+                  <div className="flex-1 overflow-auto">
+                    {children}
+                  </div>
+                </div>
+              </ResizablePanel>
+              
+              {/* Resizable handle for navigation panel */}
+              <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+              
+              {/* Navigation panel - resizable */}
+              <ResizablePanel 
+                defaultSize={navPanelSize} 
+                minSize={15} 
+                maxSize={35}
+                className="min-w-0"
+              >
+                <div className="h-full flex flex-col bg-background border-l border-border">
+                  <SlideOutMenu 
+                    isOpen={true}
+                    onClose={() => {}}
+                    width={undefined}
+                  />
+                </div>
+              </ResizablePanel>
+            </ResizablePanelGroup>
+          ) : (
+            /* Main content only when navigation is not pinned */
+            <div className="flex-1 flex flex-col">
+              {!isFullScreen && (
+                <TopMenu 
+                  onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
+                  isNavPanelOpen={isNavigationOpen}
+                />
+              )}
+              <div className="flex-1 overflow-auto">
+                {children}
+              </div>
             </div>
           )}
         </div>
