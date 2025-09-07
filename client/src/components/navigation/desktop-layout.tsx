@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
@@ -76,7 +76,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   });
 
   // Calculate dynamic AI panel size based on collapse state
-  const currentAiPanelSize = isAiPanelCollapsed ? Math.max(6, 4) : Math.max(aiPanelSize, 15);
+  const currentAiPanelSize = isAiPanelCollapsed ? Math.max(6, 4) : Math.max(savedAiPanelSize || aiPanelSize, 15);
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
 
@@ -295,12 +295,28 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // Store reference to panel group for force updates
   const [panelGroupKey, setPanelGroupKey] = useState(0);
 
+  // Direct panel reference for AI panel width control
+  const aiPanelRef = useRef<any>(null);
+  const [savedAiPanelSize, setSavedAiPanelSize] = useState(25);
+
   // Listen for AI panel collapse state changes
   useEffect(() => {
     const handleAiPanelStorageChange = () => {
       try {
         const collapsed = localStorage.getItem('ai-panel-collapsed') === 'true';
         if (collapsed !== isAiPanelCollapsed) {
+          if (!collapsed) {
+            // Expanding - save current size for restoration
+            const savedSize = localStorage.getItem('aiPanelSize');
+            if (savedSize) {
+              setSavedAiPanelSize(parseInt(savedSize));
+            }
+          } else {
+            // Collapsing - save current size
+            const currentSize = aiPanelSize;
+            setSavedAiPanelSize(currentSize);
+            localStorage.setItem('aiPanelSize', currentSize.toString());
+          }
           setIsAiPanelCollapsed(collapsed);
           // Force panel groups to remount with updated sizes
           setPanelGroupKey(prev => prev + 1);
@@ -317,7 +333,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       window.removeEventListener('storage', handleAiPanelStorageChange);
       clearInterval(interval);
     };
-  }, [isAiPanelCollapsed]);
+  }, [isAiPanelCollapsed, aiPanelSize]);
 
   // Track window width for responsive panel hiding
   useEffect(() => {
@@ -482,13 +498,18 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             {/* Resizable handle for navigation panel */}
             <ResizableHandle 
               withHandle 
-              className="w-2 bg-blue-500/30 hover:bg-blue-500/60 transition-all duration-200 cursor-col-resize border-2 border-blue-500/50 hover:border-blue-500 relative z-10"
+              className="w-6 bg-blue-600 hover:bg-blue-700 transition-all duration-200 cursor-col-resize border-2 border-blue-800 hover:border-blue-900 relative z-50"
               style={{ 
-                boxShadow: 'inset 0 0 0 1px rgba(59, 130, 246, 0.5)', 
-                background: 'linear-gradient(90deg, rgba(59, 130, 246, 0.2) 0%, rgba(59, 130, 246, 0.4) 50%, rgba(59, 130, 246, 0.2) 100%)'
+                background: '#2563eb',
+                boxShadow: '0 0 10px rgba(37, 99, 235, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.2)', 
+                minWidth: '24px'
               }}
             >
-              <div className="w-1 h-12 bg-blue-500 rounded-full opacity-80 shadow-sm" />
+              <div className="flex flex-col items-center justify-center h-full gap-1">
+                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+              </div>
             </ResizableHandle>
             
             {/* Navigation panel - resizable */}
