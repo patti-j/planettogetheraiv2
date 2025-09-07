@@ -82,14 +82,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
 
-  // Debug logging
-  console.log('🐛 Desktop Layout Debug:', {
-    showPanels,
-    isNavigationPinned,
-    currentAiPanelSize,
-    aiPanelSize,
-    isAiPanelCollapsed
-  });
+  // Debug logging will be added after variables are defined
 
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
@@ -376,6 +369,17 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // Check if we're on production scheduler page (which uses an iframe and shouldn't have resizable panels)
   const isProductionScheduler = location === '/production-scheduler';
   const showPanels = !isFullScreen && !shouldHidePanels && !isProductionScheduler;
+  
+  // Debug logging - now that all variables are defined
+  console.log('🐛 Desktop Layout Debug:', {
+    showPanels,
+    isNavigationPinned,
+    currentAiPanelSize,
+    aiPanelSize,
+    isAiPanelCollapsed,
+    location,
+    isProductionScheduler
+  });
 
   // For very small screens (actual mobile), render content directly without TopMenu
   // Only do this for screens smaller than 320px (actual mobile devices)
