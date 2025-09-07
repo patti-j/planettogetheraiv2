@@ -75,12 +75,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   });
 
-  // Direct panel reference for AI panel width control
-  const aiPanelRef = useRef<any>(null);
-  const [savedAiPanelSize, setSavedAiPanelSize] = useState(25);
+  // Note: aiPanelRef no longer needed with direct state management
 
   // Calculate dynamic AI panel size based on collapse state
-  const currentAiPanelSize = isAiPanelCollapsed ? Math.max(6, 4) : Math.max(savedAiPanelSize || aiPanelSize, 15);
+  const currentAiPanelSize = isAiPanelCollapsed ? 6 : aiPanelSize;
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
 
@@ -306,20 +304,19 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         const collapsed = localStorage.getItem('ai-panel-collapsed') === 'true';
         if (collapsed !== isAiPanelCollapsed) {
           if (!collapsed) {
-            // Expanding - save current size for restoration
+            // Expanding - restore saved size immediately
             const savedSize = localStorage.getItem('aiPanelSize');
             if (savedSize) {
-              setSavedAiPanelSize(parseInt(savedSize));
+              const parsedSize = parseInt(savedSize);
+              if (parsedSize > 0) {
+                setAiPanelSize(parsedSize); // Update the AI panel size state
+              }
             }
           } else {
-            // Collapsing - save current size
-            const currentSize = aiPanelSize;
-            setSavedAiPanelSize(currentSize);
-            localStorage.setItem('aiPanelSize', currentSize.toString());
+            // Collapsing - save current size for later restoration
+            localStorage.setItem('aiPanelSize', aiPanelSize.toString());
           }
           setIsAiPanelCollapsed(collapsed);
-          // Force panel groups to remount with updated sizes
-          setPanelGroupKey(prev => prev + 1);
         }
       } catch {
         // Ignore errors
@@ -407,7 +404,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </ResizablePanel>
               
               {/* Resizable handle for navigation panel */}
-              <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
+              <ResizableHandle 
+                withHandle 
+                className="w-6 bg-blue-600 hover:bg-blue-700 transition-all duration-200 cursor-col-resize border-2 border-blue-800 hover:border-blue-900 relative z-50"
+                style={{ 
+                  background: '#2563eb',
+                  boxShadow: '0 0 10px rgba(37, 99, 235, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.2)', 
+                  minWidth: '24px'
+                }}
+              >
+                <div className="flex flex-col items-center justify-center h-full gap-1">
+                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                </div>
+              </ResizableHandle>
               
               {/* Navigation panel - resizable */}
               <ResizablePanel 
@@ -458,7 +469,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         isNavigationPinned ? (
           /* Layout with AI panel, main content, and pinned navigation (3 panels) */
           <ResizablePanelGroup 
-            key={`ai-3panel-${panelGroupKey}`}
             direction="horizontal" 
             className="flex-1 overflow-hidden"
             onLayout={handlePanelResize}
@@ -532,7 +542,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           /* Layout with AI panel and main content only (2 panels) */
           <div className="flex flex-1 overflow-hidden">
             <ResizablePanelGroup 
-              key={`ai-2panel-${panelGroupKey}`}
               direction="horizontal" 
               className="flex-1 overflow-hidden"
               onLayout={handlePanelResize}
