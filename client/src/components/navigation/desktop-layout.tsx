@@ -370,7 +370,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const isProductionScheduler = location === '/production-scheduler';
   const showPanels = !isFullScreen && !shouldHidePanels && !isProductionScheduler;
   
-  // Debug logging - now that all variables are defined
+  // VERY OBVIOUS DEBUG LOGGING
+  console.log('🚨🚨🚨 DESKTOP LAYOUT IS RENDERING 🚨🚨🚨');
   console.log('🐛 Desktop Layout Debug:', {
     showPanels,
     isNavigationPinned,
@@ -378,8 +379,11 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     aiPanelSize,
     isAiPanelCollapsed,
     location,
-    isProductionScheduler
+    isProductionScheduler,
+    windowWidth,
+    isFullScreen
   });
+  console.log('🚨🚨🚨 END DESKTOP LAYOUT DEBUG 🚨🚨🚨');
 
   // For very small screens (actual mobile), render content directly without TopMenu
   // Only do this for screens smaller than 320px (actual mobile devices)
