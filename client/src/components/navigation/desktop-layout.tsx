@@ -77,10 +77,19 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
   // Note: aiPanelRef no longer needed with direct state management
 
-  // Calculate dynamic AI panel size based on collapse state
-  const currentAiPanelSize = isAiPanelCollapsed ? 6 : aiPanelSize;
+  // Calculate dynamic AI panel size based on collapse state - fix config error
+  const currentAiPanelSize = isAiPanelCollapsed ? 6 : Math.max(aiPanelSize, 15);
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
+
+  // Debug logging
+  console.log('🐛 Desktop Layout Debug:', {
+    showPanels,
+    isNavigationPinned,
+    currentAiPanelSize,
+    aiPanelSize,
+    isAiPanelCollapsed
+  });
 
   // Panel states no longer needed - panels are always visible but can be collapsed individually
 
@@ -403,20 +412,30 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 </div>
               </ResizablePanel>
               
-              {/* Resizable handle for navigation panel */}
+              {/* Resizable handle for navigation panel - BRIGHT RED FOR TESTING */}
               <ResizableHandle 
                 withHandle 
-                className="w-6 bg-blue-600 hover:bg-blue-700 transition-all duration-200 cursor-col-resize border-2 border-blue-800 hover:border-blue-900 relative z-50"
+                className="cursor-col-resize relative z-50"
                 style={{ 
-                  background: '#2563eb',
-                  boxShadow: '0 0 10px rgba(37, 99, 235, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.2)', 
-                  minWidth: '24px'
+                  width: '32px',
+                  minWidth: '32px',
+                  maxWidth: '32px',
+                  background: '#FF0000 !important',
+                  border: '4px solid #000000',
+                  boxShadow: '0 0 20px rgba(255, 0, 0, 1)', 
                 }}
               >
-                <div className="flex flex-col items-center justify-center h-full gap-1">
-                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
-                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
-                  <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+                <div style={{ 
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  height: '100%',
+                  gap: '4px'
+                }}>
+                  <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
+                  <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
+                  <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
                 </div>
               </ResizableHandle>
               
@@ -505,20 +524,30 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
             </ResizablePanel>
             
-            {/* Resizable handle for navigation panel */}
+            {/* Resizable handle for navigation panel - BRIGHT RED FOR TESTING */}
             <ResizableHandle 
               withHandle 
-              className="w-6 bg-blue-600 hover:bg-blue-700 transition-all duration-200 cursor-col-resize border-2 border-blue-800 hover:border-blue-900 relative z-50"
+              className="cursor-col-resize relative z-50"
               style={{ 
-                background: '#2563eb',
-                boxShadow: '0 0 10px rgba(37, 99, 235, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.2)', 
-                minWidth: '24px'
+                width: '32px',
+                minWidth: '32px',
+                maxWidth: '32px',
+                background: '#FF0000 !important',
+                border: '4px solid #000000',
+                boxShadow: '0 0 20px rgba(255, 0, 0, 1)', 
               }}
             >
-              <div className="flex flex-col items-center justify-center h-full gap-1">
-                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
-                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
-                <div className="w-1 h-4 bg-white rounded-full opacity-90" />
+              <div style={{ 
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                height: '100%',
+                gap: '4px'
+              }}>
+                <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
+                <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
+                <div style={{ width: '4px', height: '16px', background: '#FFFFFF', borderRadius: '2px' }} />
               </div>
             </ResizableHandle>
             
