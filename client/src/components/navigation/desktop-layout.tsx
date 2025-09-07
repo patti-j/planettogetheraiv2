@@ -75,6 +75,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   });
 
+  // Direct panel reference for AI panel width control
+  const aiPanelRef = useRef<any>(null);
+  const [savedAiPanelSize, setSavedAiPanelSize] = useState(25);
+
   // Calculate dynamic AI panel size based on collapse state
   const currentAiPanelSize = isAiPanelCollapsed ? Math.max(6, 4) : Math.max(savedAiPanelSize || aiPanelSize, 15);
   const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
@@ -294,10 +298,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
   // Store reference to panel group for force updates
   const [panelGroupKey, setPanelGroupKey] = useState(0);
-
-  // Direct panel reference for AI panel width control
-  const aiPanelRef = useRef<any>(null);
-  const [savedAiPanelSize, setSavedAiPanelSize] = useState(25);
 
   // Listen for AI panel collapse state changes
   useEffect(() => {
