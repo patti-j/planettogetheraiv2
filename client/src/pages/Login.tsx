@@ -34,27 +34,64 @@ export default function Login() {
   const [pageLoaded, setPageLoaded] = useState(false);
   const { login } = useAuth();
 
-  // Ensure page is properly loaded immediately
+  // Auto-login for admin user in development
   React.useEffect(() => {
-    // Clear any lingering blacklisted tokens
-    const token = localStorage.getItem('authToken');
-    if (token) {
-      // Quick check if token is blacklisted
-      fetch('/api/auth/me', {
-        headers: { 'Authorization': `Bearer ${token}` }
-      }).then(response => {
-        if (response.status === 401) {
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isDemo');
+    const autoLoginAdmin = async () => {
+      // Check if we have a valid token first
+      const existingToken = localStorage.getItem('authToken');
+      if (existingToken) {
+        // Validate existing token
+        try {
+          const response = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${existingToken}` }
+          });
+          if (response.ok) {
+            // Token is valid, redirect to dashboard
+            window.location.href = '/dashboard';
+            return;
+          } else if (response.status === 401) {
+            // Token is invalid, clear it
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            localStorage.removeItem('isDemo');
+          }
+        } catch (error) {
+          console.log('Token validation failed, proceeding with auto-login');
         }
-      }).catch(() => {
-        // Ignore errors, just clear token on failure
-        localStorage.removeItem('authToken');
-      });
-    }
-    setPageLoaded(true);
-  }, []);
+      }
+      
+      // Auto-login admin user in development if no valid token
+      const isDevelopment = window.location.hostname === 'localhost' || 
+                          window.location.hostname.includes('replit');
+      
+      if (isDevelopment) {
+        // Always enable auto-login for admin in development
+        localStorage.setItem('adminAutoLogin', 'enabled');
+        
+        if (!existingToken) {
+          try {
+            // Automatically log in as admin
+            setLoading(true);
+            const result = await login({ username: 'admin', password: 'admin123' });
+            if (result && result.token) {
+              localStorage.setItem('authToken', result.token);
+              // Store that we've auto-logged in
+              localStorage.setItem('autoLoggedIn', 'true');
+              window.location.href = '/dashboard';
+              return;
+            }
+          } catch (error) {
+            console.log('Auto-login attempt failed, will show login form');
+            setLoading(false);
+          }
+        }
+      }
+      
+      setPageLoaded(true);
+    };
+    
+    autoLoginAdmin();
+  }, [login]);
   
   // Portal login state
   const [portalEmail, setPortalEmail] = useState("");
