@@ -42,7 +42,7 @@ interface ExtendedFeatureCardProps extends FeatureCardProps {
 }
 
 const FeatureCard: React.FC<ExtendedFeatureCardProps> = ({ icon, title, description, roi, highlight = false }) => (
-  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
+  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 to-purple-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
     {highlight && (
       <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-white text-xs sm:text-sm px-4 py-2 rounded-bl-xl font-bold shadow-lg">
         ✨ MOST POPULAR
@@ -198,7 +198,7 @@ const MarketingHome: React.FC = () => {
       {/* Hero Section - Enhanced Modern Design */}
       <section className="relative overflow-hidden bg-black text-white">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20" />
         <div className="absolute inset-0 bg-grid-white/5" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
@@ -219,11 +219,11 @@ const MarketingHome: React.FC = () => {
             
             {/* Enhanced heading with better typography */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
-              <span className="bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-100 to-purple-100 bg-clip-text text-transparent">
                 Transform Your
               </span>
               <br />
-              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-blue-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 to-purple-300 bg-clip-text text-transparent">
                 Manufacturing Operations
               </span>
             </h1>
@@ -240,7 +240,7 @@ const MarketingHome: React.FC = () => {
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
-                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative z-10 flex items-center justify-center">
@@ -252,7 +252,7 @@ const MarketingHome: React.FC = () => {
               <Button 
                 size="lg"
                 onClick={handleWatchDemo}
-                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative z-10 flex items-center justify-center">
