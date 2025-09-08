@@ -29,26 +29,11 @@ function useAuthStatus() {
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // Check if token exists - reactive to localStorage changes
-  const [hasToken, setHasToken] = useState(() => {
-    return typeof window !== 'undefined' && !!localStorage.getItem('authToken');
-  });
-  
-  // For public paths, always show website regardless of token
-  // For other paths, check authentication
-  const [isAuthenticated, setIsAuthenticated] = useState(isPublicPath ? false : hasToken);
-  const [isLoading, setIsLoading] = useState(isPublicPath ? false : hasToken); // Only load if we need to verify token
+  // For session-based authentication, we need to check the server
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(!isPublicPath); // Only load for protected paths
 
   useEffect(() => {
-    // Update hasToken state immediately when localStorage changes
-    const updateTokenState = () => {
-      const token = localStorage.getItem('authToken');
-      setHasToken(!!token);
-    };
-
-    // Check token state on mount and path changes
-    updateTokenState();
-
     // Skip auth check entirely for public pages
     if (isPublicPath) {
       setIsAuthenticated(false);
@@ -61,48 +46,24 @@ function useAuthStatus() {
       if ((window as any).__LOGOUT_IN_PROGRESS__) {
         setIsAuthenticated(false);
         setIsLoading(false);
-        setHasToken(false);
         return;
       }
       
-      const token = localStorage.getItem('authToken');
-      const tokenExists = !!token;
-      setHasToken(tokenExists);
-      
-      // No token = not authenticated, no need to check
-      if (!token) {
-        setIsAuthenticated(false);
-        setIsLoading(false);
-        return;
-      }
-      
-      // We have a token, verify it's valid
+      // Check session-based authentication
       try {
         const response = await fetch('/api/auth/me', {
-          credentials: 'include',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+          credentials: 'include', // Include session cookie
         });
         
         if (response.status === 401) {
-          // Token is blacklisted or invalid, clear it completely
-          localStorage.removeItem('authToken');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isDemo');
-          setHasToken(false);
+          // Not authenticated
           setIsAuthenticated(false);
         } else if (response.ok) {
           const userData = await response.json();
           localStorage.setItem('user', JSON.stringify(userData));
           setIsAuthenticated(true);
         } else {
-          // Only clear token for actual auth failures, not network issues
-          if (response.status >= 400 && response.status < 500) {
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            setHasToken(false);
-          }
+          // Authentication failed
           setIsAuthenticated(false);
         }
       } catch (error) {
@@ -117,37 +78,24 @@ function useAuthStatus() {
     // Only check auth for non-public pages
     checkAuth();
 
-    // Listen for storage changes (including logout from other tabs)
-    const handleStorageChange = (e: StorageEvent) => {
-      console.log("Storage change detected:", e.key);
-      if (e.key === 'authToken') {
-        const newToken = !!localStorage.getItem('authToken');
-        setHasToken(newToken);
-        checkAuth();
-      }
-    };
-
     // Listen for custom logout events
     const handleLogout = () => {
       console.log("Logout event detected");
-      setHasToken(false);
       checkAuth();
     };
 
-    window.addEventListener('storage', handleStorageChange);
     window.addEventListener('logout', handleLogout);
 
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('logout', handleLogout);
     };
   }, [isPublicPath, currentPath]); // Add currentPath as dependency
 
-  return { isAuthenticated, isLoading, hasToken };
+  return { isAuthenticated, isLoading };
 }
 
 export default function App() {
-  const { isAuthenticated, isLoading, hasToken } = useAuthStatus();
+  const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
@@ -173,19 +121,9 @@ export default function App() {
   // Determine if we should show website or app (but not for portal routes)
   const shouldShowWebsite = !isPortalRoute && (
     // Show website for public paths OR when not authenticated
-    isPublicPath || (!hasToken && !isLoading)
+    isPublicPath || (!isAuthenticated && !isLoading)
   );
 
-  // Debug logging to track authentication state
-  console.log('🚨 App Routing Debug:', {
-    currentPath,
-    isPortalRoute,
-    isPublicPath,
-    hasToken,
-    isAuthenticated,
-    isLoading,
-    shouldShowWebsite
-  });
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
   if (isLoading && !isPublicPath && !isPortalRoute) {
