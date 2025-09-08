@@ -421,33 +421,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </ResizablePanel>
               
               {/* Resizable handle for navigation panel */}
-              <ResizableHandle 
-                withHandle 
-                className="cursor-col-resize hover:bg-primary/20 transition-colors"
-                style={{ 
-                  width: '8px',
-                  minWidth: '8px',
-                  maxWidth: '8px',
-                  position: 'relative',
-                  zIndex: 100,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  backgroundColor: 'hsl(var(--border))',
-                }}
-              >
-                <div 
-                  className="w-1 h-8 bg-muted-foreground/50 rounded-full hover:bg-muted-foreground transition-colors"
-                  style={{
-                    position: 'relative',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                  }}
-                >
-                  <div className="w-0.5 h-4 bg-current opacity-60" />
-                </div>
-              </ResizableHandle>
+              <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
               
               {/* Navigation panel - resizable */}
               <ResizablePanel 
@@ -536,33 +510,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             </ResizablePanel>
             
             {/* Resizable handle for navigation panel */}
-            <ResizableHandle 
-              withHandle 
-              className="cursor-col-resize hover:bg-primary/20 transition-colors"
-              style={{ 
-                width: '8px',
-                minWidth: '8px',
-                maxWidth: '8px',
-                position: 'relative',
-                zIndex: 100,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: 'hsl(var(--border))',
-              }}
-            >
-              <div 
-                className="w-1 h-8 bg-muted-foreground/50 rounded-full hover:bg-muted-foreground transition-colors"
-                style={{
-                  position: 'relative',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <div className="w-0.5 h-4 bg-current opacity-60" />
-              </div>
-            </ResizableHandle>
+            <ResizableHandle withHandle className="w-2 bg-border hover:bg-primary/20 transition-colors" />
             
             {/* Navigation panel - resizable */}
             <ResizablePanel 
