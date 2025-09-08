@@ -79,17 +79,25 @@ router.post("/auth/login", async (req, res) => {
       permissions: permissions
     };
 
-    console.log("Login successful");
-    res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roleNames,
-        permissions: permissions
+    // Save session before sending response
+    req.session.save((err) => {
+      if (err) {
+        console.error("Session save error:", err);
+        return res.status(500).json({ message: "Session save failed" });
       }
+      
+      console.log("Login successful");
+      res.json({
+        user: {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          roles: roleNames,
+          permissions: permissions
+        }
+      });
     });
   } catch (error) {
     console.error("Login error:", error);

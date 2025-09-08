@@ -65,6 +65,7 @@ function useAuthStatus() {
       // We have a token, verify it's valid
       try {
         const response = await fetch('/api/auth/me', {
+          credentials: 'include',
           headers: {
             'Authorization': `Bearer ${token}`
           }

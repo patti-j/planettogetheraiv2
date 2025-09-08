@@ -42,6 +42,7 @@ export default function Login() {
         // Validate existing token
         try {
           const response = await fetch('/api/auth/me', {
+            credentials: 'include',
             headers: { 'Authorization': `Bearer ${existingToken}` }
           });
           if (response.ok) {
