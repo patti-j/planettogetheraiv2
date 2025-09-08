@@ -2269,6 +2269,41 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                       </CardContent>
                     </Card>
                     
+                    {/* Validation Rules Section */}
+                    <div>
+                      <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                        <Shield className="w-5 h-5" />
+                        Validation Rules
+                      </h3>
+                      {currentProfileDraft.validationRules ? (
+                        <ValidationRulesSection 
+                          validationRules={currentProfileDraft.validationRules}
+                          onToggle={handleValidationRuleToggle}
+                        />
+                      ) : (
+                        <Card className="p-4">
+                          <div className="text-center text-gray-500">
+                            <Shield className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                            <p className="text-sm">No validation rules configured</p>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              className="mt-2"
+                              onClick={() => {
+                                const updatedProfile = { 
+                                  ...currentProfileDraft, 
+                                  validationRules: getDefaultValidationRules() 
+                                };
+                                setCurrentProfileDraft(updatedProfile);
+                              }}
+                            >
+                              Initialize Default Rules
+                            </Button>
+                          </div>
+                        </Card>
+                      )}
+                    </div>
+                    
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" onClick={() => setShowProfileEditor(false)}>
                         Cancel
