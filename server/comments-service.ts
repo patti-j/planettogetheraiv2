@@ -1,11 +1,11 @@
 import { db } from "./db";
 import { 
-  comments, 
-  commentMentions, 
-  notifications,
-  commentAttachments,
-  commentReactions,
-  commentWatchers,
+  // comments, 
+  // commentMentions, 
+  // notifications,
+  // commentAttachments,
+  // commentReactions,
+  // commentWatchers,
   users
 } from "@shared/schema";
 import { eq, and, or, desc, asc, sql, inArray } from "drizzle-orm";

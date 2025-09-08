@@ -1,13 +1,13 @@
 import { Router } from "express";
 import { implementationService } from "../implementation-service";
 import { 
-  insertImplementationProjectSchema,
-  insertImplementationPhaseSchema,
-  insertImplementationSopSchema,
-  insertImplementationDocumentSchema,
-  insertImplementationSignoffSchema,
-  insertImplementationTaskSchema,
-  insertImplementationCommentSchema
+  // insertImplementationProjectSchema,
+  // insertImplementationPhaseSchema,
+  // insertImplementationSopSchema,
+  // insertImplementationDocumentSchema,
+  // insertImplementationSignoffSchema,
+  // insertImplementationTaskSchema,
+  // insertImplementationCommentSchema
 } from "@shared/schema";
 import { z } from "zod";
 
