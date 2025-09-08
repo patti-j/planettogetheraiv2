@@ -15,7 +15,7 @@ import {
   Plus, Search, Filter, Edit3, Trash2, Copy, Eye, Clock,
   Code2, MessageSquare, ThumbsUp, ThumbsDown, Bug, 
   Lightbulb, ArrowRight, ChevronDown, ChevronUp, AlertTriangle,
-  Shield, Users, FileText, Pause, XCircle, Send
+  Shield, Users, FileText, Pause, XCircle, Send, ToggleLeft, ToggleRight
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +41,37 @@ interface OptimizationAlgorithm {
   createdBy: number;
   createdAt: string;
   profile?: AlgorithmProfile;
+}
+
+interface ValidationRule {
+  id: string;
+  name: string;
+  description: string;
+  category: 'physical' | 'policy';
+  subcategory: string;
+  enabled: boolean;
+  severity?: 'error' | 'warning' | 'info';
+  customParameters?: Record<string, any>;
+}
+
+interface ValidationRulesConfig {
+  physical: {
+    general: ValidationRule[];
+    dependency: ValidationRule[];
+    time: ValidationRule[];
+    resource: ValidationRule[];
+    inventory: ValidationRule[];
+  };
+  policy: {
+    businessRules: ValidationRule[];
+    resourceManagement: ValidationRule[];
+    timeFlexibility: ValidationRule[];
+    processFlow: ValidationRule[];
+    materialHandling: ValidationRule[];
+    costControl: ValidationRule[];
+    qualityCompliance: ValidationRule[];
+    optimizationPreferences: ValidationRule[];
+  };
 }
 
 interface AlgorithmProfile {
@@ -75,6 +106,7 @@ interface AlgorithmProfile {
     customRules?: any[];
     strictness: 'relaxed' | 'moderate' | 'strict';
   };
+  validationRules?: ValidationRulesConfig;
   outputSettings: {
     format: 'detailed' | 'summary' | 'metrics_only';
     includeVisualization: boolean;
@@ -196,6 +228,76 @@ export default function OptimizationStudio() {
 
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Default validation rules configuration
+  const getDefaultValidationRules = (): ValidationRulesConfig => ({
+    physical: {
+      general: [
+        { id: 'no_overlap', name: 'No overlapping activities', description: 'Prevent activities from overlapping unless overlap feature is enabled', category: 'physical', subcategory: 'general', enabled: true, severity: 'error' },
+        { id: 'valid_dates', name: 'Valid date ranges', description: 'Start date must precede end date for all activities', category: 'physical', subcategory: 'general', enabled: true, severity: 'error' },
+        { id: 'mandatory_fields', name: 'Mandatory fields', description: 'Activities must include name, duration, and assigned resource', category: 'physical', subcategory: 'general', enabled: true, severity: 'error' },
+        { id: 'resource_exists', name: 'Resource existence', description: 'Resources must exist in the system', category: 'physical', subcategory: 'general', enabled: true, severity: 'error' },
+        { id: 'resource_available', name: 'Resource availability', description: 'Resources must be available during usage time', category: 'physical', subcategory: 'general', enabled: true, severity: 'warning' }
+      ],
+      dependency: [
+        { id: 'predecessor_logic', name: 'Predecessor/successor logic', description: 'Activities follow dependency relationships (FS, SS, SF, FF)', category: 'physical', subcategory: 'dependency', enabled: true, severity: 'error' },
+        { id: 'no_circular', name: 'No circular dependencies', description: 'Prevent circular dependency chains', category: 'physical', subcategory: 'dependency', enabled: true, severity: 'error' }
+      ],
+      time: [
+        { id: 'working_hours', name: 'Working hours alignment', description: 'Activities must align with working hours and holidays', category: 'physical', subcategory: 'time', enabled: true, severity: 'warning' },
+        { id: 'lead_lag', name: 'Lead/lag times', description: 'Respect lead and lag times for dependencies', category: 'physical', subcategory: 'time', enabled: true, severity: 'warning' }
+      ],
+      resource: [
+        { id: 'no_overallocation', name: 'No over-allocation', description: 'Resources must not be over-allocated', category: 'physical', subcategory: 'resource', enabled: true, severity: 'error' },
+        { id: 'skill_matching', name: 'Skill/capability matching', description: 'Assign activities only to resources with required capabilities', category: 'physical', subcategory: 'resource', enabled: true, severity: 'warning' },
+        { id: 'capacity_limits', name: 'Capacity limits', description: 'Respect resource capacity limits (e.g., machine throughput)', category: 'physical', subcategory: 'resource', enabled: true, severity: 'error' }
+      ],
+      inventory: [
+        { id: 'material_available', name: 'Material availability', description: 'Required materials must be available', category: 'physical', subcategory: 'inventory', enabled: true, severity: 'error' },
+        { id: 'batch_size', name: 'Batch size rules', description: 'Adhere to minimum/maximum batch size rules', category: 'physical', subcategory: 'inventory', enabled: false, severity: 'warning' }
+      ]
+    },
+    policy: {
+      businessRules: [
+        { id: 'priority_order', name: 'Priority ordering', description: 'High-priority activities get precedence', category: 'policy', subcategory: 'businessRules', enabled: true, severity: 'info' },
+        { id: 'need_dates', name: 'Meet need dates', description: 'Jobs/orders must meet their need dates', category: 'policy', subcategory: 'businessRules', enabled: true, severity: 'warning' },
+        { id: 'budget_limits', name: 'Budget constraints', description: 'Stay within budgeted labor/resource costs', category: 'policy', subcategory: 'businessRules', enabled: false, severity: 'warning' }
+      ],
+      resourceManagement: [
+        { id: 'limit_overtime', name: 'Limit overtime', description: 'Control overtime to manage labor costs', category: 'policy', subcategory: 'resourceManagement', enabled: false, severity: 'info' }
+      ],
+      timeFlexibility: [
+        { id: 'weekend_work', name: 'Weekend/holiday work', description: 'Permit work on weekends/holidays to meet deadlines', category: 'policy', subcategory: 'timeFlexibility', enabled: false, severity: 'info' },
+        { id: 'workload_balance', name: 'Workload balancing', description: 'Balance workload across shifts to avoid bottlenecks', category: 'policy', subcategory: 'timeFlexibility', enabled: true, severity: 'info' },
+        { id: 'prevent_setup_conflict', name: 'Prevent setup conflicts', description: 'Prevent same setup type on multiple resources simultaneously', category: 'policy', subcategory: 'timeFlexibility', enabled: false, severity: 'warning' }
+      ],
+      processFlow: [
+        { id: 'parallel_processing', name: 'Parallel processing', description: 'Allow parallel processing for non-dependent activities', category: 'policy', subcategory: 'processFlow', enabled: true, severity: 'info' },
+        { id: 'alternative_routing', name: 'Alternative routing', description: 'Permit alternative routing when primary machines are busy', category: 'policy', subcategory: 'processFlow', enabled: false, severity: 'info' },
+        { id: 'skip_noncritical', name: 'Skip non-critical steps', description: 'Skip non-critical steps for low-priority orders', category: 'policy', subcategory: 'processFlow', enabled: false, severity: 'info' }
+      ],
+      materialHandling: [
+        { id: 'jit_delivery', name: 'Just-in-time delivery', description: 'Schedule assuming just-in-time material delivery', category: 'policy', subcategory: 'materialHandling', enabled: false, severity: 'info' },
+        { id: 'substitute_materials', name: 'Material substitution', description: 'Allow substitute materials when primary unavailable', category: 'policy', subcategory: 'materialHandling', enabled: false, severity: 'info' },
+        { id: 'partial_material_start', name: 'Partial material start', description: 'Start activities with partial materials if full stock expected', category: 'policy', subcategory: 'materialHandling', enabled: false, severity: 'warning' }
+      ],
+      costControl: [
+        { id: 'avoid_peak_rates', name: 'Avoid peak utility rates', description: 'Avoid high-energy activities during peak rate periods', category: 'policy', subcategory: 'costControl', enabled: false, severity: 'info' },
+        { id: 'cost_efficiency', name: 'Cost-efficient priority', description: 'Prioritize cost-efficient activities over speed', category: 'policy', subcategory: 'costControl', enabled: false, severity: 'info' },
+        { id: 'premium_resource_limit', name: 'Limit premium resources', description: 'Restrict use of premium resources unless necessary', category: 'policy', subcategory: 'costControl', enabled: false, severity: 'info' }
+      ],
+      qualityCompliance: [
+        { id: 'deferred_inspections', name: 'Deferred inspections', description: 'Allow deferred inspections post-production', category: 'policy', subcategory: 'qualityCompliance', enabled: false, severity: 'warning' },
+        { id: 'parameter_tolerance', name: 'Parameter tolerance', description: 'Accept minor deviations within tolerance', category: 'policy', subcategory: 'qualityCompliance', enabled: false, severity: 'info' },
+        { id: 'audit_trails', name: 'Detailed audit trails', description: 'Enable/disable detailed audit trails by product/customer', category: 'policy', subcategory: 'qualityCompliance', enabled: true, severity: 'info' }
+      ],
+      optimizationPreferences: [
+        { id: 'minimize_makespan', name: 'Minimize makespan', description: 'Complete jobs as quickly as possible', category: 'policy', subcategory: 'optimizationPreferences', enabled: true, severity: 'info' },
+        { id: 'maximize_utilization', name: 'Maximize utilization', description: 'Maximize machine utilization over labor cost', category: 'policy', subcategory: 'optimizationPreferences', enabled: false, severity: 'info' },
+        { id: 'prioritize_margin', name: 'Prioritize high-margin', description: 'Prioritize high-margin orders when capacity limited', category: 'policy', subcategory: 'optimizationPreferences', enabled: false, severity: 'info' }
+      ]
+    }
+  });
 
   // Fetch optimization algorithms
   const { data: algorithms = [], isLoading: algorithmsLoading } = useQuery({
