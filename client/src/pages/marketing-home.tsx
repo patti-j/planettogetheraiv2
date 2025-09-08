@@ -265,7 +265,7 @@ const MarketingHome: React.FC = () => {
             {/* Enhanced pricing indicator */}
             <div className="mb-8 sm:mb-10">
               <p className="text-base sm:text-lg text-blue-200 font-medium">
-                Starting at <span className="font-bold text-white bg-gradient-to-r from-blue-400 to-purple-400 px-3 py-1 rounded-full text-base sm:text-lg">$499/month</span>
+                Starting at <span className="font-bold text-white bg-gradient-to-r from-purple-500 to-purple-600 px-3 py-1 rounded-full text-base sm:text-lg">$499/month</span>
               </p>
               <p className="text-sm sm:text-base text-blue-300 mt-2">
                 No credit card required • Cancel anytime • 30-day money-back guarantee

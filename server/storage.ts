@@ -202,12 +202,7 @@ export class DatabaseStorage implements IStorage {
   // User Role Management
   async getUserRoles(userId: number): Promise<UserRole[]> {
     try {
-      const roles = await db.select({
-        id: userRoles.id,
-        userId: userRoles.userId,
-        roleId: userRoles.roleId,
-        createdAt: userRoles.createdAt
-      }).from(userRoles).where(eq(userRoles.userId, userId));
+      const roles = await db.select().from(userRoles).where(eq(userRoles.userId, userId));
       return roles.map(role => ({
         id: role.id,
         userId: role.userId,

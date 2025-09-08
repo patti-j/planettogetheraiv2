@@ -30,14 +30,14 @@ app.use(session({
   }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: false,
+  saveUninitialized: true, // Changed to true to save session immediately
   name: 'sessionId', // Change cookie name to avoid conflicts
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
-    httpOnly: false, 
+    secure: false, // Set to false for development
+    httpOnly: true, // Changed to true for security
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-    domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
+    sameSite: 'lax',
+    path: '/' // Ensure cookie is available for all paths
   }
 }));
 
