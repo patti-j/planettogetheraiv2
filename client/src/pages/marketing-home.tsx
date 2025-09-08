@@ -42,7 +42,7 @@ interface ExtendedFeatureCardProps extends FeatureCardProps {
 }
 
 const FeatureCard: React.FC<ExtendedFeatureCardProps> = ({ icon, title, description, roi, highlight = false }) => (
-  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-cyan-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
+  <Card className={`group transition-all duration-300 hover:shadow-2xl hover:-translate-y-2 border-0 rounded-2xl overflow-hidden ${highlight ? 'bg-gradient-to-br from-blue-50 via-purple-50 to-blue-50 border-2 border-blue-200 relative' : 'bg-white border border-gray-100'}`}>
     {highlight && (
       <div className="absolute top-0 right-0 bg-gradient-to-l from-yellow-400 to-orange-500 text-white text-xs sm:text-sm px-4 py-2 rounded-bl-xl font-bold shadow-lg">
         ✨ MOST POPULAR
@@ -198,14 +198,14 @@ const MarketingHome: React.FC = () => {
       {/* Hero Section - Enhanced Modern Design */}
       <section className="relative overflow-hidden bg-black text-white">
         {/* Background Effects */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-cyan-600/20" />
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-blue-600/20" />
         <div className="absolute inset-0 bg-grid-white/5" />
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
         
         {/* Floating Elements */}
         <div className="absolute top-20 left-10 w-16 h-16 bg-blue-500/20 rounded-full blur-xl animate-pulse" />
         <div className="absolute top-40 right-20 w-20 h-20 bg-purple-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '1s'}} />
-        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-cyan-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}} />
+        <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-purple-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}} />
         
         <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-16 sm:pb-20">
           <div className="max-w-5xl mx-auto text-center">
@@ -219,11 +219,11 @@ const MarketingHome: React.FC = () => {
             
             {/* Enhanced heading with better typography */}
             <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 sm:mb-8 leading-tight">
-              <span className="bg-gradient-to-r from-white via-blue-100 to-cyan-100 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-white via-blue-100 to-purple-100 bg-clip-text text-transparent">
                 Transform Your
               </span>
               <br />
-              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-cyan-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-300 via-purple-300 to-blue-300 bg-clip-text text-transparent">
                 Manufacturing Operations
               </span>
             </h1>
@@ -232,7 +232,7 @@ const MarketingHome: React.FC = () => {
             <p className="text-lg sm:text-xl md:text-2xl text-blue-100 mb-8 sm:mb-10 max-w-3xl mx-auto leading-relaxed px-2 sm:px-0 font-light">
               The most advanced <span className="font-semibold text-white">AI-First Factory Optimization Platform</span> with transparent AI decision-making.
               <br className="hidden sm:block" />
-              <span className="text-cyan-200">Trust AI that shows its thinking and learns from your expertise.</span>
+              <span className="text-purple-200">Trust AI that shows its thinking and learns from your expertise.</span>
             </p>
             
             {/* Enhanced CTAs with modern styling */}
@@ -240,7 +240,7 @@ const MarketingHome: React.FC = () => {
               <Button 
                 size="lg" 
                 onClick={handleGetStarted}
-                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 hover:from-blue-600 hover:via-purple-600 hover:to-cyan-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative z-10 flex items-center justify-center">
@@ -252,7 +252,7 @@ const MarketingHome: React.FC = () => {
               <Button 
                 size="lg"
                 onClick={handleWatchDemo}
-                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 hover:from-blue-600 hover:via-purple-600 hover:to-cyan-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
+                className="group relative w-full sm:w-auto px-8 sm:px-10 py-6 sm:py-7 text-lg sm:text-xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-blue-500 hover:from-blue-600 hover:via-purple-600 hover:to-blue-600 text-white border-0 shadow-2xl shadow-blue-500/30 hover:shadow-blue-500/50 transform hover:scale-105 transition-all duration-300 rounded-xl overflow-hidden"
               >
                 <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                 <span className="relative z-10 flex items-center justify-center">
@@ -265,7 +265,7 @@ const MarketingHome: React.FC = () => {
             {/* Enhanced pricing indicator */}
             <div className="mb-8 sm:mb-10">
               <p className="text-base sm:text-lg text-blue-200 font-medium">
-                Starting at <span className="font-bold text-white bg-gradient-to-r from-blue-400 to-cyan-400 px-3 py-1 rounded-full text-base sm:text-lg">$499/month</span>
+                Starting at <span className="font-bold text-white bg-gradient-to-r from-blue-400 to-purple-400 px-3 py-1 rounded-full text-base sm:text-lg">$499/month</span>
               </p>
               <p className="text-sm sm:text-base text-blue-300 mt-2">
                 No credit card required • Cancel anytime • 30-day money-back guarantee
@@ -321,10 +321,10 @@ const MarketingHome: React.FC = () => {
           
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
             <div className="group text-center p-6 sm:p-8 bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 border border-gray-100">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-400 to-purple-500 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300">
                 <DollarSign className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
               </div>
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">25%</div>
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">25%</div>
               <div className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Cost Reduction</div>
               <div className="text-sm text-gray-600">Average savings achieved</div>
             </div>
