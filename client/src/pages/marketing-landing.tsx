@@ -283,6 +283,33 @@ export default function MarketingLandingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
+      {/* Header Navigation */}
+      <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center gap-3">
+              <Factory className="w-8 h-8 text-white" />
+              <span className="text-xl font-bold text-white">PlanetTogether</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <Button 
+                variant="outline" 
+                className="border-white text-white hover:bg-white hover:text-slate-900"
+                onClick={() => window.location.href = '/login'}
+              >
+                Sign In
+              </Button>
+              <Button 
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => window.location.href = '/login'}
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+      
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900">
         <div className="absolute inset-0 bg-black/20"></div>
