@@ -15,6 +15,24 @@ interface BryntumSchedulerProComponentProps {
     assignments: any[];
   };
   onOperationUpdate?: (operationId: number, updates: any) => void;
+  displayOptions?: {
+    showWeekends: boolean;
+    showNonWorkingTime: boolean;
+    showResourceNames: boolean;
+    showOperationDetails: boolean;
+    showDependencies: boolean;
+    showCriticalPath: boolean;
+    showProgress: boolean;
+    showTooltips: boolean;
+    compactMode: boolean;
+    colorBy: string;
+    timeFormat: string;
+    gridLines: string;
+    rowHeight: string;
+    highlightCurrentTime: boolean;
+    showBaselines: boolean;
+    showConstraints: boolean;
+  };
 }
 
 const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProComponentProps, ref: any) => {
@@ -22,7 +40,25 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     operations = [], 
     resources = [],
     project,
-    onOperationUpdate 
+    onOperationUpdate,
+    displayOptions = {
+      showWeekends: true,
+      showNonWorkingTime: true,
+      showResourceNames: true,
+      showOperationDetails: true,
+      showDependencies: true,
+      showCriticalPath: false,
+      showProgress: true,
+      showTooltips: true,
+      compactMode: false,
+      colorBy: 'status',
+      timeFormat: '12h',
+      gridLines: 'both',
+      rowHeight: 'normal',
+      highlightCurrentTime: true,
+      showBaselines: false,
+      showConstraints: true
+    }
   } = props;
   const schedulerRef = useRef<any>(null);
   
@@ -112,15 +148,26 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
       //   endType: typeof endDate
       // });
       
+      // Format name based on display options
+      let eventName = op.operationName;
+      if (displayOptions.showResourceNames && op.resourceName) {
+        eventName = `${op.jobName}: ${op.operationName}`;
+      }
+      if (displayOptions.showOperationDetails && op.duration) {
+        eventName += ` (${op.duration}h)`;
+      }
+      
       return {
         id: `e_${op.id || op.operationId}`,
-        name: `${op.jobName}: ${op.operationName}`,
+        name: eventName,
         startDate: startDate,
         endDate: endDate,
         // Bryntum-supported properties only
         eventColor: getOperationColor(op),
         // Lock scheduled operations to prevent accidental moves
         readOnly: op.isLocked || false,
+        // Show progress bar if enabled
+        percentDone: displayOptions.showProgress ? (op.completionPercentage || 0) : undefined,
         // Store custom data in a data object that Bryntum won't process
         data: {
           assignmentType: op.assignmentType || 'unscheduled',
@@ -145,7 +192,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
     
     // console.log('Created events:', validEvents.length);
     return validEvents;
-  }, [effectiveOperations]);
+  }, [effectiveOperations, displayOptions]);
 
   // Create assignments based on Jim's corrections - WITH PROPER RESOURCE VALIDATION
   const bryntumAssignments = useMemo(() => {
@@ -344,8 +391,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         startDate={new Date(2025, 8, 1)}  // September 1, 2025
         endDate={new Date(2025, 8, 7)}    // September 7, 2025 - 1 week view
         viewPreset="hourAndDay"
-        rowHeight={60}
-        barMargin={8}
+        rowHeight={displayOptions.rowHeight === 'compact' ? 40 : displayOptions.rowHeight === 'comfortable' ? 70 : 60}
+        barMargin={displayOptions.compactMode ? 4 : 8}
         height={700}
         autoAdjustTimeAxis={false}
         
@@ -373,11 +420,26 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
         ]}
         
         // Feature configuration - using any to bypass TypeScript issues
-        {...{ features: {
+        {...{ 
+          weekendsEnabled: displayOptions.showWeekends,
+          features: {
+          
+          // Grid and visualization features
+          columnLines: displayOptions.gridLines === 'vertical' || displayOptions.gridLines === 'both',
+          stripe: displayOptions.gridLines === 'horizontal' || displayOptions.gridLines === 'both',
+          nonWorkingTime: displayOptions.showNonWorkingTime,
+          resourceNonWorkingTime: displayOptions.showNonWorkingTime,
+          percentBar: displayOptions.showProgress,
+          timeRanges: {
+            showCurrentTimeLine: displayOptions.highlightCurrentTime
+          },
+          criticalPaths: {
+            disabled: !displayOptions.showCriticalPath
+          },
 
           // Configure drag-and-drop, editing, and resizing capabilities for interactive scheduling
           eventDrag: {
-            showTooltip: true,
+            showTooltip: displayOptions.showTooltips,
             constrainDragToResource: true, // Maintain resource assignments for production integrity
             constrainDragToTimeSlot: false, // Allow time flexibility within resource
             // Validate resource compatibility and scheduling constraints
@@ -500,6 +562,7 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
           eventEdit: false, // Disable direct editing to prevent accidental changes
           eventDragCreate: false, // Disable creation via drag to maintain production integrity
           eventTooltip: {
+            disabled: !displayOptions.showTooltips,
             template: ({ eventRecord }: any) => `
               <div class="operation-tooltip">
                 <h4>${eventRecord?.name || 'Unknown Operation'}</h4>
@@ -512,7 +575,8 @@ const BryntumSchedulerProComponent = forwardRef((props: BryntumSchedulerProCompo
               </div>
             `
           },
-          dependencies: false // Clean view without dependency lines for now
+          dependencies: displayOptions.showDependencies, // Control dependency lines visibility
+          dependencyEdit: displayOptions.showDependencies
         }}} // Close features object with spread operator
         
         

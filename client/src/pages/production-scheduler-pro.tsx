@@ -37,7 +37,7 @@ import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesServic
 import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
 import { AlgorithmExecutionService } from '@/services/optimization/AlgorithmExecutionService';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles, Settings, Zap } from 'lucide-react';
+import { Sparkles, Settings, Zap, Eye, EyeOff, Palette, Grid, Clock, Layers } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -78,6 +78,41 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<any>(null);
   const [algorithmProfile, setAlgorithmProfile] = useState<any>(null);
   const [isExecutingAlgorithm, setIsExecutingAlgorithm] = useState(false);
+  const [showDisplayOptions, setShowDisplayOptions] = useState(false);
+  // Load display options from localStorage or use defaults
+  const [displayOptions, setDisplayOptions] = useState(() => {
+    const savedOptions = localStorage.getItem('scheduler-display-options');
+    if (savedOptions) {
+      try {
+        return JSON.parse(savedOptions);
+      } catch (e) {
+        console.error('Failed to parse saved display options:', e);
+      }
+    }
+    return {
+      showWeekends: true,
+      showNonWorkingTime: true,
+      showResourceNames: true,
+      showOperationDetails: true,
+      showDependencies: true,
+      showCriticalPath: false,
+      showProgress: true,
+      showTooltips: true,
+      compactMode: false,
+      colorBy: 'status', // 'status', 'resource', 'priority', 'job'
+      timeFormat: '12h', // '12h' or '24h'
+      gridLines: 'both', // 'none', 'horizontal', 'vertical', 'both'
+      rowHeight: 'normal', // 'compact', 'normal', 'comfortable'
+      highlightCurrentTime: true,
+      showBaselines: false,
+      showConstraints: true
+    };
+  });
+  
+  // Save display options to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('scheduler-display-options', JSON.stringify(displayOptions));
+  }, [displayOptions]);
   const { toast } = useToast();
   
   // Services
@@ -146,15 +181,25 @@ const ProductionSchedulerProV2: React.FC = () => {
         const endDate = new Date(today);
         endDate.setDate(endDate.getDate() + 14); // Show 2 weeks to match demo operations
         
+        // Calculate row height based on display options
+        const rowHeightMap = {
+          compact: 35,
+          normal: 50,
+          comfortable: 65
+        };
+        
         setSchedulerConfig({
           startDate: today,
           endDate: endDate,
           viewPreset: 'weekAndMonth',
-          rowHeight: 50,
-          barMargin: 5,
+          rowHeight: rowHeightMap[displayOptions.rowHeight],
+          barMargin: displayOptions.compactMode ? 2 : 5,
           columns: config.columns,
+          weekendsEnabled: displayOptions.showWeekends,
           features: {
-            dependencies: true,
+            dependencies: {
+              disabled: !displayOptions.showDependencies
+            },
             dependencyEdit: true,
             eventDrag: {
               constrainDragToResource: false
@@ -162,24 +207,29 @@ const ProductionSchedulerProV2: React.FC = () => {
             eventDragCreate: true,
             eventEdit: true,
             eventResize: true,
-            eventTooltip: true,
-            columnLines: true,
+            eventTooltip: {
+              disabled: !displayOptions.showTooltips
+            },
+            columnLines: displayOptions.gridLines === 'vertical' || displayOptions.gridLines === 'both',
             columnReorder: true,
             columnResize: true,
             filterBar: false,
-            nonWorkingTime: true,
-            resourceNonWorkingTime: true, // Enable resource calendar visualization
-            percentBar: true,
+            nonWorkingTime: displayOptions.showNonWorkingTime,
+            resourceNonWorkingTime: displayOptions.showNonWorkingTime, // Enable resource calendar visualization
+            percentBar: displayOptions.showProgress,
             regionResize: true,
             sort: 'name',
-            stripe: true,
+            stripe: displayOptions.gridLines === 'horizontal' || displayOptions.gridLines === 'both',
             tree: true,
             timeRanges: {
-              showCurrentTimeLine: true
+              showCurrentTimeLine: displayOptions.highlightCurrentTime
             },
             // Enable scheduling engine for resource constraint handling
             eventDragSelect: true,
-            scheduleTooltip: true
+            scheduleTooltip: displayOptions.showTooltips,
+            criticalPaths: {
+              disabled: !displayOptions.showCriticalPath
+            }
           }
         });
         
@@ -207,7 +257,7 @@ const ProductionSchedulerProV2: React.FC = () => {
     };
     
     loadData();
-  }, []);
+  }, [displayOptions]); // Re-apply config when display options change
 
 
   // Capture scheduler instance after mount and apply zoom to fit
@@ -1117,6 +1167,17 @@ const ProductionSchedulerProV2: React.FC = () => {
               <Sparkles className="h-4 w-4 mr-1" />
               <span className="hidden sm:inline">Advanced</span>
             </Button>
+            
+            {/* Display Options Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowDisplayOptions(true)}
+              className="h-8"
+            >
+              <Settings className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Display</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -1126,6 +1187,7 @@ const ProductionSchedulerProV2: React.FC = () => {
         <BryntumSchedulerProComponent
           ref={schedulerRef}
           project={schedulerData.project}
+          displayOptions={displayOptions}
         />
         {isLoading && (
           <div className="absolute inset-0 bg-gray-900/90 flex items-center justify-center">
@@ -1329,6 +1391,384 @@ const ProductionSchedulerProV2: React.FC = () => {
                   </>
                 )}
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Display Options Dialog */}
+      <Dialog open={showDisplayOptions} onOpenChange={setShowDisplayOptions}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-blue-600" />
+              Display Options
+            </DialogTitle>
+            <DialogDescription>
+              Customize how the production schedule is displayed
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6">
+            {/* Display Options Tabs */}
+            <Tabs defaultValue="visibility" className="w-full">
+              <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="visibility">Visibility</TabsTrigger>
+                <TabsTrigger value="appearance">Appearance</TabsTrigger>
+                <TabsTrigger value="layout">Layout</TabsTrigger>
+                <TabsTrigger value="time">Time</TabsTrigger>
+              </TabsList>
+              
+              {/* Visibility Tab */}
+              <TabsContent value="visibility" className="space-y-4 mt-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-weekends">Show Weekends</Label>
+                      <p className="text-sm text-muted-foreground">Display Saturday and Sunday in the timeline</p>
+                    </div>
+                    <Switch
+                      id="show-weekends"
+                      checked={displayOptions.showWeekends}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showWeekends: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-non-working">Show Non-Working Time</Label>
+                      <p className="text-sm text-muted-foreground">Highlight non-working hours</p>
+                    </div>
+                    <Switch
+                      id="show-non-working"
+                      checked={displayOptions.showNonWorkingTime}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showNonWorkingTime: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-resources">Show Resource Names</Label>
+                      <p className="text-sm text-muted-foreground">Display resource names on operations</p>
+                    </div>
+                    <Switch
+                      id="show-resources"
+                      checked={displayOptions.showResourceNames}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showResourceNames: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-details">Show Operation Details</Label>
+                      <p className="text-sm text-muted-foreground">Display duration and other details</p>
+                    </div>
+                    <Switch
+                      id="show-details"
+                      checked={displayOptions.showOperationDetails}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showOperationDetails: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-dependencies">Show Dependencies</Label>
+                      <p className="text-sm text-muted-foreground">Display dependency lines between operations</p>
+                    </div>
+                    <Switch
+                      id="show-dependencies"
+                      checked={displayOptions.showDependencies}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showDependencies: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-critical">Show Critical Path</Label>
+                      <p className="text-sm text-muted-foreground">Highlight the critical path</p>
+                    </div>
+                    <Switch
+                      id="show-critical"
+                      checked={displayOptions.showCriticalPath}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showCriticalPath: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-progress">Show Progress</Label>
+                      <p className="text-sm text-muted-foreground">Display completion percentage</p>
+                    </div>
+                    <Switch
+                      id="show-progress"
+                      checked={displayOptions.showProgress}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showProgress: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-constraints">Show Constraints</Label>
+                      <p className="text-sm text-muted-foreground">Display constraint indicators</p>
+                    </div>
+                    <Switch
+                      id="show-constraints"
+                      checked={displayOptions.showConstraints}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showConstraints: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* Appearance Tab */}
+              <TabsContent value="appearance" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Color Operations By</Label>
+                    <Select
+                      value={displayOptions.colorBy}
+                      onValueChange={(value) =>
+                        setDisplayOptions(prev => ({ ...prev, colorBy: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="status">Status</SelectItem>
+                        <SelectItem value="resource">Resource</SelectItem>
+                        <SelectItem value="priority">Priority</SelectItem>
+                        <SelectItem value="job">Job/Order</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label>Grid Lines</Label>
+                    <Select
+                      value={displayOptions.gridLines}
+                      onValueChange={(value) =>
+                        setDisplayOptions(prev => ({ ...prev, gridLines: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="horizontal">Horizontal Only</SelectItem>
+                        <SelectItem value="vertical">Vertical Only</SelectItem>
+                        <SelectItem value="both">Both</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="highlight-current">Highlight Current Time</Label>
+                      <p className="text-sm text-muted-foreground">Show a line at the current time</p>
+                    </div>
+                    <Switch
+                      id="highlight-current"
+                      checked={displayOptions.highlightCurrentTime}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, highlightCurrentTime: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-tooltips">Show Tooltips</Label>
+                      <p className="text-sm text-muted-foreground">Display tooltips on hover</p>
+                    </div>
+                    <Switch
+                      id="show-tooltips"
+                      checked={displayOptions.showTooltips}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showTooltips: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* Layout Tab */}
+              <TabsContent value="layout" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Row Height</Label>
+                    <Select
+                      value={displayOptions.rowHeight}
+                      onValueChange={(value) =>
+                        setDisplayOptions(prev => ({ ...prev, rowHeight: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="compact">Compact</SelectItem>
+                        <SelectItem value="normal">Normal</SelectItem>
+                        <SelectItem value="comfortable">Comfortable</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="compact-mode">Compact Mode</Label>
+                      <p className="text-sm text-muted-foreground">Reduce spacing between elements</p>
+                    </div>
+                    <Switch
+                      id="compact-mode"
+                      checked={displayOptions.compactMode}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, compactMode: checked }))
+                      }
+                    />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <Label htmlFor="show-baselines">Show Baselines</Label>
+                      <p className="text-sm text-muted-foreground">Display baseline schedule for comparison</p>
+                    </div>
+                    <Switch
+                      id="show-baselines"
+                      checked={displayOptions.showBaselines}
+                      onCheckedChange={(checked) =>
+                        setDisplayOptions(prev => ({ ...prev, showBaselines: checked }))
+                      }
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* Time Tab */}
+              <TabsContent value="time" className="space-y-4 mt-4">
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>Time Format</Label>
+                    <Select
+                      value={displayOptions.timeFormat}
+                      onValueChange={(value) =>
+                        setDisplayOptions(prev => ({ ...prev, timeFormat: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="12h">12-hour (AM/PM)</SelectItem>
+                        <SelectItem value="24h">24-hour</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Action Buttons */}
+            <div className="flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  // Reset to defaults
+                  setDisplayOptions({
+                    showWeekends: true,
+                    showNonWorkingTime: true,
+                    showResourceNames: true,
+                    showOperationDetails: true,
+                    showDependencies: true,
+                    showCriticalPath: false,
+                    showProgress: true,
+                    showTooltips: true,
+                    compactMode: false,
+                    colorBy: 'status',
+                    timeFormat: '12h',
+                    gridLines: 'both',
+                    rowHeight: 'normal',
+                    highlightCurrentTime: true,
+                    showBaselines: false,
+                    showConstraints: true
+                  });
+                  toast({
+                    title: "Display Options Reset",
+                    description: "Display settings have been reset to defaults"
+                  });
+                }}
+              >
+                Reset to Defaults
+              </Button>
+              
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setShowDisplayOptions(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    // Apply display options to scheduler
+                    if (schedulerInstance) {
+                      // Apply settings to Bryntum scheduler
+                      schedulerInstance.weekendsEnabled = displayOptions.showWeekends;
+                      schedulerInstance.showTooltip = displayOptions.showTooltips;
+                      
+                      // Update row height
+                      const rowHeightMap = {
+                        compact: 30,
+                        normal: 45,
+                        comfortable: 60
+                      };
+                      schedulerInstance.rowHeight = rowHeightMap[displayOptions.rowHeight];
+                      
+                      // Apply other settings
+                      if (displayOptions.showCriticalPath) {
+                        schedulerInstance.features.criticalPaths = { disabled: false };
+                      } else {
+                        schedulerInstance.features.criticalPaths = { disabled: true };
+                      }
+                      
+                      if (displayOptions.showDependencies) {
+                        schedulerInstance.features.dependencies = { disabled: false };
+                      } else {
+                        schedulerInstance.features.dependencies = { disabled: true };
+                      }
+                      
+                      // Refresh the scheduler
+                      schedulerInstance.refresh();
+                    }
+                    
+                    setShowDisplayOptions(false);
+                    toast({
+                      title: "Display Options Applied",
+                      description: "Your display preferences have been updated"
+                    });
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  Apply Changes
+                </Button>
+              </div>
             </div>
           </div>
         </DialogContent>
