@@ -495,6 +495,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       {showPanels ? (
         isNavigationPinned ? (
           /* Layout with AI panel, main content, and pinned navigation (3 panels) */
+          <div>
+            <div style={{position: 'fixed', top: '100px', right: '20px', background: '#00FF00', color: '#000', padding: '10px', zIndex: 9999, fontSize: '14px', fontWeight: 'bold'}}>
+              ✅ 3-PANEL LAYOUT ACTIVE - Red handle should be visible!
+            </div>
           <ResizablePanelGroup 
             direction="horizontal" 
             className="flex-1 overflow-hidden"
