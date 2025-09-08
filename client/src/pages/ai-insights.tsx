@@ -20,7 +20,8 @@ import {
   Play,
   X,
   Check,
-  RotateCcw
+  RotateCcw,
+  Calendar
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,6 +108,7 @@ export default function AIInsightsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [timeRange, setTimeRange] = useState('7d');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // Generate sample insights directly in component
   const generateSampleInsights = (): AIInsight[] => {
@@ -391,12 +393,140 @@ export default function AIInsightsPage() {
         
         <div className="flex items-center gap-3">
           <Button 
+            onClick={async () => {
+              setIsAnalyzing(true);
+              try {
+                // Fetch actual schedule data
+                const [operationsRes, resourcesRes] = await Promise.all([
+                  fetch('/api/pt-operations'),
+                  fetch('/api/resources')
+                ]);
+                
+                const operations = await operationsRes.json();
+                const resources = await resourcesRes.json();
+                
+                // Calculate actual metrics from the data
+                const scheduledOps = operations.filter((op: any) => op.startTime && op.resourceName);
+                const resourceUtilization = new Map();
+                
+                // Calculate resource utilization
+                resources.forEach((resource: any) => {
+                  const resourceOps = scheduledOps.filter((op: any) => 
+                    op.resourceName === resource.name || op.resourceId === resource.id
+                  );
+                  resourceUtilization.set(resource.name || resource.id, {
+                    operationCount: resourceOps.length,
+                    totalDuration: resourceOps.reduce((sum: number, op: any) => sum + (op.duration || 0), 0)
+                  });
+                });
+                
+                // Build insights from analysis
+                const analysisInsights: AIInsight[] = [];
+                const timestamp = new Date().toISOString();
+                const baseId = Date.now();
+                
+                // Schedule efficiency insight
+                const efficiency = Math.round((scheduledOps.length / operations.length) * 100);
+                analysisInsights.push({
+                  id: `analysis_${baseId}_1`,
+                  type: 'optimization',
+                  title: 'Schedule Efficiency Analysis',
+                  description: `Current schedule has ${efficiency}% of operations scheduled (${scheduledOps.length} of ${operations.length} total).`,
+                  priority: efficiency < 80 ? 'high' : 'medium',
+                  timestamp,
+                  source: 'schedule_analyzer',
+                  category: 'production',
+                  status: 'new',
+                  actionable: true,
+                  impact: efficiency < 80 ? 'Significant scheduling gaps detected' : 'Schedule is well-optimized',
+                  recommendation: efficiency < 80 ? 'Run ASAP or Critical Path algorithm to improve scheduling' : 'Continue monitoring for optimization opportunities',
+                  confidence: 95
+                });
+                
+                // Resource utilization insights
+                const highUtilization: string[] = [];
+                const lowUtilization: string[] = [];
+                
+                resourceUtilization.forEach((data, resource) => {
+                  if (data.operationCount > 10) {
+                    highUtilization.push(resource as string);
+                  } else if (data.operationCount < 3) {
+                    lowUtilization.push(resource as string);
+                  }
+                });
+                
+                if (highUtilization.length > 0) {
+                  analysisInsights.push({
+                    id: `analysis_${baseId}_2`,
+                    type: 'bottleneck',
+                    title: 'Resource Bottleneck Detected',
+                    description: `Resources with high load: ${highUtilization.slice(0, 3).join(', ')}`,
+                    priority: 'high',
+                    timestamp,
+                    source: 'schedule_analyzer',
+                    category: 'production',
+                    status: 'new',
+                    actionable: true,
+                    impact: 'Potential production delays',
+                    recommendation: 'Consider running Level Resources algorithm or adding capacity',
+                    confidence: 88,
+                    affected_areas: highUtilization
+                  });
+                }
+                
+                if (lowUtilization.length > 0) {
+                  analysisInsights.push({
+                    id: `analysis_${baseId}_3`,
+                    type: 'optimization',
+                    title: 'Underutilized Resources Found',
+                    description: `Resources with low utilization: ${lowUtilization.slice(0, 3).join(', ')}`,
+                    priority: 'low',
+                    timestamp,
+                    source: 'schedule_analyzer',
+                    category: 'efficiency',
+                    status: 'new',
+                    actionable: true,
+                    impact: 'Opportunity for better resource allocation',
+                    recommendation: 'Redistribute work to balance resource load',
+                    confidence: 85,
+                    affected_areas: lowUtilization
+                  });
+                }
+                
+                // Add the new insights to the existing ones
+                setInsights(prev => [...analysisInsights, ...prev]);
+                
+                toast({
+                  title: "Schedule Analysis Complete",
+                  description: `Generated ${analysisInsights.length} new insights from schedule analysis`
+                });
+                
+              } catch (error) {
+                console.error('Error analyzing schedule:', error);
+                toast({
+                  title: "Analysis Failed",
+                  description: "Could not analyze the schedule. Please try again.",
+                  variant: "destructive"
+                });
+              } finally {
+                setIsAnalyzing(false);
+              }
+            }}
+            disabled={isAnalyzing}
+            variant="outline"
+            className="border-purple-500 text-purple-600 hover:bg-purple-50"
+          >
+            <Calendar className={cn("h-4 w-4 mr-2", isAnalyzing && "animate-spin")} />
+            {isAnalyzing ? 'Analyzing...' : 'Analyze Schedule'}
+          </Button>
+          
+          <Button 
             onClick={handleRefresh}
             disabled={isRefreshing}
             className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
           >
             <RefreshCw className={cn("h-4 w-4 mr-2", isRefreshing && "animate-spin")} />
-            {isRefreshing ? 'Analyzing...' : 'Refresh with AI'}
+            {isRefreshing ? 'Refreshing...' : 'Refresh with AI'}
           </Button>
         </div>
       </div>
