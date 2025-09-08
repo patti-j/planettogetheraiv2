@@ -702,8 +702,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   // Auto-scroll chat to bottom when new messages arrive (only if near bottom)
   useEffect(() => {
     if (scrollAreaRef.current && chatMessages.length > 0) {
-      // Only auto-scroll if user is near the bottom to not interrupt reading
-      if (isNearBottom) {
+      // Always scroll to bottom on initial load or when opening the panel
+      if (isNearBottom || chatMessages.length === 1) {
         setTimeout(() => {
           scrollToBottom();
         }, 100);
@@ -717,14 +717,33 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   // Save collapsed state to localStorage whenever it changes
   useEffect(() => {
     localStorage.setItem('ai-panel-collapsed', isCollapsed.toString());
-  }, [isCollapsed]);
+    
+    // When panel opens (isCollapsed becomes false), scroll to bottom after a short delay
+    if (!isCollapsed) {
+      // Small delay to ensure the panel animation completes and messages are rendered
+      setTimeout(() => {
+        scrollToBottom();
+      }, 300);
+    }
+  }, [isCollapsed, scrollToBottom]);
 
   // Listen for toggle event from command palette
   useEffect(() => {
-    const handleToggle = () => setIsCollapsed(prev => !prev);
+    const handleToggle = () => {
+      setIsCollapsed(prev => {
+        // If we're opening the panel (prev was true, now will be false)
+        if (prev) {
+          // Scroll to bottom after opening
+          setTimeout(() => {
+            scrollToBottom();
+          }, 300);
+        }
+        return !prev;
+      });
+    };
     document.addEventListener('toggle-ai-panel', handleToggle);
     return () => document.removeEventListener('toggle-ai-panel', handleToggle);
-  }, []);
+  }, [scrollToBottom]);
 
 
   // Transform Max AI insights to display format
