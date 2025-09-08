@@ -128,7 +128,7 @@ export const insertDiscreteOperationSchema = PT.insertPtJobOperationsSchema;
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  operationPhaseIdx: unique().on(table.operationId, table.phaseNumber),
+  operationPhaseIdx: unique("operation_phase_idx").on(table.operationId, table.phaseNumber),
 }));*/
 
 // Recipe Phase Relationships - REMOVED - Using PT tables instead
@@ -549,7 +549,7 @@ export const widgetDeployments = pgTable("widget_deployments", {
   deployedAt: timestamp("deployed_at").defaultNow(),
   deployedBy: integer("deployed_by").references(() => users.id).notNull(),
 }, (table) => ({
-  widgetSystemUnique: unique().on(table.widgetId, table.targetSystem, table.targetContext),
+  widgetSystemUnique: unique("widget_system_unique").on(table.widgetId, table.targetSystem, table.targetContext),
 }));
 
 // Home Dashboard Layouts - customizable dashboard layouts for the home page
@@ -570,7 +570,7 @@ export const homeDashboardLayouts = pgTable("home_dashboard_layouts", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  userDefaultUnique: unique().on(table.userId, table.isDefault),
+  userDefaultUnique: unique("user_default_unique").on(table.userId, table.isDefault),
   userIndex: index("home_dashboard_layouts_user_idx").on(table.userId),
 }));
 
@@ -1546,7 +1546,7 @@ export const workspaceDashboards = pgTable("workspace_dashboards", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   // Ensure one active dashboard per page per workspace
-  pageWorkspaceActiveUnique: unique().on(table.pageIdentifier, table.plantId, table.isActive),
+  pageWorkspaceActiveUnique: unique("page_workspace_active_unique").on(table.pageIdentifier, table.plantId, table.isActive),
   pageIdentifierIdx: index("workspace_dashboards_page_idx").on(table.pageIdentifier),
   plantIdIdx: index("workspace_dashboards_plant_idx").on(table.plantId),
 }));
@@ -1717,7 +1717,7 @@ export const plantKpiTargets = pgTable("plant_kpi_targets", {
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
   plantKpiIdx: index().on(table.plantId, table.kpiName),
-  uniquePlantKpi: unique().on(table.plantId, table.kpiName),
+  uniquePlantKpi: unique("unique_plant_kpi").on(table.plantId, table.kpiName),
 }));
 
 // Plant KPI Performance History - Actual performance data over time
@@ -2588,7 +2588,7 @@ export const stockBalances = pgTable("stock_balances", {
   lastTransactionDate: timestamp("last_transaction_date"),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  itemLocationIdx: unique().on(table.itemId, table.location),
+  itemLocationIdx: unique("item_location_idx").on(table.itemId, table.location),
 }));
 
 // Demand Planning Tables
@@ -2654,7 +2654,7 @@ export const demandHistory = pgTable("demand_history", {
   dataSource: text("data_source").notNull().default("manual"), // manual, erp, sales_system, pos
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  itemPeriodIdx: unique().on(table.itemId, table.period),
+  itemPeriodIdx: unique("item_period_idx").on(table.itemId, table.period),
 }));
 
 export const stockOptimizationScenarios = pgTable("stock_optimization_scenarios", {
@@ -2893,7 +2893,7 @@ export const workflowActionMappings = pgTable("workflow_action_mappings", {
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  workflowActionIdx: unique().on(table.workflowId, table.actionId, table.executionOrder),
+  workflowActionIdx: unique("workflow_action_idx").on(table.workflowId, table.actionId, table.executionOrder),
 }));
 
 // Execution history and monitoring
@@ -3013,7 +3013,7 @@ export const algorithmVersions = pgTable("algorithm_versions", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  algorithmVersionIdx: unique().on(table.algorithmName, table.version),
+  algorithmVersionIdx: unique("algorithm_version_idx").on(table.algorithmName, table.version),
 }));
 
 export const plantAlgorithmDeployments = pgTable("plant_algorithm_deployments", {
@@ -3083,7 +3083,7 @@ export const plantAlgorithmDeployments = pgTable("plant_algorithm_deployments", 
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  plantAlgorithmIdx: unique().on(table.plantId, table.algorithmVersionId),
+  plantAlgorithmIdx: unique("plant_algorithm_idx").on(table.plantId, table.algorithmVersionId),
 }));
 
 export const algorithmApprovalWorkflows = pgTable("algorithm_approval_workflows", {
@@ -3521,7 +3521,7 @@ export const userAuthorities = pgTable("user_authorities", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  uniqueUserAuthority: unique().on(table.userId, table.authorityType, table.authorityId),
+  uniqueUserAuthority: unique("unique_user_authority").on(table.userId, table.authorityType, table.authorityId),
   authorityIdx: index().on(table.userId, table.authorityType, table.isActive),
 }));
 
@@ -3903,7 +3903,7 @@ export const userResourceAssignments = pgTable("user_resource_assignments", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  userResourceUniqueIdx: unique().on(table.userId, table.resourceId),
+  userResourceUniqueIdx: unique("user_resource_unique_idx").on(table.userId, table.resourceId),
   userIdx: index("user_resource_assignments_user_idx").on(table.userId),
   resourceIdx: index("user_resource_assignments_resource_idx").on(table.resourceId),
 }));
@@ -4119,7 +4119,7 @@ export const fieldComments = pgTable("field_comments", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  tableColumnUnique: unique().on(table.tableName, table.columnName),
+  tableColumnUnique: unique("table_column_unique").on(table.tableName, table.columnName),
   tableNameIdx: index("field_comments_table_name_idx").on(table.tableName),
 }));
 
@@ -4171,7 +4171,7 @@ export const chatMembers = pgTable("chat_members", {
   joinedAt: timestamp("joined_at").defaultNow(),
   lastReadAt: timestamp("last_read_at"),
 }, (table) => ({
-  channelUserUnique: unique().on(table.channelId, table.userId),
+  channelUserUnique: unique("channel_user_unique").on(table.channelId, table.userId),
 }));
 
 export const chatMessages: any = pgTable("chat_messages", {
@@ -4200,7 +4200,7 @@ export const chatReactions = pgTable("chat_reactions", {
   emoji: varchar("emoji", { length: 50 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  messageUserEmojiUnique: unique().on(table.messageId, table.userId, table.emoji),
+  messageUserEmojiUnique: unique("message_user_emoji_unique").on(table.messageId, table.userId, table.emoji),
 }));
 
 // Chat Relations
@@ -4620,7 +4620,7 @@ export const onboardingProgress = pgTable("onboarding_progress", {
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  userStepIdx: unique().on(table.userId, table.step),
+  userStepIdx: unique("user_step_idx").on(table.userId, table.step),
 }));
 
 // ===== IMPLEMENTATION TRACKING SYSTEM =====
@@ -4698,7 +4698,7 @@ export const implementationPhases = pgTable("implementation_phases", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  projectPhaseIdx: unique().on(table.projectId, table.phaseNumber),
+  projectPhaseIdx: unique("project_phase_idx").on(table.projectId, table.phaseNumber),
 }));
 
 // SOPs (Standard Operating Procedures) library
@@ -5121,7 +5121,7 @@ export const feedbackVotes = pgTable("feedback_votes", {
   voteType: text("vote_type").notNull(), // up, down
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  userFeedbackIdx: unique().on(table.userId, table.feedbackId),
+  userFeedbackIdx: unique("user_feedback_idx").on(table.userId, table.feedbackId),
 }));
 
 // Feedback relations
@@ -5862,7 +5862,7 @@ export const algorithmFeedbackVotes = pgTable("algorithm_feedback_votes", {
   voteType: text("vote_type").notNull(), // upvote, downvote
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  uniqueVote: unique().on(table.feedbackId, table.userId),
+  uniqueVote: unique("unique_vote").on(table.feedbackId, table.userId),
   feedbackIdIndex: index("feedback_votes_feedback_idx").on(table.feedbackId),
   userIdIndex: index("feedback_votes_user_idx").on(table.userId),
 }));
@@ -6689,7 +6689,7 @@ export const aiConversationContext = pgTable("ai_conversation_context", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  userSessionIdx: unique().on(table.userId, table.sessionId),
+  userSessionIdx: unique("user_session_idx").on(table.userId, table.sessionId),
 }));
 
 // AI Memory Relations
@@ -7093,7 +7093,7 @@ export const userIndustryTemplates = pgTable("user_industry_templates", {
   appliedAt: timestamp("applied_at").defaultNow(),
   lastModified: timestamp("last_modified").defaultNow(),
 }, (table) => ({
-  userTemplateIdx: unique().on(table.userId, table.templateId),
+  userTemplateIdx: unique("user_template_idx").on(table.userId, table.templateId),
 }));
 
 // Dashboard and Widget-Based Page Architecture
@@ -7197,7 +7197,7 @@ export const userPageLayouts = pgTable("user_page_layouts", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  userPageUnique: unique().on(table.userId, table.pageId),
+  userPageUnique: unique("user_page_unique").on(table.userId, table.pageId),
 }));
 
 // Dashboard configurations for traditional dashboard-style pages
@@ -8010,7 +8010,7 @@ export const workCenterResources = pgTable("work_center_resources", {
   endDate: timestamp("end_date"), // null = no end date
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  workCenterResourceUnique: unique().on(table.workCenterId, table.resourceId),
+  workCenterResourceUnique: unique("work_center_resource_unique").on(table.workCenterId, table.resourceId),
 }));
 
 // Many-to-many junction table: Departments ↔ Resources (for shared resources)
@@ -8024,7 +8024,7 @@ export const departmentResources = pgTable("department_resources", {
   endDate: timestamp("end_date"), // null = no end date
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  departmentResourceUnique: unique().on(table.departmentId, table.resourceId),
+  departmentResourceUnique: unique("department_resource_unique").on(table.departmentId, table.resourceId),
 }));
 
 // Employees - personnel who can be assigned to work centers or used as resources
@@ -8073,7 +8073,7 @@ export const inventoryLots = pgTable("inventory_lots", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  lotItemStorageLocationIdx: unique().on(table.lotNumber, table.itemId, table.storageLocationId),
+  lotItemStorageLocationIdx: unique("lot_item_storage_location_idx").on(table.lotNumber, table.itemId, table.storageLocationId),
 }));
 
 // Sales orders from customers - enhanced with comprehensive pricing, discount, payment terms, freight handling, and tax management
@@ -8236,7 +8236,7 @@ export const stocks = pgTable("stocks", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  stocksItemLocationIdx: unique().on(table.itemId, table.storageLocationId), // One stock record per item per location
+  stocksItemLocationIdx: unique("stocks_item_location_idx").on(table.itemId, table.storageLocationId), // One stock record per item per location
   quantityOnHandIdx: index("stocks_quantity_on_hand_idx").on(table.quantityOnHand),
   quantityAvailableIdx: index("stocks_quantity_available_idx").on(table.quantityAvailable),
   statusIdx: index("stocks_status_idx").on(table.status),
@@ -8299,7 +8299,7 @@ export const bomLines = pgTable("bom_lines", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  bomLineIdx: unique().on(table.bomId, table.lineNumber),
+  bomLineIdx: unique("bom_line_idx").on(table.bomId, table.lineNumber),
 }));
 
 // BOM Material Requirements - detailed material requirements for each BOM
@@ -8507,7 +8507,7 @@ export const routingOperations = pgTable("routing_operations", {
   notes: text("notes"),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  routingOperationIdx: unique().on(table.routingId, table.operationNumber),
+  routingOperationIdx: unique("routing_operation_idx").on(table.routingId, table.operationNumber),
 }));
 
 // Demand forecasts
@@ -8525,7 +8525,7 @@ export const forecasts = pgTable("forecasts", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  itemSiteDateIdx: unique().on(table.itemId, table.siteId, table.forecastDate),
+  itemSiteDateIdx: unique("item_site_date_idx").on(table.itemId, table.siteId, table.forecastDate),
 }));
 
 // ===== ERP RELATIONS =====
@@ -8807,7 +8807,7 @@ export const masterProductionSchedule = pgTable("ptMasterProductionSchedule", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  itemPlantPeriodIdx: unique().on(table.itemId, table.plantId, table.bucketStartDate),
+  itemPlantPeriodIdx: unique("item_plant_period_idx").on(table.itemId, table.plantId, table.bucketStartDate),
 }));
 
 // MRP Runs - tracks each execution of the MRP calculation
@@ -8883,7 +8883,7 @@ export const mrpRequirements = pgTable("mrp_requirements", {
   
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  mrpItemPeriodIdx: unique().on(table.mrpRunId, table.itemId, table.periodStartDate),
+  mrpItemPeriodIdx: unique("mrp_item_period_idx").on(table.mrpRunId, table.itemId, table.periodStartDate),
 }));
 
 // MRP Action Messages - suggestions for planners
@@ -8958,7 +8958,7 @@ export const mrpPlanningParameters = pgTable("mrp_planning_parameters", {
   lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  itemPlantIdx: unique().on(table.itemId, table.plantId),
+  itemPlantIdx: unique("item_plant_idx").on(table.itemId, table.plantId),
 }));
 
 // MRP Relations (to be handled below with existing relations)
@@ -9430,7 +9430,7 @@ export const userSecrets = pgTable("user_secrets", {
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 }, (table) => ({
-  userKeyUnique: unique().on(table.userId, table.key), // Ensure unique key per user
+  userKeyUnique: unique("user_key_unique").on(table.userId, table.key), // Ensure unique key per user
 }));
 
 export const insertUserSecretSchema = createInsertSchema(userSecrets, { 
@@ -10613,7 +10613,7 @@ export const commentMentions = pgTable("comment_mentions", {
   
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  commentUserIdx: unique().on(table.commentId, table.mentionedUserId),
+  commentUserIdx: unique("comment_user_idx").on(table.commentId, table.mentionedUserId),
   mentionedUserIdx: index().on(table.mentionedUserId),
   acknowledgedIdx: index().on(table.isAcknowledged),
 }));
@@ -10713,7 +10713,7 @@ export const commentReactions = pgTable("comment_reactions", {
   
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  uniqueUserReaction: unique().on(table.commentId, table.userId, table.reactionType),
+  uniqueUserReaction: unique("unique_user_reaction").on(table.commentId, table.userId, table.reactionType),
   commentIdx: index().on(table.commentId),
   userIdx: index().on(table.userId),
 }));
@@ -10737,7 +10737,7 @@ export const commentWatchers = pgTable("comment_watchers", {
   
   createdAt: timestamp("created_at").defaultNow(),
 }, (table) => ({
-  uniqueWatcher: unique().on(table.watchType, table.watchId, table.userId),
+  uniqueWatcher: unique("unique_watcher").on(table.watchType, table.watchId, table.userId),
   userIdx: index().on(table.userId),
 }));
 
@@ -11419,7 +11419,7 @@ export const employeeMachineCertifications = pgTable('employee_machine_certifica
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow()
 }, (table) => ({
-  userResourceIdx: unique().on(table.userId, table.resourceId),
+  userResourceIdx: unique("user_resource_idx").on(table.userId, table.resourceId),
   userIdx: index('machine_certifications_user_idx').on(table.userId),
   resourceIdx: index('machine_certifications_resource_idx').on(table.resourceId),
   levelIdx: index('machine_certifications_level_idx').on(table.certificationLevel)
@@ -11672,7 +11672,7 @@ export const integrationConnections = pgTable('integration_connections', {
   integrationIdx: index('integration_connections_integration_idx').on(table.integrationId),
   plantIdx: index('integration_connections_plant_idx').on(table.plantId),
   statusIdx: index('integration_connections_status_idx').on(table.status),
-  uniqueConnection: unique().on(table.integrationId, table.plantId, table.connectionName)
+  uniqueConnection: unique("unique_connection").on(table.integrationId, table.plantId, table.connectionName)
 }));
 
 // Integration sync jobs - Track data synchronization jobs
@@ -11748,7 +11748,7 @@ export const integrationFieldMappings = pgTable('integration_field_mappings', {
 }, (table) => ({
   connectionIdx: index('field_mappings_connection_idx').on(table.connectionId),
   entityIdx: index('field_mappings_entity_idx').on(table.entityType),
-  uniqueMapping: unique().on(table.connectionId, table.entityType, table.sourceField, table.targetField)
+  uniqueMapping: unique("unique_mapping").on(table.connectionId, table.entityType, table.sourceField, table.targetField)
 }));
 
 // Integration logs - Store detailed logs of integration activities
