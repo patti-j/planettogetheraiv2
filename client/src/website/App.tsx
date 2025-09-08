@@ -183,11 +183,9 @@ export default function WebsiteApp() {
           </Route>
           
           <Route path="/">
-            {() => {
-              // Redirect root path to login page
-              window.location.href = '/login';
-              return null;
-            }}
+            <WebsiteLayout>
+              <MarketingHome />
+            </WebsiteLayout>
           </Route>
           
           {/* Default fallback */}
