@@ -29,8 +29,10 @@ function useAuthStatus() {
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
-  // Check if token exists
-  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  // Check if token exists - reactive to localStorage changes
+  const [hasToken, setHasToken] = useState(() => {
+    return typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  });
   
   // For public paths, always show website regardless of token
   // For other paths, check authentication
@@ -50,10 +52,13 @@ function useAuthStatus() {
       if ((window as any).__LOGOUT_IN_PROGRESS__) {
         setIsAuthenticated(false);
         setIsLoading(false);
+        setHasToken(false);
         return;
       }
       
       const token = localStorage.getItem('authToken');
+      const tokenExists = !!token;
+      setHasToken(tokenExists);
       
       // No token = not authenticated, no need to check
       if (!token) {
@@ -76,6 +81,7 @@ function useAuthStatus() {
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           localStorage.removeItem('isDemo');
+          setHasToken(false);
           setIsAuthenticated(false);
         } else if (response.ok) {
           const userData = await response.json();
@@ -86,6 +92,7 @@ function useAuthStatus() {
           if (response.status >= 400 && response.status < 500) {
             localStorage.removeItem('authToken');
             localStorage.removeItem('user');
+            setHasToken(false);
           }
           setIsAuthenticated(false);
         }
@@ -105,6 +112,8 @@ function useAuthStatus() {
     const handleStorageChange = (e: StorageEvent) => {
       console.log("Storage change detected:", e.key);
       if (e.key === 'authToken') {
+        const newToken = !!localStorage.getItem('authToken');
+        setHasToken(newToken);
         checkAuth();
       }
     };
@@ -112,6 +121,7 @@ function useAuthStatus() {
     // Listen for custom logout events
     const handleLogout = () => {
       console.log("Logout event detected");
+      setHasToken(false);
       checkAuth();
     };
 
@@ -124,20 +134,17 @@ function useAuthStatus() {
     };
   }, [isPublicPath]);
 
-  return { isAuthenticated, isLoading };
+  return { isAuthenticated, isLoading, hasToken };
 }
 
 export default function App() {
-  const { isAuthenticated, isLoading } = useAuthStatus();
+  const { isAuthenticated, isLoading, hasToken } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if this is a portal route - handle separately from main app
   const isPortalRoute = currentPath.startsWith('/portal');
-  
-  // Check if user has a token for the main app
-  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
   
   // If on root path and not authenticated, show website (don't redirect)
   // Authenticated users at root path will see the ApplicationApp
