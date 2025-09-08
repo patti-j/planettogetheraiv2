@@ -184,6 +184,490 @@ interface GovernanceDeployment {
   };
 }
 
+// Validation Rules Section Component
+const ValidationRulesSection = ({ 
+  validationRules, 
+  onToggle 
+}: { 
+  validationRules: ValidationRulesConfig; 
+  onToggle: (category: string, subcategory: string, ruleId: string) => void;
+}) => {
+  const [expandedCategories, setExpandedCategories] = useState<Set<string>>(new Set(['physical']));
+
+  const toggleCategory = (category: string) => {
+    const newExpanded = new Set(expandedCategories);
+    if (newExpanded.has(category)) {
+      newExpanded.delete(category);
+    } else {
+      newExpanded.add(category);
+    }
+    setExpandedCategories(newExpanded);
+  };
+
+  const countEnabledRules = (rules: ValidationRule[]) => {
+    return rules.filter(r => r.enabled).length;
+  };
+
+  const getSeverityColor = (severity?: string) => {
+    switch (severity) {
+      case 'error': return 'text-red-600 dark:text-red-400';
+      case 'warning': return 'text-yellow-600 dark:text-yellow-400';
+      case 'info': return 'text-blue-600 dark:text-blue-400';
+      default: return 'text-gray-600 dark:text-gray-400';
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Physical Constraints */}
+      <Card>
+        <CardHeader 
+          className="cursor-pointer" 
+          onClick={() => toggleCategory('physical')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Shield className="w-5 h-5 text-purple-600" />
+              <CardTitle className="text-base">Physical Constraints</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {countEnabledRules(Object.values(validationRules.physical).flat())} / {Object.values(validationRules.physical).flat().length} enabled
+              </Badge>
+              {expandedCategories.has('physical') ? 
+                <ChevronUp className="w-4 h-4" /> : 
+                <ChevronDown className="w-4 h-4" />
+              }
+            </div>
+          </div>
+          <CardDescription>Hard constraints that must be satisfied</CardDescription>
+        </CardHeader>
+        {expandedCategories.has('physical') && (
+          <CardContent className="space-y-4">
+            {/* General Validation Rules */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">General Validation Rules</h4>
+              <div className="space-y-2">
+                {validationRules.physical.general.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('physical', 'general', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Dependency Constraints */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Dependency Constraints</h4>
+              <div className="space-y-2">
+                {validationRules.physical.dependency.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('physical', 'dependency', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Constraints */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Time Constraints</h4>
+              <div className="space-y-2">
+                {validationRules.physical.time.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('physical', 'time', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resource Constraints */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Resource Constraints</h4>
+              <div className="space-y-2">
+                {validationRules.physical.resource.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('physical', 'resource', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Inventory/Material Constraints */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Inventory/Material Constraints</h4>
+              <div className="space-y-2">
+                {validationRules.physical.inventory.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('physical', 'inventory', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+
+      {/* Policy Constraints */}
+      <Card>
+        <CardHeader 
+          className="cursor-pointer" 
+          onClick={() => toggleCategory('policy')}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Settings className="w-5 h-5 text-blue-600" />
+              <CardTitle className="text-base">Policy Constraints</CardTitle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline">
+                {countEnabledRules(Object.values(validationRules.policy).flat())} / {Object.values(validationRules.policy).flat().length} enabled
+              </Badge>
+              {expandedCategories.has('policy') ? 
+                <ChevronUp className="w-4 h-4" /> : 
+                <ChevronDown className="w-4 h-4" />
+              }
+            </div>
+          </div>
+          <CardDescription>Flexible business rules and preferences</CardDescription>
+        </CardHeader>
+        {expandedCategories.has('policy') && (
+          <CardContent className="space-y-4">
+            {/* Business Rules */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Business Rules</h4>
+              <div className="space-y-2">
+                {validationRules.policy.businessRules.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'businessRules', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Resource Management */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Resource Management</h4>
+              <div className="space-y-2">
+                {validationRules.policy.resourceManagement.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'resourceManagement', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Time Flexibility */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Time Flexibility</h4>
+              <div className="space-y-2">
+                {validationRules.policy.timeFlexibility.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'timeFlexibility', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Process Flow */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Process Flow</h4>
+              <div className="space-y-2">
+                {validationRules.policy.processFlow.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'processFlow', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Material Handling */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Material Handling</h4>
+              <div className="space-y-2">
+                {validationRules.policy.materialHandling.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'materialHandling', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Cost Control */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Cost Control</h4>
+              <div className="space-y-2">
+                {validationRules.policy.costControl.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'costControl', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Quality & Compliance */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Quality & Compliance</h4>
+              <div className="space-y-2">
+                {validationRules.policy.qualityCompliance.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'qualityCompliance', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Optimization Preferences */}
+            <div>
+              <h4 className="text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">Optimization Preferences</h4>
+              <div className="space-y-2">
+                {validationRules.policy.optimizationPreferences.map((rule) => (
+                  <div key={rule.id} className="flex items-start justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{rule.name}</span>
+                        <span className={`text-xs ${getSeverityColor(rule.severity)}`}>({rule.severity})</span>
+                      </div>
+                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{rule.description}</p>
+                    </div>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggle('policy', 'optimizationPreferences', rule.id);
+                      }}
+                      className="ml-4 flex-shrink-0"
+                    >
+                      {rule.enabled ? 
+                        <ToggleRight className="w-8 h-8 text-green-600" /> : 
+                        <ToggleLeft className="w-8 h-8 text-gray-400" />
+                      }
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </CardContent>
+        )}
+      </Card>
+    </div>
+  );
+};
+
 export default function OptimizationStudio() {
   const [isMaximized, setIsMaximized] = useState(false);
   const [selectedTab, setSelectedTab] = useState("algorithms");
@@ -757,6 +1241,7 @@ export default function OptimizationStudio() {
         customRules: [],
         strictness: 'moderate'
       },
+      validationRules: getDefaultValidationRules(),
       outputSettings: {
         format: 'detailed',
         includeVisualization: true,
@@ -764,6 +1249,30 @@ export default function OptimizationStudio() {
       }
     };
     setCurrentProfileDraft(profile);
+  };
+
+  // Handle validation rule toggle
+  const handleValidationRuleToggle = (category: string, subcategory: string, ruleId: string) => {
+    if (!currentProfileDraft) return;
+    
+    const updatedProfile = { ...currentProfileDraft };
+    if (!updatedProfile.validationRules) {
+      updatedProfile.validationRules = getDefaultValidationRules();
+    }
+    
+    // Find and toggle the rule
+    const categoryRules = updatedProfile.validationRules[category as keyof ValidationRulesConfig];
+    const subcategoryRules = categoryRules[subcategory as keyof typeof categoryRules] as ValidationRule[];
+    
+    const ruleIndex = subcategoryRules.findIndex(r => r.id === ruleId);
+    if (ruleIndex !== -1) {
+      subcategoryRules[ruleIndex] = {
+        ...subcategoryRules[ruleIndex],
+        enabled: !subcategoryRules[ruleIndex].enabled
+      };
+    }
+    
+    setCurrentProfileDraft(updatedProfile);
   };
 
   // Start AI collaboration session
