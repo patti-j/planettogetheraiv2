@@ -194,7 +194,7 @@ const MarketingHome: React.FC = () => {
   ];
 
   return (
-    <div className="fixed inset-0 min-h-screen bg-background z-[9999] overflow-auto">
+    <div className="min-h-screen bg-background">
       {/* Hero Section - Enhanced Modern Design */}
       <section className="relative overflow-hidden bg-black text-white">
         {/* Background Effects */}
