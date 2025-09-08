@@ -40,6 +40,15 @@ function useAuthStatus() {
   const [isLoading, setIsLoading] = useState(isPublicPath ? false : hasToken); // Only load if we need to verify token
 
   useEffect(() => {
+    // Update hasToken state immediately when localStorage changes
+    const updateTokenState = () => {
+      const token = localStorage.getItem('authToken');
+      setHasToken(!!token);
+    };
+
+    // Check token state on mount and path changes
+    updateTokenState();
+
     // Skip auth check entirely for public pages
     if (isPublicPath) {
       setIsAuthenticated(false);
@@ -132,7 +141,7 @@ function useAuthStatus() {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('logout', handleLogout);
     };
-  }, [isPublicPath]);
+  }, [isPublicPath, currentPath]); // Add currentPath as dependency
 
   return { isAuthenticated, isLoading, hasToken };
 }
@@ -166,6 +175,17 @@ export default function App() {
     // Show website for public paths OR when not authenticated
     isPublicPath || (!hasToken && !isLoading)
   );
+
+  // Debug logging to track authentication state
+  console.log('🚨 App Routing Debug:', {
+    currentPath,
+    isPortalRoute,
+    isPublicPath,
+    hasToken,
+    isAuthenticated,
+    isLoading,
+    shouldShowWebsite
+  });
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
   if (isLoading && !isPublicPath && !isPortalRoute) {
