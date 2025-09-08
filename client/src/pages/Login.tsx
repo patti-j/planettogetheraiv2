@@ -34,10 +34,9 @@ export default function Login() {
   const [pageLoaded, setPageLoaded] = useState(false);
   const { login } = useAuth();
 
-  // Auto-login for admin user in development
+  // Check for existing valid session on page load
   React.useEffect(() => {
-    const autoLoginAdmin = async () => {
-      // Check if we have a valid token first
+    const checkExistingSession = async () => {
       const existingToken = localStorage.getItem('authToken');
       if (existingToken) {
         // Validate existing token
@@ -47,7 +46,7 @@ export default function Login() {
           });
           if (response.ok) {
             // Token is valid, redirect to dashboard
-            window.location.href = '/dashboard';
+            setLocation('/dashboard');
             return;
           } else if (response.status === 401) {
             // Token is invalid, clear it
@@ -56,42 +55,16 @@ export default function Login() {
             localStorage.removeItem('isDemo');
           }
         } catch (error) {
-          console.log('Token validation failed, proceeding with auto-login');
+          console.log('Token validation failed');
         }
       }
       
-      // Auto-login admin user in development if no valid token
-      const isDevelopment = window.location.hostname === 'localhost' || 
-                          window.location.hostname.includes('replit');
-      
-      if (isDevelopment) {
-        // Always enable auto-login for admin in development
-        localStorage.setItem('adminAutoLogin', 'enabled');
-        
-        if (!existingToken) {
-          try {
-            // Automatically log in as admin
-            setLoading(true);
-            const result = await login({ username: 'admin', password: 'admin123' });
-            if (result && result.token) {
-              localStorage.setItem('authToken', result.token);
-              // Store that we've auto-logged in
-              localStorage.setItem('autoLoggedIn', 'true');
-              window.location.href = '/dashboard';
-              return;
-            }
-          } catch (error) {
-            console.log('Auto-login attempt failed, will show login form');
-            setLoading(false);
-          }
-        }
-      }
-      
+      // Mark page as loaded to enable login form
       setPageLoaded(true);
     };
     
-    autoLoginAdmin();
-  }, [login]);
+    checkExistingSession();
+  }, [setLocation]);
   
   // Portal login state
   const [portalEmail, setPortalEmail] = useState("");
