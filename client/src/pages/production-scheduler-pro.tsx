@@ -35,6 +35,20 @@ import { GanttDataService } from '@/services/scheduler/GanttDataService';
 import { GanttConfigService } from '@/services/scheduler/GanttConfigService';
 import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesService';
 import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
+import { AlgorithmExecutionService } from '@/services/optimization/AlgorithmExecutionService';
+import { Badge } from '@/components/ui/badge';
+import { Sparkles } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const ProductionSchedulerProV2: React.FC = () => {
   const schedulerRef = useRef<any>(null);
@@ -59,6 +73,11 @@ const ProductionSchedulerProV2: React.FC = () => {
   const [schedulerConfig, setSchedulerConfig] = useState<any>(null);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [resourceUtilization, setResourceUtilization] = useState('--');
+  const [showAlgorithmDialog, setShowAlgorithmDialog] = useState(false);
+  const [availableAlgorithms, setAvailableAlgorithms] = useState<any[]>([]);
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<any>(null);
+  const [algorithmProfile, setAlgorithmProfile] = useState<any>(null);
+  const [isExecutingAlgorithm, setIsExecutingAlgorithm] = useState(false);
   const { toast } = useToast();
   
   // Services
@@ -66,6 +85,30 @@ const ProductionSchedulerProV2: React.FC = () => {
   const configService = GanttConfigService.getInstance();
   const favoritesService = GanttFavoritesService.getInstance();
   const contextService = SchedulerContextService.getInstance();
+  const algorithmService = AlgorithmExecutionService.getInstance();
+
+  // Load available algorithms
+  useEffect(() => {
+    const loadAlgorithms = async () => {
+      try {
+        const [standard, custom] = await Promise.all([
+          algorithmService.getStandardAlgorithms(),
+          algorithmService.getAvailableAlgorithms()
+        ]);
+        
+        // Combine and filter approved algorithms
+        const allAlgorithms = [...standard, ...custom].filter(algo => 
+          algo.status === 'approved' || algo.status === 'deployed' || algo.isStandard
+        );
+        
+        setAvailableAlgorithms(allAlgorithms);
+      } catch (error) {
+        console.error('Failed to load algorithms:', error);
+      }
+    };
+    
+    loadAlgorithms();
+  }, []);
 
   // Load initial data
   useEffect(() => {
@@ -363,6 +406,137 @@ const ProductionSchedulerProV2: React.FC = () => {
       setIsLoading(false);
     }
   }, [schedulerInstance, toast]);
+
+  // Execute optimization algorithm from Optimization Studio
+  const executeOptimizationAlgorithm = useCallback(async () => {
+    if (!schedulerInstance || !selectedAlgorithm) {
+      toast({
+        title: "Error",
+        description: "Please select an algorithm",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsExecutingAlgorithm(true);
+    
+    try {
+      // Prepare schedule data
+      const currentSchedule = {
+        events: schedulerInstance.eventStore.records.map((e: any) => ({
+          id: e.id,
+          name: e.name,
+          startDate: e.startDate.toISOString(),
+          endDate: e.endDate.toISOString(),
+          resourceId: e.resourceId,
+          needDate: e.needDate?.toISOString()
+        })),
+        resources: schedulerInstance.resourceStore.records.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          capacity: r.capacity || 100
+        })),
+        dependencies: schedulerInstance.dependencyStore.records.map((d: any) => ({
+          from: d.from,
+          to: d.to,
+          type: d.type,
+          lag: d.lag || 0
+        })),
+        assignments: schedulerInstance.assignmentStore.records.map((a: any) => ({
+          eventId: a.eventId,
+          resourceId: a.resourceId,
+          units: a.units || 100
+        }))
+      };
+      
+      // Validate against rules if profile has validation rules
+      if (algorithmProfile?.validationRules) {
+        const violations = algorithmService.validateSchedule(currentSchedule, algorithmProfile.validationRules);
+        
+        if (violations.length > 0) {
+          const errorViolations = violations.filter(v => v.severity === 'error');
+          const warningViolations = violations.filter(v => v.severity === 'warning');
+          
+          if (errorViolations.length > 0) {
+            toast({
+              title: "Validation Failed",
+              description: `Found ${errorViolations.length} errors that must be fixed before optimization`,
+              variant: "destructive"
+            });
+            
+            // Show violations in console
+            console.error('Validation errors:', errorViolations);
+            setIsExecutingAlgorithm(false);
+            return;
+          }
+          
+          if (warningViolations.length > 0) {
+            console.warn('Validation warnings:', warningViolations);
+          }
+        }
+      }
+      
+      // Execute the algorithm
+      const execution = {
+        algorithmId: selectedAlgorithm.id,
+        parameters: algorithmProfile?.parameters || {},
+        scope: {
+          timeHorizon: algorithmProfile?.scope?.timeHorizon || '1_week',
+          startDate: schedulerInstance.startDate.toISOString(),
+          endDate: schedulerInstance.endDate.toISOString()
+        },
+        validationRules: algorithmProfile?.validationRules,
+        constraints: algorithmProfile?.constraints
+      };
+      
+      const result = await algorithmService.executeAlgorithm(execution);
+      
+      if (result.success && result.optimizedSchedule) {
+        // Apply optimization to scheduler
+        const applied = algorithmService.applyOptimizationToScheduler(
+          schedulerInstance,
+          result
+        );
+        
+        if (applied) {
+          // Calculate and show metrics
+          const metrics = algorithmService.calculateMetrics(result.optimizedSchedule);
+          
+          toast({
+            title: "Optimization Applied",
+            description: `${selectedAlgorithm.displayName} completed successfully. Makespan: ${metrics.makespan} days, Resource Utilization: ${metrics.resourceUtilization}%`
+          });
+          
+          // Update resource utilization display
+          if (metrics.resourceUtilization) {
+            setResourceUtilization(`Resource utilization: ${metrics.resourceUtilization}%`);
+          }
+        } else {
+          toast({
+            title: "Application Failed",
+            description: "Could not apply optimization results to schedule",
+            variant: "destructive"
+          });
+        }
+      } else {
+        toast({
+          title: "Optimization Failed",
+          description: result.message || "Algorithm execution failed",
+          variant: "destructive"
+        });
+      }
+    } catch (error: any) {
+      console.error('Algorithm execution error:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to execute optimization algorithm",
+        variant: "destructive"
+      });
+    } finally {
+      setIsExecutingAlgorithm(false);
+      setShowAlgorithmDialog(false);
+    }
+  }, [schedulerInstance, selectedAlgorithm, algorithmProfile, toast]);
 
   // ASAP Scheduling Algorithm
   const asapScheduling = useCallback(async () => {
@@ -932,6 +1106,17 @@ const ProductionSchedulerProV2: React.FC = () => {
                 <SelectItem value="drum">Drum (TOC)</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Optimization Studio Algorithms Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAlgorithmDialog(true)}
+              className="h-8 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white border-0"
+            >
+              <Sparkles className="h-4 w-4 mr-1" />
+              <span className="hidden sm:inline">Advanced</span>
+            </Button>
           </div>
         </div>
       </div>
@@ -956,6 +1141,198 @@ const ProductionSchedulerProV2: React.FC = () => {
           <span>{resourceUtilization}</span>
         </div>
       </div>
+      
+      {/* Optimization Algorithm Dialog */}
+      <Dialog open={showAlgorithmDialog} onOpenChange={setShowAlgorithmDialog}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-purple-600" />
+              Advanced Optimization Algorithms
+            </DialogTitle>
+            <DialogDescription>
+              Select and configure an optimization algorithm from the Optimization Studio
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Algorithm Tabs */}
+            <Tabs defaultValue="standard" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="standard">Standard Algorithms</TabsTrigger>
+                <TabsTrigger value="custom">Custom Algorithms</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="standard" className="space-y-4">
+                <div className="grid gap-3">
+                  {availableAlgorithms
+                    .filter(algo => algo.isStandard)
+                    .map((algo) => (
+                      <Card 
+                        key={algo.id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          selectedAlgorithm?.id === algo.id
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'hover:border-gray-400'
+                        }`}
+                        onClick={() => {
+                          setSelectedAlgorithm(algo);
+                          setAlgorithmProfile(algo.profile || null);
+                        }}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold flex items-center gap-2">
+                                {algo.displayName}
+                                {selectedAlgorithm?.id === algo.id && (
+                                  <Badge className="bg-purple-600 text-white">Selected</Badge>
+                                )}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {algo.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline">{algo.category}</Badge>
+                                <Badge variant="outline">v{algo.version}</Badge>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  }
+                  {availableAlgorithms.filter(algo => algo.isStandard).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No standard algorithms available
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="custom" className="space-y-4">
+                <div className="grid gap-3">
+                  {availableAlgorithms
+                    .filter(algo => !algo.isStandard)
+                    .map((algo) => (
+                      <Card 
+                        key={algo.id}
+                        className={`cursor-pointer transition-all hover:shadow-md ${
+                          selectedAlgorithm?.id === algo.id
+                            ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/20'
+                            : 'hover:border-gray-400'
+                        }`}
+                        onClick={() => {
+                          setSelectedAlgorithm(algo);
+                          setAlgorithmProfile(algo.profile || null);
+                        }}
+                      >
+                        <div className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <h4 className="font-semibold flex items-center gap-2">
+                                {algo.displayName}
+                                {selectedAlgorithm?.id === algo.id && (
+                                  <Badge className="bg-purple-600 text-white">Selected</Badge>
+                                )}
+                              </h4>
+                              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                                {algo.description}
+                              </p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline">{algo.category}</Badge>
+                                <Badge variant="outline">v{algo.version}</Badge>
+                                {algo.status === 'deployed' && (
+                                  <Badge className="bg-green-600 text-white">Deployed</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))
+                  }
+                  {availableAlgorithms.filter(algo => !algo.isStandard).length === 0 && (
+                    <div className="text-center py-8 text-gray-500">
+                      No custom algorithms available. Create algorithms in the Optimization Studio.
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            {/* Algorithm Configuration */}
+            {selectedAlgorithm && algorithmProfile && (
+              <Card className="p-4 border-purple-200 bg-purple-50/50 dark:bg-purple-900/10">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Runtime Configuration
+                </h4>
+                <div className="space-y-3 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Time Horizon:</span>
+                    <span className="font-medium">
+                      {algorithmProfile.scope?.timeHorizon?.replace('_', ' ') || 'Default'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Primary Objective:</span>
+                    <span className="font-medium">
+                      {algorithmProfile.objectives?.primary?.replace(/_/g, ' ') || 'Minimize Cost'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-gray-600 dark:text-gray-400">Constraint Strictness:</span>
+                    <span className="font-medium capitalize">
+                      {algorithmProfile.constraints?.strictness || 'Moderate'}
+                    </span>
+                  </div>
+                  {algorithmProfile.validationRules && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-gray-600 dark:text-gray-400">Validation Rules:</span>
+                      <span className="font-medium">
+                        {Object.values(algorithmProfile.validationRules.physical || {})
+                          .flat()
+                          .filter((r: any) => r.enabled).length +
+                         Object.values(algorithmProfile.validationRules.policy || {})
+                          .flat()
+                          .filter((r: any) => r.enabled).length} enabled
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            )}
+            
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowAlgorithmDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={executeOptimizationAlgorithm}
+                disabled={!selectedAlgorithm || isExecutingAlgorithm}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white"
+              >
+                {isExecutingAlgorithm ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
+                    Optimizing...
+                  </>
+                ) : (
+                  <>
+                    <Zap className="h-4 w-4 mr-2" />
+                    Execute Algorithm
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
