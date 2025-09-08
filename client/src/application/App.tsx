@@ -145,7 +145,7 @@ export default function ApplicationApp() {
               <Route path="/onboarding" component={Onboarding} />
 
               {/* Main Dashboard */}
-              <Route path="/dashboard" component={HomePage} />
+              <Route path="/dashboard" component={Dashboard} />
               <Route path="/mobile-home" component={HomePage} />
 
               {/* Analytics & Reports */}
