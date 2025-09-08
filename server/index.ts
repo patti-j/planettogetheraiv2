@@ -1,7 +1,7 @@
 import express from "express";
 import fs from "fs";
 import path from "path";
-import { registerRoutes } from "./routes";
+import routes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
@@ -116,8 +116,8 @@ app.use((req, res, next) => {
     }
   });
 
-  // Register API routes (registerRoutes returns a Promise<Server>)
-  const server = await registerRoutes(app);
+  // Register API routes
+  app.use('/api', routes);
 
   // Error handler
   app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
@@ -127,21 +127,19 @@ app.use((req, res, next) => {
     log(`Error: ${message}`);
   });
 
+  // Create server
+  const port = 5000;
+  const server = app.listen(port, "0.0.0.0", () => {
+    log(`🏭 PlanetTogether serving on port ${port}`);
+    log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'}`);
+    log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
+  });
+
   // Setup Vite in development
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
-
-  const port = 5000;
-  server.listen({
-    port,
-    host: "0.0.0.0",
-    reusePort: true,
-  }, () => {
-    log(`🏭 PlanetTogether serving on port ${port}`);
-    log(`📊 Database: ${process.env.DATABASE_URL ? 'Connected' : 'No DATABASE_URL'}`);
-    log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
-  });
+  // Server is already listening above
 })();
