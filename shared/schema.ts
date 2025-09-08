@@ -180,6 +180,29 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// Add a dedicated production orders table for frontend compatibility
+export const productionOrders = pgTable("production_orders", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").notNull(),
+  orderNumber: text("order_number"),
+  itemId: integer("item_id"),
+  itemName: text("item_name"),
+  quantity: numeric("quantity"),
+  unitOfMeasure: varchar("unit_of_measure", { length: 20 }),
+  status: varchar("status", { length: 50 }).default("planned"),
+  priority: integer("priority").default(5),
+  dueDate: timestamp("due_date"),
+  scheduledStartDate: timestamp("scheduled_start_date"),
+  scheduledEndDate: timestamp("scheduled_end_date"),
+  customerId: integer("customer_id"),
+  salesOrderId: integer("sales_order_id"),
+  description: text("description"),
+  notes: text("notes"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 export const ptResources = pgTable("ptresources", {
   id: serial("id").primaryKey(),
   publishDate: timestamp("publish_date").notNull(),
@@ -234,6 +257,29 @@ export const insertPtJobOperationSchema = createInsertSchema(ptJobOperations);
 export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturingOrders);
 export const insertPtResourceSchema = createInsertSchema(ptResources);
 export const insertRecentPageSchema = createInsertSchema(recentPages);
+export const insertProductionOrderSchema = createInsertSchema(productionOrders);
+
+// Legacy schema aliases for backward compatibility  
+export const insertResourceSchema = insertPtResourceSchema;
+export const insertPlantSchema = insertPtPlantSchema;
+export const insertJobOperationSchema = insertPtJobOperationSchema;
+export const insertManufacturingOrderSchema = insertPtManufacturingOrderSchema;
+export const insertCapabilitySchema = createInsertSchema(ptPlants); // Placeholder
+export const insertDepartmentSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertCapacityPlanningScenarioSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertMrpRunSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertDisruptionSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertCustomerSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertVendorSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertSalesOrderSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertInventorySchema = createInsertSchema(ptPlants); // Placeholder
+export const insertItemSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertBomSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertRoutingSchema = createInsertSchema(ptPlants); // Placeholder
+
+// Add more common legacy exports that the frontend might expect
+export const insertDiscreteOperationSchema = insertPtJobOperationSchema;
+export const insertRecipeOperationSchema = insertPtJobOperationSchema;
 
 // Types
 export type User = typeof users.$inferSelect;
@@ -266,7 +312,7 @@ export const plants = ptPlants;
 export const resources = ptResources;
 export const manufacturingOrders = ptManufacturingOrders;
 export const jobOperations = ptJobOperations;
-export const productionOrders = ptManufacturingOrders;
+// export const productionOrders = ptManufacturingOrders; // Removed duplicate - using dedicated table above
 
 export type Plant = PtPlant;
 export type InsertPlant = InsertPtPlant;
