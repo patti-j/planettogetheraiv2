@@ -37,7 +37,7 @@ import { GanttFavoritesService } from '@/services/scheduler/GanttFavoritesServic
 import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
 import { AlgorithmExecutionService } from '@/services/optimization/AlgorithmExecutionService';
 import { Badge } from '@/components/ui/badge';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Settings, Zap } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
