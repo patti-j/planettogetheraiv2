@@ -127,7 +127,7 @@ export default function SolutionsComparison() {
   ];
 
   return (
-    <div className="fixed inset-0 min-h-screen bg-gray-50 dark:bg-gray-900 z-[9999] overflow-auto">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white">
         <div className="container mx-auto px-4 py-16">

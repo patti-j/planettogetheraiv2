@@ -490,7 +490,7 @@ export default function Pricing() {
   ];
 
   return (
-    <div className="fixed inset-0 min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 z-[9999] overflow-auto">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
