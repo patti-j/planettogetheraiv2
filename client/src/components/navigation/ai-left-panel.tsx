@@ -138,20 +138,26 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     const currentMessageCount = chatMessages.length;
     const previousCount = previousMessageCountRef.current;
     
-    // Check if there's a new assistant message and panel is collapsed
-    if (currentMessageCount > previousCount && isCollapsed) {
+    // Check if there's a new assistant message
+    if (currentMessageCount > previousCount) {
       const newMessages = chatMessages.slice(previousCount);
       const latestAssistantMessage = newMessages.find(msg => msg.role === 'assistant');
       
-      if (latestAssistantMessage) {
+      // Show floating notification if panel is collapsed AND there's a new assistant message
+      if (latestAssistantMessage && isCollapsed) {
         setFloatingNotification(latestAssistantMessage);
         setShowFloatingNotification(true);
         
-        // Auto-hide after 8 seconds
+        // Auto-hide after 10 seconds (increased from 8)
         setTimeout(() => {
           setShowFloatingNotification(false);
           setTimeout(() => setFloatingNotification(null), 300); // Allow fade out
-        }, 8000);
+        }, 10000);
+      }
+      
+      // If panel is open and there's a new assistant message, ensure we scroll to it
+      if (latestAssistantMessage && !isCollapsed) {
+        setTimeout(scrollToBottom, 100);
       }
     }
     
@@ -507,7 +513,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const data = await response.json();
       return data;
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       setShowMaxThinking(false);
       setCurrentRequestController(null);
       console.log("Max AI Full Response:", data);
@@ -523,7 +529,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         }
         
         // Show navigation confirmation
-        addMessage({
+        await addMessage({
           role: 'assistant',
           content: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
           source: 'panel'
@@ -535,7 +541,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;
         
-        addMessage({
+        await addMessage({
           role: 'assistant',
           content: responseContent,
           source: 'panel'
@@ -545,6 +551,32 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         if (aiSettings.soundEnabled) {
           speakResponse(responseContent);
         }
+        
+        // If panel is collapsed, also show a temporary floating notification
+        if (isCollapsed) {
+          setFloatingNotification({
+            id: Date.now(),
+            role: 'assistant',
+            content: responseContent,
+            createdAt: new Date().toISOString(),
+            source: 'panel'
+          });
+          setShowFloatingNotification(true);
+          
+          // Auto-hide after 10 seconds
+          setTimeout(() => {
+            setShowFloatingNotification(false);
+            setTimeout(() => setFloatingNotification(null), 300);
+          }, 10000);
+        }
+      } else if (!data?.action) {
+        // If no content and no action, show a default response
+        console.warn('Max AI response missing content:', data);
+        await addMessage({
+          role: 'assistant',
+          content: 'I processed your request but didn\'t generate a response. Please try rephrasing your question.',
+          source: 'panel'
+        });
       }
 
       // Canvas actions are handled by the Max sidebar component, not the left panel
