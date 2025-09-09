@@ -40,12 +40,15 @@ router.post("/auth/login", async (req, res) => {
     for (const userRole of userRoles) {
       const role = await storage.getRole(userRole.roleId);
       if (role) {
+        console.log(`🔍 Processing role: ${role.name} (ID: ${role.id})`);
         const rolePermissions = await storage.getRolePermissions(role.id);
+        console.log(`🔍 Found ${rolePermissions.length} role permissions for ${role.name}`);
         const permissions = [];
         
         for (const rp of rolePermissions) {
           const permission = await storage.getPermission(rp.permissionId);
           if (permission) {
+            console.log(`🔍 Found permission: ${permission.name} (${permission.feature}-${permission.action})`);
             allPermissions.push(permission.name);
             permissions.push({
               id: permission.id,
@@ -54,9 +57,12 @@ router.post("/auth/login", async (req, res) => {
               action: permission.action,
               description: permission.description || `${permission.action} access to ${permission.feature}`
             });
+          } else {
+            console.log(`❌ Permission not found for ID: ${rp.permissionId}`);
           }
         }
         
+        console.log(`🔍 Role ${role.name} has ${permissions.length} permissions`);
         roles.push({
           id: role.id,
           name: role.name,
