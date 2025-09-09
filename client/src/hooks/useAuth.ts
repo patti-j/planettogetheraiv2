@@ -27,9 +27,23 @@ const rolePermissionsMap: Record<string, string[]> = {
     'implementation-projects-view'
   ],
   'Administrator': [
-    'role-management-view', 'systems-management-view', 'user-role-assignments-view',
-    'schedule-view', 'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
-    'implementation-projects-view'
+    'ai-assistant-view', 'alerts-view', 'algorithm-governance-view',
+    'analytics-create', 'analytics-edit', 'analytics-view',
+    'boards-view', 'business-goals-view', 'capacity-planning-view',
+    'chat-view', 'demand-planning-view', 'demand-supply-alignment-view',
+    'disruption-management-view', 'erp-import-view', 'feedback-view',
+    'forklift-driver-view', 'implementation-projects-view',
+    'inbox-view', 'industry-templates-view', 'inventory-optimization-view',
+    'labor-create', 'labor-delete', 'labor-edit', 'labor-view',
+    'labor-planning-create', 'labor-planning-delete', 'labor-planning-edit', 'labor-planning-view',
+    'maintenance-view', 'maintenance-planning-view', 'master-production-schedule-view',
+    'notifications-send', 'operator-dashboard-view', 'optimization-view',
+    'optimization-studio-view', 'planning-scheduling-view', 'plant-manager-view',
+    'production-cockpit-view', 'reports-create', 'reports-view',
+    'role-management-view', 'schedule-create', 'schedule-delete', 'schedule-edit', 'schedule-view',
+    'scheduling-optimizer-view', 'shop-floor-view', 'systems-integration-view',
+    'systems-management-view', 'tenant-admin-view', 'training-view',
+    'user-management-view', 'user-role-assignments-view', 'visual-factory-view'
   ],
   'Shop Floor Operations': [
     'shop-floor-view', 'operator-dashboard-view', 'reports-view',
