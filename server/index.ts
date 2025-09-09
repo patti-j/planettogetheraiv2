@@ -35,19 +35,20 @@ app.use((req, res, next) => {
 });
 
 // Session middleware configuration - must be after CORS and before routes
-// Temporarily use memory store to fix authentication issue
+// Use memory store for development
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: true, // Save session immediately to establish cookie
-  name: 'connect.sid', // Use standard connect session cookie name
+  saveUninitialized: false, // Don't save empty sessions
+  name: 'sid', // Simple session ID name
   cookie: {
     secure: false, // Set to false for development
     httpOnly: true, // Security - prevent JS access
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: 'lax'
-  },
-  rolling: true // Reset expiry on activity
+    sameSite: 'strict', // Strict for same-site requests
+    path: '/', // Available for all paths
+    domain: undefined // Let browser handle domain
+  }
 }));
 
 // Logging middleware

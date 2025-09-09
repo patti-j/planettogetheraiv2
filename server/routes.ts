@@ -116,7 +116,7 @@ router.post("/auth/logout", (req, res) => {
     if (err) {
       return res.status(500).json({ message: "Could not log out" });
     }
-    res.clearCookie("connect.sid");
+    res.clearCookie("sid"); // Clear the correct cookie name
     res.json({ message: "Logged out successfully" });
   });
 });
