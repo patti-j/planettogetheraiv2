@@ -2,6 +2,7 @@ import { Route, Switch, Link } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { AgentProvider } from "@/contexts/AgentContext";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MobileLayout } from "@/components/navigation/mobile-layout";
@@ -135,10 +136,11 @@ export default function ApplicationApp() {
   return (
     <ThemeProvider>
       <TooltipProvider>
-        <Layout>
-          <HintSystem />
-          <OnboardingGate>
-            <SplitScreenLayout>
+        <AgentProvider>
+          <Layout>
+            <HintSystem />
+            <OnboardingGate>
+              <SplitScreenLayout>
               <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
@@ -445,9 +447,10 @@ export default function ApplicationApp() {
                 }}
               </Route>
               </Switch>
-            </SplitScreenLayout>
-          </OnboardingGate>
-        </Layout>
+              </SplitScreenLayout>
+            </OnboardingGate>
+          </Layout>
+        </AgentProvider>
         <Toaster />
       </TooltipProvider>
     </ThemeProvider>
