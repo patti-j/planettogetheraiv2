@@ -30,11 +30,11 @@ app.use(session({
   }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: true, // Changed to true to save session immediately
-  name: 'sessionId', // Change cookie name to avoid conflicts
+  saveUninitialized: false, // Don't save empty sessions
+  name: 'connect.sid', // Use standard connect session cookie name
   cookie: {
     secure: false, // Set to false for development
-    httpOnly: true, // Changed to true for security
+    httpOnly: true, // Security - prevent JS access
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
     sameSite: 'lax',
     path: '/' // Ensure cookie is available for all paths

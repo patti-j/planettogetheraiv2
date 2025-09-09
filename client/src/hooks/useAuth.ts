@@ -122,33 +122,13 @@ export function useAuth() {
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
-      const token = localStorage.getItem('authToken');
-      const headers: HeadersInit = {};
-      
-      // Check if token is expired before making request
-      if (token && token.startsWith('user_')) {
-        const tokenParts = token.split('_');
-        if (tokenParts.length >= 3) {
-          const expiresAt = parseInt(tokenParts[2]);
-          if (isNaN(expiresAt) || Date.now() > expiresAt) {
-            // Token is expired, clear it
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            return null;
-          }
-        }
-        headers.Authorization = `Bearer ${token}`;
-      }
-      
+      // Session-based authentication - no token needed
       const res = await fetch(queryKey.join("/") as string, {
-        credentials: "include",
-        headers,
+        credentials: "include", // This sends the session cookie
       });
 
       if (res.status === 401) {
-        // Clear expired tokens on 401 response
-        localStorage.removeItem('authToken');
-        localStorage.removeItem('user');
+        // Not authenticated
         return null;
       }
 
@@ -157,7 +137,9 @@ export function useAuth() {
         throw new Error(`${res.status}: ${text}`);
       }
 
-      return await res.json();
+      const data = await res.json();
+      // Extract user from the response if it's wrapped
+      return data.user || data;
     },
   });
 
@@ -180,10 +162,8 @@ export function useAuth() {
         
         const userData = await response.json();
         
-        // Store token in localStorage if provided
-        if (userData.token) {
-          localStorage.setItem('authToken', userData.token);
-        }
+        // Session-based auth - no token to store
+        // Session cookie is automatically set by the browser
         
         return userData;
       } catch (error) {
@@ -231,18 +211,14 @@ export function useAuth() {
       }
     },
     onError: (error) => {
-      // Clear any stored auth token on login failure
-      localStorage.removeItem('authToken');
+      // Session-based auth - nothing to clear on client
+      console.error('Login failed:', error);
     }
   });
 
   const logoutMutation = useMutation({
     mutationFn: async () => {
       console.log("=== LOGOUT MUTATION STARTING ===");
-      
-      // Get current token BEFORE clearing it
-      const currentToken = localStorage.getItem('authToken');
-      console.log("✓ Current token for logout:", currentToken);
       
       // Clear only authentication-related queries, preserve other app data
       queryClient.setQueryData(["/api/auth/me"], null);
@@ -257,26 +233,22 @@ export function useAuth() {
         query.queryKey[0]?.toString().includes("current-role")
       });
       
-      // Send logout request FIRST before clearing localStorage
+      // Send logout request to destroy session on server
       try {
-        if (currentToken) {
-          // Make logout request to blacklist token on server
-          const response = await fetch("/api/auth/logout", {
-            method: "POST",
-            headers: { 
-              "Content-Type": "application/json",
-              "Authorization": `Bearer ${currentToken}`
-            },
-            credentials: "include", // Include session cookies
-          });
-          console.log("✓ Server logout request completed:", response.status);
-          
-          if (response.ok) {
-            const result = await response.json();
-            console.log("✓ Server logout response:", result);
-          } else {
-            console.error("Server logout failed with status:", response.status);
-          }
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+          headers: { 
+            "Content-Type": "application/json"
+          },
+          credentials: "include", // Include session cookies
+        });
+        console.log("✓ Server logout request completed:", response.status);
+        
+        if (response.ok) {
+          const result = await response.json();
+          console.log("✓ Server logout response:", result);
+        } else {
+          console.error("Server logout failed with status:", response.status);
         }
       } catch (error) {
         console.error("Server logout failed:", error);
@@ -284,9 +256,7 @@ export function useAuth() {
       }
       
       // Clear only authentication-related items from localStorage
-      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       localStorage.removeItem('activeDemoTour');
@@ -301,9 +271,7 @@ export function useAuth() {
       console.log("=== LOGOUT SUCCESS HANDLER ===");
       
       // Ensure auth data is cleared (but preserve other app data)
-      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       
@@ -318,9 +286,7 @@ export function useAuth() {
       console.error("=== LOGOUT ERROR HANDLER ===", error);
       // Even if logout fails, clear auth data
       console.log("Clearing auth data despite error...");
-      localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      localStorage.removeItem('isDemo');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
       queryClient.setQueryData(["/api/auth/me"], null);
@@ -340,7 +306,6 @@ export function useAuth() {
     logout: () => {
       console.log("=== LOGOUT CALLED ===");
       console.log("Current user:", user);
-      console.log("Local storage token:", localStorage.getItem('authToken'));
       logoutMutation.mutate();
     },
     loginError: loginMutation.error || error, // Include auth query error

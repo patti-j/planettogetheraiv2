@@ -37,27 +37,18 @@ export default function Login() {
   // Check for existing valid session on page load
   React.useEffect(() => {
     const checkExistingSession = async () => {
-      const existingToken = localStorage.getItem('authToken');
-      if (existingToken) {
-        // Validate existing token
-        try {
-          const response = await fetch('/api/auth/me', {
-            credentials: 'include',
-            headers: { 'Authorization': `Bearer ${existingToken}` }
-          });
-          if (response.ok) {
-            // Token is valid, redirect to dashboard
-            setLocation('/dashboard');
-            return;
-          } else if (response.status === 401) {
-            // Token is invalid, clear it
-            localStorage.removeItem('authToken');
-            localStorage.removeItem('user');
-            localStorage.removeItem('isDemo');
-          }
-        } catch (error) {
-          console.log('Token validation failed');
+      // Check if user has a valid session
+      try {
+        const response = await fetch('/api/auth/me', {
+          credentials: 'include' // Include session cookie
+        });
+        if (response.ok) {
+          // Session is valid, redirect to dashboard
+          setLocation('/dashboard');
+          return;
         }
+      } catch (error) {
+        console.log('Session check failed');
       }
       
       // Mark page as loaded to enable login form
@@ -89,12 +80,8 @@ export default function Login() {
     try {
       const result = await login({ username, password });
       
-      // Ensure token is stored before redirect
-      if (result && result.token) {
-        localStorage.setItem('authToken', result.token);
-      }
-      
-      // Small delay to ensure token is properly stored
+      // Session is automatically set by the server
+      // Small delay to ensure session is properly established
       await new Promise(resolve => setTimeout(resolve, 100));
       
       // Check if user is on mobile device and redirect appropriately
