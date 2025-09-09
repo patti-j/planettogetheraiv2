@@ -34,24 +34,39 @@ router.post("/auth/login", async (req, res) => {
 
     // Get user roles and permissions
     const userRoles = await storage.getUserRoles(user.id);
-    const roleNames = [];
-    const permissions: string[] = [];
+    const roles = [];
+    const allPermissions: string[] = [];
 
     for (const userRole of userRoles) {
       const role = await storage.getRole(userRole.roleId);
       if (role) {
-        roleNames.push(role.name);
         const rolePermissions = await storage.getRolePermissions(role.id);
+        const permissions = [];
+        
         for (const rp of rolePermissions) {
           const permission = await storage.getPermission(rp.permissionId);
           if (permission) {
-            permissions.push(permission.name);
+            allPermissions.push(permission.name);
+            permissions.push({
+              id: permission.id,
+              name: permission.name,
+              feature: permission.feature,
+              action: permission.action,
+              description: permission.description || `${permission.action} access to ${permission.feature}`
+            });
           }
         }
+        
+        roles.push({
+          id: role.id,
+          name: role.name,
+          description: role.description || `${role.name} role with assigned permissions`,
+          permissions: permissions
+        });
       }
     }
 
-    console.log(`User roles: ${roleNames.join(', ')}`);
+    console.log(`User roles: ${roles.map(r => r.name).join(', ')}`);
     console.log(`Stored hash: ${user.passwordHash}`);
     console.log(`Comparing password: ${password}`);
 
@@ -82,8 +97,8 @@ router.post("/auth/login", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: roleNames,
-        permissions: permissions
+        roles: roles,
+        permissions: allPermissions
       },
       createdAt: Date.now(),
       expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
@@ -98,8 +113,8 @@ router.post("/auth/login", async (req, res) => {
         email: user.email,
         firstName: user.firstName,
         lastName: user.lastName,
-        roles: roleNames,
-        permissions: permissions
+        roles: roles,
+        permissions: allPermissions
       },
       token: token
     });
