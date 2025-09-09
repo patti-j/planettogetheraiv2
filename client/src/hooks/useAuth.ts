@@ -344,11 +344,27 @@ export function usePermissions() {
   const { user } = useAuth();
 
   const hasPermission = (feature: string, action: string): boolean => {
-    if (!user) return false;
+    if (!user) {
+      console.log('🚫 hasPermission: No user found');
+      return false;
+    }
 
     // All users now use the roles array structure
     if (!user.roles || !Array.isArray(user.roles)) {
+      console.log('🚫 hasPermission: No roles found for user:', user);
       return false;
+    }
+
+    // Debug the user structure on first check
+    if (feature === 'analytics' && action === 'view') {
+      console.log('🔍 User permissions debug:', {
+        username: user.username,
+        hasRoles: !!user.roles,
+        rolesLength: user.roles?.length,
+        roleNames: user.roles?.map(r => r?.name || 'NO_NAME'),
+        firstRoleStructure: user.roles?.[0],
+        allPermissions: user.roles?.flatMap(r => r?.permissions?.map(p => `${p?.feature}-${p?.action}`) || [])
+      });
     }
 
     return user.roles.some(role =>
