@@ -49,14 +49,24 @@ function useAuthStatus() {
         return;
       }
       
-      // Check session-based authentication
+      // Check token-based authentication
       try {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch('/api/auth/me', {
-          credentials: 'include', // Include session cookie
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         });
         
         if (response.status === 401) {
-          // Not authenticated
+          // Token invalid/expired - clear it
+          localStorage.removeItem('auth_token');
           setIsAuthenticated(false);
         } else if (response.ok) {
           const userData = await response.json();
