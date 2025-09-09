@@ -67,43 +67,41 @@ router.post("/auth/login", async (req, res) => {
     // Update last login
     await storage.updateUser(user.id, { lastLogin: new Date() });
 
-    // Store user in session
-    (req.session as any).userId = user.id;
-    (req.session as any).user = {
-      id: user.id,
-      username: user.username,
-      email: user.email,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      roles: roleNames,
-      permissions: permissions
-    };
-
-    console.log("Session before save:", req.sessionID);
-    console.log("Session data being saved:", (req.session as any).userId);
-
-    // Save session before sending response
-    req.session.save((err) => {
-      if (err) {
-        console.error("Session save error:", err);
-        return res.status(500).json({ message: "Session save failed" });
-      }
-      
-      console.log("Session saved successfully, ID:", req.sessionID);
-      console.log("Session cookie:", req.session.cookie);
-      console.log("Login successful");
-      
-      res.json({
-        user: {
-          id: user.id,
-          username: user.username,
-          email: user.email,
-          firstName: user.firstName,
-          lastName: user.lastName,
-          roles: roleNames,
-          permissions: permissions
-        }
-      });
+    // Generate simple token (user ID + timestamp + secret)
+    const token = Buffer.from(`${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret'}`).toString('base64');
+    
+    console.log(`Generated token for user ${user.id}`);
+    
+    // Store token mapping in memory (in production, use Redis)
+    global.tokenStore = global.tokenStore || new Map();
+    global.tokenStore.set(token, {
+      userId: user.id,
+      userData: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: roleNames,
+        permissions: permissions
+      },
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+    });
+    
+    console.log("Login successful - token based");
+    
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: roleNames,
+        permissions: permissions
+      },
+      token: token
     });
   } catch (error) {
     console.error("Login error:", error);
@@ -123,23 +121,33 @@ router.post("/auth/logout", (req, res) => {
 
 router.get("/auth/me", (req, res) => {
   console.log("=== AUTH CHECK ===");
-  console.log(`Session ID: ${req.sessionID}`);
   console.log(`Authorization header: ${req.headers.authorization}`);
-  console.log(`Session userId: ${(req.session as any)?.userId}`);
-  console.log(`Session isDemo: ${(req.session as any)?.isDemo}`);
-
-  const sessionUserId = (req.session as any)?.userId;
-  if (!sessionUserId) {
-    console.log("No userId found, returning 401");
+  
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log("No authorization header found");
     return res.status(401).json({ message: "Not authenticated" });
   }
-
-  const user = (req.session as any).user;
-  if (user) {
-    res.json({ user });
-  } else {
-    res.status(401).json({ message: "Not authenticated" });
+  
+  const token = authHeader.substring(7); // Remove 'Bearer '
+  
+  // Check token store
+  global.tokenStore = global.tokenStore || new Map();
+  const tokenData = global.tokenStore.get(token);
+  
+  if (!tokenData) {
+    console.log("Invalid token");
+    return res.status(401).json({ message: "Invalid token" });
   }
+  
+  if (Date.now() > tokenData.expiresAt) {
+    console.log("Token expired");
+    global.tokenStore.delete(token);
+    return res.status(401).json({ message: "Token expired" });
+  }
+  
+  console.log(`Token valid for user ${tokenData.userId}`);
+  res.json({ user: tokenData.userData });
 });
 
 // User management routes

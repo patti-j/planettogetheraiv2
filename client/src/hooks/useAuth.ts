@@ -122,13 +122,21 @@ export function useAuth() {
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
-      // Session-based authentication - no token needed
+      // Token-based authentication - get token from localStorage
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
+        return null;
+      }
+
       const res = await fetch(queryKey.join("/") as string, {
-        credentials: "include", // This sends the session cookie
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       });
 
       if (res.status === 401) {
-        // Not authenticated
+        // Token invalid/expired - clear it
+        localStorage.removeItem('auth_token');
         return null;
       }
 
@@ -162,8 +170,10 @@ export function useAuth() {
         
         const userData = await response.json();
         
-        // Session-based auth - no token to store
-        // Session cookie is automatically set by the browser
+        // Token-based auth - store token in localStorage
+        if (userData.token) {
+          localStorage.setItem('auth_token', userData.token);
+        }
         
         return userData;
       } catch (error) {
@@ -256,6 +266,7 @@ export function useAuth() {
       }
       
       // Clear only authentication-related items from localStorage
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
@@ -271,6 +282,7 @@ export function useAuth() {
       console.log("=== LOGOUT SUCCESS HANDLER ===");
       
       // Ensure auth data is cleared (but preserve other app data)
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
@@ -286,6 +298,7 @@ export function useAuth() {
       console.error("=== LOGOUT ERROR HANDLER ===", error);
       // Even if logout fails, clear auth data
       console.log("Clearing auth data despite error...");
+      localStorage.removeItem('auth_token');
       localStorage.removeItem('user');
       localStorage.removeItem('portal_token');
       localStorage.removeItem('portal_user');
