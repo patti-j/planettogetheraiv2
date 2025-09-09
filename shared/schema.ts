@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -229,6 +229,171 @@ export const ptResources = pgTable("ptresources", {
 });
 
 // ============================================
+// AI Agent Team System
+// ============================================
+
+// AI Agent types enum
+export const agentTypeEnum = pgEnum('agent_type', [
+  'production_scheduling',
+  'inventory_planning', 
+  'capacity_planning',
+  'quality_management',
+  'maintenance_planning',
+  'supply_chain',
+  'demand_forecasting',
+  'cost_optimization',
+  'safety_compliance',
+  'general_assistant'
+]);
+
+export const agentStatusEnum = pgEnum('agent_status', ['active', 'paused', 'error', 'training']);
+
+export const recommendationStatusEnum = pgEnum('recommendation_status', [
+  'pending',
+  'accepted', 
+  'rejected',
+  'completed',
+  'in_progress'
+]);
+
+// AI Agent definitions - user-configurable specialized agents
+export const aiAgentTeam = pgTable("ai_agent_team", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 100 }).notNull(),
+  agentType: agentTypeEnum("agent_type").notNull(),
+  description: text("description"),
+  isActive: boolean("is_active").default(true),
+  
+  // Agent configuration
+  specialization: jsonb("specialization"), // Focus areas within the agent type
+  settings: jsonb("settings").default(sql`'{}'::jsonb`), // Agent-specific settings
+  persona: text("persona"), // Custom personality/approach for the agent
+  
+  // Performance metrics
+  totalRecommendations: integer("total_recommendations").default(0),
+  acceptedRecommendations: integer("accepted_recommendations").default(0),
+  successRate: numeric("success_rate").default(0),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI Agent recommendations - specific actionable recommendations from agents
+export const agentRecommendations = pgTable("agent_recommendations", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").references(() => aiAgentTeam.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  
+  // Recommendation details
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description").notNull(),
+  priority: integer("priority").default(50), // 1-100 priority score
+  confidence: integer("confidence").default(80), // AI confidence 0-100
+  category: varchar("category", { length: 50 }),
+  
+  // Related entities
+  entityType: varchar("entity_type", { length: 50 }), // 'job', 'resource', 'order', etc.
+  entityId: integer("entity_id"),
+  
+  // Action details
+  actionType: varchar("action_type", { length: 50 }), // 'schedule', 'optimize', 'adjust', etc.
+  actionData: jsonb("action_data"), // Specific action parameters
+  estimatedImpact: text("estimated_impact"),
+  estimatedTime: integer("estimated_time"), // Minutes to implement
+  
+  // AI reasoning
+  reasoning: text("reasoning").notNull(),
+  dataPoints: jsonb("data_points"), // Supporting data used in analysis
+  alternatives: jsonb("alternatives"), // Alternative approaches considered
+  
+  // Status tracking
+  status: recommendationStatusEnum("status").default('pending'),
+  feedback: text("feedback"), // User feedback on the recommendation
+  actualOutcome: text("actual_outcome"), // Results after implementation
+  
+  // Timing
+  recommendedAt: timestamp("recommended_at").defaultNow(),
+  respondedAt: timestamp("responded_at"),
+  implementedAt: timestamp("implemented_at"),
+  reviewedAt: timestamp("reviewed_at"),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// AI Agent actions - track what actions agents have taken
+export const agentActions = pgTable("agent_actions", {
+  id: serial("id").primaryKey(),
+  sessionId: varchar("session_id", { length: 100 }),
+  agentId: integer("agent_id").references(() => aiAgentTeam.id),
+  agentType: varchar("agent_type", { length: 50 }).notNull(),
+  
+  // Action details
+  actionType: varchar("action_type", { length: 50 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }),
+  entityId: integer("entity_id"),
+  actionDescription: text("action_description").notNull(),
+  
+  // AI reasoning and decision making
+  reasoning: text("reasoning"),
+  userPrompt: text("user_prompt"),
+  beforeState: jsonb("before_state"),
+  afterState: jsonb("after_state"),
+  undoInstructions: text("undo_instructions"),
+  
+  // Execution tracking
+  batchId: varchar("batch_id", { length: 100 }),
+  executionTime: integer("execution_time"), // milliseconds
+  success: boolean("success").default(true),
+  errorMessage: text("error_message"),
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// AI Memories - store user preferences and learned context
+export const aiMemories = pgTable("ai_memories", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id", { length: 50 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  category: varchar("category", { length: 100 }),
+  content: text("content").notNull(),
+  context: jsonb("context"),
+  confidence: integer("confidence").default(80),
+  importance: varchar("importance", { length: 20 }).default('medium'),
+  source: varchar("source", { length: 50 }),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Playbooks - knowledge base for AI agents
+export const playbooks = pgTable("playbooks", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  content: text("content").notNull(),
+  category: varchar("category", { length: 100 }),
+  tags: jsonb("tags").default(sql`'[]'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Playbook usage tracking
+export const playbookUsage = pgTable("playbook_usage", {
+  id: serial("id").primaryKey(),
+  playbookId: integer("playbook_id").references(() => playbooks.id).notNull(),
+  userId: integer("user_id").references(() => users.id),
+  actionType: varchar("action_type", { length: 50 }).notNull(),
+  context: text("context"),
+  effectivenessRating: integer("effectiveness_rating"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
 // Application Tables
 // ============================================
 
@@ -259,6 +424,14 @@ export const insertPtResourceSchema = createInsertSchema(ptResources);
 export const insertRecentPageSchema = createInsertSchema(recentPages);
 export const insertProductionOrderSchema = createInsertSchema(productionOrders);
 
+// AI Agent Team System schemas
+export const insertAiAgentTeamSchema = createInsertSchema(aiAgentTeam);
+export const insertAgentRecommendationSchema = createInsertSchema(agentRecommendations);
+export const insertAgentActionSchema = createInsertSchema(agentActions);
+export const insertAiMemorySchema = createInsertSchema(aiMemories);
+export const insertPlaybookSchema = createInsertSchema(playbooks);
+export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage);
+
 // Legacy schema aliases for backward compatibility  
 export const insertResourceSchema = insertPtResourceSchema;
 export const insertPlantSchema = insertPtPlantSchema;
@@ -276,6 +449,13 @@ export const insertInventorySchema = createInsertSchema(ptPlants); // Placeholde
 export const insertItemSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertBomSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertRoutingSchema = createInsertSchema(ptPlants); // Placeholder
+
+// Product development schemas (placeholders for now)
+export const insertStrategyDocumentSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertDevelopmentTaskSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertTestSuiteSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertTestCaseSchema = createInsertSchema(ptPlants); // Placeholder
+export const insertArchitectureComponentSchema = createInsertSchema(ptPlants); // Placeholder
 
 // Add more common legacy exports that the frontend might expect
 export const insertDiscreteOperationSchema = insertPtJobOperationSchema;
@@ -306,6 +486,27 @@ export type PtResource = typeof ptResources.$inferSelect;
 export type InsertPtResource = z.infer<typeof insertPtResourceSchema>;
 export type RecentPage = typeof recentPages.$inferSelect;
 export type InsertRecentPage = z.infer<typeof insertRecentPageSchema>;
+
+// AI Agent Team System types
+export type AiAgentTeam = typeof aiAgentTeam.$inferSelect;
+export type InsertAiAgentTeam = z.infer<typeof insertAiAgentTeamSchema>;
+export type AgentRecommendation = typeof agentRecommendations.$inferSelect;
+export type InsertAgentRecommendation = z.infer<typeof insertAgentRecommendationSchema>;
+export type AgentAction = typeof agentActions.$inferSelect;
+export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
+export type AiMemory = typeof aiMemories.$inferSelect;
+export type InsertAiMemory = z.infer<typeof insertAiMemorySchema>;
+export type Playbook = typeof playbooks.$inferSelect;
+export type InsertPlaybook = z.infer<typeof insertPlaybookSchema>;
+export type PlaybookUsage = typeof playbookUsage.$inferSelect;
+export type InsertPlaybookUsage = z.infer<typeof insertPlaybookUsageSchema>;
+
+// Product development types (placeholders)
+export type StrategyDocument = PtPlant; // Placeholder
+export type DevelopmentTask = PtPlant; // Placeholder
+export type TestSuite = PtPlant; // Placeholder
+export type TestCase = PtPlant; // Placeholder
+export type ArchitectureComponent = PtPlant; // Placeholder
 
 // Legacy aliases for backward compatibility
 export const plants = ptPlants;
