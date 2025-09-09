@@ -26,19 +26,20 @@ app.use(session({
   store: new pgSession({
     conString: process.env.DATABASE_URL,
     createTableIfMissing: true,
-    tableName: 'session'
+    tableName: 'session',
+    pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 minutes
   }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: false, // Don't save empty sessions
+  saveUninitialized: true, // Save session immediately to establish cookie
   name: 'connect.sid', // Use standard connect session cookie name
   cookie: {
     secure: false, // Set to false for development
     httpOnly: true, // Security - prevent JS access
     maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: 'lax',
-    path: '/' // Ensure cookie is available for all paths
-  }
+    sameSite: 'lax'
+  },
+  rolling: true // Reset expiry on activity
 }));
 
 // CORS

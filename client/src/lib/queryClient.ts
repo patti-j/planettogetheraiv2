@@ -22,14 +22,9 @@ export async function apiRequest(
     throw new Error(`Invalid HTTP method: ${method}. Valid methods are: ${validMethods.join(', ')}`);
   }
 
-  const token = localStorage.getItem('authToken');
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
   };
-  
-  if (token) {
-    headers.Authorization = `Bearer ${token}`;
-  }
   
   try {
     const res = await fetch(url, {
@@ -57,16 +52,8 @@ export const getQueryFn: <T>(options: {
 }) => QueryFunction<T> =
   ({ on401: unauthorizedBehavior }) =>
   async ({ queryKey }) => {
-    const token = localStorage.getItem('authToken');
-    const headers: HeadersInit = {};
-    
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-    
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
-      headers,
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

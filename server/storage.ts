@@ -33,8 +33,8 @@ export interface IStorage {
   createPermission(permission: any): Promise<Permission>;
 
   // User Role Management
-  getUserRoles(userId: number): Promise<UserRole[]>;
-  createUserRole(userRole: any): Promise<UserRole>;
+  getUserRoles(userId: number): Promise<any[]>;
+  createUserRole(userRole: any): Promise<any>;
   deleteUserRole(userId: number, roleId: number): Promise<boolean>;
 
   // Role Permission Management
@@ -200,22 +200,17 @@ export class DatabaseStorage implements IStorage {
   }
 
   // User Role Management
-  async getUserRoles(userId: number): Promise<UserRole[]> {
+  async getUserRoles(userId: number): Promise<any[]> {
     try {
       const roles = await db.select().from(userRoles).where(eq(userRoles.userId, userId));
-      return roles.map(role => ({
-        id: role.id,
-        userId: role.userId,
-        roleId: role.roleId,
-        assignedAt: role.createdAt // Map created_at to assignedAt for compatibility
-      }));
+      return roles;
     } catch (error) {
       console.error('Error fetching user roles:', error);
       return [];
     }
   }
 
-  async createUserRole(userRole: any): Promise<UserRole> {
+  async createUserRole(userRole: any): Promise<any> {
     const [newUserRole] = await db.insert(userRoles).values(userRole).returning();
     return newUserRole;
   }

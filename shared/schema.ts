@@ -45,10 +45,10 @@ export const permissions = pgTable("permissions", {
 });
 
 export const userRoles = pgTable("user_roles", {
-  id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id).notNull(),
   roleId: integer("role_id").references(() => roles.id).notNull(),
   assignedAt: timestamp("assigned_at").defaultNow(),
+  assignedBy: integer("assigned_by").references(() => users.id),
 });
 
 export const rolePermissions = pgTable("role_permissions", {
