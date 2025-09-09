@@ -35,19 +35,19 @@ app.use((req, res, next) => {
 });
 
 // Session middleware configuration - must be after CORS and before routes
-// Use memory store for development
+// Configure for Replit environment (HTTPS external, HTTP internal)
 app.use(session({
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
-  saveUninitialized: false, // Don't save empty sessions
-  name: 'sid', // Simple session ID name
+  saveUninitialized: true, // Create session immediately
+  name: 'planettogether_session', // Unique session name
+  proxy: true, // Trust proxy for HTTPS headers
   cookie: {
-    secure: false, // Set to false for development
+    secure: false, // Replit handles HTTPS externally
     httpOnly: true, // Security - prevent JS access
-    maxAge: 1000 * 60 * 60 * 24 * 7, // 1 week
-    sameSite: 'strict', // Strict for same-site requests
-    path: '/', // Available for all paths
-    domain: undefined // Let browser handle domain
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
+    sameSite: 'lax', // More permissive for cross-origin
+    path: '/' // Available for all paths
   }
 }));
 
