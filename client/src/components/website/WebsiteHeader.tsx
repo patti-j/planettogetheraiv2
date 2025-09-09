@@ -9,7 +9,7 @@ const WebsiteHeader: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   
   // Check if user is authenticated to show logout option
-  const isAuthenticated = typeof window !== 'undefined' && !!localStorage.getItem('authToken');
+  const isAuthenticated = typeof window !== 'undefined' && !!localStorage.getItem('auth_token');
 
   const navigation = [
     { name: "Home", href: "/" },
@@ -70,7 +70,7 @@ const WebsiteHeader: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => {
-                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('auth_token');
                     localStorage.removeItem('user');
                     localStorage.removeItem('isDemo');
                     window.location.href = '/';
@@ -130,7 +130,7 @@ const WebsiteHeader: React.FC = () => {
                       <Button
                         variant="outline"
                         onClick={() => {
-                          localStorage.removeItem('authToken');
+                          localStorage.removeItem('auth_token');
                           localStorage.removeItem('user');
                           localStorage.removeItem('isDemo');
                           window.location.href = '/';
