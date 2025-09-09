@@ -4,7 +4,6 @@ import path from "path";
 import routes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
-import connectPg from "connect-pg-simple";
 
 // Extend session interface
 declare module "express-session" {
@@ -20,15 +19,24 @@ const app = express();
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: false, limit: '10mb' }));
 
+// CORS - Must be BEFORE session middleware
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Credentials', 'true');
+  const origin = req.headers.origin || 'http://localhost:5000';
+  res.header('Access-Control-Allow-Origin', origin);
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
 // Session middleware configuration - must be after CORS and before routes
-const pgSession = connectPg(session);
+// Temporarily use memory store to fix authentication issue
 app.use(session({
-  store: new pgSession({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    tableName: 'session',
-    pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 minutes
-  }),
   secret: process.env.SESSION_SECRET || 'dev-secret-key-change-in-production',
   resave: false,
   saveUninitialized: true, // Save session immediately to establish cookie
@@ -41,23 +49,6 @@ app.use(session({
   },
   rolling: true // Reset expiry on activity
 }));
-
-// CORS
-app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Credentials', 'true');
-  const origin = process.env.NODE_ENV === 'production' 
-    ? process.env.FRONTEND_URL || req.headers.origin 
-    : 'http://localhost:5000';
-  res.header('Access-Control-Allow-Origin', origin);
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Cookie');
-  
-  if (req.method === 'OPTIONS') {
-    res.sendStatus(200);
-  } else {
-    next();
-  }
-});
 
 // Logging middleware
 app.use((req, res, next) => {

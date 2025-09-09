@@ -79,6 +79,9 @@ router.post("/auth/login", async (req, res) => {
       permissions: permissions
     };
 
+    console.log("Session before save:", req.sessionID);
+    console.log("Session data being saved:", (req.session as any).userId);
+
     // Save session before sending response
     req.session.save((err) => {
       if (err) {
@@ -86,7 +89,10 @@ router.post("/auth/login", async (req, res) => {
         return res.status(500).json({ message: "Session save failed" });
       }
       
+      console.log("Session saved successfully, ID:", req.sessionID);
+      console.log("Session cookie:", req.session.cookie);
       console.log("Login successful");
+      
       res.json({
         user: {
           id: user.id,
