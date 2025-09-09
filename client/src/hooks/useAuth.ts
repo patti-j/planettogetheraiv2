@@ -162,7 +162,24 @@ export function useAuth() {
 
       const data = await res.json();
       // Extract user from the response if it's wrapped
-      return data.user || data;
+      let userData = data.user || data;
+      
+      // CRITICAL FIX: Apply same permission fix for auth/me endpoint
+      if (userData && userData.roles && Array.isArray(userData.roles)) {
+        userData.roles = userData.roles.map(role => {
+          if (!role.permissions || role.permissions.length === 0) {
+            console.log(`🔧 [auth/me] Applying hardcoded permissions for role: ${role.name}`);
+            return createRoleStructure(role.name);
+          }
+          return role;
+        });
+      } else if (userData) {
+        // No roles at all - apply default Administrator role
+        console.log('🔧 [auth/me] No roles found, applying default Administrator role');
+        userData.roles = [createRoleStructure('Administrator')];
+      }
+      
+      return userData;
     },
   });
 
@@ -190,7 +207,38 @@ export function useAuth() {
           localStorage.setItem('auth_token', userData.token);
         }
         
-        return userData;
+        // CRITICAL FIX: Ensure permissions are properly set
+        let processedUserData = userData;
+        if (userData.user) {
+          processedUserData = userData.user;
+        }
+        
+        // If roles exist but have empty permissions, use hardcoded fallback
+        if (processedUserData.roles && Array.isArray(processedUserData.roles)) {
+          processedUserData.roles = processedUserData.roles.map(role => {
+            if (!role.permissions || role.permissions.length === 0) {
+              console.log(`🔧 Applying hardcoded permissions for role: ${role.name}`);
+              // Use hardcoded permissions for this role
+              return createRoleStructure(role.name);
+            }
+            return role;
+          });
+        } else {
+          // No roles at all - this shouldn't happen but just in case
+          console.log('🔧 No roles found, applying default Administrator role');
+          processedUserData.roles = [createRoleStructure('Administrator')];
+        }
+        
+        console.log('🔧 Final user data with permissions:', {
+          username: processedUserData.username,
+          roles: processedUserData.roles.map(r => ({
+            name: r.name,
+            permissionCount: r.permissions?.length || 0,
+            firstFewPermissions: r.permissions?.slice(0, 3).map(p => `${p.feature}-${p.action}`)
+          }))
+        });
+        
+        return { ...userData, user: processedUserData };
       } catch (error) {
         throw error;
       }
