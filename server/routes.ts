@@ -40,15 +40,12 @@ router.post("/auth/login", async (req, res) => {
     for (const userRole of userRoles) {
       const role = await storage.getRole(userRole.roleId);
       if (role) {
-        console.log(`🔍 Processing role: ${role.name} (ID: ${role.id})`);
         const rolePermissions = await storage.getRolePermissions(role.id);
-        console.log(`🔍 Found ${rolePermissions.length} role permissions for ${role.name}`);
         const permissions = [];
         
         for (const rp of rolePermissions) {
           const permission = await storage.getPermission(rp.permissionId);
           if (permission) {
-            console.log(`🔍 Found permission: ${permission.name} (${permission.feature}-${permission.action})`);
             allPermissions.push(permission.name);
             permissions.push({
               id: permission.id,
@@ -57,12 +54,8 @@ router.post("/auth/login", async (req, res) => {
               action: permission.action,
               description: permission.description || `${permission.action} access to ${permission.feature}`
             });
-          } else {
-            console.log(`❌ Permission not found for ID: ${rp.permissionId}`);
           }
         }
-        
-        console.log(`🔍 Role ${role.name} has ${permissions.length} permissions`);
         roles.push({
           id: role.id,
           name: role.name,
@@ -357,6 +350,56 @@ router.get("/manufacturing-orders", async (req, res) => {
   } catch (error) {
     console.error("Error fetching manufacturing orders:", error);
     res.status(500).json({ message: "Failed to fetch manufacturing orders" });
+  }
+});
+
+// User role endpoints for workspace switcher
+router.get("/users/:userId/assigned-roles", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const userRoles = await storage.getUserRoles(userId);
+    const roles = [];
+
+    for (const userRole of userRoles) {
+      const role = await storage.getRole(userRole.roleId);
+      if (role) {
+        roles.push({
+          id: role.id,
+          name: role.name,
+          description: role.description || `${role.name} role`
+        });
+      }
+    }
+
+    res.json(roles);
+  } catch (error) {
+    console.error("Error fetching user assigned roles:", error);
+    res.status(500).json({ message: "Failed to fetch assigned roles" });
+  }
+});
+
+router.get("/users/:userId/current-role", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const userRoles = await storage.getUserRoles(userId);
+    
+    if (userRoles.length > 0) {
+      // Return the first role as the current role (in a real app, this would be tracked separately)
+      const role = await storage.getRole(userRoles[0].roleId);
+      if (role) {
+        res.json({
+          id: role.id,
+          name: role.name,
+          description: role.description || `${role.name} role`
+        });
+        return;
+      }
+    }
+    
+    res.json(null);
+  } catch (error) {
+    console.error("Error fetching user current role:", error);
+    res.status(500).json({ message: "Failed to fetch current role" });
   }
 });
 
