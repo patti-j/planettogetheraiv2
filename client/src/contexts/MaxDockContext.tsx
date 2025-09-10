@@ -50,15 +50,7 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   const { user } = useAuth();
   
   // Initialize states with default values (database-only persistence)
-  const [isMaxOpen, setIsMaxOpen] = useState(() => {
-    // Open Max by default only on the specific production scheduler page, not scheduler-pro
-    if (typeof window !== 'undefined') {
-      const path = window.location.pathname;
-      // Only auto-open on /production-scheduler, explicitly closed on scheduler-pro
-      return path === '/production-scheduler' && path !== '/scheduler-pro';
-    }
-    return false;
-  });
+  const [isMaxOpen, setIsMaxOpen] = useState(false);
   const [maxWidth, setMaxWidth] = useState(400);
   const [currentPage, setCurrentPage] = useState('/');
   const [isMobile, setIsMobile] = useState(false);

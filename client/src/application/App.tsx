@@ -212,7 +212,7 @@ export default function ApplicationApp() {
 
               <Route path="/production-scheduler">
                 <ProtectedRoute feature="schedule" action="view">
-                  <ProductionSchedulerWrapper />
+                  <SchedulerProNew />
                 </ProtectedRoute>
               </Route>
               <Route path="/scheduler-pro">
