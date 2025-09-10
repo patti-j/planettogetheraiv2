@@ -28,7 +28,7 @@ const rolePermissionsMap: Record<string, string[]> = {
   ],
   'Administrator': [
     // Core permissions for all navigation menu items
-    'ai-assistant-view', 'alerts-view', 'algorithm-governance-view',
+    'dashboard-view', 'ai-assistant-view', 'alerts-view', 'algorithm-governance-view',
     'analytics-create', 'analytics-edit', 'analytics-view',
     'boards-view', 'business-goals-view', 'capacity-planning-view',
     'chat-view', 'demand-planning-view', 'demand-supply-alignment-view',
