@@ -286,7 +286,7 @@ export default function MarketingLandingPage() {
       {/* Header Navigation */}
       <header className="absolute top-0 left-0 right-0 z-50 bg-transparent">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-6">
+          <div className="flex items-center justify-between py-3">
             <div className="flex items-center gap-3">
               <Factory className="w-8 h-8 text-white" />
               <span className="text-xl font-bold text-white">PlanetTogether</span>
@@ -313,42 +313,42 @@ export default function MarketingLandingPage() {
       {/* Hero Section */}
       <section className="relative overflow-hidden bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900">
         <div className="absolute inset-0 bg-black/20"></div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-20">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12">
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-white">
-              <h1 className="text-4xl lg:text-6xl font-bold mb-4">
+              <h1 className="text-4xl lg:text-5xl font-bold mb-3">
                 Transform Your Manufacturing Operations with 
                 <span className={`block ${aiTheme.gradient} bg-clip-text text-transparent`}>
                   Transparent AI Intelligence
                 </span>
               </h1>
-              <p className="text-xl lg:text-2xl mb-6 text-blue-100">
+              <p className="text-lg lg:text-xl mb-4 text-blue-100">
                 Join other leading global manufacturers achieving 25% efficiency gains through transparent AI decision-making, 
                 collaborative knowledge systems, and intelligent playbook-guided optimization.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4 mb-6">
+              <div className="flex flex-col sm:flex-row gap-3 mb-4">
                 <Button 
                   size="lg" 
-                  className={`${aiTheme.gradient} hover:opacity-90 text-white px-8 py-4 text-lg`}
+                  className={`${aiTheme.gradient} hover:opacity-90 text-white px-6 py-3 text-base`}
                 >
-                  <Play className="w-5 h-5 mr-2" />
+                  <Play className="w-4 h-4 mr-2" />
                   Watch Demo (2 min)
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 text-lg"
+                  className="border-white text-white hover:bg-white hover:text-slate-900 px-6 py-3 text-base"
                   onClick={() => window.location.href = '/whats-coming'}
                 >
-                  <Sparkles className="w-5 h-5 mr-2" />
+                  <Sparkles className="w-4 h-4 mr-2" />
                   Enhanced AI Features
                 </Button>
                 <Button 
                   size="lg" 
                   variant="outline" 
-                  className="border-white text-white hover:bg-white hover:text-slate-900 px-8 py-4 text-lg"
+                  className="border-white text-white hover:bg-white hover:text-slate-900 px-6 py-3 text-base"
                 >
-                  <Calendar className="w-5 h-5 mr-2" />
+                  <Calendar className="w-4 h-4 mr-2" />
                   Schedule Consultation
                 </Button>
               </div>
