@@ -71,7 +71,7 @@ export function AgentAdapterProvider({ children }: { children: ReactNode }) {
       } catch (error: any) {
         console.warn('[AgentAdapter] Failed to initialize with federated agents, using fallback:', error);
       }
-      })
+    })()
       .catch((error: any) => console.error('[AgentAdapter] Federation init failed:', error));
   }, []);
 
@@ -100,22 +100,23 @@ export function AgentAdapterProvider({ children }: { children: ReactNode }) {
         if (agentSystem) {
           await agentSystem.switchToAgent(agentId);
           const newAgent = agentSystem.getCurrentAgent();
-        if (newAgent) {
-          setCurrentAgent(newAgent);
-          
-          const transitionMessage: AgentMessage = {
-            id: `transition_${Date.now()}`,
-            agentId: newAgent.id,
-            type: 'system',
-            content: `Switched to ${newAgent.displayName}. ${getAgentWelcomeMessage(newAgent)}`,
-            timestamp: new Date(),
-            context: {
-              page: window.location.pathname
-            }
-          };
-          
-          setMessages(prev => [...prev, transitionMessage]);
-          return;
+          if (newAgent) {
+            setCurrentAgent(newAgent);
+            
+            const transitionMessage: AgentMessage = {
+              id: `transition_${Date.now()}`,
+              agentId: newAgent.id,
+              type: 'system',
+              content: `Switched to ${newAgent.displayName}. ${getAgentWelcomeMessage(newAgent)}`,
+              timestamp: new Date(),
+              context: {
+                page: window.location.pathname
+              }
+            };
+            
+            setMessages(prev => [...prev, transitionMessage]);
+            return;
+          }
         }
       }
       
