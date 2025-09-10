@@ -1,30 +1,16 @@
 // Agent System Module Implementation
 // Using simplified standalone implementation for Week 3 client adapter integration
 import { agentManager, agentAnalysisEngine, agentCommunication } from './services';
+import type { 
+  AgentSystemContract, 
+  AgentAnalysisRequest, 
+  AgentAnalysisResponse,
+  AgentRecommendation 
+} from '../shared-components/contracts/module-contracts';
 
 // Simplified types and base class for initial federation
 interface ModuleInitOptions {
   config?: Record<string, any>;
-}
-
-interface AgentAnalysisRequest {
-  agentId: string;
-  context: Record<string, any>;
-}
-
-interface AgentAnalysisResponse {
-  agentId: string;
-  summary: string;
-  insights: string[];
-  recommendations: string[];
-  metrics: {
-    efficiency: number;
-    quality: number;
-    cost: number;
-    safety: number;
-    delivery: number;
-  };
-  confidence: number;
 }
 
 abstract class BaseModule {
@@ -42,16 +28,6 @@ abstract class BaseModule {
   
   protected abstract onInitialize(options?: ModuleInitOptions): Promise<void>;
   protected abstract onDestroy(): Promise<void>;
-}
-
-interface AgentSystemContract {
-  getAvailableAgents(): Promise<{ success: boolean; data?: any[]; error?: string }>;
-  getCurrentAgent(): any;
-  switchToAgent(agentId: string): Promise<void>;
-  requestAnalysis(request: AgentAnalysisRequest): Promise<AgentAnalysisResponse>;
-  getAgentCapabilities(agentId: string): Promise<{ success: boolean; data?: any[]; error?: string }>;
-  sendMessageToAgent(agentId: string, message: string): Promise<{ success: boolean; data?: string; error?: string }>;
-  subscribeToAgentUpdates(callback: (update: any) => void): () => void;
 }
 
 export class AgentSystemModule extends BaseModule implements AgentSystemContract {
@@ -117,12 +93,29 @@ export class AgentSystemModule extends BaseModule implements AgentSystemContract
     try {
       const analysis = await this.analysisEngine.requestAnalysis(request.agentId, request.context);
       
+      // Convert analysis recommendations to proper AgentRecommendation format
+      const recommendations: AgentRecommendation[] = analysis.recommendations.map((rec: any, index: number) => ({
+        id: `rec-${index}`,
+        title: typeof rec === 'string' ? rec : rec.title || rec,
+        description: typeof rec === 'string' ? '' : rec.description || '',
+        impact: 'medium' as const,
+        confidence: 0.85,
+        actions: [],
+        reasoning: ''
+      }));
+      
       return {
         agentId: request.agentId,
         summary: analysis.summary,
         insights: analysis.keyInsights,
-        recommendations: analysis.recommendations,
-        metrics: analysis.performanceMetrics,
+        recommendations,
+        metrics: {
+          efficiency: analysis.performanceMetrics.efficiency || 0,
+          quality: analysis.performanceMetrics.quality || 0,
+          cost: analysis.performanceMetrics.cost || 0,
+          safety: analysis.performanceMetrics.safety || 0,
+          delivery: analysis.performanceMetrics.delivery || 0
+        },
         confidence: 85 // Default confidence level
       };
     } catch (error) {

@@ -1,6 +1,7 @@
 // Core Platform Module Implementation
 // Using simplified standalone implementation for Week 3 client adapter integration
 import { authService, navigationService, themeService } from './services';
+import type { CorePlatformContract } from '../shared-components/contracts/module-contracts';
 
 // Simplified types and base class for initial federation
 interface ModuleInitOptions {
@@ -24,15 +25,6 @@ abstract class BaseModule {
   
   protected abstract onInitialize(options?: ModuleInitOptions): Promise<void>;
   protected abstract onDestroy(): Promise<void>;
-}
-
-interface CorePlatformContract {
-  getCurrentUser(): Promise<{ success: boolean; data?: any; error?: string }>;
-  getUserPermissions(userId: number): Promise<{ success: boolean; data?: string[]; error?: string }>;
-  setTheme(theme: string): Promise<{ success: boolean; error?: string }>;
-  getCurrentTheme(): Promise<{ success: boolean; data?: string; error?: string }>;
-  navigateTo(path: string): Promise<{ success: boolean; error?: string }>;
-  getCurrentRoute(): Promise<{ success: boolean; data?: string; error?: string }>;
 }
 
 export class CorePlatformModule extends BaseModule implements CorePlatformContract {

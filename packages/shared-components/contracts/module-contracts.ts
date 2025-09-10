@@ -1,6 +1,7 @@
 // Module API Contracts for PlanetTogether Federation
 
-import type { 
+// Re-export types for modules to use
+export type { 
   Job, 
   JobOperation, 
   Resource, 
@@ -10,7 +11,10 @@ import type {
   AgentAnalysisResponse,
   KPIMetric,
   PaginationRequest,
-  ApiResponse
+  ApiResponse,
+  ModuleEvent,
+  AgentRecommendation,
+  PerformanceMetrics
 } from '../types';
 
 // Core Platform Module Contract
