@@ -1,4 +1,15 @@
-// Federation Registry - Dynamic Module Loading System
+// Federation Registry - Dynamic Module Loading System with Performance Optimization
+import { 
+  performanceMonitor,
+  trackModuleLoad,
+  trackMethodPerformance,
+  markTiming,
+  measureTiming,
+  cleanupModulePerformance,
+  preloadCriticalModules,
+  type ModuleLoadingOptions
+} from '../federation-performance';
+
 export interface ModuleFactory<T = any> {
   (): Promise<T>;
 }
@@ -9,6 +20,9 @@ export interface ModuleMetadata {
   version: string;
   dependencies: string[];
   contract: string;
+  priority?: 'high' | 'normal' | 'low';
+  preload?: boolean;
+  cacheable?: boolean;
 }
 
 export interface ModuleRegistration<T = any> {
@@ -27,12 +41,13 @@ export interface ModuleEvent {
 
 interface ModuleState {
   id: string;
-  status: 'initializing' | 'ready' | 'error' | 'stopped';
+  status: 'initializing' | 'ready' | 'error' | 'stopped' | 'preloading';
   instance?: any;
   contract?: any;
   lastError?: Error;
   dependencies: string[];
   dependents: string[];
+  lastAccessTime?: number;
 }
 
 export class FederationRegistry {
@@ -43,9 +58,13 @@ export class FederationRegistry {
   private eventListeners = new Map<string, Set<Function>>();
   private sharedState = new Map<string, any>();
   private initializationOrder: string[] = [];
+  private moduleCache = new Map<string, any>();
+  private preloadQueue = new Set<string>();
 
   constructor() {
     this.setupDefaultModules();
+    this.setupPerformanceBudgets();
+    this.schedulePreloading();
   }
 
   register<T>(registration: ModuleRegistration<T>): void {
@@ -57,15 +76,35 @@ export class FederationRegistry {
       id: registration.metadata.id,
       status: 'initializing',
       dependencies: registration.metadata.dependencies,
-      dependents: []
+      dependents: [],
+      lastAccessTime: Date.now()
     };
     this.moduleStates.set(registration.metadata.id, moduleState);
+    
+    // Schedule preloading if needed
+    if (registration.metadata.preload) {
+      this.preloadQueue.add(registration.metadata.id);
+    }
   }
 
   async getModule<T>(moduleId: string): Promise<T> {
+    // Update last access time
+    const moduleState = this.moduleStates.get(moduleId);
+    if (moduleState) {
+      moduleState.lastAccessTime = Date.now();
+    }
+
     // Return existing instance if available
     if (this.instances.has(moduleId)) {
       return this.instances.get(moduleId);
+    }
+
+    // Check cache first
+    const registration = this.modules.get(moduleId);
+    if (registration?.metadata.cacheable && this.moduleCache.has(moduleId)) {
+      const cached = this.moduleCache.get(moduleId);
+      this.instances.set(moduleId, cached);
+      return cached;
     }
 
     // Return existing loading promise if in progress
@@ -73,8 +112,15 @@ export class FederationRegistry {
       return this.loadingPromises.get(moduleId);
     }
 
-    // Start loading the module
-    const loadingPromise = this.loadModule<T>(moduleId);
+    // Start loading the module with performance tracking
+    const loadingOptions: ModuleLoadingOptions = {
+      priority: registration?.metadata.priority || 'normal',
+      cache: registration?.metadata.cacheable || false,
+      preload: registration?.metadata.preload || false,
+      timeout: 30000
+    };
+    
+    const loadingPromise = this.loadModuleWithPerformance<T>(moduleId, loadingOptions);
     this.loadingPromises.set(moduleId, loadingPromise);
 
     try {
@@ -87,6 +133,11 @@ export class FederationRegistry {
       if (moduleState) {
         moduleState.status = 'ready';
         moduleState.instance = instance;
+      }
+      
+      // Cache if needed
+      if (registration?.metadata.cacheable) {
+        this.moduleCache.set(moduleId, instance);
       }
       
       // Emit module ready event
@@ -129,17 +180,63 @@ export class FederationRegistry {
     // Validate contract with runtime checking
     const validatedInstance = this.validateContract<T>(instance, registration.metadata.contract);
 
+    // Wrap methods with performance tracking
+    const instrumentedInstance = this.instrumentModule(validatedInstance, moduleId);
+
     // Initialize module if it has lifecycle methods
-    if (typeof (validatedInstance as any).initialize === 'function') {
-      await (validatedInstance as any).initialize({
+    if (typeof (instrumentedInstance as any).initialize === 'function') {
+      markTiming(moduleId, 'initialization');
+      await (instrumentedInstance as any).initialize({
         dependencies,
         config: this.getModuleConfig(moduleId),
         eventBus: this
       });
+      const initTime = measureTiming(moduleId, 'initialization');
+      console.log(`[Federation] Module ${moduleId} initialized in ${initTime.toFixed(2)}ms`);
     }
 
     console.log(`[Federation] Module loaded successfully: ${moduleId}`);
-    return validatedInstance;
+    return instrumentedInstance;
+  }
+
+  private async loadModuleWithPerformance<T>(moduleId: string, options: ModuleLoadingOptions): Promise<T> {
+    const registration = this.modules.get(moduleId);
+    if (!registration) {
+      throw new Error(`Module not found: ${moduleId}`);
+    }
+
+    // Use performance monitoring for module loading
+    return trackModuleLoad(
+      moduleId,
+      async () => this.loadModule<T>(moduleId),
+      options
+    );
+  }
+
+  private instrumentModule<T>(instance: any, moduleId: string): T {
+    if (!instance || typeof instance !== 'object') {
+      return instance;
+    }
+
+    // Create a proxy to wrap all methods with performance tracking
+    return new Proxy(instance, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        
+        // Only wrap functions
+        if (typeof value === 'function' && typeof prop === 'string') {
+          // Skip internal methods
+          if (prop.startsWith('_') || prop === 'constructor') {
+            return value;
+          }
+          
+          // Return wrapped method
+          return trackMethodPerformance(moduleId, prop, value.bind(target));
+        }
+        
+        return value;
+      }
+    });
   }
 
   private getModuleConfig(_moduleId: string): Record<string, any> {
@@ -283,6 +380,10 @@ export class FederationRegistry {
     }
     this.instances.delete(moduleId);
     this.moduleStates.delete(moduleId);
+    this.moduleCache.delete(moduleId);
+    
+    // Clean up performance tracking
+    cleanupModulePerformance(moduleId);
     
     this.emit('module:unregistered', { moduleId });
     console.log(`[Federation] Module unloaded: ${moduleId}`);
@@ -309,6 +410,80 @@ export class FederationRegistry {
     ];
   }
 
+  private setupPerformanceBudgets(): void {
+    // Set performance budgets for core modules
+    const coreModules = [
+      '@planettogether/shared-components',
+      '@planettogether/core-platform'
+    ];
+
+    coreModules.forEach(moduleId => {
+      performanceMonitor.setBudget(moduleId, {
+        maxInitTime: 200, // 200ms for core modules
+        maxMemoryUsage: 50 * 1024 * 1024, // 50MB
+        maxEventLatency: 50, // 50ms
+        warningThreshold: 0.8
+      });
+    });
+
+    // Set budgets for non-core modules
+    const nonCoreModules = [
+      '@planettogether/agent-system',
+      '@planettogether/production-scheduling',
+      '@planettogether/shop-floor',
+      '@planettogether/quality-management',
+      '@planettogether/inventory-planning',
+      '@planettogether/analytics-reporting'
+    ];
+
+    nonCoreModules.forEach(moduleId => {
+      performanceMonitor.setBudget(moduleId, {
+        maxInitTime: 500, // 500ms for non-core modules
+        maxMemoryUsage: 100 * 1024 * 1024, // 100MB
+        maxEventLatency: 100, // 100ms
+        warningThreshold: 0.8
+      });
+    });
+  }
+
+  private schedulePreloading(): void {
+    // Schedule preloading of critical modules
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        const criticalModules = [
+          '@planettogether/shared-components',
+          '@planettogether/core-platform'
+        ];
+        
+        preloadCriticalModules(criticalModules);
+        
+        // Preload any modules marked for preloading
+        this.preloadQueue.forEach(moduleId => {
+          if (!this.isLoaded(moduleId)) {
+            console.log(`[Federation] Preloading module: ${moduleId}`);
+            this.getModule(moduleId).catch(error => {
+              console.warn(`[Federation] Preload failed for ${moduleId}:`, error);
+            });
+          }
+        });
+      });
+    }
+  }
+
+  // Parallel module loading
+  async loadModulesParallel(moduleIds: string[]): Promise<Map<string, any>> {
+    const modules = moduleIds.map(id => ({
+      id,
+      factory: () => this.getModule(id),
+      options: {
+        priority: this.modules.get(id)?.metadata.priority || 'normal',
+        cache: this.modules.get(id)?.metadata.cacheable || false
+      }
+    }));
+
+    return performanceMonitor.loadModulesParallel(modules);
+  }
+
   private setModuleError(moduleId: string, error: Error): void {
     const moduleState = this.moduleStates.get(moduleId);
     if (moduleState) {
@@ -322,31 +497,70 @@ export class FederationRegistry {
     const status: Record<string, any> = {};
     
     for (const [id, state] of this.moduleStates) {
+      const perfMetrics = performanceMonitor.getMetrics(id);
       status[id] = {
         status: state.status,
         dependencies: state.dependencies,
         dependents: state.dependents,
-        error: state.lastError?.message
+        error: state.lastError?.message,
+        lastAccessTime: state.lastAccessTime,
+        performance: perfMetrics ? {
+          loadTime: perfMetrics.loadTime,
+          initializationTime: perfMetrics.initializationTime,
+          memoryUsage: perfMetrics.memoryUsage,
+          eventCount: perfMetrics.eventCount
+        } : null
       };
     }
     
     return status;
   }
 
+  // Get performance report
+  getPerformanceReport() {
+    return performanceMonitor.generateReport();
+  }
+
   async initializeAllModules(): Promise<void> {
     console.log('[Federation] Starting module initialization...');
+    
+    // Group modules by priority for parallel loading
+    const highPriority: string[] = [];
+    const normalPriority: string[] = [];
+    const lowPriority: string[] = [];
     
     for (const moduleId of this.initializationOrder) {
       if (this.isLoaded(moduleId)) {
         continue; // Already loaded
       }
       
-      try {
-        await this.getModule(moduleId);
-      } catch (error) {
-        console.error(`[Federation] Failed to load ${moduleId}:`, error);
+      const registration = this.modules.get(moduleId);
+      const priority = registration?.metadata.priority || 'normal';
+      
+      switch (priority) {
+        case 'high':
+          highPriority.push(moduleId);
+          break;
+        case 'low':
+          lowPriority.push(moduleId);
+          break;
+        default:
+          normalPriority.push(moduleId);
       }
     }
+    
+    // Load in priority order with parallel loading within each group
+    if (highPriority.length > 0) {
+      await this.loadModulesParallel(highPriority);
+    }
+    if (normalPriority.length > 0) {
+      await this.loadModulesParallel(normalPriority);
+    }
+    if (lowPriority.length > 0) {
+      await this.loadModulesParallel(lowPriority);
+    }
+    
+    console.log('[Federation] All modules initialized');
   }
 
   // Contract validation utilities

@@ -94,6 +94,7 @@ import ProductionSchedulerWrapper from "@/pages/production-scheduler-wrapper";
 import SchedulerPro from "@/pages/scheduler-pro";
 import SchedulerProNew from "@/pages/scheduler-pro-new";
 import SMSPage from "@/pages/sms";
+import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuthFederated";
@@ -441,6 +442,13 @@ export default function ApplicationApp() {
               <Route path="/systems-integration">
                 <ProtectedRoute feature="systems-integration" action="view">
                   <SystemIntegrationsPage />
+                </ProtectedRoute>
+              </Route>
+              
+              {/* Federation Performance Dashboard */}
+              <Route path="/federation-performance">
+                <ProtectedRoute feature="systems-integration" action="view">
+                  <FederationPerformanceDashboard />
                 </ProtectedRoute>
               </Route>
 
