@@ -26,15 +26,53 @@ let agentSystemModuleCache: AgentSystemModule | null = null;
 let loadingAttempted = false;
 
 export async function loadCorePlatformModule(): Promise<CorePlatformModule | null> {
-  // Week 3: Federation disabled - always return null to use fallback implementations
-  console.log('[Federation] Week 3 mode - Core Platform federation disabled, using fallbacks');
-  return null;
+  if (corePlatformModuleCache) {
+    return corePlatformModuleCache;
+  }
+
+  try {
+    console.log('[Federation] Loading Core Platform module...');
+    const { federationRegistry } = await import('../../../packages/federation-registry');
+    const { isFederationInitialized } = await import('./federation-bootstrap');
+    
+    if (!isFederationInitialized()) {
+      console.log('[Federation] System not initialized, using fallback');
+      return null;
+    }
+
+    const module = await federationRegistry.getModule<CorePlatformModule>('core-platform');
+    corePlatformModuleCache = module;
+    console.log('[Federation] Core Platform module loaded successfully');
+    return module;
+  } catch (error) {
+    console.warn('[Federation] Core Platform module loading failed, using fallback:', error);
+    return null;
+  }
 }
 
 export async function loadAgentSystemModule(): Promise<AgentSystemModule | null> {
-  // Week 3: Federation disabled - always return null to use fallback implementations
-  console.log('[Federation] Week 3 mode - Agent System federation disabled, using fallbacks');
-  return null;
+  if (agentSystemModuleCache) {
+    return agentSystemModuleCache;
+  }
+
+  try {
+    console.log('[Federation] Loading Agent System module...');
+    const { federationRegistry } = await import('../../../packages/federation-registry');
+    const { isFederationInitialized } = await import('./federation-bootstrap');
+    
+    if (!isFederationInitialized()) {
+      console.log('[Federation] System not initialized, using fallback');
+      return null;
+    }
+
+    const module = await federationRegistry.getModule<AgentSystemModule>('agent-system');
+    agentSystemModuleCache = module;
+    console.log('[Federation] Agent System module loaded successfully');
+    return module;
+  } catch (error) {
+    console.warn('[Federation] Agent System module loading failed, using fallback:', error);
+    return null;
+  }
 }
 
 // Helper to check if federation is available

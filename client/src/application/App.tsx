@@ -11,6 +11,7 @@ import { MobileLayout } from "@/components/navigation/mobile-layout";
 import { DesktopLayout } from "@/components/navigation/desktop-layout";
 import { HintSystem } from "@/components/HintBubble";
 import { SplitScreenLayout } from "@/components/split-screen-layout";
+import { initializeFederation } from "@/lib/federation-bootstrap";
 
 // Application Pages
 import Dashboard from "@/pages/dashboard";
@@ -101,6 +102,17 @@ import { useState, useEffect } from "react";
 
 export default function ApplicationApp() {
   const { isAuthenticated, user, isLoading, loginError } = useAuth();
+
+  // Initialize federation system on app startup
+  useEffect(() => {
+    initializeFederation()
+      .then(() => {
+        console.log('[App] Federation system initialized successfully');
+      })
+      .catch((error) => {
+        console.warn('[App] Federation initialization failed, using fallback mode:', error);
+      });
+  }, []);
 
   // Reactive mobile detection that updates on window resize - use standard mobile breakpoint
   const [isMobile, setIsMobile] = useState(typeof window !== 'undefined' && window.innerWidth < 480);

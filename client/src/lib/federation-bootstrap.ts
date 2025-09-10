@@ -16,16 +16,51 @@ export async function initializeFederation(): Promise<void> {
     return Promise.resolve();
   }
 
-  console.log('[Federation] Week 3 - Using graceful fallback mode, federation disabled');
+  console.log('[Federation] Initializing full federation system...');
 
   initializationPromise = (async () => {
     try {
-      // For Week 3, we skip actual federation initialization
-      // and let adapters fall back to existing implementations
-      console.log('[Federation] Fallback mode - adapters will use existing implementations');
-      isInitialized = false; // Keep this false to ensure adapters always use fallbacks
+      // Import federation registry and modules
+      const { federationRegistry, createAsyncModuleFactory } = await import('../../../packages/federation-registry');
+      
+      console.log('[Federation] Registering Core Platform module...');
+      // Register Core Platform module
+      federationRegistry.register({
+        metadata: {
+          id: 'core-platform',
+          name: 'Core Platform Module',
+          version: '1.0.0',
+          dependencies: [],
+          contract: 'CorePlatformContract'
+        },
+        factory: createAsyncModuleFactory(async () => {
+          const module = await import('../../../packages/core-platform/CorePlatformModule');
+          return { default: module.CorePlatformModule };
+        })
+      });
+
+      console.log('[Federation] Registering Agent System module...');
+      // Register Agent System module
+      federationRegistry.register({
+        metadata: {
+          id: 'agent-system',
+          name: 'Agent System Module',
+          version: '1.0.0',
+          dependencies: ['core-platform'],
+          contract: 'AgentSystemContract'
+        },
+        factory: createAsyncModuleFactory(async () => {
+          const module = await import('../../../packages/agent-system/AgentSystemModule');
+          return { default: module.AgentSystemModule };
+        })
+      });
+      
+      console.log('[Federation] All modules registered successfully');
+      isInitialized = true;
     } catch (error) {
-      console.error('[Federation] Fallback mode initialization failed:', error);
+      console.error('[Federation] Initialization failed:', error);
+      // Fall back to non-federated mode on error
+      isInitialized = false;
       throw error;
     }
   })();
