@@ -22,7 +22,7 @@ import { TourSelectionDialog } from "./tour-selection-dialog";
 import { GlobalSearchDialog } from "./global-search-dialog";
 import { Input } from "@/components/ui/input";
 import { DashboardCardContainer } from "./dashboard-card-container";
-import { useTheme } from "@/contexts/ThemeContext";
+import { useTheme } from "@/hooks/useThemeFederated";
 import { useViewMode } from "@/hooks/use-view-mode";
 import { useLayoutDensity } from "@/contexts/LayoutDensityContext";
 import { navigationGroups } from "@/config/navigation-menu";
