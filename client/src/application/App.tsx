@@ -162,14 +162,11 @@ export default function ApplicationApp() {
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
 
-              {/* Main Dashboard - Redirect to production scheduler */}
+              {/* Main Dashboard */}
               <Route path="/dashboard">
-                {() => {
-                  if (typeof window !== 'undefined') {
-                    window.location.replace('/production-scheduler');
-                  }
-                  return null;
-                }}
+                <ProtectedRoute feature="dashboard" action="view">
+                  <Dashboard />
+                </ProtectedRoute>
               </Route>
               <Route path="/mobile-home" component={HomePage} />
 
