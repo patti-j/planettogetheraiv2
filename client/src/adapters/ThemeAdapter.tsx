@@ -42,8 +42,13 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
       // Try to use federated theme management if available
       if (isInitialized) {
         try {
-          const corePlatform = await getCorePlatformModule();
-          await corePlatform.setTheme(newTheme);
+          const corePlatform = await loadCorePlatformModule();
+          if (corePlatform) {
+            const result = await corePlatform.setTheme(newTheme);
+            if (!result.success) {
+              console.warn('[ThemeAdapter] Federated theme update failed:', result.error);
+            }
+          }
         } catch (error) {
           console.warn('[ThemeAdapter] Federated theme update failed, using fallback:', error);
         }

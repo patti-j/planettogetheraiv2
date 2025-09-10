@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
 import { Search, Settings, User, ChevronDown, Building2, Calendar, Command, Sun, Moon, Monitor, Maximize2, Minimize2, MoreVertical, Rows3, Rows4, Rows2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useThemeFederated';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
   DropdownMenu,
