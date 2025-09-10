@@ -2,8 +2,34 @@
 export * from './types';
 export * from './contracts/module-contracts';
 
-// Re-export common utilities that will be used across modules
-export { federationRegistry } from '../federation-registry';
+// Federation Registry System (explicit re-exports to avoid conflicts)
+export { 
+  FederationRegistry, 
+  federationRegistry, 
+  createModuleFactory, 
+  createAsyncModuleFactory,
+  createSingletonModuleFactory,
+  validateContract
+} from '../federation-registry';
+export { 
+  getCorePlatformModule, 
+  getAgentSystemModule, 
+  initializeCoreModules 
+} from '../federation-registry/manifest';
+
+// Module Re-exports for Path Resolution
+export { CorePlatformModule } from '../core-platform/CorePlatformModule';
+export { AgentSystemModule } from '../agent-system/AgentSystemModule';
+
+// Shared Configuration (explicit re-export to avoid conflicts)
+export { 
+  MANUFACTURING_AGENTS, 
+  getAgentById, 
+  getActiveAgents, 
+  getAgentsByDepartment, 
+  getAgentWelcomeMessage,
+  type Agent
+} from './config/agents';
 
 // Common React imports that all modules will need
 export type { FC, ReactNode, ComponentProps } from 'react';
