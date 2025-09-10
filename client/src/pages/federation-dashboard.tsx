@@ -29,7 +29,8 @@ import {
   Zap,
   Loader2,
   Play,
-  Pause
+  Pause,
+  RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { getFederationModule, isFederationInitialized } from '@/lib/federation-bootstrap';
