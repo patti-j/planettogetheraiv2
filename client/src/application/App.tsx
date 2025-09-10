@@ -150,8 +150,15 @@ export default function ApplicationApp() {
               {/* <Route path="/demo" component={DemoPage} /> */}
               <Route path="/onboarding" component={Onboarding} />
 
-              {/* Main Dashboard */}
-              <Route path="/dashboard" component={Dashboard} />
+              {/* Main Dashboard - Redirect to production scheduler */}
+              <Route path="/dashboard">
+                {() => {
+                  if (typeof window !== 'undefined') {
+                    window.location.replace('/production-scheduler');
+                  }
+                  return null;
+                }}
+              </Route>
               <Route path="/mobile-home" component={HomePage} />
 
               {/* Analytics & Reports */}
