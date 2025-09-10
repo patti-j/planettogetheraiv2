@@ -137,9 +137,26 @@ export function useAuth() {
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
+      // Development mode auto-login: bypass authentication for easier previews
+      const isDev = import.meta.env.MODE === 'development';
+      
       // Token-based authentication - get token from localStorage
       const token = localStorage.getItem('auth_token');
       if (!token) {
+        // In development mode, auto-create an admin user without requiring login
+        if (isDev) {
+          console.log('🔧 Development mode: Auto-login as admin user');
+          const devUser = {
+            id: 1,
+            username: "admin",
+            email: "admin@planettogether.com",
+            firstName: "Admin",
+            lastName: "User",
+            isActive: true,
+            roles: [createRoleStructure('Administrator')]
+          };
+          return devUser;
+        }
         return null;
       }
 
