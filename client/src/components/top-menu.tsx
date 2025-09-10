@@ -333,7 +333,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
         allItems.push({
           feature,
           groupTitle: group.title,
-          groupColor: group.color
+          groupColor: group.color || 'gray'
         });
       });
     });
@@ -900,7 +900,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                       <div key={groupIndex} className={`
                         ${isRecentGroup ? 
                           'bg-transparent border-0 shadow-none' : 
-                          `${getDarkModeColor(group.bgColor, group.bgColor.replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor, group.borderColor.replace('-200', '-800').replace('dark:', ''))} overflow-hidden shadow-sm`
+                          `${getDarkModeColor(group.bgColor || 'bg-gray-50 dark:bg-gray-950/20', (group.bgColor || 'bg-gray-50 dark:bg-gray-950/20').replace('-50', '-950/20').replace('dark:', ''))} rounded-xl border ${getDarkModeBorder(group.borderColor || 'border-gray-200 dark:border-gray-800', (group.borderColor || 'border-gray-200 dark:border-gray-800').replace('-200', '-800').replace('dark:', ''))} overflow-hidden shadow-sm`
                         }
                         ${isRecentGroup ? 'mb-4' : ''}
                       `}>
@@ -936,7 +936,7 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                                     'teal': 'bg-teal-500 dark:bg-teal-600',
                                     'amber': 'bg-amber-500 dark:bg-amber-600'
                                   };
-                                  const bgColor = colorMap[group.color] || 'bg-gray-500 dark:bg-gray-600';
+                                  const bgColor = colorMap[group.color || 'gray'] || 'bg-gray-500 dark:bg-gray-600';
                                   
                                   return (
                                     <>
