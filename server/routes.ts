@@ -5,6 +5,7 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { db } from "./db";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema } from "@shared/schema";
+import { systemMonitoringAgent } from "./monitoring-agent";
 
 const router = express.Router();
 
@@ -550,6 +551,37 @@ router.get("/pt-resources", async (req, res) => {
   } catch (error) {
     console.error("Error fetching PT resources:", error);
     res.status(500).json({ message: "Failed to fetch PT resources", error: (error as Error).message });
+  }
+});
+
+// System Monitoring Agent API Routes
+router.get("/monitoring-agent/status", async (req, res) => {
+  try {
+    const status = systemMonitoringAgent.getStatus();
+    res.json(status);
+  } catch (error) {
+    console.error("Error getting monitoring agent status:", error);
+    res.status(500).json({ error: "Failed to get monitoring agent status" });
+  }
+});
+
+router.post("/monitoring-agent/start", async (req, res) => {
+  try {
+    await systemMonitoringAgent.start();
+    res.json({ success: true, message: "Monitoring agent started" });
+  } catch (error) {
+    console.error("Error starting monitoring agent:", error);
+    res.status(500).json({ error: "Failed to start monitoring agent" });
+  }
+});
+
+router.post("/monitoring-agent/stop", async (req, res) => {
+  try {
+    await systemMonitoringAgent.stop();
+    res.json({ success: true, message: "Monitoring agent stopped" });
+  } catch (error) {
+    console.error("Error stopping monitoring agent:", error);
+    res.status(500).json({ error: "Failed to stop monitoring agent" });
   }
 });
 
