@@ -1,0 +1,36 @@
+{
+  "name": "@planettogether/shared-components",
+  "version": "1.0.0",
+  "description": "Shared TypeScript types, UI components, and utilities",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "@radix-ui/react-slot": "^1.0.0",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
+    "tailwind-merge": "^1.14.0",
+    "lucide-react": "^0.263.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./types/index.ts",
+    "./contracts": "./contracts/module-contracts.ts",
+    "./components": "./components/index.ts",
+    "./utils": "./utils/index.ts"
+  }
+}

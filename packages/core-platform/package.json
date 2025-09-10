@@ -1,0 +1,30 @@
+{
+  "name": "@planettogether/core-platform",
+  "version": "1.0.0",
+  "description": "Core platform services for authentication, navigation, and shared state",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@planettogether/shared-components": "workspace:*",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "react-dom": ">=18.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./types": "./types/index.ts",
+    "./services": "./services/index.ts"
+  }
+}

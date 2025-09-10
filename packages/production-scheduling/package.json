@@ -1,0 +1,29 @@
+{
+  "name": "@planettogether/production-scheduling",
+  "version": "1.0.0",
+  "description": "Production scheduling with Gantt charts and optimization algorithms",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@planettogether/shared-components": "workspace:*",
+    "@planettogether/core-platform": "workspace:*",
+    "@bryntum/schedulerpro": "^6.3.1",
+    "@bryntum/schedulerpro-react": "^6.3.1",
+    "react": "^18.0.0",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./components": "./components/index.ts",
+    "./algorithms": "./algorithms/index.ts",
+    "./types": "./types/index.ts"
+  }
+}

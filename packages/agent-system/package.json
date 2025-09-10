@@ -1,0 +1,28 @@
+{
+  "name": "@planettogether/agent-system",
+  "version": "1.0.0",
+  "description": "AI agent system with 13 specialized manufacturing agents",
+  "main": "index.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "jest"
+  },
+  "dependencies": {
+    "@planettogether/shared-components": "workspace:*",
+    "@planettogether/core-platform": "workspace:*",
+    "@anthropic-ai/sdk": "^0.20.0",
+    "openai": "^4.0.0",
+    "react": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.0.0",
+    "typescript": "^5.0.0"
+  },
+  "exports": {
+    ".": "./index.ts",
+    "./agents": "./agents/index.ts",
+    "./components": "./components/index.ts",
+    "./hooks": "./hooks/index.ts"
+  }
+}
