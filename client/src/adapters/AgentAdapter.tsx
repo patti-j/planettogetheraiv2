@@ -48,29 +48,31 @@ export function AgentAdapterProvider({ children }: { children: ReactNode }) {
 
   // Initialize federation system
   useEffect(() => {
-    initializeFederation()
-      .then(async () => {
-        setIsInitialized(true);
-        
-        // Initialize with federated agent system if available
-        try {
-          const agentSystem = await getAgentSystemModule();
-          const federatedAgents = await agentSystem.getAvailableAgents();
-          const currentFederatedAgent = await agentSystem.getCurrentAgent();
+    // For Week 3, federation is disabled but we'll try gracefully
+    (async () => {
+      setIsInitialized(true);
+      
+      // Try to initialize with federated agent system if available
+      try {
+        const agentSystem = await loadAgentSystemModule();
+        if (agentSystem) {
+          const federatedAgentsResult = await agentSystem.getAvailableAgents();
+          const currentFederatedAgent = agentSystem.getCurrentAgent();
           
-          if (federatedAgents && federatedAgents.length > 0) {
-            setAllAgents(federatedAgents);
-            setAvailableAgents(federatedAgents.filter(agent => agent.status === 'active'));
+          if (federatedAgentsResult.success && federatedAgentsResult.data && federatedAgentsResult.data.length > 0) {
+            setAllAgents(federatedAgentsResult.data);
+            setAvailableAgents(federatedAgentsResult.data.filter((agent: any) => agent.status === 'active'));
           }
           
           if (currentFederatedAgent) {
             setCurrentAgent(currentFederatedAgent);
           }
-        } catch (error) {
-          console.warn('[AgentAdapter] Failed to initialize with federated agents, using fallback:', error);
         }
+      } catch (error: any) {
+        console.warn('[AgentAdapter] Failed to initialize with federated agents, using fallback:', error);
+      }
       })
-      .catch(error => console.error('[AgentAdapter] Federation init failed:', error));
+      .catch((error: any) => console.error('[AgentAdapter] Federation init failed:', error));
   }, []);
 
   // Initialize with welcome message from current agent
@@ -94,9 +96,10 @@ export function AgentAdapterProvider({ children }: { children: ReactNode }) {
     try {
       // Try federated agent switching first
       if (isInitialized) {
-        const agentSystem = await getAgentSystemModule();
-        await agentSystem.switchToAgent(agentId);
-        const newAgent = await agentSystem.getCurrentAgent();
+        const agentSystem = await loadAgentSystemModule();
+        if (agentSystem) {
+          await agentSystem.switchToAgent(agentId);
+          const newAgent = agentSystem.getCurrentAgent();
         if (newAgent) {
           setCurrentAgent(newAgent);
           
@@ -117,7 +120,7 @@ export function AgentAdapterProvider({ children }: { children: ReactNode }) {
       }
       
       // Fallback to local agent switching
-      const agent = getAgentById(agentId);
+      const agent = ALL_AGENTS.find(a => a.id === agentId);
       if (agent && agent.status === 'active') {
         setCurrentAgent(agent);
         
