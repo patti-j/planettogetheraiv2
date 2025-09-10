@@ -98,7 +98,7 @@ import { FederationPerformanceDashboard } from "@/components/federation-performa
 import FederationDashboard from "@/pages/federation-dashboard";
 
 // Import other application-specific components  
-import { useAuth, usePermissions } from "@/hooks/useAuthFederated";
+import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 
