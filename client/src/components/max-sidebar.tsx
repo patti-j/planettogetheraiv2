@@ -1830,6 +1830,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
             </div>
           ))}
           <div ref={messagesEndRef} />
+          </div>
         </div>
       </ScrollArea>
 

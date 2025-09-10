@@ -183,7 +183,7 @@ export function useAuth() {
       
       // CRITICAL FIX: Apply same permission fix for auth/me endpoint
       if (userData && userData.roles && Array.isArray(userData.roles)) {
-        userData.roles = userData.roles.map(role => {
+        userData.roles = userData.roles.map((role: any) => {
           if (!role.permissions || role.permissions.length === 0) {
             console.log(`🔧 [auth/me] Applying hardcoded permissions for role: ${role.name}`);
             return createRoleStructure(role.name);
@@ -232,7 +232,7 @@ export function useAuth() {
         
         // If roles exist but have empty permissions, use hardcoded fallback
         if (processedUserData.roles && Array.isArray(processedUserData.roles)) {
-          processedUserData.roles = processedUserData.roles.map(role => {
+          processedUserData.roles = processedUserData.roles.map((role: any) => {
             if (!role.permissions || role.permissions.length === 0) {
               console.log(`🔧 Applying hardcoded permissions for role: ${role.name}`);
               // Use hardcoded permissions for this role
@@ -248,10 +248,10 @@ export function useAuth() {
         
         console.log('🔧 Final user data with permissions:', {
           username: processedUserData.username,
-          roles: processedUserData.roles.map(r => ({
+          roles: processedUserData.roles.map((r: any) => ({
             name: r.name,
             permissionCount: r.permissions?.length || 0,
-            firstFewPermissions: r.permissions?.slice(0, 3).map(p => `${p.feature}-${p.action}`)
+            firstFewPermissions: r.permissions?.slice(0, 3).map((p: any) => `${p.feature}-${p.action}`)
           }))
         });
         
@@ -316,12 +316,15 @@ export function useAuth() {
       
       // Only invalidate auth-related queries instead of clearing everything
       queryClient.removeQueries({ queryKey: ["/api/auth/me"] });
-      queryClient.removeQueries({ predicate: query => 
-        query.queryKey[0]?.toString().includes("/api/auth") ||
-        query.queryKey[0]?.toString().includes("/api/users") ||
-        query.queryKey[0]?.toString().includes("assigned-roles") ||
-        query.queryKey[0]?.toString().includes("current-role")
-      });
+      queryClient.removeQueries({ predicate: query => {
+        const key = query.queryKey[0]?.toString();
+        return !!(
+          key?.includes("/api/auth") ||
+          key?.includes("/api/users") ||
+          key?.includes("assigned-roles") ||
+          key?.includes("current-role")
+        );
+      } });
       
       // Send logout request to destroy session on server
       try {

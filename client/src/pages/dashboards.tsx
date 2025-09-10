@@ -30,7 +30,6 @@ import {
   Target,
   TrendingUp,
   Monitor,
-  Bot,
   Zap,
   Layout,
   Settings,
