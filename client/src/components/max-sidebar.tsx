@@ -590,7 +590,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       console.log('Message contains job listing:', response.message.includes('Job ID') || response.message.includes('job name'));
       console.log('================================');
       
-      const assistantMessage: Message = {
+      const assistantMessage: AgentMessage = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
         content: response.message,
@@ -640,7 +640,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     },
     onError: (error: any) => {
       // Instead of showing error toast, display helpful message in chat
-      const errorMessage: Message = {
+      const errorMessage: AgentMessage = {
         id: Date.now().toString() + '_error',
         type: 'assistant',
         content: "I apologize, but I'm unable to help with that request right now. This might be because:\n\n• The request requires capabilities I don't currently have\n• There's a temporary connectivity issue\n• The request involves sensitive operations I cannot perform\n\nPlease try rephrasing your request or ask me about something else I can help with, like analyzing your production data, optimizing schedules, or explaining system features.",
@@ -662,7 +662,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const handleSendMessage = async () => {
     if (!inputMessage.trim()) return;
 
-    const userMessage: Message = {
+    const userMessage: AgentMessage = {
       id: Date.now().toString() + '_user',
       type: 'user',
       content: inputMessage.trim(),
@@ -1289,7 +1289,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     await playTTSResponse(testText);
   };
 
-  const handleCopyMessage = async (message: Message) => {
+  const handleCopyMessage = async (message: AgentMessage) => {
     const copyText = `Max AI Response (${message.timestamp.toLocaleString()}):\n\n${message.content}`;
     
     try {
