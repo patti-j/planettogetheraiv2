@@ -3,6 +3,7 @@ import bcryptjs from "bcryptjs";
 import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
+import { db } from "./db";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema } from "@shared/schema";
 
 const router = express.Router();
@@ -400,6 +401,155 @@ router.get("/users/:userId/current-role", async (req, res) => {
   } catch (error) {
     console.error("Error fetching user current role:", error);
     res.status(500).json({ message: "Failed to fetch current role" });
+  }
+});
+
+// PT Operations endpoint - reads from PT tables
+router.get("/pt-operations", async (req, res) => {
+  try {
+    console.log('Fetching PT operations from ptjoboperations table...');
+    
+    // Query PT operations with joins to get resource and job information
+    const ptOperationsQuery = `
+      SELECT 
+        -- Operation core data from ptjoboperations
+        jo.id as operation_id,
+        jo.external_id as operation_external_id,
+        jo.name as operation_name,
+        jo.description as operation_description,
+        jo.operation_id as base_operation_id,
+        jo.required_finish_qty,
+        jo.cycle_hrs,
+        jo.setup_hours,
+        jo.post_processing_hours,
+        jo.scheduled_start,
+        jo.scheduled_end,
+        jo.percent_finished,
+        
+        -- Job information from ptjobs
+        j.id as job_id,
+        j.external_id as job_external_id,
+        j.name as job_name,
+        j.description as job_description,
+        j.priority as job_priority,
+        j.need_date_time as job_due_date,
+        j.scheduled_status as job_status,
+        
+        -- Activity information from ptjobactivities
+        ja.id as activity_id,
+        ja.external_id as activity_external_id,
+        ja.production_status as activity_status,
+        ja.comments as activity_comments,
+        
+        -- Resource assignment from ptjobresources
+        jr.id as job_resource_id,
+        jr.default_resource_id as actual_resource_id,
+        jr.is_primary,
+        
+        -- Resource information from ptresources
+        r.id as resource_id,
+        r.external_id as resource_external_id,
+        r.name as resource_name,
+        r.description as resource_description,
+        r.bottleneck as is_bottleneck,
+        r.active as resource_active,
+        
+        -- Plant information from ptplants
+        p.id as plant_id,
+        p.external_id as plant_external_id,
+        p.name as plant_name,
+        p.description as plant_description
+        
+      FROM ptjoboperations jo
+      LEFT JOIN ptjobs j ON jo.job_id = j.id
+      LEFT JOIN ptjobactivities ja ON ja.operation_id = jo.id
+      LEFT JOIN ptjobresources jr ON jr.operation_id = jo.id AND jr.is_primary = true
+      LEFT JOIN ptresources r ON jr.default_resource_id = r.resource_id
+      LEFT JOIN ptplants p ON r.plant_id = p.id
+      ORDER BY 
+        jo.scheduled_start ASC NULLS LAST,
+        jo.id ASC
+      LIMIT 100
+    `;
+
+    const rawOperations = await db.execute(sql.raw(ptOperationsQuery));
+    
+    // Transform the data for the frontend (handle Neon/Drizzle result format)
+    const operationsData = Array.isArray(rawOperations) ? rawOperations : rawOperations.rows || [];
+    const operations = operationsData.map((op: any) => ({
+      id: op.operation_id,
+      name: op.operation_name || `Operation ${op.operation_id}`,
+      jobName: op.job_name,
+      operationName: op.operation_name,
+      resourceName: op.resource_name || 'Unassigned',
+      resourceId: op.resource_id,
+      startTime: op.scheduled_start,
+      startDate: op.scheduled_start,
+      duration: (op.cycle_hrs || 2) * 60, // Convert hours to minutes
+      percent_done: op.percent_finished || 0,
+      status: op.activity_status || 'Not Started',
+      priority: op.job_priority || 'Medium',
+      dueDate: op.job_due_date
+    }));
+
+    console.log(`Successfully fetched ${operations.length} PT operations`);
+    res.json(operations);
+    
+  } catch (error) {
+    console.error("Error fetching PT operations:", error);
+    res.status(500).json({ message: "Failed to fetch PT operations", error: (error as Error).message });
+  }
+});
+
+// PT Resources endpoint - reads from PT tables
+router.get("/pt-resources", async (req, res) => {
+  try {
+    console.log('Fetching PT resources from ptresources table...');
+    
+    // Query PT resources with plant information
+    const ptResourcesQuery = `
+      SELECT DISTINCT
+        r.id,
+        r.external_id,
+        r.name,
+        r.description,
+        r.bottleneck,
+        r.capacity_type,
+        r.hourly_cost,
+        r.load_percent,
+        r.online_hrs,
+        r.active,
+        p.name as plant_name,
+        p.external_id as plant_external_id
+      FROM ptresources r
+      LEFT JOIN ptplants p ON r.plant_id = p.id
+      WHERE r.active = true
+      ORDER BY r.name
+    `;
+
+    const rawResources = await db.execute(sql.raw(ptResourcesQuery));
+    
+    // Transform the data for the frontend (handle Neon/Drizzle result format)
+    const resourcesData = Array.isArray(rawResources) ? rawResources : rawResources.rows || [];
+    const resources = resourcesData.map((resource: any) => ({
+      id: resource.id,
+      external_id: resource.external_id,
+      name: resource.name || `Resource ${resource.id}`,
+      description: resource.description,
+      category: resource.resource_type || 'Manufacturing',
+      capacity: resource.capacity,
+      efficiency: resource.efficiency || 100,
+      isBottleneck: resource.bottleneck || false,
+      plantName: resource.plant_name,
+      active: resource.active
+    }));
+
+    console.log(`Successfully fetched ${resources.length} PT resources`);
+    res.json(resources);
+    
+  } catch (error) {
+    console.error("Error fetching PT resources:", error);
+    res.status(500).json({ message: "Failed to fetch PT resources", error: (error as Error).message });
   }
 });
 
