@@ -21,6 +21,13 @@ export function ProtectedRoute({
 
   let hasAccess = false;
 
+  console.log('🔐 ProtectedRoute Check:', {
+    feature,
+    action,
+    permissions,
+    role
+  });
+
   if (role) {
     hasAccess = hasRole(role);
   } else if (permissions) {
@@ -31,6 +38,8 @@ export function ProtectedRoute({
     // No restrictions, allow access
     hasAccess = true;
   }
+
+  console.log('🔐 ProtectedRoute Result:', { hasAccess });
 
   if (!hasAccess) {
     return fallback || (
