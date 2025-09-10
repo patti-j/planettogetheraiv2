@@ -1,0 +1,22 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "paths": {
+      "@planettogether/shared-components": ["../shared-components"],
+      "@planettogether/shared-components/*": ["../shared-components/*"],
+      "@planettogether/core-platform": ["../core-platform"],
+      "@planettogether/core-platform/*": ["../core-platform/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
