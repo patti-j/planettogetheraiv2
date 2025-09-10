@@ -1,0 +1,305 @@
+// Navigation Adapter - Wraps Core Platform Module navigation behind existing NavigationContext API
+import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getCorePlatformModule } from '../../../packages/shared-components';
+import { initializeFederation } from '@/lib/federation-bootstrap';
+import { useLocation } from 'wouter';
+import { useAuthAdapter } from './AuthAdapter';
+import { apiRequest } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
+import { getNavigationItemByHref } from '@/config/navigation-menu';
+
+interface RecentPage {
+  path: string;
+  label: string;
+  icon?: string;
+  timestamp: number;
+  isPinned?: boolean;
+}
+
+interface NavigationAdapterContextType {
+  recentPages: RecentPage[];
+  addRecentPage: (path: string, label: string, icon?: string) => void;
+  clearRecentPages: () => void;
+  togglePinPage: (path: string) => void;
+  lastVisitedRoute: string | null;
+  setLastVisitedRoute: (route: string) => void;
+}
+
+const NavigationAdapterContext = createContext<NavigationAdapterContextType | undefined>(undefined);
+
+const DEFAULT_MAX_RECENT_PAGES = 5;
+
+export function NavigationAdapterProvider({ children }: { children: ReactNode }) {
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
+  const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
+  const [location] = useLocation();
+  const { user, isAuthenticated } = useAuthAdapter();
+
+  // Initialize federation system
+  useEffect(() => {
+    initializeFederation()
+      .then(() => setIsInitialized(true))
+      .catch(error => console.error('[NavigationAdapter] Federation init failed:', error));
+  }, []);
+
+  // Fetch user preferences
+  const { data: userPreferences } = useQuery<any>({
+    queryKey: [`/api/user-preferences/${user?.id}`],
+    enabled: !!user?.id,
+  });
+
+  const maxRecentPages = userPreferences?.dashboardLayout?.maxRecentPages || DEFAULT_MAX_RECENT_PAGES;
+
+  // Load recent pages from user preferences
+  useEffect(() => {
+    const loadRecentPages = async () => {
+      if (isAuthenticated && user?.id && typeof user.id === 'number') {
+        try {
+          // Try federated navigation first
+          if (isInitialized) {
+            try {
+              const corePlatform = await getCorePlatformModule();
+              const federatedRoute = await corePlatform.getCurrentRoute();
+              if (federatedRoute) {
+                setLastVisitedRouteState(federatedRoute);
+              }
+            } catch (error) {
+              console.warn('[NavigationAdapter] Federated navigation failed, using fallback:', error);
+            }
+          }
+
+          // Fallback to existing logic
+          const response = await fetch(`/api/user-preferences/${user.id}`, {
+            headers: {
+              'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            },
+            credentials: 'include',
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const preferences = await response.json();
+          const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
+          
+          if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
+            const defaultRecentPages = [{
+              path: '/onboarding',
+              label: 'Getting Started',
+              icon: 'BookOpen',
+              timestamp: Date.now(),
+              isPinned: true
+            }];
+            setRecentPages(defaultRecentPages);
+          } else {
+            setRecentPages(savedRecentPages.slice(0, maxRecentPages));
+          }
+        } catch (error) {
+          console.warn('Failed to load recent pages from database:', error);
+          // Initialize with default
+          const defaultRecentPages = [{
+            path: '/onboarding',
+            label: 'Getting Started',
+            icon: 'BookOpen',
+            timestamp: Date.now(),
+            isPinned: true
+          }];
+          setRecentPages(defaultRecentPages);
+        }
+      } else {
+        setRecentPages([]);
+      }
+    };
+
+    loadRecentPages();
+  }, [isAuthenticated, user?.id, isInitialized]);
+
+  const addRecentPage = async (path: string, label?: string, icon?: string) => {
+    // Try federated navigation first
+    if (isInitialized) {
+      try {
+        const corePlatform = await getCorePlatformModule();
+        await corePlatform.navigateTo(path);
+      } catch (error) {
+        console.warn('[NavigationAdapter] Federated navigation failed:', error);
+      }
+    }
+
+    // Get the navigation item from config
+    const navItem = getNavigationItemByHref(path);
+    const finalLabel = label || navItem?.label || generateLabelFromPath(path).label;
+    const finalIcon = icon || (typeof navItem?.icon === 'string' ? navItem.icon : 'FileText');
+    
+    setRecentPages(current => {
+      const existingIndex = current.findIndex(page => page.path === path);
+      
+      if (existingIndex !== -1) {
+        const updated = [...current];
+        updated[existingIndex] = {
+          ...updated[existingIndex],
+          timestamp: Date.now()
+        };
+        saveRecentPages(updated);
+        return updated;
+      } else {
+        const pinnedPages = current.filter(page => page.isPinned);
+        const unpinnedPages = current.filter(page => !page.isPinned);
+        
+        const newPage = { path, label: finalLabel, icon: finalIcon, timestamp: Date.now(), isPinned: false };
+        const updatedUnpinned = [newPage, ...unpinnedPages];
+        
+        const updated = [...pinnedPages, ...updatedUnpinned].slice(0, maxRecentPages);
+        saveRecentPages(updated);
+        return updated;
+      }
+    });
+  };
+
+  const saveRecentPages = async (pages: RecentPage[]) => {
+    if (!isAuthenticated || !user?.id) return;
+    
+    try {
+      const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+        headers: {
+          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+        },
+        credentials: 'include',
+      });
+      
+      if (!getResponse.ok) {
+        throw new Error(`Failed to get preferences: ${getResponse.status}`);
+      }
+      
+      const currentPreferences = await getResponse.json();
+      
+      const updatedDashboardLayout = {
+        ...currentPreferences.dashboardLayout,
+        recentPages: pages
+      };
+      
+      const putResponse = await fetch('/api/user-preferences', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          dashboardLayout: updatedDashboardLayout
+        }),
+      });
+      
+      if (!putResponse.ok) {
+        throw new Error(`Failed to save preferences: ${putResponse.status}`);
+      }
+    } catch (error) {
+      console.warn('Failed to save recent pages to database:', error);
+    }
+  };
+
+  const togglePinPage = (path: string) => {
+    setRecentPages(current => {
+      const updated = current.map(page => 
+        page.path === path ? { ...page, isPinned: !page.isPinned } : page
+      );
+      
+      const pinnedPages = updated.filter(page => page.isPinned).sort((a, b) => a.timestamp - b.timestamp);
+      const unpinnedPages = updated.filter(page => !page.isPinned).sort((a, b) => b.timestamp - a.timestamp);
+      const sortedUpdated = [...pinnedPages, ...unpinnedPages];
+      
+      saveRecentPages(sortedUpdated);
+      return sortedUpdated;
+    });
+  };
+
+  const clearRecentPages = async () => {
+    setRecentPages([]);
+    if (isAuthenticated && user?.id) {
+      try {
+        const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
+          headers: {
+            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          },
+          credentials: 'include',
+        });
+        
+        if (!getResponse.ok) {
+          throw new Error(`Failed to get preferences: ${getResponse.status}`);
+        }
+        
+        const currentPreferences = await getResponse.json();
+        
+        const updatedDashboardLayout = {
+          ...currentPreferences.dashboardLayout,
+          recentPages: []
+        };
+        
+        const putResponse = await fetch('/api/user-preferences', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          },
+          credentials: 'include',
+          body: JSON.stringify({
+            dashboardLayout: updatedDashboardLayout
+          }),
+        });
+        
+        if (!putResponse.ok) {
+          throw new Error(`Failed to clear preferences: ${putResponse.status}`);
+        }
+      } catch (error) {
+        console.warn('Failed to clear recent pages from database:', error);
+      }
+    }
+  };
+
+  const setLastVisitedRoute = (route: string) => {
+    setLastVisitedRouteState(route);
+  };
+
+  const value: NavigationAdapterContextType = {
+    recentPages,
+    addRecentPage,
+    clearRecentPages,
+    togglePinPage,
+    lastVisitedRoute,
+    setLastVisitedRoute
+  };
+
+  return (
+    <NavigationAdapterContext.Provider value={value}>
+      {children}
+    </NavigationAdapterContext.Provider>
+  );
+}
+
+export function useNavigationAdapter() {
+  const context = useContext(NavigationAdapterContext);
+  if (context === undefined) {
+    throw new Error('useNavigationAdapter must be used within a NavigationAdapterProvider');
+  }
+  return context;
+}
+
+// Helper function to generate label from path
+function generateLabelFromPath(path: string): { label: string; icon: string } {
+  const segments = path.replace(/^\//, '').split(/[-\/]/).filter(Boolean);
+  
+  const label = segments
+    .map(segment => segment.charAt(0).toUpperCase() + segment.slice(1))
+    .join(' ');
+  
+  let icon = 'FileText';
+  
+  if (path.includes('data')) icon = 'Database';
+  else if (path.includes('analytics') || path.includes('report')) icon = 'BarChart3';
+  else if (path.includes('dashboard') || path.includes('cockpit')) icon = 'Monitor';
+  else if (path.includes('schedule') || path.includes('planning')) icon = 'Calendar';
+  else if (path.includes('optimization') || path.includes('algorithm')) icon = 'Sparkles';
+  
+  return { label: label || 'Page', icon };
+}

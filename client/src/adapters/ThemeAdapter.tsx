@@ -1,0 +1,140 @@
+// Theme Adapter - Wraps Core Platform Module theme management behind existing ThemeContext API
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { getCorePlatformModule } from '../../../packages/shared-components';
+import { initializeFederation } from '@/lib/federation-bootstrap';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient, apiRequest } from '@/lib/queryClient';
+import { useAuthAdapter } from './AuthAdapter';
+
+type Theme = 'light' | 'dark' | 'system';
+
+interface ThemeAdapterContextType {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
+  resolvedTheme: 'light' | 'dark';
+}
+
+const ThemeAdapterContext = createContext<ThemeAdapterContextType | undefined>(undefined);
+
+export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
+  const { user } = useAuthAdapter();
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [theme, setThemeState] = useState<Theme>('light');
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+
+  // Initialize federation system
+  useEffect(() => {
+    initializeFederation()
+      .then(() => setIsInitialized(true))
+      .catch(error => console.error('[ThemeAdapter] Federation init failed:', error));
+  }, []);
+
+  // Query user preferences
+  const { data: preferences } = useQuery<{ theme?: Theme }>({
+    queryKey: user ? [`/api/user-preferences/${user.id}`] : [],
+    enabled: !!user,
+  });
+
+  // Mutation to update theme preference
+  const updateThemeMutation = useMutation({
+    mutationFn: async (newTheme: Theme) => {
+      if (!user) return;
+      
+      // Try to use federated theme management if available
+      if (isInitialized) {
+        try {
+          const corePlatform = await getCorePlatformModule();
+          await corePlatform.setTheme(newTheme);
+        } catch (error) {
+          console.warn('[ThemeAdapter] Federated theme update failed, using fallback:', error);
+        }
+      }
+      
+      // Fallback to existing API
+      const response = await apiRequest('PUT', '/api/user-preferences', {
+        theme: newTheme
+      });
+      return response.json();
+    },
+    onSuccess: () => {
+      if (user) {
+        queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user.id}`] });
+      }
+    }
+  });
+
+  // Set theme from preferences or localStorage
+  useEffect(() => {
+    if (preferences?.theme) {
+      setThemeState(preferences.theme as Theme);
+    } else {
+      const savedTheme = localStorage.getItem('theme') as Theme;
+      if (savedTheme) {
+        setThemeState(savedTheme);
+      }
+    }
+  }, [preferences]);
+
+  // Apply theme to document and resolve system theme
+  useEffect(() => {
+    const root = window.document.documentElement;
+    let effectiveTheme: 'light' | 'dark' = 'light';
+
+    if (theme === 'system') {
+      const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      effectiveTheme = systemTheme;
+    } else {
+      effectiveTheme = theme as 'light' | 'dark';
+    }
+
+    root.classList.remove('light', 'dark');
+    root.classList.add(effectiveTheme);
+    setResolvedTheme(effectiveTheme);
+  }, [theme]);
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme !== 'system') return;
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = () => {
+      const systemTheme = mediaQuery.matches ? 'dark' : 'light';
+      const root = window.document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(systemTheme);
+      setResolvedTheme(systemTheme);
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, [theme]);
+
+  const setTheme = (newTheme: Theme) => {
+    setThemeState(newTheme);
+    localStorage.setItem('theme', newTheme);
+    
+    if (user) {
+      updateThemeMutation.mutate(newTheme);
+    }
+  };
+
+  const value: ThemeAdapterContextType = {
+    theme,
+    setTheme,
+    resolvedTheme
+  };
+
+  return (
+    <ThemeAdapterContext.Provider value={value}>
+      {children}
+    </ThemeAdapterContext.Provider>
+  );
+}
+
+export function useThemeAdapter() {
+  const context = useContext(ThemeAdapterContext);
+  if (context === undefined) {
+    throw new Error('useThemeAdapter must be used within a ThemeAdapterProvider');
+  }
+  return context;
+}

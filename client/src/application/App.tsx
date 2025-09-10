@@ -1,8 +1,10 @@
 import { Route, Switch, Link } from "wouter";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { AgentProvider } from "@/contexts/AgentContext";
+import { AuthAdapterProvider } from "@/adapters/AuthAdapter";
+import { ThemeAdapterProvider } from "@/adapters/ThemeAdapter";
+import { AgentAdapterProvider } from "@/adapters/AgentAdapter";
+import { NavigationAdapterProvider } from "@/adapters/NavigationAdapter";
 import { OnboardingGate } from "@/components/onboarding-gate";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { MobileLayout } from "@/components/navigation/mobile-layout";
@@ -134,9 +136,11 @@ export default function ApplicationApp() {
   const Layout = isMobile ? MobileLayout : DesktopLayout;
 
   return (
-    <ThemeProvider>
-      <TooltipProvider>
-        <AgentProvider>
+    <AuthAdapterProvider>
+      <ThemeAdapterProvider>
+        <TooltipProvider>
+          <AgentAdapterProvider>
+            <NavigationAdapterProvider>
           <Layout>
             <HintSystem />
             <OnboardingGate>
@@ -450,9 +454,11 @@ export default function ApplicationApp() {
               </SplitScreenLayout>
             </OnboardingGate>
           </Layout>
-        </AgentProvider>
-        <Toaster />
-      </TooltipProvider>
-    </ThemeProvider>
+            </NavigationAdapterProvider>
+          </AgentAdapterProvider>
+          <Toaster />
+        </TooltipProvider>
+      </ThemeAdapterProvider>
+    </AuthAdapterProvider>
   );
 }
