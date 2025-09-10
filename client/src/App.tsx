@@ -11,6 +11,8 @@ import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitScreenProvider } from "@/contexts/SplitScreenContext";
 import { Switch, Route } from "wouter";
+import { runTestsInDevelopment } from "./lib/federation-test-harness";
+import FederationTestStatus from "./components/FederationTestStatus";
 
 // Separate Apps
 import WebsiteApp from "./website/App";
@@ -110,6 +112,13 @@ export default function App() {
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
+  // Run federation tests in development mode
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      runTestsInDevelopment();
+    }
+  }, []);
+  
   // Check if this is a portal route - handle separately from main app
   const isPortalRoute = currentPath.startsWith('/portal');
   
@@ -157,6 +166,9 @@ export default function App() {
                 <LayoutDensityProvider>
                   <SplitScreenProvider>
                     <ViewModeProvider>
+                    {/* Show test status in development mode */}
+                    {import.meta.env.DEV && <FederationTestStatus />}
+                    
                     {/* Portal Routes - Always accessible, independent of main app auth */}
                     {isPortalRoute ? (
                       <div className="fixed inset-0 z-[9999] overflow-auto">
