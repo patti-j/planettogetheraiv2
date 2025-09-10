@@ -169,6 +169,22 @@ export function useAuth() {
       if (res.status === 401) {
         // Token invalid/expired - clear it
         localStorage.removeItem('auth_token');
+        
+        // In development mode, fall back to auto-login even with invalid token
+        if (isDev) {
+          console.log('🔧 Development mode: Token invalid, using auto-login as admin user');
+          const devUser = {
+            id: 1,
+            username: "admin",
+            email: "admin@planettogether.com",
+            firstName: "Admin",
+            lastName: "User",
+            isActive: true,
+            roles: [createRoleStructure('Administrator')]
+          };
+          return devUser;
+        }
+        
         return null;
       }
 
@@ -420,11 +436,29 @@ export function usePermissions() {
       return false;
     }
 
-    return user.roles.some(role =>
-      role.permissions?.some(permission =>
-        permission.feature === feature && permission.action === action
-      )
-    );
+    // Debug logging to understand permission checking
+    console.log(`🔍 Checking permission: feature="${feature}", action="${action}"`);
+    console.log('User roles:', user.roles.map(r => r.name));
+    
+    const hasAccess = user.roles.some(role => {
+      const roleHasPermission = role.permissions?.some(permission => {
+        const matches = permission.feature === feature && permission.action === action;
+        if (matches) {
+          console.log(`✅ Found matching permission in role "${role.name}": ${permission.feature}-${permission.action}`);
+        }
+        return matches;
+      });
+      return roleHasPermission;
+    });
+    
+    if (!hasAccess) {
+      console.log(`❌ Permission denied for ${feature}-${action}`);
+      console.log('Available permissions:', user.roles.flatMap(r => 
+        r.permissions?.map(p => `${p.feature}-${p.action}`) || []
+      ));
+    }
+    
+    return hasAccess;
   };
 
   const hasAnyPermission = (permissions: Array<{ feature: string; action: string }>): boolean => {
