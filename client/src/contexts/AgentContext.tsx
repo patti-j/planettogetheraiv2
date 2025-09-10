@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Agent, AgentMessage, AgentAnalysis, AgentCoordination } from '@/types/agents';
+// Temporarily revert to original agent management while federation is in development
 import { getAgentById, getActiveAgents, ALL_AGENTS } from '@/config/agents';
 
 interface AgentContextType {
