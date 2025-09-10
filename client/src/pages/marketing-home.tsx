@@ -207,7 +207,7 @@ const MarketingHome: React.FC = () => {
         <div className="absolute top-40 right-20 w-20 h-20 bg-purple-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '1s'}} />
         <div className="absolute bottom-20 left-1/4 w-12 h-12 bg-purple-500/20 rounded-full blur-xl animate-pulse" style={{animationDelay: '2s'}} />
         
-        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-24 sm:pt-32 pb-16 sm:pb-20">
+        <div className="relative container mx-auto px-4 sm:px-6 lg:px-8 pt-8 sm:pt-12 pb-16 sm:pb-20">
           <div className="max-w-5xl mx-auto text-center">
             {/* Enhanced badge with glow effect */}
             <div className="mb-6 sm:mb-8">
