@@ -72,7 +72,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
           // Fallback to existing logic
           const response = await fetch(`/api/user-preferences/${user.id}`, {
             headers: {
-              'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+              'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
             },
             credentials: 'include',
           });
@@ -163,7 +163,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     try {
       const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
         headers: {
-          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
         },
         credentials: 'include',
       });
@@ -183,7 +183,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -220,7 +220,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
       try {
         const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
           headers: {
-            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
           },
           credentials: 'include',
         });
@@ -240,7 +240,7 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
           },
           credentials: 'include',
           body: JSON.stringify({

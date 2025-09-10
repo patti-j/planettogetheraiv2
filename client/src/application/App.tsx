@@ -94,8 +94,8 @@ import SchedulerPro from "@/pages/scheduler-pro";
 import SchedulerProNew from "@/pages/scheduler-pro-new";
 import SMSPage from "@/pages/sms";
 
-// Import other application-specific components
-import { useAuth, usePermissions } from "@/hooks/useAuth";
+// Import other application-specific components  
+import { useAuth, usePermissions } from "@/hooks/useAuthFederated";
 import { useQuery } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 

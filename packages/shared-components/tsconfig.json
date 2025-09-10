@@ -1,0 +1,24 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "rootDir": "./",
+    "baseUrl": ".",
+    "paths": {
+      "@planettogether/federation-registry": ["../federation-registry"],
+      "@planettogether/federation-registry/*": ["../federation-registry/*"],
+      "@planettogether/core-platform": ["../core-platform"],
+      "@planettogether/core-platform/*": ["../core-platform/*"],
+      "@planettogether/agent-system": ["../agent-system"],
+      "@planettogether/agent-system/*": ["../agent-system/*"]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
