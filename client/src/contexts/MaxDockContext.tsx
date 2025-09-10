@@ -51,9 +51,11 @@ export const MaxDockProvider: React.FC<{ children: ReactNode }> = ({ children })
   
   // Initialize states with default values (database-only persistence)
   const [isMaxOpen, setIsMaxOpen] = useState(() => {
-    // Open Max by default on production scheduler page
+    // Open Max by default only on the specific production scheduler page, not scheduler-pro
     if (typeof window !== 'undefined') {
-      return window.location.pathname === '/production-scheduler';
+      const path = window.location.pathname;
+      // Only auto-open on /production-scheduler, explicitly closed on scheduler-pro
+      return path === '/production-scheduler' && path !== '/scheduler-pro';
     }
     return false;
   });
