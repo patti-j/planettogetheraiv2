@@ -126,16 +126,34 @@ export default function SchedulerProNew() {
         return '#4a90e2';
       }
 
-      // Transform PT operations into events - exact copy from working HTML
+      // Transform PT operations into events - Fixed for PT data
       let events = (Array.isArray(ptOperations) ? ptOperations : []).map((operation: any, index: number) => {
-        // First try to find a matching resource
-        let resourceId = findResourceId(operation);
+        // First try to find a matching resource using the PT resource name
+        let resourceId = null;
         
-        // Check if operation is truly unscheduled
-        const isUnscheduled = (!operation.startTime && !operation.scheduled_start) ||
-                            operation.resourceName === 'Resource null' ||
-                            operation.resourceName === 'Unassigned' ||
-                            (!resourceId && !operation.resourceName);
+        // Map PT resource to scheduler resource
+        if (operation.resourceName && operation.resourceName !== 'Unassigned' && operation.resourceName !== 'Resource null') {
+          // Try to find exact match first
+          const exactMatch = resources.find(r => r.name === operation.resourceName);
+          if (exactMatch) {
+            resourceId = exactMatch.id;
+          } else {
+            // Create dynamic resource ID for PT resources
+            resourceId = `r_${operation.resourceId || operation.resource_id}`;
+            // Make sure this resource exists in our resources list
+            if (!resources.find(r => r.id === resourceId)) {
+              resources.push({
+                id: resourceId,
+                name: operation.resourceName,
+                category: 'Manufacturing',
+                originalId: operation.resourceId || operation.resource_id
+              });
+            }
+          }
+        }
+        
+        // Check if operation is truly unscheduled (no resource assigned)
+        const isUnscheduled = !resourceId;
         
         let startDate;
         
@@ -145,31 +163,34 @@ export default function SchedulerProNew() {
           const daysOffset = Math.floor(index / 10);
           startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset);
           resourceId = 'unscheduled';
+        } else if (operation.startTime && operation.startTime !== null) {
+          // Use the operation's actual scheduled time if it exists
+          const originalDate = new Date(operation.startTime);
+          startDate = originalDate;
         } else {
-          // Use the operation's actual scheduled time
-          const originalDate = new Date(operation.startTime || operation.start_date);
-          const dayOffset = Math.floor((originalDate.getTime() - new Date(2025, 7, 22).getTime()) / (1000 * 60 * 60 * 24));
-          startDate = new Date(2025, 8, 3 + dayOffset);
-          startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+          // For unscheduled operations with assigned resources, distribute them across time
+          const hoursOffset = (index % 24) * 1; // Spread across 24 hours
+          const daysOffset = Math.floor(index / 24);
+          startDate = new Date(2025, 8, 10 + daysOffset, 8 + hoursOffset);
         }
         
         const duration = operation.duration ? (operation.duration / 60) : 2;
         
         return {
           id: operation.id,
-          name: operation.name || `${operation.jobName || 'Job'}: ${operation.operationName || 'Operation'}`,
+          name: operation.name || `${operation.jobName || 'Job'}: ${operation.operationName || operation.name || 'Operation'}`,
           startDate: startDate,
           duration: duration,
           durationUnit: 'hour',
           resourceId: resourceId,
           percentDone: operation.percent_done || 0,
-          eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.operationName)),
-          constraintType: isUnscheduled ? null : 'startnoearlierthan',
-          constraintDate: isUnscheduled ? null : startDate,
+          eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.operationName || operation.name)),
+          constraintType: (isUnscheduled || !operation.startTime) ? null : 'startnoearlierthan',
+          constraintDate: (isUnscheduled || !operation.startTime) ? null : startDate,
           manuallyScheduled: false,
           draggable: true,
           jobName: operation.jobName,
-          operationName: operation.operationName,
+          operationName: operation.operationName || operation.name,
           resourceName: operation.resourceName,
           isUnscheduled: isUnscheduled,
           ptData: operation
