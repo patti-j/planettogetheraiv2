@@ -222,7 +222,7 @@ export const ptResources = pgTable("ptresources", {
   resourceType: varchar("resource_type", { length: 50 }).default("machine"),
   capacity: numeric("capacity"),
   availableHours: numeric("available_hours"),
-  efficiency: numeric("efficiency").default(1.0),
+  efficiency: numeric("efficiency").default("1.0"),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -273,7 +273,7 @@ export const aiAgentTeam = pgTable("ai_agent_team", {
   // Performance metrics
   totalRecommendations: integer("total_recommendations").default(0),
   acceptedRecommendations: integer("accepted_recommendations").default(0),
-  successRate: numeric("success_rate").default(0),
+  successRate: numeric("success_rate").default("0"),
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
