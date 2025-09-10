@@ -1,0 +1,55 @@
+// Federation Access - Dynamic Loading with Graceful Fallback
+// This module provides safe dynamic access to federation modules
+// without causing static import resolution errors
+
+export interface CorePlatformModule {
+  getCurrentUser(): Promise<{ success: boolean; data?: any; error?: string }>;
+  getUserPermissions(userId: number): Promise<{ success: boolean; data?: string[]; error?: string }>;
+  setTheme(theme: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentTheme(): Promise<{ success: boolean; data?: string; error?: string }>;
+  navigateTo(path: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentRoute(): Promise<{ success: boolean; data?: string; error?: string }>;
+}
+
+export interface AgentSystemModule {
+  getAvailableAgents(): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  getCurrentAgent(): any;
+  switchToAgent(agentId: string): Promise<void>;
+  requestAnalysis(request: any): Promise<any>;
+  getAgentCapabilities(agentId: string): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  sendMessageToAgent(agentId: string, message: string): Promise<{ success: boolean; data?: string; error?: string }>;
+  subscribeToAgentUpdates(callback: (update: any) => void): () => void;
+}
+
+let corePlatformModuleCache: CorePlatformModule | null = null;
+let agentSystemModuleCache: AgentSystemModule | null = null;
+let loadingAttempted = false;
+
+export async function loadCorePlatformModule(): Promise<CorePlatformModule | null> {
+  // Week 3: Federation disabled - always return null to use fallback implementations
+  console.log('[Federation] Week 3 mode - Core Platform federation disabled, using fallbacks');
+  return null;
+}
+
+export async function loadAgentSystemModule(): Promise<AgentSystemModule | null> {
+  // Week 3: Federation disabled - always return null to use fallback implementations
+  console.log('[Federation] Week 3 mode - Agent System federation disabled, using fallbacks');
+  return null;
+}
+
+// Helper to check if federation is available
+export async function isFederationAvailable(): Promise<boolean> {
+  try {
+    const coreModule = await loadCorePlatformModule();
+    return coreModule !== null;
+  } catch {
+    return false;
+  }
+}
+
+// Clear cache for testing/development
+export function clearFederationCache(): void {
+  corePlatformModuleCache = null;
+  agentSystemModuleCache = null;
+  loadingAttempted = false;
+}

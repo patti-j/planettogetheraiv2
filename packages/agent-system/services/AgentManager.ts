@@ -1,6 +1,6 @@
 // Agent Manager Implementation
 import type { AgentManager, AgentCapability } from '../types';
-import { MANUFACTURING_AGENTS, getAgentWelcomeMessage, type Agent } from '@planettogether/shared-components/config/agents';
+import { MANUFACTURING_AGENTS, getAgentWelcomeMessage, type Agent } from '../config/agents';
 
 export class AgentManagerImpl implements AgentManager {
   private agents: Agent[] = [...MANUFACTURING_AGENTS];

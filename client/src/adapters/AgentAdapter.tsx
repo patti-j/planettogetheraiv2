@@ -1,10 +1,9 @@
 // Agent Adapter - Wraps Agent System Module behind existing AgentContext API
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getAgentSystemModule } from '../../../packages/shared-components';
-import { initializeFederation } from '@/lib/federation-bootstrap';
+import { loadAgentSystemModule } from '@/lib/federation-access';
 import type { Agent, AgentMessage, AgentAnalysis, AgentCoordination } from '@/types/agents';
-// Import existing agent configuration as fallback
-import { getAgentById, getActiveAgents, MANUFACTURING_AGENTS } from '../../../packages/shared-components';
+// Import existing agent configuration as fallback from local source
+import { ALL_AGENTS, getActiveAgents } from '@/config/agents';
 
 interface AgentAdapterContextType {
   // Current agent state
@@ -37,11 +36,12 @@ const AgentAdapterContext = createContext<AgentAdapterContextType | undefined>(u
 export function AgentAdapterProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const [currentAgent, setCurrentAgent] = useState<Agent>(() => {
-    return getAgentById('max') || MANUFACTURING_AGENTS[0];
+    const maxAgent = ALL_AGENTS.find(a => a.id === 'max');
+    return maxAgent || ALL_AGENTS[0];
   });
   
   const [availableAgents, setAvailableAgents] = useState<Agent[]>(() => getActiveAgents());
-  const [allAgents, setAllAgents] = useState<Agent[]>(MANUFACTURING_AGENTS);
+  const [allAgents, setAllAgents] = useState<Agent[]>(ALL_AGENTS);
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [activeCoordination, setActiveCoordination] = useState<AgentCoordination>();
   const [currentAnalysis, setCurrentAnalysis] = useState<AgentAnalysis>();

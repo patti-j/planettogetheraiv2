@@ -1,5 +1,6 @@
-// Federation System Bootstrap
-import { initializeCoreModules } from '../../../packages/shared-components';
+// Federation System Bootstrap (Week 3 - Graceful fallback mode)
+// During Week 3, federation initialization is disabled to focus on adapter integration
+// The adapters will automatically fall back to existing implementations
 
 let initializationPromise: Promise<void> | null = null;
 let isInitialized = false;
@@ -15,15 +16,16 @@ export async function initializeFederation(): Promise<void> {
     return Promise.resolve();
   }
 
-  console.log('[Federation] Starting initialization...');
+  console.log('[Federation] Week 3 - Using graceful fallback mode, federation disabled');
 
   initializationPromise = (async () => {
     try {
-      await initializeCoreModules();
-      isInitialized = true;
-      console.log('[Federation] Successfully initialized all core modules');
+      // For Week 3, we skip actual federation initialization
+      // and let adapters fall back to existing implementations
+      console.log('[Federation] Fallback mode - adapters will use existing implementations');
+      isInitialized = false; // Keep this false to ensure adapters always use fallbacks
     } catch (error) {
-      console.error('[Federation] Failed to initialize core modules:', error);
+      console.error('[Federation] Fallback mode initialization failed:', error);
       throw error;
     }
   })();

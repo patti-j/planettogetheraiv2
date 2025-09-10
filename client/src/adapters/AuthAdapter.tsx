@@ -1,7 +1,6 @@
 // Authentication Adapter - Wraps Core Platform Module behind existing useAuth API
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
-import { getCorePlatformModule } from '../../../packages/shared-components';
-import { initializeFederation } from '@/lib/federation-bootstrap';
+import { loadCorePlatformModule } from '@/lib/federation-access';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { User } from '@/hooks/useAuth';
@@ -22,11 +21,11 @@ export function AuthAdapterProvider({ children }: { children: ReactNode }) {
   const [isInitialized, setIsInitialized] = useState(false);
   const queryClient = useQueryClient();
 
-  // Initialize federation system
+  // Initialize federation system (now using dynamic loading)
   useEffect(() => {
-    initializeFederation()
-      .then(() => setIsInitialized(true))
-      .catch(error => console.error('[AuthAdapter] Federation init failed:', error));
+    // For Week 3, we don't need to pre-initialize
+    // Federation will be attempted dynamically when needed
+    setIsInitialized(true);
   }, []);
 
   // Use existing auth logic but potentially enhance with federated modules in the future
@@ -68,9 +67,14 @@ export function AuthAdapterProvider({ children }: { children: ReactNode }) {
         // Use federated Core Platform module for user management if available
         if (isInitialized) {
           try {
-            const corePlatform = await getCorePlatformModule();
-            // Enhance user data with federated module if needed
-            userData = await corePlatform.getCurrentUser() || userData;
+            const corePlatform = await loadCorePlatformModule();
+            if (corePlatform) {
+              // Enhance user data with federated module if available
+              const federatedUserResult = await corePlatform.getCurrentUser();
+              if (federatedUserResult.success && federatedUserResult.data) {
+                userData = federatedUserResult.data;
+              }
+            }
           } catch (error) {
             console.warn('[AuthAdapter] Federated user lookup failed, using fallback:', error);
           }

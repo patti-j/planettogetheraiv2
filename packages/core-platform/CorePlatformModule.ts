@@ -1,7 +1,39 @@
 // Core Platform Module Implementation
-import { BaseModule, ModuleInitOptions } from '@planettogether/shared-components';
-import type { CorePlatformContract } from '@planettogether/shared-components/contracts/module-contracts';
+// Using simplified standalone implementation for Week 3 client adapter integration
 import { authService, navigationService, themeService } from './services';
+
+// Simplified types and base class for initial federation
+interface ModuleInitOptions {
+  config?: Record<string, any>;
+  apiBaseUrl?: string;
+  theme?: string;
+}
+
+abstract class BaseModule {
+  protected abstract name: string;
+  
+  async initialize(options?: ModuleInitOptions): Promise<void> {
+    console.log(`[${this.name}] Initializing module...`);
+    await this.onInitialize(options);
+  }
+  
+  async destroy(): Promise<void> {
+    console.log(`[${this.name}] Destroying module...`);
+    await this.onDestroy();
+  }
+  
+  protected abstract onInitialize(options?: ModuleInitOptions): Promise<void>;
+  protected abstract onDestroy(): Promise<void>;
+}
+
+interface CorePlatformContract {
+  getCurrentUser(): Promise<{ success: boolean; data?: any; error?: string }>;
+  getUserPermissions(userId: number): Promise<{ success: boolean; data?: string[]; error?: string }>;
+  setTheme(theme: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentTheme(): Promise<{ success: boolean; data?: string; error?: string }>;
+  navigateTo(path: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentRoute(): Promise<{ success: boolean; data?: string; error?: string }>;
+}
 
 export class CorePlatformModule extends BaseModule implements CorePlatformContract {
   protected name = 'core-platform';

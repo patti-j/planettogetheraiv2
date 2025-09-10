@@ -1,8 +1,58 @@
 // Agent System Module Implementation
-import { BaseModule, ModuleInitOptions } from '@planettogether/shared-components';
-import type { AgentSystemContract } from '@planettogether/shared-components/contracts/module-contracts';
-import type { AgentAnalysisRequest, AgentAnalysisResponse } from '@planettogether/shared-components/types';
+// Using simplified standalone implementation for Week 3 client adapter integration
 import { agentManager, agentAnalysisEngine, agentCommunication } from './services';
+
+// Simplified types and base class for initial federation
+interface ModuleInitOptions {
+  config?: Record<string, any>;
+}
+
+interface AgentAnalysisRequest {
+  agentId: string;
+  context: Record<string, any>;
+}
+
+interface AgentAnalysisResponse {
+  agentId: string;
+  summary: string;
+  insights: string[];
+  recommendations: string[];
+  metrics: {
+    efficiency: number;
+    quality: number;
+    cost: number;
+    safety: number;
+    delivery: number;
+  };
+  confidence: number;
+}
+
+abstract class BaseModule {
+  protected abstract name: string;
+  
+  async initialize(options?: ModuleInitOptions): Promise<void> {
+    console.log(`[${this.name}] Initializing module...`);
+    await this.onInitialize(options);
+  }
+  
+  async destroy(): Promise<void> {
+    console.log(`[${this.name}] Destroying module...`);
+    await this.onDestroy();
+  }
+  
+  protected abstract onInitialize(options?: ModuleInitOptions): Promise<void>;
+  protected abstract onDestroy(): Promise<void>;
+}
+
+interface AgentSystemContract {
+  getAvailableAgents(): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  getCurrentAgent(): any;
+  switchToAgent(agentId: string): Promise<void>;
+  requestAnalysis(request: AgentAnalysisRequest): Promise<AgentAnalysisResponse>;
+  getAgentCapabilities(agentId: string): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  sendMessageToAgent(agentId: string, message: string): Promise<{ success: boolean; data?: string; error?: string }>;
+  subscribeToAgentUpdates(callback: (update: any) => void): () => void;
+}
 
 export class AgentSystemModule extends BaseModule implements AgentSystemContract {
   protected name = 'agent-system';

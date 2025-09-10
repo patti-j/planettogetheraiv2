@@ -1,7 +1,6 @@
 // Navigation Adapter - Wraps Core Platform Module navigation behind existing NavigationContext API
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { getCorePlatformModule } from '../../../packages/shared-components';
-import { initializeFederation } from '@/lib/federation-bootstrap';
+import { loadCorePlatformModule } from '@/lib/federation-access';
 import { useLocation } from 'wouter';
 import { useAuthAdapter } from './AuthAdapter';
 import { apiRequest } from '@/lib/queryClient';
@@ -36,11 +35,11 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuthAdapter();
 
-  // Initialize federation system
+  // Initialize federation system (now using dynamic loading)
   useEffect(() => {
-    initializeFederation()
-      .then(() => setIsInitialized(true))
-      .catch(error => console.error('[NavigationAdapter] Federation init failed:', error));
+    // For Week 3, we don't need to pre-initialize
+    // Federation will be attempted dynamically when needed
+    setIsInitialized(true);
   }, []);
 
   // Fetch user preferences

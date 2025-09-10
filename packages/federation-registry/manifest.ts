@@ -1,9 +1,25 @@
 // Federation Module Manifest  
 import { federationRegistry, createModuleFactory } from './index';
-import type { 
-  CorePlatformContract, 
-  AgentSystemContract 
-} from '@planettogether/shared-components/contracts/module-contracts';
+
+// Simplified interfaces for initial federation
+interface CorePlatformContract {
+  getCurrentUser(): Promise<{ success: boolean; data?: any; error?: string }>;
+  getUserPermissions(userId: number): Promise<{ success: boolean; data?: string[]; error?: string }>;
+  setTheme(theme: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentTheme(): Promise<{ success: boolean; data?: string; error?: string }>;
+  navigateTo(path: string): Promise<{ success: boolean; error?: string }>;
+  getCurrentRoute(): Promise<{ success: boolean; data?: string; error?: string }>;
+}
+
+interface AgentSystemContract {
+  getAvailableAgents(): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  getCurrentAgent(): any;
+  switchToAgent(agentId: string): Promise<void>;
+  requestAnalysis(request: any): Promise<any>;
+  getAgentCapabilities(agentId: string): Promise<{ success: boolean; data?: any[]; error?: string }>;
+  sendMessageToAgent(agentId: string, message: string): Promise<{ success: boolean; data?: string; error?: string }>;
+  subscribeToAgentUpdates(callback: (update: any) => void): () => void;
+}
 
 // Register Core Platform Module using singleton
 federationRegistry.register({

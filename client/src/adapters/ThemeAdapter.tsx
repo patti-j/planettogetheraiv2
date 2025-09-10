@@ -1,7 +1,6 @@
 // Theme Adapter - Wraps Core Platform Module theme management behind existing ThemeContext API
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { getCorePlatformModule } from '../../../packages/shared-components';
-import { initializeFederation } from '@/lib/federation-bootstrap';
+import { loadCorePlatformModule } from '@/lib/federation-access';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { queryClient, apiRequest } from '@/lib/queryClient';
 import { useAuthAdapter } from './AuthAdapter';
@@ -22,11 +21,11 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>('light');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
 
-  // Initialize federation system
+  // Initialize federation system (now using dynamic loading)
   useEffect(() => {
-    initializeFederation()
-      .then(() => setIsInitialized(true))
-      .catch(error => console.error('[ThemeAdapter] Federation init failed:', error));
+    // For Week 3, we don't need to pre-initialize
+    // Federation will be attempted dynamically when needed
+    setIsInitialized(true);
   }, []);
 
   // Query user preferences
