@@ -95,6 +95,7 @@ import SchedulerPro from "@/pages/scheduler-pro";
 import SchedulerProNew from "@/pages/scheduler-pro-new";
 import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
+import FederationDashboard from "@/pages/federation-dashboard";
 
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuthFederated";
@@ -172,6 +173,11 @@ export default function ApplicationApp() {
               <Route path="/mobile-home" component={HomePage} />
 
               {/* Analytics & Reports */}
+              <Route path="/federation-dashboard">
+                <ProtectedRoute>
+                  <FederationDashboard />
+                </ProtectedRoute>
+              </Route>
               <Route path="/analytics">
                 <ProtectedRoute feature="analytics" action="view">
                   <Analytics />
