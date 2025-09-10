@@ -1,0 +1,38 @@
+{
+  "name": "@planettogether/workspace",
+  "version": "1.0.0",
+  "description": "PlanetTogether Modular Federation Workspace",
+  "private": true,
+  "workspaces": [
+    "core-platform",
+    "agent-system", 
+    "production-scheduling",
+    "shop-floor",
+    "quality-management",
+    "inventory-planning",
+    "analytics-reporting",
+    "shared-components"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces",
+    "dev": "npm run dev --workspaces",
+    "test": "npm run test --workspaces",
+    "lint": "npm run lint --workspaces",
+    "clean": "rm -rf */dist */node_modules",
+    "bootstrap": "npm install && npm run build",
+    "federation:start": "node federation-registry.js",
+    "federation:status": "node -e \"console.log(require('./federation-registry.js').federationRegistry.getModuleStatus())\""
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0",
+    "jest": "^29.0.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
+    "eslint": "^8.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  }
+}

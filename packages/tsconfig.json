@@ -1,0 +1,60 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "node",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    
+    "baseUrl": ".",
+    "paths": {
+      "@planettogether/*": ["./*"],
+      "@shared/*": ["./shared-components/*"],
+      "@core/*": ["./core-platform/*"],
+      "@agents/*": ["./agent-system/*"],
+      "@scheduling/*": ["./production-scheduling/*"],
+      "@shopfloor/*": ["./shop-floor/*"],
+      "@quality/*": ["./quality-management/*"],
+      "@inventory/*": ["./inventory-planning/*"],
+      "@analytics/*": ["./analytics-reporting/*"]
+    },
+    
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "outDir": "./dist",
+    "rootDir": "./",
+    
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx"
+  ],
+  "references": [
+    { "path": "./shared-components" },
+    { "path": "./core-platform" },
+    { "path": "./agent-system" },
+    { "path": "./production-scheduling" },
+    { "path": "./shop-floor" },
+    { "path": "./quality-management" },
+    { "path": "./inventory-planning" },
+    { "path": "./analytics-reporting" }
+  ]
+}

@@ -3,8 +3,7 @@
 
 import type { 
   ModuleRegistration, 
-  FederationEventBus, 
-  ModuleEvent,
+  FederationEventBus,
   CorePlatformContract,
   AgentSystemContract,
   ProductionSchedulingContract,
@@ -14,6 +13,15 @@ import type {
   AnalyticsReportingContract,
   SharedComponentsContract
 } from './shared-components/contracts/module-contracts';
+
+// Define ModuleEvent interface locally since it's not exported from contracts
+interface ModuleEvent {
+  type: string;
+  source: string;
+  target?: string;
+  payload: any;
+  timestamp: Date;
+}
 
 // Module State Management
 interface ModuleState {
@@ -307,7 +315,7 @@ export function isShopFloorContract(contract: any): contract is ShopFloorContrac
 }
 
 // Development Helper
-export function createModuleProxy<T>(moduleId: string): T {
+export function createModuleProxy<T extends Record<string, any>>(moduleId: string): T {
   return new Proxy({} as T, {
     get(target, prop) {
       const contract = federationRegistry.getModuleContract<T>(moduleId);
