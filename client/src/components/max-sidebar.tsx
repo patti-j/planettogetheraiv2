@@ -17,6 +17,10 @@ import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
 import { useSplitScreen } from "@/contexts/SplitScreenContext";
 import { AIReasoning } from "@/components/max-ai-reasoning";
 import { SchedulerContextService } from "@/services/scheduler/SchedulerContextService";
+import { useAgent } from "@/contexts/AgentContext";
+import { useAgentAnalysis } from "@/hooks/useAgentAnalysis";
+import { AgentSelector } from "@/components/agent-selector";
+import type { AgentMessage } from "@/types/agents";
 import { 
   Bot, 
   Send, 
@@ -65,35 +69,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AI_THEME_OPTIONS, AIThemeColor } from "@/lib/ai-theme";
 
 
-interface Message {
-  id: string;
-  type: 'user' | 'assistant';
-  content: string;
-  timestamp: Date;
-  context?: {
-    page: string;
-    action?: string;
-    data?: any;
-  };
-  reasoning?: {
-    thought_process: string[];
-    decision_factors: string[];
-    playbooks_consulted: string[];
-    confidence_score: number;
-    alternative_approaches?: string[];
-  };
-  playbooksUsed?: Array<{
-    id: number;
-    title: string;
-    relevance_score: number;
-    sections_used: string[];
-    applied_rules?: string[];
-  }>;
-  canvasAction?: {
-    type: 'create' | 'update' | 'clear';
-    items?: CanvasItem[];
-  };
-}
+// Using AgentMessage from types/agents.ts instead of local Message interface
 
 
 
@@ -105,33 +81,7 @@ interface AIInsight {
   actionable: boolean;
 }
 
-// AI Agent Team System Types
-interface AIAgent {
-  id: string;
-  name: string;
-  type: string;
-  description: string;
-  icon: any;
-  color: string;
-  specialization: string[];
-  isActive: boolean;
-}
-
-interface AgentRecommendation {
-  id: string;
-  agentId: string;
-  title: string;
-  description: string;
-  priority: number; // 1-100
-  confidence: number; // 1-100
-  category: string;
-  actionType: string;
-  estimatedImpact: string;
-  estimatedTime: number; // minutes
-  reasoning: string;
-  status: 'pending' | 'accepted' | 'rejected' | 'completed' | 'in_progress';
-  actionData?: any;
-}
+// Using agent types from the centralized agent system
 
 // Available AI voice options for OpenAI TTS
 const VOICE_OPTIONS = [
@@ -143,89 +93,7 @@ const VOICE_OPTIONS = [
   { value: 'shimmer', name: 'Shimmer', description: 'Gentle and soothing' }
 ];
 
-// Specialized Manufacturing AI Agents
-const AI_AGENTS: AIAgent[] = [
-  {
-    id: 'general_assistant',
-    name: 'Max AI Assistant',
-    type: 'general_assistant',
-    description: 'General manufacturing intelligence and navigation assistant',
-    icon: Sparkles,
-    color: 'from-blue-500 to-purple-600',
-    specialization: ['General queries', 'Navigation', 'System help', 'Data analysis'],
-    isActive: true,
-  },
-  {
-    id: 'production_scheduling',
-    name: 'Production Scheduler',
-    type: 'production_scheduling',
-    description: 'Optimizes production schedules and resolves scheduling conflicts',
-    icon: Calendar,
-    color: 'from-green-500 to-teal-600',
-    specialization: ['Schedule optimization', 'Conflict resolution', 'Resource allocation', 'Timeline management'],
-    isActive: true,
-  },
-  {
-    id: 'inventory_planning',
-    name: 'Inventory Planner',
-    type: 'inventory_planning',
-    description: 'Manages stock levels, forecasts demand, and optimizes inventory',
-    icon: Package,
-    color: 'from-orange-500 to-red-600',
-    specialization: ['Stock optimization', 'Demand forecasting', 'Reorder planning', 'Safety stock'],
-    isActive: true,
-  },
-  {
-    id: 'capacity_planning',
-    name: 'Capacity Planner',
-    type: 'capacity_planning',
-    description: 'Analyzes resource utilization and plans capacity requirements',
-    icon: Layers,
-    color: 'from-purple-500 to-pink-600',
-    specialization: ['Resource utilization', 'Capacity analysis', 'Bottleneck detection', 'Load balancing'],
-    isActive: true,
-  },
-  {
-    id: 'quality_management',
-    name: 'Quality Manager',
-    type: 'quality_management',
-    description: 'Monitors quality metrics and identifies improvement opportunities',
-    icon: Shield,
-    color: 'from-indigo-500 to-blue-600',
-    specialization: ['Quality control', 'Defect analysis', 'Process improvement', 'Compliance'],
-    isActive: true,
-  },
-  {
-    id: 'maintenance_planning',
-    name: 'Maintenance Planner',
-    type: 'maintenance_planning',
-    description: 'Predicts equipment failures and schedules preventive maintenance',
-    icon: Wrench,
-    color: 'from-yellow-500 to-orange-600',
-    specialization: ['Predictive maintenance', 'Equipment health', 'Downtime reduction', 'Service scheduling'],
-    isActive: true,
-  },
-  {
-    id: 'supply_chain',
-    name: 'Supply Chain Optimizer',
-    type: 'supply_chain',
-    description: 'Optimizes supplier relationships and delivery schedules',
-    icon: Truck,
-    color: 'from-teal-500 to-green-600',
-    specialization: ['Supplier management', 'Logistics optimization', 'Lead time analysis', 'Cost reduction'],
-    isActive: true,
-  },
-  {
-    id: 'cost_optimization',
-    name: 'Cost Optimizer',
-    type: 'cost_optimization',
-    description: 'Identifies cost reduction opportunities across operations',
-    icon: DollarSign,
-    color: 'from-emerald-500 to-teal-600',
-    specialization: ['Cost analysis', 'Efficiency gains', 'Waste reduction', 'ROI optimization'],
-    isActive: true,
-  },
-];
+// Using agents from centralized config instead of local definitions
 
 function AIThemeSelector() {
   const { currentTheme, updateTheme, isUpdating } = useAITheme();
@@ -265,76 +133,22 @@ function AIThemeSelector() {
   );
 }
 
-function AIAgentSwitcher({ activeAgent, onAgentChange }: { 
-  activeAgent: AIAgent; 
-  onAgentChange: (agent: AIAgent) => void;
-}) {
-  return (
-    <Select 
-      value={activeAgent.id} 
-      onValueChange={(agentId) => {
-        const agent = AI_AGENTS.find(a => a.id === agentId);
-        if (agent) onAgentChange(agent);
-      }}
-    >
-      <SelectTrigger className="h-10 mb-4">
-        <SelectValue>
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-lg bg-gradient-to-r ${activeAgent.color} flex-shrink-0`}>
-              <activeAgent.icon className="h-4 w-4 text-white" />
-            </div>
-            <div className="flex flex-col items-start min-w-0">
-              <span className="font-medium text-sm truncate">{activeAgent.name}</span>
-              <span className="text-xs text-muted-foreground truncate">{activeAgent.description}</span>
-            </div>
-            <ChevronDown className="h-4 w-4 opacity-50 flex-shrink-0" />
-          </div>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent className="w-80">
-        {AI_AGENTS.filter(agent => agent.isActive).map((agent) => (
-          <SelectItem key={agent.id} value={agent.id}>
-            <div className="flex items-center space-x-3 py-2">
-              <div className={`p-2 rounded-lg bg-gradient-to-r ${agent.color} flex-shrink-0`}>
-                <agent.icon className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex flex-col min-w-0">
-                <span className="font-medium">{agent.name}</span>
-                <span className="text-xs text-muted-foreground mb-1">{agent.description}</span>
-                <div className="flex flex-wrap gap-1">
-                  {agent.specialization.slice(0, 2).map((spec, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs px-1 py-0">
-                      {spec}
-                    </Badge>
-                  ))}
-                  {agent.specialization.length > 2 && (
-                    <span className="text-xs text-muted-foreground">+{agent.specialization.length - 2} more</span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
+// Using new AgentSelector component instead of old AIAgentSwitcher
 
 function RecommendationCard({ 
   recommendation, 
   onExecute, 
   onViewDetails 
 }: { 
-  recommendation: AgentRecommendation;
-  onExecute: (rec: AgentRecommendation) => void;
-  onViewDetails: (rec: AgentRecommendation) => void;
+  recommendation: any; // Using any for now, will be updated to use agent recommendations
+  onExecute: (rec: any) => void;
+  onViewDetails: (rec: any) => void;
 }) {
-  const priorityColor = recommendation.priority >= 80 ? 'text-red-600' : 
-                       recommendation.priority >= 60 ? 'text-orange-600' : 
-                       recommendation.priority >= 40 ? 'text-yellow-600' : 'text-green-600';
-  
-  const confidenceColor = recommendation.confidence >= 90 ? 'text-green-600' : 
-                         recommendation.confidence >= 70 ? 'text-blue-600' : 'text-yellow-600';
+  const getImpactColor = (impact: string) => {
+    if (impact === 'high') return 'text-red-600';
+    if (impact === 'medium') return 'text-orange-600';
+    return 'text-green-600';
+  };
 
   return (
     <Card className="mb-3 border-l-4 border-l-blue-500">
@@ -342,23 +156,27 @@ function RecommendationCard({
         <div className="flex items-start justify-between mb-2">
           <h4 className="font-medium text-sm mb-1">{recommendation.title}</h4>
           <div className="flex items-center space-x-2 text-xs">
-            <span className={`font-medium ${priorityColor}`}>P{recommendation.priority}</span>
-            <span className={`${confidenceColor}`}>{recommendation.confidence}%</span>
+            <span className={`font-medium ${getImpactColor(recommendation.impact)}`}>
+              {recommendation.impact?.toUpperCase()}
+            </span>
+            <span className="text-blue-600">{recommendation.confidence}%</span>
           </div>
         </div>
         
         <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{recommendation.description}</p>
         
-        <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
-          <span className="flex items-center">
-            <Clock className="h-3 w-3 mr-1" />
-            {recommendation.estimatedTime}min
-          </span>
-          <span className="flex items-center">
-            <Target className="h-3 w-3 mr-1" />
-            {recommendation.estimatedImpact}
-          </span>
-        </div>
+        {recommendation.metrics && (
+          <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
+            <span className="flex items-center">
+              <Target className="h-3 w-3 mr-1" />
+              {recommendation.metrics.improvement}
+            </span>
+            <span className="flex items-center">
+              <TrendingUpIcon className="h-3 w-3 mr-1" />
+              {recommendation.metrics.unit}
+            </span>
+          </div>
+        )}
         
         <div className="flex space-x-2">
           <Button 
@@ -411,217 +229,43 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const { startTour } = useTour();
   const { handleNavigation } = useSplitScreen();
   
+  // Agent System Integration
+  const { 
+    currentAgent, 
+    messages, 
+    addMessage, 
+    clearMessages,
+    currentAnalysis
+  } = useAgent();
+  const { analysis, isLoading: isAnalysisLoading } = useAgentAnalysis();
+  
   // State management
-  const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [currentInsights, setCurrentInsights] = useState<AIInsight[]>([]);
   const [isVoiceEnabled, setIsVoiceEnabled] = useState(true);
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
-
-  // AI Agent Team State
-  const [activeAgent, setActiveAgent] = useState<AIAgent>(AI_AGENTS[0]); // Default to general assistant
-  const [agentRecommendations, setAgentRecommendations] = useState<AgentRecommendation[]>([]);
   const [showRecommendations, setShowRecommendations] = useState(true);
-  const [isLoadingRecommendations, setIsLoadingRecommendations] = useState(false);
 
-  // Generate sample recommendations based on agent type
-  const generateAgentRecommendations = (agent: AIAgent): AgentRecommendation[] => {
-    const currentPage = window.location.pathname;
-    const recommendations: AgentRecommendation[] = [];
+  // Using new agent analysis system instead of old recommendation generation
 
-    switch (agent.type) {
-      case 'production_scheduling':
-        recommendations.push(
-          {
-            id: 'sched-001',
-            agentId: agent.id,
-            title: 'Resolve Resource Conflict on Line 2',
-            description: 'Equipment C-102 is double-booked between Job J-4827 and Job J-4831. Recommend shifting Job J-4831 by 2 hours.',
-            priority: 85,
-            confidence: 94,
-            category: 'conflict_resolution',
-            actionType: 'reschedule',
-            estimatedImpact: 'Prevent 4hr delay',
-            estimatedTime: 5,
-            reasoning: 'Job J-4831 has a 2-hour buffer in its schedule and can be safely delayed without affecting downstream operations.',
-            status: 'pending',
-          },
-          {
-            id: 'sched-002',
-            agentId: agent.id,
-            title: 'Optimize Batch Sequencing',
-            description: 'Grouping similar products in Batch B-401 through B-405 could reduce changeover time by 40%.',
-            priority: 72,
-            confidence: 87,
-            category: 'optimization',
-            actionType: 'resequence',
-            estimatedImpact: '3.2hr saved',
-            estimatedTime: 15,
-            reasoning: 'Product families share similar setup requirements. Batching reduces cleaning and equipment changeover time.',
-            status: 'pending',
-          }
-        );
-        break;
-
-      case 'inventory_planning':
-        recommendations.push(
-          {
-            id: 'inv-001',
-            agentId: agent.id,
-            title: 'Reorder Raw Material A-205',
-            description: 'Current stock: 847 kg. Lead time: 5 days. Based on current consumption, stock will be insufficient in 3 days.',
-            priority: 90,
-            confidence: 96,
-            category: 'stock_replenishment',
-            actionType: 'reorder',
-            estimatedImpact: 'Prevent stockout',
-            estimatedTime: 2,
-            reasoning: 'Historical usage shows 280kg/day average. Current order would arrive just in time to prevent production delays.',
-            status: 'pending',
-          },
-          {
-            id: 'inv-002',
-            agentId: agent.id,
-            title: 'Reduce Safety Stock for Item B-330',
-            description: 'Safety stock is 150% above optimal level. Current excess: 2,340 units valued at $23,400.',
-            priority: 65,
-            confidence: 82,
-            category: 'optimization',
-            actionType: 'adjust_safety_stock',
-            estimatedImpact: '$23.4k freed up',
-            estimatedTime: 10,
-            reasoning: 'Demand variability has decreased 40% over past 6 months. Current safety stock calculation is outdated.',
-            status: 'pending',
-          }
-        );
-        break;
-
-      case 'capacity_planning':
-        recommendations.push(
-          {
-            id: 'cap-001',
-            agentId: agent.id,
-            title: 'Add Weekend Shift for Bottleneck Resource',
-            description: 'Packaging Line PL-03 is at 98% utilization and creating a bottleneck. Weekend shift could increase capacity by 40%.',
-            priority: 78,
-            confidence: 89,
-            category: 'capacity_expansion',
-            actionType: 'add_shift',
-            estimatedImpact: '+40% capacity',
-            estimatedTime: 30,
-            reasoning: 'Bottleneck analysis shows PL-03 constrains overall plant output. Additional shift ROI is positive within 6 weeks.',
-            status: 'pending',
-          }
-        );
-        break;
-
-      case 'quality_management':
-        recommendations.push(
-          {
-            id: 'qual-001',
-            agentId: agent.id,
-            title: 'Investigate Quality Trend on Line 1',
-            description: 'Defect rate increased from 0.8% to 2.3% over past week. Pattern suggests equipment drift on Station S-105.',
-            priority: 88,
-            confidence: 91,
-            category: 'quality_investigation',
-            actionType: 'investigate',
-            estimatedImpact: 'Prevent quality issues',
-            estimatedTime: 45,
-            reasoning: 'Statistical analysis shows correlation between S-105 temperature variance and defect rate increases.',
-            status: 'pending',
-          }
-        );
-        break;
-
-      case 'maintenance_planning':
-        recommendations.push(
-          {
-            id: 'maint-001',
-            agentId: agent.id,
-            title: 'Schedule Preventive Maintenance',
-            description: 'Pump P-401 vibration levels increased 25% in past month. Recommend maintenance before failure.',
-            priority: 82,
-            confidence: 93,
-            category: 'preventive_maintenance',
-            actionType: 'schedule_maintenance',
-            estimatedImpact: 'Prevent failure',
-            estimatedTime: 180,
-            reasoning: 'Vibration pattern matches historical pre-failure signatures. Maintenance now prevents 2-week emergency downtime.',
-            status: 'pending',
-          }
-        );
-        break;
-
-      default:
-        recommendations.push(
-          {
-            id: 'gen-001',
-            agentId: agent.id,
-            title: 'Review Production Dashboard',
-            description: 'Based on your current page activity, you might find the production dashboard helpful for monitoring operations.',
-            priority: 50,
-            confidence: 75,
-            category: 'navigation',
-            actionType: 'navigate',
-            estimatedImpact: 'Better visibility',
-            estimatedTime: 1,
-            reasoning: 'User is actively reviewing manufacturing data. Dashboard provides comprehensive overview.',
-            status: 'pending',
-          }
-        );
-        break;
-    }
-
-    return recommendations;
-  };
-
-  // Handle agent switching
-  const handleAgentChange = (newAgent: AIAgent) => {
-    setActiveAgent(newAgent);
-    setIsLoadingRecommendations(true);
-    
-    // Simulate loading recommendations
-    setTimeout(() => {
-      const recommendations = generateAgentRecommendations(newAgent);
-      setAgentRecommendations(recommendations);
-      setIsLoadingRecommendations(false);
-    }, 800);
-  };
-
-  // Handle recommendation actions
-  const handleExecuteRecommendation = (recommendation: AgentRecommendation) => {
+  // Handle recommendation actions using new agent system
+  const handleExecuteRecommendation = (recommendation: any) => {
     console.log('Executing recommendation:', recommendation);
     toast({
       title: "Executing Action",
       description: `Starting ${recommendation.title}...`,
     });
-    
-    // Update recommendation status
-    setAgentRecommendations(prev => 
-      prev.map(rec => 
-        rec.id === recommendation.id 
-          ? { ...rec, status: 'in_progress' as const }
-          : rec
-      )
-    );
   };
 
-  const handleViewRecommendationDetails = (recommendation: AgentRecommendation) => {
+  const handleViewRecommendationDetails = (recommendation: any) => {
     console.log('Viewing details for:', recommendation);
     toast({
       title: "Recommendation Details",
       description: `Reasoning: ${recommendation.reasoning}`,
     });
   };
-
-  // Load initial recommendations when component mounts or agent changes
-  useEffect(() => {
-    const recommendations = generateAgentRecommendations(activeAgent);
-    setAgentRecommendations(recommendations);
-  }, [activeAgent]);
   
   // Save voice settings to database only
   useEffect(() => {
@@ -2051,19 +1695,16 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-3">
-          {/* AI Agent Switcher */}
-          <AIAgentSwitcher 
-            activeAgent={activeAgent} 
-            onAgentChange={handleAgentChange}
-          />
+          {/* AI Agent Selector */}
+          <AgentSelector compact={true} />
 
           {/* Agent Recommendations */}
           {showRecommendations && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-medium flex items-center gap-2">
-                  <activeAgent.icon className="h-4 w-4" />
-                  {activeAgent.name} Recommendations
+                  <Sparkles className="h-4 w-4" style={{ color: currentAgent.color }} />
+                  {currentAgent.displayName} Insights
                 </h3>
                 <Button 
                   variant="ghost" 
@@ -2075,14 +1716,14 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 </Button>
               </div>
 
-              {isLoadingRecommendations ? (
+              {isAnalysisLoading ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-                  <span className="ml-2 text-sm text-muted-foreground">Loading recommendations...</span>
+                  <span className="ml-2 text-sm text-muted-foreground">Analyzing operations...</span>
                 </div>
-              ) : agentRecommendations.length > 0 ? (
+              ) : analysis?.recommendations && analysis.recommendations.length > 0 ? (
                 <div className="space-y-2">
-                  {agentRecommendations.map((recommendation) => (
+                  {analysis.recommendations.map((recommendation) => (
                     <RecommendationCard
                       key={recommendation.id}
                       recommendation={recommendation}
@@ -2094,8 +1735,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
               ) : (
                 <div className="text-center text-sm text-muted-foreground py-4">
                   <Target className="h-6 w-6 mx-auto mb-2 opacity-50" />
-                  <p>No recommendations available</p>
-                  <p className="text-xs">Switch to a different agent or check back later</p>
+                  <p>No insights available</p>
+                  <p className="text-xs">Check back for {currentAgent.displayName} analysis</p>
                 </div>
               )}
             </div>
@@ -2105,16 +1746,16 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           <div className="border-t pt-3">
             <div className="flex items-center gap-2 mb-3">
               <MessageSquare className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Chat with {activeAgent.name}</span>
+              <span className="text-sm font-medium">Chat with {currentAgent.displayName}</span>
             </div>
             
             {messages.length === 0 && (
               <div className="text-center text-gray-500 text-sm py-4">
                 <Bot className="h-6 w-6 mx-auto mb-2 text-gray-400" />
-                <p>Hi! I'm {activeAgent.name}.</p>
-                <p className="text-xs mt-1">{activeAgent.description}</p>
+                <p>Start a conversation with {currentAgent.displayName}</p>
+                <p className="text-xs mt-1">{currentAgent.description}</p>
                 <div className="flex flex-wrap gap-1 justify-center mt-2">
-                  {activeAgent.specialization.slice(0, 3).map((spec, index) => (
+                  {currentAgent.specialties.slice(0, 3).map((spec, index) => (
                     <Badge key={index} variant="secondary" className="text-xs">
                       {spec}
                     </Badge>
