@@ -318,10 +318,10 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       {/* Menu Content */}
       <ScrollArea className="flex-1 overflow-y-auto navigation-menu-scroll"
         style={{ 
-          height: 'calc(100vh - 200px)',
-          maxHeight: '600px'
+          height: 'calc(100vh - 240px)',
+          maxHeight: 'calc(100vh - 240px)'
         }}>
-        <div className="py-3" style={{ 
+        <div className="py-3 pb-20" style={{ 
           touchAction: 'pan-y', 
           WebkitOverflowScrolling: 'touch', 
           overscrollBehavior: 'contain' 
