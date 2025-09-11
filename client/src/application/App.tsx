@@ -397,12 +397,12 @@ export default function ApplicationApp() {
               <Route path="/plants-management" component={PlantsManagement} />
               <Route path="/business-goals" component={BusinessGoals} />
               <Route path="/business-intelligence">
-                <ProtectedRoute feature="business-intelligence" action="view">
+                <ProtectedRoute feature="analytics" action="view">
                   <Analytics />
                 </ProtectedRoute>
               </Route>
               <Route path="/financial-management">
-                <ProtectedRoute feature="financial-management" action="view">
+                <ProtectedRoute feature="analytics" action="view">
                   <Dashboard />
                 </ProtectedRoute>
               </Route>

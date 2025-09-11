@@ -1,4 +1,4 @@
-import { usePermissions } from "@/hooks/useAuth";
+import { usePermissions, useAuth } from "@/hooks/useAuth";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -17,6 +17,7 @@ export function ProtectedRoute({
   role,
   fallback 
 }: ProtectedRouteProps) {
+  const { user, isLoading } = useAuth();
   const { hasPermission, hasAnyPermission, hasRole } = usePermissions();
 
   let hasAccess = false;
@@ -25,8 +26,29 @@ export function ProtectedRoute({
     feature,
     action,
     permissions,
-    role
+    role,
+    isLoading,
+    userExists: !!user
   });
+
+  // If auth is still loading, show a loading state instead of access denied
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading permissions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If user is not authenticated at all, they shouldn't see "Access Denied" but should be redirected to login
+  if (!user) {
+    // This should be handled by the auth system, but for safety:
+    window.location.href = '/login';
+    return null;
+  }
 
   if (role) {
     hasAccess = hasRole(role);
