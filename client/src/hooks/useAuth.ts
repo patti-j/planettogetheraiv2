@@ -19,12 +19,28 @@ const rolePermissionsMap: Record<string, string[]> = {
   'IT Administrator': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
     'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
-    'implementation-projects-view'
+    'implementation-projects-view',
+    // Newly connected features
+    'product-development-view', 'schedule-management-view', 'scheduling-history-view',
+    'functional-map-view', 'api-integrations-view', 'analytics-new-view',
+    'tasks-view', 'billing-view', 'algorithm-management-view',
+    'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
+    'data-import-simple-view', 'help-view', 'control-tower-view',
+    'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view',
+    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view'
   ],
   'Systems Manager': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
     'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view',
-    'implementation-projects-view'
+    'implementation-projects-view',
+    // Newly connected features
+    'product-development-view', 'schedule-management-view', 'scheduling-history-view',
+    'functional-map-view', 'api-integrations-view', 'analytics-new-view',
+    'tasks-view', 'billing-view', 'algorithm-management-view',
+    'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
+    'data-import-simple-view', 'help-view', 'control-tower-view',
+    'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view',
+    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view'
   ],
   'Administrator': [
     // Core permissions for all navigation menu items
@@ -44,7 +60,14 @@ const rolePermissionsMap: Record<string, string[]> = {
     'role-management-view', 'schedule-create', 'schedule-delete', 'schedule-edit', 'schedule-view',
     'scheduling-optimizer-view', 'shop-floor-view', 'systems-integration-view',
     'systems-management-view', 'tenant-admin-view', 'training-view',
-    'user-management-view', 'user-role-assignments-view', 'visual-factory-view'
+    'user-management-view', 'user-role-assignments-view', 'visual-factory-view',
+    // Newly connected features
+    'product-development-view', 'schedule-management-view', 'scheduling-history-view',
+    'functional-map-view', 'api-integrations-view', 'analytics-new-view',
+    'tasks-view', 'billing-view', 'algorithm-management-view',
+    'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
+    'data-import-simple-view', 'help-view', 'control-tower-view',
+    'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view'
   ],
   'Shop Floor Operations': [
     'shop-floor-view', 'operator-dashboard-view', 'reports-view',
