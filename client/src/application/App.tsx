@@ -46,7 +46,6 @@ import IntegrationsPage from "@/pages/integrations";
 import SystemIntegrationsPage from "@/pages/system-integrations";
 import DemandManagement from "@/pages/demand-management";
 import AtpCtp from "@/pages/atp-ctp";
-import Patti from "@/pages/Patti";
 import PlanningOverview from "@/pages/planning-overview";
 import PlantsManagement from "@/pages/plants-management";
 import DemandSupplyAlignment from "@/pages/demand-supply-alignment";
@@ -90,9 +89,6 @@ import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
 import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
-import ProductionSchedulerWrapper from "@/pages/production-scheduler-wrapper";
-import SchedulerPro from "@/pages/scheduler-pro";
-import SchedulerProNew from "@/pages/scheduler-pro-new";
 import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 import FederationDashboard from "@/pages/federation-dashboard";
@@ -226,16 +222,6 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
-              <Route path="/production-scheduler">
-                <ProtectedRoute feature="schedule" action="view">
-                  <SchedulerProNew />
-                </ProtectedRoute>
-              </Route>
-              <Route path="/scheduler-pro">
-                <ProtectedRoute feature="schedule" action="view">
-                  <SchedulerProNew />
-                </ProtectedRoute>
-              </Route>
               <Route path="/master-production-schedule">
                 <ProtectedRoute feature="master-production-schedule" action="view">
                   <MasterProductionSchedule />
@@ -431,7 +417,6 @@ export default function ApplicationApp() {
               </Route>
 
               {/* Test/Demo Pages */}
-              <Route path="/patti" component={Patti} />
 
               {/* Settings */}
               <Route path="/email-settings">

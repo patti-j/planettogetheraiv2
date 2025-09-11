@@ -21,7 +21,6 @@ const ClearStorage = lazy(() => import("@/pages/clear-storage"));
 
 // Lazy-loaded Feature Detail Pages
 const AiFeaturesPage = lazy(() => import("@/pages/ai-features"));
-const ProductionSchedulingPage = lazy(() => import("@/pages/production-scheduling"));
 const SupplyChainMarketingPage = lazy(() => import("@/pages/supply-chain-marketing"));
 const TheoryOfConstraintsPage = lazy(() => import("@/pages/theory-of-constraints"));
 const EnterpriseScalabilityPage = lazy(() => import("@/pages/enterprise-scalability"));
@@ -120,11 +119,6 @@ export default function WebsiteApp() {
             </WebsiteLayout>
           </Route>
           
-          <Route path="/production-scheduling">
-            <WebsiteLayout>
-              <ProductionSchedulingPage />
-            </WebsiteLayout>
-          </Route>
           
           <Route path="/supply-chain">
             <WebsiteLayout>

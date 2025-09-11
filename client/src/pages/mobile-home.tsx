@@ -130,7 +130,6 @@ import { AiDesignStudioMobile } from '@/components/design-studio/ai-design-studi
 import { MobileAlerts } from '@/components/alerts/mobile-alerts';
 
 // Import page components for mobile routing - only import existing pages
-import ProductionSchedulePage from "@/pages/production-schedule";
 import Dashboard from "@/pages/dashboard";
 
 import Analytics from "@/pages/analytics";
@@ -249,7 +248,7 @@ const getWidgetRoute = (widget: any): string | null => {
       return '/kpi';
     case 'gantt':
     case 'schedule-gantt':
-      return '/production-schedule';
+      return '/dashboard';
     case 'schedule-optimizer':
     case 'schedule-optimization':
       return `/widgets/${widget.id}`;
@@ -281,7 +280,7 @@ const getWidgetRoute = (widget: any): string | null => {
         return `/widgets/${widget.id}`;
       }
       if (widgetTitle.includes('gantt') || (widgetTitle.includes('schedule') && !widgetTitle.includes('optimizer'))) {
-        return '/production-schedule';
+        return '/dashboard';
       }
       if (widgetTitle.includes('production') && widgetTitle.includes('cockpit')) {
         return '/dashboard';
@@ -519,13 +518,6 @@ function MobilePageContent({ location }: { location: string }) {
   console.log("🔍 MobilePageContent - Rendering for location:", location);
   
   switch (location) {
-    case "/production-schedule":
-      console.log("📅 Rendering Production Schedule page");
-      return (
-        <MobilePageWrapper>
-          <ProductionSchedulePage />
-        </MobilePageWrapper>
-      );
     case "/dashboard":
       return (
         <MobilePageWrapper>
@@ -1685,7 +1677,7 @@ export default function MobileHomePage() {
                               
                               // Handle Production Scheduler Dashboard specially
                               if (dashboard.title === "Production Scheduler Dashboard") {
-                                setLocation('/production-scheduler-dashboard');
+                                setLocation('/dashboard');
                               } else {
                                 setLocation(`/dashboards/${dashboard.id}`);
                               }

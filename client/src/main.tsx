@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import "./styles/bryntum-theme.css";
 
 // Comprehensive error suppression for Bryntum Scheduler
 if (typeof window !== 'undefined') {

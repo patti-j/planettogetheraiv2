@@ -20,7 +20,7 @@ import { apiRequest, queryClient } from '@/lib/queryClient';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
-import { SchedulerContextService } from '@/services/scheduler/SchedulerContextService';
+// Scheduler context service removed with production-scheduler cleanup
 
 interface AIInsight {
   id: string;
@@ -128,8 +128,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const { canvasItems, setCanvasItems, isCanvasVisible, setCanvasVisible } = useMaxDock();
   const previousMessageCountRef = useRef(0);
   
-  // Scheduler context service for enhanced context awareness
-  const schedulerContextService = SchedulerContextService.getInstance();
+  // Scheduler context removed with production-scheduler cleanup
   const [schedulerContext, setSchedulerContext] = useState<any>(null);
   const [schedulerInsights, setSchedulerInsights] = useState<AIInsight[]>([]);
 
@@ -171,16 +170,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     // Generate page-specific insights
     generatePageInsights(currentPage);
     
-    // Capture scheduler context if on scheduler page
+    // Capture scheduler context if on scheduler page (removed with production-scheduler)
     if (currentPage === '/production-scheduler') {
-      const context = schedulerContextService.getContext();
-      setSchedulerContext(context);
+      // Scheduler context service removed
+      setSchedulerContext(null);
       
       // Update context periodically while on scheduler page
       const interval = setInterval(() => {
-        const newContext = schedulerContextService.getContext();
-        setSchedulerContext(newContext);
-        generateSchedulerInsights(newContext);
+        // Scheduler context service removed
+        setSchedulerContext(null);
+        generateSchedulerInsights(null);
       }, 5000); // Update every 5 seconds
       
       return () => clearInterval(interval);
@@ -499,7 +498,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 selectedEvent: schedulerContext.selectedEvent,
                 selectedResource: schedulerContext.selectedResource,
                 criticalResources: schedulerContext.resources?.criticalResources,
-                suggestions: schedulerContextService.getSuggestions()
+                suggestions: []  // Scheduler context service removed
               }
             } : {})
           }
