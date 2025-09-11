@@ -149,9 +149,9 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
   })).filter(group => group.items.length > 0);
 
   return (
-    <>
+    <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b flex-shrink-0">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold">Navigation</h2>
           <div className="flex items-center gap-1">
@@ -234,7 +234,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
 
       {/* Recent Pages Section - Only show in list mode and when there are recent pages */}
       {layoutMode === 'list' && recentPages.length > 0 && (
-        <div className="px-3 py-2 border-b">
+        <div className="px-3 py-2 border-b flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Clock className="h-3 w-3 text-muted-foreground" />
@@ -316,12 +316,8 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       )}
 
       {/* Menu Content */}
-      <ScrollArea className="flex-1 overflow-y-auto navigation-menu-scroll"
-        style={{ 
-          height: 'calc(100vh - 240px)',
-          maxHeight: 'calc(100vh - 240px)'
-        }}>
-        <div className="py-3 pb-20" style={{ 
+      <ScrollArea className="flex-1 overflow-y-auto navigation-menu-scroll">
+        <div className="py-3 pb-10" style={{ 
           touchAction: 'pan-y', 
           WebkitOverflowScrolling: 'touch', 
           overscrollBehavior: 'contain' 
@@ -612,6 +608,6 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           )}
         </div>
       </ScrollArea>
-    </>
+    </div>
   );
 }
