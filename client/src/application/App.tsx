@@ -93,6 +93,12 @@ import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 import FederationDashboard from "@/pages/federation-dashboard";
 
+// Fully implemented features now being connected
+import ControlTower from "@/pages/control-tower";
+import Dashboards from "@/pages/dashboards";
+import SmartKpiTracking from "@/pages/smart-kpi-tracking";
+import SchedulingOptimizer from "@/pages/scheduling-optimizer";
+
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -349,14 +355,28 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/smart-kpi-tracking">
                 <ProtectedRoute feature="analytics" action="view">
-                  <KPIPage />
+                  <SmartKpiTracking />
                 </ProtectedRoute>
               </Route>
 
               {/* Global Control Tower */}
               <Route path="/control-tower">
                 <ProtectedRoute feature="analytics" action="view">
-                  <EnterpriseMap />
+                  <ControlTower />
+                </ProtectedRoute>
+              </Route>
+
+              {/* Dashboard Management */}
+              <Route path="/dashboards">
+                <ProtectedRoute feature="analytics" action="view">
+                  <Dashboards />
+                </ProtectedRoute>
+              </Route>
+
+              {/* Scheduling Optimizer */}
+              <Route path="/scheduling-optimizer">
+                <ProtectedRoute feature="scheduling-optimizer" action="view">
+                  <SchedulingOptimizer />
                 </ProtectedRoute>
               </Route>
               
