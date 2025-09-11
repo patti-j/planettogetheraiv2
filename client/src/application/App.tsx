@@ -99,6 +99,26 @@ import Dashboards from "@/pages/dashboards";
 import SmartKpiTracking from "@/pages/smart-kpi-tracking";
 import SchedulingOptimizer from "@/pages/scheduling-optimizer";
 
+// Additional connected features
+import ProductDevelopment from "@/pages/product-development";
+import DemandPlanning from "@/pages/demand-planning";
+import RoleManagement from "@/pages/role-management";
+import ERPImport from "@/pages/erp-import";
+import ScheduleManagement from "@/pages/schedule-management";
+import FunctionalMap from "@/pages/functional-map";
+import APIIntegrations from "@/pages/api-integrations";
+import AnalyticsNew from "@/pages/analytics-new";
+import SchedulingHistory from "@/pages/scheduling-history";
+import Tasks from "@/pages/tasks";
+import AlgorithmGovernance from "@/pages/algorithm-governance";
+import Billing from "@/pages/billing";
+import AlgorithmManagement from "@/pages/algorithm-management";
+import MobileDashboardView from "@/pages/mobile-dashboard-view";
+import MemoryBooks from "@/pages/memory-books";
+import DataImportClean from "@/pages/data-import-clean";
+import DataImportSimple from "@/pages/data-import-simple";
+import Help from "@/pages/help";
+
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
@@ -272,6 +292,16 @@ export default function ApplicationApp() {
                   <ProductionPlanning />
                 </ProtectedRoute>
               </Route>
+              <Route path="/product-development">
+                <ProtectedRoute feature="production-planning" action="view">
+                  <ProductDevelopment />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/demand-planning">
+                <ProtectedRoute feature="demand-planning" action="view">
+                  <DemandPlanning />
+                </ProtectedRoute>
+              </Route>
               <Route path="/atp-ctp">
                 <ProtectedRoute feature="production-scheduling" action="view">
                   <AtpCtp />
@@ -280,6 +310,16 @@ export default function ApplicationApp() {
               <Route path="/schedule-sequences">
                 <ProtectedRoute feature="schedule" action="view">
                   <ScheduleSequences />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/schedule-management">
+                <ProtectedRoute feature="schedule" action="view">
+                  <ScheduleManagement />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/scheduling-history">
+                <ProtectedRoute feature="schedule" action="view">
+                  <SchedulingHistory />
                 </ProtectedRoute>
               </Route>
               <Route path="/shift-management">
@@ -307,10 +347,16 @@ export default function ApplicationApp() {
               <Route path="/ai-scenario-creator" component={AIScenarioCreator} />
               <Route path="/canvas" component={CanvasPage} />
               <Route path="/playbooks" component={MemoryBookPage} />
+              <Route path="/memory-books" component={MemoryBooks} />
               <Route path="/agent-history" component={AgentHistory} />
+              <Route path="/functional-map" component={FunctionalMap} />
+              <Route path="/analytics-new" component={AnalyticsNew} />
               
               {/* Data Management Routes */}
               <Route path="/data-import" component={DataImport} />
+              <Route path="/data-import-clean" component={DataImportClean} />
+              <Route path="/data-import-simple" component={DataImportSimple} />
+              <Route path="/erp-import" component={ERPImport} />
               <Route path="/master-data" component={MasterData} />
               <Route path="/database-explorer" component={DatabaseExplorer} />
               <Route path="/data-schema" component={DataSchema} />
@@ -321,6 +367,7 @@ export default function ApplicationApp() {
               
               {/* Shop Floor Operations Routes */}
               <Route path="/disruption-management" component={DisruptionManagement} />
+              <Route path="/tasks" component={Tasks} />
               
               {/* Management & Administration Routes */}
               <Route path="/implementation-projects" component={ImplementationProjects} />
@@ -330,9 +377,15 @@ export default function ApplicationApp() {
               <Route path="/extension-studio" component={ExtensionStudio} />
               <Route path="/error-logs" component={ErrorLogs} />
               <Route path="/tenant-admin" component={TenantAdmin} />
+              <Route path="/role-management" component={RoleManagement} />
+              <Route path="/algorithm-governance" component={AlgorithmGovernance} />
+              <Route path="/algorithm-management" component={AlgorithmManagement} />
+              <Route path="/api-integrations" component={APIIntegrations} />
+              <Route path="/billing" component={Billing} />
               
               {/* Training & Support Routes */}
               <Route path="/training" component={Training} />
+              <Route path="/help" component={Help} />
               <Route path="/industry-templates" component={IndustryTemplates} />
               <Route path="/presentation-system" component={PresentationSystem} />
               
@@ -418,6 +471,11 @@ export default function ApplicationApp() {
               <Route path="/inbox">
                 <ProtectedRoute feature="inbox" action="view">
                   <InboxPage />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/mobile-dashboard-view">
+                <ProtectedRoute feature="dashboard" action="view">
+                  <MobileDashboardView />
                 </ProtectedRoute>
               </Route>
               <Route path="/alerts">
