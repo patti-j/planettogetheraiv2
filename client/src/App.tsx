@@ -12,7 +12,7 @@ import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitScreenProvider } from "@/contexts/SplitScreenContext";
 import { Switch, Route } from "wouter";
 import { runTestsInDevelopment } from "./lib/federation-test-harness";
-import FederationTestStatus from "./components/FederationTestStatus";
+// FederationTestStatus removed - not needed
 
 // Separate Apps
 import WebsiteApp from "./website/App";
@@ -166,8 +166,7 @@ export default function App() {
                 <LayoutDensityProvider>
                   <SplitScreenProvider>
                     <ViewModeProvider>
-                    {/* Show test status in development mode */}
-                    {import.meta.env.DEV && <FederationTestStatus />}
+                    {/* Federation test status removed - not needed */}
                     
                     {/* Portal Routes - Always accessible, independent of main app auth */}
                     {isPortalRoute ? (
