@@ -492,35 +492,52 @@ export default function ProductionSchedulePage() {
   // Load data into scheduler when it's ready
   useEffect(() => {
     if (schedulerRef.current && !isLoadingResources && !isLoadingOperations && !isLoadingDependencies) {
-      const scheduler = schedulerRef.current.instance;
-      const project = scheduler.project;
-      
-      // Clear existing data
-      project.resources.clear();
-      project.events.clear();
-      if (project.dependencies) {
-        project.dependencies.clear();
+      try {
+        const scheduler = schedulerRef.current.instance;
+        if (!scheduler || !scheduler.project) {
+          console.warn('Scheduler or project not ready');
+          return;
+        }
+        
+        const project = scheduler.project;
+        
+        // Clear existing data using proper Bryntum API
+        if (project.resourceStore) {
+          project.resourceStore.removeAll();
+        }
+        if (project.eventStore) {
+          project.eventStore.removeAll();
+        }
+        if (project.dependencyStore) {
+          project.dependencyStore.removeAll();
+        }
+        
+        // Load resources
+        const transformedResources = transformResourcesForBryntum(ptResources);
+        if (project.resourceStore && transformedResources.length > 0) {
+          project.resourceStore.add(transformedResources);
+        }
+        
+        // Load events (operations)
+        const transformedEvents = transformOperationsForBryntum(ptOperations);
+        if (project.eventStore && transformedEvents.length > 0) {
+          project.eventStore.add(transformedEvents);
+        }
+        
+        // Load dependencies
+        if (ptDependencies.length > 0 && project.dependencyStore) {
+          project.dependencyStore.add(ptDependencies);
+        }
+        
+        // Auto-schedule if enabled
+        if (isAutoScheduling) {
+          project.commitAsync();
+        }
+        
+        console.log('Loaded', transformedResources.length, 'resources,', transformedEvents.length, 'events, and', ptDependencies.length, 'dependencies');
+      } catch (error) {
+        console.error('Error loading scheduler data:', error);
       }
-      
-      // Load resources
-      const transformedResources = transformResourcesForBryntum(ptResources);
-      project.resources.add(transformedResources);
-      
-      // Load events (operations)
-      const transformedEvents = transformOperationsForBryntum(ptOperations);
-      project.events.add(transformedEvents);
-      
-      // Load dependencies
-      if (ptDependencies.length > 0 && project.dependencies) {
-        project.dependencies.add(ptDependencies);
-      }
-      
-      // Auto-schedule if enabled
-      if (isAutoScheduling) {
-        project.commitAsync();
-      }
-      
-      console.log('Loaded', transformedResources.length, 'resources,', transformedEvents.length, 'events, and', ptDependencies.length, 'dependencies');
     }
   }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling]);
 
