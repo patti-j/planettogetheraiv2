@@ -242,6 +242,16 @@ export default function ProductionSchedulePage() {
     lagUnit: dep.lagUnit || 'day'
   }));
 
+  // Debug resource/event mapping
+  console.log('🔍 Resource/Event Mapping Debug:', {
+    resourcesLen: schedulerResources.length,
+    uniqueResourceIds: new Set(schedulerResources.map(r => r.id)).size,
+    eventsLen: schedulerEvents.length,
+    assignedDistinct: new Set(schedulerEvents.map(e => e.resourceId).filter(Boolean)).size,
+    resourceIds: schedulerResources.map(r => r.id).slice(0, 5),
+    eventResourceIds: schedulerEvents.map(e => e.resourceId).filter(Boolean).slice(0, 5)
+  });
+
   // Bryntum Scheduler Pro configuration
   const schedulerProConfig = {
     startDate: startOfDay(new Date()),
@@ -771,6 +781,33 @@ export default function ProductionSchedulePage() {
                       timeRanges: {
                         showCurrentTimeLine: true
                       }
+                    }}
+                    onSchedulerReady={(scheduler: any) => {
+                      console.log('📊 Bryntum Scheduler Ready - Store Debug:');
+                      console.log('Resources in store:', scheduler.resourceStore?.count || 0);
+                      console.log('Events in store:', scheduler.eventStore?.count || 0);
+                      console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
+                      console.log('Resource filters:', scheduler.resourceStore?.filters?.length || 0);
+                      
+                      // Clear any resource filters
+                      if (scheduler.resourceStore?.clearFilters) {
+                        scheduler.resourceStore.clearFilters();
+                        console.log('✅ Cleared resource store filters');
+                      }
+                      
+                      // Disable hide unassigned resources if it exists
+                      if ('hideUnassignedResources' in scheduler) {
+                        scheduler.hideUnassignedResources = false;
+                        console.log('✅ Disabled hideUnassignedResources');
+                      }
+                      
+                      // Clear resource filter feature if it exists
+                      if (scheduler.features?.resourceFilter?.clearFilters) {
+                        scheduler.features.resourceFilter.clearFilters();
+                        console.log('✅ Cleared resource filter feature');
+                      }
+                      
+                      console.log('Final resource count:', scheduler.resourceStore?.count || 0);
                     }}
                   />
                 </div>
