@@ -92,6 +92,7 @@ import CanvasPage from "@/pages/canvas";
 import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 import FederationDashboard from "@/pages/federation-dashboard";
+import ProductionSchedule from "@/pages/production-schedule";
 
 // Fully implemented features now being connected
 import ControlTower from "@/pages/control-tower";
@@ -290,6 +291,11 @@ export default function ApplicationApp() {
               <Route path="/production-planning">
                 <ProtectedRoute feature="production-planning" action="view">
                   <ProductionPlanning />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/production-schedule">
+                <ProtectedRoute feature="production-scheduling" action="view">
+                  <ProductionSchedule />
                 </ProtectedRoute>
               </Route>
               <Route path="/product-development">

@@ -7,6 +7,16 @@ import { db } from "./db";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
 
+// Extend the global namespace to include tokenStore
+declare global {
+  var tokenStore: Map<string, {
+    userId: number;
+    userData: any;
+    createdAt: number;
+    expiresAt: number;
+  }> | undefined;
+}
+
 const router = express.Router();
 
 // Authentication routes
