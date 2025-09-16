@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { BryntumSchedulerPro } from "@bryntum/schedulerpro-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -761,28 +761,33 @@ export default function ProductionSchedulePage() {
                 </div>
               ) : schedulerResources.length > 0 ? (
                 <div style={{ height: '700px' }}>
-                  <BryntumSchedulerPro
-                    ref={schedulerRef}
-                    resources={schedulerResources}
-                    events={schedulerEvents}
-                    dependencies={schedulerDependencies}
-                    startDate={startOfDay(new Date())}
-                    endDate={endOfDay(addDays(new Date(), 90))}
-                    viewPreset="weekAndDay"
-                    columns={[
+                  {React.createElement(BryntumSchedulerPro as any, {
+                    ref: schedulerRef,
+                    resources: schedulerResources,
+                    events: schedulerEvents,
+                    dependencies: schedulerDependencies,
+                    startDate: startOfDay(new Date()),
+                    endDate: endOfDay(addDays(new Date(), 90)),
+                    viewPreset: "weekAndDay",
+                    columns: [
                       { text: 'Name', field: 'name', width: 150 },
                       { text: 'Category', field: 'category', width: 100 }
-                    ]}
-                    features={{
+                    ],
+                    // Force show all resources including unassigned ones
+                    hideUnassignedResources: false,
+                    enableEventAnimations: false,
+                    features: {
                       eventDrag: true,
                       eventResize: true,
                       eventEdit: true,
                       dependencies: true,
                       timeRanges: {
                         showCurrentTimeLine: true
-                      }
-                    }}
-                    onSchedulerReady={(scheduler: any) => {
+                      },
+                      // Disable resource filter to show all resources
+                      resourceFilter: false
+                    },
+                    onSchedulerReady: (scheduler: any) => {
                       console.log('📊 Bryntum Scheduler Ready - Store Debug:');
                       console.log('Resources in store:', scheduler.resourceStore?.count || 0);
                       console.log('Events in store:', scheduler.eventStore?.count || 0);
@@ -808,8 +813,8 @@ export default function ProductionSchedulePage() {
                       }
                       
                       console.log('Final resource count:', scheduler.resourceStore?.count || 0);
-                    }}
-                  />
+                    }
+                  })}
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-[600px]">
