@@ -61,6 +61,11 @@ export interface IStorage {
   getResources(): Promise<PtResource[]>;
   getJobOperations(): Promise<PtJobOperation[]>;
   getManufacturingOrders(): Promise<PtManufacturingOrder[]>;
+  
+  // Advanced PT Data Access  
+  getPtResourcesWithDetails(): Promise<any[]>;
+  getPtOperationsWithDetails(): Promise<any[]>;
+  getPtDependencies(): Promise<any[]>;
 
   // Error logging
   logError(error: any): Promise<void>;
@@ -370,6 +375,126 @@ export class DatabaseStorage implements IStorage {
       return await db.select().from(ptManufacturingOrders).orderBy(ptManufacturingOrders.orderNumber);
     } catch (error) {
       console.error('Error fetching manufacturing orders:', error);
+      return [];
+    }
+  }
+
+  // Advanced PT Data Access
+  async getPtResourcesWithDetails(): Promise<any[]> {
+    try {
+      const resources = await db.select({
+        id: ptResources.id,
+        resourceId: ptResources.resourceId, 
+        name: ptResources.name,
+        description: ptResources.description,
+        category: ptResources.resourceType,
+        capacity: sql`COALESCE(${ptResources.capacity}, 100)`,
+        efficiency: sql`COALESCE(${ptResources.efficiency}, 1) * 100`,
+        isBottleneck: ptResources.bottleneck,
+        plantId: ptResources.plantId,
+        departmentId: ptResources.departmentId,
+        active: ptResources.isActive,
+        bufferHours: ptResources.bufferHours,
+        availableHours: ptResources.availableHours,
+        capacityType: ptResources.capacityType,
+        overtimeHourlyCost: ptResources.overtimeHourlyCost,
+        standardHourlyCost: ptResources.standardHourlyCost
+      }).from(ptResources)
+        .where(sql`${ptResources.isActive} = true OR ${ptResources.isActive} IS NULL`)
+        .orderBy(ptResources.name);
+      return resources;
+    } catch (error) {
+      console.error('Error fetching PT resources with details:', error);
+      return [];
+    }
+  }
+
+  async getPtOperationsWithDetails(): Promise<any[]> {
+    try {
+      const operations = await db.select({
+        id: ptJobOperations.id,
+        operationId: ptJobOperations.operationId,
+        manufacturingOrderId: ptJobOperations.manufacturingOrderId,
+        plantId: ptJobOperations.plantId,
+        name: ptJobOperations.operationName,
+        description: ptJobOperations.description,
+        resourceId: ptJobOperations.resourceId,
+        startDate: ptJobOperations.startDate,
+        endDate: ptJobOperations.endDate,
+        duration: sql`COALESCE(${ptJobOperations.duration}, 60)`,
+        setupTime: ptJobOperations.setupTime,
+        processTime: ptJobOperations.processTime,
+        teardownTime: ptJobOperations.teardownTime,
+        queueTime: ptJobOperations.queueTime,
+        moveTime: ptJobOperations.moveTime,
+        waitTime: ptJobOperations.waitTime,
+        sequenceNumber: ptJobOperations.sequenceNumber,
+        workCenterName: ptJobOperations.workCenterName,
+        status: ptJobOperations.status,
+        actualStartDate: ptJobOperations.actualStartDate,
+        actualEndDate: ptJobOperations.actualEndDate,
+        percentDone: sql`CASE
+          WHEN ${ptJobOperations.status} = 'completed' THEN 100
+          WHEN ${ptJobOperations.status} = 'in_progress' THEN 50
+          ELSE 0
+        END`,
+        priority: sql`CASE
+          WHEN ${ptJobOperations.sequenceNumber} = 1 THEN 'Critical'
+          WHEN ${ptJobOperations.sequenceNumber} <= 3 THEN 'High'
+          WHEN ${ptJobOperations.sequenceNumber} <= 6 THEN 'Medium'
+          ELSE 'Low'
+        END`,
+        isActive: ptJobOperations.isActive
+      }).from(ptJobOperations)
+        .orderBy(ptJobOperations.startDate, ptJobOperations.operationName);
+      return operations;
+    } catch (error) {
+      console.error('Error fetching PT operations with details:', error);
+      return [];
+    }
+  }
+
+  async getPtDependencies(): Promise<any[]> {
+    try {
+      // For now, generate dependencies based on operation sequence numbers
+      const operations = await db.select({
+        operationId: ptJobOperations.operationId,
+        manufacturingOrderId: ptJobOperations.manufacturingOrderId,
+        sequenceNumber: ptJobOperations.sequenceNumber,
+        operationName: ptJobOperations.operationName
+      }).from(ptJobOperations)
+        .where(sql`${ptJobOperations.sequenceNumber} IS NOT NULL`)
+        .orderBy(ptJobOperations.manufacturingOrderId, ptJobOperations.sequenceNumber);
+      
+      const dependencies = [];
+      const orderGroups = new Map();
+      
+      // Group operations by manufacturing order
+      for (const op of operations) {
+        if (!orderGroups.has(op.manufacturingOrderId)) {
+          orderGroups.set(op.manufacturingOrderId, []);
+        }
+        orderGroups.get(op.manufacturingOrderId).push(op);
+      }
+      
+      // Create dependencies between sequential operations
+      for (const [orderId, ops] of orderGroups) {
+        const sortedOps = ops.sort((a: any, b: any) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+        for (let i = 0; i < sortedOps.length - 1; i++) {
+          dependencies.push({
+            id: `dep-${sortedOps[i].operationId}-${sortedOps[i + 1].operationId}`,
+            fromEvent: `event-${sortedOps[i].operationId}`,
+            toEvent: `event-${sortedOps[i + 1].operationId}`,
+            type: 2, // Finish-to-Start dependency
+            lag: 0,
+            lagUnit: 'minute'
+          });
+        }
+      }
+      
+      return dependencies;
+    } catch (error) {
+      console.error('Error fetching PT dependencies:', error);
       return [];
     }
   }

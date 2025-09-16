@@ -83,6 +83,15 @@ interface PTManufacturingOrder {
   scheduledEndDate?: string;
 }
 
+interface PTDependency {
+  id: string;
+  fromEvent: string;
+  toEvent: string;
+  type: number;
+  lag: number;
+  lagUnit: string;
+}
+
 // Helper function to get color based on priority
 const getPriorityColor = (priority?: string | number): string => {
   if (typeof priority === 'number') {
@@ -126,8 +135,7 @@ const getStatusColor = (status?: string): string => {
 
 export default function ProductionSchedulePage() {
   const { toast } = useToast();
-  const schedulerRef = useRef<any>(null);
-  const projectRef = useRef<any>(null);
+  const schedulerRef = useRef<{ instance: any } | null>(null);
   const [viewPreset, setViewPreset] = useState<string>("weekAndDay");
   const [selectedPlant, setSelectedPlant] = useState<string>("all");
   const [showCriticalPath, setShowCriticalPath] = useState(false);
@@ -147,6 +155,11 @@ export default function ProductionSchedulePage() {
   // Fetch manufacturing orders
   const { data: manufacturingOrders = [], isLoading: isLoadingOrders } = useQuery<PTManufacturingOrder[]>({
     queryKey: ['/api/manufacturing-orders'],
+  });
+
+  // Fetch PT dependencies
+  const { data: ptDependencies = [], isLoading: isLoadingDependencies } = useQuery<PTDependency[]>({
+    queryKey: ['/api/pt-dependencies'],
   });
 
   // Transform PT data for Bryntum format
@@ -196,6 +209,22 @@ export default function ProductionSchedulePage() {
       effortUnit: 'hour',
       schedulingMode: 'Normal'
     }));
+  };
+
+  // Helper functions for metrics calculation
+  const calculateOverallUtilization = () => {
+    if (ptResources.length === 0 || ptOperations.length === 0) return 0;
+    const totalCapacity = ptResources.reduce((sum, r) => sum + (r.capacity || 100), 0) * 8;
+    const totalLoad = ptOperations.reduce((sum, op) => sum + (op.duration || 0), 0) / 60;
+    return Math.min(100, Math.round((totalLoad / totalCapacity) * 100));
+  };
+  
+  const calculateOEE = () => {
+    // OEE = Availability × Performance × Quality
+    const availability = 0.9; // 90% availability as example
+    const performance = ptOperations.filter(op => op.status === 'Completed').length / Math.max(1, ptOperations.length);
+    const quality = 0.95; // 95% quality rate as example
+    return Math.round(availability * performance * quality * 100);
   };
 
   // Bryntum Scheduler Pro configuration
@@ -365,7 +394,10 @@ export default function ProductionSchedulePage() {
         field: 'utilization',
         width: 100,
         renderer: ({ record }: any) => {
-          const utilization = Math.round(Math.random() * 100); // Replace with actual calculation
+          // Calculate utilization based on assigned operations vs capacity
+          const assignedHours = record.events?.reduce((sum: number, event: any) => sum + (event.duration || 0), 0) || 0;
+          const capacityHours = (record.capacity || 100) * 8; // Assuming 8 hour workday
+          const utilization = Math.min(100, Math.round((assignedHours / capacityHours) * 100));
           const color = utilization > 80 ? 'red' : utilization > 60 ? 'orange' : 'green';
           return `
             <div class="flex items-center gap-2">
@@ -439,13 +471,16 @@ export default function ProductionSchedulePage() {
 
   // Load data into scheduler when it's ready
   useEffect(() => {
-    if (schedulerRef.current && !isLoadingResources && !isLoadingOperations) {
+    if (schedulerRef.current && !isLoadingResources && !isLoadingOperations && !isLoadingDependencies) {
       const scheduler = schedulerRef.current.instance;
       const project = scheduler.project;
       
       // Clear existing data
       project.resources.clear();
       project.events.clear();
+      if (project.dependencies) {
+        project.dependencies.clear();
+      }
       
       // Load resources
       const transformedResources = transformResourcesForBryntum(ptResources);
@@ -455,14 +490,19 @@ export default function ProductionSchedulePage() {
       const transformedEvents = transformOperationsForBryntum(ptOperations);
       project.events.add(transformedEvents);
       
+      // Load dependencies
+      if (ptDependencies.length > 0 && project.dependencies) {
+        project.dependencies.add(ptDependencies);
+      }
+      
       // Auto-schedule if enabled
       if (isAutoScheduling) {
         project.commitAsync();
       }
       
-      console.log('Loaded', transformedResources.length, 'resources and', transformedEvents.length, 'events');
+      console.log('Loaded', transformedResources.length, 'resources,', transformedEvents.length, 'events, and', ptDependencies.length, 'dependencies');
     }
-  }, [ptResources, ptOperations, isLoadingResources, isLoadingOperations, isAutoScheduling]);
+  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling]);
 
   // Handler functions
   const handleZoomIn = () => {
@@ -499,7 +539,7 @@ export default function ProductionSchedulePage() {
 
   const handleToggleCriticalPath = () => {
     setShowCriticalPath(!showCriticalPath);
-    if (schedulerRef.current) {
+    if (schedulerRef.current?.instance?.features?.criticalPaths) {
       schedulerRef.current.instance.features.criticalPaths.disabled = showCriticalPath;
       schedulerRef.current.instance.features.criticalPaths.refresh();
     }
@@ -515,7 +555,7 @@ export default function ProductionSchedulePage() {
     });
   };
 
-  const isLoading = isLoadingResources || isLoadingOperations || isLoadingOrders;
+  const isLoading = isLoadingResources || isLoadingOperations || isLoadingOrders || isLoadingDependencies;
 
   return (
     <div className="container mx-auto p-4 space-y-4">
@@ -640,7 +680,7 @@ export default function ProductionSchedulePage() {
               </div>
               <div className="flex items-center gap-1">
                 <TrendingUp className="w-4 h-4 text-orange-500" />
-                <span className="font-medium">{Math.round(Math.random() * 100)}%</span> Utilization
+                <span className="font-medium">{calculateOverallUtilization()}%</span> Utilization
               </div>
             </div>
           </div>
@@ -696,7 +736,7 @@ export default function ProductionSchedulePage() {
               <CardContent>
                 <div className="text-2xl font-bold">{ptOperations.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  +{Math.round(Math.random() * 20)}% from last week
+                  {ptOperations.filter(op => op.status === 'In Progress').length} in progress
                 </p>
               </CardContent>
             </Card>
@@ -720,7 +760,7 @@ export default function ProductionSchedulePage() {
                 <CheckCircle className="h-4 w-4 text-muted-foreground" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">{Math.round(Math.random() * 20 + 75)}%</div>
+                <div className="text-2xl font-bold">{calculateOEE()}%</div>
                 <p className="text-xs text-muted-foreground">
                   Target: 95%
                 </p>

@@ -564,6 +564,38 @@ router.get("/pt-resources", async (req, res) => {
   }
 });
 
+// PT Dependencies endpoint
+router.get("/pt-dependencies", async (req, res) => {
+  try {
+    console.log('Fetching PT dependencies...');
+    const dependencies = await storage.getPtDependencies();
+    console.log(`Successfully fetched ${dependencies.length} PT dependencies`);
+    res.json(dependencies);
+  } catch (error) {
+    console.error("Error fetching PT dependencies:", error);
+    res.status(500).json({ message: "Failed to fetch PT dependencies", error: (error as Error).message });
+  }
+});
+
+// Export endpoint for Bryntum scheduler
+router.post("/export", async (req, res) => {
+  try {
+    const { format = 'pdf', data } = req.body;
+    
+    // For now, return a simple success response
+    // In production, you would generate actual PDF/Excel files here
+    res.json({ 
+      success: true, 
+      message: `Export to ${format.toUpperCase()} initiated`,
+      format: format,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Error exporting schedule:", error);
+    res.status(500).json({ message: "Failed to export schedule" });
+  }
+});
+
 // System Monitoring Agent API Routes
 router.get("/monitoring-agent/status", async (req, res) => {
   try {
