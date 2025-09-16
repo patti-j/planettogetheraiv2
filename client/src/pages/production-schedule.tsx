@@ -135,7 +135,7 @@ const getStatusColor = (status?: string): string => {
 
 export default function ProductionSchedulePage() {
   const { toast } = useToast();
-  const schedulerRef = useRef<{ instance: any } | null>(null);
+  const schedulerRef = useRef<any>(null);
   const [viewPreset, setViewPreset] = useState<string>("weekAndDay");
   const [selectedPlant, setSelectedPlant] = useState<string>("all");
   const [showCriticalPath, setShowCriticalPath] = useState(false);
@@ -227,11 +227,31 @@ export default function ProductionSchedulePage() {
     return Math.round(availability * performance * quality * 100);
   };
 
+  // Combine loading state
+  const isLoading = isLoadingResources || isLoadingOperations || isLoadingDependencies;
+
+  // Transform data for Bryntum
+  const schedulerResources = transformResourcesForBryntum(ptResources);
+  const schedulerEvents = transformOperationsForBryntum(ptOperations);
+  const schedulerDependencies = ptDependencies.map(dep => ({
+    id: dep.id,
+    fromEvent: dep.fromEvent,
+    toEvent: dep.toEvent,
+    type: dep.type || 2,
+    lag: dep.lag || 0,
+    lagUnit: dep.lagUnit || 'day'
+  }));
+
   // Bryntum Scheduler Pro configuration
   const schedulerProConfig = {
     startDate: startOfDay(new Date()),
     endDate: endOfDay(addDays(new Date(), 90)),
-    viewPreset: viewPreset,
+    viewPreset: viewPreset, // Use built-in Bryntum preset names directly
+    
+    // Data configuration
+    resources: schedulerResources,
+    events: schedulerEvents,
+    dependencies: schedulerDependencies,
     
     // Features configuration
     features: {
@@ -555,8 +575,6 @@ export default function ProductionSchedulePage() {
     });
   };
 
-  const isLoading = isLoadingResources || isLoadingOperations || isLoadingOrders || isLoadingDependencies;
-
   return (
     <div className="container mx-auto p-4 space-y-4">
       {/* Header */}
@@ -714,12 +732,37 @@ export default function ProductionSchedulePage() {
                     <p>Loading production schedule...</p>
                   </div>
                 </div>
-              ) : (
+              ) : schedulerResources.length > 0 ? (
                 <div style={{ height: '700px' }}>
                   <BryntumSchedulerPro
                     ref={schedulerRef}
-                    {...schedulerProConfig as any}
+                    resources={schedulerResources}
+                    events={schedulerEvents}
+                    dependencies={schedulerDependencies}
+                    startDate={startOfDay(new Date())}
+                    endDate={endOfDay(addDays(new Date(), 90))}
+                    viewPreset="weekAndDay"
+                    columns={[
+                      { text: 'Name', field: 'name', width: 150 },
+                      { text: 'Category', field: 'category', width: 100 }
+                    ]}
+                    features={{
+                      eventDrag: true,
+                      eventResize: true,
+                      eventEdit: true,
+                      dependencies: true,
+                      timeRanges: {
+                        showCurrentTimeLine: true
+                      }
+                    }}
                   />
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[600px]">
+                  <div className="text-center">
+                    <AlertTriangle className="w-8 h-8 mx-auto mb-4 text-yellow-500" />
+                    <p>No resources available. Please add resources to view the schedule.</p>
+                  </div>
                 </div>
               )}
             </CardContent>
