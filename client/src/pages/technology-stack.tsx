@@ -18,7 +18,7 @@ const TechnologyStack = () => {
     { name: "TanStack Query", version: "5.x", description: "Powerful data synchronization for React", category: "State" },
     { name: "Wouter", version: "Latest", description: "Minimalist React router", category: "Routing" },
     { name: "React DnD", version: "Latest", description: "Drag and drop for React", category: "Interaction" },
-    { name: "Bryntum Scheduler Pro", version: "6.3.1", description: "Enterprise Gantt chart", category: "Scheduling" },
+    { name: "Bryntum Scheduler Pro", version: "6.3.2", description: "Enterprise Gantt chart", category: "Scheduling" },
     { name: "Chart.js", version: "4.5.0", description: "Data visualization and charts", category: "Visualization" },
     { name: "Recharts", version: "Latest", description: "React charting library", category: "Visualization" }
   ];
