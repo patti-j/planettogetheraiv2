@@ -180,13 +180,11 @@ export default function ProductionSchedulePage() {
       plantName: resource.plantName || 'Main Plant',
       iconCls: resource.isBottleneck ? 'b-fa b-fa-exclamation-triangle' : 'b-fa b-fa-industry',
       eventColor: resource.isBottleneck ? 'red' : (index % 2 === 0 ? 'blue' : 'green'),
-      active: resource.active !== false,
-      // Additional fields for resource utilization
-      maxLoad: 100,
-      unit: '%'
+      active: resource.active !== false
     }));
   };
 
+  // Transform operations for Bryntum (events without resourceId - Scheduler Pro pattern)
   const transformOperationsForBryntum = (operations: PTOperation[]) => {
     console.log('🔍 Processing operations for scheduler:', operations.length);
     console.log('🔍 Operations with resourceId:', operations.filter(op => op.resourceId).length);
@@ -198,12 +196,10 @@ export default function ProductionSchedulePage() {
       duration: op.duration
     })));
     
-    return operations
-      // .filter(op => op.resourceId) // REMOVED: Show ALL operations, even unassigned ones
-      .map((op) => ({
-        id: `event-${op.id}`,
-        name: op.name || `Operation ${op.id}`,
-        resourceId: op.resourceId ? `resource-${op.resourceId}` : null, // Handle null resourceId
+    return operations.map((op) => ({
+      id: `event-${op.id}`,
+      name: op.name || `Operation ${op.id}`,
+      // NOTE: No resourceId here - Scheduler Pro uses AssignmentStore instead
       startDate: op.startDate ? new Date(op.startDate) : new Date(),
       duration: op.duration || 60, // Duration in minutes
       durationUnit: 'minute',
@@ -219,6 +215,8 @@ export default function ProductionSchedulePage() {
       status: op.status || 'Scheduled',
       priority: op.priority || 'Medium',
       dueDate: op.dueDate,
+      // Store original resourceId for assignment creation
+      _originalResourceId: op.resourceId,
       // Constraints
       constraintType: op.dueDate ? 'finishnolaterthan' : null,
       constraintDate: op.dueDate ? new Date(op.dueDate) : null,
@@ -227,6 +225,18 @@ export default function ProductionSchedulePage() {
       effortUnit: 'hour',
       schedulingMode: 'Normal'
     }));
+  };
+
+  // Create assignments for Scheduler Pro (required for resource-event mapping)
+  const createAssignmentsForBryntum = (operations: PTOperation[]) => {
+    return operations
+      .filter(op => op.resourceId) // Only create assignments for operations with resources
+      .map((op) => ({
+        id: `assignment-${op.id}`,
+        eventId: `event-${op.id}`,
+        resourceId: `resource-${op.resourceId}`,
+        units: 100 // 100% allocation
+      }));
   };
 
   // Helper functions for metrics calculation
@@ -248,9 +258,10 @@ export default function ProductionSchedulePage() {
   // Combine loading state
   const isLoading = isLoadingResources || isLoadingOperations || isLoadingDependencies;
 
-  // Transform data for Bryntum
+  // Transform data for Bryntum Scheduler Pro (with separate stores)
   const schedulerResources = transformResourcesForBryntum(ptResources);
   const schedulerEvents = transformOperationsForBryntum(ptOperations);
+  const schedulerAssignments = createAssignmentsForBryntum(ptOperations);
   const schedulerDependencies = ptDependencies.map(dep => ({
     id: dep.id,
     fromEvent: dep.fromEvent,
@@ -261,15 +272,16 @@ export default function ProductionSchedulePage() {
   }));
 
   // Resource/event mapping summary for production
-  console.log(`📊 Scheduler Data: ${schedulerResources.length} resources, ${schedulerEvents.length} operations`);
+  console.log(`📊 Scheduler Data: ${schedulerResources.length} resources, ${schedulerEvents.length} events, ${schedulerAssignments.length} assignments`);
   console.log(`📊 Raw Data: ${ptResources.length} PT resources, ${ptOperations.length} PT operations`);
   console.log(`📊 Operations with resourceId: ${ptOperations.filter(op => op.resourceId).length}`);
   
+  // Check assignment validity instead of checking events for resourceId
   const resourceIds = new Set(schedulerResources.map(r => r.id));
-  const unmatchedEvents = schedulerEvents.filter(e => e.resourceId && !resourceIds.has(e.resourceId));
+  const unmatchedAssignments = schedulerAssignments.filter(a => !resourceIds.has(a.resourceId));
   
-  if (unmatchedEvents.length > 0) {
-    console.warn(`⚠️ ${unmatchedEvents.length} operations have invalid resource assignments`);
+  if (unmatchedAssignments.length > 0) {
+    console.warn(`⚠️ ${unmatchedAssignments.length} assignments have invalid resource references`);
   }
   
   if (schedulerEvents.length === 0 && ptOperations.length > 0) {
@@ -283,10 +295,22 @@ export default function ProductionSchedulePage() {
     endDate: endOfDay(addDays(new Date(), 90)),
     viewPreset: viewPreset, // Use built-in Bryntum preset names directly
     
-    // Data configuration
-    resources: schedulerResources,
-    events: schedulerEvents,
-    dependencies: schedulerDependencies,
+    // Project configuration - Scheduler Pro pattern with separate stores
+    project: {
+      autoLoad: false,
+      autoSync: false,
+      resources: schedulerResources,
+      events: schedulerEvents,
+      assignments: schedulerAssignments, // Critical: AssignmentStore for Scheduler Pro
+      dependencies: schedulerDependencies,
+      
+      // Event listeners
+      listeners: {
+        change: ({ source }: any) => {
+          console.log('Project changed:', source);
+        }
+      }
+    },
     
     // Features configuration
     features: {
@@ -508,20 +532,7 @@ export default function ProductionSchedulePage() {
           { unit: 'week', dateFormat: 'DD' }
         ]
       }
-    ],
-    
-    // Project model configuration for automatic scheduling
-    project: {
-      autoLoad: false,
-      autoSync: false,
-      
-      // Event listeners
-      listeners: {
-        change: ({ source }: any) => {
-          console.log('Project changed:', source);
-        }
-      }
-    }
+    ]
   };
 
   // Load data into scheduler when it's ready
@@ -788,39 +799,9 @@ export default function ProductionSchedulePage() {
                 <div style={{ height: '700px' }}>
                   {React.createElement(BryntumSchedulerPro as any, {
                     ref: schedulerRef,
-                    // Use direct data instead of stores
-                    resources: { data: schedulerResources },
-                    events: { data: schedulerEvents },
-                    assignments: { data: schedulerEvents.map(e => ({ 
-                      id: `assignment-${e.id}`,
-                      event: e.id,
-                      resource: e.resourceId 
-                    })) },
-                    dependencies: { data: schedulerDependencies },
-                    startDate: new Date('2025-08-01'), // Show from August
-                    endDate: new Date('2025-12-31'), // Show through end of year
-                    viewPreset: "weekAndDay",
-                    columns: [
-                      { text: 'Name', field: 'name', width: 150 },
-                      { text: 'Category', field: 'category', width: 100 }
-                    ],
-                    // Critical: Force show all resources including unassigned ones
-                    hideUnassignedRows: false,
-                    hideUnscheduled: false,
-                    enableEventAnimations: false,
-                    features: {
-                      eventDrag: true,
-                      eventResize: true,
-                      eventEdit: true,
-                      dependencies: true,
-                      timeRanges: {
-                        showCurrentTimeLine: true
-                      },
-                      // Disable resource filter to show all resources
-                      resourceFilter: false
-                    },
+                    ...schedulerProConfig,
                     onReady: (scheduler: any) => {
-                      console.log('📊 Bryntum Scheduler Ready - Detailed Debug:');
+                      console.log('📊 Bryntum Scheduler Pro Ready - Detailed Debug:');
                       console.log('Resources in store:', scheduler.resourceStore?.count || 0);
                       console.log('Events in store:', scheduler.eventStore?.count || 0);
                       console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
@@ -830,8 +811,9 @@ export default function ProductionSchedulePage() {
                         const allResources = scheduler.resourceStore.records;
                         console.log('📋 Resource Details:');
                         allResources.forEach((r: any) => {
-                          const eventCount = scheduler.eventStore?.records?.filter((e: any) => e.resourceId === r.id).length || 0;
-                          console.log(`  - ${r.name} (id: ${r.id}) - Hidden: ${r.hidden}, Events: ${eventCount}`);
+                          // Count assignments for this resource instead of checking events for resourceId
+                          const assignmentCount = scheduler.assignmentStore?.records?.filter((a: any) => a.resourceId === r.id).length || 0;
+                          console.log(`  - ${r.name} (id: ${r.id}) - Hidden: ${r.hidden}, Assignments: ${assignmentCount}`);
                         });
                         
                         // Force show ALL resources
@@ -846,18 +828,8 @@ export default function ProductionSchedulePage() {
                         console.log('✅ Cleared resource store filters');
                       }
                       
-                      // Force disable resource filter feature
-                      if (scheduler.features?.resourceFilter) {
-                        scheduler.features.resourceFilter.disabled = true;
-                        console.log('✅ Disabled resource filter feature');
-                      }
-                      
-                      // Ensure hideUnassignedRows is false
-                      scheduler.hideUnassignedRows = false;
-                      console.log('✅ Set hideUnassignedRows to false');
-                      
                       console.log('Final resource count:', scheduler.resourceStore?.count || 0);
-                      console.log('✅ Scheduler fully initialized with all resources visible');
+                      console.log('✅ Scheduler Pro fully initialized with proper data model');
                     }
                   })}
                 </div>
