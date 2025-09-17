@@ -459,29 +459,7 @@ export default function ProductionSchedulePage() {
       resourceTimeRanges: true,
       
       // Tree feature for hierarchical resource grouping
-      tree: {
-        // Enable tree functionality
-        parentIdField: 'parentId',
-        expandOnLoad: true, // Expand all nodes by default
-        // Tree column configuration
-        column: {
-          text: 'Resources',
-          field: 'name',
-          width: 250,
-          // Show expand/collapse icons
-          cellCls: 'b-tree-cell',
-          renderer: ({ record, value }: any) => {
-            if (record.isParent) {
-              // Plant nodes (parents)
-              return `<i class="${record.iconCls || 'b-fa b-fa-building'}"></i> ${value}`;
-            } else {
-              // Resource nodes (children)
-              const bottleneckIcon = record.isBottleneck ? ' <i class="b-fa b-fa-exclamation-triangle text-red-500"></i>' : '';
-              return `<i class="${record.iconCls || 'b-fa b-fa-industry'}"></i> ${value}${bottleneckIcon}`;
-            }
-          }
-        }
-      },
+      tree: true,
       
       // Export features
       pdfExport: {
@@ -504,17 +482,18 @@ export default function ProductionSchedulePage() {
       {
         text: 'Resources',
         field: 'name',
-        width: 200,
+        width: 250,
         type: 'tree',
         renderer: ({ record, value }: any) => {
-          const iconClass = record.isBottleneck ? 'text-red-500' : 'text-blue-500';
-          return `
-            <div class="flex items-center gap-2">
-              <i class="${record.iconCls} ${iconClass}"></i>
-              <span>${value}</span>
-              ${record.isBottleneck ? '<span class="text-xs text-red-500">(Bottleneck)</span>' : ''}
-            </div>
-          `;
+          if (record.isParent) {
+            // Plant nodes (parents)
+            return `🏭 ${value}`;
+          } else {
+            // Resource nodes (children)
+            const iconClass = record.isBottleneck ? 'text-red-500' : 'text-blue-500';
+            const bottleneckIcon = record.isBottleneck ? ' ⚠️' : '';
+            return `<i class="${record.iconCls} ${iconClass}"></i> ${value}${bottleneckIcon}`;
+          }
         }
       },
       {
