@@ -372,7 +372,12 @@ export class DatabaseStorage implements IStorage {
 
   async getManufacturingOrders(): Promise<PtManufacturingOrder[]> {
     try {
-      return await db.select().from(ptManufacturingOrders).orderBy(ptManufacturingOrders.orderNumber);
+      // Use raw SQL since schema doesn't match actual database structure
+      const result = await db.execute(sql`
+        SELECT * FROM ptmanufacturingorders 
+        ORDER BY name
+      `);
+      return result.rows as any[];
     } catch (error) {
       console.error('Error fetching manufacturing orders:', error);
       return [];
@@ -456,35 +461,42 @@ export class DatabaseStorage implements IStorage {
 
   async getPtDependencies(): Promise<any[]> {
     try {
-      // For now, generate dependencies based on operation sequence numbers
-      const operations = await db.select({
-        operationId: ptJobOperations.operationId,
-        manufacturingOrderId: ptJobOperations.manufacturingOrderId,
-        sequenceNumber: ptJobOperations.sequenceNumber,
-        operationName: ptJobOperations.operationName
-      }).from(ptJobOperations)
-        .where(sql`${ptJobOperations.sequenceNumber} IS NOT NULL`)
-        .orderBy(ptJobOperations.manufacturingOrderId, ptJobOperations.sequenceNumber);
+      // Generate dependencies based on operation scheduling within jobs
+      // Use raw SQL since schema doesn't match actual database structure
+      const result = await db.execute(sql`
+        SELECT jo.id as operation_id, jo.job_id, jo.name as operation_name, 
+               jo.scheduled_start, jo.scheduled_end
+        FROM ptjoboperations jo
+        WHERE jo.job_id IS NOT NULL 
+          AND jo.scheduled_start IS NOT NULL
+        ORDER BY jo.job_id, jo.scheduled_start, jo.id
+      `);
+      const operations = result.rows;
       
       const dependencies = [];
       const orderGroups = new Map();
       
-      // Group operations by manufacturing order
+      // Group operations by job (manufacturing order)
       for (const op of operations) {
-        if (!orderGroups.has(op.manufacturingOrderId)) {
-          orderGroups.set(op.manufacturingOrderId, []);
+        if (!orderGroups.has(op.job_id)) {
+          orderGroups.set(op.job_id, []);
         }
-        orderGroups.get(op.manufacturingOrderId).push(op);
+        orderGroups.get(op.job_id).push(op);
       }
       
       // Create dependencies between sequential operations
       for (const [orderId, ops] of orderGroups) {
-        const sortedOps = ops.sort((a: any, b: any) => (a.sequenceNumber || 0) - (b.sequenceNumber || 0));
+        const sortedOps = ops.sort((a: any, b: any) => {
+          // Sort by scheduled_start first, then by operation_id
+          const aStart = new Date(a.scheduled_start || 0).getTime();
+          const bStart = new Date(b.scheduled_start || 0).getTime();
+          return aStart - bStart || a.operation_id - b.operation_id;
+        });
         for (let i = 0; i < sortedOps.length - 1; i++) {
           dependencies.push({
-            id: `dep-${sortedOps[i].operationId}-${sortedOps[i + 1].operationId}`,
-            fromEvent: `event-${sortedOps[i].operationId}`,
-            toEvent: `event-${sortedOps[i + 1].operationId}`,
+            id: `dep-${sortedOps[i].operation_id}-${sortedOps[i + 1].operation_id}`,
+            fromEvent: `event-${sortedOps[i].operation_id}`,
+            toEvent: `event-${sortedOps[i + 1].operation_id}`,
             type: 2, // Finish-to-Start dependency
             lag: 0,
             lagUnit: 'minute'
