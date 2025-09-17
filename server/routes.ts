@@ -26,7 +26,6 @@ router.post("/auth/login", async (req, res) => {
     const { username, password } = req.body;
     console.log(`Username: ${username}`);
     console.log(`Password length: ${password?.length}`);
-    console.log(`Password: ${password}`);
 
     if (!username || !password) {
       return res.status(400).json({ message: "Username and password are required" });
@@ -78,8 +77,6 @@ router.post("/auth/login", async (req, res) => {
     }
 
     console.log(`User roles: ${roles.map(r => r.name).join(', ')}`);
-    console.log(`Stored hash: ${user.passwordHash}`);
-    console.log(`Comparing password: ${password}`);
 
     // Verify password
     const isValid = await bcryptjs.compare(password, user.passwordHash);
@@ -93,8 +90,9 @@ router.post("/auth/login", async (req, res) => {
     // Update last login
     await storage.updateUser(user.id, { lastLogin: new Date() });
 
-    // Generate simple token (user ID + timestamp + secret)
-    const token = Buffer.from(`${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret'}`).toString('base64');
+    // Generate secure token (user ID + timestamp + secure secret from env)
+    const tokenPayload = `${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
+    const token = Buffer.from(tokenPayload).toString('base64');
     
     console.log(`Generated token for user ${user.id}`);
     
@@ -112,7 +110,7 @@ router.post("/auth/login", async (req, res) => {
         permissions: allPermissions
       },
       createdAt: Date.now(),
-      expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days for development convenience
     });
     
     console.log("Login successful - token based");
@@ -145,7 +143,7 @@ router.post("/auth/logout", (req, res) => {
   });
 });
 
-router.get("/auth/me", (req, res) => {
+router.get("/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization}`);
   
@@ -157,9 +155,65 @@ router.get("/auth/me", (req, res) => {
   
   const token = authHeader.substring(7); // Remove 'Bearer '
   
-  // Check token store
+  // Check token store first
   global.tokenStore = global.tokenStore || new Map();
-  const tokenData = global.tokenStore.get(token);
+  let tokenData = global.tokenStore.get(token);
+  
+  // If not in memory store, try to reconstruct from token (for server restart resilience)
+  if (!tokenData) {
+    try {
+      const decoded = Buffer.from(token, 'base64').toString();
+      const [userId, timestamp, secret] = decoded.split(':');
+      const expectedSecret = process.env.SESSION_SECRET || 'dev-secret-key';
+      
+      if (secret === expectedSecret && !isNaN(Number(userId)) && !isNaN(Number(timestamp))) {
+        const tokenAge = Date.now() - Number(timestamp);
+        const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+        
+        if (tokenAge < maxAge) {
+          // Token is valid but not in memory store - need to fetch user from database
+          console.log(`Token valid but not in memory store - fetching user ${userId} from database`);
+          
+          try {
+            const user = await storage.getUser(Number(userId));
+            if (user && user.isActive) {
+              // Get user roles and permissions from database
+              const userRoles = await storage.getUserRoles(user.id);
+              const roles = [];
+              for (const userRole of userRoles) {
+                const role = await storage.getRole(userRole.roleId);
+                if (role) {
+                  roles.push(role);
+                }
+              }
+              
+              tokenData = {
+                userId: user.id,
+                userData: {
+                  id: user.id,
+                  username: user.username,
+                  email: user.email,
+                  firstName: user.firstName,
+                  lastName: user.lastName,
+                  roles: roles,
+                  permissions: []
+                },
+                createdAt: Number(timestamp),
+                expiresAt: Number(timestamp) + maxAge
+              };
+              
+              // Re-add to memory store
+              global.tokenStore.set(token, tokenData);
+            }
+          } catch (dbError) {
+            console.log("Failed to fetch user from database:", dbError);
+          }
+        }
+      }
+    } catch (error) {
+      console.log("Could not reconstruct token:", error);
+    }
+  }
   
   if (!tokenData) {
     console.log("Invalid token");

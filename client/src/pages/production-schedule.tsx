@@ -142,14 +142,20 @@ export default function ProductionSchedulePage() {
   const [isAutoScheduling, setIsAutoScheduling] = useState(true);
   const [activeTab, setActiveTab] = useState("schedule");
 
-  // Fetch PT resources
+  // Fetch PT resources with cache busting
   const { data: ptResources = [], isLoading: isLoadingResources } = useQuery<PTResource[]>({
     queryKey: ['/api/pt-resources'],
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
-  // Fetch PT operations
+  // Fetch PT operations with cache busting
   const { data: ptOperations = [], isLoading: isLoadingOperations } = useQuery<PTOperation[]>({
     queryKey: ['/api/pt-operations'],
+    staleTime: 0,
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
   });
 
   // Fetch manufacturing orders
@@ -182,10 +188,12 @@ export default function ProductionSchedulePage() {
   };
 
   const transformOperationsForBryntum = (operations: PTOperation[]) => {
-    return operations.map((op) => ({
-      id: `event-${op.id}`,
-      name: op.name || `Operation ${op.id}`,
-      resourceId: op.resourceId ? `resource-${op.resourceId}` : undefined,
+    return operations
+      .filter(op => op.resourceId) // Only include operations with valid resource assignments
+      .map((op) => ({
+        id: `event-${op.id}`,
+        name: op.name || `Operation ${op.id}`,
+        resourceId: `resource-${op.resourceId}`,
       startDate: op.startDate ? new Date(op.startDate) : new Date(),
       duration: op.duration || 60, // Duration in minutes
       durationUnit: 'minute',
@@ -242,15 +250,22 @@ export default function ProductionSchedulePage() {
     lagUnit: dep.lagUnit || 'day'
   }));
 
-  // Debug resource/event mapping
-  console.log('🔍 Resource/Event Mapping Debug:', {
-    resourcesLen: schedulerResources.length,
-    uniqueResourceIds: new Set(schedulerResources.map(r => r.id)).size,
-    eventsLen: schedulerEvents.length,
-    assignedDistinct: new Set(schedulerEvents.map(e => e.resourceId).filter(Boolean)).size,
-    resourceIds: schedulerResources.map(r => r.id).slice(0, 5),
-    eventResourceIds: schedulerEvents.map(e => e.resourceId).filter(Boolean).slice(0, 5)
-  });
+  // Resource/event mapping summary for production
+  console.log(`📊 Scheduler Data: ${schedulerResources.length} resources, ${schedulerEvents.length} operations`);
+  console.log(`📊 Raw Data: ${ptResources.length} PT resources, ${ptOperations.length} PT operations`);
+  console.log(`📊 Operations with resourceId: ${ptOperations.filter(op => op.resourceId).length}`);
+  
+  const resourceIds = new Set(schedulerResources.map(r => r.id));
+  const unmatchedEvents = schedulerEvents.filter(e => e.resourceId && !resourceIds.has(e.resourceId));
+  
+  if (unmatchedEvents.length > 0) {
+    console.warn(`⚠️ ${unmatchedEvents.length} operations have invalid resource assignments`);
+  }
+  
+  if (schedulerEvents.length === 0 && ptOperations.length > 0) {
+    console.error(`🚨 NO OPERATIONS RENDERED: ${ptOperations.length} operations fetched but 0 scheduler events created`);
+    console.error('Sample operations without resourceId:', ptOperations.filter(op => !op.resourceId).slice(0, 3));
+  }
 
   // Bryntum Scheduler Pro configuration
   const schedulerProConfig = {
@@ -774,7 +789,7 @@ export default function ProductionSchedulePage() {
                       { text: 'Category', field: 'category', width: 100 }
                     ],
                     // Force show all resources including unassigned ones
-                    hideUnassignedResources: false,
+                    hideUnassignedRows: false,
                     enableEventAnimations: false,
                     features: {
                       eventDrag: true,
@@ -787,12 +802,11 @@ export default function ProductionSchedulePage() {
                       // Disable resource filter to show all resources
                       resourceFilter: false
                     },
-                    onSchedulerReady: (scheduler: any) => {
+                    onReady: (scheduler: any) => {
                       console.log('📊 Bryntum Scheduler Ready - Store Debug:');
                       console.log('Resources in store:', scheduler.resourceStore?.count || 0);
                       console.log('Events in store:', scheduler.eventStore?.count || 0);
                       console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
-                      console.log('Resource filters:', scheduler.resourceStore?.filters?.length || 0);
                       
                       // Clear any resource filters
                       if (scheduler.resourceStore?.clearFilters) {
@@ -800,19 +814,18 @@ export default function ProductionSchedulePage() {
                         console.log('✅ Cleared resource store filters');
                       }
                       
-                      // Disable hide unassigned resources if it exists
-                      if ('hideUnassignedResources' in scheduler) {
-                        scheduler.hideUnassignedResources = false;
-                        console.log('✅ Disabled hideUnassignedResources');
+                      // Force disable resource filter feature
+                      if (scheduler.features?.resourceFilter) {
+                        scheduler.features.resourceFilter.disabled = true;
+                        console.log('✅ Disabled resource filter feature');
                       }
                       
-                      // Clear resource filter feature if it exists
-                      if (scheduler.features?.resourceFilter?.clearFilters) {
-                        scheduler.features.resourceFilter.clearFilters();
-                        console.log('✅ Cleared resource filter feature');
-                      }
+                      // Ensure hideUnassignedRows is false
+                      scheduler.hideUnassignedRows = false;
+                      console.log('✅ Set hideUnassignedRows to false');
                       
                       console.log('Final resource count:', scheduler.resourceStore?.count || 0);
+                      console.log('✅ Scheduler fully initialized with all resources visible');
                     }
                   })}
                 </div>

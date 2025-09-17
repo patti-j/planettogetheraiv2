@@ -48,6 +48,7 @@ const DEFAULT_MAX_RECENT_PAGES = 5;
 // Page mapping for labels and icons
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
+  '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
   '/production-scheduler': { label: 'Production Schedule', icon: 'Calendar' },
   '/schedule-sequences': { label: 'Schedule Sequences', icon: 'ArrowUpDown' },
   '/planning-overview': { label: 'Planning Process Guide', icon: 'Workflow' },
@@ -109,6 +110,19 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
 
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
+
+  // Load recent pages from localStorage on mount
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('recent_pages');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        setRecentPages(parsed);
+      }
+    } catch (error) {
+      console.error('Failed to load recent pages from localStorage:', error);
+    }
+  }, []);
   const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
@@ -227,7 +241,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           
           const response = await fetch(`/api/user-preferences/${user.id}`, {
             headers: {
-              'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+              'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
             },
             credentials: 'include',
           });
@@ -444,7 +458,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       // First get current preferences to merge
       const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
         headers: {
-          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
         },
         credentials: 'include',
       });
@@ -466,7 +480,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -482,6 +496,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       setPendingSave(null);
     } catch (error) {
       console.warn('Failed to save recent pages to database:', error);
+    }
+    
+    // Always save to localStorage as backup/fallback for persistence
+    try {
+      localStorage.setItem('recent_pages', JSON.stringify(pages));
+    } catch (error) {
+      console.error('Failed to save recent pages to localStorage:', error);
     }
   };
 
@@ -513,7 +534,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         // First get current preferences to merge
         const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
           headers: {
-            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
           },
           credentials: 'include',
         });
@@ -535,7 +556,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': localStorage.getItem('authToken') ? `Bearer ${localStorage.getItem('authToken')}` : '',
+            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
           },
           credentials: 'include',
           body: JSON.stringify({
