@@ -109,6 +109,9 @@ app.use((req, res, next) => {
     }
   });
 
+  // Serve Bryntum static assets from public directory
+  app.use(express.static(path.resolve(import.meta.dirname, "public")));
+
   // Register API routes
   app.use('/api', routes);
 
