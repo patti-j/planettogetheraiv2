@@ -220,8 +220,11 @@ export default function ProductionScheduleVanillaFix() {
           startDate,
           endDate,
           viewPreset: 'dayAndWeek',
-          rowHeight: 60,
-          barMargin: 8,
+          rowHeight: 50,
+          barMargin: 4,
+          height: '100%',
+          width: '100%',
+          autoHeight: false,
           project: {
             resourceStore: { data: resourceData },
             eventStore: { data: eventsForScheduler },
@@ -286,6 +289,10 @@ export default function ProductionScheduleVanillaFix() {
             // Log resource names
             const resourceNames = resourceStore.records.map((r: any) => r.name).slice(0, 5);
             addDebug(`🔧 Resource names: ${resourceNames.join(', ')}`);
+            
+            // Force scheduler refresh to ensure all rows are visible
+            schedulerInstance.refresh();
+            addDebug(`🔧 Forced scheduler refresh`);
           }, 500);
           // Diagnostics
           // @ts-ignore
