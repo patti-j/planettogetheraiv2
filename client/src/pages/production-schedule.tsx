@@ -188,12 +188,22 @@ export default function ProductionSchedulePage() {
   };
 
   const transformOperationsForBryntum = (operations: PTOperation[]) => {
+    console.log('🔍 Processing operations for scheduler:', operations.length);
+    console.log('🔍 Operations with resourceId:', operations.filter(op => op.resourceId).length);
+    console.log('🔍 First 3 operations:', operations.slice(0, 3).map(op => ({
+      id: op.id,
+      name: op.name,
+      resourceId: op.resourceId,
+      startDate: op.startDate,
+      duration: op.duration
+    })));
+    
     return operations
-      .filter(op => op.resourceId) // Only include operations with valid resource assignments
+      // .filter(op => op.resourceId) // REMOVED: Show ALL operations, even unassigned ones
       .map((op) => ({
         id: `event-${op.id}`,
         name: op.name || `Operation ${op.id}`,
-        resourceId: `resource-${op.resourceId}`,
+        resourceId: op.resourceId ? `resource-${op.resourceId}` : null, // Handle null resourceId
       startDate: op.startDate ? new Date(op.startDate) : new Date(),
       duration: op.duration || 60, // Duration in minutes
       durationUnit: 'minute',
