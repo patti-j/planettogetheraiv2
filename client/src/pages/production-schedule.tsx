@@ -116,6 +116,11 @@ export default function ProductionScheduleVanillaMapFix() {
         const rawOps       = opsResp && (opsResp as any).ok ? await (opsResp as any).json() : [];
         const resourcesSrc = asArray(rawResources);
         const opsSrc       = asArray(rawOps);
+        
+        // Debug logging to see actual data
+        console.log('[DEBUG] Raw resources from API:', resourcesSrc.slice(0, 5));
+        console.log('[DEBUG] Raw operations from API:', opsSrc.slice(0, 5));
+        console.log('[DEBUG] Total resources:', resourcesSrc.length, 'Total operations:', opsSrc.length);
 
         // Build resource data using resource.resource_id (string) as the CANONICAL id
         const mappedResources = [
