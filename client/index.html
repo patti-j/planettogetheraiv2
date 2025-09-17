@@ -42,6 +42,25 @@
   </head>
   <body>
     <div id="root"></div>
+    <style>
+      /* Prevent flash of unstyled content - set initial background immediately */
+      body {
+        background-color: white;
+        transition: none !important;
+      }
+      body.dark {
+        background-color: rgb(17 24 39);
+      }
+    </style>
+    <script>
+      // Apply body background color immediately based on theme
+      (function() {
+        const theme = localStorage.getItem('theme') || 'light';
+        if (theme === 'dark') {
+          document.body.classList.add('dark');
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
     <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
     <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
