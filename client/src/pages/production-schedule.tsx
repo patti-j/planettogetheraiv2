@@ -547,6 +547,22 @@ export default function ProductionSchedulePage() {
           { unit: 'month', dateFormat: 'MMMM YYYY' },
           { unit: 'week', dateFormat: 'DD' }
         ]
+      },
+      {
+        id: 'monthAndYear',
+        name: 'Month & Year',
+        tickWidth: 200,
+        displayDateFormat: 'MMM YYYY',
+        shiftIncrement: 1,
+        shiftUnit: 'year',
+        timeResolution: {
+          unit: 'month',
+          increment: 1
+        },
+        headers: [
+          { unit: 'year', dateFormat: 'YYYY' },
+          { unit: 'month', dateFormat: 'MMM' }
+        ]
       }
     ]
   };
@@ -619,20 +635,34 @@ export default function ProductionSchedulePage() {
 
   // Handler functions
   const handleZoomIn = () => {
-    if (schedulerRef.current) {
-      schedulerRef.current.instance.zoomIn();
+    if (schedulerRef.current?.instance) {
+      try {
+        const scheduler = schedulerRef.current.instance;
+        scheduler.zoomIn();
+      } catch (error) {
+        console.warn('Error zooming in:', error);
+      }
     }
   };
 
   const handleZoomOut = () => {
-    if (schedulerRef.current) {
-      schedulerRef.current.instance.zoomOut();
+    if (schedulerRef.current?.instance) {
+      try {
+        const scheduler = schedulerRef.current.instance;
+        scheduler.zoomOut();
+      } catch (error) {
+        console.warn('Error zooming out:', error);
+      }
     }
   };
 
   const handleZoomToFit = () => {
-    if (schedulerRef.current) {
-      schedulerRef.current.instance.zoomToFit();
+    if (schedulerRef.current?.instance) {
+      try {
+        schedulerRef.current.instance.zoomToFit();
+      } catch (error) {
+        console.warn('Error zooming to fit:', error);
+      }
     }
   };
 
@@ -709,8 +739,8 @@ export default function ProductionSchedulePage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="hourAndDay">Hour & Day</SelectItem>
-                  <SelectItem value="weekAndDay">Week & Day</SelectItem>
-                  <SelectItem value="monthAndWeek">Month & Week</SelectItem>
+                  <SelectItem value="dayAndWeek">Day & Week</SelectItem>
+                  <SelectItem value="monthAndYear">Month & Year</SelectItem>
                 </SelectContent>
               </Select>
               
