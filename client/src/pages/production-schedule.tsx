@@ -788,18 +788,25 @@ export default function ProductionSchedulePage() {
                 <div style={{ height: '700px' }}>
                   {React.createElement(BryntumSchedulerPro as any, {
                     ref: schedulerRef,
-                    resources: schedulerResources,
-                    events: schedulerEvents,
-                    dependencies: schedulerDependencies,
-                    startDate: startOfDay(new Date()),
-                    endDate: endOfDay(addDays(new Date(), 90)),
+                    // Use direct data instead of stores
+                    resources: { data: schedulerResources },
+                    events: { data: schedulerEvents },
+                    assignments: { data: schedulerEvents.map(e => ({ 
+                      id: `assignment-${e.id}`,
+                      event: e.id,
+                      resource: e.resourceId 
+                    })) },
+                    dependencies: { data: schedulerDependencies },
+                    startDate: new Date('2025-08-01'), // Show from August
+                    endDate: new Date('2025-12-31'), // Show through end of year
                     viewPreset: "weekAndDay",
                     columns: [
                       { text: 'Name', field: 'name', width: 150 },
                       { text: 'Category', field: 'category', width: 100 }
                     ],
-                    // Force show all resources including unassigned ones
+                    // Critical: Force show all resources including unassigned ones
                     hideUnassignedRows: false,
+                    hideUnscheduled: false,
                     enableEventAnimations: false,
                     features: {
                       eventDrag: true,

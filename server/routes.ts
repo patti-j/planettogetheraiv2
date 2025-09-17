@@ -512,7 +512,7 @@ router.get("/pt-operations", async (req, res) => {
         jr.is_primary,
         
         -- Resource information from ptresources
-        r.id as resource_id,
+        r.resource_id as resource_id,  -- Use resource_id column instead of id
         r.external_id as resource_external_id,
         r.name as resource_name,
         r.description as resource_description,
@@ -574,7 +574,7 @@ router.get("/pt-resources", async (req, res) => {
     // Query PT resources with plant information
     const ptResourcesQuery = `
       SELECT DISTINCT
-        r.id,
+        r.resource_id as id,  -- Use resource_id as the ID for proper mapping with operations
         r.external_id,
         r.name,
         r.description,
