@@ -211,8 +211,8 @@ export default function ProductionScheduleVanillaFix() {
 
         addDebug(`🔧 Creating scheduler with ${resourceData.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
         
-        // DEBUG: Log the first few resources to see their structure
-        console.log('First 5 resources being passed to Bryntum:', resourceData.slice(0, 5));
+        // DEBUG: Log the first few resources to see their structure in visual debug
+        addDebug(`🔧 Sample resources: ${resourceData.slice(0, 3).map(r => `${r.id}:${r.name}`).join(', ')}`);
         
         // Instantiate using store configs (non-deprecated) with AssignmentStore
         schedulerInstance = new SchedulerPro({
@@ -275,6 +275,18 @@ export default function ProductionScheduleVanillaFix() {
 
         if (!destroyed) {
           window.scheduler = schedulerInstance;
+          addDebug(`🔧 Scheduler created successfully`);
+          
+          // DEBUG: Check what Bryntum actually loaded
+          setTimeout(() => {
+            const resourceStore = schedulerInstance.project.resourceStore;
+            const eventStore = schedulerInstance.project.eventStore;
+            addDebug(`🔧 Bryntum loaded: ${resourceStore.count} resources, ${eventStore.count} events`);
+            
+            // Log resource names
+            const resourceNames = resourceStore.records.map((r: any) => r.name).slice(0, 5);
+            addDebug(`🔧 Resource names: ${resourceNames.join(', ')}`);
+          }, 500);
           // Diagnostics
           // @ts-ignore
           const rCount = schedulerInstance?.project?.resourceStore?.count;
