@@ -109,6 +109,7 @@ export default function ProductionScheduleVanillaFix() {
         addDebug('🔧 Assets loaded successfully');
 
         const { SchedulerPro } = window.bryntum.schedulerpro;
+        addDebug('🔧 SchedulerPro class loaded');
 
         // Timespan: match standalone
         const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
@@ -125,6 +126,8 @@ export default function ProductionScheduleVanillaFix() {
 
         const rawResources = resResp && (resResp as any).ok ? await (resResp as any).json() : [];
         const rawOps       = opsResp && (opsResp as any).ok ? await (opsResp as any).json() : [];
+        
+        addDebug(`🔧 Fetched ${rawResources.length} raw resources, ${rawOps.length} raw operations`);
 
         // Normalize
         const resourcesSrc = asArray(rawResources);
@@ -139,6 +142,8 @@ export default function ProductionScheduleVanillaFix() {
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
           }))
         ];
+        
+        addDebug(`🔧 Created ${resourceData.length} resource entries (including Unscheduled)`);
 
         const resourceIdSet = new Set(resourceData.map(r => r.id));
 
