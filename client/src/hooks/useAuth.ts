@@ -5,16 +5,16 @@ import { apiRequest } from "@/lib/queryClient";
 const rolePermissionsMap: Record<string, string[]> = {
   'Director': [
     'business-goals-view', 'business-goals-create', 'business-goals-edit', 'business-goals-delete',
-    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'Plant Manager': [
     'plant-manager-view', 'capacity-planning-view', 'reports-view', 'analytics-view',
-    'schedule-view', 'ai-assistant-view', 'feedback-view'
+    'schedule-view', 'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'Production Scheduler': [
     'schedule-view', 'schedule-create', 'schedule-edit', 'schedule-delete',
     'scheduling-optimizer-view', 'shop-floor-view', 'boards-view', 'erp-import-view',
-    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view'
+    'analytics-view', 'reports-view', 'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'IT Administrator': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
@@ -27,7 +27,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
     'data-import-simple-view', 'help-view', 'control-tower-view',
     'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view',
-    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view'
+    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view', 'production-scheduling-view'
   ],
   'Systems Manager': [
     'systems-management-view', 'role-management-view', 'user-role-assignments-view',
@@ -40,7 +40,7 @@ const rolePermissionsMap: Record<string, string[]> = {
     'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
     'data-import-simple-view', 'help-view', 'control-tower-view',
     'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view',
-    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view'
+    'demand-planning-view', 'erp-import-view', 'algorithm-governance-view', 'production-scheduling-view'
   ],
   'Administrator': [
     // Core permissions for all navigation menu items
@@ -67,15 +67,15 @@ const rolePermissionsMap: Record<string, string[]> = {
     'tasks-view', 'billing-view', 'algorithm-management-view',
     'mobile-dashboard-view', 'memory-books-view', 'data-import-clean-view',
     'data-import-simple-view', 'help-view', 'control-tower-view',
-    'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view'
+    'dashboards-view', 'smart-kpi-tracking-view', 'production-planning-view', 'production-scheduling-view'
   ],
   'Shop Floor Operations': [
     'shop-floor-view', 'operator-dashboard-view', 'reports-view',
-    'ai-assistant-view', 'feedback-view'
+    'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'Data Analyst': [
     'analytics-view', 'reports-view', 'schedule-view',
-    'ai-assistant-view', 'feedback-view'
+    'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ],
   'Trainer': [
     'training-view', 'role-switching-permissions', 'analytics-view', 'reports-view',
@@ -85,11 +85,11 @@ const rolePermissionsMap: Record<string, string[]> = {
     'boards-view', 'erp-import-view', 'plant-manager-view', 'operator-dashboard-view',
     'maintenance-planning-view', 'role-management-view', 'user-role-assignments-view',
     'business-goals-create', 'business-goals-edit', 'schedule-create', 'schedule-edit',
-    'implementation-projects-view'
+    'implementation-projects-view', 'production-scheduling-view'
   ],
   'Maintenance Technician': [
     'maintenance-planning-view', 'reports-view',
-    'ai-assistant-view', 'feedback-view'
+    'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
   ]
 };
 
