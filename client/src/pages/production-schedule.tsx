@@ -1,6 +1,7 @@
 // production-schedule.tsx (simplified, working version)
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
+import { ProjectModel } from '@bryntum/schedulerpro';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
 type PTResource = {
@@ -51,24 +52,30 @@ function getOperationColor(opName?: string) {
 
 export default function ProductionSchedulePage() {
   const schedulerRef = useRef<any>(null);
+  const projectRef = useRef<ProjectModel | null>(null);
 
-  // Timespan (match your HTML: Sep 3–17, 2025; feel free to wire this to "today")
-  const startDate = useMemo(() => new Date(2025, 8, 3, 0, 0, 0, 0), []);
-  const endDate   = useMemo(() => new Date(2025, 8, 17, 23, 59, 59, 999), []);
+  // Timespan - use broader range to capture all operations
+  const startDate = useMemo(() => new Date(2025, 7, 1, 0, 0, 0, 0), []); // August 1, 2025
+  const endDate   = useMemo(() => new Date(2025, 9, 31, 23, 59, 59, 999), []); // October 31, 2025
 
-  // App state (inline data to the project)
-  const [resources, setResources] = useState<any[]>([]);
-  const [events, setEvents]       = useState<any[]>([]);
-  const [dependencies, setDependencies] = useState<any[]>([]);
+  // App state 
   const [loading, setLoading] = useState(true);
 
-  // Load PT data – mirror your HTML: resources + operations + deps (if any)
+  // Initialize ProjectModel and load PT data
   useEffect(() => {
     let cancelled = false;
 
     async function load() {
       try {
         setLoading(true);
+
+        // Create ProjectModel instance
+        const project = new ProjectModel({
+          autoLoad: false,
+          autoSync: false
+        });
+
+        projectRef.current = project;
 
         // Replace with your actual endpoints if different:
         const [resRes, opsRes] = await Promise.all([
@@ -89,12 +96,14 @@ export default function ProductionSchedulePage() {
             eventColor: '#808080'
           },
           ...ptResources.map((r, i) => ({
-            id: String(r.id),
+            id: String(r.id), // PT resources already have string IDs
             name: r.name || `Resource ${r.id}`,
             category: r.plantName || 'Main Plant',
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
           }))
         ];
+
+        console.log('🔧 Mapped Resources:', mappedResources);
 
         // Map PT operations to Bryntum events; if resourceId missing ⇒ unscheduled
         const mappedEvents = ptOperations.map(op => {
@@ -109,7 +118,8 @@ export default function ProductionSchedulePage() {
             end = e;
           }
 
-          const unscheduled = !op.resourceId || op.resourceId === 0;
+          // PT operations have string resourceId, check if it exists
+          const unscheduled = !op.resourceId || op.resourceId === '0' || op.resourceId === 0;
           const resourceId = unscheduled ? UNSCHEDULED_ID : String(op.resourceId);
 
           return {
@@ -130,6 +140,9 @@ export default function ProductionSchedulePage() {
           };
         });
 
+        console.log('🔧 Mapped Events:', mappedEvents.slice(0, 3));
+        console.log('🔧 Resource IDs in events:', [...new Set(mappedEvents.map(e => e.resourceId))]);
+
         // Optional: infer simple FS dependencies by job sequence if you have hints
         // Exactly like your HTML: build dependencies between sequential ops on different resources
         const inferredDeps: PTDependency[] = []; // keep empty unless you have data
@@ -143,9 +156,12 @@ export default function ProductionSchedulePage() {
         }));
 
         if (!cancelled) {
-          setResources(mappedResources);
-          setEvents(mappedEvents);
-          setDependencies(mappedDeps);
+          // Load data into the project model
+          await project.loadInlineData({
+            resources: mappedResources,
+            events: mappedEvents,
+            dependencies: mappedDeps
+          });
         }
       } catch (e) {
         console.error('Failed to load schedule data', e);
@@ -229,21 +245,18 @@ export default function ProductionSchedulePage() {
     });
   };
 
-  // Bryntum project config to emulate your "ASAP w/ resource constraints"
-  const project = useMemo(() => ({
-    autoLoad: false,
-    autoSync: false,
-    schedulingEngine: {
-      multiplePerResource: true,
-      allowOverlap: false
-    },
-    // Inline data load like your HTML
-    resourcesData: resources,
-    eventsData: events,
-    dependenciesData: dependencies
-  }), [resources, events, dependencies]);
+  // Assign project to scheduler when both are ready
+  useEffect(() => {
+    const scheduler = schedulerRef.current?.instance;
+    const project = projectRef.current;
+    
+    if (scheduler && project && !loading) {
+      console.log('🔧 Assigning ProjectModel to scheduler');
+      scheduler.project = project;
+    }
+  }, [loading]);
 
-  // Scheduler config
+  // Scheduler config using ProjectModel instance
   const schedulerConfig = useMemo(() => ({
     columns: [
       { text: 'Resource', field: 'name', width: 200 },
@@ -252,12 +265,13 @@ export default function ProductionSchedulePage() {
     viewPreset: 'dayAndWeek',
     rowHeight: 60,
     barMargin: 8,
+    height: 600, // Fix sizing warning
     startDate,
     endDate,
-    project,
+    // No project prop - will be assigned via scheduler.project property
     features,
     eventRenderer
-  }), [startDate, endDate, project, features, eventRenderer]);
+  }), [startDate, endDate, features, eventRenderer]);
 
   return (
     <div style={{ padding: 16 }}>
