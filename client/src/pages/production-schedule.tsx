@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { BryntumSchedulerPro } from "@bryntum/schedulerpro-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -166,6 +166,15 @@ export default function ProductionSchedulePage() {
   const [activeTab, setActiveTab] = useState("schedule");
   const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("asap");
   const [isApplyingSchedule, setIsApplyingSchedule] = useState(false);
+  
+  // Live metrics state for real-time status bar updates
+  const [liveMetrics, setLiveMetrics] = useState({
+    operationCounts: { total: 0, completed: 0, inProgress: 0, scheduled: 0, delayed: 0, critical: 0 },
+    resourceUtilization: { overall: 0, bottlenecks: 0, active: 0, idle: 0, total: 0 },
+    schedulingMetrics: { assignments: 0, dependencies: 0, unassigned: 0, conflicted: 0 },
+    lastUpdated: new Date()
+  });
+  const [schedulerInstance, setSchedulerInstance] = useState<any>(null);
 
   // Fetch PT resources with cache busting
   const { data: ptResources = [], isLoading: isLoadingResources } = useQuery<PTResource[]>({
@@ -192,6 +201,58 @@ export default function ProductionSchedulePage() {
   const { data: ptDependencies = [], isLoading: isLoadingDependencies } = useQuery<PTDependency[]>({
     queryKey: ['/api/pt-dependencies'],
   });
+
+  // Combine loading state - MOVED UP to fix initialization order
+  const isLoading = isLoadingResources || isLoadingOperations || isLoadingDependencies;
+
+  // ✅ CRITICAL FIX: Initialize metrics from static data immediately when data loads
+  useEffect(() => {
+    const currentLoading = isLoadingResources || isLoadingOperations || isLoadingDependencies;
+    console.log('🚀 CRITICAL: Initializing status bar metrics from static data...');
+    console.log('📊 Data available:', {
+      resources: ptResources.length,
+      operations: ptOperations.length,
+      dependencies: ptDependencies.length,
+      loading: currentLoading
+    });
+    
+    if (!currentLoading && ptResources.length > 0 && ptOperations.length > 0) {
+      // Calculate initial metrics from static data before scheduler is ready
+      const initialMetrics = {
+        operationCounts: {
+          total: ptOperations.length,
+          completed: ptOperations.filter(op => op.status === 'Completed' || op.status === 'finished').length,
+          inProgress: ptOperations.filter(op => op.status === 'In Progress' || op.status === 'running' || op.status === 'active').length,
+          scheduled: ptOperations.filter(op => op.status === 'Scheduled' || op.status === 'planned').length,
+          delayed: ptOperations.filter(op => op.status === 'Delayed' || op.status === 'overdue').length,
+          critical: ptOperations.filter(op => op.priority === 'Critical' || op.priority === 'High').length
+        },
+        resourceUtilization: {
+          overall: calculateOverallUtilization(),
+          bottlenecks: Math.round(ptResources.filter(r => r.isBottleneck).length * 100 / Math.max(1, ptResources.length)),
+          active: ptResources.filter(r => r.active !== false).length,
+          idle: ptResources.filter(r => r.active === false).length,
+          total: ptResources.length
+        },
+        schedulingMetrics: {
+          assignments: ptOperations.filter(op => op.resourceId).length,
+          dependencies: ptDependencies.length,
+          unassigned: ptOperations.filter(op => !op.resourceId).length,
+          conflicted: 0
+        },
+        lastUpdated: new Date()
+      };
+      
+      console.log('✅ CRITICAL: Static metrics calculated successfully:', {
+        totalOps: initialMetrics.operationCounts.total,
+        activeResources: initialMetrics.resourceUtilization.active,
+        utilization: initialMetrics.resourceUtilization.overall + '%',
+        assignments: initialMetrics.schedulingMetrics.assignments
+      });
+      
+      setLiveMetrics(initialMetrics);
+    }
+  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies]);
 
   // Transform PT data for Bryntum format - simple flat list like working HTML version
   const transformResourcesForBryntum = (resources: PTResource[]) => {
@@ -280,22 +341,307 @@ export default function ProductionSchedulePage() {
     return Math.round(availability * performance * quality * 100);
   };
 
-  // Combine loading state
-  const isLoading = isLoadingResources || isLoadingOperations || isLoadingDependencies;
+  // Enhanced status bar calculation functions
+  const getOperationCountsByStatus = () => {
+    const counts = {
+      total: ptOperations.length,
+      completed: ptOperations.filter(op => op.status === 'Completed').length,
+      inProgress: ptOperations.filter(op => op.status === 'In Progress').length,
+      scheduled: ptOperations.filter(op => op.status === 'Scheduled' || op.status === 'Planned').length,
+      delayed: ptOperations.filter(op => op.status === 'Delayed' || op.status === 'Overdue').length,
+      critical: ptOperations.filter(op => op.priority === 'Critical' || op.priority === 'High').length
+    };
+    return counts;
+  };
 
-  // Transform data for Bryntum Scheduler Pro (with separate stores)
-  const schedulerResources = transformResourcesForBryntum(ptResources);
-  const schedulerEvents = transformOperationsForBryntum(ptOperations);
-  const schedulerAssignments = createAssignmentsForBryntum(ptOperations);
-  const schedulerDependencies = ptDependencies.map(dep => ({
+  const getResourceUtilizationDetails = () => {
+    if (ptResources.length === 0) return { overall: 0, bottlenecks: 0, active: 0, idle: 0 };
+    
+    const resourceUtilization = ptResources.map(resource => {
+      const resourceAssignments = ptOperations.filter(op => op.resourceId === resource.id);
+      const totalAssignedHours = resourceAssignments.reduce((sum, op) => sum + (op.duration || 0), 0) / 60;
+      const capacityHours = (resource.capacity || 100) * 8; // 8 hour workday
+      const utilization = Math.min(100, (totalAssignedHours / capacityHours) * 100);
+      
+      return {
+        id: resource.id,
+        name: resource.name,
+        utilization,
+        isBottleneck: resource.isBottleneck,
+        active: resource.active
+      };
+    });
+    
+    const activeResources = resourceUtilization.filter(r => r.active);
+    const overallUtilization = activeResources.length > 0 
+      ? activeResources.reduce((sum, r) => sum + r.utilization, 0) / activeResources.length 
+      : 0;
+    
+    const bottleneckUtilization = resourceUtilization
+      .filter(r => r.isBottleneck && r.active)
+      .reduce((sum, r) => sum + r.utilization, 0) / Math.max(1, resourceUtilization.filter(r => r.isBottleneck && r.active).length);
+    
+    return {
+      overall: Math.round(overallUtilization),
+      bottlenecks: Math.round(bottleneckUtilization || 0),
+      active: activeResources.length,
+      idle: resourceUtilization.filter(r => r.utilization < 10 && r.active).length,
+      total: ptResources.length
+    };
+  };
+
+  const getSchedulingMetrics = () => {
+    return {
+      dependencies: ptDependencies.length,
+      assignments: schedulerAssignments.length,
+      unassigned: ptOperations.filter(op => !op.resourceId).length,
+      conflicted: 0 // Could be calculated based on overlapping assignments
+    };
+  };
+
+  const getLastUpdatedTime = () => {
+    return format(new Date(), 'MMM dd, HH:mm:ss');
+  };
+
+  // ✅ LIVE DATA CALCULATION FUNCTIONS - Connect to Bryntum stores
+  const calculateLiveOperationCounts = useCallback((scheduler: any) => {
+    if (!scheduler?.eventStore) return { total: 0, completed: 0, inProgress: 0, scheduled: 0, delayed: 0, critical: 0 };
+    
+    const events = scheduler.eventStore.records || [];
+    
+    // Status normalization mapping
+    const normalizeStatus = (status?: string) => {
+      if (!status) return 'scheduled';
+      const s = status.toLowerCase().trim();
+      if (['completed', 'finished', 'done'].includes(s)) return 'completed';
+      if (['in progress', 'running', 'active', 'working'].includes(s)) return 'inProgress';
+      if (['delayed', 'overdue', 'late', 'behind'].includes(s)) return 'delayed';
+      if (['scheduled', 'planned', 'pending', 'waiting'].includes(s)) return 'scheduled';
+      return 'scheduled';
+    };
+    
+    const normalizePriority = (priority?: string | number) => {
+      if (typeof priority === 'number') return priority >= 7 ? 'critical' : 'normal';
+      if (!priority) return 'normal';
+      const p = priority.toLowerCase().trim();
+      return ['critical', 'high', 'urgent'].includes(p) ? 'critical' : 'normal';
+    };
+    
+    const counts = {
+      total: events.length,
+      completed: 0,
+      inProgress: 0,
+      scheduled: 0,
+      delayed: 0,
+      critical: 0
+    };
+    
+    events.forEach((event: any) => {
+      const status = normalizeStatus(event.status);
+      const priority = normalizePriority(event.priority);
+      
+      counts[status as keyof typeof counts]++;
+      if (priority === 'critical') counts.critical++;
+    });
+    
+    return counts;
+  }, []);
+  
+  const calculateLiveResourceUtilization = useCallback((scheduler: any) => {
+    if (!scheduler?.resourceStore || !scheduler?.assignmentStore) {
+      return { overall: 0, bottlenecks: 0, active: 0, idle: 0, total: 0 };
+    }
+    
+    const resources = scheduler.resourceStore.records || [];
+    const assignments = scheduler.assignmentStore.records || [];
+    const events = scheduler.eventStore?.records || [];
+    
+    // Get visible time range for accurate utilization calculation
+    const timeAxis = scheduler.timeAxis;
+    const startDate = timeAxis?.startDate || startOfDay(new Date());
+    const endDate = timeAxis?.endDate || endOfDay(addDays(new Date(), 30));
+    const timeRangeHours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+    const workingDaysInRange = Math.ceil(timeRangeHours / 24) * 0.7; // ~70% working days
+    const workingHoursPerDay = 8;
+    
+    const resourceUtilization = resources.map((resource: any) => {
+      const resourceAssignments = assignments.filter((a: any) => a.resourceId === resource.id);
+      
+      // Calculate actual assigned time within visible range
+      let totalAssignedHours = 0;
+      resourceAssignments.forEach((assignment: any) => {
+        const event = events.find((e: any) => e.id === assignment.eventId);
+        if (event) {
+          const eventStart = new Date(event.startDate);
+          const eventEnd = new Date(event.endDate || new Date(eventStart.getTime() + (event.duration * 60 * 1000)));
+          
+          // Only count time within visible range
+          const rangeStart = Math.max(startDate.getTime(), eventStart.getTime());
+          const rangeEnd = Math.min(endDate.getTime(), eventEnd.getTime());
+          
+          if (rangeStart < rangeEnd) {
+            const assignedHours = ((rangeEnd - rangeStart) / (1000 * 60 * 60)) * ((assignment.units || 100) / 100);
+            totalAssignedHours += assignedHours;
+          }
+        }
+      });
+      
+      // Calculate working capacity based on resource efficiency and working time
+      const efficiency = (resource.efficiency || 100) / 100;
+      const workingCapacityHours = workingDaysInRange * workingHoursPerDay * efficiency;
+      
+      const utilization = workingCapacityHours > 0 ? Math.min(100, (totalAssignedHours / workingCapacityHours) * 100) : 0;
+      
+      return {
+        id: resource.id,
+        name: resource.name,
+        utilization: Math.round(utilization),
+        isBottleneck: resource.isBottleneck || false,
+        active: resource.active !== false,
+        assignedHours: totalAssignedHours,
+        capacityHours: workingCapacityHours
+      };
+    });
+    
+    const activeResources = resourceUtilization.filter(r => r.active);
+    const bottleneckResources = resourceUtilization.filter(r => r.isBottleneck && r.active);
+    
+    const overallUtilization = activeResources.length > 0 
+      ? activeResources.reduce((sum, r) => sum + r.utilization, 0) / activeResources.length 
+      : 0;
+      
+    const bottleneckUtilization = bottleneckResources.length > 0
+      ? bottleneckResources.reduce((sum, r) => sum + r.utilization, 0) / bottleneckResources.length
+      : 0;
+    
+    return {
+      overall: Math.round(overallUtilization),
+      bottlenecks: Math.round(bottleneckUtilization),
+      active: activeResources.length,
+      idle: activeResources.filter(r => r.utilization < 10).length,
+      total: resources.length
+    };
+  }, []);
+  
+  const calculateLiveSchedulingMetrics = useCallback((scheduler: any) => {
+    if (!scheduler?.project) return { assignments: 0, dependencies: 0, unassigned: 0, conflicted: 0 };
+    
+    const assignments = scheduler.assignmentStore?.records || [];
+    const dependencies = scheduler.dependencyStore?.records || [];
+    const events = scheduler.eventStore?.records || [];
+    const resources = scheduler.resourceStore?.records || [];
+    
+    // Count unassigned events (events without assignments)
+    const assignedEventIds = new Set(assignments.map((a: any) => a.eventId));
+    const unassignedEvents = events.filter((e: any) => !assignedEventIds.has(e.id));
+    
+    // Detect scheduling conflicts (overlapping assignments on same resource)
+    const conflictedResources = new Set();
+    resources.forEach((resource: any) => {
+      const resourceAssignments = assignments.filter((a: any) => a.resourceId === resource.id);
+      
+      // Check for overlapping time ranges
+      for (let i = 0; i < resourceAssignments.length; i++) {
+        for (let j = i + 1; j < resourceAssignments.length; j++) {
+          const event1 = events.find((e: any) => e.id === resourceAssignments[i].eventId);
+          const event2 = events.find((e: any) => e.id === resourceAssignments[j].eventId);
+          
+          if (event1 && event2) {
+            const start1 = new Date(event1.startDate).getTime();
+            const end1 = new Date(event1.endDate || new Date(start1 + event1.duration * 60000)).getTime();
+            const start2 = new Date(event2.startDate).getTime();
+            const end2 = new Date(event2.endDate || new Date(start2 + event2.duration * 60000)).getTime();
+            
+            // Check for overlap
+            if (start1 < end2 && start2 < end1) {
+              conflictedResources.add(resource.id);
+            }
+          }
+        }
+      }
+    });
+    
+    return {
+      assignments: assignments.length,
+      dependencies: dependencies.length,
+      unassigned: unassignedEvents.length,
+      conflicted: conflictedResources.size
+    };
+  }, []);
+  
+  // ✅ PERFORMANCE OPTIMIZATION: Throttled metrics updater with error handling
+  const updateLiveMetrics = useCallback((scheduler: any) => {
+    try {
+      if (!scheduler?.project) {
+        console.warn('⚠️ Cannot update metrics: scheduler or project not available');
+        return;
+      }
+      
+      console.log('📊 Updating live metrics from scheduler stores...');
+      console.log('📊 Scheduler stores available:', {
+        eventStore: !!scheduler.eventStore,
+        resourceStore: !!scheduler.resourceStore,
+        assignmentStore: !!scheduler.assignmentStore,
+        eventCount: scheduler.eventStore?.count || 0,
+        resourceCount: scheduler.resourceStore?.count || 0,
+        assignmentCount: scheduler.assignmentStore?.count || 0
+      });
+      
+      const newMetrics = {
+        operationCounts: calculateLiveOperationCounts(scheduler),
+        resourceUtilization: calculateLiveResourceUtilization(scheduler),
+        schedulingMetrics: calculateLiveSchedulingMetrics(scheduler),
+        lastUpdated: new Date()
+      };
+      
+      setLiveMetrics(newMetrics);
+      
+      console.log('✅ Live metrics updated successfully:', {
+        operations: newMetrics.operationCounts.total,
+        utilization: newMetrics.resourceUtilization.overall + '%',
+        assignments: newMetrics.schedulingMetrics.assignments,
+        unassigned: newMetrics.schedulingMetrics.unassigned,
+        conflicts: newMetrics.schedulingMetrics.conflicted
+      });
+    } catch (error) {
+      console.error('❌ Error updating live metrics:', error);
+      // Fallback to default metrics on error
+      setLiveMetrics({
+        operationCounts: { total: 0, completed: 0, inProgress: 0, scheduled: 0, delayed: 0, critical: 0 },
+        resourceUtilization: { overall: 0, bottlenecks: 0, active: 0, idle: 0, total: 0 },
+        schedulingMetrics: { assignments: 0, dependencies: 0, unassigned: 0, conflicted: 0 },
+        lastUpdated: new Date()
+      });
+    }
+  }, [calculateLiveOperationCounts, calculateLiveResourceUtilization, calculateLiveSchedulingMetrics]);
+  
+  // ✅ SIMPLIFIED THROTTLED VERSION for performance - prevents excessive updates
+  const throttledUpdateLiveMetrics = useCallback(
+    (() => {
+      let timeoutId: NodeJS.Timeout | null = null;
+      
+      return (scheduler: any) => {
+        if (timeoutId) clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => {
+          updateLiveMetrics(scheduler);
+        }, 250); // 250ms debounce for smooth performance
+      };
+    })()
+  , [updateLiveMetrics]);
+
+  // Memoized static data transformations for performance
+  const schedulerResources = useMemo(() => transformResourcesForBryntum(ptResources), [ptResources]);
+  const schedulerEvents = useMemo(() => transformOperationsForBryntum(ptOperations), [ptOperations]);
+  const schedulerAssignments = useMemo(() => createAssignmentsForBryntum(ptOperations), [ptOperations]);
+  const schedulerDependencies = useMemo(() => ptDependencies.map(dep => ({
     id: dep.id,
     fromEvent: dep.fromEvent,
     toEvent: dep.toEvent,
     type: dep.type || 2,
     lag: dep.lag || 0,
     lagUnit: dep.lagUnit || 'day'
-  }));
-
+  })), [ptDependencies]);
+  
   // Resource/event mapping summary for production
   console.log(`📊 Scheduler Data: ${schedulerResources.length} resources, ${schedulerEvents.length} events, ${schedulerAssignments.length} assignments`);
   console.log(`📊 Raw Data: ${ptResources.length} PT resources, ${ptOperations.length} PT operations`);
@@ -595,6 +941,17 @@ export default function ProductionSchedulePage() {
           if (isAutoScheduling) {
             project.commitAsync();
           }
+          
+          // Update live metrics after data load with error handling
+          setTimeout(() => {
+            try {
+              if (schedulerRef.current?.instance) {
+                updateLiveMetrics(schedulerRef.current.instance);
+              }
+            } catch (metricsError) {
+              console.warn('Error updating initial metrics:', metricsError);
+            }
+          }, 200);
         }
         
       } catch (error) {
@@ -606,7 +963,7 @@ export default function ProductionSchedulePage() {
         });
       }
     }
-  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling, toast]);
+  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling, toast, updateLiveMetrics]);
 
   // Handle viewPreset changes
   useEffect(() => {
@@ -2139,15 +2496,15 @@ export default function ProductionSchedulePage() {
             <div className="flex items-center gap-4 text-sm">
               <div className="flex items-center gap-1">
                 <Package className="w-4 h-4 text-blue-500" />
-                <span className="font-medium">{ptOperations.length}</span> Operations
+                <span className="font-medium">{liveMetrics.operationCounts.total}</span> Operations
               </div>
               <div className="flex items-center gap-1">
                 <Wrench className="w-4 h-4 text-green-500" />
-                <span className="font-medium">{ptResources.length}</span> Resources
+                <span className="font-medium">{liveMetrics.resourceUtilization.total}</span> Resources
               </div>
               <div className="flex items-center gap-1">
                 <TrendingUp className="w-4 h-4 text-orange-500" />
-                <span className="font-medium">{calculateOverallUtilization()}%</span> Utilization
+                <span className="font-medium">{liveMetrics.resourceUtilization.overall}%</span> Utilization
               </div>
             </div>
           </div>
@@ -2172,8 +2529,88 @@ export default function ProductionSchedulePage() {
         </TabsList>
 
         <TabsContent value="schedule" className="mt-4">
+          {/* ✅ CRITICAL FIX: ALWAYS VISIBLE STATUS BAR - Moved outside conditional rendering */}
+          <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-gray-800 dark:to-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg p-4 mb-4 shadow-sm" data-testid="status-bar-header">
+            <div className="flex items-center justify-between text-sm">
+              {/* Left Section - Operations Status (LIVE) */}
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2" data-testid="status-operations-total">
+                  <Package className="w-5 h-5 text-blue-600" />
+                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                    {liveMetrics.operationCounts.total}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">operations</span>
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-1" data-testid="status-operations-active">
+                    <div className="w-3 h-3 rounded-full bg-blue-500"></div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">
+                      {liveMetrics.operationCounts.inProgress} active
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1" data-testid="status-operations-completed">
+                    <div className="w-3 h-3 rounded-full bg-green-500"></div>
+                    <span className="text-gray-700 dark:text-gray-300 font-medium">
+                      {liveMetrics.operationCounts.completed} done
+                    </span>
+                  </div>
+                  {liveMetrics.operationCounts.delayed > 0 && (
+                    <div className="flex items-center gap-1" data-testid="status-operations-delayed">
+                      <div className="w-3 h-3 rounded-full bg-red-500"></div>
+                      <span className="text-red-600 dark:text-red-400 font-medium">
+                        {liveMetrics.operationCounts.delayed} delayed
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Center Section - Resource Utilization (LIVE) */}
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2" data-testid="status-utilization">
+                  <TrendingUp className="w-5 h-5 text-orange-600" />
+                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                    {liveMetrics.resourceUtilization.overall}%
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">utilization</span>
+                </div>
+                
+                <div className="flex items-center gap-2" data-testid="status-resources">
+                  <Factory className="w-5 h-5 text-green-600" />
+                  <span className="font-bold text-lg text-gray-900 dark:text-gray-100">
+                    {liveMetrics.resourceUtilization.active}
+                  </span>
+                  <span className="text-gray-600 dark:text-gray-400 font-medium">resources</span>
+                </div>
+              </div>
+              
+              {/* Right Section - System Status (LIVE) */}
+              <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <div className="flex items-center gap-1" data-testid="status-assignments">
+                  <span className="font-medium">{liveMetrics.schedulingMetrics.assignments}</span> assigned
+                </div>
+                <div className="flex items-center gap-1" data-testid="status-dependencies">
+                  <span className="font-medium">{liveMetrics.schedulingMetrics.dependencies}</span> dependencies
+                </div>
+                {liveMetrics.schedulingMetrics.unassigned > 0 && (
+                  <div className="flex items-center gap-1" data-testid="status-unassigned">
+                    <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                    <span className="text-yellow-600 dark:text-yellow-400 font-medium">
+                      {liveMetrics.schedulingMetrics.unassigned} unassigned
+                    </span>
+                  </div>
+                )}
+                <div className="flex items-center gap-2 border-l pl-4" data-testid="status-last-updated">
+                  <Clock className="w-4 h-4" />
+                  <span className="text-xs">Updated: {format(liveMetrics.lastUpdated, 'HH:mm:ss')}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
           <Card>
-            <CardContent className="p-0">
+            <CardContent className="p-0 relative">
               {isLoading ? (
                 <div className="flex items-center justify-center h-[600px]">
                   <div className="text-center">
@@ -2182,42 +2619,266 @@ export default function ProductionSchedulePage() {
                   </div>
                 </div>
               ) : schedulerResources.length > 0 ? (
-                <div style={{ height: '700px' }}>
-                  {React.createElement(BryntumSchedulerPro as any, {
-                    ref: schedulerRef,
-                    ...schedulerProConfig,
-                    onReady: (scheduler: any) => {
-                      console.log('📊 Bryntum Scheduler Pro Ready - Detailed Debug:');
-                      console.log('Resources in store:', scheduler.resourceStore?.count || 0);
-                      console.log('Events in store:', scheduler.eventStore?.count || 0);
-                      console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
-                      
-                      // List all resources with their visibility status
-                      if (scheduler.resourceStore) {
-                        const allResources = scheduler.resourceStore.records;
-                        console.log('📋 Resource Details:');
-                        allResources.forEach((r: any) => {
-                          // Count assignments for this resource instead of checking events for resourceId
-                          const assignmentCount = scheduler.assignmentStore?.records?.filter((a: any) => a.resourceId === r.id).length || 0;
-                          console.log(`  - ${r.name} (id: ${r.id}) - Hidden: ${r.hidden}, Assignments: ${assignmentCount}`);
+                <div className="flex flex-col h-[700px]">
+                  {/* Scheduler Container */}
+                  <div className="flex-1" style={{ minHeight: '640px' }}>
+                    {React.createElement(BryntumSchedulerPro as any, {
+                      ref: schedulerRef,
+                      ...schedulerProConfig,
+                      onReady: (scheduler: any) => {
+                        console.log('📊 Bryntum Scheduler Pro Ready - Detailed Debug:');
+                        console.log('Resources in store:', scheduler.resourceStore?.count || 0);
+                        console.log('Events in store:', scheduler.eventStore?.count || 0);
+                        console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
+                        
+                        // List all resources with their visibility status
+                        if (scheduler.resourceStore) {
+                          const allResources = scheduler.resourceStore.records;
+                          console.log('📋 Resource Details:');
+                          allResources.forEach((r: any) => {
+                            // Count assignments for this resource instead of checking events for resourceId
+                            const assignmentCount = scheduler.assignmentStore?.records?.filter((a: any) => a.resourceId === r.id).length || 0;
+                            console.log(`  - ${r.name} (id: ${r.id}) - Hidden: ${r.hidden}, Assignments: ${assignmentCount}`);
+                          });
+                          
+                          // Force show ALL resources
+                          scheduler.resourceStore.forEach((resource: any) => {
+                            resource.hidden = false;
+                          });
+                        }
+                        
+                        // Clear any resource filters
+                        if (scheduler.resourceStore?.clearFilters) {
+                          scheduler.resourceStore.clearFilters();
+                          console.log('✅ Cleared resource store filters');
+                        }
+                        
+                        console.log('Final resource count:', scheduler.resourceStore?.count || 0);
+                        console.log('✅ Scheduler Pro fully initialized with proper data model');
+                        
+                        // ✅ CRITICAL FIX: Store scheduler instance for live metrics
+                        setSchedulerInstance(scheduler);
+                        
+                        // ✅ COMPREHENSIVE CONSOLE VERIFICATION
+                        console.log('🎯 CRITICAL: Scheduler instance stored and ready for live metrics');
+                        console.log('🎯 Scheduler stores status:', {
+                          eventStore: !!scheduler.eventStore && scheduler.eventStore.count,
+                          resourceStore: !!scheduler.resourceStore && scheduler.resourceStore.count,
+                          assignmentStore: !!scheduler.assignmentStore && scheduler.assignmentStore.count,
+                          dependencyStore: !!scheduler.dependencyStore && scheduler.dependencyStore.count
                         });
                         
-                        // Force show ALL resources
-                        scheduler.resourceStore.forEach((resource: any) => {
-                          resource.hidden = false;
-                        });
+                        // ✅ REAL-TIME EVENT LISTENERS for live status bar updates (THROTTLED)
+                        const updateMetrics = () => {
+                          try {
+                            console.log('📊 CRITICAL: Live metrics update triggered by scheduler event');
+                            throttledUpdateLiveMetrics(scheduler);
+                          } catch (error) {
+                            console.error('❌ Error in updateMetrics:', error);
+                          }
+                        };
+                        
+                        // Listen to project-level changes with more specific events
+                        if (scheduler.project) {
+                          scheduler.project.on({
+                            change: updateMetrics,
+                            refresh: updateMetrics,
+                            dataready: updateMetrics,
+                            load: updateMetrics,
+                            commitfinalized: updateMetrics  // Important for real-time updates
+                          });
+                          console.log('✅ Project event listeners attached');
+                        }
+                        
+                        // Listen to individual store changes for granular updates
+                        if (scheduler.eventStore) {
+                          scheduler.eventStore.on({
+                            change: updateMetrics,
+                            add: updateMetrics,
+                            remove: updateMetrics,
+                            update: updateMetrics,
+                            refresh: updateMetrics,
+                            datachange: updateMetrics  // Catch data modifications
+                          });
+                          console.log('✅ EventStore listeners attached');
+                        }
+                        
+                        if (scheduler.assignmentStore) {
+                          scheduler.assignmentStore.on({
+                            change: updateMetrics,
+                            add: updateMetrics,
+                            remove: updateMetrics,
+                            update: updateMetrics,
+                            datachange: updateMetrics
+                          });
+                          console.log('✅ AssignmentStore listeners attached');
+                        }
+                        
+                        if (scheduler.resourceStore) {
+                          scheduler.resourceStore.on({
+                            change: updateMetrics,
+                            add: updateMetrics,
+                            remove: updateMetrics,
+                            update: updateMetrics,
+                            datachange: updateMetrics
+                          });
+                          console.log('✅ ResourceStore listeners attached');
+                        }
+                        
+                        if (scheduler.dependencyStore) {
+                          scheduler.dependencyStore.on({
+                            change: updateMetrics,
+                            add: updateMetrics,
+                            remove: updateMetrics,
+                            datachange: updateMetrics
+                          });
+                          console.log('✅ DependencyStore listeners attached');
+                        }
+                        
+                        // ✅ CRITICAL FIX: Enhanced initial metrics calculation
+                        setTimeout(() => {
+                          try {
+                            console.log('🚀 CRITICAL: Performing comprehensive initial metrics calculation...');
+                            console.log('📊 Scheduler final state:', {
+                              events: scheduler.eventStore?.count || 0,
+                              resources: scheduler.resourceStore?.count || 0,
+                              assignments: scheduler.assignmentStore?.count || 0,
+                              dependencies: scheduler.dependencyStore?.count || 0
+                            });
+                            updateLiveMetrics(scheduler); // Use direct call for initial load
+                          } catch (error) {
+                            console.error('❌ CRITICAL: Error in initial metrics calculation:', error);
+                          }
+                        }, 300); // Increased delay to ensure all stores are ready
+                        
+                        // ✅ CRITICAL FIX: Add additional real-time listeners for user interactions
+                        if (scheduler.on) {
+                          scheduler.on({
+                            timeaxischange: updateMetrics,
+                            zoomchange: updateMetrics,
+                            viewchange: updateMetrics,
+                            scroll: updateMetrics  // Update on scroll too
+                          });
+                          console.log('✅ CRITICAL: Enhanced scheduler interaction listeners attached');
+                        }
+                        
+                        console.log('🔄 All real-time event listeners attached for status bar updates');
                       }
+                    })}
+                  </div>
+                  
+                  {/* ✅ LIVE STATUS BAR - Shows real-time metrics from liveMetrics state */}
+                  <div className="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-700 px-6 py-3 flex-shrink-0 sticky bottom-0 z-10">
+                    <div className="flex items-center justify-between text-sm">
+                      {/* Left Section - Operations (LIVE) */}
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2" data-testid="status-operations-total">
+                          <Package className="w-4 h-4 text-blue-500" />
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {liveMetrics.operationCounts.total}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400">operations</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-4 text-xs">
+                          <div className="flex items-center gap-1" data-testid="status-operations-progress">
+                            <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                            <span className="text-gray-600 dark:text-gray-300">
+                              {liveMetrics.operationCounts.inProgress} active
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1" data-testid="status-operations-completed">
+                            <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                            <span className="text-gray-600 dark:text-gray-300">
+                              {liveMetrics.operationCounts.completed} completed
+                            </span>
+                          </div>
+                          {liveMetrics.operationCounts.delayed > 0 && (
+                            <div className="flex items-center gap-1" data-testid="status-operations-delayed">
+                              <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                              <span className="text-red-600 dark:text-red-400">
+                                {liveMetrics.operationCounts.delayed} delayed
+                              </span>
+                            </div>
+                          )}
+                          {liveMetrics.operationCounts.critical > 0 && (
+                            <div className="flex items-center gap-1" data-testid="status-operations-critical">
+                              <div className="w-2 h-2 rounded-full bg-red-600"></div>
+                              <span className="text-red-600 dark:text-red-400">
+                                {liveMetrics.operationCounts.critical} critical
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                       
-                      // Clear any resource filters
-                      if (scheduler.resourceStore?.clearFilters) {
-                        scheduler.resourceStore.clearFilters();
-                        console.log('✅ Cleared resource store filters');
-                      }
+                      {/* Center Section - Resource Utilization (LIVE) */}
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2" data-testid="status-utilization">
+                          <TrendingUp className="w-4 h-4 text-orange-500" />
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {liveMetrics.resourceUtilization.overall}%
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400">utilization</span>
+                        </div>
+                        
+                        <div className="flex items-center gap-2" data-testid="status-resources">
+                          <Factory className="w-4 h-4 text-green-500" />
+                          <span className="font-medium text-gray-900 dark:text-gray-100">
+                            {liveMetrics.resourceUtilization.active}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400">active resources</span>
+                        </div>
+                        
+                        {liveMetrics.resourceUtilization.bottlenecks > 0 && (
+                          <div className="flex items-center gap-1" data-testid="status-bottlenecks">
+                            <AlertTriangle className="w-4 h-4 text-red-500" />
+                            <span className="text-red-600 dark:text-red-400 text-xs">
+                              {liveMetrics.resourceUtilization.bottlenecks}% bottleneck util
+                            </span>
+                          </div>
+                        )}
+                        
+                        {liveMetrics.resourceUtilization.idle > 0 && (
+                          <div className="flex items-center gap-1" data-testid="status-idle-resources">
+                            <span className="text-yellow-600 dark:text-yellow-400 text-xs">
+                              {liveMetrics.resourceUtilization.idle} idle
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       
-                      console.log('Final resource count:', scheduler.resourceStore?.count || 0);
-                      console.log('✅ Scheduler Pro fully initialized with proper data model');
-                    }
-                  })}
+                      {/* Right Section - System Info (LIVE) */}
+                      <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-1" data-testid="status-assignments">
+                          <span>{liveMetrics.schedulingMetrics.assignments} assignments</span>
+                        </div>
+                        <div className="flex items-center gap-1" data-testid="status-dependencies">
+                          <span>{liveMetrics.schedulingMetrics.dependencies} dependencies</span>
+                        </div>
+                        {liveMetrics.schedulingMetrics.unassigned > 0 && (
+                          <div className="flex items-center gap-1" data-testid="status-unassigned">
+                            <AlertTriangle className="w-3 h-3 text-yellow-500" />
+                            <span className="text-yellow-600 dark:text-yellow-400">
+                              {liveMetrics.schedulingMetrics.unassigned} unassigned
+                            </span>
+                          </div>
+                        )}
+                        {liveMetrics.schedulingMetrics.conflicted > 0 && (
+                          <div className="flex items-center gap-1" data-testid="status-conflicts">
+                            <AlertTriangle className="w-3 h-3 text-red-500" />
+                            <span className="text-red-600 dark:text-red-400">
+                              {liveMetrics.schedulingMetrics.conflicted} conflicts
+                            </span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-2" data-testid="status-last-updated">
+                          <Clock className="w-3 h-3" />
+                          <span>Updated: {format(liveMetrics.lastUpdated, 'MMM dd, HH:mm:ss')}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="flex items-center justify-center h-[600px]">
