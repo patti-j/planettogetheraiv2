@@ -279,7 +279,7 @@ export default function ProductionSchedulePage() {
 
   // Bryntum Scheduler Pro configuration
   const schedulerProConfig = {
-    startDate: startOfDay(new Date()),
+    startDate: startOfDay(new Date('2025-08-01')), // Show from August to include all operations
     endDate: endOfDay(addDays(new Date(), 90)),
     viewPreset: viewPreset, // Use built-in Bryntum preset names directly
     
@@ -813,10 +813,25 @@ export default function ProductionSchedulePage() {
                       resourceFilter: false
                     },
                     onReady: (scheduler: any) => {
-                      console.log('📊 Bryntum Scheduler Ready - Store Debug:');
+                      console.log('📊 Bryntum Scheduler Ready - Detailed Debug:');
                       console.log('Resources in store:', scheduler.resourceStore?.count || 0);
                       console.log('Events in store:', scheduler.eventStore?.count || 0);
                       console.log('Assignments in store:', scheduler.assignmentStore?.count || 0);
+                      
+                      // List all resources with their visibility status
+                      if (scheduler.resourceStore) {
+                        const allResources = scheduler.resourceStore.records;
+                        console.log('📋 Resource Details:');
+                        allResources.forEach((r: any) => {
+                          const eventCount = scheduler.eventStore?.records?.filter((e: any) => e.resourceId === r.id).length || 0;
+                          console.log(`  - ${r.name} (id: ${r.id}) - Hidden: ${r.hidden}, Events: ${eventCount}`);
+                        });
+                        
+                        // Force show ALL resources
+                        scheduler.resourceStore.forEach((resource: any) => {
+                          resource.hidden = false;
+                        });
+                      }
                       
                       // Clear any resource filters
                       if (scheduler.resourceStore?.clearFilters) {
