@@ -354,7 +354,31 @@ export class DatabaseStorage implements IStorage {
 
   async getResources(): Promise<PtResource[]> {
     try {
-      return await db.select().from(ptResources).orderBy(ptResources.name);
+      // Select only the columns that exist in the database, including drum as false
+      return await db.select({
+        id: ptResources.id,
+        publishDate: ptResources.publishDate,
+        instanceId: ptResources.instanceId,
+        plantId: ptResources.plantId,
+        departmentId: ptResources.departmentId,
+        resourceId: ptResources.resourceId,
+        name: ptResources.name,
+        description: ptResources.description,
+        notes: ptResources.notes,
+        bottleneck: ptResources.bottleneck,
+        bufferHours: ptResources.bufferHours,
+        capacityType: ptResources.capacityType,
+        drum: sql`false`.as('drum'), // Add drum column with default false
+        overtimeHourlyCost: ptResources.overtimeHourlyCost,
+        standardHourlyCost: ptResources.standardHourlyCost,
+        resourceType: ptResources.resourceType,
+        capacity: ptResources.capacity,
+        availableHours: ptResources.availableHours,
+        efficiency: ptResources.efficiency,
+        isActive: ptResources.isActive,
+        createdAt: ptResources.createdAt,
+        updatedAt: ptResources.updatedAt
+      }).from(ptResources).orderBy(ptResources.name);
     } catch (error) {
       console.error('Error fetching resources:', error);
       return [];

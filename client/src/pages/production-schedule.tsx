@@ -171,9 +171,9 @@ export default function ProductionScheduleVanilla() {
           barMargin: 8,
           // Project inline data
           project: {
-            resourcesData: resourceData,
-            eventsData: eventData,
-            dependenciesData: []
+            resources: resourceData,
+            events: eventData,
+            dependencies: []
           },
           // Features mirroring the HTML
           features: {
