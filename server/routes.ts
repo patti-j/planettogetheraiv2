@@ -602,7 +602,7 @@ router.get("/pt-operations", async (req, res) => {
         jr.is_primary,
         
         -- Resource information from ptresources
-        r.resource_id as resource_id,  -- Use resource_id column instead of id
+        r.id as resource_id,  -- Use id to match /api/resources endpoint
         r.external_id as resource_external_id,
         r.name as resource_name,
         r.description as resource_description,
@@ -637,9 +637,9 @@ router.get("/pt-operations", async (req, res) => {
       jobName: op.job_name,
       operationName: op.operation_name,
       resourceName: op.resource_name || 'Unassigned',
-      resourceId: op.resource_id,
-      startTime: op.scheduled_start,
-      startDate: op.scheduled_start,
+      resourceId: op.resource_id ? String(op.resource_id) : null,  // Convert to string to match Bryntum requirements
+      startDate: op.scheduled_start,  // Use camelCase for Bryntum
+      endDate: op.scheduled_end,      // Use camelCase for Bryntum
       duration: (op.cycle_hrs || 2) * 60, // Convert hours to minutes
       percent_done: op.percent_finished || 0,
       status: op.activity_status || 'Not Started',
