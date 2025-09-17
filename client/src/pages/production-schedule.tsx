@@ -26,7 +26,9 @@ import {
   Target,
   TrendingUp,
   Factory,
-  Wrench
+  Wrench,
+  Zap,
+  Loader2
 } from "lucide-react";
 import { format, addDays, startOfDay, endOfDay } from "date-fns";
 
@@ -92,6 +94,27 @@ interface PTDependency {
   lagUnit: string;
 }
 
+// Interface for scheduler assignment objects
+interface BryntumAssignment {
+  id: string;
+  eventId: string;
+  resourceId: string;
+  units: number;
+}
+
+// Interface for event schedule information
+interface EventSchedule {
+  startTime: Date;
+  endTime: Date;
+  duration: number;
+}
+
+// Interface for dependency cycles
+interface DependencyCycle {
+  path: string[];
+  events: string[];
+}
+
 // Helper function to get color based on priority
 const getPriorityColor = (priority?: string | number): string => {
   if (typeof priority === 'number') {
@@ -141,6 +164,8 @@ export default function ProductionSchedulePage() {
   const [showCriticalPath, setShowCriticalPath] = useState(false);
   const [isAutoScheduling, setIsAutoScheduling] = useState(true);
   const [activeTab, setActiveTab] = useState("schedule");
+  const [selectedAlgorithm, setSelectedAlgorithm] = useState<string>("asap");
+  const [isApplyingSchedule, setIsApplyingSchedule] = useState(false);
 
   // Fetch PT resources with cache busting
   const { data: ptResources = [], isLoading: isLoadingResources } = useQuery<PTResource[]>({
@@ -293,7 +318,7 @@ export default function ProductionSchedulePage() {
   const schedulerProConfig = {
     startDate: startOfDay(new Date('2025-08-01')), // Show from August to include all operations
     endDate: endOfDay(addDays(new Date(), 90)),
-    viewPreset: 'weekAndDay', // Use a safe built-in preset initially
+    viewPreset: 'weekAndDayLetter', // Use built-in Bryntum preset
     
     // Project configuration - Scheduler Pro pattern with separate stores
     project: {
@@ -493,78 +518,10 @@ export default function ProductionSchedulePage() {
     // Enable automatic scheduling
     autoAdjustTimeAxis: true,
     
-    // TimeAxis configuration with proper presets
-    timeAxis: {
-      continuous: false
-    },
+    // Remove custom timeAxis configuration - let Bryntum handle defaults
     
-    // View presets - Configure correctly for Bryntum TimeAxis
-    presets: [
-      {
-        id: 'hourAndDay',
-        name: 'Hour & Day',
-        tickWidth: 60,
-        displayDateFormat: 'HH:mm',
-        shiftIncrement: 1,
-        shiftUnit: 'day',
-        timeResolution: {
-          unit: 'hour',
-          increment: 1
-        },
-        headers: [
-          { unit: 'day', dateFormat: 'ddd MMM DD' },
-          { unit: 'hour', dateFormat: 'HH' }
-        ]
-      },
-      {
-        id: 'weekAndDay',
-        name: 'Week & Day',
-        tickWidth: 100,
-        displayDateFormat: 'MMM DD',
-        shiftIncrement: 1,
-        shiftUnit: 'week',
-        timeResolution: {
-          unit: 'day',
-          increment: 1
-        },
-        headers: [
-          { unit: 'week', dateFormat: 'MMM DD' },
-          { unit: 'day', dateFormat: 'ddd DD' }
-        ]
-      },
-      {
-        id: 'monthAndWeek',
-        name: 'Month & Week',
-        tickWidth: 150,
-        displayDateFormat: 'MMM DD',
-        shiftIncrement: 1,
-        shiftUnit: 'month',
-        timeResolution: {
-          unit: 'week',
-          increment: 1
-        },
-        headers: [
-          { unit: 'month', dateFormat: 'MMMM YYYY' },
-          { unit: 'week', dateFormat: 'DD' }
-        ]
-      },
-      {
-        id: 'monthAndYear',
-        name: 'Month & Year',
-        tickWidth: 200,
-        displayDateFormat: 'MMM YYYY',
-        shiftIncrement: 1,
-        shiftUnit: 'year',
-        timeResolution: {
-          unit: 'month',
-          increment: 1
-        },
-        headers: [
-          { unit: 'year', dateFormat: 'YYYY' },
-          { unit: 'month', dateFormat: 'MMM' }
-        ]
-      }
-    ]
+    // Remove custom presets - use built-in Bryntum presets only
+    // Use built-in Bryntum presets only to avoid timeAxis compatibility issues
   };
 
   // Load data into scheduler when it's ready
@@ -579,45 +536,77 @@ export default function ProductionSchedulePage() {
         
         const project = scheduler.project;
         
-        // Clear existing data using proper Bryntum API
-        if (project.resourceStore) {
-          project.resourceStore.removeAll();
-        }
-        if (project.eventStore) {
-          project.eventStore.removeAll();
-        }
-        if (project.dependencyStore) {
-          project.dependencyStore.removeAll();
+        // Use batch updates for performance
+        project.suspendAutoCommit();
+        
+        try {
+          // Clear existing data using proper Bryntum API
+          if (project.resourceStore) {
+            project.resourceStore.removeAll();
+          }
+          if (project.eventStore) {
+            project.eventStore.removeAll();
+          }
+          if (project.assignmentStore) {
+            project.assignmentStore.removeAll();
+          }
+          if (project.dependencyStore) {
+            project.dependencyStore.removeAll();
+          }
+          
+          // Load resources
+          const transformedResources = transformResourcesForBryntum(ptResources);
+          if (project.resourceStore && transformedResources.length > 0) {
+            project.resourceStore.add(transformedResources);
+          }
+          
+          // Load events (operations)
+          const transformedEvents = transformOperationsForBryntum(ptOperations);
+          if (project.eventStore && transformedEvents.length > 0) {
+            project.eventStore.add(transformedEvents);
+          }
+          
+          // ✅ CRITICAL FIX: Load assignments (was missing!)
+          const transformedAssignments = createAssignmentsForBryntum(ptOperations);
+          if (project.assignmentStore && transformedAssignments.length > 0) {
+            project.assignmentStore.add(transformedAssignments);
+          }
+          
+          // Load dependencies with proper ID mapping
+          const transformedDependencies = ptDependencies.map(dep => ({
+            id: dep.id,
+            fromEvent: dep.fromEvent,
+            toEvent: dep.toEvent,
+            type: dep.type || 2,
+            lag: dep.lag || 0,
+            lagUnit: dep.lagUnit || 'day'
+          }));
+          if (transformedDependencies.length > 0 && project.dependencyStore) {
+            project.dependencyStore.add(transformedDependencies);
+          }
+          
+          console.log(`✅ Loaded: ${transformedResources.length} resources, ${transformedEvents.length} events, ${transformedAssignments.length} assignments, ${transformedDependencies.length} dependencies`);
+          
+        } finally {
+          // Resume commits and trigger scheduling
+          project.resumeAutoCommit();
+          
+          // Auto-schedule if enabled
+          if (isAutoScheduling) {
+            project.commitAsync();
+          }
         }
         
-        // Load resources
-        const transformedResources = transformResourcesForBryntum(ptResources);
-        if (project.resourceStore && transformedResources.length > 0) {
-          project.resourceStore.add(transformedResources);
-        }
-        
-        // Load events (operations)
-        const transformedEvents = transformOperationsForBryntum(ptOperations);
-        if (project.eventStore && transformedEvents.length > 0) {
-          project.eventStore.add(transformedEvents);
-        }
-        
-        // Load dependencies
-        if (ptDependencies.length > 0 && project.dependencyStore) {
-          project.dependencyStore.add(ptDependencies);
-        }
-        
-        // Auto-schedule if enabled
-        if (isAutoScheduling) {
-          project.commitAsync();
-        }
-        
-        console.log('Loaded', transformedResources.length, 'resources,', transformedEvents.length, 'events, and', ptDependencies.length, 'dependencies');
       } catch (error) {
         console.error('Error loading scheduler data:', error);
+        toast({
+          title: "Loading Error",
+          description: "Failed to load scheduling data. Please refresh the page.",
+          variant: "destructive"
+        });
       }
     }
-  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling]);
+  }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling, toast]);
 
   // Handle viewPreset changes
   useEffect(() => {
@@ -698,6 +687,1311 @@ export default function ProductionSchedulePage() {
     });
   };
 
+  // Build dependency graph utilities
+  const buildDependencyGraph = (events: any[], dependencies: any[]) => {
+    const graph = new Map();
+    const inDegree = new Map();
+    
+    // Initialize graph nodes
+    events.forEach(event => {
+      graph.set(event.id, []);
+      inDegree.set(event.id, 0);
+    });
+    
+    // Build adjacency list and in-degree count
+    dependencies.forEach(dep => {
+      if (graph.has(dep.fromEvent) && graph.has(dep.toEvent)) {
+        graph.get(dep.fromEvent).push({ to: dep.toEvent, lag: dep.lag || 0, lagUnit: dep.lagUnit || 'day' });
+        inDegree.set(dep.toEvent, inDegree.get(dep.toEvent) + 1);
+      }
+    });
+    
+    return { graph, inDegree };
+  };
+  
+  const topologicalSort = (events: any[], dependencies: any[]): { sortedEvents: any[], hasCycle: boolean, cycle?: DependencyCycle } => {
+    const { graph, inDegree } = buildDependencyGraph(events, dependencies);
+    const queue = events.filter(event => inDegree.get(event.id) === 0);
+    const result = [];
+    const processed = new Set();
+    
+    while (queue.length > 0) {
+      const current = queue.shift();
+      result.push(current);
+      processed.add(current.id);
+      
+      // Reduce in-degree for successors
+      graph.get(current.id).forEach((edge: any) => {
+        const newInDegree = inDegree.get(edge.to) - 1;
+        inDegree.set(edge.to, newInDegree);
+        if (newInDegree === 0) {
+          const successor = events.find(e => e.id === edge.to);
+          if (successor) queue.push(successor);
+        }
+      });
+    }
+    
+    // Cycle detection: if we haven't processed all events, there's a cycle
+    if (result.length !== events.length) {
+      const unprocessedEvents = events.filter(e => !processed.has(e.id));
+      console.warn(`🔄 Dependency cycle detected! Processed ${result.length}/${events.length} events`);
+      
+      // Find the cycle path using DFS
+      const findCycle = (startEventId: string, visited: Set<string>, path: string[]): DependencyCycle | null => {
+        if (visited.has(startEventId)) {
+          const cycleStartIndex = path.indexOf(startEventId);
+          if (cycleStartIndex !== -1) {
+            const cyclePath = path.slice(cycleStartIndex);
+            const cycleEvents = cyclePath.map(id => {
+              const event = events.find(e => e.id === id);
+              return event ? event.name || `Event ${id}` : `Unknown Event ${id}`;
+            });
+            return { path: cyclePath, events: cycleEvents };
+          }
+        }
+        
+        visited.add(startEventId);
+        path.push(startEventId);
+        
+        const successors = graph.get(startEventId) || [];
+        for (const edge of successors) {
+          const cycle = findCycle(edge.to, new Set(visited), [...path]);
+          if (cycle) return cycle;
+        }
+        
+        return null;
+      };
+      
+      // Try to find a cycle starting from unprocessed events
+      let detectedCycle: DependencyCycle | undefined;
+      for (const event of unprocessedEvents) {
+        const cycle = findCycle(event.id, new Set(), []);
+        if (cycle) {
+          detectedCycle = cycle;
+          break;
+        }
+      }
+      
+      return {
+        sortedEvents: result,
+        hasCycle: true,
+        cycle: detectedCycle || {
+          path: unprocessedEvents.map(e => e.id),
+          events: unprocessedEvents.map(e => e.name || `Event ${e.id}`)
+        }
+      };
+    }
+    
+    return { sortedEvents: result, hasCycle: false };
+  };
+  
+  // Convert lag time to milliseconds
+  const convertLagToMs = (lag: number, lagUnit: string) => {
+    const conversions = {
+      'minute': 60 * 1000,
+      'hour': 60 * 60 * 1000,
+      'day': 24 * 60 * 60 * 1000,
+      'week': 7 * 24 * 60 * 60 * 1000
+    };
+    return lag * (conversions[lagUnit as keyof typeof conversions] || conversions.day);
+  };
+  
+  // Working calendar utilities
+  const isWorkingHour = (date: Date) => {
+    const hour = date.getHours();
+    const day = date.getDay(); // 0 = Sunday, 6 = Saturday
+    return day >= 1 && day <= 5 && hour >= 7 && hour < 17; // Monday-Friday, 7 AM - 5 PM
+  };
+  
+  const getNextWorkingTime = (date: Date) => {
+    const newDate = new Date(date);
+    while (!isWorkingHour(newDate)) {
+      if (newDate.getHours() >= 17 || newDate.getDay() === 0 || newDate.getDay() === 6) {
+        // Move to next day 7 AM
+        newDate.setDate(newDate.getDate() + 1);
+        newDate.setHours(7, 0, 0, 0);
+      } else if (newDate.getHours() < 7) {
+        newDate.setHours(7, 0, 0, 0);
+      } else {
+        newDate.setMinutes(newDate.getMinutes() + 30);
+      }
+    }
+    return newDate;
+  };
+  
+  // Build assignment index map for performance
+  const buildAssignmentIndex = (assignments: any[]) => {
+    const eventToAssignments = new Map();
+    const resourceToAssignments = new Map();
+    
+    assignments.forEach(assignment => {
+      if (!eventToAssignments.has(assignment.eventId)) {
+        eventToAssignments.set(assignment.eventId, []);
+      }
+      eventToAssignments.get(assignment.eventId).push(assignment);
+      
+      if (!resourceToAssignments.has(assignment.resourceId)) {
+        resourceToAssignments.set(assignment.resourceId, []);
+      }
+      resourceToAssignments.get(assignment.resourceId).push(assignment);
+    });
+    
+    return { eventToAssignments, resourceToAssignments };
+  };
+
+  // Scheduling Algorithm Implementations
+  const asapScheduling = async () => {
+    setIsApplyingSchedule(true);
+    
+    try {
+      if (!schedulerRef.current?.instance) {
+        throw new Error('Scheduler not available');
+      }
+      
+      const scheduler = schedulerRef.current.instance;
+      const events = [...scheduler.eventStore.records];
+      const dependencies = [...(scheduler.dependencyStore?.records || [])];
+      const assignments = [...(scheduler.assignmentStore?.records || [])];
+      
+      if (events.length === 0) {
+        throw new Error('No operations to schedule');
+      }
+      
+      console.log(`🔄 ASAP Scheduling: ${events.length} events, ${dependencies.length} dependencies`);
+      
+      // Use batch updates for performance
+      scheduler.project.suspendAutoCommit();
+      
+      try {
+        // Build performance index maps
+        const { eventToAssignments, resourceToAssignments } = buildAssignmentIndex(assignments);
+        
+        // Topological sort to respect precedence constraints
+        const topSortResult = topologicalSort(events, dependencies);
+        if (topSortResult.hasCycle) {
+          throw new Error(`Dependency cycle detected: ${topSortResult.cycle?.events.join(' → ')}. Please remove circular dependencies before scheduling.`);
+        }
+        const sortedEvents = topSortResult.sortedEvents;
+        console.log(`📊 Topological sort completed: ${sortedEvents.length}/${events.length} events ordered`);
+        
+        // Initialize scheduling state
+        const baseDate = new Date(2025, 8, 3, 7, 0, 0, 0); // September 3, 2025, 7 AM
+        const resourceNextAvailable = new Map();
+        const eventStartTimes = new Map();
+        
+        // Schedule events in topological order
+        sortedEvents.forEach((event: any) => {
+          let earliestStart = new Date(baseDate);
+          
+          // Check dependency constraints
+          dependencies.forEach(dep => {
+            if (dep.toEvent === event.id && eventStartTimes.has(dep.fromEvent)) {
+              const predecessorEnd = eventStartTimes.get(dep.fromEvent).endTime;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const dependencyStart = new Date(predecessorEnd.getTime() + lagMs);
+              if (dependencyStart > earliestStart) {
+                earliestStart = dependencyStart;
+              }
+            }
+          });
+          
+          // Check resource constraints
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          eventAssignments.forEach((assignment: any) => {
+            const resourceNext = resourceNextAvailable.get(assignment.resourceId) || new Date(baseDate);
+            if (resourceNext > earliestStart) {
+              earliestStart = resourceNext;
+            }
+          });
+          
+          // Ensure working hours
+          const actualStart = getNextWorkingTime(earliestStart);
+          const durationMs = (event.duration || 60) * 60 * 1000;
+          const endTime = new Date(actualStart.getTime() + durationMs);
+          
+          // Update event times
+          event.startDate = actualStart;
+          event.endDate = endTime;
+          eventStartTimes.set(event.id, { startTime: actualStart, endTime });
+          
+          // Update resource availability (with buffer)
+          eventAssignments.forEach((assignment: any) => {
+            const bufferMs = 15 * 60 * 1000; // 15 minute buffer
+            resourceNextAvailable.set(assignment.resourceId, new Date(endTime.getTime() + bufferMs));
+          });
+        });
+        
+        console.log(`✅ ASAP scheduling completed successfully`);
+        toast({
+          title: "ASAP Scheduling Complete",
+          description: `Successfully scheduled ${sortedEvents.length} operations with dependency constraints.`
+        });
+        
+      } finally {
+        scheduler.project.resumeAutoCommit();
+      }
+      
+    } catch (error) {
+      console.error('ASAP Scheduling Error:', error);
+      toast({
+        title: "ASAP Scheduling Failed",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
+  const alapScheduling = async () => {
+    setIsApplyingSchedule(true);
+    
+    try {
+      if (!schedulerRef.current?.instance) {
+        throw new Error('Scheduler not available');
+      }
+      
+      const scheduler = schedulerRef.current.instance;
+      const events = [...scheduler.eventStore.records];
+      const dependencies = [...(scheduler.dependencyStore?.records || [])];
+      const assignments = [...(scheduler.assignmentStore?.records || [])];
+      
+      if (events.length === 0) {
+        throw new Error('No operations to schedule');
+      }
+      
+      console.log(`🔄 ALAP Scheduling: ${events.length} events, ${dependencies.length} dependencies`);
+      
+      // Use batch updates for performance
+      scheduler.project.suspendAutoCommit();
+      
+      try {
+        // Build performance index maps
+        const { eventToAssignments } = buildAssignmentIndex(assignments);
+        const { graph } = buildDependencyGraph(events, dependencies);
+        
+        // Reverse topological sort for ALAP (start from end events)
+        const reverseGraph = new Map();
+        const outDegree = new Map();
+        
+        // Initialize reverse graph
+        events.forEach(event => {
+          reverseGraph.set(event.id, []);
+          outDegree.set(event.id, 0);
+        });
+        
+        // Build reverse adjacency list
+        dependencies.forEach(dep => {
+          if (reverseGraph.has(dep.toEvent) && reverseGraph.has(dep.fromEvent)) {
+            reverseGraph.get(dep.toEvent).push({ to: dep.fromEvent, lag: dep.lag || 0, lagUnit: dep.lagUnit || 'day' });
+            outDegree.set(dep.fromEvent, outDegree.get(dep.fromEvent) + 1);
+          }
+        });
+        
+        // Find end events (no successors)
+        const endEvents = events.filter(event => outDegree.get(event.id) === 0);
+        const reverseSorted = [];
+        const queue = [...endEvents];
+        
+        while (queue.length > 0) {
+          const current = queue.shift();
+          reverseSorted.push(current);
+          
+          // Process predecessors
+          reverseGraph.get(current.id).forEach((edge: any) => {
+            const newOutDegree = outDegree.get(edge.to) - 1;
+            outDegree.set(edge.to, newOutDegree);
+            if (newOutDegree === 0) {
+              const predecessor = events.find(e => e.id === edge.to);
+              if (predecessor) queue.push(predecessor);
+            }
+          });
+        }
+        
+        console.log(`📈 Reverse topological sort completed: ${reverseSorted.length}/${events.length} events ordered`);
+        
+        // Initialize scheduling state - schedule backwards from September 17, 2025
+        const projectDeadline = new Date(2025, 8, 17, 17, 0, 0, 0); // September 17, 2025, 5 PM
+        const resourceLastAvailable = new Map();
+        const eventEndTimes = new Map();
+        
+        // Schedule events in reverse topological order (ALAP)
+        reverseSorted.forEach(event => {
+          let latestEnd = new Date(projectDeadline);
+          
+          // Check successor dependency constraints
+          dependencies.forEach(dep => {
+            if (dep.fromEvent === event.id && eventEndTimes.has(dep.toEvent)) {
+              const successorStart = eventEndTimes.get(dep.toEvent).startTime;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const dependencyEnd = new Date(successorStart.getTime() - lagMs);
+              if (dependencyEnd < latestEnd) {
+                latestEnd = dependencyEnd;
+              }
+            }
+          });
+          
+          // Check resource constraints (backwards)
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          eventAssignments.forEach((assignment: any) => {
+            const resourceLast = resourceLastAvailable.get(assignment.resourceId) || new Date(projectDeadline);
+            if (resourceLast < latestEnd) {
+              latestEnd = resourceLast;
+            }
+          });
+          
+          // Calculate start time and ensure working hours
+          const durationMs = (event.duration || 60) * 60 * 1000;
+          let calculatedStart = new Date(latestEnd.getTime() - durationMs);
+          
+          // Adjust for working hours (backwards)
+          const getPrevWorkingTime = (date: Date) => {
+            const newDate = new Date(date);
+            while (!isWorkingHour(newDate)) {
+              if (newDate.getHours() < 7 || newDate.getDay() === 0 || newDate.getDay() === 6) {
+                // Move to previous day 5 PM
+                newDate.setDate(newDate.getDate() - 1);
+                newDate.setHours(17, 0, 0, 0);
+              } else if (newDate.getHours() >= 17) {
+                newDate.setHours(16, 30, 0, 0);
+              } else {
+                newDate.setMinutes(newDate.getMinutes() - 30);
+              }
+            }
+            return newDate;
+          };
+          
+          const workingEnd = getPrevWorkingTime(latestEnd);
+          const actualStart = new Date(workingEnd.getTime() - durationMs);
+          const finalStart = getPrevWorkingTime(actualStart);
+          const finalEnd = new Date(finalStart.getTime() + durationMs);
+          
+          // Update event times
+          event.startDate = finalStart;
+          event.endDate = finalEnd;
+          eventEndTimes.set(event.id, { startTime: finalStart, endTime: finalEnd });
+          
+          // Update resource availability (backwards with buffer)
+          eventAssignments.forEach((assignment: any) => {
+            const bufferMs = 15 * 60 * 1000; // 15 minute buffer
+            resourceLastAvailable.set(assignment.resourceId, new Date(finalStart.getTime() - bufferMs));
+          });
+        });
+        
+        console.log(`✅ ALAP scheduling completed successfully`);
+        toast({
+          title: "ALAP Scheduling Complete",
+          description: `Successfully scheduled ${reverseSorted.length} operations as late as possible with constraints.`
+        });
+        
+      } finally {
+        scheduler.project.resumeAutoCommit();
+      }
+      
+    } catch (error) {
+      console.error('ALAP Scheduling Error:', error);
+      toast({
+        title: "ALAP Scheduling Failed",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
+  const criticalPathScheduling = async () => {
+    setIsApplyingSchedule(true);
+    
+    try {
+      if (!schedulerRef.current?.instance) {
+        throw new Error('Scheduler not available');
+      }
+      
+      const scheduler = schedulerRef.current.instance;
+      const events = [...scheduler.eventStore.records];
+      const dependencies = [...(scheduler.dependencyStore?.records || [])];
+      const assignments = [...(scheduler.assignmentStore?.records || [])];
+      
+      if (events.length === 0) {
+        throw new Error('No operations to schedule');
+      }
+      
+      console.log(`🔄 Critical Path Scheduling: ${events.length} events, ${dependencies.length} dependencies`);
+      
+      // Use batch updates for performance
+      scheduler.project.suspendAutoCommit();
+      
+      try {
+        // Build performance index maps
+        const { eventToAssignments } = buildAssignmentIndex(assignments);
+        const eventMap = new Map(events.map(e => [e.id, e]));
+        
+        // Calculate Early Start (ES) and Early Finish (EF) - Forward Pass
+        const earlyDates = new Map();
+        const topSortResult = topologicalSort(events, dependencies);
+        if (topSortResult.hasCycle) {
+          throw new Error(`Dependency cycle detected: ${topSortResult.cycle?.events.join(' → ')}. Cannot perform critical path analysis with circular dependencies.`);
+        }
+        const sortedEvents = topSortResult.sortedEvents;
+        
+        const baseDate = new Date(2025, 8, 3, 7, 0, 0, 0); // September 3, 2025, 7 AM
+        
+        console.log(`🔍 Forward pass: calculating early dates...`);
+        sortedEvents.forEach((event: any) => {
+          let earliestStart = new Date(baseDate);
+          
+          // Check all predecessor constraints
+          dependencies.forEach(dep => {
+            if (dep.toEvent === event.id && earlyDates.has(dep.fromEvent)) {
+              const predEF = earlyDates.get(dep.fromEvent).earlyFinish;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const constraintStart = new Date(predEF.getTime() + lagMs);
+              if (constraintStart > earliestStart) {
+                earliestStart = constraintStart;
+              }
+            }
+          });
+          
+          // Ensure working hours
+          const workingStart = getNextWorkingTime(earliestStart);
+          const duration = (event.duration || 60) * 60 * 1000; // Convert to ms
+          const earlyFinish = new Date(workingStart.getTime() + duration);
+          
+          earlyDates.set(event.id, {
+            earlyStart: workingStart,
+            earlyFinish: earlyFinish,
+            duration: event.duration || 60
+          });
+        });
+        
+        // Calculate Late Start (LS) and Late Finish (LF) - Backward Pass
+        const lateDates = new Map();
+        const projectEnd = Math.max(...Array.from(earlyDates.values()).map(d => d.earlyFinish.getTime()));
+        const projectDeadline = new Date(projectEnd);
+        
+        console.log(`🔎 Backward pass: calculating late dates...`);
+        // Reverse topological order for backward pass
+        const reverseSorted = [...sortedEvents].reverse();
+        
+        reverseSorted.forEach(event => {
+          let latestFinish = new Date(projectDeadline);
+          
+          // Check all successor constraints
+          dependencies.forEach(dep => {
+            if (dep.fromEvent === event.id && lateDates.has(dep.toEvent)) {
+              const succLS = lateDates.get(dep.toEvent).lateStart;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const constraintFinish = new Date(succLS.getTime() - lagMs);
+              if (constraintFinish < latestFinish) {
+                latestFinish = constraintFinish;
+              }
+            }
+          });
+          
+          // If no successors found, use project deadline
+          if (latestFinish.getTime() === projectDeadline.getTime()) {
+            const hasSuccessors = dependencies.some(dep => dep.fromEvent === event.id);
+            if (!hasSuccessors) {
+              latestFinish = new Date(earlyDates.get(event.id).earlyFinish);
+            }
+          }
+          
+          const duration = (event.duration || 60) * 60 * 1000;
+          const lateStart = new Date(latestFinish.getTime() - duration);
+          
+          lateDates.set(event.id, {
+            lateStart: lateStart,
+            lateFinish: latestFinish,
+            duration: event.duration || 60
+          });
+        });
+        
+        // Calculate Total Slack and identify critical path
+        const slackInfo = new Map();
+        const criticalEvents = new Set();
+        
+        console.log(`⚙️ Calculating slack and critical path...`);
+        events.forEach(event => {
+          const early = earlyDates.get(event.id);
+          const late = lateDates.get(event.id);
+          
+          if (early && late) {
+            const totalSlackMs = late.lateStart.getTime() - early.earlyStart.getTime();
+            const totalSlackDays = Math.round(totalSlackMs / (24 * 60 * 60 * 1000) * 10) / 10;
+            const freeSlackMs = Math.max(0, Math.min(...dependencies
+              .filter(dep => dep.fromEvent === event.id)
+              .map(dep => earlyDates.get(dep.toEvent)?.earlyStart.getTime() || Infinity)
+            ) - early.earlyFinish.getTime());
+            const freeSlackDays = Math.round(freeSlackMs / (24 * 60 * 60 * 1000) * 10) / 10;
+            
+            slackInfo.set(event.id, {
+              totalSlack: totalSlackDays,
+              freeSlack: freeSlackDays,
+              isCritical: totalSlackMs <= 0
+            });
+            
+            if (totalSlackMs <= 0) {
+              criticalEvents.add(event.id);
+            }
+          }
+        });
+        
+        console.log(`🎯 Critical path identified: ${criticalEvents.size} critical operations`);
+        
+        // Schedule events using calculated early dates, prioritizing critical path
+        const resourceNextAvailable = new Map();
+        
+        // Schedule critical events first with tight scheduling
+        const criticalEventList = sortedEvents.filter((event: any) => criticalEvents.has(event.id));
+        const nonCriticalEventList = sortedEvents.filter((event: any) => !criticalEvents.has(event.id));
+        
+        [...criticalEventList, ...nonCriticalEventList].forEach(event => {
+          const early = earlyDates.get(event.id);
+          const slack = slackInfo.get(event.id);
+          const isCritical = criticalEvents.has(event.id);
+          
+          if (early) {
+            let scheduledStart = new Date(early.earlyStart);
+            
+            // For non-critical events, we can use some slack for resource leveling
+            if (!isCritical && slack && slack.totalSlack > 0) {
+              // Check resource constraints and potentially delay within slack bounds
+              const eventAssignments = eventToAssignments.get(event.id) || [];
+              eventAssignments.forEach((assignment: any) => {
+                const resourceNext = resourceNextAvailable.get(assignment.resourceId) || new Date(baseDate);
+                const late = lateDates.get(event.id);
+                if (resourceNext > scheduledStart && resourceNext <= late?.lateStart) {
+                  scheduledStart = getNextWorkingTime(resourceNext);
+                }
+              });
+            }
+            
+            const actualStart = getNextWorkingTime(scheduledStart);
+            const duration = (event.duration || 60) * 60 * 1000;
+            const endTime = new Date(actualStart.getTime() + duration);
+            
+            // Update event schedule
+            event.startDate = actualStart;
+            event.endDate = endTime;
+            
+            // Add visual indicators for critical path
+            if (isCritical) {
+              event.cls = (event.cls || '') + ' critical-path';
+              event.eventColor = 'red';
+            } else if (slack && slack.totalSlack < 1) {
+              event.cls = (event.cls || '') + ' near-critical';
+              event.eventColor = 'orange';
+            }
+            
+            // Update resource availability
+            const eventAssignments = eventToAssignments.get(event.id) || [];
+            eventAssignments.forEach((assignment: any) => {
+              const buffer = isCritical ? 0 : 15 * 60 * 1000; // Critical events: no buffer, others: 15min
+              resourceNextAvailable.set(assignment.resourceId, new Date(endTime.getTime() + buffer));
+            });
+          }
+        });
+        
+        // Generate scheduling report
+        const criticalPathLength = Math.max(...Array.from(lateDates.values()).map(d => d.lateFinish.getTime()));
+        const projectDuration = Math.round((criticalPathLength - baseDate.getTime()) / (24 * 60 * 60 * 1000) * 10) / 10;
+        
+        console.log(`✅ Critical Path Analysis complete:`);
+        console.log(`  • Project Duration: ${projectDuration} days`);
+        console.log(`  • Critical Operations: ${criticalEvents.size}/${events.length}`);
+        console.log(`  • Average Slack: ${Array.from(slackInfo.values()).reduce((sum, s) => sum + s.totalSlack, 0) / slackInfo.size} days`);
+        
+        toast({
+          title: "Critical Path Analysis Complete",
+          description: `Identified ${criticalEvents.size} critical operations. Project duration: ${projectDuration} days.`
+        });
+        
+      } finally {
+        scheduler.project.resumeAutoCommit();
+      }
+      
+    } catch (error) {
+      console.error('Critical Path Scheduling Error:', error);
+      toast({
+        title: "Critical Path Analysis Failed",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
+  const levelResourcesScheduling = async () => {
+    setIsApplyingSchedule(true);
+    
+    try {
+      if (!schedulerRef.current?.instance) {
+        throw new Error('Scheduler not available');
+      }
+      
+      const scheduler = schedulerRef.current.instance;
+      const events = [...scheduler.eventStore.records];
+      const resources = [...scheduler.resourceStore.records];
+      const assignments = [...(scheduler.assignmentStore?.records || [])];
+      const dependencies = [...(scheduler.dependencyStore?.records || [])];
+      
+      if (events.length === 0 || resources.length === 0) {
+        throw new Error('No operations or resources to level');
+      }
+      
+      console.log(`🔄 Resource Leveling: ${events.length} events across ${resources.length} resources`);
+      
+      // Use batch updates for performance
+      scheduler.project.suspendAutoCommit();
+      
+      try {
+        // Build performance index maps
+        const { eventToAssignments, resourceToAssignments } = buildAssignmentIndex(assignments);
+        
+        // Calculate resource capacities and efficiencies
+        const resourceCapacity = new Map();
+        const resourceEfficiency = new Map();
+        resources.forEach(resource => {
+          const capacity = resource.capacity || 100; // Default capacity percentage
+          const efficiency = resource.efficiency || 100; // Default efficiency percentage
+          const effectiveCapacity = (capacity * efficiency) / 10000; // Convert percentages to decimal
+          resourceCapacity.set(resource.id, {
+            capacity: capacity,
+            efficiency: efficiency,
+            effectiveCapacity: Math.max(0.1, effectiveCapacity), // Minimum 10% capacity
+            isBottleneck: resource.isBottleneck || false
+          });
+        });
+        
+        console.log(`⚙️ Resource capacities calculated for ${resources.length} resources`);
+        
+        // Perform forward scheduling first to establish baseline
+        const topSortResult = topologicalSort(events, dependencies);
+        if (topSortResult.hasCycle) {
+          throw new Error(`Dependency cycle detected: ${topSortResult.cycle?.events.join(' → ')}. Please remove circular dependencies before resource leveling.`);
+        }
+        const sortedEvents = topSortResult.sortedEvents;
+        const baseDate = new Date(2025, 8, 3, 7, 0, 0, 0); // September 3, 2025, 7 AM
+        
+        // Initial scheduling pass - establish feasible schedule
+        const resourceNextAvailable = new Map();
+        const eventSchedule = new Map();
+        resources.forEach(resource => {
+          resourceNextAvailable.set(resource.id, new Date(baseDate));
+        });
+        
+        // Schedule events respecting dependencies
+        sortedEvents.forEach((event: any) => {
+          let earliestStart = new Date(baseDate);
+          
+          // Check dependency constraints
+          dependencies.forEach(dep => {
+            if (dep.toEvent === event.id && eventSchedule.has(dep.fromEvent)) {
+              const predecessorEnd = eventSchedule.get(dep.fromEvent).endTime;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const dependencyStart = new Date(predecessorEnd.getTime() + lagMs);
+              if (dependencyStart > earliestStart) {
+                earliestStart = dependencyStart;
+              }
+            }
+          });
+          
+          // Check resource availability
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          let resourceStart = earliestStart;
+          eventAssignments.forEach((assignment: BryntumAssignment) => {
+            const resourceNext = resourceNextAvailable.get(assignment.resourceId) || new Date(baseDate);
+            if (resourceNext > resourceStart) {
+              resourceStart = resourceNext;
+            }
+          });
+          
+          const actualStart = getNextWorkingTime(resourceStart);
+          const duration = (event.duration || 60) * 60 * 1000;
+          const endTime = new Date(actualStart.getTime() + duration);
+          
+          eventSchedule.set(event.id, {
+            startTime: actualStart,
+            endTime: endTime,
+            duration: event.duration || 60
+          });
+          
+          // Update resource availability
+          eventAssignments.forEach((assignment: BryntumAssignment) => {
+            resourceNextAvailable.set(assignment.resourceId, endTime);
+          });
+        });
+        
+        console.log(`📈 Initial schedule established, starting resource leveling...`);
+        
+        // Calculate resource utilization profiles
+        const calculateResourceUtilization = () => {
+          const utilization = new Map();
+          
+          resources.forEach(resource => {
+            const resAssignments = resourceToAssignments.get(resource.id) || [];
+            let totalLoad = 0;
+            let peakLoad = 0;
+            const hourlyLoad = new Map();
+            
+            resAssignments.forEach((assignment: BryntumAssignment) => {
+              const schedule = eventSchedule.get(assignment.eventId);
+              if (schedule) {
+                const duration = schedule.duration;
+                totalLoad += duration;
+                
+                // Calculate hourly distribution
+                const startHour = Math.floor(schedule.startTime.getTime() / (60 * 60 * 1000));
+                const durationHours = Math.ceil(duration / 60);
+                
+                for (let h = startHour; h < startHour + durationHours; h++) {
+                  hourlyLoad.set(h, (hourlyLoad.get(h) || 0) + (duration / durationHours));
+                }
+              }
+            });
+            
+            // Find peak hourly load
+            peakLoad = Math.max(...Array.from(hourlyLoad.values()), 0);
+            
+            const capacity = resourceCapacity.get(resource.id);
+            const avgUtilization = totalLoad / (8 * 60); // 8-hour workday in minutes
+            const peakUtilization = peakLoad / 60; // Convert to hours
+            const effectiveUtil = avgUtilization / (capacity?.effectiveCapacity || 1);
+            
+            utilization.set(resource.id, {
+              totalLoad,
+              avgUtilization: effectiveUtil,
+              peakUtilization,
+              variance: peakUtilization - avgUtilization,
+              isOverloaded: effectiveUtil > 0.9, // Over 90% utilization
+              capacity: capacity?.effectiveCapacity || 1
+            });
+          });
+          
+          return utilization;
+        };
+        
+        let utilization = calculateResourceUtilization();
+        const overloadedResources = Array.from(utilization.entries())
+          .filter(([_, util]) => util.isOverloaded)
+          .sort(([_, a], [__, b]) => b.peakUtilization - a.peakUtilization);
+        
+        console.log(`⚠️ Found ${overloadedResources.length} overloaded resources`);
+        
+        // Resource leveling iterations
+        const maxIterations = 5;
+        let iteration = 0;
+        let improved = true;
+        
+        while (improved && iteration < maxIterations && overloadedResources.length > 0) {
+          improved = false;
+          iteration++;
+          
+          console.log(`🔄 Resource Leveling Iteration ${iteration}...`);
+          
+          // Try to level each overloaded resource
+          for (const [resourceId, util] of overloadedResources) {
+            const resAssignments = resourceToAssignments.get(resourceId) || [];
+            
+            // Find events that can be delayed (have slack)
+            const delayableEvents = resAssignments
+              .map((assignment: any) => assignment.eventId)
+              .filter((eventId: any) => {
+                // Check if event has any slack (not on critical path)
+                const hasSlack = !dependencies.some(dep => dep.fromEvent === eventId);
+                return hasSlack;
+              })
+              .sort((a: any, b: any) => {
+                // Sort by duration (delay longer operations first)
+                const aDuration = eventSchedule.get(a)?.duration || 0;
+                const bDuration = eventSchedule.get(b)?.duration || 0;
+                return bDuration - aDuration;
+              });
+            
+            // Try to delay some operations to reduce peak load
+            for (const eventId of delayableEvents.slice(0, 3)) { // Limit to top 3 candidates
+              const currentSchedule = eventSchedule.get(eventId);
+              if (currentSchedule) {
+                // Try delaying by 2-8 hours
+                const delayOptions = [2, 4, 6, 8].map(hours => hours * 60 * 60 * 1000);
+                
+                for (const delay of delayOptions) {
+                  const newStart = new Date(currentSchedule.startTime.getTime() + delay);
+                  const workingStart = getNextWorkingTime(newStart);
+                  const newEnd = new Date(workingStart.getTime() + currentSchedule.duration * 60 * 1000);
+                  
+                  // Check if this delay violates any successor dependencies
+                  const violatesDependencies = dependencies.some(dep => {
+                    if (dep.fromEvent === eventId) {
+                      const successorSchedule = eventSchedule.get(dep.toEvent);
+                      if (successorSchedule) {
+                        const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+                        return newEnd.getTime() + lagMs > successorSchedule.startTime.getTime();
+                      }
+                    }
+                    return false;
+                  });
+                  
+                  if (!violatesDependencies) {
+                    // Apply the delay
+                    eventSchedule.set(eventId, {
+                      startTime: workingStart,
+                      endTime: newEnd,
+                      duration: currentSchedule.duration
+                    });
+                    improved = true;
+                    break;
+                  }
+                }
+              }
+            }
+          }
+          
+          // Recalculate utilization
+          utilization = calculateResourceUtilization();
+          const newOverloaded = Array.from(utilization.entries())
+            .filter(([_, util]) => util.isOverloaded);
+          
+          if (newOverloaded.length < overloadedResources.length) {
+            improved = true;
+          }
+        }
+        
+        // Apply the final schedule to events
+        events.forEach(event => {
+          const schedule = eventSchedule.get(event.id);
+          if (schedule) {
+            event.startDate = schedule.startTime;
+            event.endDate = schedule.endTime;
+          }
+        });
+        
+        // Calculate final metrics
+        const finalUtilization = calculateResourceUtilization();
+        const avgUtilization = Array.from(finalUtilization.values())
+          .reduce((sum, util) => sum + util.avgUtilization, 0) / resources.length;
+        const maxUtilization = Math.max(...Array.from(finalUtilization.values())
+          .map(util => util.avgUtilization));
+        const finalOverloaded = Array.from(finalUtilization.entries())
+          .filter(([_, util]) => util.isOverloaded).length;
+        
+        console.log(`✅ Resource Leveling completed:`);
+        console.log(`  • Iterations: ${iteration}`);
+        console.log(`  • Average Utilization: ${Math.round(avgUtilization * 100)}%`);
+        console.log(`  • Peak Utilization: ${Math.round(maxUtilization * 100)}%`);
+        console.log(`  • Overloaded Resources: ${finalOverloaded}/${resources.length}`);
+        
+        toast({
+          title: "Resource Leveling Complete",
+          description: `Optimized workload distribution. Average utilization: ${Math.round(avgUtilization * 100)}%, ${finalOverloaded} resources still overloaded.`
+        });
+        
+      } finally {
+        scheduler.project.resumeAutoCommit();
+      }
+      
+    } catch (error) {
+      console.error('Resource Leveling Error:', error);
+      toast({
+        title: "Resource Leveling Failed",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
+  const drumScheduling = async () => {
+    setIsApplyingSchedule(true);
+    
+    try {
+      if (!schedulerRef.current?.instance) {
+        throw new Error('Scheduler not available');
+      }
+      
+      const scheduler = schedulerRef.current.instance;
+      const events = [...scheduler.eventStore.records];
+      const resources = [...scheduler.resourceStore.records];
+      const assignments = [...(scheduler.assignmentStore?.records || [])];
+      const dependencies = [...(scheduler.dependencyStore?.records || [])];
+      
+      if (events.length === 0 || resources.length === 0) {
+        throw new Error('No operations or resources for drum scheduling');
+      }
+      
+      console.log(`🥁 Drum/TOC Scheduling: ${events.length} events across ${resources.length} resources`);
+      
+      // Use batch updates for performance
+      scheduler.project.suspendAutoCommit();
+      
+      try {
+        // Build performance index maps
+        const { eventToAssignments, resourceToAssignments } = buildAssignmentIndex(assignments);
+        
+        // Identify bottleneck resource(s) using Theory of Constraints principles
+        const resourceAnalysis = new Map();
+        resources.forEach(resource => {
+          const resAssignments = resourceToAssignments.get(resource.id) || [];
+          const capacity = resource.capacity || 100;
+          const efficiency = resource.efficiency || 100;
+          const isMarkedBottleneck = resource.isBottleneck || false;
+          
+          // Calculate total load and effective capacity
+          let totalLoad = 0;
+          let totalOperations = 0;
+          const operationTypes = new Set();
+          
+          resAssignments.forEach((assignment: BryntumAssignment) => {
+            const event = events.find(e => e.id === assignment.eventId);
+            if (event) {
+              totalLoad += event.duration || 60;
+              totalOperations++;
+              operationTypes.add(event.name || 'Unknown');
+            }
+          });
+          
+          // Effective capacity considering efficiency and availability
+          const effectiveCapacity = (capacity * efficiency) / 10000 * 8 * 60; // 8 hours * efficiency
+          const utilizationRatio = totalLoad / Math.max(effectiveCapacity, 1);
+          
+          // Calculate bottleneck score (higher = more bottlenecked)
+          let bottleneckScore = utilizationRatio;
+          if (isMarkedBottleneck) bottleneckScore *= 2; // Double score for explicitly marked bottlenecks
+          if (totalOperations > 5) bottleneckScore *= 1.2; // Bonus for high operation count
+          if (operationTypes.size === 1) bottleneckScore *= 1.1; // Bonus for specialized resources
+          
+          resourceAnalysis.set(resource.id, {
+            resource,
+            totalLoad,
+            totalOperations,
+            effectiveCapacity,
+            utilizationRatio,
+            bottleneckScore,
+            isMarkedBottleneck,
+            operationTypes: Array.from(operationTypes)
+          });
+        });
+        
+        // Find the primary bottleneck (drum)
+        const bottleneckCandidates = Array.from(resourceAnalysis.entries())
+          .sort(([, a], [, b]) => b.bottleneckScore - a.bottleneckScore);
+        
+        if (bottleneckCandidates.length === 0) {
+          throw new Error('No bottleneck resource identified');
+        }
+        
+        const [drumResourceId, drumAnalysis] = bottleneckCandidates[0];
+        const drumResource = drumAnalysis.resource;
+        
+        console.log(`🥁 Identified drum resource: ${drumResource.name} (Score: ${drumAnalysis.bottleneckScore.toFixed(2)})`);
+        console.log(`  • Utilization: ${(drumAnalysis.utilizationRatio * 100).toFixed(1)}%`);
+        console.log(`  • Operations: ${drumAnalysis.totalOperations}`);
+        console.log(`  • Load: ${drumAnalysis.totalLoad} minutes`);
+        
+        // Get drum operations (operations that use the bottleneck resource)
+        const drumEvents = events.filter(event => {
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          return eventAssignments.some((assignment: any) => assignment.resourceId === drumResourceId);
+        });
+        
+        console.log(`🎼 Drum operations identified: ${drumEvents.length}/${events.length}`);
+        
+        // Perform forward pass to get early dates (same as ASAP but focus on drum)
+        const topSortResult = topologicalSort(events, dependencies);
+        if (topSortResult.hasCycle) {
+          throw new Error(`Dependency cycle detected: ${topSortResult.cycle?.events.join(' → ')}. Please remove circular dependencies before drum scheduling.`);
+        }
+        const sortedEvents = topSortResult.sortedEvents;
+        const baseDate = new Date(2025, 8, 3, 7, 0, 0, 0); // September 3, 2025, 7 AM
+        const eventStartTimes = new Map();
+        const resourceNextAvailable = new Map();
+        
+        // Initialize resource availability
+        resources.forEach(resource => {
+          resourceNextAvailable.set(resource.id, new Date(baseDate));
+        });
+        
+        // First pass: Schedule all events with basic constraints
+        sortedEvents.forEach((event: any) => {
+          let earliestStart = new Date(baseDate);
+          
+          // Check dependency constraints
+          dependencies.forEach(dep => {
+            if (dep.toEvent === event.id && eventStartTimes.has(dep.fromEvent)) {
+              const predecessorEnd = eventStartTimes.get(dep.fromEvent).endTime;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const dependencyStart = new Date(predecessorEnd.getTime() + lagMs);
+              if (dependencyStart > earliestStart) {
+                earliestStart = dependencyStart;
+              }
+            }
+          });
+          
+          // Check resource constraints
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          eventAssignments.forEach((assignment: any) => {
+            const resourceNext = resourceNextAvailable.get(assignment.resourceId) || new Date(baseDate);
+            if (resourceNext > earliestStart) {
+              earliestStart = resourceNext;
+            }
+          });
+          
+          const actualStart = getNextWorkingTime(earliestStart);
+          const duration = (event.duration || 60) * 60 * 1000;
+          const endTime = new Date(actualStart.getTime() + duration);
+          
+          eventStartTimes.set(event.id, {
+            startTime: actualStart,
+            endTime: endTime,
+            isDrumOperation: drumEvents.includes(event)
+          });
+          
+          // Update resource availability
+          eventAssignments.forEach((assignment: any) => {
+            resourceNextAvailable.set(assignment.resourceId, endTime);
+          });
+        });
+        
+        // Second pass: Optimize drum schedule with buffers
+        const drumSchedule: { event: any; startTime: Date; endTime: Date; bufferBefore?: number }[] = [];
+        let drumTime = new Date(baseDate);
+        
+        // Sort drum operations by priority and dependencies
+        const sortedDrumEvents = drumEvents.sort((a, b) => {
+          // Priority 1: Dependency order
+          const aDeps = dependencies.filter(dep => dep.toEvent === a.id).length;
+          const bDeps = dependencies.filter(dep => dep.toEvent === b.id).length;
+          if (aDeps !== bDeps) return bDeps - aDeps; // More dependencies = higher priority
+          
+          // Priority 2: Due dates if available
+          const aDue = a.dueDate ? new Date(a.dueDate).getTime() : Infinity;
+          const bDue = b.dueDate ? new Date(b.dueDate).getTime() : Infinity;
+          if (aDue !== bDue) return aDue - bDue;
+          
+          // Priority 3: Duration (shorter operations first for flexibility)
+          return (a.duration || 60) - (b.duration || 60);
+        });
+        
+        // Schedule drum operations with protective buffers
+        sortedDrumEvents.forEach((event, index) => {
+          // Add rope buffer before drum operations (except first)
+          if (index > 0) {
+            const ropeBufferMinutes = 30; // 30-minute rope buffer
+            drumTime = new Date(drumTime.getTime() + ropeBufferMinutes * 60 * 1000);
+          }
+          
+          const workingStart = getNextWorkingTime(drumTime);
+          const duration = (event.duration || 60) * 60 * 1000;
+          const endTime = new Date(workingStart.getTime() + duration);
+          
+          drumSchedule.push({
+            event,
+            startTime: workingStart,
+            endTime: endTime,
+            bufferBefore: index > 0 ? 30 : 0
+          });
+          
+          // Update drum time
+          drumTime = new Date(endTime);
+        });
+        
+        console.log(`⏰ Drum schedule created with ${drumSchedule.length} operations`);
+        
+        // Third pass: Schedule non-drum operations around drum schedule
+        const finalSchedule = new Map();
+        const finalResourceAvailable = new Map();
+        resources.forEach(resource => {
+          finalResourceAvailable.set(resource.id, new Date(baseDate));
+        });
+        
+        // Apply drum schedule first
+        drumSchedule.forEach(({ event, startTime, endTime }: any) => {
+          finalSchedule.set(event.id, { startTime, endTime, isDrum: true });
+          finalResourceAvailable.set(drumResourceId, endTime);
+        });
+        
+        // Schedule remaining operations
+        const nonDrumEvents = events.filter(event => !drumEvents.includes(event));
+        const finalTopSortResult = topologicalSort([...drumEvents, ...nonDrumEvents], dependencies);
+        if (finalTopSortResult.hasCycle) {
+          throw new Error(`Dependency cycle detected in final scheduling: ${finalTopSortResult.cycle?.events.join(' → ')}.`);
+        }
+        const allSortedEvents = finalTopSortResult.sortedEvents;
+        
+        allSortedEvents.forEach((event: any) => {
+          if (finalSchedule.has(event.id)) return; // Skip already scheduled drum operations
+          
+          let earliestStart = new Date(baseDate);
+          
+          // Check dependency constraints against final schedule
+          dependencies.forEach(dep => {
+            if (dep.toEvent === event.id && finalSchedule.has(dep.fromEvent)) {
+              const predecessorEnd = finalSchedule.get(dep.fromEvent).endTime;
+              const lagMs = convertLagToMs(dep.lag || 0, dep.lagUnit || 'day');
+              const dependencyStart = new Date(predecessorEnd.getTime() + lagMs);
+              if (dependencyStart > earliestStart) {
+                earliestStart = dependencyStart;
+              }
+            }
+          });
+          
+          // Check resource constraints against final schedule
+          const eventAssignments = eventToAssignments.get(event.id) || [];
+          eventAssignments.forEach((assignment: any) => {
+            const resourceNext = finalResourceAvailable.get(assignment.resourceId) || new Date(baseDate);
+            if (resourceNext > earliestStart) {
+              earliestStart = resourceNext;
+            }
+          });
+          
+          const actualStart = getNextWorkingTime(earliestStart);
+          const duration = (event.duration || 60) * 60 * 1000;
+          const endTime = new Date(actualStart.getTime() + duration);
+          
+          finalSchedule.set(event.id, {
+            startTime: actualStart,
+            endTime: endTime,
+            isDrum: false
+          });
+          
+          // Update resource availability with buffer for non-drum operations
+          eventAssignments.forEach((assignment: any) => {
+            const buffer = assignment.resourceId === drumResourceId ? 0 : 15 * 60 * 1000; // 15min buffer for non-drum
+            finalResourceAvailable.set(assignment.resourceId, new Date(endTime.getTime() + buffer));
+          });
+        });
+        
+        // Apply final schedule to events with visual indicators
+        events.forEach(event => {
+          const schedule = finalSchedule.get(event.id);
+          if (schedule) {
+            event.startDate = schedule.startTime;
+            event.endDate = schedule.endTime;
+            
+            // Add visual indicators for drum operations
+            if (schedule.isDrum) {
+              event.cls = (event.cls || '') + ' drum-operation';
+              event.eventColor = 'purple';
+            } else {
+              // Check if this operation feeds the drum
+              const feedsDrum = dependencies.some(dep => 
+                dep.fromEvent === event.id && drumEvents.some(de => de.id === dep.toEvent)
+              );
+              if (feedsDrum) {
+                event.cls = (event.cls || '') + ' feeds-drum';
+                event.eventColor = 'blue';
+              }
+            }
+          }
+        });
+        
+        // Calculate performance metrics
+        const drumUtilization = drumSchedule.reduce((sum: number, item) => {
+          const duration = item.endTime.getTime() - item.startTime.getTime();
+          return sum + duration;
+        }, 0) / (8 * 60 * 60 * 1000); // 8-hour workday
+        
+        const totalProjectTime = Math.max(...Array.from(finalSchedule.values()).map(s => s.endTime.getTime()));
+        const projectDuration = (totalProjectTime - baseDate.getTime()) / (24 * 60 * 60 * 1000);
+        
+        console.log(`✅ Drum/TOC Scheduling completed:`);
+        console.log(`  • Drum Resource: ${drumResource.name}`);
+        console.log(`  • Drum Utilization: ${(drumUtilization * 100).toFixed(1)}%`);
+        console.log(`  • Drum Operations: ${drumSchedule.length}`);
+        console.log(`  • Project Duration: ${projectDuration.toFixed(1)} days`);
+        console.log(`  • Total Operations Scheduled: ${finalSchedule.size}`);
+        
+        toast({
+          title: "Drum/TOC Scheduling Complete",
+          description: `Optimized around bottleneck ${drumResource.name}. Drum utilization: ${(drumUtilization * 100).toFixed(1)}%, Project: ${projectDuration.toFixed(1)} days.`
+        });
+        
+      } finally {
+        scheduler.project.resumeAutoCommit();
+      }
+      
+    } catch (error) {
+      console.error('Drum/TOC Scheduling Error:', error);
+      toast({
+        title: "Drum/TOC Scheduling Failed",
+        description: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive"
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
+  // Handle apply scheduling
+  const handleApplyScheduling = async () => {
+    if (!schedulerRef.current?.instance || isApplyingSchedule) return;
+    
+    setIsApplyingSchedule(true);
+    
+    try {
+      let algorithmName = "";
+      let color = "green";
+      
+      switch (selectedAlgorithm) {
+        case "asap":
+          await asapScheduling();
+          algorithmName = "ASAP Forward Scheduling";
+          break;
+        case "alap":
+          await alapScheduling();
+          algorithmName = "ALAP Backward Scheduling";
+          break;
+        case "criticalPath":
+          await criticalPathScheduling();
+          algorithmName = "Critical Path Scheduling";
+          break;
+        case "levelResources":
+          await levelResourcesScheduling();
+          algorithmName = "Resource Leveling";
+          break;
+        case "drum":
+          await drumScheduling();
+          algorithmName = "Drum (TOC) Scheduling";
+          break;
+        default:
+          throw new Error("Unknown algorithm selected");
+      }
+      
+      // Update scheduler view
+      const scheduler = schedulerRef.current.instance;
+      if (scheduler) {
+        // Set timespan to show all operations
+        const events = [...scheduler.eventStore.records];
+        if (events.length > 0) {
+          const earliestStart = Math.min(...events.map((e: any) => e.startDate.getTime()));
+          const latestEnd = Math.max(...events.map((e: any) => e.endDate?.getTime() || e.startDate.getTime()));
+          
+          const currentStartDate = new Date(earliestStart);
+          const currentEndDate = new Date(latestEnd);
+          currentEndDate.setDate(currentEndDate.getDate() + 1); // Add buffer day
+          
+          scheduler.setTimeSpan(currentStartDate, currentEndDate);
+        }
+      }
+      
+      toast({
+        title: "Scheduling Applied",
+        description: `${algorithmName} has been successfully applied to all operations.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Scheduling Error",
+        description: `Failed to apply scheduling: ${error.message}`,
+        variant: "destructive",
+      });
+    } finally {
+      setIsApplyingSchedule(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-4 space-y-4">
       {/* Header */}
@@ -770,6 +2064,38 @@ export default function ProductionSchedulePage() {
                   <Maximize2 className="w-4 h-4" />
                 </Button>
               </div>
+            </div>
+
+            {/* Scheduling Algorithm Controls */}
+            <div className="flex items-center gap-2 border-l pl-4">
+              <Select value={selectedAlgorithm} onValueChange={setSelectedAlgorithm}>
+                <SelectTrigger className="w-[200px]" data-testid="select-algorithm">
+                  <SelectValue placeholder="Select algorithm" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="asap">ASAP (Forward)</SelectItem>
+                  <SelectItem value="alap">ALAP (Backward)</SelectItem>
+                  <SelectItem value="criticalPath">Critical Path</SelectItem>
+                  <SelectItem value="levelResources">Resource Leveling</SelectItem>
+                  <SelectItem value="drum">Drum (TOC)</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <Button
+                variant="default"
+                size="sm"
+                onClick={handleApplyScheduling}
+                disabled={isApplyingSchedule || isLoading}
+                data-testid="button-apply-scheduling"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {isApplyingSchedule ? (
+                  <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                ) : (
+                  <Zap className="w-4 h-4 mr-1" />
+                )}
+                {isApplyingSchedule ? "Applying..." : "Apply Schedule"}
+              </Button>
             </div>
 
             {/* Feature Toggles */}
