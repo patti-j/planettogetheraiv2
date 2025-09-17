@@ -180,10 +180,35 @@ router.get("/auth/me", async (req, res) => {
               // Get user roles and permissions from database
               const userRoles = await storage.getUserRoles(user.id);
               const roles = [];
+              const allPermissions = [];
+              
               for (const userRole of userRoles) {
                 const role = await storage.getRole(userRole.roleId);
                 if (role) {
-                  roles.push(role);
+                  // Get role permissions
+                  const rolePermissions = await storage.getRolePermissions(role.id);
+                  const permissions = [];
+                  
+                  for (const rp of rolePermissions) {
+                    const permission = await storage.getPermission(rp.permissionId);
+                    if (permission) {
+                      allPermissions.push(permission.name);
+                      permissions.push({
+                        id: permission.id,
+                        name: permission.name,
+                        feature: permission.feature,
+                        action: permission.action,
+                        description: permission.description || `${permission.action} access to ${permission.feature}`
+                      });
+                    }
+                  }
+                  
+                  roles.push({
+                    id: role.id,
+                    name: role.name,
+                    description: role.description || `${role.name} role with assigned permissions`,
+                    permissions: permissions
+                  });
                 }
               }
               
@@ -196,7 +221,7 @@ router.get("/auth/me", async (req, res) => {
                   firstName: user.firstName,
                   lastName: user.lastName,
                   roles: roles,
-                  permissions: []
+                  permissions: allPermissions
                 },
                 createdAt: Number(timestamp),
                 expiresAt: Number(timestamp) + maxAge

@@ -175,7 +175,19 @@ export default function ProductionScheduleVanillaFix() {
           }
         }
 
-        // Instantiate using store configs (non-deprecated)
+        // Create assignments (required for Scheduler Pro functionality)
+        const assignments = eventData
+          .filter(e => e.resourceId) // Include all events, even unscheduled
+          .map((e, i) => ({
+            id: `a-${e.id}`,
+            eventId: e.id,
+            resourceId: e.resourceId
+          }));
+
+        // Remove resourceId from events (assignments handle the relationship)
+        const eventsForScheduler = eventData.map(({ resourceId, ...rest }) => rest);
+
+        // Instantiate using store configs (non-deprecated) with AssignmentStore
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
           startDate,
@@ -185,7 +197,8 @@ export default function ProductionScheduleVanillaFix() {
           barMargin: 8,
           project: {
             resourceStore: { data: resourceData },
-            eventStore: { data: eventData },
+            eventStore: { data: eventsForScheduler },
+            assignmentStore: { data: assignments },
             dependencyStore: { data: [] }
           },
           features: {
