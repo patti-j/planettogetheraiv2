@@ -77,6 +77,9 @@ function getOperationColor(opName?: string) {
 }
 
 export default function ProductionScheduleVanillaFix() {
+  // CANARY LOG - This proves the new component is being rendered
+  console.log('[🔧 CANARY] ProductionScheduleVanillaFix component is rendering!');
+  
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -282,6 +285,11 @@ export default function ProductionScheduleVanillaFix() {
 
   return (
     <div className="flex flex-col h-[700px]">
+      {/* VISUAL CANARY - This proves the component is rendering */}
+      <div className="bg-red-500 text-white p-4 font-bold text-center">
+        🔧 CANARY: ProductionScheduleVanillaFix is ACTIVE! If you see this, the component is rendering.
+      </div>
+      
       <div className="flex-1 relative" ref={containerRef}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
