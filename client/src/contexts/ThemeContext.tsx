@@ -65,8 +65,14 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       effectiveTheme = theme as 'light' | 'dark';
     }
 
-    root.classList.remove('light', 'dark');
-    root.classList.add(effectiveTheme);
+    // Only modify classes if the theme actually changed
+    // This prevents the flash on initial load when the theme is already set in index.html
+    const currentTheme = root.classList.contains('dark') ? 'dark' : 'light';
+    if (currentTheme !== effectiveTheme) {
+      root.classList.remove('light', 'dark');
+      root.classList.add(effectiveTheme);
+    }
+    
     setResolvedTheme(effectiveTheme);
   }, [theme]);
 
@@ -78,8 +84,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const handleChange = () => {
       const systemTheme = mediaQuery.matches ? 'dark' : 'light';
       const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(systemTheme);
+      const currentTheme = root.classList.contains('dark') ? 'dark' : 'light';
+      if (currentTheme !== systemTheme) {
+        root.classList.remove('light', 'dark');
+        root.classList.add(systemTheme);
+      }
       setResolvedTheme(systemTheme);
     };
 

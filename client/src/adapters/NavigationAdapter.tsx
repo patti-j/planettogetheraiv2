@@ -58,10 +58,14 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
           // Try federated navigation first
           if (isInitialized) {
             try {
-              const corePlatform = await getCorePlatformModule();
-              const federatedRoute = await corePlatform.getCurrentRoute();
-              if (federatedRoute) {
-                setLastVisitedRouteState(federatedRoute);
+              const corePlatform = await loadCorePlatformModule();
+              if (corePlatform) {
+                const federatedRoute = await corePlatform.getCurrentRoute();
+                if (federatedRoute && typeof federatedRoute === 'string') {
+                  setLastVisitedRouteState(federatedRoute);
+                } else if (federatedRoute && federatedRoute.data) {
+                  setLastVisitedRouteState(federatedRoute.data);
+                }
               }
             } catch (error) {
               console.warn('[NavigationAdapter] Federated navigation failed, using fallback:', error);
@@ -119,8 +123,10 @@ export function NavigationAdapterProvider({ children }: { children: ReactNode })
     // Try federated navigation first
     if (isInitialized) {
       try {
-        const corePlatform = await getCorePlatformModule();
-        await corePlatform.navigateTo(path);
+        const corePlatform = await loadCorePlatformModule();
+        if (corePlatform) {
+          await corePlatform.navigateTo(path);
+        }
       } catch (error) {
         console.warn('[NavigationAdapter] Federated navigation failed:', error);
       }
