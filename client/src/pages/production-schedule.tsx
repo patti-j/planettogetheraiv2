@@ -1,22 +1,5 @@
-// production-schedule-vanilla.tsx
+// production-schedule-vanilla-fix.tsx
 import React, { useEffect, useRef, useState } from 'react';
-
-// This component embeds Bryntum Scheduler Pro via the UMD bundle (`/schedulerpro.umd.js`)
-// and theme CSS (`/schedulerpro.classic-light.css`) — same as your working HTML.
-// It mirrors the unscheduled lane, drag-to-schedule behavior, tooltips, percent bar,
-// and date span used in your standalone page.
-//
-// Prereqs (match your standalone page):
-//   • Host these assets somewhere your app can reach them:
-//       /schedulerpro.umd.js
-//       /schedulerpro.classic-light.css
-//   • Your backend should expose:
-//       GET /api/resources
-//       GET /api/pt-operations
-//
-// Notes:
-//   • We dynamically inject the CSS/JS if they're not already present.
-//   • On unmount, we destroy the Bryntum instance to avoid leaks.
 
 declare global {
   interface Window {
@@ -33,7 +16,6 @@ function ensureThemeLink(): Promise<void> {
     const id = 'bryntum-scheduler-theme-link';
     const existing = document.getElementById(id) as HTMLLinkElement | null;
     if (existing) return resolve();
-
     const link = document.createElement('link');
     link.id = id;
     link.rel = 'stylesheet';
@@ -64,7 +46,27 @@ function ensureUmdScript(): Promise<void> {
   });
 }
 
-// Color helper similar to your HTML
+// Helpers
+function asArray(payload: any): any[] {
+  if (!payload) return [];
+  if (Array.isArray(payload)) return payload;
+  if (Array.isArray(payload.data)) return payload.data;
+  if (Array.isArray(payload.results)) return payload.results;
+  if (Array.isArray(payload.items)) return payload.items;
+  return [];
+}
+
+function toStrId(v: any, fallback: string): string {
+  if (v === null || v === undefined) return fallback;
+  if (typeof v === 'string') return v;
+  if (typeof v === 'number') return String(v);
+  if (typeof v === 'object') {
+    if ('id' in v) return toStrId((v as any).id, fallback);
+    if ('_id' in v) return toStrId((v as any)._id, fallback);
+  }
+  try { return String(v); } catch { return fallback; }
+}
+
 function getOperationColor(opName?: string) {
   const s = (opName || '').toLowerCase();
   if (s.includes('cut')) return 'blue';
@@ -74,7 +76,7 @@ function getOperationColor(opName?: string) {
   return 'cyan';
 }
 
-export default function ProductionScheduleVanilla() {
+export default function ProductionScheduleVanillaFix() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -91,48 +93,48 @@ export default function ProductionScheduleVanilla() {
 
         const { SchedulerPro } = window.bryntum.schedulerpro;
 
-        // Timespan: Sep 3–17, 2025 (matches the standalone page)
-        const startDate = new Date(2025, 8, 3); // months 0-based
-        startDate.setHours(0, 0, 0, 0);
-        const endDate = new Date(2025, 8, 17);
-        endDate.setHours(23, 59, 59, 999);
+        // Timespan: match standalone
+        const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
+        const endDate   = new Date(2025, 8, 17); endDate.setHours(23, 59, 59, 999);
 
-        // Fetch resources and PT operations from your backend (same routes as the HTML)
-        let resources: any[] = [];
-        let ptOperations: any[] = [];
-
+        // Fetch
         const [resResp, opsResp] = await Promise.all([
           fetch('/api/resources'),
           fetch('/api/pt-operations')
-        ]);
+        ]).catch((e) => {
+          console.warn('Fetch failed, continuing with empty arrays', e);
+          return [{ ok: false }, { ok: false }] as any;
+        });
 
-        resources = resResp.ok ? await resResp.json() : [];
-        ptOperations = opsResp.ok ? await opsResp.json() : [];
+        const rawResources = resResp && (resResp as any).ok ? await (resResp as any).json() : [];
+        const rawOps       = opsResp && (opsResp as any).ok ? await (opsResp as any).json() : [];
 
-        // If backend not ready, add minimal sample data (optional)
-        if (!resources || resources.length === 0) {
-          resources = [
-            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' }
-          ];
-        }
+        // Normalize
+        const resourcesSrc = asArray(rawResources);
+        const opsSrc       = asArray(rawOps);
 
-        // Add the "Unscheduled" lane at the top
         const resourceData = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
-          ...resources.map((r: any, i: number) => ({
-            id: String(r.id ?? r.external_id ?? r.name ?? `r${i}`),
-            name: r.name ?? `Resource ${i + 1}`,
-            category: r.category ?? r.plantName ?? 'Default',
+          ...resourcesSrc.map((r: any, i: number) => ({
+            id: toStrId(r.id ?? r.external_id ?? r.resourceId ?? r.name, `r${i}`),
+            name: (r.name ?? r.displayName ?? `Resource ${i + 1}`),
+            category: (r.category ?? r.plantName ?? r.area ?? 'Default'),
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
           }))
         ];
 
-        // Map PT operations to events
-        const eventData = (ptOperations || []).map((op: any) => {
-          const start = op.startDate ? new Date(op.startDate) : (op.startTime ? new Date(op.startTime) : null);
-          let end = op.endDate ? new Date(op.endDate) : null;
+        const resourceIdSet = new Set(resourceData.map(r => r.id));
 
+        // Deduplicate events by id, normalize resourceId to string
+        const seen = new Set<string>();
+        const eventData = opsSrc.map((op: any, i: number) => {
+          const id = toStrId(op.id ?? op.operationId ?? `e${i}`, `e${i}`);
+          if (seen.has(id)) return null;
+          seen.add(id);
+
+          const start = op.startDate ? new Date(op.startDate)
+                        : (op.startTime ? new Date(op.startTime) : null);
+          let end = op.endDate ? new Date(op.endDate) : null;
           if (start && !end && op.duration) {
             const e = new Date(start);
             const hours = op.durationUnit === 'day' ? (op.duration * 24) : (op.duration || 0);
@@ -140,12 +142,13 @@ export default function ProductionScheduleVanilla() {
             end = e;
           }
 
-          const unscheduled = !op.resourceId || op.resourceId === 0;
-          const resourceId = unscheduled ? 'unscheduled' : String(op.resourceId);
+          const rawResId = (op.resourceId ?? op.machineId ?? op.resource_id);
+          const unscheduled = !rawResId || rawResId === 0 || rawResId === '0' || rawResId === 'unscheduled';
+          const resourceId = unscheduled ? 'unscheduled' : toStrId(rawResId, 'unscheduled');
 
           return {
-            id: String(op.id),
-            name: op.name,
+            id,
+            name: op.name ?? op.operationName ?? `Op ${i + 1}`,
             jobName: op.jobName,
             operationName: op.operationName,
             startDate: start || null,
@@ -153,15 +156,26 @@ export default function ProductionScheduleVanilla() {
             duration: op.duration,
             durationUnit: op.durationUnit || 'hour',
             resourceId,
-            isUnscheduled: unscheduled,
-            percentDone: op.percent_done ?? 0,
+            isUnscheduled: unscheduled || !resourceIdSet.has(String(resourceId)),
+            percentDone: op.percent_done ?? op.percentDone ?? 0,
             eventColor: unscheduled ? '#808080' : (op.eventColor || getOperationColor(op.operationName)),
             draggable: true,
             resizable: true
           };
-        });
+        }).filter(Boolean) as any[];
 
-        // Create the scheduler like in the HTML (vanilla)
+        // Mark orphans (resourceId not in store) as unscheduled
+        const orphans = eventData.filter(e => e.resourceId !== 'unscheduled' && !resourceIdSet.has(String(e.resourceId)));
+        if (orphans.length) {
+          console.warn(`[Scheduler] Found ${orphans.length} events with non-matching resourceId. Example:`, orphans[0]);
+          for (const ev of orphans) {
+            ev.isUnscheduled = true;
+            ev.resourceId = 'unscheduled';
+            ev.eventColor = '#808080';
+          }
+        }
+
+        // Instantiate using store configs (non-deprecated)
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
           startDate,
@@ -169,19 +183,14 @@ export default function ProductionScheduleVanilla() {
           viewPreset: 'dayAndWeek',
           rowHeight: 60,
           barMargin: 8,
-          // Project inline data
           project: {
-            resources: resourceData,
-            events: eventData,
-            dependencies: []
+            resourceStore: { data: resourceData },
+            eventStore: { data: eventData },
+            dependencyStore: { data: [] }
           },
-          // Features mirroring the HTML
           features: {
             dependencies: true,
-            eventDrag: {
-              showTooltip: true,
-              constrainDragToResource: false
-            },
+            eventDrag: { showTooltip: true, constrainDragToResource: false },
             eventResize: { showTooltip: true },
             eventTooltip: {
               template: ({ eventRecord }: any) => `
@@ -208,7 +217,6 @@ export default function ProductionScheduleVanilla() {
           ]
         });
 
-        // Unschedule <-> schedule drag logic (from your HTML)
         schedulerInstance.on('eventdrop', ({ eventRecords, targetResourceRecord }: any) => {
           eventRecords.forEach((eventRecord: any) => {
             if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
@@ -227,6 +235,14 @@ export default function ProductionScheduleVanilla() {
 
         if (!destroyed) {
           window.scheduler = schedulerInstance;
+          // Diagnostics
+          // @ts-ignore
+          const rCount = schedulerInstance?.project?.resourceStore?.count;
+          // @ts-ignore
+          const eCount = schedulerInstance?.project?.eventStore?.count;
+          console.log('[Scheduler] Ready', { resources: rCount, events: eCount });
+          console.log('[Scheduler] Resource IDs:', Array.from(resourceIdSet).slice(0, 10), '...');
+          console.log('[Scheduler] Sample event:', eventData[0]);
           setLoading(false);
           setError(null);
         }
