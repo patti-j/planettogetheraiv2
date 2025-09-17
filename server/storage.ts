@@ -354,31 +354,40 @@ export class DatabaseStorage implements IStorage {
 
   async getResources(): Promise<PtResource[]> {
     try {
-      // Select only the columns that exist in the database, including drum as false
-      return await db.select({
-        id: ptResources.id,
-        publishDate: ptResources.publishDate,
-        instanceId: ptResources.instanceId,
-        plantId: ptResources.plantId,
-        departmentId: ptResources.departmentId,
-        resourceId: ptResources.resourceId,
-        name: ptResources.name,
-        description: ptResources.description,
-        notes: ptResources.notes,
-        bottleneck: ptResources.bottleneck,
-        bufferHours: ptResources.bufferHours,
-        capacityType: ptResources.capacityType,
-        drum: sql`false`.as('drum'), // Add drum column with default false
-        overtimeHourlyCost: ptResources.overtimeHourlyCost,
-        standardHourlyCost: ptResources.standardHourlyCost,
-        resourceType: ptResources.resourceType,
-        capacity: ptResources.capacity,
-        availableHours: ptResources.availableHours,
-        efficiency: ptResources.efficiency,
-        isActive: ptResources.isActive,
-        createdAt: ptResources.createdAt,
-        updatedAt: ptResources.updatedAt
-      }).from(ptResources).orderBy(ptResources.name);
+      // Use raw SQL to select only columns that actually exist in the database
+      const result = await db.execute(sql`
+        SELECT 
+          id,
+          publish_date,
+          instance_id,
+          plant_id,
+          department_id,
+          resource_id,
+          name,
+          description,
+          notes,
+          external_id,
+          plant_name,
+          department_name,
+          active as is_active,
+          bottleneck,
+          buffer_hours,
+          capacity_type,
+          hourly_cost as standard_hourly_cost,
+          setup_cost as overtime_hourly_cost,
+          tank as drum,
+          -- Set defaults for missing schema fields
+          'equipment' as resource_type,
+          100.0 as capacity,
+          24.0 as available_hours,
+          '1.0' as efficiency,
+          now() as created_at,
+          now() as updated_at
+        FROM ptresources 
+        WHERE active = true
+        ORDER BY name
+      `);
+      return result.rows as any[];
     } catch (error) {
       console.error('Error fetching resources:', error);
       return [];
