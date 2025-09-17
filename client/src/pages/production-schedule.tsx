@@ -132,7 +132,7 @@ export default function ProductionScheduleVanillaStrictFix() {
         const resourceData = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
           ...resourcesSrc.map((r: any, i: number) => ({
-            id: toStrId(r.id ?? r.external_id ?? r.resourceId ?? r.name, `r${i}`),
+            id: toStrId(r.resource_id ?? r.external_id ?? r.id ?? r.name, `r${i}`),
             name: (r.name ?? r.displayName ?? `Resource ${i + 1}`),
             category: (r.category ?? r.plantName ?? r.area ?? 'Default'),
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
