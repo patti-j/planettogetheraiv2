@@ -293,7 +293,7 @@ export default function ProductionSchedulePage() {
   const schedulerProConfig = {
     startDate: startOfDay(new Date('2025-08-01')), // Show from August to include all operations
     endDate: endOfDay(addDays(new Date(), 90)),
-    viewPreset: viewPreset, // Use built-in Bryntum preset names directly
+    viewPreset: 'weekAndDay', // Use a safe built-in preset initially
     
     // Project configuration - Scheduler Pro pattern with separate stores
     project: {
@@ -497,14 +497,24 @@ export default function ProductionSchedulePage() {
     // Enable automatic scheduling
     autoAdjustTimeAxis: true,
     
-    // View presets
+    // TimeAxis configuration with proper presets
+    timeAxis: {
+      continuous: false
+    },
+    
+    // View presets - Configure correctly for Bryntum TimeAxis
     presets: [
       {
         id: 'hourAndDay',
+        name: 'Hour & Day',
         tickWidth: 60,
         displayDateFormat: 'HH:mm',
         shiftIncrement: 1,
         shiftUnit: 'day',
+        timeResolution: {
+          unit: 'hour',
+          increment: 1
+        },
         headers: [
           { unit: 'day', dateFormat: 'ddd MMM DD' },
           { unit: 'hour', dateFormat: 'HH' }
@@ -512,10 +522,15 @@ export default function ProductionSchedulePage() {
       },
       {
         id: 'weekAndDay',
+        name: 'Week & Day',
         tickWidth: 100,
         displayDateFormat: 'MMM DD',
         shiftIncrement: 1,
         shiftUnit: 'week',
+        timeResolution: {
+          unit: 'day',
+          increment: 1
+        },
         headers: [
           { unit: 'week', dateFormat: 'MMM DD' },
           { unit: 'day', dateFormat: 'ddd DD' }
@@ -523,10 +538,15 @@ export default function ProductionSchedulePage() {
       },
       {
         id: 'monthAndWeek',
+        name: 'Month & Week',
         tickWidth: 150,
         displayDateFormat: 'MMM DD',
         shiftIncrement: 1,
         shiftUnit: 'month',
+        timeResolution: {
+          unit: 'week',
+          increment: 1
+        },
         headers: [
           { unit: 'month', dateFormat: 'MMMM YYYY' },
           { unit: 'week', dateFormat: 'DD' }
@@ -586,6 +606,20 @@ export default function ProductionSchedulePage() {
       }
     }
   }, [ptResources, ptOperations, ptDependencies, isLoadingResources, isLoadingOperations, isLoadingDependencies, isAutoScheduling]);
+
+  // Handle viewPreset changes
+  useEffect(() => {
+    if (schedulerRef.current && schedulerRef.current.instance) {
+      try {
+        const scheduler = schedulerRef.current.instance;
+        if (scheduler.viewPreset !== viewPreset) {
+          scheduler.viewPreset = viewPreset;
+        }
+      } catch (error) {
+        console.warn('Error changing view preset:', error);
+      }
+    }
+  }, [viewPreset]);
 
   // Handler functions
   const handleZoomIn = () => {
