@@ -146,18 +146,19 @@ router.post("/auth/logout", (req, res) => {
 router.get("/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization}`);
+  console.log(`Session userId: ${req.session.userId}`);
   
   const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log("No authorization header found");
-    return res.status(401).json({ message: "Not authenticated" });
-  }
+  let tokenData = null;
   
-  const token = authHeader.substring(7); // Remove 'Bearer '
+  // Try Bearer token first
+  if (authHeader && authHeader.startsWith('Bearer ')) {
   
-  // Check token store first
-  global.tokenStore = global.tokenStore || new Map();
-  let tokenData = global.tokenStore.get(token);
+    const token = authHeader.substring(7); // Remove 'Bearer '
+    
+    // Check token store first
+    global.tokenStore = global.tokenStore || new Map();
+    tokenData = global.tokenStore.get(token);
   
   // If not in memory store, try to reconstruct from token (for server restart resilience)
   if (!tokenData) {
@@ -240,14 +241,78 @@ router.get("/auth/me", async (req, res) => {
     }
   }
   
-  if (!tokenData) {
-    console.log("Invalid token");
-    return res.status(401).json({ message: "Invalid token" });
   }
   
-  if (Date.now() > tokenData.expiresAt) {
+  // If no Bearer token or invalid token, try session fallback
+  if (!tokenData && req.session.userId) {
+    console.log("No valid token, trying session fallback");
+    try {
+      const user = await storage.getUser(req.session.userId);
+      if (user && user.isActive) {
+        // Get user roles and permissions from database
+        const userRoles = await storage.getUserRoles(user.id);
+        const roles = [];
+        const allPermissions = [];
+        
+        for (const userRole of userRoles) {
+          const role = await storage.getRole(userRole.roleId);
+          if (role) {
+            // Get role permissions
+            const rolePermissions = await storage.getRolePermissions(role.id);
+            const permissions = [];
+            
+            for (const rp of rolePermissions) {
+              const permission = await storage.getPermission(rp.permissionId);
+              if (permission) {
+                allPermissions.push(permission.name);
+                permissions.push({
+                  id: permission.id,
+                  name: permission.name,
+                  feature: permission.feature,
+                  action: permission.action,
+                  description: permission.description || `${permission.action} access to ${permission.feature}`
+                });
+              }
+            }
+            
+            roles.push({
+              id: role.id,
+              name: role.name,
+              description: role.description || `${role.name} role with assigned permissions`,
+              permissions: permissions
+            });
+          }
+        }
+        
+        tokenData = {
+          userId: user.id,
+          userData: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            roles: roles,
+            permissions: allPermissions
+          }
+        };
+      }
+    } catch (error) {
+      console.log("Session fallback failed:", error);
+    }
+  }
+
+  if (!tokenData) {
+    console.log("No valid authentication found");
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  
+  if (tokenData.expiresAt && Date.now() > tokenData.expiresAt) {
     console.log("Token expired");
-    global.tokenStore.delete(token);
+    if (global.tokenStore && authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      global.tokenStore.delete(token);
+    }
     return res.status(401).json({ message: "Token expired" });
   }
   
