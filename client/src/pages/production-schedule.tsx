@@ -77,22 +77,36 @@ function getOperationColor(opName?: string) {
 }
 
 export default function ProductionScheduleVanillaFix() {
-  // CANARY LOG - This proves the new component is being rendered
-  console.log('[🔧 CANARY] ProductionScheduleVanillaFix component is rendering!');
+  // DETAILED DEBUGGING - visible on page instead of console
+  const [debugLog, setDebugLog] = useState<string[]>(['🔧 Component started']);
+  
+  const addDebug = (msg: string) => {
+    setDebugLog(prev => [...prev, msg]);
+  };
   
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Add debug immediately
+  React.useEffect(() => {
+    addDebug('🔧 useEffect triggered');
+  }, []);
+
   useEffect(() => {
+    addDebug('🔧 useEffect starting...');
     let destroyed = false;
     let schedulerInstance: any;
 
     async function init() {
       try {
+        addDebug('🔧 Init function starting...');
         setLoading(true);
+        addDebug('🔧 Loading theme CSS...');
         await ensureThemeLink();
+        addDebug('🔧 Loading Bryntum UMD script...');
         await ensureUmdScript();
+        addDebug('🔧 Assets loaded successfully');
 
         const { SchedulerPro } = window.bryntum.schedulerpro;
 
@@ -285,9 +299,13 @@ export default function ProductionScheduleVanillaFix() {
 
   return (
     <div className="flex flex-col h-[700px]">
-      {/* VISUAL CANARY - This proves the component is rendering */}
-      <div className="bg-red-500 text-white p-4 font-bold text-center">
-        🔧 CANARY: ProductionScheduleVanillaFix is ACTIVE! If you see this, the component is rendering.
+      {/* Debug info - Visual debugging */}
+      <div className="bg-yellow-100 p-2 text-xs border">
+        <div><strong>Debug Status:</strong> Loading={loading.toString()}, Error={error || 'none'}</div>
+        <div><strong>Debug Log:</strong></div>
+        {debugLog.map((log, i) => (
+          <div key={i} className="text-xs text-gray-600">• {log}</div>
+        ))}
       </div>
       
       <div className="flex-1 relative" ref={containerRef}>
