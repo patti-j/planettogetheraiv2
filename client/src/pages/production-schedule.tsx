@@ -483,7 +483,6 @@ export default function ProductionSchedulePage() {
         text: 'Resources',
         field: 'name',
         width: 250,
-        type: 'tree',
         renderer: ({ record, value }: any) => {
           if (record.isParent) {
             // Plant nodes (parents)
