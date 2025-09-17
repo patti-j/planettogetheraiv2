@@ -60,16 +60,12 @@ export async function getAgentSystemModule(): Promise<AgentSystemContract> {
 
 // Initialize all core modules
 export async function initializeCoreModules(): Promise<void> {
-  console.log('[Federation] Initializing core modules...');
-  
   try {
     // Load core platform first (no dependencies)
     await getCorePlatformModule();
     
     // Load agent system
     await getAgentSystemModule();
-    
-    console.log('[Federation] All core modules initialized successfully');
   } catch (error) {
     console.error('[Federation] Failed to initialize core modules:', error);
     throw error;

@@ -9,7 +9,6 @@ class SimpleFederationRegistry {
   private modules = new Map<string, any>();
   
   register(config: { metadata: any; factory: () => Promise<any> }) {
-    console.log(`[Federation] Registering module: ${config.metadata.id}`);
     this.modules.set(config.metadata.id, config);
   }
   
@@ -42,8 +41,6 @@ export async function initializeFederation(): Promise<void> {
     return Promise.resolve();
   }
 
-  console.log('[Federation] Initializing federation system with stub modules...');
-
   initializationPromise = (async () => {
     try {
       // Register stub modules - these will be replaced with real implementations later
@@ -58,7 +55,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'SharedComponentsContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Shared Components stub module');
           return {
             getAvailableComponents: () => [],
             renderComponent: () => null,
@@ -83,8 +79,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'CorePlatformContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Core Platform stub module');
-          
           return {
             getCurrentUser: async () => {
               // Stub implementation - return mock user
@@ -137,8 +131,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'AgentSystemContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Agent System stub module');
-          
           // Stub agent data
           const agents = [
             { id: 'max', name: 'Max', role: 'General Assistant', status: 'active' },
@@ -198,7 +190,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'ProductionSchedulingContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Production Scheduling stub module');
           return {
             getJobs: async () => ({ success: true, data: [] }),
             getJobById: async (jobId: number) => ({ success: false, error: 'Not found' }),
@@ -227,7 +218,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'ShopFloorContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Shop Floor stub module');
           return {
             getCurrentOperations: async () => ({ success: true, data: [] }),
             updateOperationStatus: async () => ({ success: false, error: 'Not implemented' }),
@@ -252,7 +242,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'QualityManagementContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Quality Management stub module');
           return {
             getInspections: async () => ({ success: true, data: [] }),
             createInspection: async () => ({ success: false, error: 'Not implemented' }),
@@ -277,7 +266,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'InventoryPlanningContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Inventory Planning stub module');
           return {
             getInventoryItems: async () => ({ success: true, data: [] }),
             updateInventoryLevel: async () => ({ success: false, error: 'Not implemented' }),
@@ -302,7 +290,6 @@ export async function initializeFederation(): Promise<void> {
           contract: 'AnalyticsReportingContract'
         },
         factory: async () => {
-          console.log('[Federation] Loading Analytics Reporting stub module');
           return {
             getKPIs: async () => ({ success: true, data: [] }),
             calculateKPI: async () => ({ success: false, error: 'Not implemented' }),
@@ -317,7 +304,6 @@ export async function initializeFederation(): Promise<void> {
         }
       });
       
-      console.log('[Federation] All 8 modules registered successfully');
       isInitialized = true;
     } catch (error) {
       console.error('[Federation] Initialization failed:', error);

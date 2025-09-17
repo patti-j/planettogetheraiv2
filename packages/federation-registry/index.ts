@@ -68,7 +68,6 @@ export class FederationRegistry {
   }
 
   register<T>(registration: ModuleRegistration<T>): void {
-    console.log(`[Federation] Registering module: ${registration.metadata.id}`);
     this.modules.set(registration.metadata.id, registration);
     
     // Initialize module state
@@ -157,8 +156,6 @@ export class FederationRegistry {
       throw new Error(`Module not found: ${moduleId}`);
     }
 
-    console.log(`[Federation] Loading module: ${moduleId}`);
-
     // Check dependencies
     const dependencies: Record<string, any> = {};
     for (const depId of registration.metadata.dependencies) {
@@ -192,10 +189,8 @@ export class FederationRegistry {
         eventBus: this
       });
       const initTime = measureTiming(moduleId, 'initialization');
-      console.log(`[Federation] Module ${moduleId} initialized in ${initTime.toFixed(2)}ms`);
     }
 
-    console.log(`[Federation] Module loaded successfully: ${moduleId}`);
     return instrumentedInstance;
   }
 
