@@ -1,4 +1,4 @@
-// production-schedule-vanilla-strictfix.tsx
+// production-schedule-vanilla-mapfix.tsx
 import React, { useEffect, useRef, useState } from 'react';
 
 declare global {
@@ -65,15 +65,11 @@ function asArray(payload: any): any[] {
   return [];
 }
 
-function toStrId(v: any, fallback: string): string {
-  if (v === null || v === undefined) return fallback;
+function toStr(v: any): string | undefined {
+  if (v === null || v === undefined) return undefined;
   if (typeof v === 'string') return v;
   if (typeof v === 'number') return String(v);
-  if (typeof v === 'object') {
-    if ('id' in v) return toStrId((v as any).id, fallback);
-    if ('_id' in v) return toStrId((v as any)._id, fallback);
-  }
-  try { return String(v); } catch { return fallback; }
+  return String(v);
 }
 
 function getOperationColor(opName?: string) {
@@ -85,30 +81,23 @@ function getOperationColor(opName?: string) {
   return 'cyan';
 }
 
-export default function ProductionScheduleVanillaStrictFix() {
+export default function ProductionScheduleVanillaMapFix() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const initOnce = useRef(false); // StrictMode guard
 
   useEffect(() => {
-    if (initOnce.current) return; // prevent double-run in React 18 StrictMode
-    initOnce.current = true;
-
     let destroyed = false;
     let schedulerInstance: any;
 
     async function init() {
       try {
-        console.log('[Scheduler] useEffect starting…');
         setLoading(true);
         await ensureThemeLink();
         await ensureUmdScript();
-
         const { SchedulerPro } = window.bryntum.schedulerpro;
-        console.log('[Scheduler] SchedulerPro class loaded');
 
-        // Timespan: match standalone
+        // Timespan
         const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
         const endDate   = new Date(2025, 8, 17); endDate.setHours(23, 59, 59, 999);
 
@@ -116,49 +105,51 @@ export default function ProductionScheduleVanillaStrictFix() {
         const [resResp, opsResp] = await Promise.all([
           fetch('/api/resources'),
           fetch('/api/pt-operations')
-        ]).catch((e) => {
-          console.warn('Fetch failed, continuing with empty arrays', e);
-          return [{ ok: false }, { ok: false }] as any;
-        });
+        ]).catch(() => [{ ok: false }, { ok: false }] as any);
 
         const rawResources = resResp && (resResp as any).ok ? await (resResp as any).json() : [];
         const rawOps       = opsResp && (opsResp as any).ok ? await (opsResp as any).json() : [];
-
         const resourcesSrc = asArray(rawResources);
         const opsSrc       = asArray(rawOps);
 
-        console.log(`[Scheduler] Fetched ${resourcesSrc.length} resources, ${opsSrc.length} operations`);
-
-        const resourceData = [
+        // Build resource data using resource.resource_id (string) as the CANONICAL id
+        const mappedResources = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
-          ...resourcesSrc.map((r: any, i: number) => ({
-            id: toStrId(r.resource_id ?? r.external_id ?? r.id ?? r.name, `r${i}`),
-            name: (r.name ?? r.displayName ?? `Resource ${i + 1}`),
-            category: (r.category ?? r.plantName ?? r.area ?? 'Default'),
-            eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
-          }))
+          ...resourcesSrc.map((r: any, i: number) => {
+            const canonicalId = toStr(r.resource_id) ?? toStr(r.id) ?? `r${i}`;
+            return {
+              id: canonicalId, // <-- important
+              name: r.name ?? r.displayName ?? `Resource ${i + 1}`,
+              category: r.category ?? r.plantName ?? r.area ?? 'Default',
+              eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
+            };
+          })
         ];
-        const resourceIdSet = new Set(resourceData.map(r => r.id));
 
+        const idSet = new Set(mappedResources.map(r => r.id));
+        const firstFew = mappedResources.slice(0, 6).map(r => r.id);
+        console.log('[MapFix] Resource ids (first few):', firstFew);
+
+        // Map operations: resourceId must match resource.resource_id
         const seen = new Set<string>();
-        const eventData = opsSrc.map((op: any, i: number) => {
-          const id = toStrId(op.id ?? op.operationId ?? `e${i}`, `e${i}`);
+        const mappedEvents = opsSrc.map((op: any, i: number) => {
+          const id = toStr(op.id) ?? `e${i}`;
           if (seen.has(id)) return null;
           seen.add(id);
 
+          const resourceId = toStr(op.resourceId);
           const start = op.startDate ? new Date(op.startDate)
                         : (op.startTime ? new Date(op.startTime) : null);
           let end = op.endDate ? new Date(op.endDate) : null;
           if (start && !end && op.duration) {
             const e = new Date(start);
-            const hours = op.durationUnit === 'day' ? (op.duration * 24) : (op.duration || 0);
-            e.setHours(e.getHours() + hours);
+            const hrs = op.durationUnit === 'day' ? (op.duration * 24) : (op.duration || 0);
+            e.setHours(e.getHours() + hrs);
             end = e;
           }
 
-          const rawResId = (op.resourceId ?? op.machineId ?? op.resource_id);
-          const resourceId = rawResId ? toStrId(rawResId, 'unscheduled') : 'unscheduled';
-          const isOrphan = resourceId !== 'unscheduled' && !resourceIdSet.has(resourceId);
+          const exists = resourceId ? idSet.has(resourceId) : false;
+          const isUnscheduled = !resourceId || !exists;
 
           return {
             id,
@@ -169,19 +160,21 @@ export default function ProductionScheduleVanillaStrictFix() {
             endDate: end || null,
             duration: op.duration,
             durationUnit: op.durationUnit || 'hour',
-            resourceId: isOrphan ? 'unscheduled' : resourceId,
-            isUnscheduled: !rawResId || isOrphan,
+            resourceId: isUnscheduled ? 'unscheduled' : resourceId,
+            isUnscheduled,
             percentDone: op.percent_done ?? op.percentDone ?? 0,
-            eventColor: (!rawResId || isOrphan) ? '#808080' : (op.eventColor || getOperationColor(op.operationName)),
+            eventColor: isUnscheduled ? '#808080' : (op.eventColor || getOperationColor(op.operationName)),
             draggable: true,
             resizable: true
           };
         }).filter(Boolean) as any[];
 
-        const orphanCount = eventData.filter(e => e.isUnscheduled && e.resourceId === 'unscheduled').length;
-        console.log(`[Scheduler] Creating scheduler with ${resourceData.length} resources, ${eventData.length} events (unscheduled/orphans: ${orphanCount})`);
-        console.log('[Scheduler] Sample resources:', resourceData.slice(0, 5).map(r => `${r.id}:${r.name}`).join(', '));
-        console.log('[Scheduler] Sample events:', eventData.slice(0, 3).map(e => ({ id: e.id, resourceId: e.resourceId, name: e.name })));
+        const orphanCount = mappedEvents.filter(e => e.resourceId === 'unscheduled').length;
+        if (orphanCount) {
+          console.warn(`[MapFix] Orphan events (resourceId not found): ${orphanCount}`);
+          // Print a small sample for quick inspection
+          console.warn('[MapFix] Orphan sample:', mappedEvents.find(e => e.resourceId === 'unscheduled'));
+        }
 
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
@@ -191,8 +184,8 @@ export default function ProductionScheduleVanillaStrictFix() {
           rowHeight: 60,
           barMargin: 8,
           project: {
-            resourceStore: { data: resourceData },
-            eventStore: { data: eventData },
+            resourceStore: { data: mappedResources },
+            eventStore: { data: mappedEvents },
             dependencyStore: { data: [] }
           },
           features: {
@@ -224,33 +217,18 @@ export default function ProductionScheduleVanillaStrictFix() {
           ]
         });
 
-        schedulerInstance.on('eventdrop', ({ eventRecords, targetResourceRecord }: any) => {
-          eventRecords.forEach((eventRecord: any) => {
-            if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
-              eventRecord.isUnscheduled = false;
-              eventRecord.eventColor = getOperationColor(eventRecord.operationName);
-              eventRecord.constraintType = 'startnoearlierthan';
-              eventRecord.constraintDate = eventRecord.startDate;
-            } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
-              eventRecord.isUnscheduled = true;
-              eventRecord.eventColor = '#808080';
-              eventRecord.constraintType = null;
-              eventRecord.constraintDate = null;
-            }
-          });
-        });
-
         if (!destroyed) {
-          window.scheduler = schedulerInstance;
+          // Diagnostics
+          // @ts-ignore
           const rCount = schedulerInstance?.project?.resourceStore?.count;
+          // @ts-ignore
           const eCount = schedulerInstance?.project?.eventStore?.count;
-          console.log('[Scheduler] Scheduler created successfully');
-          console.log('[Scheduler] Bryntum loaded:', { resources: rCount, events: eCount });
+          console.log('[MapFix] Scheduler ready', { resources: rCount, events: eCount });
           setLoading(false);
           setError(null);
         }
       } catch (e: any) {
-        console.error('Failed to initialize vanilla SchedulerPro', e);
+        console.error('[MapFix] Failed to initialize', e);
         if (!destroyed) {
           setError(e?.message || 'Failed to initialize scheduler');
           setLoading(false);
