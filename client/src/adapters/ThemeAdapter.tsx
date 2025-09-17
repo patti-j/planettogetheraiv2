@@ -18,8 +18,26 @@ const ThemeAdapterContext = createContext<ThemeAdapterContextType | undefined>(u
 export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
   const { user } = useAuthAdapter();
   const [isInitialized, setIsInitialized] = useState(false);
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  
+  // Get initial theme from DOM or localStorage to prevent flash
+  const getInitialTheme = (): Theme => {
+    const root = window.document.documentElement;
+    // Check if dark class is already set (from index.html)
+    if (root.classList.contains('dark')) {
+      return 'dark';
+    }
+    // Check localStorage
+    const saved = localStorage.getItem('theme') as Theme;
+    return saved || 'light';
+  };
+  
+  const initialTheme = getInitialTheme();
+  const [theme, setThemeState] = useState<Theme>(initialTheme);
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(
+    initialTheme === 'system' 
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : initialTheme as 'light' | 'dark'
+  );
 
   // Initialize federation system (now using dynamic loading)
   useEffect(() => {
@@ -91,8 +109,13 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
       effectiveTheme = theme as 'light' | 'dark';
     }
 
-    root.classList.remove('light', 'dark');
-    root.classList.add(effectiveTheme);
+    // Only modify classes if the theme actually changed to prevent flash
+    const currentTheme = root.classList.contains('dark') ? 'dark' : 'light';
+    if (currentTheme !== effectiveTheme) {
+      root.classList.remove('light', 'dark');
+      root.classList.add(effectiveTheme);
+    }
+    
     setResolvedTheme(effectiveTheme);
   }, [theme]);
 
@@ -104,8 +127,11 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
     const handleChange = () => {
       const systemTheme = mediaQuery.matches ? 'dark' : 'light';
       const root = window.document.documentElement;
-      root.classList.remove('light', 'dark');
-      root.classList.add(systemTheme);
+      const currentTheme = root.classList.contains('dark') ? 'dark' : 'light';
+      if (currentTheme !== systemTheme) {
+        root.classList.remove('light', 'dark');
+        root.classList.add(systemTheme);
+      }
       setResolvedTheme(systemTheme);
     };
 

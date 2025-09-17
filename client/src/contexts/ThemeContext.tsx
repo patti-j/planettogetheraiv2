@@ -15,8 +15,28 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
-  const [theme, setThemeState] = useState<Theme>('light');
-  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
+  
+  // Initialize theme from localStorage or user preferences to prevent flash
+  const getInitialTheme = (): Theme => {
+    // First check if we already have a theme class set (from index.html)
+    const root = window.document.documentElement;
+    if (root.classList.contains('dark')) {
+      return 'dark';
+    }
+    // Otherwise check localStorage
+    const savedTheme = localStorage.getItem('theme') as Theme;
+    if (savedTheme) {
+      return savedTheme;
+    }
+    return 'light';
+  };
+  
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme());
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>(
+    getInitialTheme() === 'system' 
+      ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      : getInitialTheme() as 'light' | 'dark'
+  );
 
   // Query user preferences
   const { data: preferences } = useQuery<{ theme?: Theme }>({
