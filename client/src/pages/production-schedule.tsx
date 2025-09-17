@@ -87,15 +87,20 @@ export default function ProductionScheduleVanillaMapFix() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    console.log('[MapFix] useEffect started');
     let destroyed = false;
     let schedulerInstance: any;
 
     async function init() {
       try {
+        console.log('[MapFix] init() starting');
         setLoading(true);
         await ensureThemeLink();
+        console.log('[MapFix] theme loaded');
         await ensureUmdScript();
+        console.log('[MapFix] UMD loaded');
         const { SchedulerPro } = window.bryntum.schedulerpro;
+        console.log('[MapFix] SchedulerPro class ready');
 
         // Timespan
         const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
