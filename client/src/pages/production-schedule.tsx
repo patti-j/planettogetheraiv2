@@ -209,6 +209,11 @@ export default function ProductionScheduleVanillaFix() {
         // Remove resourceId from events (assignments handle the relationship)
         const eventsForScheduler = eventData.map(({ resourceId, ...rest }) => rest);
 
+        addDebug(`🔧 Creating scheduler with ${resourceData.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
+        
+        // DEBUG: Log the first few resources to see their structure
+        console.log('First 5 resources being passed to Bryntum:', resourceData.slice(0, 5));
+        
         // Instantiate using store configs (non-deprecated) with AssignmentStore
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
