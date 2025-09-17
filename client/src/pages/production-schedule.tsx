@@ -168,20 +168,60 @@ export default function ProductionSchedulePage() {
     queryKey: ['/api/pt-dependencies'],
   });
 
-  // Transform PT data for Bryntum format
+  // Transform PT data for Bryntum format with hierarchical tree structure
   const transformResourcesForBryntum = (resources: PTResource[]) => {
-    return resources.map((resource, index) => ({
-      id: `resource-${resource.id}`,
-      name: resource.name || `Resource ${resource.id}`,
-      category: resource.category || 'Manufacturing',
-      capacity: resource.capacity || 100,
-      efficiency: resource.efficiency || 100,
-      isBottleneck: resource.isBottleneck || false,
-      plantName: resource.plantName || 'Main Plant',
-      iconCls: resource.isBottleneck ? 'b-fa b-fa-exclamation-triangle' : 'b-fa b-fa-industry',
-      eventColor: resource.isBottleneck ? 'red' : (index % 2 === 0 ? 'blue' : 'green'),
-      active: resource.active !== false
-    }));
+    // Group resources by plant
+    const plantGroups = new Map<string, PTResource[]>();
+    resources.forEach(resource => {
+      const plantName = resource.plantName || 'Main Plant';
+      if (!plantGroups.has(plantName)) {
+        plantGroups.set(plantName, []);
+      }
+      plantGroups.get(plantName)!.push(resource);
+    });
+
+    const result: any[] = [];
+    
+    // Create hierarchical structure: Plants as parents, Resources as children
+    plantGroups.forEach((plantResources, plantName) => {
+      // Add plant node (parent)
+      const plantNode = {
+        id: `plant-${plantName.replace(/\s+/g, '-').toLowerCase()}`,
+        name: `🏭 ${plantName}`,
+        expanded: true, // Show expanded by default
+        children: [] as any[],
+        // Plant-level properties
+        category: 'Plant',
+        iconCls: 'b-fa b-fa-building',
+        eventColor: 'gray',
+        // Tree properties
+        leaf: false
+      };
+
+      // Add resources as children of the plant
+      plantResources.forEach((resource, index) => {
+        const resourceNode = {
+          id: `resource-${resource.id}`,
+          name: resource.name || `Resource ${resource.id}`,
+          category: resource.category || 'Manufacturing',
+          capacity: resource.capacity || 100,
+          efficiency: resource.efficiency || 100,
+          isBottleneck: resource.isBottleneck || false,
+          plantName: plantName,
+          iconCls: resource.isBottleneck ? 'b-fa b-fa-exclamation-triangle' : 'b-fa b-fa-industry',
+          eventColor: resource.isBottleneck ? 'red' : (index % 2 === 0 ? 'blue' : 'green'),
+          active: resource.active !== false,
+          // Tree properties
+          leaf: true
+        };
+        
+        plantNode.children.push(resourceNode);
+      });
+
+      result.push(plantNode);
+    });
+
+    return result;
   };
 
   // Transform operations for Bryntum (events without resourceId - Scheduler Pro pattern)
@@ -417,6 +457,31 @@ export default function ProductionSchedulePage() {
       
       // Resource utilization
       resourceTimeRanges: true,
+      
+      // Tree feature for hierarchical resource grouping
+      tree: {
+        // Enable tree functionality
+        parentIdField: 'parentId',
+        expandOnLoad: true, // Expand all nodes by default
+        // Tree column configuration
+        column: {
+          text: 'Resources',
+          field: 'name',
+          width: 250,
+          // Show expand/collapse icons
+          cellCls: 'b-tree-cell',
+          renderer: ({ record, value }: any) => {
+            if (record.isParent) {
+              // Plant nodes (parents)
+              return `<i class="${record.iconCls || 'b-fa b-fa-building'}"></i> ${value}`;
+            } else {
+              // Resource nodes (children)
+              const bottleneckIcon = record.isBottleneck ? ' <i class="b-fa b-fa-exclamation-triangle text-red-500"></i>' : '';
+              return `<i class="${record.iconCls || 'b-fa b-fa-industry'}"></i> ${value}${bottleneckIcon}`;
+            }
+          }
+        }
+      },
       
       // Export features
       pdfExport: {
