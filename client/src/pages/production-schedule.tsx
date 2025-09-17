@@ -1,46 +1,70 @@
-// production-schedule.tsx (simplified, working version)
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import { ProjectModel } from '@bryntum/schedulerpro';
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+// production-schedule-vanilla.tsx
+import React, { useEffect, useRef, useState } from 'react';
 
-type PTResource = {
-  id: number;
-  name: string;
-  plantName?: string;
-  capacity?: number;
-  efficiency?: number;
-  isBottleneck?: boolean;
-  active?: boolean;
-};
+// This component embeds Bryntum Scheduler Pro via the UMD bundle (`/schedulerpro.umd.js`)
+// and theme CSS (`/schedulerpro.classic-light.css`) — same as your working HTML.
+// It mirrors the unscheduled lane, drag-to-schedule behavior, tooltips, percent bar,
+// and date span used in your standalone page.
+//
+// Prereqs (match your standalone page):
+//   • Host these assets somewhere your app can reach them:
+//       /schedulerpro.umd.js
+//       /schedulerpro.classic-light.css
+//   • Your backend should expose:
+//       GET /api/resources
+//       GET /api/pt-operations
+//
+// Notes:
+//   • We dynamically inject the CSS/JS if they're not already present.
+//   • On unmount, we destroy the Bryntum instance to avoid leaks.
 
-type PTOperation = {
-  id: number;
-  name: string;
-  jobName?: string;
-  operationName?: string;
-  resourceId?: number | string;   // PT numeric; we'll map to string
-  startDate?: string;             // ISO
-  endDate?: string;               // ISO
-  duration?: number;              // hours (if no endDate)
-  durationUnit?: 'hour' | 'minute' | 'day';
-  percent_done?: number;
-  eventColor?: string;
-  isUnscheduled?: boolean;
-};
+declare global {
+  interface Window {
+    bryntum?: any;
+    scheduler?: any;
+  }
+}
 
-type PTDependency = {
-  id: string;
-  from: number | string;
-  to: number | string;
-  type?: number;     // 2 = FS
-  lag?: number;
-  lagUnit?: 'hour' | 'day';
-};
+const THEME_HREF = '/schedulerpro.classic-light.css?v=3';
+const UMD_SRC    = '/schedulerpro.umd.js';
 
-const UNSCHEDULED_ID = 'unscheduled';
+function ensureThemeLink(): Promise<void> {
+  return new Promise((resolve) => {
+    const id = 'bryntum-scheduler-theme-link';
+    const existing = document.getElementById(id) as HTMLLinkElement | null;
+    if (existing) return resolve();
 
-// Color helper similar to your HTML getOperationColor()
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = THEME_HREF;
+    link.onload = () => resolve();
+    link.onerror = () => resolve();
+    document.head.appendChild(link);
+  });
+}
+
+function ensureUmdScript(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (window.bryntum?.schedulerpro) return resolve();
+    const id = 'bryntum-scheduler-umd-script';
+    const existing = document.getElementById(id) as HTMLScriptElement | null;
+    if (existing) {
+      existing.addEventListener('load', () => resolve(), { once: true });
+      existing.addEventListener('error', () => reject(new Error('Failed to load Bryntum UMD')), { once: true });
+      return;
+    }
+    const script = document.createElement('script');
+    script.id = id;
+    script.src = UMD_SRC;
+    script.async = true;
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error('Failed to load Bryntum UMD'));
+    document.body.appendChild(script);
+  });
+}
+
+// Color helper similar to your HTML
 function getOperationColor(opName?: string) {
   const s = (opName || '').toLowerCase();
   if (s.includes('cut')) return 'blue';
@@ -50,67 +74,65 @@ function getOperationColor(opName?: string) {
   return 'cyan';
 }
 
-export default function ProductionSchedulePage() {
-  const schedulerRef = useRef<any>(null);
-  const projectRef = useRef<ProjectModel | null>(null);
-
-  // Timespan - use broader range to capture all operations
-  const startDate = useMemo(() => new Date(2025, 7, 1, 0, 0, 0, 0), []); // August 1, 2025
-  const endDate   = useMemo(() => new Date(2025, 9, 31, 23, 59, 59, 999), []); // October 31, 2025
-
-  // App state 
+export default function ProductionScheduleVanilla() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Initialize ProjectModel and load PT data
   useEffect(() => {
-    let cancelled = false;
+    let destroyed = false;
+    let schedulerInstance: any;
 
-    async function load() {
+    async function init() {
       try {
         setLoading(true);
+        await ensureThemeLink();
+        await ensureUmdScript();
 
-        // Create ProjectModel instance
-        const project = new ProjectModel({
-          autoLoad: false,
-          autoSync: false
-        });
+        const { SchedulerPro } = window.bryntum.schedulerpro;
 
-        projectRef.current = project;
+        // Timespan: Sep 3–17, 2025 (matches the standalone page)
+        const startDate = new Date(2025, 8, 3); // months 0-based
+        startDate.setHours(0, 0, 0, 0);
+        const endDate = new Date(2025, 8, 17);
+        endDate.setHours(23, 59, 59, 999);
 
-        // Replace with your actual endpoints if different:
-        const [resRes, opsRes] = await Promise.all([
-          fetch('/api/pt-resources'),
+        // Fetch resources and PT operations from your backend (same routes as the HTML)
+        let resources: any[] = [];
+        let ptOperations: any[] = [];
+
+        const [resResp, opsResp] = await Promise.all([
+          fetch('/api/resources'),
           fetch('/api/pt-operations')
         ]);
 
-        const ptResources: PTResource[]  = await resRes.json();
-        const ptOperations: PTOperation[] = await opsRes.json();
+        resources = resResp.ok ? await resResp.json() : [];
+        ptOperations = opsResp.ok ? await opsResp.json() : [];
 
-        // Map PT resources to Bryntum resources
-        const mappedResources = [
-          // Unscheduled lane at the top
-          {
-            id: UNSCHEDULED_ID,
-            name: 'Unscheduled',
-            category: 'Queue',
-            eventColor: '#808080'
-          },
-          ...ptResources.map((r, i) => ({
-            id: String(r.id), // PT resources already have string IDs
-            name: r.name || `Resource ${r.id}`,
-            category: r.plantName || 'Main Plant',
+        // If backend not ready, add minimal sample data (optional)
+        if (!resources || resources.length === 0) {
+          resources = [
+            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
+            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' }
+          ];
+        }
+
+        // Add the "Unscheduled" lane at the top
+        const resourceData = [
+          { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
+          ...resources.map((r: any, i: number) => ({
+            id: String(r.id ?? r.external_id ?? r.name ?? `r${i}`),
+            name: r.name ?? `Resource ${i + 1}`,
+            category: r.category ?? r.plantName ?? 'Default',
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
           }))
         ];
 
-        console.log('🔧 Mapped Resources:', mappedResources);
+        // Map PT operations to events
+        const eventData = (ptOperations || []).map((op: any) => {
+          const start = op.startDate ? new Date(op.startDate) : (op.startTime ? new Date(op.startTime) : null);
+          let end = op.endDate ? new Date(op.endDate) : null;
 
-        // Map PT operations to Bryntum events; if resourceId missing ⇒ unscheduled
-        const mappedEvents = ptOperations.map(op => {
-          const start = op.startDate ? new Date(op.startDate) : null;
-          let end     = op.endDate ? new Date(op.endDate) : null;
-
-          // If only duration present, compute end
           if (start && !end && op.duration) {
             const e = new Date(start);
             const hours = op.durationUnit === 'day' ? (op.duration * 24) : (op.duration || 0);
@@ -118,9 +140,8 @@ export default function ProductionSchedulePage() {
             end = e;
           }
 
-          // PT operations have string resourceId, check if it exists
-          const unscheduled = !op.resourceId || op.resourceId === '0' || op.resourceId === 0;
-          const resourceId = unscheduled ? UNSCHEDULED_ID : String(op.resourceId);
+          const unscheduled = !op.resourceId || op.resourceId === 0;
+          const resourceId = unscheduled ? 'unscheduled' : String(op.resourceId);
 
           return {
             id: String(op.id),
@@ -140,153 +161,110 @@ export default function ProductionSchedulePage() {
           };
         });
 
-        console.log('🔧 Mapped Events:', mappedEvents.slice(0, 3));
-        console.log('🔧 Resource IDs in events:', [...new Set(mappedEvents.map(e => e.resourceId))]);
+        // Create the scheduler like in the HTML (vanilla)
+        schedulerInstance = new SchedulerPro({
+          appendTo: containerRef.current!,
+          startDate,
+          endDate,
+          viewPreset: 'dayAndWeek',
+          rowHeight: 60,
+          barMargin: 8,
+          // Project inline data
+          project: {
+            resourcesData: resourceData,
+            eventsData: eventData,
+            dependenciesData: []
+          },
+          // Features mirroring the HTML
+          features: {
+            dependencies: true,
+            eventDrag: {
+              showTooltip: true,
+              constrainDragToResource: false
+            },
+            eventResize: { showTooltip: true },
+            eventTooltip: {
+              template: ({ eventRecord }: any) => `
+                <div style="padding:10px">
+                  <strong>${eventRecord.name}</strong><br>
+                  ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
+                  ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || 'hour'}<br>` : ''}
+                  Progress: ${eventRecord.percentDone ?? 0}%
+                  ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠️ Unscheduled - Drag to a resource</span>' : ''}
+                  ${eventRecord.jobName ? `<br>Job: ${eventRecord.jobName}` : ''}
+                  ${eventRecord.operationName ? `<br>Operation: ${eventRecord.operationName}` : ''}
+                </div>
+              `
+            },
+            timeRanges: { showCurrentTimeLine: true },
+            percentBar: true,
+            nonWorkingTime: true,
+            eventMenu: true,
+            scheduleMenu: true
+          },
+          columns: [
+            { text: 'Resource', field: 'name', width: 200 },
+            { text: 'Category', field: 'category', width: 150 }
+          ]
+        });
 
-        // Optional: infer simple FS dependencies by job sequence if you have hints
-        // Exactly like your HTML: build dependencies between sequential ops on different resources
-        const inferredDeps: PTDependency[] = []; // keep empty unless you have data
-        const mappedDeps = inferredDeps.map(d => ({
-          id: d.id,
-          from: String(d.from),
-          to: String(d.to),
-          type: d.type ?? 2,
-          lag: d.lag ?? 0,
-          lagUnit: d.lagUnit ?? 'hour'
-        }));
-
-        if (!cancelled) {
-          // Load data into the project model
-          await project.loadInlineData({
-            resources: mappedResources,
-            events: mappedEvents,
-            dependencies: mappedDeps
+        // Unschedule <-> schedule drag logic (from your HTML)
+        schedulerInstance.on('eventdrop', ({ eventRecords, targetResourceRecord }: any) => {
+          eventRecords.forEach((eventRecord: any) => {
+            if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
+              eventRecord.isUnscheduled = false;
+              eventRecord.eventColor = getOperationColor(eventRecord.operationName);
+              eventRecord.constraintType = 'startnoearlierthan';
+              eventRecord.constraintDate = eventRecord.startDate;
+            } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
+              eventRecord.isUnscheduled = true;
+              eventRecord.eventColor = '#808080';
+              eventRecord.constraintType = null;
+              eventRecord.constraintDate = null;
+            }
           });
+        });
+
+        if (!destroyed) {
+          window.scheduler = schedulerInstance;
+          setLoading(false);
+          setError(null);
         }
-      } catch (e) {
-        console.error('Failed to load schedule data', e);
-      } finally {
-        if (!cancelled) setLoading(false);
+      } catch (e: any) {
+        console.error('Failed to initialize vanilla SchedulerPro', e);
+        if (!destroyed) {
+          setError(e?.message || 'Failed to initialize scheduler');
+          setLoading(false);
+        }
       }
     }
 
-    load();
-    return () => { cancelled = true; };
-  }, []);
+    init();
 
-  // Features and renderers (mirror your HTML)
-  const features = useMemo(() => ({
-    dependencies: true,
-    eventDrag: {
-      showTooltip: true,
-      constrainDragToResource: false,
-      // Allow dragging from Unscheduled to a real resource (and vice versa)
-      validatorFn() { return true; }
-    },
-    eventResize: { showTooltip: true },
-    eventTooltip: {
-      template: ({ eventRecord }: any) => `
-        <div style="padding:10px">
-          <strong>${eventRecord.name}</strong><br>
-          ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ``}
-          ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || `hour`}<br>` : ``}
-          Progress: ${eventRecord.percentDone ?? 0}%
-          ${eventRecord.isUnscheduled ? `<br><span style="color:orange;font-weight:bold;">⚠️ Unscheduled - Drag to a resource</span>` : ``}
-          ${eventRecord.jobName ? `<br>Job: ${eventRecord.jobName}` : ``}
-          ${eventRecord.operationName ? `<br>Operation: ${eventRecord.operationName}` : ``}
-        </div>
-      `
-    },
-    timeRanges: { showCurrentTimeLine: true },
-    percentBar: true,
-    nonWorkingTime: true,
-    criticalPaths: false,
-    eventMenu: true,
-    scheduleMenu: true
-  }), []);
-
-  // Match the HTML's renderer (set color + two-line content)
-  const eventRenderer = useMemo(() => {
-    return ({ eventRecord, renderData }: any) => {
-      renderData.eventColor = eventRecord.eventColor;
-      return {
-        html: `
-          <div style="padding:4px;">
-            <div style="font-weight:500;font-size:12px;">${eventRecord.name}</div>
-            <div style="font-size:11px;opacity:0.8;">
-              ${eventRecord.percentDone ?? 0}% complete
-            </div>
-          </div>
-        `
-      };
+    return () => {
+      destroyed = true;
+      try {
+        if (schedulerInstance && schedulerInstance.destroy) {
+          schedulerInstance.destroy();
+        }
+      } catch {}
     };
   }, []);
 
-  // Handle the unscheduled <-> scheduled drag like your HTML
-  const onEventDrop = ({ eventRecords, targetResourceRecord }: any) => {
-    const scheduler = schedulerRef.current?.instance;
-    if (!scheduler) return;
-
-    eventRecords.forEach((ev: any) => {
-      const draggedToUnscheduled = targetResourceRecord?.id === UNSCHEDULED_ID;
-      if (ev.isUnscheduled && !draggedToUnscheduled) {
-        // Now scheduled
-        ev.isUnscheduled = false;
-        ev.eventColor = getOperationColor(ev.operationName);
-        ev.constraintType = 'startnoearlierthan';
-        ev.constraintDate = ev.startDate;
-      } else if (!ev.isUnscheduled && draggedToUnscheduled) {
-        // Back to unscheduled
-        ev.isUnscheduled = true;
-        ev.eventColor = '#808080';
-        ev.constraintType = null;
-        ev.constraintDate = null;
-      }
-    });
-  };
-
-  // Assign project to scheduler when both are ready
-  useEffect(() => {
-    const scheduler = schedulerRef.current?.instance;
-    const project = projectRef.current;
-    
-    if (scheduler && project && !loading) {
-      console.log('🔧 Assigning ProjectModel to scheduler');
-      scheduler.project = project;
-    }
-  }, [loading]);
-
-  // Scheduler config using ProjectModel instance
-  const schedulerConfig = useMemo(() => ({
-    columns: [
-      { text: 'Resource', field: 'name', width: 200 },
-      { text: 'Category', field: 'category', width: 150 }
-    ],
-    viewPreset: 'dayAndWeek',
-    rowHeight: 60,
-    barMargin: 8,
-    height: 600, // Fix sizing warning
-    startDate,
-    endDate,
-    // No project prop - will be assigned via scheduler.project property
-    features,
-    eventRenderer
-  }), [startDate, endDate, features, eventRenderer]);
-
   return (
-    <div style={{ padding: 16 }}>
-      {loading ? (
-        <div style={{ height: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div>Loading production schedule…</div>
-        </div>
-      ) : (
-        <BryntumSchedulerPro
-          ref={schedulerRef}
-          {...schedulerConfig}
-          // Events
-          onEventDrop={onEventDrop}
-        />
-      )}
+    <div className="flex flex-col h-[700px]">
+      <div className="flex-1 relative" ref={containerRef}>
+        {loading && (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div>Loading production schedule…</div>
+          </div>
+        )}
+        {error && (
+          <div className="absolute inset-0 flex items-center justify-center text-red-600">
+            {error}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
