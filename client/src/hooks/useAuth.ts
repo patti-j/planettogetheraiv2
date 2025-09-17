@@ -224,14 +224,13 @@ export function useAuth() {
       if (userData && userData.roles && Array.isArray(userData.roles)) {
         userData.roles = userData.roles.map((role: any) => {
           if (!role.permissions || role.permissions.length === 0) {
-            console.log(`🔧 [auth/me] Applying hardcoded permissions for role: ${role.name}`);
+            // Silently apply hardcoded permissions
             return createRoleStructure(role.name);
           }
           return role;
         });
       } else if (userData) {
-        // No roles at all - apply default Administrator role
-        console.log('🔧 [auth/me] No roles found, applying default Administrator role');
+        // No roles at all - apply default Administrator role silently
         userData.roles = [createRoleStructure('Administrator')];
       }
       
@@ -459,27 +458,12 @@ export function usePermissions() {
       return false;
     }
 
-    // Debug logging to understand permission checking
-    console.log(`🔍 Checking permission: feature="${feature}", action="${action}"`);
-    console.log('User roles:', user.roles.map(r => r.name));
-    
+    // Check permissions without logging
     const hasAccess = user.roles.some(role => {
-      const roleHasPermission = role.permissions?.some(permission => {
-        const matches = permission.feature === feature && permission.action === action;
-        if (matches) {
-          console.log(`✅ Found matching permission in role "${role.name}": ${permission.feature}-${permission.action}`);
-        }
-        return matches;
+      return role.permissions?.some(permission => {
+        return permission.feature === feature && permission.action === action;
       });
-      return roleHasPermission;
     });
-    
-    if (!hasAccess) {
-      console.log(`❌ Permission denied for ${feature}-${action}`);
-      console.log('Available permissions:', user.roles.flatMap(r => 
-        r.permissions?.map(p => `${p.feature}-${p.action}`) || []
-      ));
-    }
     
     return hasAccess;
   };

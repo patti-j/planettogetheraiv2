@@ -6,8 +6,17 @@
     <title>PlanetTogether - Production Scheduling Software</title>
     <link rel="icon" type="image/png" href="/favicon.png" />
     <script>
-      // Immediately set AI theme colors to prevent flash
+      // Prevent theme flash by immediately setting theme before React loads
       (function() {
+        // CRITICAL: Set theme immediately to prevent dark mode flash
+        const storedTheme = localStorage.getItem('theme') || 'light';
+        if (storedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+        } else {
+          document.documentElement.classList.remove('dark');
+        }
+        
+        // AI theme colors
         const colors = {
           'purple-pink': { from: '280 83% 62%', to: '323 86% 66%' },
           'blue-indigo': { from: '213 94% 68%', to: '239 84% 67%' },
@@ -24,9 +33,6 @@
         // Set CSS variables immediately
         document.documentElement.style.setProperty('--ai-gradient-from', theme.from);
         document.documentElement.style.setProperty('--ai-gradient-to', theme.to);
-
-        // Remove automatic auth token setting - let user login manually
-        // Auth tokens should only be set via proper login flow
       })();
     </script>
     <!-- Bryntum Scheduler Pro CSS -->
