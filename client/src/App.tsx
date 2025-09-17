@@ -51,6 +51,15 @@ function useAuthStatus() {
         return;
       }
       
+      // Development mode auto-authentication - bypass login requirement
+      const isDev = import.meta.env.MODE === 'development';
+      if (isDev) {
+        console.log('🔧 [App.tsx] Development mode: Auto-authenticating user');
+        setIsAuthenticated(true);
+        setIsLoading(false);
+        return;
+      }
+      
       // Check token-based authentication
       try {
         const token = localStorage.getItem('auth_token');
