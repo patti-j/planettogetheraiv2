@@ -1,10 +1,12 @@
-// production-schedule-vanilla-fix.tsx
+// production-schedule-vanilla-strictfix.tsx
 import React, { useEffect, useRef, useState } from 'react';
 
 declare global {
   interface Window {
     bryntum?: any;
     scheduler?: any;
+    __PT_SCHEDULER_UMD_LOADING__?: boolean;
+    __PT_SCHEDULER_UMD_LOADED__?: boolean;
   }
 }
 
@@ -28,20 +30,27 @@ function ensureThemeLink(): Promise<void> {
 
 function ensureUmdScript(): Promise<void> {
   return new Promise((resolve, reject) => {
-    if (window.bryntum?.schedulerpro) return resolve();
-    const id = 'bryntum-scheduler-umd-script';
-    const existing = document.getElementById(id) as HTMLScriptElement | null;
-    if (existing) {
-      existing.addEventListener('load', () => resolve(), { once: true });
-      existing.addEventListener('error', () => reject(new Error('Failed to load Bryntum UMD')), { once: true });
+    if (window.bryntum?.schedulerpro || window.__PT_SCHEDULER_UMD_LOADED__) return resolve();
+    if (window.__PT_SCHEDULER_UMD_LOADING__) {
+      const onReady = () => resolve();
+      window.addEventListener('__pt_scheduler_umd_ready__', onReady, { once: true });
       return;
     }
+    window.__PT_SCHEDULER_UMD_LOADING__ = true;
     const script = document.createElement('script');
-    script.id = id;
+    script.id = 'bryntum-scheduler-umd-script';
     script.src = UMD_SRC;
     script.async = true;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Failed to load Bryntum UMD'));
+    script.onload = () => {
+      window.__PT_SCHEDULER_UMD_LOADING__ = false;
+      window.__PT_SCHEDULER_UMD_LOADED__ = true;
+      window.dispatchEvent(new Event('__pt_scheduler_umd_ready__'));
+      resolve();
+    };
+    script.onerror = () => {
+      window.__PT_SCHEDULER_UMD_LOADING__ = false;
+      reject(new Error('Failed to load Bryntum UMD'));
+    };
     document.body.appendChild(script);
   });
 }
@@ -76,40 +85,28 @@ function getOperationColor(opName?: string) {
   return 'cyan';
 }
 
-export default function ProductionScheduleVanillaFix() {
-  // DETAILED DEBUGGING - visible on page instead of console
-  const [debugLog, setDebugLog] = useState<string[]>(['🔧 Component started']);
-  
-  const addDebug = (msg: string) => {
-    setDebugLog(prev => [...prev, msg]);
-  };
-  
+export default function ProductionScheduleVanillaStrictFix() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Add debug immediately
-  React.useEffect(() => {
-    addDebug('🔧 useEffect triggered');
-  }, []);
+  const initOnce = useRef(false); // StrictMode guard
 
   useEffect(() => {
-    addDebug('🔧 useEffect starting...');
+    if (initOnce.current) return; // prevent double-run in React 18 StrictMode
+    initOnce.current = true;
+
     let destroyed = false;
     let schedulerInstance: any;
 
     async function init() {
       try {
-        addDebug('🔧 Init function starting...');
+        console.log('[Scheduler] useEffect starting…');
         setLoading(true);
-        addDebug('🔧 Loading theme CSS...');
         await ensureThemeLink();
-        addDebug('🔧 Loading Bryntum UMD script...');
         await ensureUmdScript();
-        addDebug('🔧 Assets loaded successfully');
 
         const { SchedulerPro } = window.bryntum.schedulerpro;
-        addDebug('🔧 SchedulerPro class loaded');
+        console.log('[Scheduler] SchedulerPro class loaded');
 
         // Timespan: match standalone
         const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
@@ -126,31 +123,26 @@ export default function ProductionScheduleVanillaFix() {
 
         const rawResources = resResp && (resResp as any).ok ? await (resResp as any).json() : [];
         const rawOps       = opsResp && (opsResp as any).ok ? await (opsResp as any).json() : [];
-        
-        addDebug(`🔧 Fetched ${rawResources.length} raw resources, ${rawOps.length} raw operations`);
 
-        // Normalize
         const resourcesSrc = asArray(rawResources);
         const opsSrc       = asArray(rawOps);
+
+        console.log(`[Scheduler] Fetched ${resourcesSrc.length} resources, ${opsSrc.length} operations`);
 
         const resourceData = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
           ...resourcesSrc.map((r: any, i: number) => ({
-            id: toStrId(r.resource_id ?? r.id ?? r.external_id ?? r.resourceId ?? r.name, `r${i}`),
+            id: toStrId(r.id ?? r.external_id ?? r.resourceId ?? r.name, `r${i}`),
             name: (r.name ?? r.displayName ?? `Resource ${i + 1}`),
             category: (r.category ?? r.plantName ?? r.area ?? 'Default'),
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
           }))
         ];
-        
-        addDebug(`🔧 Created ${resourceData.length} resource entries (including Unscheduled)`);
-
         const resourceIdSet = new Set(resourceData.map(r => r.id));
 
-        // Deduplicate events by id, normalize resourceId to string
         const seen = new Set<string>();
         const eventData = opsSrc.map((op: any, i: number) => {
-          const id = toStrId(op.operation_id ?? op.id ?? op.operationId ?? `e${i}`, `e${i}`);
+          const id = toStrId(op.id ?? op.operationId ?? `e${i}`, `e${i}`);
           if (seen.has(id)) return null;
           seen.add(id);
 
@@ -165,8 +157,8 @@ export default function ProductionScheduleVanillaFix() {
           }
 
           const rawResId = (op.resourceId ?? op.machineId ?? op.resource_id);
-          const unscheduled = !rawResId || rawResId === 0 || rawResId === '0' || rawResId === 'unscheduled';
-          const resourceId = unscheduled ? 'unscheduled' : toStrId(rawResId, 'unscheduled');
+          const resourceId = rawResId ? toStrId(rawResId, 'unscheduled') : 'unscheduled';
+          const isOrphan = resourceId !== 'unscheduled' && !resourceIdSet.has(resourceId);
 
           return {
             id,
@@ -177,58 +169,30 @@ export default function ProductionScheduleVanillaFix() {
             endDate: end || null,
             duration: op.duration,
             durationUnit: op.durationUnit || 'hour',
-            resourceId,
-            isUnscheduled: unscheduled || !resourceIdSet.has(String(resourceId)),
+            resourceId: isOrphan ? 'unscheduled' : resourceId,
+            isUnscheduled: !rawResId || isOrphan,
             percentDone: op.percent_done ?? op.percentDone ?? 0,
-            eventColor: unscheduled ? '#808080' : (op.eventColor || getOperationColor(op.operationName)),
+            eventColor: (!rawResId || isOrphan) ? '#808080' : (op.eventColor || getOperationColor(op.operationName)),
             draggable: true,
             resizable: true
           };
         }).filter(Boolean) as any[];
 
-        // Mark orphans (resourceId not in store) as unscheduled
-        const orphans = eventData.filter(e => e.resourceId !== 'unscheduled' && !resourceIdSet.has(String(e.resourceId)));
-        if (orphans.length) {
-          console.warn(`[Scheduler] Found ${orphans.length} events with non-matching resourceId. Example:`, orphans[0]);
-          for (const ev of orphans) {
-            ev.isUnscheduled = true;
-            ev.resourceId = 'unscheduled';
-            ev.eventColor = '#808080';
-          }
-        }
+        const orphanCount = eventData.filter(e => e.isUnscheduled && e.resourceId === 'unscheduled').length;
+        console.log(`[Scheduler] Creating scheduler with ${resourceData.length} resources, ${eventData.length} events (unscheduled/orphans: ${orphanCount})`);
+        console.log('[Scheduler] Sample resources:', resourceData.slice(0, 5).map(r => `${r.id}:${r.name}`).join(', '));
+        console.log('[Scheduler] Sample events:', eventData.slice(0, 3).map(e => ({ id: e.id, resourceId: e.resourceId, name: e.name })));
 
-        // Create assignments (required for Scheduler Pro functionality)
-        const assignments = eventData
-          .filter(e => e.resourceId) // Include all events, even unscheduled
-          .map((e, i) => ({
-            id: `a-${e.id}`,
-            eventId: e.id,
-            resourceId: e.resourceId
-          }));
-
-        // Remove resourceId from events (assignments handle the relationship)
-        const eventsForScheduler = eventData.map(({ resourceId, ...rest }) => rest);
-
-        addDebug(`🔧 Creating scheduler with ${resourceData.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
-        
-        // DEBUG: Log the first few resources to see their structure in visual debug
-        addDebug(`🔧 Sample resources: ${resourceData.slice(0, 3).map(r => `${r.id}:${r.name}`).join(', ')}`);
-        
-        // Instantiate using store configs (non-deprecated) with AssignmentStore
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
           startDate,
           endDate,
           viewPreset: 'dayAndWeek',
-          rowHeight: 50,
-          barMargin: 4,
-          height: '100%',
-          width: '100%',
-          autoHeight: false,
+          rowHeight: 60,
+          barMargin: 8,
           project: {
             resourceStore: { data: resourceData },
-            eventStore: { data: eventsForScheduler },
-            assignmentStore: { data: assignments },
+            eventStore: { data: eventData },
             dependencyStore: { data: [] }
           },
           features: {
@@ -278,30 +242,10 @@ export default function ProductionScheduleVanillaFix() {
 
         if (!destroyed) {
           window.scheduler = schedulerInstance;
-          addDebug(`🔧 Scheduler created successfully`);
-          
-          // DEBUG: Check what Bryntum actually loaded
-          setTimeout(() => {
-            const resourceStore = schedulerInstance.project.resourceStore;
-            const eventStore = schedulerInstance.project.eventStore;
-            addDebug(`🔧 Bryntum loaded: ${resourceStore.count} resources, ${eventStore.count} events`);
-            
-            // Log resource names
-            const resourceNames = resourceStore.records.map((r: any) => r.name).slice(0, 5);
-            addDebug(`🔧 Resource names: ${resourceNames.join(', ')}`);
-            
-            // Force scheduler refresh to ensure all rows are visible
-            schedulerInstance.refresh();
-            addDebug(`🔧 Forced scheduler refresh`);
-          }, 500);
-          // Diagnostics
-          // @ts-ignore
           const rCount = schedulerInstance?.project?.resourceStore?.count;
-          // @ts-ignore
           const eCount = schedulerInstance?.project?.eventStore?.count;
-          console.log('[Scheduler] Ready', { resources: rCount, events: eCount });
-          console.log('[Scheduler] Resource IDs:', Array.from(resourceIdSet).slice(0, 10), '...');
-          console.log('[Scheduler] Sample event:', eventData[0]);
+          console.log('[Scheduler] Scheduler created successfully');
+          console.log('[Scheduler] Bryntum loaded:', { resources: rCount, events: eCount });
           setLoading(false);
           setError(null);
         }
@@ -319,8 +263,9 @@ export default function ProductionScheduleVanillaFix() {
     return () => {
       destroyed = true;
       try {
-        if (schedulerInstance && schedulerInstance.destroy) {
-          schedulerInstance.destroy();
+        if (window.scheduler && window.scheduler.destroy) {
+          window.scheduler.destroy();
+          window.scheduler = undefined;
         }
       } catch {}
     };
@@ -328,15 +273,6 @@ export default function ProductionScheduleVanillaFix() {
 
   return (
     <div className="flex flex-col h-[700px]">
-      {/* Debug info - Visual debugging */}
-      <div className="bg-yellow-100 p-2 text-xs border">
-        <div><strong>Debug Status:</strong> Loading={loading.toString()}, Error={error || 'none'}</div>
-        <div><strong>Debug Log:</strong></div>
-        {debugLog.map((log, i) => (
-          <div key={i} className="text-xs text-gray-600">• {log}</div>
-        ))}
-      </div>
-      
       <div className="flex-1 relative" ref={containerRef}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
