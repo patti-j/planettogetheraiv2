@@ -168,60 +168,20 @@ export default function ProductionSchedulePage() {
     queryKey: ['/api/pt-dependencies'],
   });
 
-  // Transform PT data for Bryntum format with hierarchical tree structure
+  // Transform PT data for Bryntum format - simple flat list like working HTML version
   const transformResourcesForBryntum = (resources: PTResource[]) => {
-    // Group resources by plant
-    const plantGroups = new Map<string, PTResource[]>();
-    resources.forEach(resource => {
-      const plantName = resource.plantName || 'Main Plant';
-      if (!plantGroups.has(plantName)) {
-        plantGroups.set(plantName, []);
-      }
-      plantGroups.get(plantName)!.push(resource);
-    });
-
-    const result: any[] = [];
-    
-    // Create hierarchical structure: Plants as parents, Resources as children
-    plantGroups.forEach((plantResources, plantName) => {
-      // Add plant node (parent)
-      const plantNode = {
-        id: `plant-${plantName.replace(/\s+/g, '-').toLowerCase()}`,
-        name: `🏭 ${plantName}`,
-        expanded: true, // Show expanded by default
-        children: [] as any[],
-        // Plant-level properties
-        category: 'Plant',
-        iconCls: 'b-fa b-fa-building',
-        eventColor: 'gray',
-        // Tree properties
-        leaf: false
-      };
-
-      // Add resources as children of the plant
-      plantResources.forEach((resource, index) => {
-        const resourceNode = {
-          id: `resource-${resource.id}`,
-          name: resource.name || `Resource ${resource.id}`,
-          category: resource.category || 'Manufacturing',
-          capacity: resource.capacity || 100,
-          efficiency: resource.efficiency || 100,
-          isBottleneck: resource.isBottleneck || false,
-          plantName: plantName,
-          iconCls: resource.isBottleneck ? 'b-fa b-fa-exclamation-triangle' : 'b-fa b-fa-industry',
-          eventColor: resource.isBottleneck ? 'red' : (index % 2 === 0 ? 'blue' : 'green'),
-          active: resource.active !== false,
-          // Tree properties
-          leaf: true
-        };
-        
-        plantNode.children.push(resourceNode);
-      });
-
-      result.push(plantNode);
-    });
-
-    return result;
+    return resources.map((resource, index) => ({
+      id: `resource-${resource.id}`,
+      name: resource.name || `Resource ${resource.id}`,
+      category: resource.plantName || 'Main Plant', // Show plant in category column
+      capacity: resource.capacity || 100,
+      efficiency: resource.efficiency || 100,
+      isBottleneck: resource.isBottleneck || false,
+      plantName: resource.plantName || 'Main Plant',
+      iconCls: resource.isBottleneck ? 'b-fa b-fa-exclamation-triangle' : 'b-fa b-fa-industry',
+      eventColor: resource.isBottleneck ? 'red' : (index % 2 === 0 ? 'blue' : 'green'),
+      active: resource.active !== false
+    }));
   };
 
   // Transform operations for Bryntum (events without resourceId - Scheduler Pro pattern)
@@ -458,8 +418,7 @@ export default function ProductionSchedulePage() {
       // Resource utilization
       resourceTimeRanges: true,
       
-      // Tree feature for hierarchical resource grouping
-      tree: true,
+      // Remove tree feature - use simple flat list like working HTML version
       
       // Export features
       pdfExport: {
@@ -480,25 +439,19 @@ export default function ProductionSchedulePage() {
     // Columns configuration for resources
     columns: [
       {
-        text: 'Resources',
+        text: 'Resource',
         field: 'name',
-        width: 250,
+        width: 200,
         renderer: ({ record, value }: any) => {
-          if (record.isParent) {
-            // Plant nodes (parents)
-            return `🏭 ${value}`;
-          } else {
-            // Resource nodes (children)
-            const iconClass = record.isBottleneck ? 'text-red-500' : 'text-blue-500';
-            const bottleneckIcon = record.isBottleneck ? ' ⚠️' : '';
-            return `<i class="${record.iconCls} ${iconClass}"></i> ${value}${bottleneckIcon}`;
-          }
+          const iconClass = record.isBottleneck ? 'text-red-500' : 'text-blue-500';
+          const bottleneckIcon = record.isBottleneck ? ' ⚠️' : '';
+          return `<i class="${record.iconCls} ${iconClass}"></i> ${value}${bottleneckIcon}`;
         }
       },
       {
-        text: 'Type',
+        text: 'Plant',
         field: 'category',
-        width: 120
+        width: 150
       },
       {
         text: 'Plant',
