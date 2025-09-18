@@ -38,7 +38,7 @@ export function SchedulingAssistant() {
   const { data: messages = [], isLoading: messagesLoading } = useQuery<SchedulingMessage[]>({
     queryKey: currentConversationId ? ['/api/ai/schedule/messages', currentConversationId] : [],
     queryFn: async () => {
-      const response = await apiRequest(`/api/ai/schedule/messages/${currentConversationId}`, 'GET');
+      const response = await apiRequest('GET', `/api/ai/schedule/messages/${currentConversationId}`);
       return response.json();
     },
     enabled: !!currentConversationId,
@@ -47,7 +47,7 @@ export function SchedulingAssistant() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, conversationId }: { message: string; conversationId?: number }) => {
-      const response = await apiRequest('/api/ai/schedule/query', 'POST', {
+      const response = await apiRequest('POST', '/api/ai/schedule/query', {
         message,
         conversationId,
       });
@@ -75,7 +75,7 @@ export function SchedulingAssistant() {
   // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: number) => {
-      const response = await apiRequest(`/api/ai/schedule/conversations/${conversationId}`, 'DELETE');
+      const response = await apiRequest('DELETE', `/api/ai/schedule/conversations/${conversationId}`);
       return response.json();
     },
     onSuccess: () => {

@@ -867,12 +867,26 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
     const userId = (req as any).userId;
     const { message, conversationId } = req.body;
     
+    console.log('[AI Schedule] Query endpoint called:', {
+      userId,
+      conversationId,
+      messageLength: message?.length,
+      hasAuth: !!req.headers.authorization
+    });
+    
+    if (!userId) {
+      console.error('[AI Schedule] No userId found in request');
+      return res.status(401).json({ error: 'User ID not found in authenticated request' });
+    }
+    
     if (!message || typeof message !== 'string') {
+      console.error('[AI Schedule] Invalid message:', message);
       return res.status(400).json({ error: 'Message is required' });
     }
     
     // Check rate limit
     if (!checkRateLimit(userId)) {
+      console.warn(`[AI Schedule] Rate limit exceeded for user ${userId}`);
       return res.status(429).json({ 
         error: 'Rate limit exceeded. Please wait before sending more requests.' 
       });
@@ -882,6 +896,7 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
     
     // Create new conversation if needed
     if (!convId) {
+      console.log('[AI Schedule] Creating new conversation for user:', userId);
       const title = await schedulingAI.generateTitle(message);
       const conversation = await storage.createSchedulingConversation({
         userId,
@@ -889,6 +904,7 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
         page: 'production-schedule'
       });
       convId = conversation.id;
+      console.log('[AI Schedule] Created conversation:', convId);
     }
     
     // Save user message
@@ -908,6 +924,7 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
       }));
     
     // Generate AI response
+    console.log('[AI Schedule] Generating AI response for conversation:', convId);
     const aiResponse = await schedulingAI.generateResponse(message, formattedHistory);
     
     // Save AI response
@@ -917,12 +934,18 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
       content: aiResponse
     });
     
+    console.log('[AI Schedule] Response generated successfully for user:', userId);
     res.json({
       conversationId: convId,
       message: assistantMessage
     });
   } catch (error) {
-    console.error('AI scheduling query error:', error);
+    console.error('[AI Schedule] Error processing query:', error);
+    console.error('[AI Schedule] Error details:', {
+      userId: (req as any).userId,
+      hasAuth: !!req.headers.authorization,
+      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+    });
     res.status(500).json({ error: 'Failed to process scheduling query' });
   }
 });
