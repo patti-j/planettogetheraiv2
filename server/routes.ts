@@ -774,19 +774,22 @@ router.post("/monitoring-agent/stop", async (req, res) => {
   }
 });
 
-// Serve standalone Bryntum demo HTML page
-router.get("/production-scheduler-demo", (req, res) => {
+// Serve standalone Bryntum demo HTML page  
+router.get("/scheduler-demo", (req, res) => {
   try {
+    console.log('Serving scheduler demo HTML...');
     const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-integrated_1758222440041.html');
     
     // Check if file exists
     if (!fs.existsSync(htmlPath)) {
+      console.error('Demo HTML file not found at:', htmlPath);
       return res.status(404).send('Demo HTML file not found');
     }
     
     // Read and send the HTML file
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-    res.setHeader('Content-Type', 'text/html');
+    console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.send(htmlContent);
   } catch (error) {
     console.error('Error serving demo HTML:', error);
