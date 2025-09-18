@@ -6,6 +6,8 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
+import path from "path";
+import fs from "fs";
 
 // Extend the global namespace to include tokenStore
 declare global {
@@ -769,6 +771,26 @@ router.post("/monitoring-agent/stop", async (req, res) => {
   } catch (error) {
     console.error("Error stopping monitoring agent:", error);
     res.status(500).json({ error: "Failed to stop monitoring agent" });
+  }
+});
+
+// Serve standalone Bryntum demo HTML page
+router.get("/production-scheduler-demo", (req, res) => {
+  try {
+    const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-integrated_1758222440041.html');
+    
+    // Check if file exists
+    if (!fs.existsSync(htmlPath)) {
+      return res.status(404).send('Demo HTML file not found');
+    }
+    
+    // Read and send the HTML file
+    const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlContent);
+  } catch (error) {
+    console.error('Error serving demo HTML:', error);
+    res.status(500).send('Error loading demo page');
   }
 });
 
