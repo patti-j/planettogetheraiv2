@@ -778,7 +778,7 @@ router.post("/monitoring-agent/stop", async (req, res) => {
 router.get("/scheduler-demo", (req, res) => {
   try {
     console.log('Serving scheduler demo HTML...');
-    const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-integrated_1758222440041.html');
+    const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-noUnscheduled.html');
     
     // Check if file exists
     if (!fs.existsSync(htmlPath)) {
