@@ -2,23 +2,17 @@
 import React, { useEffect, useRef, useState } from 'react';
 
 /**
- * ProductionSchedule (vanilla UMD integration)
+ * ProductionSchedule (vanilla UMD integration w/ visual guards)
  * - Loads Bryntum Scheduler Pro via /schedulerpro.umd.js and theme CSS
- * - Uses AssignmentStore (no event.resourceId) to avoid "everything on one resource" issues
- * - Canonical resource id is the string `resource_id` from /api/resources
- * - Maps operations.resourceId (string) to resource.resource_id (string)
- * - Adds an "Unscheduled" lane (events without valid assignment appear there visually)
- * - Drag event between rows updates assignment (or removes it when dropping to Unscheduled)
- * - Single-init guard for React 18 StrictMode
- * - Console diagnostics to spot data mismatches fast
- *
- * Endpoints expected:
- *   GET /api/resources       -> [{ resource_id: "1", name: "Resource A", ... }, ...]
- *   GET /api/pt-operations   -> [{ id, name, resourceId: "1", startDate/endDate or duration* }, ...]
- *
- * Static assets expected (match your standalone HTML):
- *   /schedulerpro.umd.js
- *   /schedulerpro.classic-light.css  (or your chosen theme)
+ * - Uses AssignmentStore (no event.resourceId) to avoid "everything on one resource"
+ * - Canonical resource id: string `resource_id` from /api/resources
+ * - Maps operations.resourceId (string) -> resource.resource_id (string)
+ * - Adds an "Unscheduled" lane for unmatched ops
+ * - Drag between rows updates assignments; drag to Unscheduled removes it
+ * - React 18 single-init guard
+ * - Console diagnostics
+ * - **Visual clarity baked-in**: taller rows, zebra striping, row id / chip rid badges
+ * - **CSS safety bubble**: neutralizes global resets that can desync panels
  */
 
 declare global {
@@ -94,11 +88,12 @@ function S(v: any): string | undefined {
 
 function getOperationColor(opName?: string) {
   const s = (opName || '').toLowerCase();
-  if (s.includes('cut')) return 'blue';
-  if (s.includes('form')) return 'indigo';
-  if (s.includes('paint')) return 'orange';
-  if (s.includes('inspect')) return 'green';
-  return 'cyan';
+  if (s.includes('whirlpool')) return 'blue';
+  if (s.includes('boil') || s.includes('boiling')) return 'indigo';
+  if (s.includes('mash')) return 'cyan';
+  if (s.includes('ferment')) return 'green';
+  if (s.includes('matur')) return 'purple';
+  return 'teal';
 }
 
 export default function ProductionSchedule() {
@@ -120,9 +115,32 @@ export default function ProductionSchedule() {
         await ensureThemeLink();
         await ensureUmdScript();
 
+        // Install a small CSS "bubble" to normalize metrics inside the scheduler only
+        if (!document.getElementById('ptSchedulerGuardCSS')) {
+          const st = document.createElement('style');
+          st.id = 'ptSchedulerGuardCSS';
+          st.textContent = `
+            .pt-scheduler-root { transform: none !important; zoom: normal !important; }
+            .pt-scheduler-root .b-grid,
+            .pt-scheduler-root .b-grid-body,
+            .pt-scheduler-root .b-grid-row,
+            .pt-scheduler-root .b-grid-cell,
+            .pt-scheduler-root .b-sch-timeaxis-cell {
+              font-size: 14px;
+              line-height: 1.3;
+            }
+            /* match rowHeight below */
+            .pt-scheduler-root .b-grid-row,
+            .pt-scheduler-root .b-sch-timeaxis-cell {
+              height: 80px !important;
+            }
+          `;
+          document.head.appendChild(st);
+        }
+
         const { SchedulerPro } = window.bryntum.schedulerpro;
 
-        // Timespan (match your standalone if desired)
+        // Timespan
         const startDate = new Date(2025, 8, 3); startDate.setHours(0, 0, 0, 0);
         const endDate   = new Date(2025, 8, 17); endDate.setHours(23, 59, 59, 999);
 
@@ -142,7 +160,7 @@ export default function ProductionSchedule() {
         const mappedResources = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
           ...resourcesSrc.map((r: any, i: number) => ({
-            id: S(r.resource_id) ?? S(r.id) ?? `r${i}`,           // canonical string id
+            id: S(r.resource_id) ?? S(r.id) ?? `r${i}`,
             name: r.name ?? r.displayName ?? `Resource ${i + 1}`,
             category: r.category ?? r.plantName ?? r.area ?? 'Default',
             eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
@@ -176,7 +194,7 @@ export default function ProductionSchedule() {
             duration: op.duration,
             durationUnit: op.durationUnit || 'hour',
             percentDone: op.percent_finished ?? op.percent_done ?? op.percentDone ?? 0,
-            isUnscheduled: false,            // will be set after assignments mapping
+            isUnscheduled: false,            // set below if no assignment
             eventColor: getOperationColor(op.operationName),
             draggable: true,
             resizable: true
@@ -195,7 +213,7 @@ export default function ProductionSchedule() {
           }
         }
 
-        // Orphans: mark events without assignments as Unscheduled (visual hint via color/flag)
+        // Mark orphans (no assignment) as Unscheduled (visual hint via color/flag)
         const assignedEventIds = new Set(mappedAssignments.map(a => a.eventId));
         for (const ev of mappedEvents) {
           if (!assignedEventIds.has(ev.id)) {
@@ -209,18 +227,15 @@ export default function ProductionSchedule() {
         console.log('[ProdSched] Events sample:', mappedEvents.slice(0, 3).map(e => ({ id: e.id, name: e.name })));
         console.log('[ProdSched] Assignments sample:', mappedAssignments.slice(0, 5));
         const orphanCount = mappedEvents.length - assignedEventIds.size;
-        if (orphanCount) {
-          console.warn(`[ProdSched] Orphan events (no assignment): ${orphanCount}`);
-        }
+        if (orphanCount) console.warn(`[ProdSched] Orphan events (no assignment): ${orphanCount}`);
 
-        // Instantiate SchedulerPro with explicit stores
-        const { SchedulerPro: SP } = window.bryntum.schedulerpro;
-        scheduler = new SP({
-          appendTo: containerRef.current!,
+        // Instantiate SchedulerPro with explicit stores + clarity options
+        scheduler = new SchedulerPro({
+          appendTo: containerRef.current!,             // wrapper div uses pt-scheduler-root
           startDate,
           endDate,
           viewPreset: 'dayAndWeek',
-          rowHeight: 60,
+          rowHeight: 80,
           barMargin: 8,
           project: {
             resourceStore:   { data: mappedResources },
@@ -229,19 +244,19 @@ export default function ProductionSchedule() {
             dependencyStore: { data: [] }
           },
           features: {
+            stripe: true,                              // zebra rows for readability
             dependencies: true,
             eventDrag: { showTooltip: true, constrainDragToResource: false },
             eventResize: { showTooltip: true },
             eventTooltip: {
-              template: ({ eventRecord }: any) => `
+              template: ({ eventRecord, resourceRecord }: any) => `
                 <div style="padding:10px">
                   <strong>${eventRecord.name}</strong><br>
+                  Resource: <em>${resourceRecord?.name ?? '—'}</em><br>
                   ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
                   ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || 'hour'}<br>` : ''}
                   Progress: ${eventRecord.percentDone ?? 0}%
-                  ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠️ Unscheduled - Drag to a resource</span>' : ''}
-                  ${eventRecord.jobName ? `<br>Job: ${eventRecord.jobName}` : ''}
-                  ${eventRecord.operationName ? `<br>Operation: ${eventRecord.operationName}` : ''}
+                  ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠ Drag to a resource to schedule</span>' : ''}
                 </div>
               `
             },
@@ -252,21 +267,26 @@ export default function ProductionSchedule() {
             scheduleMenu: true
           },
           columns: [
-            { text: 'Resource', field: 'name', width: 220 },
+            { type: 'rownumber', width: 44 },
+            { text: 'Resource (id)', field: 'name', width: 240,
+              renderer: ({ record }: any) => `${record.name} — [${record.id}]` },
             { text: 'Category', field: 'category', width: 160 }
-          ]
+          ],
+          // Show assigned resource id on each chip (while debugging / clarity)
+          eventRenderer: ({ eventRecord, assignmentRecord }: any) => {
+            const rid = assignmentRecord?.resourceId ?? '—';
+            return `${eventRecord.name} <span style="opacity:.6">[rid:${rid}]</span>`;
+          }
         });
 
-        // Drag/drop: move assignment to new resource or remove assignment for Unscheduled
+        // Drag/drop: move assignment or unschedule
         scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord }: any) => {
           const aStore = scheduler.project.assignmentStore;
           const droppingToUnscheduled = targetResourceRecord?.id === 'unscheduled';
 
           eventRecords.forEach((ev: any) => {
-            // Find existing assignment (assuming single assignment per op)
             const existing = aStore.find((a: any) => a.eventId === ev.id);
             if (droppingToUnscheduled) {
-              // Remove assignment → becomes unscheduled
               if (existing) aStore.remove(existing);
               ev.isUnscheduled = true;
               ev.eventColor = '#808080';
@@ -320,21 +340,16 @@ export default function ProductionSchedule() {
 
   return (
     <div className="flex flex-col h-[700px]">
-      <div className="flex-1 relative" ref={containerRef}>
+      {/* wrapper gives us a protected CSS bubble */}
+      <div className="flex-1 relative pt-scheduler-root" ref={containerRef}>
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-lg">Loading Production Schedule...</div>
+            <div>Loading production schedule…</div>
           </div>
         )}
         {error && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-red-500 text-center">
-              <h3 className="text-xl font-bold mb-2">Error</h3>
-              <p>{error}</p>
-              <p className="text-sm mt-2 text-gray-600">
-                Make sure schedulerpro.umd.js and schedulerpro.classic-light.css are available in your public folder.
-              </p>
-            </div>
+          <div className="absolute inset-0 flex items-center justify-center text-red-600">
+            {error}
           </div>
         )}
       </div>
