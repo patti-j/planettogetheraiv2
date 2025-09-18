@@ -121,6 +121,14 @@ export default function ProductionScheduleVanillaMapFix() {
         console.log('[DEBUG] Raw resources from API:', resourcesSrc.slice(0, 5));
         console.log('[DEBUG] Raw operations from API:', opsSrc.slice(0, 5));
         console.log('[DEBUG] Total resources:', resourcesSrc.length, 'Total operations:', opsSrc.length);
+        
+        // Additional debug - check if operations is empty
+        if (opsSrc.length === 0) {
+          console.error('[DEBUG] No operations loaded from API!');
+          if (!opsResp || !(opsResp as any).ok) {
+            console.error('[DEBUG] Operations API request failed');
+          }
+        }
 
         // Build resource data using resource.resource_id (string) as the CANONICAL id
         const mappedResources = [
