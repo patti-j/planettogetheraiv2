@@ -602,7 +602,8 @@ router.get("/pt-operations", async (req, res) => {
         jr.is_primary,
         
         -- Resource information from ptresources
-        r.id as resource_id,  -- Use id to match /api/resources endpoint
+        r.id as resource_db_id,           -- numeric PK (internal only)
+        r.resource_id as resource_id,     -- ✅ canonical STRING id for UI matching
         r.external_id as resource_external_id,
         r.name as resource_name,
         r.description as resource_description,
