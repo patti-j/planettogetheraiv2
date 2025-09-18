@@ -126,9 +126,10 @@ export default function ProductionScheduleVanillaMapFix() {
         const mappedResources = [
           { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
           ...resourcesSrc.map((r: any, i: number) => {
-            const canonicalId = toStr(r.resource_id) ?? toStr(r.id) ?? `r${i}`;
+            // Use resource_id string as canonical ID, not the numeric id!
+            const canonicalId = toStr(r.resource_id) ?? `r${i}`;
             return {
-              id: canonicalId, // <-- important
+              id: canonicalId, // This should be "1", "2", "3" etc, NOT 6, 7, 18
               name: r.name ?? r.displayName ?? `Resource ${i + 1}`,
               category: r.category ?? r.plantName ?? r.area ?? 'Default',
               eventColor: r.isBottleneck ? 'red' : (i % 2 === 0 ? 'blue' : 'green')
@@ -186,6 +187,13 @@ export default function ProductionScheduleVanillaMapFix() {
           console.warn('[MapFix] Orphan sample:', mappedEvents.find(e => e.resourceId === 'unscheduled'));
         }
 
+        // Build assignments for multi-assignment mode (SchedulerPro default)
+        const mappedAssignments = mappedEvents.map((event, i) => ({
+          id: `a${i}`,
+          eventId: event.id,
+          resourceId: event.resourceId
+        }));
+
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
           startDate,
@@ -194,8 +202,17 @@ export default function ProductionScheduleVanillaMapFix() {
           rowHeight: 60,
           barMargin: 8,
           project: {
+            // Enable validation to see data model errors in console
+            validateResponse: true,
             resourceStore: { data: mappedResources },
-            eventStore: { data: mappedEvents },
+            eventStore: { 
+              data: mappedEvents.map(e => {
+                // Remove resourceId from events when using assignment store
+                const { resourceId, ...eventData } = e;
+                return eventData;
+              })
+            },
+            assignmentStore: { data: mappedAssignments },
             dependencyStore: { data: [] }
           },
           features: {
