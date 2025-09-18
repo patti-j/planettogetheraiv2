@@ -210,6 +210,19 @@ export default function ProductionScheduleVanillaMapFix() {
         }));
         
         console.log('[DEBUG] Sample assignments:', mappedAssignments.slice(0, 10));
+        
+        // Debug: Create a map to verify resource availability
+        const resourceMap = new Map(mappedResources.map(r => [r.id, r.name]));
+        console.log('[DEBUG] Resource map:', Object.fromEntries(resourceMap));
+        
+        // Debug: Check event-resource relationships
+        const eventsByResource = mappedEvents.reduce((acc, event) => {
+          const resId = event.resourceId;
+          if (!acc[resId]) acc[resId] = [];
+          acc[resId].push(event.name);
+          return acc;
+        }, {} as Record<string, string[]>);
+        console.log('[DEBUG] Events by resource:', eventsByResource);
 
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
@@ -218,16 +231,19 @@ export default function ProductionScheduleVanillaMapFix() {
           viewPreset: 'dayAndWeek',
           rowHeight: 60,
           barMargin: 8,
+          // Enable single assignment mode at the scheduler level
+          multiEventSelect: true,
           project: {
             // Enable validation to see data model errors in console
             validateResponse: true,
-            resourceStore: { data: mappedResources },
+            // Tell Bryntum we're using single assignment (resourceId on events)
+            assignmentStore: false,  // Explicitly disable assignment store
+            resourceStore: { 
+              data: mappedResources 
+            },
             eventStore: { 
-              // Use single assignment mode with resourceId directly on events
-              singleAssignment: true,
               data: mappedEvents // Keep resourceId on events for single assignment
             },
-            // Don't use assignment store in single assignment mode
             dependencyStore: { data: [] }
           },
           features: {
