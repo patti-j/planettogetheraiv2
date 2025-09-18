@@ -21,6 +21,23 @@ declare global {
 
 const router = express.Router();
 
+// Serve Bryntum static assets
+router.get('/schedulerpro.classic-light.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/schedulerpro.umd.js', (req, res) => {
+  const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
+  res.sendFile(jsPath);
+});
+
+router.get('/fonts/*', (req, res) => {
+  const fontFile = (req.params as any)[0];
+  const fontPath = path.join(process.cwd(), 'attached_assets/build/thin/fonts', fontFile);
+  res.sendFile(fontPath);
+});
+
 // Authentication routes
 router.post("/auth/login", async (req, res) => {
   try {
