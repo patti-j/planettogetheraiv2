@@ -390,6 +390,8 @@ export default function ProductionSchedule() {
           viewPreset: 'dayAndWeek',
           rowHeight: 60,
           barMargin: 8,
+          height: 600, // Explicit height to ensure all rows are visible
+          autoHeight: false, // Disable auto height to use explicit height
           
           // Project data
           project: {
@@ -483,7 +485,27 @@ export default function ProductionSchedule() {
         // Store reference globally
         window.scheduler = scheduler;
         
+        // 🔧 DEBUG: Verify resources are loaded properly
         console.log('🎉 Scheduler initialized successfully!');
+        console.log('🔍 DEBUG: Resource verification:');
+        console.log(`   Total resources configured: ${resources.length}`);
+        console.log(`   Resources in scheduler store: ${scheduler.resourceStore.count}`);
+        console.log(`   Scheduler height: ${schedulerConfig.height}px`);
+        console.log(`   Row height: ${schedulerConfig.rowHeight}px`);
+        console.log(`   Expected total height needed: ${resources.length * schedulerConfig.rowHeight}px`);
+        console.log('   Resource details:', scheduler.resourceStore.records.map(r => ({id: r.id, name: r.name})));
+        
+        // Verify scheduler grid display
+        setTimeout(() => {
+          const schedulerEl = document.getElementById('scheduler');
+          if (schedulerEl) {
+            console.log('🔍 DEBUG: Scheduler DOM verification:');
+            console.log(`   Scheduler container height: ${schedulerEl.offsetHeight}px`);
+            console.log(`   Scheduler container scroll height: ${schedulerEl.scrollHeight}px`);
+            const gridRows = schedulerEl.querySelectorAll('.b-grid-row');
+            console.log(`   Visible grid rows in DOM: ${gridRows.length}`);
+          }
+        }, 1000);
         
         // Update status bar with better error handling and timing
         const updateStatus = () => {
@@ -978,7 +1000,9 @@ export default function ProductionSchedule() {
 
         #scheduler {
             flex: 1;
-            min-height: 0;
+            min-height: 600px;
+            height: auto;
+            overflow: auto;
         }
 
         .status-bar {

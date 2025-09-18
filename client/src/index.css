@@ -59,6 +59,7 @@
   position: relative !important;
   height: 100% !important;
   width: 100% !important;
+  min-height: 600px !important;
 }
 
 /* Ensure proper element stacking */
@@ -141,7 +142,7 @@
 
 .pt-scheduler-root .b-grid-row,
 .pt-scheduler-root .b-sch-timeaxis-cell { 
-  height: 80px !important; 
+  height: 60px !important; 
 } /* match rowHeight */
 
 /* Fix resource column */
