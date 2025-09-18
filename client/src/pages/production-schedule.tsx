@@ -187,12 +187,29 @@ export default function ProductionScheduleVanillaMapFix() {
           console.warn('[MapFix] Orphan sample:', mappedEvents.find(e => e.resourceId === 'unscheduled'));
         }
 
+        // Debug: log sample of operations with their resource assignments
+        console.log('[DEBUG] Sample operations with resourceId:', mappedEvents.slice(0, 10).map(e => ({
+          id: e.id,
+          name: e.name,
+          resourceId: e.resourceId,
+          isUnscheduled: e.isUnscheduled
+        })));
+        
+        // Debug: log all unique resource IDs from operations
+        const uniqueResourceIds = new Set(mappedEvents.map(e => e.resourceId));
+        console.log('[DEBUG] Unique resourceIds in operations:', Array.from(uniqueResourceIds));
+        
+        // Debug: log resource mapping
+        console.log('[DEBUG] Resources mapped:', mappedResources.map(r => ({ id: r.id, name: r.name })));
+        
         // Build assignments for multi-assignment mode (SchedulerPro default)
         const mappedAssignments = mappedEvents.map((event, i) => ({
           id: `a${i}`,
           eventId: event.id,
           resourceId: event.resourceId
         }));
+        
+        console.log('[DEBUG] Sample assignments:', mappedAssignments.slice(0, 10));
 
         schedulerInstance = new SchedulerPro({
           appendTo: containerRef.current!,
@@ -206,13 +223,11 @@ export default function ProductionScheduleVanillaMapFix() {
             validateResponse: true,
             resourceStore: { data: mappedResources },
             eventStore: { 
-              data: mappedEvents.map(e => {
-                // Remove resourceId from events when using assignment store
-                const { resourceId, ...eventData } = e;
-                return eventData;
-              })
+              // Use single assignment mode with resourceId directly on events
+              singleAssignment: true,
+              data: mappedEvents // Keep resourceId on events for single assignment
             },
-            assignmentStore: { data: mappedAssignments },
+            // Don't use assignment store in single assignment mode
             dependencyStore: { data: [] }
           },
           features: {
