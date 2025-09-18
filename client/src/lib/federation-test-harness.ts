@@ -6,7 +6,7 @@ import { federationRegistry } from './federation-bootstrap';
 // Test result interfaces
 interface TestResult {
   name: string;
-  status: 'pass' | 'fail' | 'warning';
+  status: 'pass' | 'fail' | 'warning' | 'partial';
   message: string;
   duration?: number;
   details?: any;
@@ -164,44 +164,44 @@ export class FederationTestHarness {
   }
 
   // Main test execution method
-  async runAllTests(): Promise<TestHarnessReport> {
-    console.log('🧪 Starting Federation Module Integration Tests...\n');
+  async runAllTests(silent: boolean = false): Promise<TestHarnessReport> {
+    if (!silent) console.log('🧪 Starting Federation Module Integration Tests...\n');
     this.startTime = performance.now();
 
     try {
       // Phase 1: Module initialization and contract validation
-      console.log('📦 Phase 1: Testing Module Initialization...');
-      await this.testAllModules();
+      if (!silent) console.log('📦 Phase 1: Testing Module Initialization...');
+      await this.testAllModules(silent);
 
       // Phase 2: Inter-module event communication
-      console.log('\n📡 Phase 2: Testing Inter-Module Communication...');
-      await this.testEventCommunication();
+      if (!silent) console.log('\n📡 Phase 2: Testing Inter-Module Communication...');
+      await this.testEventCommunication(silent);
 
       // Phase 3: Integration data flows
-      console.log('\n🔄 Phase 3: Testing Integration Data Flows...');
-      await this.testIntegrationFlows();
+      if (!silent) console.log('\n🔄 Phase 3: Testing Integration Data Flows...');
+      await this.testIntegrationFlows(silent);
 
       // Phase 4: Error recovery and fallbacks
-      console.log('\n🛡️ Phase 4: Testing Error Recovery...');
-      await this.testErrorRecovery();
+      if (!silent) console.log('\n🛡️ Phase 4: Testing Error Recovery...');
+      await this.testErrorRecovery(silent);
 
       // Phase 5: Performance metrics
-      console.log('\n⚡ Phase 5: Calculating Performance Metrics...');
+      if (!silent) console.log('\n⚡ Phase 5: Calculating Performance Metrics...');
       this.calculatePerformanceMetrics();
 
     } catch (error) {
-      console.error('❌ Test harness encountered critical error:', error);
+      if (!silent) console.error('❌ Test harness encountered critical error:', error);
     }
 
     this.report.totalDuration = performance.now() - this.startTime;
     this.generateSummary();
-    this.displayReport();
+    if (!silent) this.displayReport();
 
     return this.report;
   }
 
   // Test all modules initialization and contracts
-  private async testAllModules() {
+  private async testAllModules(silent: boolean = false) {
     const moduleIds = [
       'core-platform',
       'agent-system', 
@@ -214,13 +214,13 @@ export class FederationTestHarness {
     ];
 
     for (const moduleId of moduleIds) {
-      const moduleReport = await this.testModule(moduleId);
+      const moduleReport = await this.testModule(moduleId, silent);
       this.report.moduleReports.push(moduleReport);
     }
   }
 
   // Test individual module
-  private async testModule(moduleId: string): Promise<ModuleTestReport> {
+  private async testModule(moduleId: string, silent: boolean = false): Promise<ModuleTestReport> {
     const report: ModuleTestReport = {
       moduleId,
       initTime: 0,
@@ -231,7 +231,7 @@ export class FederationTestHarness {
       overallStatus: 'fail'
     };
 
-    console.log(`\n  Testing ${moduleId}...`);
+    if (!silent) console.log(`\n  Testing ${moduleId}...`);
     const startTime = performance.now();
 
     try {
@@ -241,7 +241,7 @@ export class FederationTestHarness {
       this.report.performanceMetrics.moduleLoadTimes[moduleId] = report.initTime;
 
       if (module) {
-        console.log(`    ✅ Module initialized in ${report.initTime.toFixed(2)}ms`);
+        if (!silent) console.log(`    ✅ Module initialized in ${report.initTime.toFixed(2)}ms`);
         
         // Validate contract methods
         const contractMethods = MODULE_CONTRACTS[moduleId as keyof typeof MODULE_CONTRACTS] || [];
@@ -267,7 +267,7 @@ export class FederationTestHarness {
             message: `All ${contractMethods.length} contract methods implemented`,
             details: { implementedMethods }
           };
-          console.log(`    ✅ Contract validated: ${contractMethods.length} methods`);
+          if (!silent) console.log(`    ✅ Contract validated: ${contractMethods.length} methods`);
         } else {
           report.contractValidation = {
             name: 'Contract Validation',
@@ -275,7 +275,7 @@ export class FederationTestHarness {
             message: `Missing ${missingMethods.length} methods: ${missingMethods.join(', ')}`,
             details: { missingMethods, implementedMethods }
           };
-          console.log(`    ⚠️ Contract partially implemented: ${missingMethods.length} missing`);
+          if (!silent) console.log(`    ⚠️ Contract partially implemented: ${missingMethods.length} missing`);
         }
 
         // Test event subscriptions if module supports them
@@ -297,12 +297,12 @@ export class FederationTestHarness {
         }
 
       } else {
-        console.log(`    ❌ Module failed to initialize`);
+        if (!silent) console.log(`    ❌ Module failed to initialize`);
         report.contractValidation.message = 'Module initialization failed';
       }
 
     } catch (error) {
-      console.log(`    ❌ Module test failed:`, error);
+      if (!silent) console.log(`    ❌ Module test failed:`, error);
       report.contractValidation = {
         name: 'Contract Validation',
         status: 'fail',
@@ -387,7 +387,7 @@ export class FederationTestHarness {
   }
 
   // Test inter-module event communication
-  private async testEventCommunication() {
+  private async testEventCommunication(silent: boolean = false) {
     const tests: TestResult[] = [];
 
     // Test 1: Production → Shop Floor event flow
@@ -398,7 +398,7 @@ export class FederationTestHarness {
       { jobId: 1, status: 'scheduled' }
     );
     tests.push(test1);
-    console.log(`    ${test1.status === 'pass' ? '✅' : '❌'} Production → Shop Floor events`);
+    if (!silent) console.log(`    ${test1.status === 'pass' ? '✅' : '❌'} Production → Shop Floor events`);
 
     // Test 2: Shop Floor → Quality event flow
     const test2 = await this.testEventFlow(
@@ -408,7 +408,7 @@ export class FederationTestHarness {
       { operationId: 1, quality: 'pending' }
     );
     tests.push(test2);
-    console.log(`    ${test2.status === 'pass' ? '✅' : '❌'} Shop Floor → Quality events`);
+    if (!silent) console.log(`    ${test2.status === 'pass' ? '✅' : '❌'} Shop Floor → Quality events`);
 
     // Test 3: Quality → Analytics event flow
     const test3 = await this.testEventFlow(
@@ -418,7 +418,7 @@ export class FederationTestHarness {
       { inspectionId: 1, result: 'pass' }
     );
     tests.push(test3);
-    console.log(`    ${test3.status === 'pass' ? '✅' : '❌'} Quality → Analytics events`);
+    if (!silent) console.log(`    ${test3.status === 'pass' ? '✅' : '❌'} Quality → Analytics events`);
 
     // Test 4: Inventory → Production event flow
     const test4 = await this.testEventFlow(
@@ -428,12 +428,12 @@ export class FederationTestHarness {
       { itemId: 1, level: 10, reorderPoint: 50 }
     );
     tests.push(test4);
-    console.log(`    ${test4.status === 'pass' ? '✅' : '❌'} Inventory → Production events`);
+    if (!silent) console.log(`    ${test4.status === 'pass' ? '✅' : '❌'} Inventory → Production events`);
 
     // Test 5: Broadcast events
     const test5 = await this.testBroadcastEvent();
     tests.push(test5);
-    console.log(`    ${test5.status === 'pass' ? '✅' : '❌'} Broadcast events`);
+    if (!silent) console.log(`    ${test5.status === 'pass' ? '✅' : '❌'} Broadcast events`);
 
     this.report.eventBusTests = tests;
   }
@@ -450,7 +450,7 @@ export class FederationTestHarness {
       let received = false;
       const startTime = performance.now();
 
-      const cleanup = testEventBus.on(fullEventName, (data) => {
+      const cleanup = testEventBus.on(fullEventName, (data: any) => {
         received = true;
         const duration = performance.now() - startTime;
         
@@ -853,28 +853,28 @@ export class FederationTestHarness {
   }
 
   // Test error recovery mechanisms
-  private async testErrorRecovery() {
+  private async testErrorRecovery(silent: boolean = false) {
     const tests: TestResult[] = [];
 
     // Test 1: Module failure recovery
     const test1 = await this.testModuleFailureRecovery();
     tests.push(test1);
-    console.log(`    ${test1.status === 'pass' ? '✅' : '❌'} Module failure recovery`);
+    if (!silent) console.log(`    ${test1.status === 'pass' ? '✅' : '❌'} Module failure recovery`);
 
     // Test 2: Event timeout handling
     const test2 = await this.testEventTimeoutHandling();
     tests.push(test2);
-    console.log(`    ${test2.status === 'pass' ? '✅' : '❌'} Event timeout handling`);
+    if (!silent) console.log(`    ${test2.status === 'pass' ? '✅' : '❌'} Event timeout handling`);
 
     // Test 3: Graceful degradation
     const test3 = await this.testGracefulDegradation();
     tests.push(test3);
-    console.log(`    ${test3.status === 'pass' ? '✅' : '❌'} Graceful degradation`);
+    if (!silent) console.log(`    ${test3.status === 'pass' ? '✅' : '❌'} Graceful degradation`);
 
     // Test 4: Retry mechanisms
     const test4 = await this.testRetryMechanisms();
     tests.push(test4);
-    console.log(`    ${test4.status === 'pass' ? '✅' : '❌'} Retry mechanisms`);
+    if (!silent) console.log(`    ${test4.status === 'pass' ? '✅' : '❌'} Retry mechanisms`);
 
     this.report.errorRecoveryTests = tests;
   }
@@ -1221,16 +1221,17 @@ export const federationTestHarness = new FederationTestHarness();
 // Auto-run tests in development mode
 export async function runTestsInDevelopment() {
   if (process.env.NODE_ENV === 'development' || import.meta.env.DEV) {
-    console.log('🚀 Running Federation Integration Tests in Development Mode...\n');
-    
-    // Delay to ensure modules are loaded
+    // Run tests silently to avoid cluttering logs
     setTimeout(async () => {
-      const report = await federationTestHarness.runAllTests();
+      const report = await federationTestHarness.runAllTests(true); // Run in silent mode
       
       // Store report in window for debugging
       if (typeof window !== 'undefined') {
         (window as any).__FEDERATION_TEST_REPORT__ = report;
-        console.log('💾 Test report saved to window.__FEDERATION_TEST_REPORT__');
+        // Only log the final summary, not all the verbose test output
+        if (report.summary.failed > 0) {
+          console.log(`⚠️ Federation Tests: ${report.summary.failed} failed, ${report.summary.passed} passed`);
+        }
       }
     }, 2000);
   }
