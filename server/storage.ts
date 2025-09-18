@@ -2,11 +2,14 @@ import {
   users, roles, permissions, userRoles, rolePermissions, 
   companyOnboarding, userPreferences, recentPages,
   ptPlants, ptResources, ptJobOperations, ptManufacturingOrders,
+  schedulingConversations, schedulingMessages,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
   type RecentPage, type InsertRecentPage,
-  type PtPlant, type PtResource, type PtJobOperation, type PtManufacturingOrder
+  type PtPlant, type PtResource, type PtJobOperation, type PtManufacturingOrder,
+  type SchedulingConversation, type InsertSchedulingConversation,
+  type SchedulingMessage, type InsertSchedulingMessage
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -55,6 +58,13 @@ export interface IStorage {
   // Recent Pages
   saveRecentPage(data: InsertRecentPage): Promise<void>;
   getRecentPages(userId: number): Promise<RecentPage[]>;
+
+  // Scheduling Conversations
+  createSchedulingConversation(data: InsertSchedulingConversation): Promise<SchedulingConversation>;
+  getSchedulingConversations(userId: number): Promise<SchedulingConversation[]>;
+  addSchedulingMessage(data: InsertSchedulingMessage): Promise<SchedulingMessage>;
+  getSchedulingMessages(conversationId: number): Promise<SchedulingMessage[]>;
+  deleteSchedulingConversation(id: number): Promise<boolean>;
 
   // Basic PT Table Access
   getPlants(): Promise<PtPlant[]>;
@@ -339,6 +349,55 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching recent pages:', error);
       return [];
+    }
+  }
+
+  // Scheduling Conversations
+  async createSchedulingConversation(data: InsertSchedulingConversation): Promise<SchedulingConversation> {
+    const [conversation] = await db.insert(schedulingConversations).values(data).returning();
+    return conversation;
+  }
+
+  async getSchedulingConversations(userId: number): Promise<SchedulingConversation[]> {
+    try {
+      return await db.select().from(schedulingConversations)
+        .where(eq(schedulingConversations.userId, userId))
+        .orderBy(desc(schedulingConversations.createdAt));
+    } catch (error) {
+      console.error('Error fetching scheduling conversations:', error);
+      return [];
+    }
+  }
+
+  async addSchedulingMessage(data: InsertSchedulingMessage): Promise<SchedulingMessage> {
+    const [message] = await db.insert(schedulingMessages).values(data).returning();
+    return message;
+  }
+
+  async getSchedulingMessages(conversationId: number): Promise<SchedulingMessage[]> {
+    try {
+      return await db.select().from(schedulingMessages)
+        .where(eq(schedulingMessages.conversationId, conversationId))
+        .orderBy(schedulingMessages.createdAt);
+    } catch (error) {
+      console.error('Error fetching scheduling messages:', error);
+      return [];
+    }
+  }
+
+  async deleteSchedulingConversation(id: number): Promise<boolean> {
+    try {
+      // First delete all messages
+      await db.delete(schedulingMessages)
+        .where(eq(schedulingMessages.conversationId, id));
+      
+      // Then delete the conversation
+      const result = await db.delete(schedulingConversations)
+        .where(eq(schedulingConversations.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting scheduling conversation:', error);
+      return false;
     }
   }
 

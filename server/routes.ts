@@ -4,8 +4,9 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { db } from "./db";
-import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema } from "@shared/schema";
+import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
+import { schedulingAI } from "./services/scheduling-ai";
 import path from "path";
 import fs from "fs";
 
@@ -811,6 +812,169 @@ router.get("/scheduler-demo", (req, res) => {
   } catch (error) {
     console.error('Error serving demo HTML:', error);
     res.status(500).send('Error loading demo page');
+  }
+});
+
+// ============================================
+// AI Scheduling Routes
+// ============================================
+
+// Rate limiting for scheduling AI
+const rateLimitMap = new Map<number, { count: number; resetTime: number }>();
+const RATE_LIMIT = 20; // 20 requests per minute
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute in milliseconds
+
+function checkRateLimit(userId: number): boolean {
+  const now = Date.now();
+  const userLimit = rateLimitMap.get(userId);
+  
+  if (!userLimit || now > userLimit.resetTime) {
+    rateLimitMap.set(userId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return true;
+  }
+  
+  if (userLimit.count >= RATE_LIMIT) {
+    return false;
+  }
+  
+  userLimit.count++;
+  return true;
+}
+
+// Authentication middleware for AI routes
+function requireAuth(req: any, res: any, next: any) {
+  const authHeader = req.headers.authorization;
+  
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ message: 'Authentication required' });
+  }
+  
+  const token = authHeader.substring(7);
+  global.tokenStore = global.tokenStore || new Map();
+  const tokenData = global.tokenStore.get(token);
+  
+  if (!tokenData || Date.now() > tokenData.expiresAt) {
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
+  
+  req.userId = tokenData.userId;
+  next();
+}
+
+// Main AI query endpoint
+router.post("/ai/schedule/query", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    const { message, conversationId } = req.body;
+    
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({ error: 'Message is required' });
+    }
+    
+    // Check rate limit
+    if (!checkRateLimit(userId)) {
+      return res.status(429).json({ 
+        error: 'Rate limit exceeded. Please wait before sending more requests.' 
+      });
+    }
+    
+    let convId = conversationId;
+    
+    // Create new conversation if needed
+    if (!convId) {
+      const title = await schedulingAI.generateTitle(message);
+      const conversation = await storage.createSchedulingConversation({
+        userId,
+        title,
+        page: 'production-schedule'
+      });
+      convId = conversation.id;
+    }
+    
+    // Save user message
+    await storage.addSchedulingMessage({
+      conversationId: convId,
+      role: 'user',
+      content: message
+    });
+    
+    // Get conversation history
+    const history = await storage.getSchedulingMessages(convId);
+    const formattedHistory = history
+      .filter(msg => msg.id !== history[history.length - 1]?.id) // Exclude the just-added message
+      .map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+    
+    // Generate AI response
+    const aiResponse = await schedulingAI.generateResponse(message, formattedHistory);
+    
+    // Save AI response
+    const assistantMessage = await storage.addSchedulingMessage({
+      conversationId: convId,
+      role: 'assistant',
+      content: aiResponse
+    });
+    
+    res.json({
+      conversationId: convId,
+      message: assistantMessage
+    });
+  } catch (error) {
+    console.error('AI scheduling query error:', error);
+    res.status(500).json({ error: 'Failed to process scheduling query' });
+  }
+});
+
+// Get user's conversations
+router.get("/ai/schedule/conversations", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).userId;
+    const conversations = await storage.getSchedulingConversations(userId);
+    res.json(conversations);
+  } catch (error) {
+    console.error('Error fetching conversations:', error);
+    res.status(500).json({ error: 'Failed to fetch conversations' });
+  }
+});
+
+// Get messages for a conversation
+router.get("/ai/schedule/messages/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId);
+    
+    if (isNaN(conversationId)) {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
+    
+    const messages = await storage.getSchedulingMessages(conversationId);
+    res.json(messages);
+  } catch (error) {
+    console.error('Error fetching messages:', error);
+    res.status(500).json({ error: 'Failed to fetch messages' });
+  }
+});
+
+// Delete a conversation
+router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (req, res) => {
+  try {
+    const conversationId = parseInt(req.params.conversationId);
+    
+    if (isNaN(conversationId)) {
+      return res.status(400).json({ error: 'Invalid conversation ID' });
+    }
+    
+    const success = await storage.deleteSchedulingConversation(conversationId);
+    
+    if (success) {
+      res.json({ success: true });
+    } else {
+      res.status(404).json({ error: 'Conversation not found' });
+    }
+  } catch (error) {
+    console.error('Error deleting conversation:', error);
+    res.status(500).json({ error: 'Failed to delete conversation' });
   }
 });
 

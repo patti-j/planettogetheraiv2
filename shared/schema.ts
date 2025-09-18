@@ -394,6 +394,26 @@ export const playbookUsage = pgTable("playbook_usage", {
 });
 
 // ============================================
+// AI Scheduling Conversation Tables
+// ============================================
+
+export const schedulingConversations = pgTable("scheduling_conversations", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  title: varchar("title", { length: 255 }),
+  page: varchar("page", { length: 255 }),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const schedulingMessages = pgTable("scheduling_messages", {
+  id: serial("id").primaryKey(),
+  conversationId: integer("conversation_id").references(() => schedulingConversations.id).notNull(),
+  role: varchar("role", { length: 20 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
 // Application Tables
 // ============================================
 
@@ -423,6 +443,8 @@ export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturi
 export const insertPtResourceSchema = createInsertSchema(ptResources);
 export const insertRecentPageSchema = createInsertSchema(recentPages);
 export const insertProductionOrderSchema = createInsertSchema(productionOrders);
+export const insertSchedulingConversationSchema = createInsertSchema(schedulingConversations);
+export const insertSchedulingMessageSchema = createInsertSchema(schedulingMessages);
 
 // AI Agent Team System schemas
 export const insertAiAgentTeamSchema = createInsertSchema(aiAgentTeam);
@@ -486,6 +508,10 @@ export type PtResource = typeof ptResources.$inferSelect;
 export type InsertPtResource = z.infer<typeof insertPtResourceSchema>;
 export type RecentPage = typeof recentPages.$inferSelect;
 export type InsertRecentPage = z.infer<typeof insertRecentPageSchema>;
+export type SchedulingConversation = typeof schedulingConversations.$inferSelect;
+export type InsertSchedulingConversation = z.infer<typeof insertSchedulingConversationSchema>;
+export type SchedulingMessage = typeof schedulingMessages.$inferSelect;
+export type InsertSchedulingMessage = z.infer<typeof insertSchedulingMessageSchema>;
 
 // AI Agent Team System types
 export type AiAgentTeam = typeof aiAgentTeam.$inferSelect;
