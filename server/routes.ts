@@ -774,10 +774,10 @@ router.post("/monitoring-agent/stop", async (req, res) => {
   }
 });
 
-// Serve standalone Bryntum demo HTML page  
+// Serve Bryntum Production Scheduler HTML  
 router.get("/scheduler-demo", (req, res) => {
   try {
-    console.log('Serving scheduler demo HTML...');
+    console.log('Serving production scheduler HTML...');
     const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-noUnscheduled.html');
     
     // Check if file exists
