@@ -788,6 +788,302 @@ router.get("/users/:userId/current-role", async (req, res) => {
   }
 });
 
+// ============================================
+// PT BREWERY DATA GENERATION
+// ============================================
+
+router.post("/api/generate-brewery-data", async (req, res) => {
+  try {
+    console.log('Generating complete brewery process data...');
+    
+    // Standard brewery process steps with durations (in hours)
+    const brewerySteps = [
+      { name: 'Milling', sequence: 10, duration: 1, resource_pattern: 'mill' },
+      { name: 'Mashing', sequence: 20, duration: 2, resource_pattern: 'mash' },
+      { name: 'Lautering', sequence: 30, duration: 1.5, resource_pattern: 'lauter' },
+      { name: 'Boiling', sequence: 40, duration: 1, resource_pattern: 'boil|kettle' },
+      { name: 'Whirlpool', sequence: 50, duration: 0.5, resource_pattern: 'whirlpool', optional: true },
+      { name: 'Cooling', sequence: 60, duration: 0.5, resource_pattern: 'cool|exchanger' },
+      { name: 'Fermentation', sequence: 70, duration: 72, resource_pattern: 'ferment' }
+    ];
+    
+    // Get all brewery resources
+    const resourcesQuery = `
+      SELECT resource_id, name, external_id 
+      FROM ptresources 
+      WHERE active = true
+      ORDER BY name
+    `;
+    const resources = await db.execute(sql.raw(resourcesQuery));
+    const resourceRows = Array.isArray(resources) ? resources : resources.rows || [];
+    
+    // Map resources to steps
+    const resourceMap = new Map();
+    for (const step of brewerySteps) {
+      const pattern = new RegExp(step.resource_pattern, 'i');
+      const matchingResource = resourceRows.find((r: any) => pattern.test(r.name));
+      if (matchingResource) {
+        resourceMap.set(step.name, matchingResource.resource_id);
+      }
+    }
+    
+    // Get all existing brewery jobs (limit to first 10 for testing)
+    const jobsQuery = `
+      SELECT j.id, j.external_id, j.name, j.description 
+      FROM ptjobs j
+      WHERE j.external_id LIKE 'JOB-%'
+      ORDER BY j.id
+      LIMIT 10
+    `;
+    const jobs = await db.execute(sql.raw(jobsQuery));
+    const jobRows = Array.isArray(jobs) ? jobs : jobs.rows || [];
+    
+    let operationsAdded = 0;
+    let jobsProcessed = 0;
+    
+    // Process each existing job
+    for (const job of jobRows) {
+      // Get existing operations for this job
+      const existingOpsQuery = `
+        SELECT name, sequence_number 
+        FROM ptjoboperations 
+        WHERE job_id = $1
+      `;
+      const existingOps = await db.execute(sql.raw(existingOpsQuery.replace('$1', job.id.toString())));
+      const existingOpsRows = Array.isArray(existingOps) ? existingOps : existingOps.rows || [];
+      const existingOpNames = new Set(existingOpsRows.map((op: any) => op.name.toLowerCase()));
+      
+      // Determine which steps are missing
+      let baseTime = new Date();
+      let lastEndTime = baseTime;
+      
+      // Find the latest scheduled end time if operations exist
+      if (existingOpsRows.length > 0) {
+        const lastOpQuery = `
+          SELECT MAX(scheduled_end) as last_end 
+          FROM ptjoboperations 
+          WHERE job_id = $1 AND scheduled_end IS NOT NULL
+        `;
+        const lastOpResult = await db.execute(sql.raw(lastOpQuery.replace('$1', job.id.toString())));
+        const lastOpRows = Array.isArray(lastOpResult) ? lastOpResult : lastOpResult.rows || [];
+        if (lastOpRows[0]?.last_end) {
+          lastEndTime = new Date(lastOpRows[0].last_end);
+        }
+      }
+      
+      // Determine if this beer should skip whirlpool (unfiltered styles)
+      const skipWhirlpool = job.name?.toLowerCase().includes('wheat') || 
+                           job.name?.toLowerCase().includes('hefe') ||
+                           job.description?.toLowerCase().includes('unfiltered');
+      
+      // Add missing operations
+      for (const step of brewerySteps) {
+        if (existingOpNames.has(step.name.toLowerCase())) {
+          continue; // Skip existing operations
+        }
+        
+        if (step.optional && skipWhirlpool) {
+          continue; // Skip optional steps for certain styles
+        }
+        
+        const resourceId = resourceMap.get(step.name);
+        if (!resourceId) {
+          console.log(`Warning: No resource found for ${step.name}, skipping`);
+          continue;
+        }
+        
+        // Calculate scheduled times
+        const scheduledStart = new Date(lastEndTime);
+        const scheduledEnd = new Date(scheduledStart.getTime() + step.duration * 60 * 60 * 1000);
+        lastEndTime = scheduledEnd;
+        
+        const opExternalId = `${job.external_id}-${step.name}-${Date.now()}`;
+        const opResult = await db.execute(sql.raw(`
+          INSERT INTO ptjoboperations (
+            external_id, name, description, job_id, 
+            sequence_number, scheduled_start, scheduled_end,
+            cycle_hrs, setup_hours, post_processing_hours,
+            required_finish_qty, percent_finished
+          ) VALUES (
+            '${opExternalId}',
+            '${step.name}',
+            '${step.name} process for ${job.name || job.external_id}',
+            ${job.id},
+            ${step.sequence},
+            '${scheduledStart.toISOString()}',
+            '${scheduledEnd.toISOString()}',
+            ${step.duration},
+            0.25,
+            0.1,
+            100,
+            0
+          )
+          RETURNING id
+        `));
+        
+        const opResultRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
+        if (opResultRows[0]) {
+          const opId = opResultRows[0].id;
+          
+          // Insert resource assignment
+          await db.execute(sql.raw(`
+            INSERT INTO ptjobresources (
+              operation_id, default_resource_id, is_primary,
+              setup_hrs, cycle_hrs, qty_per_cycle
+            ) VALUES (
+              ${opId},
+              '${resourceId}',
+              true,
+              0.25,
+              ${step.duration},
+              100
+            )
+          `));
+          
+          // Insert activity
+          await db.execute(sql.raw(`
+            INSERT INTO ptjobactivities (
+              external_id, operation_id, production_status, comments
+            ) VALUES (
+              'ACT-${opExternalId}',
+              ${opId},
+              'planned',
+              'Auto-generated brewery operation'
+            )
+          `));
+          
+          operationsAdded++;
+        }
+      }
+      
+      jobsProcessed++;
+    }
+    
+    // Create 3 new complete brewery jobs
+    const newJobStyles = [
+      { name: 'IPA', description: 'India Pale Ale - Full Process', skipWhirlpool: false },
+      { name: 'Lager', description: 'German Lager - Full Process', skipWhirlpool: false },
+      { name: 'Wheat', description: 'Wheat Beer - Unfiltered', skipWhirlpool: true }
+    ];
+    
+    for (let i = 0; i < newJobStyles.length; i++) {
+      const style = newJobStyles[i];
+      const timestamp = Date.now() + i;
+      const jobExternalId = `JOB-${style.name.toUpperCase()}-COMPLETE-${timestamp}`;
+      
+      // Insert new job
+      const dueDate = new Date();
+      dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
+      
+      const jobResult = await db.execute(sql.raw(`
+        INSERT INTO ptjobs (
+          external_id, name, description, priority, 
+          need_date_time, scheduled_status
+        ) VALUES (
+          '${jobExternalId}',
+          '${style.name} Batch ${timestamp}',
+          '${style.description}',
+          2,
+          '${dueDate.toISOString()}',
+          'scheduled'
+        )
+        RETURNING id
+      `));
+      
+      const jobResultRows = Array.isArray(jobResult) ? jobResult : jobResult.rows || [];
+      if (jobResultRows[0]) {
+        const jobId = jobResultRows[0].id;
+        let baseTime = new Date();
+        baseTime.setHours(baseTime.getHours() + i * 100); // Stagger start times
+        let lastEndTime = baseTime;
+        
+        // Add all operations for this new job
+        for (const step of brewerySteps) {
+          if (step.optional && style.skipWhirlpool) {
+            continue;
+          }
+          
+          const resourceId = resourceMap.get(step.name);
+          if (!resourceId) continue;
+          
+          const scheduledStart = new Date(lastEndTime);
+          const scheduledEnd = new Date(scheduledStart.getTime() + step.duration * 60 * 60 * 1000);
+          lastEndTime = scheduledEnd;
+          
+          const opExternalId = `${jobExternalId}-${step.name}`;
+          const opResult = await db.execute(sql.raw(`
+            INSERT INTO ptjoboperations (
+              external_id, name, description, job_id,
+              sequence_number, scheduled_start, scheduled_end,
+              cycle_hrs, setup_hours, post_processing_hours,
+              required_finish_qty, percent_finished
+            ) VALUES (
+              '${opExternalId}',
+              '${step.name}',
+              '${step.name} for ${style.name}',
+              ${jobId},
+              ${step.sequence},
+              '${scheduledStart.toISOString()}',
+              '${scheduledEnd.toISOString()}',
+              ${step.duration},
+              0.25,
+              0.1,
+              100,
+              0
+            )
+            RETURNING id
+          `));
+          
+          const opRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
+          if (opRows[0]) {
+            const opId = opRows[0].id;
+            
+            // Insert resource assignment
+            await db.execute(sql.raw(`
+              INSERT INTO ptjobresources (
+                operation_id, default_resource_id, is_primary,
+                setup_hrs, cycle_hrs, qty_per_cycle
+              ) VALUES (${opId}, '${resourceId}', true, 0.25, ${step.duration}, 100)
+            `));
+            
+            // Insert activity
+            await db.execute(sql.raw(`
+              INSERT INTO ptjobactivities (
+                external_id, operation_id, production_status, comments
+              ) VALUES ('ACT-${opExternalId}', ${opId}, 'planned', 'Complete brewery process')
+            `));
+            
+            operationsAdded++;
+          }
+        }
+        
+        jobsProcessed++;
+      }
+    }
+    
+    console.log(`Brewery data generation complete: ${operationsAdded} operations added across ${jobsProcessed} jobs`);
+    
+    res.json({
+      success: true,
+      message: `Generated ${operationsAdded} operations for ${jobsProcessed} brewery jobs`,
+      details: {
+        existingJobsCompleted: jobRows.length,
+        newJobsCreated: newJobStyles.length,
+        operationsAdded,
+        jobsProcessed
+      }
+    });
+    
+  } catch (error) {
+    console.error('Error generating brewery data:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to generate brewery data', 
+      error: (error as Error).message 
+    });
+  }
+});
+
 // PT Operations endpoint - reads from PT tables
 router.get("/pt-operations", async (req, res) => {
   try {
