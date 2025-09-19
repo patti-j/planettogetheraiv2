@@ -878,7 +878,9 @@ router.get("/pt-operations", async (req, res) => {
       dueDate: op.job_due_date,
       // Also pass the raw external_id for dependency grouping
       externalId: op.operation_external_id,
-      jobExternalId: op.job_external_id
+      jobExternalId: op.job_external_id,
+      // IMPORTANT: Include job_id for dependency generation
+      jobId: op.job_id
     }));
 
     console.log(`Successfully fetched ${operations.length} PT operations`);
