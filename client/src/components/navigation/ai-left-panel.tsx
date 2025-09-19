@@ -304,7 +304,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     stopAudio();
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       const response = await fetch('/api/ai/text-to-speech', {
         method: 'POST',
         headers: {
@@ -472,7 +472,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       // Removed frontend navigation pattern matching that was interfering with Max AI
       
       // Otherwise, send to backend for AI processing
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       const response = await fetch('/api/max-ai/chat', {
         method: 'POST',
         headers: {

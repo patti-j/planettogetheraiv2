@@ -163,6 +163,133 @@ router.post("/auth/logout", (req, res) => {
   });
 });
 
+// Development-only endpoint for auto-authentication
+router.get("/auth/dev-token", async (req, res) => {
+  // Only allow in development mode
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ message: "Forbidden in production" });
+  }
+  
+  console.log("🔧 Development auto-authentication requested");
+  
+  try {
+    // Get or create admin user for development
+    let user = await storage.getUser(1); // Admin user typically has ID 1
+    
+    if (!user) {
+      // Create a default admin user for development
+      user = await storage.createUser({
+        username: "admin",
+        email: "admin@planettogether.com",
+        firstName: "Admin",
+        lastName: "User",
+        passwordHash: await bcryptjs.hash("admin123", 10),
+        isActive: true
+      });
+    }
+    
+    // Get user roles and permissions
+    const userRoles = await storage.getUserRoles(user.id);
+    const roles = [];
+    const allPermissions = [];
+    
+    if (userRoles.length === 0) {
+      // Create default admin role for development
+      let adminRole = await storage.getRoleByName("Administrator");
+      if (!adminRole) {
+        adminRole = await storage.createRole({
+          name: "Administrator",
+          description: "System administrator with full access",
+          isActive: true,
+          isSystemRole: true
+        });
+      }
+      
+      // Assign admin role to user
+      await storage.assignUserRole(user.id, adminRole.id);
+      
+      // Add to roles array
+      roles.push({
+        id: adminRole.id,
+        name: adminRole.name,
+        description: adminRole.description || "Administrator role",
+        permissions: [] // Will be populated with hardcoded permissions on frontend
+      });
+    } else {
+      // Get existing roles
+      for (const userRole of userRoles) {
+        const role = await storage.getRole(userRole.roleId);
+        if (role) {
+          const rolePermissions = await storage.getRolePermissions(role.id);
+          const permissions = [];
+          
+          for (const rp of rolePermissions) {
+            const permission = await storage.getPermission(rp.permissionId);
+            if (permission) {
+              allPermissions.push(permission.name);
+              permissions.push({
+                id: permission.id,
+                name: permission.name,
+                feature: permission.feature,
+                action: permission.action,
+                description: permission.description || `${permission.action} access to ${permission.feature}`
+              });
+            }
+          }
+          
+          roles.push({
+            id: role.id,
+            name: role.name,
+            description: role.description || `${role.name} role`,
+            permissions: permissions
+          });
+        }
+      }
+    }
+    
+    // Generate secure token
+    const tokenPayload = `${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
+    const token = Buffer.from(tokenPayload).toString('base64');
+    
+    console.log(`🔧 Generated dev token for user ${user.id}`);
+    
+    // Store token mapping in memory
+    global.tokenStore = global.tokenStore || new Map();
+    global.tokenStore.set(token, {
+      userId: user.id,
+      userData: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: roles,
+        permissions: allPermissions
+      },
+      createdAt: Date.now(),
+      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
+    });
+    
+    console.log("🔧 Development auto-authentication successful");
+    
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: roles,
+        permissions: allPermissions
+      },
+      token: token
+    });
+  } catch (error) {
+    console.error("Dev token generation error:", error);
+    res.status(500).json({ message: "Failed to generate development token" });
+  }
+});
+
 router.get("/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization}`);
@@ -841,23 +968,148 @@ function checkRateLimit(userId: number): boolean {
   return true;
 }
 
-// Authentication middleware for AI routes
-function requireAuth(req: any, res: any, next: any) {
+// Authentication middleware for AI routes - aligned with main auth system
+async function requireAuth(req: any, res: any, next: any) {
+  console.log('[AI Auth] Authenticating request...');
   const authHeader = req.headers.authorization;
   
+  // Check for Bearer token in authorization header
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    console.log('[AI Auth] Missing or invalid authorization header');
     return res.status(401).json({ message: 'Authentication required' });
   }
   
   const token = authHeader.substring(7);
-  global.tokenStore = global.tokenStore || new Map();
-  const tokenData = global.tokenStore.get(token);
+  console.log('[AI Auth] Token received, length:', token.length);
   
-  if (!tokenData || Date.now() > tokenData.expiresAt) {
-    return res.status(401).json({ message: 'Invalid or expired token' });
+  // Initialize token store if needed
+  global.tokenStore = global.tokenStore || new Map();
+  let tokenData = global.tokenStore.get(token);
+  
+  // If token not in memory store, try to reconstruct from token (for server restart resilience)
+  if (!tokenData) {
+    console.log('[AI Auth] Token not in memory store, attempting to reconstruct...');
+    
+    try {
+      const decoded = Buffer.from(token, 'base64').toString();
+      const [userId, timestamp, secret] = decoded.split(':');
+      const expectedSecret = process.env.SESSION_SECRET || 'dev-secret-key';
+      
+      console.log('[AI Auth] Decoded token - userId:', userId, 'timestamp:', timestamp);
+      
+      // Validate token format
+      if (secret !== expectedSecret) {
+        console.log('[AI Auth] Invalid token secret');
+        return res.status(401).json({ message: 'Invalid token' });
+      }
+      
+      if (isNaN(Number(userId)) || isNaN(Number(timestamp))) {
+        console.log('[AI Auth] Invalid token format - userId or timestamp is not a number');
+        return res.status(401).json({ message: 'Invalid token format' });
+      }
+      
+      // Check token age (7 days max)
+      const tokenAge = Date.now() - Number(timestamp);
+      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      
+      if (tokenAge > maxAge) {
+        console.log('[AI Auth] Token expired - age:', Math.floor(tokenAge / 1000 / 60 / 60), 'hours');
+        return res.status(401).json({ message: 'Token expired' });
+      }
+      
+      // Token is valid but not in memory store - fetch user from database
+      console.log('[AI Auth] Token valid, fetching user', userId, 'from database...');
+      
+      try {
+        const user = await storage.getUser(Number(userId));
+        
+        if (!user) {
+          console.log('[AI Auth] User not found in database');
+          return res.status(401).json({ message: 'User not found' });
+        }
+        
+        if (!user.isActive) {
+          console.log('[AI Auth] User account is inactive');
+          return res.status(401).json({ message: 'User account inactive' });
+        }
+        
+        // Get user roles and permissions from database
+        console.log('[AI Auth] Fetching user roles and permissions...');
+        const userRoles = await storage.getUserRoles(user.id);
+        const roles = [];
+        const allPermissions: string[] = [];
+        
+        for (const userRole of userRoles) {
+          const role = await storage.getRole(userRole.roleId);
+          if (role) {
+            const rolePermissions = await storage.getRolePermissions(role.id);
+            const permissions = [];
+            
+            for (const rp of rolePermissions) {
+              const permission = await storage.getPermission(rp.permissionId);
+              if (permission) {
+                allPermissions.push(permission.name);
+                permissions.push({
+                  id: permission.id,
+                  name: permission.name,
+                  feature: permission.feature,
+                  action: permission.action,
+                  description: permission.description || `${permission.action} access to ${permission.feature}`
+                });
+              }
+            }
+            
+            roles.push({
+              id: role.id,
+              name: role.name,
+              description: role.description || `${role.name} role with assigned permissions`,
+              permissions: permissions
+            });
+          }
+        }
+        
+        // Reconstruct token data
+        tokenData = {
+          userId: user.id,
+          userData: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            roles: roles,
+            permissions: allPermissions
+          },
+          createdAt: Number(timestamp),
+          expiresAt: Number(timestamp) + maxAge
+        };
+        
+        // Store in memory for future requests
+        global.tokenStore.set(token, tokenData);
+        console.log('[AI Auth] Token reconstructed and cached for user:', user.id);
+        
+      } catch (dbError) {
+        console.error('[AI Auth] Database error while fetching user:', dbError);
+        return res.status(500).json({ message: 'Authentication service error' });
+      }
+      
+    } catch (error) {
+      console.error('[AI Auth] Error reconstructing token:', error);
+      return res.status(401).json({ message: 'Invalid token' });
+    }
   }
   
+  // Check if token is expired
+  if (tokenData.expiresAt && Date.now() > tokenData.expiresAt) {
+    console.log('[AI Auth] Token expired for user:', tokenData.userId);
+    global.tokenStore.delete(token);
+    return res.status(401).json({ message: 'Token expired' });
+  }
+  
+  // Authentication successful - set userId and continue
   req.userId = tokenData.userId;
+  req.userData = tokenData.userData; // Also include full user data for potential use
+  console.log('[AI Auth] Authentication successful for user:', tokenData.userId);
   next();
 }
 
@@ -873,6 +1125,9 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
       messageLength: message?.length,
       hasAuth: !!req.headers.authorization
     });
+    
+    // Set response type to JSON immediately
+    res.setHeader('Content-Type', 'application/json');
     
     if (!userId) {
       console.error('[AI Schedule] No userId found in request');
@@ -894,100 +1149,151 @@ router.post("/ai/schedule/query", requireAuth, async (req, res) => {
     
     let convId = conversationId;
     
-    // Create new conversation if needed
-    if (!convId) {
-      console.log('[AI Schedule] Creating new conversation for user:', userId);
-      const title = await schedulingAI.generateTitle(message);
-      const conversation = await storage.createSchedulingConversation({
-        userId,
-        title,
-        page: 'production-schedule'
+    try {
+      // Create new conversation if needed
+      if (!convId) {
+        console.log('[AI Schedule] Creating new conversation for user:', userId);
+        const title = await schedulingAI.generateTitle(message);
+        const conversation = await storage.createSchedulingConversation({
+          userId,
+          title,
+          page: 'production-schedule'
+        });
+        convId = conversation.id;
+        console.log('[AI Schedule] Created conversation:', convId);
+      }
+      
+      // Save user message
+      await storage.addSchedulingMessage({
+        conversationId: convId,
+        role: 'user',
+        content: message
       });
-      convId = conversation.id;
-      console.log('[AI Schedule] Created conversation:', convId);
+      
+      // Get conversation history
+      const history = await storage.getSchedulingMessages(convId);
+      const formattedHistory = history
+        .filter(msg => msg.id !== history[history.length - 1]?.id) // Exclude the just-added message
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
+      
+      // Generate AI response
+      console.log('[AI Schedule] Generating AI response for conversation:', convId);
+      const aiResponse = await schedulingAI.generateResponse(message, formattedHistory);
+      
+      // Save AI response
+      const assistantMessage = await storage.addSchedulingMessage({
+        conversationId: convId,
+        role: 'assistant',
+        content: aiResponse
+      });
+      
+      console.log('[AI Schedule] Response generated successfully for user:', userId);
+      res.json({
+        conversationId: convId,
+        message: assistantMessage
+      });
+      
+    } catch (innerError: any) {
+      // Handle errors from the AI service specifically
+      console.error('[AI Schedule] Inner error during AI processing:', innerError);
+      
+      // Check if it's an OpenAI-related error
+      if (innerError?.message?.includes('OpenAI')) {
+        return res.status(503).json({ 
+          error: innerError.message,
+          details: 'The AI service is having trouble. Please check the API configuration.'
+        });
+      }
+      
+      // Check if it's a database error
+      if (innerError?.message?.includes('database') || innerError?.code === 'ECONNREFUSED') {
+        return res.status(503).json({ 
+          error: 'Database connection error',
+          details: 'Unable to save the conversation. Please try again.'
+        });
+      }
+      
+      // Generic inner error
+      return res.status(500).json({ 
+        error: 'Failed to process your message',
+        details: innerError?.message || 'An unexpected error occurred'
+      });
     }
     
-    // Save user message
-    await storage.addSchedulingMessage({
-      conversationId: convId,
-      role: 'user',
-      content: message
-    });
-    
-    // Get conversation history
-    const history = await storage.getSchedulingMessages(convId);
-    const formattedHistory = history
-      .filter(msg => msg.id !== history[history.length - 1]?.id) // Exclude the just-added message
-      .map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
-    
-    // Generate AI response
-    console.log('[AI Schedule] Generating AI response for conversation:', convId);
-    const aiResponse = await schedulingAI.generateResponse(message, formattedHistory);
-    
-    // Save AI response
-    const assistantMessage = await storage.addSchedulingMessage({
-      conversationId: convId,
-      role: 'assistant',
-      content: aiResponse
-    });
-    
-    console.log('[AI Schedule] Response generated successfully for user:', userId);
-    res.json({
-      conversationId: convId,
-      message: assistantMessage
-    });
-  } catch (error) {
+  } catch (error: any) {
     console.error('[AI Schedule] Error processing query:', error);
+    console.error('[AI Schedule] Error stack:', error?.stack);
     console.error('[AI Schedule] Error details:', {
       userId: (req as any).userId,
       hasAuth: !!req.headers.authorization,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error'
+      errorMessage: error?.message || 'Unknown error',
+      errorType: error?.constructor?.name
     });
-    res.status(500).json({ error: 'Failed to process scheduling query' });
+    
+    // Always return JSON error responses
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ 
+      error: 'Failed to process scheduling query',
+      details: error?.message || 'An unexpected error occurred. Please try again.'
+    });
   }
 });
 
 // Get user's conversations
 router.get("/ai/schedule/conversations", requireAuth, async (req, res) => {
   try {
+    res.setHeader('Content-Type', 'application/json');
     const userId = (req as any).userId;
+    console.log('[AI Schedule] Fetching conversations for user:', userId);
     const conversations = await storage.getSchedulingConversations(userId);
     res.json(conversations);
-  } catch (error) {
-    console.error('Error fetching conversations:', error);
-    res.status(500).json({ error: 'Failed to fetch conversations' });
+  } catch (error: any) {
+    console.error('[AI Schedule] Error fetching conversations:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ 
+      error: 'Failed to fetch conversations',
+      details: error?.message || 'Database error'
+    });
   }
 });
 
 // Get messages for a conversation
 router.get("/ai/schedule/messages/:conversationId", requireAuth, async (req, res) => {
   try {
+    res.setHeader('Content-Type', 'application/json');
     const conversationId = parseInt(req.params.conversationId);
     
     if (isNaN(conversationId)) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
     
+    console.log('[AI Schedule] Fetching messages for conversation:', conversationId);
     const messages = await storage.getSchedulingMessages(conversationId);
     res.json(messages);
-  } catch (error) {
-    console.error('Error fetching messages:', error);
-    res.status(500).json({ error: 'Failed to fetch messages' });
+  } catch (error: any) {
+    console.error('[AI Schedule] Error fetching messages:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ 
+      error: 'Failed to fetch messages',
+      details: error?.message || 'Database error'
+    });
   }
 });
 
 // Delete a conversation
 router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (req, res) => {
   try {
+    res.setHeader('Content-Type', 'application/json');
     const conversationId = parseInt(req.params.conversationId);
     
     if (isNaN(conversationId)) {
       return res.status(400).json({ error: 'Invalid conversation ID' });
     }
     
+    console.log('[AI Schedule] Deleting conversation:', conversationId);
     const success = await storage.deleteSchedulingConversation(conversationId);
     
     if (success) {
@@ -995,9 +1301,13 @@ router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (
     } else {
       res.status(404).json({ error: 'Conversation not found' });
     }
-  } catch (error) {
-    console.error('Error deleting conversation:', error);
-    res.status(500).json({ error: 'Failed to delete conversation' });
+  } catch (error: any) {
+    console.error('[AI Schedule] Error deleting conversation:', error);
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).json({ 
+      error: 'Failed to delete conversation',
+      details: error?.message || 'Database error'
+    });
   }
 });
 

@@ -164,21 +164,64 @@ export function useAuth() {
       const isDev = import.meta.env.MODE === 'development';
       
       // Token-based authentication - get token from localStorage
-      const token = localStorage.getItem('auth_token');
+      let token = localStorage.getItem('auth_token');
       if (!token) {
-        // In development mode, auto-create an admin user without requiring login
+        // In development mode, fetch a development token
         if (isDev) {
-          console.log('🔧 Development mode: Auto-login as admin user');
-          const devUser = {
-            id: 1,
-            username: "admin",
-            email: "admin@planettogether.com",
-            firstName: "Admin",
-            lastName: "User",
-            isActive: true,
-            roles: [createRoleStructure('Administrator')]
-          };
-          return devUser;
+          console.log('🔧 [useAuth] Development mode: Fetching development token...');
+          try {
+            const devTokenResponse = await fetch('/api/auth/dev-token');
+            if (devTokenResponse.ok) {
+              const devData = await devTokenResponse.json();
+              
+              // Store the token and user data
+              localStorage.setItem('auth_token', devData.token);
+              localStorage.setItem('user', JSON.stringify(devData.user));
+              
+              console.log('🔧 [useAuth] Development token stored successfully');
+              token = devData.token;
+              
+              // Return the user data with proper permissions
+              if (devData.user.roles && Array.isArray(devData.user.roles)) {
+                devData.user.roles = devData.user.roles.map((role: any) => {
+                  if (!role.permissions || role.permissions.length === 0) {
+                    return createRoleStructure(role.name);
+                  }
+                  return role;
+                });
+              } else {
+                devData.user.roles = [createRoleStructure('Administrator')];
+              }
+              
+              return devData.user;
+            } else {
+              console.error('Failed to get development token from server');
+              // Fallback to local user object
+              const devUser = {
+                id: 1,
+                username: "admin",
+                email: "admin@planettogether.com",
+                firstName: "Admin",
+                lastName: "User",
+                isActive: true,
+                roles: [createRoleStructure('Administrator')]
+              };
+              return devUser;
+            }
+          } catch (error) {
+            console.error('Error fetching development token:', error);
+            // Fallback to local user object
+            const devUser = {
+              id: 1,
+              username: "admin",
+              email: "admin@planettogether.com",
+              firstName: "Admin",
+              lastName: "User",
+              isActive: true,
+              roles: [createRoleStructure('Administrator')]
+            };
+            return devUser;
+          }
         }
         return null;
       }

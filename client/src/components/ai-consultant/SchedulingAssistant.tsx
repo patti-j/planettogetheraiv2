@@ -47,13 +47,40 @@ export function SchedulingAssistant() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, conversationId }: { message: string; conversationId?: number }) => {
-      const response = await apiRequest('POST', '/api/ai/schedule/query', {
-        message,
-        conversationId,
-      });
-      return response.json();
+      console.log('[SchedulingAssistant] Sending message:', { message: message.substring(0, 50), conversationId });
+      
+      try {
+        const response = await apiRequest('POST', '/api/ai/schedule/query', {
+          message,
+          conversationId,
+        });
+        
+        // Check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('[SchedulingAssistant] Received non-JSON response:', contentType);
+          const text = await response.text();
+          console.error('[SchedulingAssistant] Response text:', text.substring(0, 200));
+          throw new Error('Server returned an invalid response format. Please refresh and try again.');
+        }
+        
+        const data = await response.json();
+        
+        // Check for error in response
+        if (data.error) {
+          console.error('[SchedulingAssistant] API error:', data.error);
+          throw new Error(data.error);
+        }
+        
+        return data;
+      } catch (error: any) {
+        console.error('[SchedulingAssistant] Error in mutationFn:', error);
+        // Re-throw to be handled by onError
+        throw error;
+      }
     },
     onSuccess: (data) => {
+      console.log('[SchedulingAssistant] Message sent successfully:', data.conversationId);
       setMessage("");
       if (data.conversationId && !currentConversationId) {
         setCurrentConversationId(data.conversationId);
@@ -63,11 +90,33 @@ export function SchedulingAssistant() {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/schedule/messages', data.conversationId] });
     },
     onError: (error: any) => {
-      const errorMessage = error?.response?.data?.error || 'Failed to send message';
+      console.error('[SchedulingAssistant] Error sending message:', error);
+      
+      let errorMessage = 'Failed to send message';
+      let errorDetails = '';
+      
+      // Parse different error types
+      if (error?.message) {
+        errorMessage = error.message;
+        
+        // Provide specific guidance for common errors
+        if (error.message.includes('OpenAI API key')) {
+          errorDetails = 'The AI service is not properly configured. Please contact support.';
+        } else if (error.message.includes('rate limit')) {
+          errorDetails = 'Too many requests. Please wait a moment before trying again.';
+        } else if (error.message.includes('Invalid response format')) {
+          errorDetails = 'The server is having issues. Please refresh the page and try again.';
+        } else if (error.message.includes('Network')) {
+          errorDetails = 'Network connection issue. Please check your connection and try again.';
+        } else if (error.message.includes('quota')) {
+          errorDetails = 'AI service quota exceeded. Please contact support.';
+        }
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: errorMessage,
+        description: errorDetails ? `${errorMessage}. ${errorDetails}` : errorMessage,
       });
     },
   });
@@ -75,19 +124,36 @@ export function SchedulingAssistant() {
   // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: number) => {
-      const response = await apiRequest('DELETE', `/api/ai/schedule/conversations/${conversationId}`);
-      return response.json();
+      console.log('[SchedulingAssistant] Deleting conversation:', conversationId);
+      
+      try {
+        const response = await apiRequest('DELETE', `/api/ai/schedule/conversations/${conversationId}`);
+        
+        // Check if the response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('[SchedulingAssistant] Delete received non-JSON response');
+          throw new Error('Server returned an invalid response format');
+        }
+        
+        return response.json();
+      } catch (error: any) {
+        console.error('[SchedulingAssistant] Error in delete mutationFn:', error);
+        throw error;
+      }
     },
     onSuccess: () => {
+      console.log('[SchedulingAssistant] Conversation deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['/api/ai/schedule/conversations'] });
       setCurrentConversationId(null);
       setShowConversations(false);
     },
-    onError: () => {
+    onError: (error: any) => {
+      console.error('[SchedulingAssistant] Error deleting conversation:', error);
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to delete conversation",
+        description: error?.message || "Failed to delete conversation",
       });
     },
   });
@@ -248,6 +314,11 @@ export function SchedulingAssistant() {
                 <p className="text-sm">Ask me anything about production scheduling!</p>
                 <p className="text-xs mt-2">I can help with PlanetTogether, scheduling concepts, and optimization strategies.</p>
               </div>
+            ) : messages.length === 0 && currentConversationId ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+                <p className="text-sm mt-2">Loading messages...</p>
+              </div>
             ) : (
               messages.map((msg) => (
                 <div
@@ -273,7 +344,7 @@ export function SchedulingAssistant() {
                   >
                     <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     <p className="text-xs opacity-70 mt-1">
-                      {new Date(msg.createdAt!).toLocaleTimeString()}
+                      {msg.createdAt ? new Date(msg.createdAt).toLocaleTimeString() : 'Just now'}
                     </p>
                   </div>
                 </div>

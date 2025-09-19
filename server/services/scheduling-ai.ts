@@ -86,6 +86,12 @@ export class SchedulingAI {
   ): Promise<string> {
     const finalOptions = { ...this.defaultOptions, ...options };
     
+    // Validate API key
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('[SchedulingAI] OpenAI API key is not configured');
+      throw new Error('OpenAI API key is not configured. Please set the OPENAI_API_KEY environment variable.');
+    }
+    
     // Build messages array with system prompt and history
     const messages: OpenAI.Chat.ChatCompletionMessageParam[] = [
       { role: 'system', content: SYSTEM_PROMPT }
@@ -104,6 +110,11 @@ export class SchedulingAI {
     messages.push({ role: 'user', content: userMessage });
 
     try {
+      console.log('[SchedulingAI] Sending request to OpenAI API...');
+      console.log('[SchedulingAI] Model:', finalOptions.model);
+      console.log('[SchedulingAI] Message count:', messages.length);
+      console.log('[SchedulingAI] User message length:', userMessage.length);
+      
       const completion = await openai.chat.completions.create({
         model: finalOptions.model!,
         messages,
@@ -111,15 +122,58 @@ export class SchedulingAI {
         temperature: finalOptions.temperature,
       });
 
-      return completion.choices[0]?.message?.content || 'I apologize, but I was unable to generate a response. Please try again.';
-    } catch (error) {
-      console.error('OpenAI API error:', error);
-      throw new Error('Failed to generate AI response');
+      const response = completion.choices[0]?.message?.content;
+      
+      if (!response) {
+        console.error('[SchedulingAI] OpenAI returned empty response');
+        throw new Error('OpenAI returned an empty response');
+      }
+      
+      console.log('[SchedulingAI] Successfully generated response, length:', response.length);
+      return response;
+      
+    } catch (error: any) {
+      console.error('[SchedulingAI] OpenAI API error:', error);
+      console.error('[SchedulingAI] Error type:', error?.constructor?.name);
+      console.error('[SchedulingAI] Error message:', error?.message);
+      console.error('[SchedulingAI] Error response:', error?.response?.data);
+      
+      // Handle specific OpenAI errors
+      if (error?.code === 'insufficient_quota') {
+        throw new Error('OpenAI API quota exceeded. Please check your billing settings.');
+      }
+      
+      if (error?.code === 'invalid_api_key') {
+        throw new Error('Invalid OpenAI API key. Please check your configuration.');
+      }
+      
+      if (error?.code === 'model_not_found') {
+        throw new Error(`Model ${finalOptions.model} not found. Please use a valid model.`);
+      }
+      
+      if (error?.status === 429) {
+        throw new Error('OpenAI API rate limit exceeded. Please try again later.');
+      }
+      
+      if (error?.status === 500 || error?.status === 502 || error?.status === 503) {
+        throw new Error('OpenAI API service is temporarily unavailable. Please try again later.');
+      }
+      
+      // Generic error
+      throw new Error(`Failed to generate AI response: ${error?.message || 'Unknown error'}`);
     }
   }
 
   async generateTitle(firstMessage: string): Promise<string> {
     try {
+      // Validate API key
+      if (!process.env.OPENAI_API_KEY) {
+        console.error('[SchedulingAI] OpenAI API key is not configured for title generation');
+        return 'Scheduling Consultation';
+      }
+      
+      console.log('[SchedulingAI] Generating conversation title...');
+      
       const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [
@@ -133,9 +187,17 @@ export class SchedulingAI {
         temperature: 0.5,
       });
 
-      return completion.choices[0]?.message?.content?.trim() || 'Scheduling Consultation';
-    } catch (error) {
-      console.error('Error generating title:', error);
+      const title = completion.choices[0]?.message?.content?.trim() || 'Scheduling Consultation';
+      console.log('[SchedulingAI] Generated title:', title);
+      return title;
+      
+    } catch (error: any) {
+      console.error('[SchedulingAI] Error generating title:', error);
+      console.error('[SchedulingAI] Title error details:', {
+        message: error?.message,
+        code: error?.code,
+        status: error?.status
+      });
       return 'Scheduling Consultation';
     }
   }
