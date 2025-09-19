@@ -170,6 +170,9 @@ export default function App() {
   const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
+  // Check if this is a portal route - handle separately from main app
+  const isPortalRoute = currentPath.startsWith('/portal');
+  
   // Run federation tests in development mode
   useEffect(() => {
     if (import.meta.env.DEV) {
@@ -177,8 +180,14 @@ export default function App() {
     }
   }, []);
   
-  // Check if this is a portal route - handle separately from main app
-  const isPortalRoute = currentPath.startsWith('/portal');
+  // Handle redirect for unauthenticated users trying to access protected routes
+  useEffect(() => {
+    if (!isPortalRoute && !isPublicPath && !isAuthenticated && !isLoading) {
+      // User is trying to access a protected route without authentication
+      // Redirect to login page
+      window.location.href = '/login';
+    }
+  }, [isPortalRoute, isPublicPath, isAuthenticated, isLoading]);
   
   // If on root path and not authenticated, show website (don't redirect)
   // Authenticated users at root path will see the ApplicationApp
@@ -196,10 +205,8 @@ export default function App() {
   }
   
   // Determine if we should show website or app (but not for portal routes)
-  const shouldShowWebsite = !isPortalRoute && (
-    // Show website for public paths OR when not authenticated
-    isPublicPath || (!isAuthenticated && !isLoading)
-  );
+  // Only show website for actual public paths, not for protected routes
+  const shouldShowWebsite = !isPortalRoute && isPublicPath;
 
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
@@ -245,7 +252,7 @@ export default function App() {
                         </Switch>
                       </div>
                     ) : shouldShowWebsite ? (
-                      // Show website for public paths or when not authenticated
+                      // Show website for public paths only
                       <WebsiteApp />
                     ) : (
                       // Authenticated users on non-public paths see the Application
