@@ -42,7 +42,13 @@ Note on concurrent work:
 
 ## Recent Updates
 
-**Latest Update (September 19, 2025)**: Implemented AI Scheduling Agent:
+**Latest Update (September 19, 2025)**: Fixed brewery operation dependencies:
+- **Cross-Kettle Dependency Fix**: Corrected dependency generation logic in Bryntum scheduler to prevent incorrect links between boiling operations on different brew kettles
+- **Proper Job Isolation**: Dependencies now only exist within the same job/batch (e.g., HKN-001-00006), not across different batches
+- **Process Sequence Integrity**: Each batch maintains its own linear flow: Milling → Mashing → Lautering → Boiling → Whirlpool → Cooling → Fermentation
+- **Parallel Processing**: Brew Kettle 1 and Brew Kettle 2 now operate independently as intended, improving throughput and scheduling flexibility
+
+**Previous Update (September 19, 2025)**: Implemented AI Scheduling Agent:
 - **AI Agent Integration**: Added comprehensive scheduling AI agent accessible from production schedule page via floating action button (FAB)
 - **Backend Service**: Created scheduling-ai.ts service with OpenAI GPT-4o integration, comprehensive PlanetTogether knowledge base, and conversation management
 - **API Endpoints**: Implemented /api/ai/schedule/* endpoints with robust authentication, rate limiting (20 req/min), and conversation persistence
