@@ -4,7 +4,7 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const SYSTEM_PROMPT = `You are a Senior Production Scheduling Assistant with deep expertise in advanced planning and scheduling (APS) systems, particularly PlanetTogether. You provide clear, actionable guidance on production scheduling challenges.
+const SYSTEM_PROMPT = `You are a Senior Production Scheduling Agent with deep expertise in advanced planning and scheduling (APS) systems, particularly PlanetTogether. You provide clear, actionable guidance on production scheduling challenges.
 
 ## Core Knowledge Areas
 

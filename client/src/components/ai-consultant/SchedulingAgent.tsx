@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import type { SchedulingConversation, SchedulingMessage } from "@shared/schema";
 
-export function SchedulingAssistant() {
+export function SchedulingAgent() {
   const [isOpen, setIsOpen] = useState(false);
   const [message, setMessage] = useState("");
   const [currentConversationId, setCurrentConversationId] = useState<number | null>(null);
@@ -47,7 +47,7 @@ export function SchedulingAssistant() {
   // Send message mutation
   const sendMessageMutation = useMutation({
     mutationFn: async ({ message, conversationId }: { message: string; conversationId?: number }) => {
-      console.log('[SchedulingAssistant] Sending message:', { message: message.substring(0, 50), conversationId });
+      console.log('[SchedulingAgent] Sending message:', { message: message.substring(0, 50), conversationId });
       
       try {
         const response = await apiRequest('POST', '/api/ai/schedule/query', {
@@ -58,9 +58,9 @@ export function SchedulingAssistant() {
         // Check if the response is JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          console.error('[SchedulingAssistant] Received non-JSON response:', contentType);
+          console.error('[SchedulingAgent] Received non-JSON response:', contentType);
           const text = await response.text();
-          console.error('[SchedulingAssistant] Response text:', text.substring(0, 200));
+          console.error('[SchedulingAgent] Response text:', text.substring(0, 200));
           throw new Error('Server returned an invalid response format. Please refresh and try again.');
         }
         
@@ -68,19 +68,19 @@ export function SchedulingAssistant() {
         
         // Check for error in response
         if (data.error) {
-          console.error('[SchedulingAssistant] API error:', data.error);
+          console.error('[SchedulingAgent] API error:', data.error);
           throw new Error(data.error);
         }
         
         return data;
       } catch (error: any) {
-        console.error('[SchedulingAssistant] Error in mutationFn:', error);
+        console.error('[SchedulingAgent] Error in mutationFn:', error);
         // Re-throw to be handled by onError
         throw error;
       }
     },
     onSuccess: (data) => {
-      console.log('[SchedulingAssistant] Message sent successfully:', data.conversationId);
+      console.log('[SchedulingAgent] Message sent successfully:', data.conversationId);
       setMessage("");
       if (data.conversationId && !currentConversationId) {
         setCurrentConversationId(data.conversationId);
@@ -90,7 +90,7 @@ export function SchedulingAssistant() {
       queryClient.invalidateQueries({ queryKey: ['/api/ai/schedule/messages', data.conversationId] });
     },
     onError: (error: any) => {
-      console.error('[SchedulingAssistant] Error sending message:', error);
+      console.error('[SchedulingAgent] Error sending message:', error);
       
       let errorMessage = 'Failed to send message';
       let errorDetails = '';
@@ -124,7 +124,7 @@ export function SchedulingAssistant() {
   // Delete conversation mutation
   const deleteConversationMutation = useMutation({
     mutationFn: async (conversationId: number) => {
-      console.log('[SchedulingAssistant] Deleting conversation:', conversationId);
+      console.log('[SchedulingAgent] Deleting conversation:', conversationId);
       
       try {
         const response = await apiRequest('DELETE', `/api/ai/schedule/conversations/${conversationId}`);
@@ -132,24 +132,24 @@ export function SchedulingAssistant() {
         // Check if the response is JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
-          console.error('[SchedulingAssistant] Delete received non-JSON response');
+          console.error('[SchedulingAgent] Delete received non-JSON response');
           throw new Error('Server returned an invalid response format');
         }
         
         return response.json();
       } catch (error: any) {
-        console.error('[SchedulingAssistant] Error in delete mutationFn:', error);
+        console.error('[SchedulingAgent] Error in delete mutationFn:', error);
         throw error;
       }
     },
     onSuccess: () => {
-      console.log('[SchedulingAssistant] Conversation deleted successfully');
+      console.log('[SchedulingAgent] Conversation deleted successfully');
       queryClient.invalidateQueries({ queryKey: ['/api/ai/schedule/conversations'] });
       setCurrentConversationId(null);
       setShowConversations(false);
     },
     onError: (error: any) => {
-      console.error('[SchedulingAssistant] Error deleting conversation:', error);
+      console.error('[SchedulingAgent] Error deleting conversation:', error);
       toast({
         variant: "destructive",
         title: "Error",
@@ -219,7 +219,7 @@ export function SchedulingAssistant() {
         <div className="flex items-center justify-between p-4 border-b">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-primary" />
-            <h2 className="font-semibold">Scheduling Assistant</h2>
+            <h2 className="font-semibold">Scheduling Agent</h2>
           </div>
           <div className="flex items-center gap-2">
             <Button

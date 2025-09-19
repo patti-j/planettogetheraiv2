@@ -43,10 +43,10 @@ Note on concurrent work:
 ## Recent Updates
 
 **Latest Update (September 19, 2025)**: Implemented AI Scheduling Agent:
-- **AI Assistant Integration**: Added comprehensive scheduling AI assistant accessible from production schedule page via floating action button (FAB)
+- **AI Agent Integration**: Added comprehensive scheduling AI agent accessible from production schedule page via floating action button (FAB)
 - **Backend Service**: Created scheduling-ai.ts service with OpenAI GPT-4o integration, comprehensive PlanetTogether knowledge base, and conversation management
 - **API Endpoints**: Implemented /api/ai/schedule/* endpoints with robust authentication, rate limiting (20 req/min), and conversation persistence
-- **Frontend Component**: Built SchedulingAssistant.tsx with chat interface, conversation history, and real-time message updates using TanStack Query
+- **Frontend Component**: Built SchedulingAgent.tsx with chat interface, conversation history, and real-time message updates using TanStack Query
 - **Authentication Fix**: Updated requireAuth middleware to handle token reconstruction from database, ensuring persistence across server restarts
 - **Knowledge Base**: AI trained on PlanetTogether concepts (finite capacity, pegging, what-if scenarios), Bryntum features, and general APS best practices
 

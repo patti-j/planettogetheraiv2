@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
-import { SchedulingAssistant } from '@/components/ai-consultant/SchedulingAssistant';
+import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -96,8 +96,8 @@ export default function ProductionSchedule() {
         />
       </div>
 
-      {/* AI Scheduling Assistant */}
-      <SchedulingAssistant />
+      {/* AI Scheduling Agent */}
+      <SchedulingAgent />
     </div>
   );
 }
