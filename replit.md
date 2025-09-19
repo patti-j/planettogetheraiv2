@@ -42,11 +42,12 @@ Note on concurrent work:
 
 ## Recent Updates
 
-**Latest Update (September 19, 2025)**: Fixed brewery operation dependencies:
+**Latest Update (September 19, 2025)**: Fixed brewery operation dependencies and UI controls:
 - **Cross-Kettle Dependency Fix**: Corrected dependency generation logic in Bryntum scheduler to prevent incorrect links between boiling operations on different brew kettles
 - **Proper Job Isolation**: Dependencies now only exist within the same job/batch (e.g., HKN-001-00006), not across different batches
-- **Process Sequence Integrity**: Each batch maintains its own linear flow: Milling → Mashing → Lautering → Boiling → Whirlpool → Cooling → Fermentation
+- **Full Process Chain Dependencies**: Fixed dependency generation to properly connect all steps in the brewery process (Boiling → Whirlpool → Cooling → Fermentation), not just consecutive steps
 - **Parallel Processing**: Brew Kettle 1 and Brew Kettle 2 now operate independently as intended, improving throughput and scheduling flexibility
+- **Fit to View Fix**: Enhanced the zoom-to-fit functionality with proper margins and fallback logic to ensure all scheduled operations are visible in the viewport
 
 **Previous Update (September 19, 2025)**: Implemented AI Scheduling Agent:
 - **AI Agent Integration**: Added comprehensive scheduling AI agent accessible from production schedule page via floating action button (FAB)
