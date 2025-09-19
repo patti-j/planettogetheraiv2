@@ -794,7 +794,7 @@ router.get("/users/:userId/current-role", async (req, res) => {
 
 router.post("/api/generate-brewery-data", async (req, res) => {
   try {
-    console.log('Generating complete brewery process data...');
+    console.log('Starting brewery data generation...');
     
     // Standard brewery process steps with durations (in hours)
     const brewerySteps = [
@@ -819,11 +819,15 @@ router.post("/api/generate-brewery-data", async (req, res) => {
     
     // Map resources to steps
     const resourceMap = new Map();
+    console.log(`Found ${resourceRows.length} resources`);
     for (const step of brewerySteps) {
       const pattern = new RegExp(step.resource_pattern, 'i');
       const matchingResource = resourceRows.find((r: any) => pattern.test(r.name));
       if (matchingResource) {
         resourceMap.set(step.name, matchingResource.resource_id);
+        console.log(`Mapped ${step.name} to resource ${matchingResource.name} (${matchingResource.resource_id})`);
+      } else {
+        console.log(`WARNING: No resource found for ${step.name} with pattern ${step.resource_pattern}`);
       }
     }
     
@@ -841,8 +845,11 @@ router.post("/api/generate-brewery-data", async (req, res) => {
     let operationsAdded = 0;
     let jobsProcessed = 0;
     
+    console.log(`Processing ${jobRows.length} existing jobs...`);
+    
     // Process each existing job
     for (const job of jobRows) {
+      console.log(`Processing job ${job.external_id}...`);
       // Get existing operations for this job
       const existingOpsQuery = `
         SELECT name, sequence_number 
@@ -898,16 +905,20 @@ router.post("/api/generate-brewery-data", async (req, res) => {
         lastEndTime = scheduledEnd;
         
         const opExternalId = `${job.external_id}-${step.name}-${Date.now()}`;
-        const opResult = await db.execute(sql.raw(`
+        const opDescription = `${step.name} process for ${(job.name || job.external_id).replace(/'/g, "''")}`;
+        
+        console.log(`  Adding ${step.name} operation...`);
+        
+        const insertOpQuery = `
           INSERT INTO ptjoboperations (
             external_id, name, description, job_id, 
             sequence_number, scheduled_start, scheduled_end,
             cycle_hrs, setup_hours, post_processing_hours,
             required_finish_qty, percent_finished
           ) VALUES (
-            '${opExternalId}',
-            '${step.name}',
-            '${step.name} process for ${job.name || job.external_id}',
+            '${opExternalId.replace(/'/g, "''")}',
+            '${step.name.replace(/'/g, "''")}',
+            '${opDescription}',
             ${job.id},
             ${step.sequence},
             '${scheduledStart.toISOString()}',
@@ -919,7 +930,9 @@ router.post("/api/generate-brewery-data", async (req, res) => {
             0
           )
           RETURNING id
-        `));
+        `;
+        
+        const opResult = await db.execute(sql.raw(insertOpQuery));
         
         const opResultRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
         if (opResultRows[0]) {
@@ -960,6 +973,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
     }
     
     // Create 3 new complete brewery jobs
+    console.log('\nCreating new complete brewery jobs...');
     const newJobStyles = [
       { name: 'IPA', description: 'India Pale Ale - Full Process', skipWhirlpool: false },
       { name: 'Lager', description: 'German Lager - Full Process', skipWhirlpool: false },
@@ -975,20 +989,24 @@ router.post("/api/generate-brewery-data", async (req, res) => {
       const dueDate = new Date();
       dueDate.setDate(dueDate.getDate() + 7); // Due in 7 days
       
-      const jobResult = await db.execute(sql.raw(`
+      console.log(`\nCreating new job: ${jobExternalId}`);
+      
+      const insertJobQuery = `
         INSERT INTO ptjobs (
           external_id, name, description, priority, 
           need_date_time, scheduled_status
         ) VALUES (
-          '${jobExternalId}',
-          '${style.name} Batch ${timestamp}',
-          '${style.description}',
+          '${jobExternalId.replace(/'/g, "''")}',
+          '${style.name.replace(/'/g, "''")} Batch ${timestamp}',
+          '${style.description.replace(/'/g, "''")}',
           2,
           '${dueDate.toISOString()}',
           'scheduled'
         )
         RETURNING id
-      `));
+      `;
+      
+      const jobResult = await db.execute(sql.raw(insertJobQuery));
       
       const jobResultRows = Array.isArray(jobResult) ? jobResult : jobResult.rows || [];
       if (jobResultRows[0]) {
@@ -1011,16 +1029,18 @@ router.post("/api/generate-brewery-data", async (req, res) => {
           lastEndTime = scheduledEnd;
           
           const opExternalId = `${jobExternalId}-${step.name}`;
-          const opResult = await db.execute(sql.raw(`
+          console.log(`    Adding ${step.name} operation...`);
+          
+          const insertOpQuery = `
             INSERT INTO ptjoboperations (
               external_id, name, description, job_id,
               sequence_number, scheduled_start, scheduled_end,
               cycle_hrs, setup_hours, post_processing_hours,
               required_finish_qty, percent_finished
             ) VALUES (
-              '${opExternalId}',
-              '${step.name}',
-              '${step.name} for ${style.name}',
+              '${opExternalId.replace(/'/g, "''")}',
+              '${step.name.replace(/'/g, "''")}',
+              '${step.name.replace(/'/g, "''")} for ${style.name.replace(/'/g, "''")}',
               ${jobId},
               ${step.sequence},
               '${scheduledStart.toISOString()}',
@@ -1032,7 +1052,9 @@ router.post("/api/generate-brewery-data", async (req, res) => {
               0
             )
             RETURNING id
-          `));
+          `;
+          
+          const opResult = await db.execute(sql.raw(insertOpQuery));
           
           const opRows = Array.isArray(opResult) ? opResult : opResult.rows || [];
           if (opRows[0]) {
