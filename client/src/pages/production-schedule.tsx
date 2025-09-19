@@ -82,10 +82,10 @@ export default function ProductionSchedule() {
           </div>
         )}
 
-        {/* Scheduler iframe */}
+        {/* Scheduler iframe with cache busting */}
         <iframe
           ref={iframeRef}
-          src="/api/scheduler-demo"
+          src={`/api/scheduler-demo?v=${Date.now()}`}
           className="w-full h-full border-0"
           title="Production Scheduler"
           data-testid="production-scheduler-iframe"

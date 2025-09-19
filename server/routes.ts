@@ -864,7 +864,8 @@ router.get("/pt-operations", async (req, res) => {
     const operations = operationsData.map((op: any) => ({
       id: op.operation_id,
       name: op.operation_name || `Operation ${op.operation_id}`,
-      jobName: op.job_name,
+      // Use job external_id (batch ID) or description if name is empty
+      jobName: op.job_name || op.job_external_id || op.job_description || 'No Job',
       operationName: op.operation_name,
       resourceName: op.resource_name || 'Unassigned',
       resourceId: op.resource_id ? String(op.resource_id) : null,  // Convert to string to match Bryntum requirements
@@ -874,7 +875,10 @@ router.get("/pt-operations", async (req, res) => {
       percent_done: op.percent_finished || 0,
       status: op.activity_status || 'Not Started',
       priority: op.job_priority || 'Medium',
-      dueDate: op.job_due_date
+      dueDate: op.job_due_date,
+      // Also pass the raw external_id for dependency grouping
+      externalId: op.operation_external_id,
+      jobExternalId: op.job_external_id
     }));
 
     console.log(`Successfully fetched ${operations.length} PT operations`);
