@@ -111,18 +111,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
 export function NavigationProvider({ children }: { children: ReactNode }) {
   const [recentPages, setRecentPages] = useState<RecentPage[]>([]);
 
-  // Load recent pages from localStorage on mount
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem('recent_pages');
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        setRecentPages(parsed);
-      }
-    } catch (error) {
-      console.error('Failed to load recent pages from localStorage:', error);
-    }
-  }, []);
+  const [isLoadingRecentPages, setIsLoadingRecentPages] = useState(true);
   const [lastVisitedRoute, setLastVisitedRouteState] = useState<string | null>(null);
   const [location] = useLocation();
   const { user, isAuthenticated } = useAuth();
@@ -218,7 +207,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  // Load recent pages from user preferences (database only) - FIXED to prevent infinite loop
+  // Load recent pages from database API or localStorage fallback
   useEffect(() => {
     const loadRecentPages = async () => {
       if (isAuthenticated && user?.id && typeof user.id === 'number') {
@@ -233,42 +222,65 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
               isPinned: true
             }];
             setRecentPages(defaultRecentPages);
+            setIsLoadingRecentPages(false);
             return;
           }
           
           // Add delay to ensure user is fully authenticated
           await new Promise(resolve => setTimeout(resolve, 100));
           
-          const response = await fetch(`/api/user-preferences/${user.id}`, {
-            headers: {
-              'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
-            },
-            credentials: 'include',
-          });
+          // Fetch recent pages from the recent-pages API endpoint
+          const response = await apiRequest('GET', '/api/recent-pages');
           
-          // Check if response is OK and contains JSON
-          if (!response.ok) {
-            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          if (response.ok) {
+            const dbPages = await response.json();
+            
+            // Transform database format to local format
+            const transformedPages = dbPages.map((page: any) => {
+              const mappedPage = pageMapping[page.path];
+              return {
+                path: page.path,
+                label: page.title || mappedPage?.label || generateLabelFromPath(page.path).label,
+                icon: mappedPage?.icon || generateLabelFromPath(page.path).icon,
+                timestamp: new Date(page.visitedAt).getTime(),
+                isPinned: false // Will be handled separately if needed
+              };
+            });
+            
+            // Apply processing logic
+            const processedPages = ensureGettingStartedPinned(transformedPages);
+            setRecentPages(processedPages);
+            
+            // Save to localStorage as backup
+            localStorage.setItem('recent_pages', JSON.stringify(processedPages));
+          } else {
+            throw new Error(`Failed to fetch recent pages: ${response.status}`);
           }
+        } catch (error) {
+          console.warn('Failed to load recent pages from database, falling back to localStorage:', error);
           
-          const contentType = response.headers.get('content-type');
-          if (!contentType || !contentType.includes('application/json')) {
-            throw new Error('Response is not JSON');
-          }
-          
-          const preferences = await response.json();
-          const savedRecentPages = preferences?.dashboardLayout?.recentPages || [];
-          
-          // DISABLED: Load last visited route to prevent automatic navigation to stored routes
-          const savedLastVisitedRoute = preferences?.dashboardLayout?.lastVisitedRoute;
-          // NavigationContext - Saved last visited route (not applying)
-          // Commented out to prevent automatic navigation
-          // if (savedLastVisitedRoute) {
-          //   setLastVisitedRouteState(savedLastVisitedRoute);
-          // }
-          
-          // If no recent pages exist, initialize with default pinned "Getting Started"
-          if (!Array.isArray(savedRecentPages) || savedRecentPages.length === 0) {
+          // Fall back to localStorage
+          try {
+            const stored = localStorage.getItem('recent_pages');
+            if (stored) {
+              const parsed = JSON.parse(stored);
+              const processedPages = ensureGettingStartedPinned(parsed);
+              setRecentPages(processedPages);
+            } else {
+              // Initialize with default pinned "Getting Started" on error
+              const defaultRecentPages = [{
+                path: '/onboarding',
+                label: 'Getting Started',
+                icon: 'BookOpen',
+                timestamp: Date.now(),
+                isPinned: true
+              }];
+              const processedPages = ensureGettingStartedPinned(defaultRecentPages);
+              setRecentPages(processedPages);
+            }
+          } catch (localError) {
+            console.error('Failed to load from localStorage:', localError);
+            // Initialize with default pinned "Getting Started"
             const defaultRecentPages = [{
               path: '/onboarding',
               label: 'Getting Started',
@@ -276,44 +288,26 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
               timestamp: Date.now(),
               isPinned: true
             }];
-            const processedPages = ensureGettingStartedPinned(defaultRecentPages);
-            setRecentPages(processedPages);
-            // Only save if we're creating defaults for the first time
-            if (savedRecentPages.length === 0) {
-              saveRecentPages(processedPages);
-            }
-          } else {
-            // First replace old routes, then ensure Getting Started is pinned
-            const updatedRoutes = replaceOldRoutes(savedRecentPages);
-            const processedPages = ensureGettingStartedPinned(updatedRoutes.slice(0, maxRecentPages));
-            setRecentPages(processedPages);
-            // Only save if auto-pinning or route replacement changed something
-            if (JSON.stringify(processedPages) !== JSON.stringify(savedRecentPages.slice(0, maxRecentPages))) {
-              saveRecentPages(processedPages);
-            }
+            setRecentPages(ensureGettingStartedPinned(defaultRecentPages));
           }
-        } catch (error) {
-          console.warn('Failed to load recent pages from database:', error);
-          console.warn('Error details:', {
-            message: error?.message,
-            type: error?.constructor?.name,
-            stack: error?.stack?.slice(0, 200)
-          });
-          // Initialize with default pinned "Getting Started" on error
-          const defaultRecentPages = [{
-            path: '/onboarding',
-            label: 'Getting Started',
-            icon: 'BookOpen',
-            timestamp: Date.now(),
-            isPinned: true
-          }];
-          const processedPages = ensureGettingStartedPinned(defaultRecentPages);
-          setRecentPages(processedPages);
         }
       } else {
-        // Not authenticated, clear recent pages
-        setRecentPages([]);
+        // Not authenticated, try localStorage
+        try {
+          const stored = localStorage.getItem('recent_pages');
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            setRecentPages(parsed);
+          } else {
+            setRecentPages([]);
+          }
+        } catch (error) {
+          console.error('Failed to load from localStorage:', error);
+          setRecentPages([]);
+        }
       }
+      
+      setIsLoadingRecentPages(false);
     };
 
     loadRecentPages();
@@ -372,7 +366,7 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   
   // Remove unused trackMenuClick function that was causing TypeScript errors
 
-  const addRecentPage = (path: string, label?: string, icon?: string) => {
+  const addRecentPage = async (path: string, label?: string, icon?: string) => {
     // Replace old routes with new ones
     if (path === '/role-management') {
       path = '/user-access-management';
@@ -400,6 +394,20 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     // Ensure finalIcon is always a string, never an object
     if (typeof finalIcon !== 'string') {
       finalIcon = 'FileText';
+    }
+    
+    // Save to database if authenticated
+    if (isAuthenticated && user) {
+      try {
+        await apiRequest('POST', '/api/recent-pages', {
+          path: path,
+          title: finalLabel,
+          visitedAt: new Date().toISOString()
+        });
+      } catch (error) {
+        console.warn('Failed to save recent page to database:', error);
+        // Continue with local storage as fallback
+      }
     }
     
     setRecentPages(current => {
@@ -440,70 +448,16 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
     });
   };
 
-  const saveRecentPages = async (pages: RecentPage[]) => {
-    if (!isAuthenticated || !user?.id) return;
-    
-    const now = Date.now();
-    const MIN_SAVE_INTERVAL = 2000; // 2 seconds minimum between saves
-    
-    // If we saved recently, queue this save for later
-    if (now - lastSaveTime < MIN_SAVE_INTERVAL) {
-      setPendingSave(pages);
-      return;
-    }
-    
-    try {
-      setLastSaveTime(now);
-      
-      // First get current preferences to merge
-      const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
-        headers: {
-          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
-        },
-        credentials: 'include',
-      });
-      
-      if (!getResponse.ok) {
-        throw new Error(`Failed to get preferences: ${getResponse.status}`);
-      }
-      
-      const currentPreferences = await getResponse.json();
-      
-      // Merge recent pages with existing dashboard layout
-      const updatedDashboardLayout = {
-        ...currentPreferences.dashboardLayout,
-        recentPages: pages
-      };
-      
-      // Save to user preferences with merged data
-      const putResponse = await fetch('/api/user-preferences', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          dashboardLayout: updatedDashboardLayout
-        }),
-      });
-      
-      if (!putResponse.ok) {
-        throw new Error(`Failed to save preferences: ${putResponse.status}`);
-      }
-      
-      // Clear any pending save since we just saved
-      setPendingSave(null);
-    } catch (error) {
-      console.warn('Failed to save recent pages to database:', error);
-    }
-    
-    // Always save to localStorage as backup/fallback for persistence
+  const saveRecentPages = (pages: RecentPage[]) => {
+    // Save to localStorage as backup/fallback for persistence
     try {
       localStorage.setItem('recent_pages', JSON.stringify(pages));
     } catch (error) {
       console.error('Failed to save recent pages to localStorage:', error);
     }
+    
+    // Note: Individual pages are saved to database via addRecentPage function
+    // when they are visited, so we don't need to save all pages here
   };
 
   const togglePinPage = (path: string) => {
@@ -520,58 +474,22 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       // Apply auto-pinning logic (but respect manual unpinning of Getting Started)
       const processedUpdated = ensureGettingStartedPinned(sortedUpdated);
       
-      // Save to user preferences
+      // Save to localStorage
       saveRecentPages(processedUpdated);
       
       return processedUpdated;
     });
   };
 
-  const clearRecentPages = async () => {
+  const clearRecentPages = () => {
     setRecentPages([]);
+    localStorage.removeItem('recent_pages');
+    
+    // Note: We would need a DELETE endpoint to clear all recent pages from database
+    // For now, the database will continue to store all visited pages as history
     if (isAuthenticated && user?.id) {
-      try {
-        // First get current preferences to merge
-        const getResponse = await fetch(`/api/user-preferences/${user.id}`, {
-          headers: {
-            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
-          },
-          credentials: 'include',
-        });
-        
-        if (!getResponse.ok) {
-          throw new Error(`Failed to get preferences: ${getResponse.status}`);
-        }
-        
-        const currentPreferences = await getResponse.json();
-        
-        // Merge empty recent pages with existing dashboard layout
-        const updatedDashboardLayout = {
-          ...currentPreferences.dashboardLayout,
-          recentPages: []
-        };
-        
-        // Clear from user preferences with merged data
-        const putResponse = await fetch('/api/user-preferences', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': localStorage.getItem('auth_token') ? `Bearer ${localStorage.getItem('auth_token')}` : '',
-          },
-          credentials: 'include',
-          body: JSON.stringify({
-            dashboardLayout: updatedDashboardLayout
-          }),
-        });
-        
-        if (!putResponse.ok) {
-          throw new Error(`Failed to clear preferences: ${putResponse.status}`);
-        }
-      } catch (error) {
-        console.warn('Failed to clear recent pages from database:', error);
-      }
+      console.log('Recent pages cleared from local storage. Database history preserved.');
     }
-    // Only clear for authenticated users - no localStorage fallback
   };
 
   // Function to set last visited route - FIXED to prevent infinite loop

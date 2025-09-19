@@ -587,7 +587,48 @@ router.post("/user-preferences/:userId", async (req, res) => {
 // Recent pages routes
 router.post("/recent-pages", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    // Check for token authentication
+    const authHeader = req.headers.authorization;
+    let userId: number | null = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // Check token store
+      global.tokenStore = global.tokenStore || new Map();
+      let tokenData = global.tokenStore.get(token);
+      
+      // If not in memory store, try to reconstruct from token (for server restart resilience)
+      if (!tokenData) {
+        try {
+          const decoded = Buffer.from(token, 'base64').toString();
+          const [tokenUserId, timestamp] = decoded.split(':');
+          
+          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+            const tokenAge = Date.now() - Number(timestamp);
+            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+            
+            if (tokenAge < maxAge) {
+              // Verify user exists in database
+              const user = await storage.getUser(Number(tokenUserId));
+              if (user && user.isActive) {
+                userId = Number(tokenUserId);
+              }
+            }
+          }
+        } catch (err) {
+          // Invalid token format
+        }
+      } else if (tokenData.expiresAt > Date.now()) {
+        userId = tokenData.userId;
+      }
+    }
+    
+    // Fallback to session
+    if (!userId) {
+      userId = (req.session as any)?.userId;
+    }
+    
     if (!userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
@@ -602,7 +643,48 @@ router.post("/recent-pages", async (req, res) => {
 
 router.get("/recent-pages", async (req, res) => {
   try {
-    const userId = (req.session as any)?.userId;
+    // Check for token authentication
+    const authHeader = req.headers.authorization;
+    let userId: number | null = null;
+    
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.substring(7);
+      
+      // Check token store
+      global.tokenStore = global.tokenStore || new Map();
+      let tokenData = global.tokenStore.get(token);
+      
+      // If not in memory store, try to reconstruct from token (for server restart resilience)
+      if (!tokenData) {
+        try {
+          const decoded = Buffer.from(token, 'base64').toString();
+          const [tokenUserId, timestamp] = decoded.split(':');
+          
+          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+            const tokenAge = Date.now() - Number(timestamp);
+            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+            
+            if (tokenAge < maxAge) {
+              // Verify user exists in database
+              const user = await storage.getUser(Number(tokenUserId));
+              if (user && user.isActive) {
+                userId = Number(tokenUserId);
+              }
+            }
+          }
+        } catch (err) {
+          // Invalid token format
+        }
+      } else if (tokenData.expiresAt > Date.now()) {
+        userId = tokenData.userId;
+      }
+    }
+    
+    // Fallback to session
+    if (!userId) {
+      userId = (req.session as any)?.userId;
+    }
+    
     if (!userId) {
       return res.status(401).json({ message: "Not authenticated" });
     }
