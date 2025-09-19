@@ -449,7 +449,18 @@ export class DatabaseStorage implements IStorage {
           now() as updated_at
         FROM ptresources 
         WHERE active = true
-        ORDER BY name
+        ORDER BY CASE 
+          -- Order resources by brewery operational sequence
+          WHEN LOWER(name) LIKE '%mill%' THEN 1
+          WHEN LOWER(name) LIKE '%mash%' THEN 2  
+          WHEN LOWER(name) LIKE '%lauter%' THEN 3
+          WHEN LOWER(name) LIKE '%boil%' OR LOWER(name) LIKE '%kettle%' THEN 4
+          WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
+          WHEN LOWER(name) LIKE '%cool%' THEN 6
+          WHEN LOWER(name) LIKE '%ferment%' THEN 7
+          -- Any other resources go after the main process
+          ELSE 8
+        END, name
       `);
       return result.rows as any[];
     } catch (error) {
