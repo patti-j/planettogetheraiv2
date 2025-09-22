@@ -25,7 +25,9 @@ import {
   Target,
   TrendingUp,
   Package,
-  Settings
+  Settings,
+  RefreshCw,
+  Archive
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceType } from '@/hooks/useDeviceType';
@@ -435,7 +437,7 @@ export default function HomePage() {
             </TabsContent>
 
             {/* Events Tab */}
-            <TabsContent value="events" className="h-full p-6 space-y-4">
+            <TabsContent value="events" className="h-full p-6 space-y-4" data-testid="events-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">System Events</h3>
@@ -448,63 +450,121 @@ export default function HomePage() {
                     <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                     Live Feed
                   </div>
+                  <Button variant="outline" size="sm" data-testid="events-refresh-button">
+                    <RefreshCw className="w-4 h-4 mr-2" />
+                    Refresh
+                  </Button>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {systemEvents.map((event) => (
-                  <Card key={event.id} className="hover:shadow-sm transition-shadow">
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className={cn(
-                          "w-8 h-8 rounded-full flex items-center justify-center",
-                          event.status === 'active' ? 'bg-blue-100 text-blue-600' :
-                          event.status === 'resolved' ? 'bg-green-100 text-green-600' :
-                          'bg-gray-100 text-gray-600'
-                        )}>
-                          <Activity className="w-4 h-4" />
+              {/* Loading State */}
+              {isLoadingEvents && (
+                <div className="space-y-3" data-testid="events-loading">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
+                            <div className="h-3 bg-gray-100 rounded w-full mb-2"></div>
+                            <div className="h-3 bg-gray-100 rounded w-1/2"></div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">{event.title}</h4>
-                            <div className="flex items-center gap-2">
-                              <Badge variant={
-                                event.status === 'active' ? 'default' :
-                                event.status === 'resolved' ? 'secondary' : 'outline'
-                              } className="text-xs">
-                                {event.status}
-                              </Badge>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Error State */}
+              {eventsError && (
+                <Card className="border-red-200 bg-red-50" data-testid="events-error">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <h4 className="font-medium">Failed to load system events</h4>
+                    </div>
+                    <p className="text-sm text-red-700 mb-4">
+                      Unable to fetch the latest events. Please check your connection and try again.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-200 text-red-600"
+                      onClick={() => eventsRefetch()}
+                      data-testid="events-retry-button"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Content */}
+              {!isLoadingEvents && !eventsError && (
+                <div className="space-y-3" data-testid="events-content">
+                  {systemEvents.map((event) => (
+                    <Card 
+                      key={event.id} 
+                      className="hover:shadow-sm transition-shadow"
+                      data-testid={`event-card-${event.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className={cn(
+                            "w-8 h-8 rounded-full flex items-center justify-center",
+                            event.status === 'active' ? 'bg-blue-100 text-blue-600' :
+                            event.status === 'resolved' ? 'bg-green-100 text-green-600' :
+                            'bg-gray-100 text-gray-600'
+                          )}>
+                            <Activity className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium">{event.title}</h4>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={
+                                  event.status === 'active' ? 'default' :
+                                  event.status === 'resolved' ? 'secondary' : 'outline'
+                                } className="text-xs" data-testid={`event-status-${event.status}`}>
+                                  {event.status}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(event.timestamp), 'MMM d, h:mm a')}
+                                </span>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {event.description}
+                            </p>
+                            <div className="flex items-center justify-between mt-2">
                               <span className="text-xs text-muted-foreground">
-                                {format(new Date(event.timestamp), 'MMM d, h:mm a')}
+                                Source: {event.source}
                               </span>
-                            </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {event.description}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              Source: {event.source}
-                            </span>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">
-                                View Details
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                Acknowledge
-                              </Button>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" data-testid={`view-details-${event.id}`}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  View Details
+                                </Button>
+                                <Button variant="ghost" size="sm" data-testid={`acknowledge-${event.id}`}>
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Acknowledge
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Alerts Tab */}
-            <TabsContent value="alerts" className="h-full p-6 space-y-4">
+            <TabsContent value="alerts" className="h-full p-6 space-y-4" data-testid="alerts-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">System Alerts</h3>
@@ -513,66 +573,125 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" data-testid="mark-all-read-button">
+                    <CheckCircle className="w-4 h-4 mr-2" />
                     Mark All Read
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button variant="outline" size="sm" data-testid="alerts-filter-button">
                     <Filter className="w-4 h-4 mr-2" />
                     Filter
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {alerts.map((alert) => (
-                  <Card key={alert.id} className={cn(
-                    "hover:shadow-sm transition-shadow",
-                    alert.status === 'unread' ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
-                  )}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        {getAlertIcon(alert.type)}
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <h4 className="font-medium">{alert.title}</h4>
-                            <div className="flex items-center gap-2">
-                              <Badge className={`text-xs ${getPriorityColor(alert.priority)}`}>
-                                {alert.priority.toUpperCase()}
-                              </Badge>
-                              {alert.status === 'unread' && (
-                                <div className="w-2 h-2 bg-blue-600 rounded-full" />
-                              )}
-                            </div>
+              {/* Loading State */}
+              {isLoadingAlerts && (
+                <div className="space-y-3" data-testid="alerts-loading">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2 w-3/4"></div>
+                            <div className="h-3 bg-gray-100 rounded w-full mb-2"></div>
+                            <div className="h-3 bg-gray-100 rounded w-1/2"></div>
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">
-                            {alert.message}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">
-                              {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
-                            </span>
-                            <div className="flex gap-1">
-                              <Button variant="ghost" size="sm">
-                                Acknowledge
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                Archive
-                              </Button>
-                              <Button variant="ghost" size="sm">
-                                Schedule
-                              </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Error State */}
+              {alertsError && (
+                <Card className="border-red-200 bg-red-50" data-testid="alerts-error">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <h4 className="font-medium">Failed to load alerts</h4>
+                    </div>
+                    <p className="text-sm text-red-700 mb-4">
+                      Unable to fetch the latest alerts. Please check your connection and try again.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-200 text-red-600"
+                      onClick={() => alertsRefetch()}
+                      data-testid="alerts-retry-button"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Content */}
+              {!isLoadingAlerts && !alertsError && (
+                <div className="space-y-3" data-testid="alerts-content">
+                  {alerts.map((alert) => (
+                    <Card 
+                      key={alert.id} 
+                      className={cn(
+                        "hover:shadow-sm transition-shadow",
+                        alert.status === 'unread' ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
+                      )}
+                      data-testid={`alert-card-${alert.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          {getAlertIcon(alert.type)}
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium">{alert.title}</h4>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  className={`text-xs ${getPriorityColor(alert.priority)}`}
+                                  data-testid={`alert-priority-${alert.priority}`}
+                                >
+                                  {alert.priority.toUpperCase()}
+                                </Badge>
+                                {alert.status === 'unread' && (
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full" data-testid="alert-unread-indicator" />
+                                )}
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              {alert.message}
+                            </p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
+                              </span>
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" data-testid={`acknowledge-${alert.id}`}>
+                                  <CheckCircle className="w-4 h-4 mr-2" />
+                                  Acknowledge
+                                </Button>
+                                <Button variant="ghost" size="sm" data-testid={`archive-${alert.id}`}>
+                                  <Archive className="w-4 h-4 mr-2" />
+                                  Archive
+                                </Button>
+                                <Button variant="ghost" size="sm" data-testid={`schedule-${alert.id}`}>
+                                  <Clock className="w-4 h-4 mr-2" />
+                                  Schedule
+                                </Button>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
 
             {/* Inbox Tab */}
-            <TabsContent value="inbox" className="h-full p-6 space-y-4">
+            <TabsContent value="inbox" className="h-full p-6 space-y-4" data-testid="inbox-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">Inbox</h3>
@@ -581,70 +700,128 @@ export default function HomePage() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button size="sm" className="gap-2">
+                  <Button size="sm" className="gap-2" data-testid="new-message-button">
                     <MessageSquare className="w-4 h-4" />
                     New Message
                   </Button>
                 </div>
               </div>
 
-              <div className="space-y-3">
-                {inboxMessages.map((message) => (
-                  <Card key={message.id} className={cn(
-                    "hover:shadow-sm transition-shadow cursor-pointer",
-                    !message.isRead ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
-                  )}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                          <Users className="w-4 h-4" />
+              {/* Loading State */}
+              {isLoadingInbox && (
+                <div className="space-y-3" data-testid="inbox-loading">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-4">
+                        <div className="flex gap-3">
+                          <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
+                          <div className="flex-1">
+                            <div className="h-4 bg-gray-200 rounded mb-2 w-1/4"></div>
+                            <div className="h-4 bg-gray-100 rounded mb-2 w-3/4"></div>
+                            <div className="h-3 bg-gray-100 rounded w-full"></div>
+                          </div>
                         </div>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <h4 className={cn(
-                                "text-sm",
-                                !message.isRead ? 'font-semibold' : 'font-medium'
-                              )}>
-                                {message.sender}
-                              </h4>
-                              <p className={cn(
-                                "text-sm",
-                                !message.isRead ? 'font-medium' : 'text-muted-foreground'
-                              )}>
-                                {message.subject}
-                              </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Error State */}
+              {inboxError && (
+                <Card className="border-red-200 bg-red-50" data-testid="inbox-error">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <h4 className="font-medium">Failed to load inbox messages</h4>
+                    </div>
+                    <p className="text-sm text-red-700 mb-4">
+                      Unable to fetch your messages. Please check your connection and try again.
+                    </p>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-200 text-red-600"
+                      onClick={() => inboxRefetch()}
+                      data-testid="inbox-retry-button"
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Content */}
+              {!isLoadingInbox && !inboxError && (
+                <div className="space-y-3" data-testid="inbox-content">
+                  {inboxMessages.map((message) => (
+                    <Card 
+                      key={message.id} 
+                      className={cn(
+                        "hover:shadow-sm transition-shadow cursor-pointer",
+                        !message.isRead ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
+                      )}
+                      data-testid={`message-card-${message.id}`}
+                    >
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                            <Users className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <h4 className={cn(
+                                  "text-sm",
+                                  !message.isRead ? 'font-semibold' : 'font-medium'
+                                )}>
+                                  {message.sender}
+                                </h4>
+                                <p className={cn(
+                                  "text-sm",
+                                  !message.isRead ? 'font-medium' : 'text-muted-foreground'
+                                )}>
+                                  {message.subject}
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <span className="text-xs text-muted-foreground">
+                                  {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+                                </span>
+                                {!message.isRead && (
+                                  <div className="w-2 h-2 bg-blue-600 rounded-full ml-auto mt-1" />
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <span className="text-xs text-muted-foreground">
-                                {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+
+                            <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                              {message.preview}
+                            </p>
+
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                <Users className="w-3 h-3" />
+                                {message.participants.length} participants
                               </span>
-                              {!message.isRead && (
-                                <div className="w-2 h-2 bg-blue-600 rounded-full ml-auto mt-1" />
-                              )}
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="sm" data-testid={`open-message-${message.id}`}>
+                                  <Eye className="w-4 h-4 mr-2" />
+                                  Open
+                                </Button>
+                                <Button variant="ghost" size="sm" data-testid={`archive-message-${message.id}`}>
+                                  <Archive className="w-4 h-4 mr-2" />
+                                  Archive
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {message.preview}
-                          </p>
-                          <div className="flex items-center justify-between mt-2">
-                            <div className="flex -space-x-1">
-                              {message.participants.slice(0, 3).map((participant, index) => (
-                                <div key={index} className="w-6 h-6 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center text-xs">
-                                  {participant.charAt(0)}
-                                </div>
-                              ))}
-                            </div>
-                            <Button variant="ghost" size="sm">
-                              <ArrowRight className="w-4 h-4" />
-                            </Button>
                           </div>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </TabsContent>
           </div>
         </Tabs>
