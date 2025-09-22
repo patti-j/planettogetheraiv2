@@ -1172,7 +1172,7 @@ router.get("/pt-operations", async (req, res) => {
       ORDER BY 
         jo.scheduled_start ASC NULLS LAST,
         jo.id ASC
-      LIMIT 20
+      LIMIT 500
     `;
 
     const rawOperations = await db.execute(sql.raw(ptOperationsQuery));
@@ -1251,8 +1251,8 @@ router.get("/pt-dependencies", async (req, res) => {
     const dependenciesData = Array.isArray(rawDependencies) ? rawDependencies : rawDependencies.rows || [];
     const dependencies = dependenciesData.map((dep: any) => ({
       id: dep.dependency_id,
-      from: `op-${dep.from_operation_id}`,  // Bryntum uses 'from' not 'fromEvent'
-      to: `op-${dep.to_operation_id}`,      // Bryntum uses 'to' not 'toEvent'
+      from: dep.from_operation_id,  // Use numeric ID to match operation IDs
+      to: dep.to_operation_id,      // Use numeric ID to match operation IDs
       type: 2, // Finish-to-Start dependency type (standard in Bryntum)
       lag: 0,  // No lag between operations
       lagUnit: 'hour',
@@ -1324,18 +1324,7 @@ router.get("/pt-resources", async (req, res) => {
   }
 });
 
-// PT Dependencies endpoint
-router.get("/pt-dependencies", async (req, res) => {
-  try {
-    console.log('Fetching PT dependencies...');
-    const dependencies = await storage.getPtDependencies();
-    console.log(`Successfully fetched ${dependencies.length} PT dependencies`);
-    res.json(dependencies);
-  } catch (error) {
-    console.error("Error fetching PT dependencies:", error);
-    res.status(500).json({ message: "Failed to fetch PT dependencies", error: (error as Error).message });
-  }
-});
+// NOTE: PT Dependencies endpoint is defined earlier in the file using direct SQL query
 
 // Export endpoint for Bryntum scheduler
 router.post("/export", async (req, res) => {
