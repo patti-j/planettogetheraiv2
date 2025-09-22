@@ -1327,6 +1327,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         id="auto-suggestions"
                         checked={aiSettings.autoSuggestions}
                         onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, autoSuggestions: checked }))}
+                        className="h-5 w-9 data-[state=checked]:bg-primary"
                       />
                     </div>
 
@@ -1338,6 +1339,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         id="show-insights"
                         checked={aiSettings.showInsights}
                         onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, showInsights: checked }))}
+                        className="h-5 w-9 data-[state=checked]:bg-primary"
                       />
                     </div>
 
@@ -1349,6 +1351,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         id="stream-responses"
                         checked={aiSettings.streamResponses}
                         onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, streamResponses: checked }))}
+                        className="h-5 w-9 data-[state=checked]:bg-primary"
                       />
                     </div>
                   </div>
