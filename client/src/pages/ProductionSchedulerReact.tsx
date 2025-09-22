@@ -50,27 +50,27 @@ export default function ProductionSchedulerReact() {
     let assignmentId = 1;
 
     opsArray.forEach((op: any) => {
-      // Check if operation has required data
-      if (op.scheduledStart && op.scheduledEnd) {
+      // Check if operation has required data - API returns startDate/endDate
+      if (op.startDate && op.endDate) {
         // Create the event
         const event = {
           id: op.id, // Use numeric ID from database
-          name: op.name || 'Operation',
-          startDate: op.scheduledStart,
-          endDate: op.scheduledEnd,
-          percentDone: op.percentFinished || 0,
-          eventColor: op.jobPriority > 5 ? 'red' : op.jobPriority > 3 ? 'orange' : 'green'
+          name: op.name || op.operationName || 'Operation',
+          startDate: op.startDate,
+          endDate: op.endDate,
+          percentDone: op.percent_done || 0,
+          eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green'
         };
         transformedEvents.push(event);
 
         // Create assignment if there's a resource
-        // Check for both resourceId and actualResourceId as the API might return either
-        const resourceId = op.resourceId || op.actualResourceId;
+        // Convert string resourceId to number to match resource IDs
+        const resourceId = op.resourceId ? parseInt(op.resourceId, 10) : null;
         if (resourceId) {
           transformedAssignments.push({
             id: assignmentId++,
             event: op.id,  // Direct reference to event ID
-            resource: resourceId  // Direct reference to resource ID
+            resource: resourceId  // Direct reference to resource ID (as number)
           });
         }
       }
