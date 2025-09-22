@@ -44,7 +44,7 @@
         }
 
         .header h1 {
-            color: #2563eb;
+            color: #000000;
             font-size: 1.5rem;
             font-weight: bold;
         }
@@ -946,10 +946,6 @@
                 <option value="drum">Drum (TOC)</option>
             </select>
             <button id="constraintSettings" title="Configure Constraints">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M12 1v6m0 6v6m4.22-13.22l-4.24 4.24m0 5.96l4.24 4.24M20 12h-6m-6 0H2m13.22 4.22l-4.24-4.24m0-5.96l-4.24-4.24"></path>
-                </svg>
                 <span>Constraints</span>
             </button>
             <button id="applyScheduling">
@@ -1874,11 +1870,13 @@
                         return start;
                     })(),
                     endDate: (() => {
-                        // Show 2 weeks from today
-                        const end = new Date(2025, 8, 17); // September 17, 2025
+                        // Show 4 weeks from today to ensure all operations are visible
+                        const end = new Date(2025, 9, 3); // October 3, 2025
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
+                    // Enable infinite scrolling for better navigation
+                    infiniteScroll: true,
                     zoomLevel: 10
                 });
 
