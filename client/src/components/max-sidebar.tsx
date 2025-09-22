@@ -1378,6 +1378,63 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
 
   return (
     <div className={`h-full flex flex-col bg-white ${isKeyboardOpen ? 'keyboard-adjusted' : ''}`}>
+      {/* Agent Selector Bar - Very Prominent */}
+      <div className="bg-gradient-to-r from-purple-500 to-purple-700 p-3 border-b-2 border-white">
+        <div className="flex items-center justify-between gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="secondary" 
+                size="default" 
+                className="flex-1 bg-white text-purple-700 hover:bg-purple-50"
+              >
+                <Sparkles className="h-4 w-4 mr-2" />
+                <span className="font-semibold">{currentAgent.displayName}</span>
+                <ChevronDown className="h-4 w-4 ml-auto" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-64">
+              <DropdownMenuLabel>Choose Your AI Assistant</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem 
+                onClick={() => switchToAgent('max')}
+                className={currentAgent.id === 'max' ? 'bg-purple-100' : ''}
+              >
+                <div className="flex items-center gap-3">
+                  <Sparkles className="h-5 w-5" style={{ color: '#8B5CF6' }} />
+                  <div>
+                    <div className="font-semibold">Max AI Assistant</div>
+                    <div className="text-xs text-gray-500">General production assistant</div>
+                  </div>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => switchToAgent('scheduling_assistant')}
+                className={currentAgent.id === 'scheduling_assistant' ? 'bg-cyan-100' : ''}
+              >
+                <div className="flex items-center gap-3">
+                  <Calendar className="h-5 w-5" style={{ color: '#06B6D4' }} />
+                  <div>
+                    <div className="font-semibold">AI Scheduling Agent</div>
+                    <div className="text-xs text-gray-500">APS & scheduling expert</div>
+                  </div>
+                </div>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
+          <Toggle
+            pressed={unifiedMode}
+            onPressedChange={setUnifiedMode}
+            size="default"
+            className="bg-white text-purple-700 hover:bg-purple-50 data-[state=on]:bg-purple-100"
+          >
+            <Users className="h-4 w-4 mr-2" />
+            Unified
+          </Toggle>
+        </div>
+      </div>
+      
       {/* Single Consolidated Header */}
       <div 
         className={`p-4 ${unifiedMode ? 'bg-gradient-to-r from-purple-600 to-cyan-600' : getThemeClasses(false)} flex flex-col gap-3 cursor-move`}
@@ -1471,64 +1528,6 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
             <X className="h-3 w-3" />
           </Button>
         </div>
-        </div>
-        
-        {/* Second row: Agent selector and unified mode toggle */}
-        <div className="flex items-center justify-between bg-white/10 rounded-md p-2">
-          {!unifiedMode ? (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-8 flex-1 text-white hover:bg-white/20 flex items-center gap-2 justify-center"
-                >
-                  <span className="text-xs">Current Agent:</span>
-                  <span className="text-xs font-semibold">{currentAgent.displayName}</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56">
-                <DropdownMenuLabel>Select an Agent</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => switchToAgent('max')}
-                  className={currentAgent.id === 'max' ? 'bg-purple-50' : ''}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" style={{ color: '#8B5CF6' }} />
-                  <div className="flex flex-col">
-                    <span className="font-medium">Max AI Assistant</span>
-                    <span className="text-xs text-gray-500">General assistant</span>
-                  </div>
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => switchToAgent('scheduling_assistant')}
-                  className={currentAgent.id === 'scheduling_assistant' ? 'bg-cyan-50' : ''}
-                >
-                  <Calendar className="h-4 w-4 mr-2" style={{ color: '#06B6D4' }} />
-                  <div className="flex flex-col">
-                    <span className="font-medium">AI Scheduling Agent</span>
-                    <span className="text-xs text-gray-500">Production scheduling</span>
-                  </div>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          ) : (
-            <div className="flex-1 text-center text-white text-xs">
-              All agents active - Messages routed to best match
-            </div>
-          )}
-          
-          <Toggle
-            pressed={unifiedMode}
-            onPressedChange={setUnifiedMode}
-            size="sm"
-            className="h-8 px-3 text-white hover:bg-white/20 data-[state=on]:bg-white/30"
-            title="Toggle unified agent mode"
-          >
-            <Users className="h-3 w-3 mr-1" />
-            <span className="text-xs">Unified</span>
-          </Toggle>
         </div>
         </div>
 
