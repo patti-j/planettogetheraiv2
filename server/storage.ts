@@ -461,6 +461,7 @@ export class DatabaseStorage implements IStorage {
           -- Any other resources go after the main process
           ELSE 8
         END, name
+        LIMIT 20
       `);
       return result.rows as any[];
     } catch (error) {
