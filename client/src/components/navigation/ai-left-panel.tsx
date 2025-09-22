@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Slider } from '@/components/ui/slider';
 import { useAuth } from '@/hooks/useAuth';
 import { apiRequest, queryClient } from '@/lib/queryClient';
+import { ALL_AGENTS } from '@/config/agents';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
@@ -1200,42 +1201,94 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             <TabsContent value="simulations" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
                 <div className="space-y-3 pt-2 pb-4">
-                <Card className="border-dashed">
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <Sparkles className="w-4 h-4" />
-                      Quick Simulation
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Run what-if scenarios instantly
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <Button 
-                        variant="default" 
-                        size="sm" 
-                        className="w-full justify-start bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                        onClick={() => navigate('/ai-scenario-creator')}
-                      >
-                        <Layers className="w-3 h-3 mr-2" />
-                        Open Scenario Creator
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Activity className="w-3 h-3 mr-2" />
-                        Add Rush Order Impact
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Activity className="w-3 h-3 mr-2" />
-                        Machine Downtime Scenario
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Activity className="w-3 h-3 mr-2" />
-                        Resource Reallocation
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                  {/* Active Agents */}
+                  <div className="space-y-2">
+                    <h3 className="text-sm font-medium text-muted-foreground px-1">Active Agents</h3>
+                    {ALL_AGENTS.map((agent) => {
+                      const isActive = agent.status === 'active';
+                      
+                      // Map icon names to Lucide icons
+                      const getAgentIcon = () => {
+                        switch (agent.icon) {
+                          case 'Sparkles': return <Sparkles className="w-5 h-5 text-white" />;
+                          case 'Calendar': return <Calendar className="w-5 h-5 text-white" />;
+                          case 'Factory': return <Factory className="w-5 h-5 text-white" />;
+                          case 'Shield': return <Shield className="w-5 h-5 text-white" />;
+                          case 'TrendingUp': return <TrendingUp className="w-5 h-5 text-white" />;
+                          case 'Package': return <Package className="w-5 h-5 text-white" />;
+                          case 'Layers': return <Layers className="w-5 h-5 text-white" />;
+                          case 'Target': return <Target className="w-5 h-5 text-white" />;
+                          case 'Wrench': return <Wrench className="w-5 h-5 text-white" />;
+                          case 'Truck': return <Truck className="w-5 h-5 text-white" />;
+                          case 'User': return <User className="w-5 h-5 text-white" />;
+                          case 'DollarSign': return <DollarSign className="w-5 h-5 text-white" />;
+                          case 'Monitor': return <Monitor className="w-5 h-5 text-white" />;
+                          default: return <Lightbulb className="w-5 h-5 text-white" />;
+                        }
+                      };
+                      
+                      return (
+                        <Card 
+                          key={agent.id} 
+                          className={cn(
+                            "cursor-pointer transition-all hover:shadow-md",
+                            !isActive && "opacity-60"
+                          )}
+                          onClick={() => {
+                            if (isActive && (agent.id === 'max' || agent.id === 'scheduling_assistant')) {
+                              setSelectedAgent(agent.id === 'max' ? 'max' : 'scheduling_assistant');
+                              setActiveTab('chat');
+                            }
+                          }}
+                        >
+                          <CardHeader className="pb-2">
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-start gap-3">
+                                <div 
+                                  className="w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0"
+                                  style={{ backgroundColor: agent.color || '#6B7280' }}
+                                >
+                                  {getAgentIcon()}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                    {agent.displayName}
+                                    <ChevronRight className="w-3 h-3 text-muted-foreground" />
+                                  </CardTitle>
+                                  <p className="text-xs text-muted-foreground mt-0.5">
+                                    {agent.specialties?.[0] || 'Agent'}
+                                  </p>
+                                </div>
+                              </div>
+                              <Settings className="w-4 h-4 text-muted-foreground cursor-pointer hover:text-foreground" />
+                            </div>
+                          </CardHeader>
+                          <CardContent className="pt-2 pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                <span className="flex items-center gap-1">
+                                  <div className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                                  {Math.floor(Math.random() * 10 + 1)} actions
+                                </span>
+                                <span className="flex items-center gap-1">
+                                  <MessageCircle className="w-3 h-3" />
+                                  {Math.floor(Math.random() * 5)}
+                                </span>
+                              </div>
+                              <div className={cn(
+                                "text-xs px-2 py-0.5 rounded-full font-medium",
+                                isActive 
+                                  ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400" 
+                                  : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                              )}>
+                                {isActive ? 'Active' : 'Idle'}
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
 
                 {displayInsights
                   .filter(i => i.type === 'simulation')
