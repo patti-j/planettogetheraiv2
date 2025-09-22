@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scheduler Test</title>
+  <style>
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #app { height: 100%; display: flex; flex-direction: column; }
+    #scheduler { 
+      flex: 1; 
+      border: 2px solid #ddd; 
+      background: #f5f5f5;
+      padding: 20px;
+      overflow: auto;
+    }
+    #status { padding: 10px; background: #333; color: white; }
+    .error { color: red; font-weight: bold; }
+    .success { color: green; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="status">Initializing scheduler...</div>
+    <div id="scheduler">
+      <h2>Scheduler Loading Test</h2>
+      <div id="log"></div>
+    </div>
+  </div>
+
+  <script type="module">
+    const logEl = document.getElementById('log');
+    const statusEl = document.getElementById('status');
+    
+    function log(msg, type = 'info') {
+      const entry = document.createElement('div');
+      entry.className = type;
+      entry.textContent = `[${new Date().toLocaleTimeString()}] ${msg}`;
+      logEl.appendChild(entry);
+      console.log(msg, type);
+    }
+    
+    async function testScheduler() {
+      try {
+        log('Step 1: Testing API endpoints...');
+        
+        // Test API endpoints
+        const [resourcesRes, opsRes] = await Promise.all([
+          fetch('/api/resources'),
+          fetch('/api/pt-operations')
+        ]);
+        
+        if (!resourcesRes.ok || !opsRes.ok) {
+          throw new Error(`API fetch failed: resources=${resourcesRes.status}, ops=${opsRes.status}`);
+        }
+        
+        const resources = await resourcesRes.json();
+        const operations = await opsRes.json();
+        
+        log(`✓ Fetched ${resources.length} resources`, 'success');
+        log(`✓ Fetched ${operations.length} operations`, 'success');
+        
+        log('Step 2: Testing Bryntum module import...');
+        
+        // Try to import the scheduler manager
+        try {
+          const module = await import('./js/bryntum-modules/scheduler-manager.js');
+          log('✓ Scheduler manager module loaded', 'success');
+          
+          if (module.default) {
+            log('✓ Found default export', 'success');
+            
+            // Try to initialize
+            const manager = new module.default();
+            log('✓ SchedulerManager instantiated', 'success');
+            
+            statusEl.textContent = 'Scheduler loaded successfully!';
+            statusEl.style.background = 'green';
+          } else {
+            log('✗ No default export found', 'error');
+          }
+        } catch (importErr) {
+          log(`✗ Module import failed: ${importErr.message}`, 'error');
+          log(`Stack: ${importErr.stack}`, 'error');
+        }
+        
+      } catch (err) {
+        log(`✗ Error: ${err.message}`, 'error');
+        statusEl.textContent = 'Failed to load scheduler';
+        statusEl.style.background = 'red';
+      }
+    }
+    
+    // Start test
+    testScheduler();
+  </script>
+</body>
+</html>

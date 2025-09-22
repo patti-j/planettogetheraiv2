@@ -23,7 +23,7 @@ export default function ProductionSchedulerStandalone() {
       
       {/* Iframe container */}
       <iframe
-        src="/scheduler-blazor/index.html"
+        src="/scheduler-blazor/test.html"
         title="Scheduler (Blazor vanilla)"
         className="flex-1 border-0"
         style={{ width: '100%' }}
