@@ -4,87 +4,121 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Scheduler Standalone (Blazor vanilla JS extracted)</title>
-  <!-- CSS file not available in extracted bundle -->
-  <!-- <link rel="stylesheet" href="/schedulerpro.classic-light.css" /> -->
   <style>
-    html, body { height: 100%; margin: 0; }
-    #app { height: 100%; }
-    .pt-scheduler-root { height: 100%; transform: none !important; zoom: normal !important; }
+    html, body { height: 100%; margin: 0; padding: 0; }
+    #app { height: 100%; display: flex; flex-direction: column; }
+    #scheduler { 
+      flex: 1;
+      min-height: 600px;
+      position: relative;
+    }
+    .error-message {
+      color: red;
+      padding: 20px;
+      font-family: Arial, sans-serif;
+    }
   </style>
 </head>
 <body>
   <div id="app">
-    <div id="scheduler" class="pt-scheduler-root"></div>
+    <div id="scheduler"></div>
   </div>
 
   <script type="module">
-    import SchedulerManager from './js/bryntum-modules/scheduler-manager.js';
+    import { SchedulerPro } from './js/build/schedulerpro.wc.module.js';
 
     const A = p => Array.isArray(p) ? p : (Array.isArray(p?.data) ? p.data : (Array.isArray(p?.results) ? p.results : []));
     const S = v => (v==null ? undefined : (typeof v === 'string' ? v : String(v)));
 
-    async function fetchJSON(url){ const r = await fetch(url); return r.ok ? r.json() : []; }
-
-    async function buildDiskImage() {
-      const [resourcesRaw, opsRaw] = await Promise.all([
-        fetchJSON('/api/resources'),
-        fetchJSON('/api/pt-operations')
-      ]);
-      const resourcesSrc = A(resourcesRaw), ops = A(opsRaw);
-
-      const resources = [
-        // Blazor pages typically used a filtered/enabled list; here we pass all
-        ...resourcesSrc.map((r, i) => ({
-          id: S(r.resource_id) ?? S(r.id) ?? `r${i}`,
-          name: r.name || r.displayName || `Resource ${i+1}`,
-          visible: true, enabled: true
-        }))
-      ];
-
-      const events = ops.map((op, i) => {
-        const start = op.startDate ? new Date(op.startDate) : (op.scheduled_start ? new Date(op.scheduled_start) : null);
-        let end = op.endDate ? new Date(op.endDate) : (op.scheduled_end ? new Date(op.scheduled_end) : null);
-        if (start && !end && op.duration){ const e = new Date(start); e.setHours(e.getHours() + (+op.duration||0)); end = e; }
-        return {
-          id: S(op.id) ?? `e${i}`,
-          name: op.name || op.operationName || `Op ${i+1}`,
-          startDate: start || null,
-          endDate: end || null,
-          // IMPORTANT: use event.resourceId mapping the Blazor pages expected
-          resourceId: S(op.resourceId ?? op.resource_id)
-        };
-      });
-
-      const dependencies = [];
-
-      // Minimal preset config the manager expects
-      const start = new Date(); start.setHours(0,0,0,0);
-      const end   = new Date(start); end.setDate(start.getDate()+14); end.setHours(23,59,59,999);
-
-      const presetConfig = {
-        startDate: start,
-        endDate: end,
-        viewPreset: 'dayAndWeek',
-        rowHeight: 80,
-        barMargin: 8,
-        columns: [
-          { type: 'rownumber', width: 44 },
-          { text: 'Resource', field: 'name', width: 240 },
-          { text: 'Category', field: 'category', width: 160 }
-        ],
-        features: {
-          stripe: true, dependencies: true, percentBar: true, nonWorkingTime: true
-        }
-      };
-
-      return { resources, events, dependencies, presetConfig };
+    async function fetchJSON(url){ 
+      const r = await fetch(url); 
+      return r.ok ? r.json() : []; 
     }
 
-    (async () => {
-      const mgr = new SchedulerManager();
-      const disk = await buildDiskImage();
-      await mgr.initializeScheduler('scheduler', disk, disk.presetConfig);
-    })();
+    async function initScheduler() {
+      try {
+        console.log('Fetching data...');
+        const [resourcesRaw, opsRaw] = await Promise.all([
+          fetchJSON('/api/resources'),
+          fetchJSON('/api/pt-operations')
+        ]);
+        
+        const resourcesSrc = A(resourcesRaw);
+        const ops = A(opsRaw);
+        
+        console.log('Resources:', resourcesSrc.length);
+        console.log('Operations:', ops.length);
+
+        const resources = resourcesSrc.map((r, i) => ({
+          id: S(r.resource_id) ?? S(r.id) ?? `r${i}`,
+          name: r.name || r.displayName || `Resource ${i+1}`,
+          eventColor: 'blue'
+        }));
+
+        const events = ops
+          .filter(op => op.scheduled_start && op.resource_id) // Only include ops with dates and resources
+          .map((op, i) => {
+            const start = new Date(op.scheduled_start);
+            const end = op.scheduled_end ? new Date(op.scheduled_end) : new Date(start.getTime() + 2*60*60*1000); // Default 2 hours
+            
+            return {
+              id: S(op.id) ?? `e${i}`,
+              name: op.name || `Operation ${i+1}`,
+              startDate: start,
+              endDate: end,
+              resourceId: S(op.resource_id)
+            };
+          });
+
+        console.log('Events to display:', events.length);
+        console.log('Sample event:', events[0]);
+        console.log('Sample resource:', resources[0]);
+
+        // Create scheduler instance
+        const scheduler = new SchedulerPro({
+          appendTo: 'scheduler',
+          startDate: new Date('2025-08-01'),
+          endDate: new Date('2025-08-31'),
+          viewPreset: 'dayAndWeek',
+          rowHeight: 50,
+          barMargin: 5,
+          
+          columns: [
+            { type: 'rownumber', width: 50 },
+            { text: 'Resource', field: 'name', width: 250 }
+          ],
+
+          resources: resources,
+          events: events,
+
+          features: {
+            stripe: true,
+            sort: false,
+            cellEdit: false,
+            eventDrag: false,
+            eventResize: false,
+            eventEdit: false
+          }
+        });
+
+        console.log('Scheduler created successfully');
+        
+        // Auto-fit to view after a short delay
+        setTimeout(() => {
+          if (scheduler.zoomToFit) {
+            scheduler.zoomToFit();
+          }
+        }, 500);
+
+      } catch (err) {
+        console.error('Error initializing scheduler:', err);
+        document.getElementById('scheduler').innerHTML = 
+          `<div class="error-message">Error loading scheduler: ${err.message}</div>`;
+      }
+    }
+
+    // Initialize on page load
+    initScheduler();
   </script>
 </body>
 </html>
