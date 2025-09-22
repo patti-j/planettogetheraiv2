@@ -847,8 +847,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       <div className={cn("px-4 py-2 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
         {!isCollapsed && (
           <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-white" />
-            <span className="font-semibold">Max</span>
+            <span className="font-semibold">Agents</span>
           </div>
         )}
         <div className="flex items-center gap-1">
@@ -1624,10 +1623,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               setIsCollapsed(false);
               setActiveTab('chat');
             }}
-            title="Open AI Chat"
+            title="Open Agents Panel"
             style={{ padding: '8px', background: 'none', border: 'none' }}
           >
-            <Sparkles className="w-5 h-5" />
+            <MessageSquare className="w-5 h-5" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full animate-pulse" />
           </div>
           <Separator className="w-6" />
