@@ -3,7 +3,6 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
-import { Link } from 'wouter';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -49,12 +48,15 @@ export default function ProductionSchedule() {
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Production Schedule
         </h1>
-        <Link href="/production-scheduler-standalone">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ExternalLink className="h-4 w-4" />
-            Open Standalone Scheduler
-          </Button>
-        </Link>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => window.location.href = '/production-scheduler-standalone'}
+        >
+          <ExternalLink className="h-4 w-4" />
+          Open Standalone Scheduler
+        </Button>
       </div>
       
       {/* Main Content - Full Screen */}

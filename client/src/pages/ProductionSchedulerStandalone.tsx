@@ -1,4 +1,3 @@
-import { Link } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 
@@ -7,12 +6,15 @@ export default function ProductionSchedulerStandalone() {
     <div className="h-screen flex flex-col">
       {/* Header with back button */}
       <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <Link href="/production-schedule">
-          <Button variant="outline" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Production Schedule
-          </Button>
-        </Link>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={() => window.location.href = '/production-schedule'}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Production Schedule
+        </Button>
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Standalone Blazor Scheduler
         </h1>
