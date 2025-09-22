@@ -32,9 +32,15 @@ export default function ProductionSchedulerReact() {
 
     // Debug log to see what data we have
     console.log('Raw operations data:', opsArray.length, 'items');
-    console.log('Sample operation:', opsArray[0]);
+    if (opsArray.length > 0) {
+      console.log('Sample operation:', opsArray[0]);
+      console.log('Operation has startDate?', !!opsArray[0].startDate);
+      console.log('Operation has endDate?', !!opsArray[0].endDate);
+    }
     console.log('Raw resources data:', resArray.length, 'items');
-    console.log('Sample resource:', resArray[0]);
+    if (resArray.length > 0) {
+      console.log('Sample resource:', resArray[0]);
+    }
 
     // Transform resources - use actual IDs from PT database
     const transformedResources = resArray.map((resource: any) => ({
@@ -44,7 +50,7 @@ export default function ProductionSchedulerReact() {
       capacity: resource.capacity || 100
     }));
 
-    // Transform operations to events - only those with scheduled times and resource assignments
+    // Transform operations to events
     const transformedEvents: any[] = [];
     const transformedAssignments: any[] = [];
     let assignmentId = 1;
@@ -56,8 +62,8 @@ export default function ProductionSchedulerReact() {
         const event = {
           id: op.id, // Use numeric ID from database
           name: op.name || op.operationName || 'Operation',
-          startDate: op.startDate,
-          endDate: op.endDate,
+          startDate: new Date(op.startDate), // Ensure it's a Date object
+          endDate: new Date(op.endDate), // Ensure it's a Date object
           percentDone: op.percent_done || 0,
           eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green'
         };
@@ -66,7 +72,7 @@ export default function ProductionSchedulerReact() {
         // Create assignment if there's a resource
         // Convert string resourceId to number to match resource IDs
         const resourceId = op.resourceId ? parseInt(op.resourceId, 10) : null;
-        if (resourceId) {
+        if (resourceId && !isNaN(resourceId)) {
           transformedAssignments.push({
             id: assignmentId++,
             event: op.id,  // Direct reference to event ID
@@ -85,10 +91,16 @@ export default function ProductionSchedulerReact() {
     }));
 
     // Debug log transformed data
-    console.log('Transformed resources:', transformedResources.length);
-    console.log('Transformed events:', transformedEvents.length);
-    console.log('Transformed assignments:', transformedAssignments.length);
+    console.log('Transformed resources:', transformedResources);
+    console.log('Transformed events (first 3):', transformedEvents.slice(0, 3));
+    console.log('Transformed assignments (first 3):', transformedAssignments.slice(0, 3));
     console.log('Transformed dependencies:', transformedDependencies.length);
+    console.log('Event/Assignment counts:', {
+      resources: transformedResources.length,
+      events: transformedEvents.length,
+      assignments: transformedAssignments.length,
+      dependencies: transformedDependencies.length
+    });
 
     return {
       resources: transformedResources,
