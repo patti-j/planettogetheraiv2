@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useState, useEffect } from 'react';
+import React, { useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
@@ -24,47 +24,59 @@ export default function ProductionSchedulerReact() {
     queryKey: ['/api/pt-dependencies'],
   });
 
-  // Transform data for Bryntum - following the documentation pattern
-  const [events, setEvents] = useState<any[]>([]);
-  const [resources, setResources] = useState<any[]>([]);
-  const [assignments, setAssignments] = useState<any[]>([]);
-  const [dependencies, setDependencies] = useState<any[]>([]);
-
-  useEffect(() => {
+  // Transform data using useMemo to avoid re-renders
+  const { resources, events, assignments, dependencies } = useMemo(() => {
     const opsArray = Array.isArray(operationsData) ? operationsData : [];
     const resArray = Array.isArray(resourcesData) ? resourcesData : [];
     const depsArray = Array.isArray(dependenciesData) ? dependenciesData : [];
 
-    // Transform resources - use actual IDs without prefixes
+    // Debug log to see what data we have
+    console.log('Raw operations data:', opsArray.length, 'items');
+    console.log('Sample operation:', opsArray[0]);
+    console.log('Raw resources data:', resArray.length, 'items');
+    console.log('Sample resource:', resArray[0]);
+
+    // Transform resources - use actual IDs from PT database
     const transformedResources = resArray.map((resource: any) => ({
-      id: resource.id,
+      id: resource.id, // Use numeric ID from database
       name: resource.name || resource.resource_name || `Resource ${resource.id}`,
       type: resource.resource_type || 'equipment',
       capacity: resource.capacity || 100
     }));
 
-    // Transform operations to events - use actual IDs without prefixes
-    const transformedEvents = opsArray
-      .filter((op: any) => op.scheduledStart && op.scheduledEnd)
-      .map((op: any) => ({
-        id: op.id,
-        name: op.name || 'Operation',
-        startDate: op.scheduledStart,
-        endDate: op.scheduledEnd,
-        percentDone: op.percentFinished || 0,
-        eventColor: op.jobPriority > 5 ? 'red' : op.jobPriority > 3 ? 'orange' : 'green'
-      }));
+    // Transform operations to events - only those with scheduled times and resource assignments
+    const transformedEvents: any[] = [];
+    const transformedAssignments: any[] = [];
+    let assignmentId = 1;
 
-    // Create assignments - CRITICAL: use 'event' and 'resource' properties
-    const transformedAssignments = opsArray
-      .filter((op: any) => op.scheduledStart && op.scheduledEnd && op.resourceId)
-      .map((op: any, index: number) => ({
-        id: index + 1, // Simple numeric ID for assignment
-        event: op.id,  // Reference to event ID (no prefix)
-        resource: op.resourceId  // Reference to resource ID (no prefix)
-      }));
+    opsArray.forEach((op: any) => {
+      // Check if operation has required data
+      if (op.scheduledStart && op.scheduledEnd) {
+        // Create the event
+        const event = {
+          id: op.id, // Use numeric ID from database
+          name: op.name || 'Operation',
+          startDate: op.scheduledStart,
+          endDate: op.scheduledEnd,
+          percentDone: op.percentFinished || 0,
+          eventColor: op.jobPriority > 5 ? 'red' : op.jobPriority > 3 ? 'orange' : 'green'
+        };
+        transformedEvents.push(event);
 
-    // Transform dependencies - use actual IDs
+        // Create assignment if there's a resource
+        // Check for both resourceId and actualResourceId as the API might return either
+        const resourceId = op.resourceId || op.actualResourceId;
+        if (resourceId) {
+          transformedAssignments.push({
+            id: assignmentId++,
+            event: op.id,  // Direct reference to event ID
+            resource: resourceId  // Direct reference to resource ID
+          });
+        }
+      }
+    });
+
+    // Transform dependencies - use direct IDs
     const transformedDependencies = depsArray.map((dep: any, index: number) => ({
       id: index + 1,
       from: dep.from,
@@ -72,17 +84,18 @@ export default function ProductionSchedulerReact() {
       type: dep.type || 2 // Finish-to-Start
     }));
 
-    // Update state with transformed data
-    setResources(transformedResources);
-    setEvents(transformedEvents);
-    setAssignments(transformedAssignments);
-    setDependencies(transformedDependencies);
+    // Debug log transformed data
+    console.log('Transformed resources:', transformedResources.length);
+    console.log('Transformed events:', transformedEvents.length);
+    console.log('Transformed assignments:', transformedAssignments.length);
+    console.log('Transformed dependencies:', transformedDependencies.length);
 
-    // Debug log to verify data structure
-    console.log('Resources:', transformedResources.length, transformedResources.slice(0, 3));
-    console.log('Events:', transformedEvents.length, transformedEvents.slice(0, 3));
-    console.log('Assignments:', transformedAssignments.length, transformedAssignments.slice(0, 3));
-    console.log('Dependencies:', transformedDependencies.length, transformedDependencies.slice(0, 3));
+    return {
+      resources: transformedResources,
+      events: transformedEvents,
+      assignments: transformedAssignments,
+      dependencies: transformedDependencies
+    };
   }, [operationsData, resourcesData, dependenciesData]);
 
   // Calculate date range
@@ -180,12 +193,20 @@ export default function ProductionSchedulerReact() {
         </div>
       </div>
 
-      {/* Scheduler Component - Data binding per documentation */}
+      {/* Debug Info - Remove this in production */}
+      <div className="px-4 py-2 bg-gray-100 dark:bg-gray-800 text-xs">
+        <span className="mr-4">Resources: {resources.length}</span>
+        <span className="mr-4">Events: {events.length}</span>
+        <span className="mr-4">Assignments: {assignments.length}</span>
+        <span>Dependencies: {dependencies.length}</span>
+      </div>
+
+      {/* Scheduler Component */}
       <div className="flex-1 overflow-hidden">
         <BryntumSchedulerPro
           ref={schedulerRef}
           
-          // Data props - passed directly as per documentation
+          // Data props - pass directly as per documentation
           resources={resources}
           events={events}
           assignments={assignments}
@@ -222,7 +243,7 @@ export default function ProductionSchedulerReact() {
             }
           ]}
           
-          // Features configuration
+          // Features configuration  
           eventDragFeature={{
             constrainDragToResource: false,
             showExactDropPosition: true
