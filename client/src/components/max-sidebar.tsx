@@ -1813,7 +1813,56 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-3">
-          {/* Agent selector moved to header */}
+          {/* Agent Selector - Simple and Visible */}
+          <div className="mb-4 p-3 bg-purple-50 rounded-lg border border-purple-200">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-semibold text-purple-700">Select AI Agent:</span>
+              <Toggle
+                pressed={unifiedMode}
+                onPressedChange={setUnifiedMode}
+                size="sm"
+                className="data-[state=on]:bg-purple-600"
+              >
+                <Users className="h-3 w-3 mr-1" />
+                <span className="text-xs">Unified Mode</span>
+              </Toggle>
+            </div>
+            <div className="grid grid-cols-1 gap-2">
+              <button
+                onClick={() => switchToAgent('max')}
+                className={`text-left p-2 rounded flex items-center gap-2 transition-colors ${
+                  currentAgent.id === 'max' 
+                    ? 'bg-purple-600 text-white' 
+                    : 'bg-white hover:bg-purple-100 text-gray-700'
+                }`}
+              >
+                <Sparkles className="h-4 w-4" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">Max AI Assistant</div>
+                  <div className="text-xs opacity-75">General production assistant</div>
+                </div>
+              </button>
+              <button
+                onClick={() => switchToAgent('scheduling_assistant')}
+                className={`text-left p-2 rounded flex items-center gap-2 transition-colors ${
+                  currentAgent.id === 'scheduling_assistant' 
+                    ? 'bg-cyan-600 text-white' 
+                    : 'bg-white hover:bg-cyan-100 text-gray-700'
+                }`}
+              >
+                <Calendar className="h-4 w-4" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">AI Scheduling Agent</div>
+                  <div className="text-xs opacity-75">APS & scheduling expert</div>
+                </div>
+              </button>
+            </div>
+            {unifiedMode && (
+              <div className="mt-2 text-xs text-purple-600 text-center">
+                All agents are active - Messages will be routed to the best match
+              </div>
+            )}
+          </div>
 
           {/* Agent Recommendations */}
           {showRecommendations && (
