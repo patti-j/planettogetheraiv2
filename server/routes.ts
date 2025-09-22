@@ -1172,7 +1172,7 @@ router.get("/pt-operations", async (req, res) => {
       ORDER BY 
         jo.scheduled_start ASC NULLS LAST,
         jo.id ASC
-      LIMIT 100
+      LIMIT 20
     `;
 
     const rawOperations = await db.execute(sql.raw(ptOperationsQuery));
