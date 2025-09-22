@@ -1574,10 +1574,11 @@
                         const fetchedDeps = await dependenciesResponse.json();
                         dependencies = fetchedDeps.map(dep => ({
                             id: `dep-${dep.id}`,
-                            fromEvent: dep.fromEvent,
-                            toEvent: dep.toEvent,
+                            from: dep.from,  // Use correct Bryntum field name
+                            to: dep.to,      // Use correct Bryntum field name
                             type: dep.type || 2, // Default to Finish-to-Start
-                            lag: 0
+                            lag: dep.lag || 0,
+                            lagUnit: dep.lagUnit || 'hour'
                         }));
                         console.log('✅ Dependencies fetched from database:', dependencies.length);
                         if (dependencies.length > 0) {
@@ -2514,7 +2515,7 @@
                     
                     // Find events with no successors (end events)
                     const endEvents = events.filter(event => 
-                        !dependencies.some(dep => dep.fromEvent === event.id)
+                        !dependencies.some(dep => dep.from === event.id)
                     );
                     
                     // Mark critical path (simplified)
@@ -2523,9 +2524,9 @@
                         // Trace back through dependencies
                         let current = event;
                         while (current) {
-                            const prevDep = dependencies.find(d => d.toEvent === current.id);
-                            if (prevDep && eventMap.has(prevDep.fromEvent)) {
-                                current = eventMap.get(prevDep.fromEvent);
+                            const prevDep = dependencies.find(d => d.to === current.id);
+                            if (prevDep && eventMap.has(prevDep.from)) {
+                                current = eventMap.get(prevDep.from);
                                 criticalEvents.add(current.id);
                             } else {
                                 current = null;
