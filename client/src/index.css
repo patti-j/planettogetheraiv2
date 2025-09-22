@@ -1192,6 +1192,17 @@ div[data-radix-tooltip-content] {
 .density-compressed .card { padding: var(--spacing-3); }
 .density-comfortable .card { padding: var(--spacing-5); }
 
+/* Fix Switch components to not be affected by density */
+[role="switch"] {
+  height: 1.25rem !important;
+  width: 2.25rem !important;
+}
+
+[role="switch"] > span {
+  height: 1rem !important;
+  width: 1rem !important;
+}
+
 /* Hybrid drag-and-scroll styles for Gantt chart */
 .gantt-scrollable {
   scrollbar-width: thin;
