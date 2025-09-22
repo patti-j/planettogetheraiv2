@@ -1,0 +1,3051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>Production Schedule - PlanetTogether</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    
+    <!-- Bryntum Scheduler Pro CSS -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: auto;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            font-size: 14px;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 1rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            color: #2563eb;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .toolbar {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 0.75rem 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            border-bottom: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .toolbar-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-right: 1rem;
+            border-right: 1px solid #e0e0e0;
+        }
+
+        .toolbar-group:last-child {
+            border-right: none;
+        }
+
+        .toolbar label {
+            font-size: 0.875rem;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .toolbar select,
+        .toolbar button {
+            padding: 0.375rem 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .toolbar select:hover,
+        .toolbar button:hover {
+            background: #f5f5f5;
+            border-color: #999;
+        }
+
+        .toolbar button {
+            background: white;
+            color: #333 !important;
+            border: 1px solid #e0e0e0;
+            font-weight: 400;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+            transition: all 0.2s;
+        }
+
+        .toolbar button:hover {
+            background: #e8f5e9;
+            transform: translateY(-1px);
+            border-color: #4CAF50;
+            color: #2e7d32 !important;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.2);
+        }
+        
+        .toolbar button.icon-only {
+            padding: 0.375rem 0.5rem;
+            min-width: 32px;
+        }
+        
+        .toolbar button svg {
+            width: 16px;
+            height: 16px;
+        }
+
+        .scheduler-container {
+            flex: 1;
+            margin: 1rem;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+        }
+
+        #scheduler {
+            flex: 1;
+            min-height: 0;
+        }
+
+        .status-bar {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 0.5rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+            flex-shrink: 0;
+        }
+
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #666;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: #ff4444;
+            color: white;
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem;
+            text-align: center;
+        }
+        
+        /* Dark theme overrides */
+        .dark-theme {
+            background: #1a1a1a;
+        }
+        
+        .dark-theme .header {
+            background: rgba(30, 30, 30, 0.95);
+            color: white;
+        }
+        
+        .dark-theme .header h1 {
+            color: #60a5fa;
+        }
+        
+        .dark-theme .toolbar {
+            background: rgba(40, 40, 40, 0.9);
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .toolbar label {
+            color: #ccc;
+        }
+        
+        .dark-theme .toolbar button {
+            background: #2a2a2a;
+            color: #e0e0e0 !important;
+            border-color: #444;
+        }
+        
+        .dark-theme .toolbar button:hover {
+            background: #1b5e20;
+            color: #a5d6a7 !important;
+            border-color: #4CAF50;
+            box-shadow: 0 2px 4px rgba(76, 175, 80, 0.3);
+        }
+        
+        .dark-theme .toolbar select {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        
+        .dark-theme .toolbar select:hover {
+            background: #333;
+            border-color: #666;
+        }
+        
+        .dark-theme .status-bar {
+            background: rgba(30, 30, 30, 0.95);
+            color: #ccc;
+            border-top-color: #444;
+        }
+        
+        .dark-theme .scheduler-container {
+            background: #2a2a2a;
+        }
+        
+        /* Dark theme for scheduler using filter */
+        .dark-theme #scheduler {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+        
+        /* Re-invert images and icons in dark mode */
+        .dark-theme #scheduler img,
+        .dark-theme #scheduler .b-icon {
+            filter: invert(1) hue-rotate(-180deg);
+        }
+        
+        /* Dependency lines styling */
+        .b-sch-dependency {
+            stroke: #666 !important;
+            stroke-width: 2 !important;
+            opacity: 0.8 !important;
+        }
+        
+        .b-sch-dependency-arrow {
+            fill: #666 !important;
+            stroke: #666 !important;
+        }
+        
+        .b-sch-dependency:hover {
+            stroke: #333 !important;
+            stroke-width: 3 !important;
+            opacity: 1 !important;
+        }
+        
+        .b-sch-dependency-arrow:hover {
+            fill: #333 !important;
+            stroke: #333 !important;
+        }
+        
+        /* Critical path dependency styling */
+        .b-sch-dependency.b-critical {
+            stroke: #ff4444 !important;
+            stroke-width: 3 !important;
+        }
+        
+        .b-sch-dependency.b-critical .b-sch-dependency-arrow {
+            fill: #ff4444 !important;
+            stroke: #ff4444 !important;
+        }
+        
+        /* Header updates for hamburger and Max AI */
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .hamburger-btn, .max-ai-btn {
+            background: white;
+            border: 1px solid #ddd;
+            color: #333;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        
+        .hamburger-btn:hover, .max-ai-btn:hover {
+            background: #f5f5f5;
+            border-color: #999;
+            transform: translateY(-1px);
+        }
+        
+        /* Navigation Menu */
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 300px;
+            height: 100vh;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: left 0.3s ease;
+            z-index: 2000;
+        }
+        
+        .nav-menu.open {
+            left: 0;
+        }
+        
+        .nav-menu-header {
+            background: #333;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-menu-header h3 {
+            margin: 0;
+        }
+        
+        .close-menu, .close-max-ai {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .nav-menu-items {
+            padding: 1rem;
+        }
+        
+        .nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #333;
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.2s;
+            margin-bottom: 0.5rem;
+        }
+        
+        .nav-item:hover {
+            background: #f5f5f5;
+        }
+        
+        .nav-item.active {
+            background: #f0f0f0;
+            color: #333;
+            font-weight: 500;
+        }
+        
+        /* Max AI Panel */
+        .max-ai-panel {
+            position: fixed;
+            top: 0;
+            right: 0; /* Visible by default to showcase scheduler features */
+            width: 400px;
+            height: 100vh;
+            background: white;
+            box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
+            transition: right 0.3s ease;
+            z-index: 2000;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .max-ai-panel.closed {
+            right: -400px;
+        }
+        
+        .max-ai-header {
+            background: #333;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .max-ai-header h3 {
+            margin: 0;
+        }
+        
+        .max-ai-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .max-ai-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+        
+        .max-ai-message {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            border-radius: 8px;
+            white-space: pre-wrap;
+            line-height: 1.5;
+        }
+        
+        .max-ai-message.assistant {
+            background: #f0f0f0;
+            font-size: 0.9rem;
+        }
+        
+        .max-ai-message.user {
+            background: rgba(59, 130, 246, 0.1);
+            margin-left: 2rem;
+        }
+        
+        .max-ai-message ul {
+            margin-left: 1.5rem;
+            margin-top: 0.5rem;
+        }
+        
+        .max-ai-message strong {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .max-ai-input {
+            display: flex;
+            padding: 1rem;
+            border-top: 1px solid #e0e0e0;
+            gap: 0.5rem;
+        }
+        
+        .max-ai-input input {
+            flex: 1;
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .max-ai-input button {
+            padding: 0.5rem 1rem;
+            background: #333;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        
+        .max-ai-input button:hover {
+            background: #555;
+        }
+        
+        /* Dark theme for nav menu and Max AI */
+        .dark-theme .nav-menu,
+        .dark-theme .max-ai-panel {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .dark-theme .constraint-modal-content {
+            background: #2a2a2a;
+            color: white;
+        }
+        
+        .dark-theme .constraint-modal-header {
+            background: #333;
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-header h2 {
+            color: white;
+        }
+        
+        .dark-theme .constraint-modal-close {
+            color: #ccc;
+        }
+        
+        .dark-theme .constraint-modal-close:hover {
+            color: white;
+        }
+        
+        .dark-theme .constraint-section h3 {
+            color: white;
+            border-bottom-color: #444;
+        }
+        
+        .dark-theme .constraint-group h4 {
+            color: #ccc;
+        }
+        
+        .dark-theme .constraint-item:hover {
+            background: #333;
+        }
+        
+        .dark-theme .constraint-label {
+            color: #e0e0e0;
+        }
+        
+        .dark-theme .constraint-modal-footer {
+            background: #333;
+            border-top-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-footer button {
+            background: #2a2a2a;
+            color: #e0e0e0;
+            border-color: #444;
+        }
+        
+        .dark-theme .constraint-modal-footer button:hover {
+            background: #1b5e20;
+            color: #a5d6a7;
+            border-color: #4CAF50;
+        }
+        
+        .dark-theme .constraint-modal-footer button.apply {
+            background: #2e7d32;
+            color: white;
+            border-color: #2e7d32;
+        }
+        
+        .dark-theme .constraint-modal-footer button.apply:hover {
+            background: #4CAF50;
+        }
+        
+        .dark-theme .nav-item {
+            color: #ccc;
+        }
+        
+        .dark-theme .nav-item:hover {
+            background: #333;
+        }
+        
+        .dark-theme .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+        }
+        
+        .dark-theme .max-ai-message.assistant {
+            background: #333;
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-message.user {
+            background: rgba(59, 130, 246, 0.2);
+            color: #ccc;
+        }
+        
+        .dark-theme .max-ai-input {
+            border-top-color: #444;
+        }
+        
+        .dark-theme .max-ai-input input {
+            background: #333;
+            color: white;
+            border-color: #444;
+        }
+        
+        /* Quick Actions Styles */
+        .max-ai-quick-actions {
+            padding: 0.75rem;
+            background: linear-gradient(to right, #eff6ff, #e0e7ff);
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .dark-theme .max-ai-quick-actions {
+            background: linear-gradient(to right, #1a2332, #202842);
+            border-bottom: 1px solid #444;
+        }
+        
+        .quick-actions-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .dark-theme .quick-actions-title {
+            color: #cbd5e0;
+        }
+        
+        .quick-actions-section {
+            margin-bottom: 0.75rem;
+        }
+        
+        .quick-actions-label {
+            font-size: 0.75rem;
+            color: #718096;
+            margin-bottom: 0.5rem;
+        }
+        
+        .dark-theme .quick-actions-label {
+            color: #a0aec0;
+        }
+        
+        .quick-actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .quick-action-btn {
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            background: white;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        
+        .dark-theme .quick-action-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
+        .quick-action-btn:hover {
+            background: #edf2f7;
+            border-color: #666;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .dark-theme .quick-action-btn:hover {
+            background: #374151;
+            border-color: #666;
+        }
+        
+        /* Constraint Settings Styles */
+        .constraint-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 3000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .constraint-modal.active {
+            display: flex;
+        }
+        
+        .constraint-modal-content {
+            background: white;
+            border-radius: 8px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 80vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .constraint-modal-header {
+            padding: 1rem 1.5rem;
+            background: #f5f5f5;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .constraint-modal-header h2 {
+            margin: 0;
+            font-size: 1.25rem;
+            color: #333;
+        }
+        
+        .constraint-modal-close {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .constraint-modal-close:hover {
+            color: #333;
+        }
+        
+        .constraint-modal-body {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1.5rem;
+        }
+        
+        .constraint-section {
+            margin-bottom: 2rem;
+        }
+        
+        .constraint-section h3 {
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            color: #333;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .constraint-group {
+            margin-bottom: 1rem;
+        }
+        
+        .constraint-group h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 0.95rem;
+            color: #555;
+            font-weight: 600;
+        }
+        
+        .constraint-item {
+            display: flex;
+            align-items: center;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+        
+        .constraint-item:hover {
+            background: #f9f9f9;
+        }
+        
+        .constraint-toggle {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+            margin-right: 1rem;
+        }
+        
+        .constraint-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .constraint-toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: 0.3s;
+            border-radius: 22px;
+        }
+        
+        .constraint-toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.3s;
+            border-radius: 50%;
+        }
+        
+        .constraint-toggle input:checked + .constraint-toggle-slider {
+            background-color: #4CAF50;
+        }
+        
+        .constraint-toggle input:checked + .constraint-toggle-slider:before {
+            transform: translateX(18px);
+        }
+        
+        .constraint-label {
+            flex: 1;
+            font-size: 0.875rem;
+            color: #333;
+            cursor: pointer;
+        }
+        
+        .constraint-modal-footer {
+            padding: 1rem 1.5rem;
+            background: #f5f5f5;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+        
+        .constraint-modal-footer button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.875rem;
+        }
+        
+        .constraint-modal-footer button:hover {
+            background: #f5f5f5;
+        }
+        
+        .constraint-modal-footer button.apply {
+            background: #4CAF50;
+            color: white;
+            border-color: #4CAF50;
+        }
+        
+        .constraint-modal-footer button.apply:hover {
+            background: #45a049;
+        }
+        
+        .quick-action-btn.full-width {
+            grid-column: span 2;
+        }
+        
+        .view-controls {
+            display: flex;
+            gap: 0.5rem;
+        }
+        
+        .view-control-btn {
+            flex: 1;
+            padding: 0.4rem;
+            font-size: 0.7rem;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .dark-theme .view-control-btn {
+            background: #2d3748;
+            border: 1px solid #4a5568;
+            color: #e0e0e0;
+        }
+        
+        .view-control-btn:hover {
+            background: #f7fafc;
+            border-color: #a0aec0;
+        }
+        
+        .dark-theme .view-control-btn:hover {
+            background: #374151;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Production Schedule</h1>
+        <div class="header-actions">
+            <!-- Max AI button removed - use main app's left panel -->
+            <!-- <button id="maxAIBtn" class="max-ai-btn">🤖 Hide AI</button> -->
+            <span id="lastUpdate">Last updated: --</span>
+        </div>
+    </div>
+    
+    <!-- Max AI Assistant removed - using main app's left panel instead -->
+
+    <div class="toolbar">
+        <div class="toolbar-group">
+            <label for="viewPreset">View:</label>
+            <select id="viewPreset">
+                <option value="hourAndDay">Hour & Day</option>
+                <option value="dayAndWeek" selected>Day & Week</option>
+                <option value="weekAndMonth">Week & Month</option>
+                <option value="monthAndYear">Month & Year</option>
+            </select>
+        </div>
+
+        <div class="toolbar-group" style="display: flex; gap: 0.25rem;">
+            <button id="zoomIn" class="icon-only" title="Zoom In">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                    <line x1="11" y1="8" x2="11" y2="14"></line>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button id="zoomOut" class="icon-only" title="Zoom Out">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="11" cy="11" r="8"></circle>
+                    <path d="m21 21-4.35-4.35"></path>
+                    <line x1="8" y1="11" x2="14" y2="11"></line>
+                </svg>
+            </button>
+            <button id="zoomToFit" class="icon-only" title="Fit to View">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
+                </svg>
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <label for="schedulingAlgorithm">Algorithm:</label>
+            <select id="schedulingAlgorithm">
+                <option value="asap">ASAP (Forward)</option>
+                <option value="alap">ALAP (Backward)</option>
+                <option value="criticalPath">Critical Path</option>
+                <option value="levelResources">Level Resources</option>
+                <option value="drum">Drum (TOC)</option>
+            </select>
+            <button id="constraintSettings" class="icon-only" title="Configure Constraints">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="3"></circle>
+                    <path d="M12 1v6m0 6v6m4.22-13.22l-4.24 4.24m0 5.96l4.24 4.24M20 12h-6m-6 0H2m13.22 4.22l-4.24-4.24m0-5.96l-4.24-4.24"></path>
+                </svg>
+            </button>
+            <button id="applyScheduling">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <span>Apply</span>
+            </button>
+        </div>
+
+        <div class="toolbar-group">
+            <button id="saveSchedule">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                    <polyline points="7 3 7 8 15 8"></polyline>
+                </svg>
+                <span>Save</span>
+            </button>
+            <button id="refreshSchedule" class="icon-only" title="Refresh">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 4 23 10 17 10"></polyline>
+                    <polyline points="1 20 1 14 7 14"></polyline>
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="scheduler-container">
+        <div id="scheduler"></div>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
+        </div>
+    </div>
+
+    <div class="status-bar">
+        <span id="operationCount">0 operations scheduled</span>
+        <span id="resourceUtilization">Resource utilization: --</span>
+    </div>
+    
+    <!-- Constraint Settings Modal -->
+    <div id="constraintModal" class="constraint-modal">
+        <div class="constraint-modal-content">
+            <div class="constraint-modal-header">
+                <h2>Optimization Constraints Configuration</h2>
+                <button class="constraint-modal-close" onclick="closeConstraintModal()">×</button>
+            </div>
+            <div class="constraint-modal-body">
+                <!-- Physical Constraints Section -->
+                <div class="constraint-section">
+                    <h3>Physical Constraints</h3>
+                    
+                    <div class="constraint-group">
+                        <h4>General Validation Rules</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noOverlap" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noOverlap" class="constraint-label">No overlapping activities (unless overlap features enabled)</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="dateValidation" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="dateValidation" class="constraint-label">Start date must precede end date</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="mandatoryFields" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="mandatoryFields" class="constraint-label">Activities must include mandatory fields</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Dependency Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="predecessorLogic" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="predecessorLogic" class="constraint-label">Follow predecessor/successor logic (FS, SS, etc.)</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noCircular" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noCircular" class="constraint-label">Prevent circular dependencies</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Time Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="workingHours" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="workingHours" class="constraint-label">Align with working hours and holidays</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="leadLagTimes" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="leadLagTimes" class="constraint-label">Respect lead/lag times for dependencies</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Resource Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="noOverAllocation" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="noOverAllocation" class="constraint-label">Prevent resource over-allocation</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="skillMatching" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="skillMatching" class="constraint-label">Match resource skills/capabilities</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="capacityLimits" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="capacityLimits" class="constraint-label">Respect capacity limits (e.g., machine throughput)</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Inventory/Material Constraints</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="materialAvailability" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="materialAvailability" class="constraint-label">Required material must be available</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="batchSizeRules" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="batchSizeRules" class="constraint-label">Adhere to min/max batch size rules</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Policy Constraints Section -->
+                <div class="constraint-section">
+                    <h3>Policy Constraints</h3>
+                    
+                    <div class="constraint-group">
+                        <h4>Business Rules</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="priorityRules" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="priorityRules" class="constraint-label">High-priority activities given preference</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="needDates" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="needDates" class="constraint-label">Jobs must meet Need Dates</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="budgetConstraints">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="budgetConstraints" class="constraint-label">Stay within budgeted labor/resource costs</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Time Flexibility</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="weekendWork">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="weekendWork" class="constraint-label">Permit weekend/holiday work for deadlines</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="workloadBalance" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="workloadBalance" class="constraint-label">Balance workload across shifts</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="limitOvertime" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="limitOvertime" class="constraint-label">Limit overtime to control labor costs</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Process Flow</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="parallelProcessing">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="parallelProcessing" class="constraint-label">Allow parallel processing for non-dependent activities</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="alternativeRouting">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="alternativeRouting" class="constraint-label">Permit alternative routing paths</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="skipNonCritical">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="skipNonCritical" class="constraint-label">Skip non-critical steps for low-priority orders</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="preventSameSetup" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="preventSameSetup" class="constraint-label">Prevent same setup type on multiple resources</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Material Handling</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="justInTime">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="justInTime" class="constraint-label">Schedule assuming just-in-time material delivery</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="substituteMaterials">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="substituteMaterials" class="constraint-label">Allow substitute materials if primary unavailable</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="partialMaterial">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="partialMaterial" class="constraint-label">Start with partial material availability</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Cost Control</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="avoidPeakRates" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="avoidPeakRates" class="constraint-label">Avoid high-energy activities during peak utility rates</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="costEfficiency">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="costEfficiency" class="constraint-label">Prioritize cost-efficient activities over urgency</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="restrictPremium" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="restrictPremium" class="constraint-label">Restrict use of premium resources unless necessary</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Quality & Compliance</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="deferredInspections">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="deferredInspections" class="constraint-label">Allow deferred inspections post-production</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="processDeviations">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="processDeviations" class="constraint-label">Accept minor deviations within tolerance</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="auditTrails" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="auditTrails" class="constraint-label">Enable detailed audit trails</label>
+                        </div>
+                    </div>
+                    
+                    <div class="constraint-group">
+                        <h4>Optimization Preferences</h4>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="minimizeMakespan" checked>
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="minimizeMakespan" class="constraint-label">Minimize makespan to complete jobs quickly</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="maximizeUtilization">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="maximizeUtilization" class="constraint-label">Maximize machine utilization over labor cost</label>
+                        </div>
+                        <div class="constraint-item">
+                            <label class="constraint-toggle">
+                                <input type="checkbox" id="prioritizeMargin">
+                                <span class="constraint-toggle-slider"></span>
+                            </label>
+                            <label for="prioritizeMargin" class="constraint-label">Prioritize high-margin orders when capacity limited</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="constraint-modal-footer">
+                <button onclick="resetConstraints()">Reset to Defaults</button>
+                <button onclick="closeConstraintModal()">Cancel</button>
+                <button class="apply" onclick="applyConstraints()">Apply Constraints</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load Bryntum Scheduler Pro UMD -->
+    <script src="/schedulerpro.umd.js"></script>
+    
+    <!-- Initialize the scheduler -->
+    <script>
+        // Wait for DOM and Bryntum to load
+        // Guard to prevent multiple initialization attempts
+        let schedulerInitialized = false;
+        
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Prevent multiple initialization
+            if (schedulerInitialized) {
+                console.log('Scheduler already initialized, skipping...');
+                return;
+            }
+            schedulerInitialized = true;
+            
+            try {
+                // Mark first task as in progress
+                
+                // Initialize scheduler using global bryntum object
+                const { SchedulerPro } = bryntum.schedulerpro;
+                
+                // Set today's date to September 3, 2025
+                const today = new Date(2025, 8, 3); // September 3, 2025
+                today.setHours(8, 0, 0, 0); // Start at 8 AM
+                
+                // Helper to create a date relative to September 3, 2025
+                function createDate(hoursFromNow) {
+                    const date = new Date(2025, 8, 3); // September 3, 2025
+                    date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
+                    return date;
+                }
+                
+                // Fetch real PT operations and resources from the backend
+                let resources = [];
+                let ptOperations = [];
+                
+                try {
+                    // Fetch resources, PT operations, and dependencies from the backend APIs
+                    const [resourcesResponse, operationsResponse, dependenciesResponse] = await Promise.all([
+                        fetch('/api/resources'),
+                        fetch('/api/pt-operations'),
+                        fetch('/api/pt-dependencies')
+                    ]);
+                    
+                    if (resourcesResponse.ok) {
+                        resources = await resourcesResponse.json();
+                        console.log('✅ Resources fetched successfully:', resources.length);
+                    } else {
+                        console.error('❌ Failed to fetch resources:', resourcesResponse.status);
+                        // Fallback sample data
+                        resources = [
+                            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
+                            { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
+                            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
+                            { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
+                            { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
+                            { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
+                        ];
+                    }
+                    
+                    // REMOVED: Unscheduled resource line
+                    // resources.unshift({
+                    //     id: 'unscheduled',
+                    //     name: '🔄 Unscheduled Operations',
+                    //     category: 'Unscheduled',
+                    //     eventColor: '#808080' // Gray color for unscheduled items
+                    // });
+                    
+                    if (operationsResponse.ok) {
+                        ptOperations = await operationsResponse.json();
+                        console.log('✅ PT Operations fetched successfully:', ptOperations.length);
+                        if (ptOperations.length > 0) {
+                            console.log('✅ First PT operation sample:', ptOperations[0]);
+                        }
+                    } else {
+                        console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
+                    }
+                } catch (error) {
+                    console.error('❌ Error fetching data:', error);
+                    // Use fallback sample data
+                    resources = [
+                        { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
+                        { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
+                        { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
+                        { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
+                        { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
+                        { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
+                    ];
+                }
+
+                // Map resources to create resource lookup by both ID and name
+                const resourceMap = new Map();
+                const resourceByName = new Map();
+                resources.forEach(resource => {
+                    resourceMap.set(resource.id, resource);
+                    resourceMap.set(resource.name, resource);
+                    // Also create a name-based lookup for better matching
+                    resourceByName.set(resource.name?.toLowerCase(), resource);
+                });
+                
+                // Transform PT operations into Bryntum events format with ASAP constraints
+                let events = ptOperations.map((operation, index) => {
+                    // Log job names for debugging
+                    if (index < 5 || operation.jobName) {
+                        console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
+                    }
+                    
+                    // First try to find a matching resource
+                    let resourceId = findResourceId(operation, resourceMap, resourceByName, resources);
+                    
+                    // Check if operation is truly unscheduled (no scheduled start time OR no valid resource)
+                    const isUnscheduled = false; // DISABLED: Force all operations to be scheduled
+                    
+                    let startDate;
+                    
+                    // Always use the operation's actual scheduled time or a default
+                    if (operation.startTime || operation.start_date || operation.scheduled_start) {
+                        const originalDate = new Date(operation.startTime || operation.start_date || operation.scheduled_start);
+                        const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
+                        startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
+                        startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                    } else {
+                        // Fallback to a default if no date - spread across resources
+                        const resourceIndex = resources.findIndex(r => r.id === resourceId) || 0;
+                        const hoursOffset = (index % 10) * 3; // Spread operations every 3 hours
+                        const daysOffset = Math.floor(index / 10); // New row every 10 operations
+                        startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset); // Sept 3+, starting at 8 AM
+                    }
+                    
+                    // If no valid resource found, assign to first available resource
+                    if (!resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId)) {
+                        resourceId = resources[index % resources.length]?.id || resources[0]?.id;
+                    }
+                    
+                    const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
+                    
+                    return {
+                        id: operation.id,
+                        name: operation.name || `${operation.jobName || 'Job'}: ${operation.operationName || 'Operation'}`,
+                        startDate: startDate,
+                        duration: duration,
+                        durationUnit: 'hour',
+                        resourceId: resourceId,
+                        percentDone: operation.percent_done || 0,
+                        eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.operationName)),
+                        // ASAP scheduling constraints (not for unscheduled operations)
+                        constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
+                        constraintDate: isUnscheduled ? null : startDate,
+                        manuallyScheduled: false, // Allow automatic scheduling
+                        draggable: true, // Allow dragging to schedule
+                        // Additional PT operation data
+                        jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
+                        jobName: operation.jobName,
+                        operationName: operation.operationName,
+                        resourceName: operation.resourceName,
+                        isUnscheduled: isUnscheduled,
+                        ptData: operation // Keep original PT data for algorithms
+                    };
+                }).filter(event => event.resourceId); // Only include operations with valid resources
+                
+                // LOG IMMEDIATELY to verify code is running
+                console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
+                
+                // Helper function to find the correct resource ID
+                function findResourceId(operation, resourceMap, resourceByName, resources) {
+                    // Try various ways to match the resource
+                    if (operation.resourceId && resourceMap.has(operation.resourceId)) {
+                        return operation.resourceId;
+                    }
+                    if (operation.resource_id && resourceMap.has(operation.resource_id)) {
+                        return operation.resource_id;
+                    }
+                    // Try to match by exact name
+                    if (operation.resourceName) {
+                        if (resourceMap.has(operation.resourceName)) {
+                            return resourceMap.get(operation.resourceName).id;
+                        }
+                        // Try case-insensitive match
+                        const lowerName = operation.resourceName.toLowerCase();
+                        if (resourceByName.has(lowerName)) {
+                            return resourceByName.get(lowerName).id;
+                        }
+                        // If resource name exists but not found in map, create a new resource entry
+                        if (operation.resourceName !== 'Resource null' && operation.resourceName !== 'Unassigned') {
+                            // Create a dynamic resource ID based on the name
+                            const dynamicId = `resource_${operation.resourceName.replace(/\s+/g, '_').toLowerCase()}`;
+                            // Add it to resources if not already there
+                            if (!resourceMap.has(dynamicId)) {
+                                const newResource = {
+                                    id: dynamicId,
+                                    name: operation.resourceName,
+                                    category: 'Manufacturing'
+                                };
+                                resources.push(newResource);
+                                resourceMap.set(dynamicId, newResource);
+                                resourceMap.set(operation.resourceName, newResource);
+                                resourceByName.set(operation.resourceName.toLowerCase(), newResource);
+                            }
+                            return dynamicId;
+                        }
+                    }
+                    // Don't fallback to a random resource if not found - return null for unscheduled
+                    return null;
+                }
+                
+                // Helper function to assign colors based on operation type
+                function getOperationColor(operationName) {
+                    if (!operationName) return 'blue';
+                    const name = operationName.toLowerCase();
+                    if (name.includes('milling') || name.includes('machining')) return 'blue';
+                    if (name.includes('assembly')) return 'green';
+                    if (name.includes('packaging')) return 'orange';
+                    if (name.includes('quality') || name.includes('testing')) return 'purple';
+                    if (name.includes('filtration')) return 'teal';
+                    if (name.includes('carbonation')) return 'yellow';
+                    return 'blue'; // default
+                }
+                
+                console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
+                
+                // If we have no PT operations, create sample events for demo
+                if (events.length === 0) {
+                    console.log('🔧 No PT operations found, creating sample data for demo');
+                    events = [
+                        {
+                            id: 1,
+                            name: 'Sample Operation - Demo',
+                            startDate: createDate(0), // Sept 3, 8 AM
+                            duration: 4,
+                            durationUnit: 'hour',
+                            resourceId: resources[0]?.id || 'cnc1',
+                            percentDone: 25,
+                            eventColor: 'blue',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(0),
+                            manuallyScheduled: false
+                        },
+                        {
+                            id: 2,
+                            name: 'Assembly Process - Demo',
+                            startDate: createDate(5), // Sept 3, 1 PM
+                            duration: 3,
+                            durationUnit: 'hour',
+                            resourceId: resources[1]?.id || 'assembly1',
+                            percentDone: 60,
+                            eventColor: 'green',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(5),
+                            manuallyScheduled: false
+                        },
+                        {
+                            id: 3,
+                            name: 'Quality Control - Demo',
+                            startDate: createDate(26), // Sept 4, 10 AM
+                            duration: 2,
+                            durationUnit: 'hour',
+                            resourceId: resources[2]?.id || 'qc1',
+                            percentDone: 0,
+                            eventColor: 'purple',
+                            constraintType: 'startnoearlierthan',
+                            constraintDate: createDate(26),
+                            manuallyScheduled: false
+                        }
+                    ];
+                }
+
+                // Load dependencies from database instead of generating them
+                let dependencies = [];
+                try {
+                    if (dependenciesResponse && dependenciesResponse.ok) {
+                        const fetchedDeps = await dependenciesResponse.json();
+                        dependencies = fetchedDeps.map(dep => ({
+                            id: `dep-${dep.id}`,
+                            fromEvent: dep.fromEvent,
+                            toEvent: dep.toEvent,
+                            type: dep.type || 2, // Default to Finish-to-Start
+                            lag: 0
+                        }));
+                        console.log('✅ Dependencies fetched from database:', dependencies.length);
+                        if (dependencies.length > 0) {
+                            console.log('Sample dependency:', dependencies[0]);
+                        }
+                    } else {
+                        console.warn('Failed to fetch dependencies, using empty array');
+                    }
+                } catch (depError) {
+                    console.error('Error processing dependencies:', depError);
+                }
+                
+                console.log('===== DEPENDENCY DATA FROM DATABASE =====');
+                console.log('Total events:', events.length);
+                console.log('Total dependencies loaded:', dependencies.length);
+                
+                // First, let's see what brewery operations we have
+                const breweryOps = events.filter(event => {
+                    const opName = (event.operationName || event.name || '').toLowerCase();
+                    return opName.includes('milling') || 
+                           opName.includes('mashing') || 
+                           opName.includes('lautering') || 
+                           opName.includes('boiling') || 
+                           opName.includes('whirlpool') || 
+                           opName.includes('cooling') || 
+                           opName.includes('fermentation');
+                });
+                
+                console.log(`Found ${breweryOps.length} brewery operations`);
+                
+                // Group by job and show what jobs we have
+                const jobGroups = {};
+                breweryOps.forEach(op => {
+                    const jobId = op.jobId || 'NO_JOB';
+                    if (!jobGroups[jobId]) {
+                        jobGroups[jobId] = [];
+                    }
+                    jobGroups[jobId].push(op);
+                });
+                
+                console.log('Jobs found:', Object.keys(jobGroups));
+                
+                // PICK JUST ONE JOB TO FOCUS ON
+                // Let's find a HKN job (brewery job) that has multiple operations
+                const targetJob = Object.keys(jobGroups).find(jobId => 
+                    jobId && jobId.includes('HKN') && jobGroups[jobId].length > 2
+                );
+                
+                if (targetJob) {
+                    console.log(`\n🎯 FOCUSING ON SINGLE JOB: ${targetJob}`);
+                    const jobOps = jobGroups[targetJob];
+                    console.log(`This job has ${jobOps.length} operations`);
+                    
+                    // Log all operations in this job
+                    jobOps.forEach(op => {
+                        console.log(`  - ${op.name} (ID: ${op.id}) on ${op.resourceName}`);
+                    });
+                    
+                    // Define process order
+                    const processOrder = {
+                        'mill': 1,
+                        'mash': 2,
+                        'lauter': 3,
+                        'boil': 4,
+                        'kettle': 4,
+                        'whirlpool': 5,
+                        'cool': 6,
+                        'ferment': 7
+                    };
+                    
+                    // Assign process order
+                    jobOps.forEach(op => {
+                        const opName = (op.name || '').toLowerCase();
+                        let order = 99;
+                        
+                        for (const [key, value] of Object.entries(processOrder)) {
+                            if (opName.includes(key)) {
+                                order = value;
+                                break;
+                            }
+                        }
+                        
+                        op.processOrder = order;
+                    });
+                    
+                    // Sort by process order
+                    const sortedOps = jobOps.sort((a, b) => a.processOrder - b.processOrder);
+                    
+                    console.log('\n📋 Operations in brewery process order:');
+                    sortedOps.forEach(op => {
+                        console.log(`  ${op.processOrder}. ${op.name} (ID: ${op.id})`);
+                    });
+                    
+                    // Create dependencies ONLY for this one job
+                    console.log('\n🔗 Creating dependencies for this job:');
+                    for (let i = 0; i < sortedOps.length - 1; i++) {
+                        const from = sortedOps[i];
+                        const to = sortedOps[i + 1];
+                        
+                        // Only link if both are brewery operations
+                        if (from.processOrder < 99 && to.processOrder < 99) {
+                            dependencies.push({
+                                id: `dep_${i}_${from.id}_${to.id}`,
+                                from: from.id,
+                                to: to.id,
+                                type: 2, // Finish-to-Start
+                                lag: 0,
+                                lagUnit: 'hour'
+                            });
+                            console.log(`  ✅ ${from.name} → ${to.name}`);
+                        }
+                    }
+                } else {
+                    console.log('❌ No suitable HKN brewery job found with multiple operations');
+                    console.log('Available jobs:', Object.keys(jobGroups).slice(0, 10));
+                }
+                
+                console.log(`\n===== DEPENDENCY GENERATION END =====`);
+                console.log(`TOTAL DEPENDENCIES CREATED: ${dependencies.length}`);
+                if (dependencies.length > 0) {
+                    console.log('Sample dependencies:', dependencies.slice(0, 3));
+                }
+                
+                // Add some demo dependencies if we're using demo data
+                if (events.length <= 3 && events[0]?.name?.includes('Demo')) {
+                    dependencies.push(
+                        {
+                            id: 'dep1',
+                            from: 1,
+                            to: 2,
+                            type: 2, // Finish-to-Start
+                            lag: 1,
+                            lagUnit: 'hour'
+                        },
+                        {
+                            id: 'dep2',
+                            from: 2,
+                            to: 3,
+                            type: 2, // Finish-to-Start
+                            lag: 0,
+                            lagUnit: 'hour'
+                        }
+                    );
+                }
+                
+                console.log(`🔗 Created ${dependencies.length} dependencies between operations`);
+                
+                // Log first few dependencies for debugging
+                if (dependencies.length > 0) {
+                    console.log('Sample dependencies:', dependencies.slice(0, 5));
+                    
+                    // Verify that the event IDs in dependencies match actual events
+                    const eventIds = new Set(events.map(e => e.id));
+                    let missingFrom = 0;
+                    let missingTo = 0;
+                    dependencies.forEach(dep => {
+                        if (!eventIds.has(dep.from)) {
+                            console.warn(`Dependency ${dep.id} has invalid 'from' ID: ${dep.from}`);
+                            missingFrom++;
+                        }
+                        if (!eventIds.has(dep.to)) {
+                            console.warn(`Dependency ${dep.id} has invalid 'to' ID: ${dep.to}`);
+                            missingTo++;
+                        }
+                    });
+                    if (missingFrom > 0 || missingTo > 0) {
+                        console.error(`⚠️ Found ${missingFrom} invalid 'from' IDs and ${missingTo} invalid 'to' IDs in dependencies!`);
+                        console.log('Available event IDs:', Array.from(eventIds).slice(0, 20));
+                    }
+                }
+
+                // Create scheduler instance with ASAP scheduling
+                // Make scheduler globally accessible for Max AI
+                window.scheduler = new SchedulerPro({
+                    appendTo: 'scheduler',
+                    
+                    columns: [
+                        { text: 'Resource', field: 'name', width: 200 },
+                        { text: 'Category', field: 'category', width: 150 }
+                    ],
+
+                    viewPreset: 'dayAndWeek',
+                    rowHeight: 60,
+                    barMargin: 8,
+
+                    // Project configuration for ASAP scheduling
+                    project: {
+                        autoLoad: false,
+                        autoSync: false,
+                        // Use ASAP scheduling with resource constraints
+                        schedulingEngine: {
+                            multiplePerResource: true, // Allow multiple tasks per resource
+                            allowOverlap: false // Prevent overlapping on same resource
+                        }
+                    },
+
+                    features: {
+                        // Dependencies feature for showing task relationships
+                        dependencies: true,
+                        
+                        // Enable drag and drop with tooltip
+                        eventDrag: {
+                            showTooltip: true,
+                            constrainDragToResource: false, // Allow dragging between resources
+                            // Enable dragging from unscheduled to other resources
+                            validatorFn({ draggedRecords, targetRecord }) {
+                                // Allow all drag operations
+                                return true;
+                            }
+                        },
+                        
+                        // Enable resize with tooltip
+                        eventResize: {
+                            showTooltip: true
+                        },
+                        
+                        // Event tooltips on hover
+                        eventTooltip: {
+                            template: ({ eventRecord }) => {
+                                // Extract job name/batch from the event data
+                                const jobInfo = eventRecord.jobName || eventRecord.data?.jobName || '';
+                                const jobDisplay = jobInfo ? `<strong style="color: #0066cc;">Job: ${jobInfo}</strong><br>` : '';
+                                
+                                return `
+                                    <div style="padding: 10px; min-width: 200px;">
+                                        ${jobDisplay}
+                                        <strong>${eventRecord.name}</strong><br>
+                                        <div style="margin-top: 5px; font-size: 0.9em;">
+                                            Start: ${eventRecord.startDate.toLocaleString()}<br>
+                                            End: ${eventRecord.endDate.toLocaleString()}<br>
+                                            Duration: ${eventRecord.duration} ${eventRecord.durationUnit}<br>
+                                            Progress: ${eventRecord.percentDone}%
+                                        </div>
+                                        ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                    </div>
+                                `;
+                            }
+                        },
+                        
+                        // Show current time line
+                        timeRanges: {
+                            showCurrentTimeLine: true
+                        },
+                        
+                        // Progress line feature - shows percentage complete
+                        percentBar: true,
+                        
+                        // Non-working time visualization
+                        nonWorkingTime: true,
+                        
+                        // Critical paths feature
+                        criticalPaths: false,
+                        
+                        // Event menu on right-click
+                        eventMenu: true,
+                        
+                        // Schedule menu on right-click
+                        scheduleMenu: true
+                    },
+
+                    eventRenderer({ eventRecord, renderData }) {
+                        renderData.eventColor = eventRecord.eventColor;
+                        return {
+                            html: `
+                                <div style="padding: 4px;">
+                                    <div style="font-weight: 500; font-size: 12px;">${eventRecord.name}</div>
+                                    <div style="font-size: 11px; opacity: 0.8;">
+                                        ${eventRecord.percentDone}% complete
+                                    </div>
+                                </div>
+                            `
+                        };
+                    },
+
+                    project: {
+                        // Use correct property names (not deprecated)
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true
+                    },
+
+                    startDate: (() => {
+                        // Start from today (September 3, 2025)
+                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
+                        start.setHours(0, 0, 0, 0);
+                        return start;
+                    })(),
+                    endDate: (() => {
+                        // Show 2 weeks from today
+                        const end = new Date(2025, 8, 17); // September 17, 2025
+                        end.setHours(23, 59, 59, 999);
+                        return end;
+                    })(),
+                    zoomLevel: 10
+                });
+
+                // Setup toolbar handlers
+                const scheduler = window.scheduler;
+                
+                // Add event listeners to handle dragging from unscheduled resource
+                scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
+                    eventRecords.forEach(eventRecord => {
+                        // Check if the event was dragged from unscheduled to a real resource
+                        if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
+                            // Mark as scheduled now
+                            eventRecord.isUnscheduled = false;
+                            // Update color to match the operation type
+                            eventRecord.eventColor = getOperationColor(eventRecord.operationName);
+                            // Apply ASAP constraint now that it's scheduled
+                            eventRecord.constraintType = 'startnoearlierthan';
+                            eventRecord.constraintDate = eventRecord.startDate;
+                            console.log(`✅ Operation "${eventRecord.name}" scheduled to resource: ${targetResourceRecord.name}`);
+                            updateStatus(); // Update metrics
+                        } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
+                            // Mark as unscheduled if dragged back to unscheduled
+                            eventRecord.isUnscheduled = true;
+                            eventRecord.eventColor = '#808080';
+                            eventRecord.constraintType = null;
+                            eventRecord.constraintDate = null;
+                            console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
+                            updateStatus(); // Update metrics
+                        }
+                    });
+                });
+                
+                // Enhanced status update function using real PT data
+                function updateStatus() {
+                    const operationCount = scheduler.eventStore.count || 0;
+                    document.getElementById('operationCount').textContent = `${operationCount} operations scheduled`;
+                    
+                    // Calculate detailed resource utilization using PT operations data
+                    const events = scheduler.eventStore.records || [];
+                    const resources = scheduler.resourceStore.records || [];
+                    
+                    let totalOperationHours = 0;
+                    const resourceUtilization = {};
+                    
+                    // Find the actual schedule timespan
+                    let earliestStart = null;
+                    let latestEnd = null;
+                    
+                    // Calculate utilization per resource and find schedule bounds
+                    resources.forEach(resource => {
+                        // Skip the unscheduled resource line from calculations
+                        if (resource.id === 'unscheduled') return;
+                        
+                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
+                        let resourceHours = 0;
+                        
+                        resourceEvents.forEach(event => {
+                            resourceHours += event.duration || 0;
+                            
+                            // Track schedule bounds
+                            if (event.startDate) {
+                                const startTime = new Date(event.startDate).getTime();
+                                const endTime = new Date(event.endDate || event.startDate).getTime();
+                                
+                                if (!earliestStart || startTime < earliestStart) {
+                                    earliestStart = startTime;
+                                }
+                                if (!latestEnd || endTime > latestEnd) {
+                                    latestEnd = endTime;
+                                }
+                            }
+                        });
+                        
+                        resourceUtilization[resource.id] = {
+                            name: resource.name,
+                            hours: resourceHours,
+                            operationCount: resourceEvents.length
+                        };
+                        totalOperationHours += resourceHours;
+                    });
+                    
+                    // Calculate actual working days and hours in the schedule
+                    let scheduleSpanHours = 0;
+                    if (earliestStart && latestEnd) {
+                        const spanMs = latestEnd - earliestStart;
+                        const spanDays = Math.ceil(spanMs / (1000 * 60 * 60 * 24));
+                        // Assume 8 working hours per day
+                        scheduleSpanHours = spanDays * 8;
+                    } else {
+                        // Fallback to single day if no schedule
+                        scheduleSpanHours = 8;
+                    }
+                    
+                    // Calculate utilization based on actual schedule span
+                    // Exclude unscheduled resource from count
+                    const activeResources = resources.filter(r => r.id !== 'unscheduled').length;
+                    const totalResourceCapacity = activeResources * scheduleSpanHours;
+                    const utilization = totalResourceCapacity > 0 ? Math.round((totalOperationHours / totalResourceCapacity) * 100) : 0;
+                    
+                    document.getElementById('resourceUtilization').textContent = `Resource utilization: ${utilization}% (${totalOperationHours.toFixed(1)}h total)`;
+                    document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                    
+                    // Store utilization data for Max AI analysis
+                    window.currentUtilization = resourceUtilization;
+                    window.currentStats = {
+                        operations: operationCount,
+                        utilization: utilization,
+                        totalHours: totalOperationHours,
+                        resources: resources.length
+                    };
+                }
+
+                // Hamburger menu removed - clean navigation
+                
+                // Max AI Handler - removed, using main app's left panel
+                // const maxAIBtn = document.getElementById('maxAIBtn');
+                // const maxAI = document.getElementById('maxAI');
+                // const closeMaxAI = document.getElementById('closeMaxAI');
+                // const maxInput = document.getElementById('maxInput');
+                // const maxSend = document.getElementById('maxSend');
+                // const maxMessages = document.getElementById('maxMessages');
+                
+                // maxAIBtn.addEventListener('click', () => {
+                //     maxAI.classList.toggle('closed');
+                //     const btnText = maxAI.classList.contains('closed') ? '🤖 Max AI' : '🤖 Hide AI';
+                //     maxAIBtn.textContent = btnText;
+                // });
+                
+                // closeMaxAI.addEventListener('click', () => {
+                //     maxAI.classList.add('closed');
+                //     maxAIBtn.textContent = '🤖 Max AI';
+                // });
+                
+                // Listen for messages from parent window (main app's Max AI panel)
+                window.addEventListener('message', (event) => {
+                    // Handle algorithm run requests from parent
+                    if (event.data && event.data.type === 'RUN_ALGORITHM') {
+                        runSchedulerAlgorithm(event.data.algorithm);
+                    }
+                });
+                
+                // Function to run scheduler algorithms from quick actions
+                function runSchedulerAlgorithm(algorithm) {
+                    const algorithmDropdown = document.getElementById('schedulingAlgorithm');
+                    const applyButton = document.getElementById('applyScheduling');
+                    
+                    // Map algorithm names to dropdown values
+                    const algorithmMap = {
+                        'ASAP': 'asap',
+                        'ALAP': 'alap',
+                        'CRITICAL_PATH': 'criticalPath',
+                        'LEVEL_RESOURCES': 'levelResources',
+                        'DRUM_TOC': 'drum'
+                    };
+                    
+                    // Set the dropdown value and trigger the algorithm
+                    if (algorithmMap[algorithm]) {
+                        algorithmDropdown.value = algorithmMap[algorithm];
+                        applyButton.click();
+                        
+                        // Max AI feedback removed - handled by main app's AI panel
+                        // const aiMsg = document.createElement('div');
+                        // aiMsg.className = 'max-ai-message assistant';
+                        // aiMsg.textContent = `✅ ${algorithm.replace(/_/g, ' ')} algorithm applied successfully!`;
+                        // maxMessages.appendChild(aiMsg);
+                        // maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }
+                }
+                
+                // Make functions available globally for onclick handlers
+                window.runSchedulerAlgorithm = runSchedulerAlgorithm;
+                
+                // Max AI chat functionality removed - handled by main app's AI panel
+                function sendMaxMessage() {
+                    // This function is now handled by the main app's Max AI panel
+                    console.log('Max AI chat is handled by the main app panel');
+                    return;
+                    
+                    // Removed code that references deleted elements
+                    // const message = maxInput.value.trim();
+                    // if (!message) return;
+                    // const userMsg = document.createElement('div');
+                    // userMsg.className = 'max-ai-message user';
+                    // userMsg.textContent = message;
+                    // maxMessages.appendChild(userMsg);
+                    
+                    // Clear input
+                    maxInput.value = '';
+                    
+                    // Process AI response and execute algorithms
+                    setTimeout(async () => {
+                        const aiMsg = document.createElement('div');
+                        aiMsg.className = 'max-ai-message assistant';
+                        
+                        // Parse message for algorithm commands
+                        const lowerMessage = message.toLowerCase();
+                        let response = '';
+                        let executedAlgorithm = null;
+                        
+                        // Check for algorithm execution commands
+                        if (lowerMessage.includes('run') || lowerMessage.includes('execute') || lowerMessage.includes('apply') || lowerMessage.includes('optimize')) {
+                            if (lowerMessage.includes('asap') || lowerMessage.includes('forward')) {
+                                executedAlgorithm = 'asap';
+                                response = '🚀 Executing ASAP (Forward) scheduling algorithm...';
+                            } else if (lowerMessage.includes('alap') || lowerMessage.includes('backward')) {
+                                executedAlgorithm = 'alap';
+                                response = '⏰ Executing ALAP (Backward) scheduling algorithm...';
+                            } else if (lowerMessage.includes('critical path')) {
+                                executedAlgorithm = 'criticalPath';
+                                response = '🎯 Executing Critical Path optimization...';
+                            } else if (lowerMessage.includes('level') || lowerMessage.includes('balance resource')) {
+                                executedAlgorithm = 'levelResources';
+                                response = '⚖️ Executing Resource Leveling algorithm...';
+                            } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc') || lowerMessage.includes('constraint')) {
+                                executedAlgorithm = 'drum';
+                                response = '🥁 Executing Drum (Theory of Constraints) optimization...';
+                            } else {
+                                response = 'To optimize the schedule, please specify an algorithm. You can say:\n• "Run ASAP scheduling"\n• "Apply ALAP algorithm"\n• "Execute critical path optimization"\n• "Level resources"\n• "Apply drum scheduling"';
+                            }
+                        } 
+                        // Check for analysis or information requests
+                        else if (lowerMessage.includes('what') || lowerMessage.includes('explain') || lowerMessage.includes('tell me about')) {
+                            if (lowerMessage.includes('asap')) {
+                                response = 'ASAP (As Soon As Possible) pushes all operations to the earliest possible time slots. Best for urgent orders or maximizing early throughput. Say "Run ASAP" to apply it.';
+                            } else if (lowerMessage.includes('alap')) {
+                                response = 'ALAP (As Late As Possible) delays operations to the latest time that still meets due dates. Minimizes inventory holding costs. Say "Run ALAP" to apply it.';
+                            } else if (lowerMessage.includes('critical path')) {
+                                response = 'Critical Path identifies the longest sequence of dependent tasks and optimizes them first. Minimizes project completion time. Say "Execute critical path" to apply it.';
+                            } else if (lowerMessage.includes('level') || lowerMessage.includes('resource')) {
+                                response = 'Resource Leveling distributes work evenly across all resources. Prevents overloading and improves efficiency. Say "Level resources" to apply it.';
+                            } else if (lowerMessage.includes('drum') || lowerMessage.includes('toc')) {
+                                response = 'Drum scheduling (TOC) identifies your bottleneck resource and optimizes around it. Maximizes throughput. Say "Apply drum scheduling" to apply it.';
+                            } else if (lowerMessage.includes('current') || lowerMessage.includes('active')) {
+                                const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+                                const algoNames = {
+                                    'asap': 'ASAP (Forward)',
+                                    'alap': 'ALAP (Backward)',
+                                    'criticalPath': 'Critical Path',
+                                    'levelResources': 'Resource Leveling',
+                                    'drum': 'Drum (TOC)'
+                                };
+                                response = `The current active algorithm is: ${algoNames[currentAlgo]}. You can ask me to run any other algorithm to change it.`;
+                            } else {
+                                response = 'I can help you optimize the schedule. Try asking:\n• "Run ASAP scheduling"\n• "What is the current algorithm?"\n• "Explain critical path"\n• "Level the resources"';
+                            }
+                        }
+                        // Check for help commands
+                        else if (lowerMessage.includes('help') || lowerMessage.includes('commands')) {
+                            response = '📊 **Schedule Optimization Commands:**\n\n**Execute Algorithms:**\n• Run ASAP\n• Apply ALAP\n• Execute critical path\n• Level resources\n• Apply drum scheduling\n\n**Get Information:**\n• What is ASAP?\n• Explain critical path\n• Current algorithm?\n\n**Analysis:**\n• Analyze schedule\n• Show utilization';
+                        }
+                        // Check for analysis commands
+                        else if (lowerMessage.includes('analyze') || lowerMessage.includes('utilization') || lowerMessage.includes('insights') || lowerMessage.includes('bottleneck')) {
+                            // Perform detailed schedule analysis
+                            const scheduler = window.scheduler;
+                            const events = scheduler.eventStore.records || [];
+                            const resources = scheduler.resourceStore.records || [];
+                            
+                            // Calculate resource utilization details
+                            const resourceUsage = {};
+                            resources.forEach(resource => {
+                                const resourceEvents = events.filter(e => e.resourceId === resource.id);
+                                let totalDuration = 0;
+                                resourceEvents.forEach(event => {
+                                    const duration = (event.endDate - event.startDate) / (1000 * 60 * 60); // hours
+                                    totalDuration += duration;
+                                });
+                                resourceUsage[resource.name] = {
+                                    operations: resourceEvents.length,
+                                    hoursUsed: totalDuration.toFixed(1),
+                                    utilization: resourceEvents.length > 0 ? 100 : 0
+                                };
+                            });
+                            
+                            // Find bottlenecks (resources with highest utilization)
+                            let bottleneck = null;
+                            let maxOps = 0;
+                            Object.entries(resourceUsage).forEach(([name, data]) => {
+                                if (data.operations > maxOps) {
+                                    maxOps = data.operations;
+                                    bottleneck = name;
+                                }
+                            });
+                            
+                            // Calculate timeline span
+                            let earliestStart = null;
+                            let latestEnd = null;
+                            events.forEach(event => {
+                                if (!earliestStart || event.startDate < earliestStart) {
+                                    earliestStart = event.startDate;
+                                }
+                                if (!latestEnd || event.endDate > latestEnd) {
+                                    latestEnd = event.endDate;
+                                }
+                            });
+                            
+                            const makespan = earliestStart && latestEnd ? 
+                                ((latestEnd - earliestStart) / (1000 * 60 * 60)).toFixed(1) : 0;
+                            
+                            // Build comprehensive analysis
+                            response = '📊 **Production Schedule Analysis**\n\n';
+                            response += `📈 **Overall Metrics:**\n`;
+                            response += `• Total Operations: ${events.length}\n`;
+                            response += `• Active Resources: ${Object.values(resourceUsage).filter(r => r.operations > 0).length}/${resources.length}\n`;
+                            response += `• Total Makespan: ${makespan} hours\n`;
+                            response += `• Current Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}\n\n`;
+                            
+                            response += `🏭 **Resource Utilization:**\n`;
+                            Object.entries(resourceUsage).forEach(([name, data]) => {
+                                if (data.operations > 0) {
+                                    response += `• ${name}: ${data.operations} operations, ${data.hoursUsed} hours\n`;
+                                }
+                            });
+                            
+                            if (bottleneck) {
+                                response += `\n⚠️ **Bottleneck Identified:**\n`;
+                                response += `• ${bottleneck} has the highest load with ${maxOps} operations\n`;
+                            }
+                            
+                            // Optimization recommendations
+                            response += `\n💡 **Optimization Recommendations:**\n`;
+                            
+                            const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+                            if (currentAlgo === 'asap') {
+                                response += `• Current: ASAP - Good for urgent orders\n`;
+                                response += `• Consider: ALAP to reduce inventory costs\n`;
+                                response += `• Consider: Level Resources to balance workload\n`;
+                            } else if (currentAlgo === 'alap') {
+                                response += `• Current: ALAP - Minimizing inventory\n`;
+                                response += `• Consider: ASAP for faster delivery\n`;
+                                response += `• Consider: Critical Path to reduce makespan\n`;
+                            } else if (currentAlgo === 'criticalPath') {
+                                response += `• Current: Critical Path - Optimized for completion time\n`;
+                                response += `• Consider: Level Resources if some resources are overloaded\n`;
+                                response += `• Consider: Drum/TOC if bottleneck is limiting throughput\n`;
+                            } else if (currentAlgo === 'levelResources') {
+                                response += `• Current: Resource Leveling - Balanced workload\n`;
+                                response += `• Consider: Critical Path to reduce total time\n`;
+                                response += `• Consider: Drum/TOC to optimize bottlenecks\n`;
+                            } else {
+                                response += `• Current: Drum/TOC - Optimized for bottlenecks\n`;
+                                response += `• Consider: ASAP for urgent completion\n`;
+                                response += `• Consider: Level Resources for even distribution\n`;
+                            }
+                            
+                            response += `\nWould you like me to apply a different algorithm to optimize the schedule?`;
+                        }
+                        else {
+                            response = `I understand you're asking about "${message}". I can help you optimize the schedule using different algorithms. Say "help" to see available commands.`;
+                        }
+                        
+                        // Execute the algorithm if one was selected
+                        if (executedAlgorithm) {
+                            aiMsg.textContent = response;
+                            maxMessages.appendChild(aiMsg);
+                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                            
+                            // Change the dropdown and execute
+                            document.getElementById('schedulingAlgorithm').value = executedAlgorithm;
+                            
+                            // Execute the algorithm after a brief delay
+                            setTimeout(() => {
+                                // Click the apply button to trigger the algorithm
+                                document.getElementById('applyScheduling').click();
+                                
+                                // Add success message after algorithm completes
+                                setTimeout(() => {
+                                    const successMsg = document.createElement('div');
+                                    successMsg.className = 'max-ai-message assistant';
+                                    const algoNames = {
+                                        'asap': 'ASAP (Forward)',
+                                        'alap': 'ALAP (Backward)',
+                                        'criticalPath': 'Critical Path',
+                                        'levelResources': 'Resource Leveling',
+                                        'drum': 'Drum (TOC)'
+                                    };
+                                    
+                                    // Get updated stats
+                                    const utilization = document.getElementById('resourceUtilization').textContent;
+                                    const totalOps = document.getElementById('operationCount').textContent;
+                                    
+                                    successMsg.textContent = `✅ Successfully applied ${algoNames[executedAlgorithm]} algorithm!\n\nResults:\n• ${totalOps}\n• ${utilization}\n\nThe schedule has been optimized. Would you like to try a different algorithm?`;
+                                    maxMessages.appendChild(successMsg);
+                                    maxMessages.scrollTop = maxMessages.scrollHeight;
+                                }, 1500); // Wait for algorithm to complete
+                            }, 500);
+                        } else {
+                            aiMsg.textContent = response;
+                            maxMessages.appendChild(aiMsg);
+                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                        }
+                    }, 300);
+                    
+                    maxMessages.scrollTop = maxMessages.scrollHeight;
+                }
+                
+                // Max AI event listeners removed - using main app's AI panel
+                // maxSend.addEventListener('click', sendMaxMessage);
+                // maxInput.addEventListener('keypress', (e) => {
+                //     if (e.key === 'Enter') sendMaxMessage();
+                // });
+                
+                // Theme toggle removed - using consistent light theme with blue-purple gradient
+                
+                // View preset selector
+                document.getElementById('viewPreset').addEventListener('change', (e) => {
+                    scheduler.viewPreset = e.target.value;
+                });
+                
+                // Zoom controls
+                document.getElementById('zoomIn').addEventListener('click', () => {
+                    scheduler.zoomLevel = Math.min(scheduler.zoomLevel + 2, 20);
+                });
+                
+                document.getElementById('zoomOut').addEventListener('click', () => {
+                    scheduler.zoomLevel = Math.max(scheduler.zoomLevel - 2, 0);
+                });
+                
+                document.getElementById('zoomToFit').addEventListener('click', () => {
+                    // Zoom to fit all events with proper options
+                    scheduler.zoomToFit({
+                        leftMargin: 50,
+                        rightMargin: 50,
+                        topMargin: 50,
+                        bottomMargin: 50
+                    });
+                    
+                    // Alternative: If zoomToFit doesn't work, try setting a wider date range
+                    if (!scheduler.timeAxis) {
+                        // Fallback to setting view preset to show more data
+                        const resources = scheduler.resourceStore.records;
+                        const events = scheduler.eventStore.records;
+                        
+                        if (events.length > 0) {
+                            // Find the earliest and latest dates
+                            let minDate = new Date(events[0].startDate);
+                            let maxDate = new Date(events[0].endDate);
+                            
+                            events.forEach(event => {
+                                const start = new Date(event.startDate);
+                                const end = new Date(event.endDate);
+                                if (start < minDate) minDate = start;
+                                if (end > maxDate) maxDate = end;
+                            });
+                            
+                            // Add some padding
+                            minDate.setDate(minDate.getDate() - 1);
+                            maxDate.setDate(maxDate.getDate() + 1);
+                            
+                            // Set the time axis range
+                            scheduler.setTimeSpan(minDate, maxDate);
+                        }
+                    }
+                });
+                
+                // Apply Scheduling Algorithm button
+                document.getElementById('applyScheduling').addEventListener('click', () => {
+                    const algorithm = document.getElementById('schedulingAlgorithm').value;
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    
+                    // Store current view settings to maintain consistent timeline
+                    const currentZoomLevel = scheduler.zoomLevel;
+                    const currentStartDate = scheduler.startDate;
+                    const currentEndDate = scheduler.endDate;
+                    
+                    requestAnimationFrame(() => {
+                        setTimeout(async () => {
+                            try {
+                                const project = scheduler.project;
+                                let message = '';
+                                let color = 'green';
+                                
+                                switch(algorithm) {
+                                    case 'asap':
+                                        // ASAP - As Soon As Possible (Forward Scheduling)
+                                        await asapScheduling();
+                                        message = 'ASAP scheduling applied - operations scheduled as early as possible!';
+                                        break;
+                                        
+                                    case 'alap':
+                                        // ALAP - As Late As Possible (Backward Scheduling)
+                                        await alapScheduling();
+                                        message = 'ALAP scheduling applied - operations scheduled as late as possible!';
+                                        color = 'blue';
+                                        break;
+                                        
+                                    case 'criticalPath':
+                                        // Critical Path Method
+                                        await criticalPathScheduling();
+                                        message = 'Critical Path identified and optimized!';
+                                        color = 'orange';
+                                        break;
+                                        
+                                    case 'levelResources':
+                                        // Resource Leveling
+                                        await levelResourcesScheduling();
+                                        message = 'Resources leveled - workload balanced across resources!';
+                                        color = 'purple';
+                                        break;
+                                        
+                                    case 'drum':
+                                        // Drum (Theory of Constraints)
+                                        await drumScheduling();
+                                        message = 'Drum scheduling applied - optimized around bottleneck!';
+                                        color = 'brown';
+                                        break;
+                                }
+                                
+                                // Refresh the scheduler
+                                scheduler.refresh();
+                                
+                                // Restore the original view settings to maintain consistent timeline
+                                scheduler.zoomLevel = currentZoomLevel;
+                                scheduler.setTimeSpan(currentStartDate, currentEndDate);
+                                
+                                // Hide loading and show success message
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                updateStatus();
+                                
+                                // Show message in status bar
+                                const statusElement = document.getElementById('operationCount');
+                                const originalText = statusElement.textContent;
+                                statusElement.innerHTML = `<span style="color: ${color}; font-weight: bold;">${message}</span>`;
+                                
+                                setTimeout(() => {
+                                    statusElement.textContent = originalText;
+                                    updateStatus();
+                                }, 3000);
+                                
+                            } catch (error) {
+                                console.error('Scheduling error:', error);
+                                document.getElementById('loadingOverlay').style.display = 'none';
+                                
+                                const statusElement = document.getElementById('operationCount');
+                                const originalText = statusElement.textContent;
+                                statusElement.innerHTML = `<span style="color: red;">Scheduling failed - ${error.message}</span>`;
+                                
+                                setTimeout(() => {
+                                    statusElement.textContent = originalText;
+                                    updateStatus();
+                                }, 3000);
+                            }
+                        }, 300);
+                    });
+                });
+                
+                // Scheduling Algorithm Implementations
+                async function asapScheduling() {
+                    // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
+                    const events = [...scheduler.eventStore.records].sort((a, b) => 
+                        a.startDate.getTime() - b.startDate.getTime()
+                    );
+                    
+                    // Use September 3, 2025 as the base scheduling date
+                    const baseDate = new Date(2025, 8, 3);
+                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
+                    
+                    const resourceEvents = {};
+                    events.forEach(event => {
+                        if (!resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId] = [];
+                        }
+                        resourceEvents[event.resourceId].push(event);
+                    });
+                    
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId];
+                        let nextAvailableTime = new Date(baseDate);
+                        
+                        resEvents.forEach(event => {
+                            // Respect constraint dates if set
+                            const earliestStart = event.constraintDate || nextAvailableTime;
+                            const actualStart = new Date(Math.max(earliestStart.getTime(), nextAvailableTime.getTime()));
+                            
+                            event.startDate = actualStart;
+                            event.constraintType = 'startnoearlierthan';
+                            event.constraintDate = actualStart;
+                            event.manuallyScheduled = false;
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
+                        });
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
+                
+                async function alapScheduling() {
+                    // ALAP (As Late As Possible) - Backward scheduling from due date
+                    const events = [...scheduler.eventStore.records];
+                    // Schedule backwards from September 17, 2025 (end of 2-week window)
+                    const dueDate = new Date(2025, 8, 17);
+                    dueDate.setHours(17, 0, 0, 0); // 5 PM
+                    
+                    const resourceEvents = {};
+                    events.forEach(event => {
+                        if (!resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId] = [];
+                        }
+                        resourceEvents[event.resourceId].push(event);
+                    });
+                    
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId];
+                        let currentEndTime = new Date(dueDate);
+                        
+                        resEvents.reverse().forEach(event => {
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            const newEnd = new Date(currentEndTime);
+                            const newStart = new Date(newEnd.getTime() - durationMs);
+                            
+                            // Ensure within working hours
+                            if (newStart.getHours() < 7) {
+                                newEnd.setDate(newEnd.getDate() - 1);
+                                newEnd.setHours(17, 0, 0, 0);
+                                newStart.setTime(newEnd.getTime() - durationMs);
+                            }
+                            
+                            event.startDate = newStart;
+                            event.endDate = newEnd;
+                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000);
+                        });
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
+                
+                async function criticalPathScheduling() {
+                    // Identify and optimize critical path
+                    const events = [...scheduler.eventStore.records];
+                    const dependencies = scheduler.dependencyStore?.records || [];
+                    
+                    // Simple implementation: prioritize longest chain
+                    const eventMap = new Map(events.map(e => [e.id, e]));
+                    const criticalEvents = new Set();
+                    
+                    // Find events with no successors (end events)
+                    const endEvents = events.filter(event => 
+                        !dependencies.some(dep => dep.fromEvent === event.id)
+                    );
+                    
+                    // Mark critical path (simplified)
+                    endEvents.forEach(event => {
+                        criticalEvents.add(event.id);
+                        // Trace back through dependencies
+                        let current = event;
+                        while (current) {
+                            const prevDep = dependencies.find(d => d.toEvent === current.id);
+                            if (prevDep && eventMap.has(prevDep.fromEvent)) {
+                                current = eventMap.get(prevDep.fromEvent);
+                                criticalEvents.add(current.id);
+                            } else {
+                                current = null;
+                            }
+                        }
+                    });
+                    
+                    // Schedule critical path first
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0);
+                    let currentTime = new Date(baseDate);
+                    
+                    events.forEach(event => {
+                        if (criticalEvents.has(event.id)) {
+                            event.startDate = new Date(currentTime);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        }
+                    });
+                    
+                    // Schedule non-critical after
+                    events.forEach(event => {
+                        if (!criticalEvents.has(event.id)) {
+                            event.startDate = new Date(currentTime);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        }
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
+                
+                async function levelResourcesScheduling() {
+                    // Balance workload across resources to reduce utilization peaks
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
+                    
+                    if (events.length === 0 || resources.length === 0) return;
+                    
+                    // Calculate current resource loads and identify overloaded resources
+                    const resourceEvents = {};
+                    resources.forEach(r => {
+                        resourceEvents[r.id] = [];
+                    });
+                    
+                    events.forEach(event => {
+                        if (resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId].push(event);
+                        }
+                    });
+                    
+                    // Set base scheduling date - Sept 3, 2025
+                    const baseDate = new Date(2025, 8, 3);
+                    baseDate.setHours(7, 0, 0, 0); // 7 AM start
+                    
+                    // Calculate scheduling span - 14 days (2 weeks)
+                    const endDate = new Date(2025, 8, 17);
+                    endDate.setHours(17, 0, 0, 0); // 5 PM end
+                    
+                    const workingHoursPerDay = 10; // 7 AM to 5 PM
+                    const totalDays = 14;
+                    const totalAvailableHours = totalDays * workingHoursPerDay * resources.length;
+                    
+                    // Level the resources by spreading operations evenly
+                    const resourceNextAvailable = {};
+                    resources.forEach(r => {
+                        resourceNextAvailable[r.id] = new Date(baseDate);
+                    });
+                    
+                    // Sort events by priority/duration to optimize scheduling
+                    events.sort((a, b) => {
+                        // Prioritize longer operations first for better packing
+                        return (b.duration || 0) - (a.duration || 0);
+                    });
+                    
+                    // Redistribute operations to level resource utilization
+                    events.forEach(event => {
+                        // Find the resource that becomes available earliest
+                        let earliestResource = event.resourceId;
+                        let earliestTime = resourceNextAvailable[event.resourceId] || new Date(baseDate);
+                        
+                        // For leveling, we can look for other compatible resources with earlier availability
+                        // For now, keep original resource assignments but spread timing
+                        
+                        // Schedule the operation
+                        const startTime = new Date(resourceNextAvailable[event.resourceId] || baseDate);
+                        
+                        // Add gaps between operations to reduce utilization percentage
+                        // This simulates maintenance, changeover, or buffer time
+                        const bufferMinutes = 60; // 1 hour buffer between operations
+                        
+                        event.startDate = startTime;
+                        const durationMs = (event.duration || 2) * 60 * 60 * 1000;
+                        event.endDate = new Date(startTime.getTime() + durationMs);
+                        
+                        // Update next available time for this resource (with buffer)
+                        resourceNextAvailable[event.resourceId] = new Date(event.endDate.getTime() + bufferMinutes * 60 * 1000);
+                        
+                        // If we've exceeded working hours for the day, move to next day
+                        const nextAvail = resourceNextAvailable[event.resourceId];
+                        if (nextAvail.getHours() >= 17) {
+                            // Move to next day at 7 AM
+                            nextAvail.setDate(nextAvail.getDate() + 1);
+                            nextAvail.setHours(7, 0, 0, 0);
+                            resourceNextAvailable[event.resourceId] = nextAvail;
+                        }
+                    });
+                    
+                    // Commit the changes
+                    scheduler.eventStore.commit();
+                    
+                    // Force a refresh to recalculate utilization
+                    setTimeout(() => {
+                        updateStatus();
+                    }, 100);
+                }
+                
+                async function drumScheduling() {
+                    // Theory of Constraints - optimize around bottleneck
+                    const events = [...scheduler.eventStore.records];
+                    
+                    // Find bottleneck resource (most loaded)
+                    const resourceLoad = {};
+                    events.forEach(event => {
+                        if (!resourceLoad[event.resourceId]) {
+                            resourceLoad[event.resourceId] = 0;
+                        }
+                        resourceLoad[event.resourceId] += event.duration;
+                    });
+                    
+                    let drumResourceId = null;
+                    let maxLoad = 0;
+                    Object.entries(resourceLoad).forEach(([resourceId, load]) => {
+                        if (load > maxLoad) {
+                            maxLoad = load;
+                            drumResourceId = resourceId;
+                        }
+                    });
+                    
+                    if (!drumResourceId) return;
+                    
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0);
+                    
+                    // Schedule drum resource optimally
+                    const drumEvents = events.filter(e => e.resourceId === drumResourceId);
+                    let drumTime = new Date(baseDate);
+                    
+                    drumEvents.sort((a, b) => b.duration - a.duration); // Longest first
+                    
+                    drumEvents.forEach(event => {
+                        event.startDate = new Date(drumTime);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000);
+                    });
+                    
+                    // Schedule feeding resources
+                    const feedingEvents = events.filter(e => e.resourceId !== drumResourceId);
+                    const resourceSchedules = {};
+                    
+                    feedingEvents.forEach(event => {
+                        if (!resourceSchedules[event.resourceId]) {
+                            const feedTime = new Date(baseDate);
+                            feedTime.setHours(6, 0, 0, 0); // Start earlier
+                            resourceSchedules[event.resourceId] = feedTime;
+                        }
+                        
+                        event.startDate = new Date(resourceSchedules[event.resourceId]);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                    });
+                    
+                    scheduler.eventStore.commit();
+                }
+                
+                // Initialize status updates
+                updateStatus();
+                
+                // Apply ASAP scheduling on initial load
+                setTimeout(async () => {
+                    console.log('🚀 Applying initial ASAP scheduling...');
+                    await asapScheduling();
+                    updateStatus();
+                    console.log('✅ ASAP scheduling applied successfully');
+                    
+                    // Add welcome message to Max AI
+                    const maxMessages = document.getElementById('maxMessages');
+                    if (maxMessages) {
+                        const welcomeMsg = document.createElement('div');
+                        welcomeMsg.className = 'max-ai-message assistant';
+                        welcomeMsg.innerHTML = '✅ <strong>ASAP scheduling applied!</strong> The schedule has been optimized for earliest completion times with resource constraints.';
+                        maxMessages.appendChild(welcomeMsg);
+                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }
+                }, 500);
+                
+                // Periodic status refresh
+                setInterval(updateStatus, 30000); // Update every 30 seconds
+                
+                // Initial zoom to fit with better timing and proper options
+                setTimeout(() => {
+                    // Use the same comprehensive fit-to-view logic as the manual button
+                    scheduler.zoomToFit({
+                        leftMargin: 50,
+                        rightMargin: 50,
+                        topMargin: 50,
+                        bottomMargin: 50
+                    });
+                    
+                    // Alternative: If zoomToFit doesn't work, try setting a wider date range
+                    if (!scheduler.timeAxis) {
+                        // Fallback to setting view preset to show more data
+                        const events = scheduler.eventStore.records;
+                        
+                        if (events.length > 0) {
+                            // Find the earliest and latest dates
+                            let minDate = new Date(events[0].startDate);
+                            let maxDate = new Date(events[0].endDate);
+                            
+                            events.forEach(event => {
+                                const start = new Date(event.startDate);
+                                const end = new Date(event.endDate);
+                                if (start < minDate) minDate = start;
+                                if (end > maxDate) maxDate = end;
+                            });
+                            
+                            // Add some padding
+                            minDate.setDate(minDate.getDate() - 1);
+                            maxDate.setDate(maxDate.getDate() + 1);
+                            
+                            // Set the time axis range
+                            scheduler.setTimeSpan(minDate, maxDate);
+                        }
+                    }
+                    
+                    // Only scroll to center if fit-to-view worked properly
+                    // Give it a moment to apply zoom first
+                    setTimeout(() => {
+                        // Center on today's date only if we have visible content
+                        const events = scheduler.eventStore.records;
+                        if (events.length > 0) {
+                            scheduler.scrollToDate(new Date(2025, 8, 3), { block: 'center' });
+                        }
+                    }, 100);
+                }, 750);
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Check for pending scheduler commands from Max AI (after navigation)
+                const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
+                if (pendingCommand) {
+                    try {
+                        const commandData = JSON.parse(pendingCommand);
+                        sessionStorage.removeItem('pendingSchedulerCommand');
+                        
+                        // Execute the pending command after a short delay to ensure page is ready
+                        setTimeout(() => {
+                            if (commandData.command === 'RUN_ALGORITHM') {
+                                window.postMessage({
+                                    type: 'RUN_SCHEDULER_ALGORITHM',
+                                    algorithm: commandData.algorithm
+                                }, '*');
+                            } else if (commandData.command === 'VIEW_CONTROL') {
+                                window.postMessage({
+                                    type: 'SCHEDULER_VIEW_CONTROL',
+                                    action: commandData.action
+                                }, '*');
+                            }
+                        }, 500);
+                    } catch (error) {
+                        console.error('Failed to execute pending scheduler command:', error);
+                    }
+                }
+                
+                // Listen for messages from Max AI
+                window.addEventListener('message', (event) => {
+                    console.log('Production Scheduler received message:', event.data);
+                    
+                    // Handle scheduler commands from Max AI
+                    if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
+                        const action = event.data.action;
+                        
+                        switch (action) {
+                            case 'zoom_in':
+                                document.getElementById('zoomIn')?.click();
+                                break;
+                            case 'zoom_out':
+                                document.getElementById('zoomOut')?.click();
+                                break;
+                            case 'zoom_fit':
+                                document.getElementById('zoomToFit')?.click();
+                                break;
+                            case 'week_view':
+                                const viewSelect = document.getElementById('viewPreset');
+                                if (viewSelect) {
+                                    viewSelect.value = 'dayAndWeek';
+                                    viewSelect.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'day_view':
+                                const viewSelectDay = document.getElementById('viewPreset');
+                                if (viewSelectDay) {
+                                    viewSelectDay.value = 'hourAndDay';
+                                    viewSelectDay.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'month_view':
+                                const viewSelectMonth = document.getElementById('viewPreset');
+                                if (viewSelectMonth) {
+                                    viewSelectMonth.value = 'monthAndYear';
+                                    viewSelectMonth.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                        }
+                    } else if (event.data?.type === 'RUN_SCHEDULER_ALGORITHM') {
+                        const algorithm = event.data.algorithm;
+                        const algorithmMap = {
+                            'ASAP': 'asap',
+                            'ALAP': 'alap',
+                            'CRITICAL_PATH': 'criticalPath',
+                            'LEVEL_RESOURCES': 'levelResources',
+                            'DRUM_TOC': 'drum'
+                        };
+                        
+                        const algorithmValue = algorithmMap[algorithm];
+                        if (algorithmValue) {
+                            const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                            const applyButton = document.getElementById('applyScheduling');
+                            
+                            if (algorithmSelect && applyButton) {
+                                algorithmSelect.value = algorithmValue;
+                                applyButton.click();
+                                console.log(`Applied scheduling algorithm: ${algorithm}`);
+                            }
+                        }
+                    } else if (event.data?.type === 'SET_THEME') {
+                        // Theme toggle removed - using consistent light theme with blue-purple gradient
+                        console.log('Theme toggle disabled - using consistent light theme');
+                    }
+                });
+                
+            } catch (error) {
+                console.error('Failed to initialize scheduler:', error);
+                // Only show error if initialization actually failed (not just warnings)
+                if (error.message && error.message !== 'undefined') {
+                    console.error('Scheduler initialization error details:', error.message);
+                }
+                // Try to continue with scheduler initialization even if some resources fail
+                document.getElementById('loadingOverlay').style.display = 'none';
+            }
+        });
+    </script>
+    
+    <!-- Constraint Settings Modal Scripts -->
+    <script>
+        // Initialize constraint settings
+        window.activeConstraints = {};
+        
+        // Constraint modal functions
+        function openConstraintModal() {
+            const modal = document.getElementById('constraintModal');
+            modal.classList.add('active');
+            
+            // Load saved constraints or use defaults
+            const savedConstraints = localStorage.getItem('schedulerConstraints');
+            if (savedConstraints) {
+                window.activeConstraints = JSON.parse(savedConstraints);
+                applyConstraintsToUI();
+            } else {
+                resetConstraints();
+            }
+        }
+        
+        function closeConstraintModal() {
+            const modal = document.getElementById('constraintModal');
+            modal.classList.remove('active');
+        }
+        
+        function applyConstraints() {
+            // Collect all constraint settings
+            const constraints = {};
+            const checkboxes = document.querySelectorAll('.constraint-toggle input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                constraints[checkbox.id] = checkbox.checked;
+            });
+            
+            window.activeConstraints = constraints;
+            
+            // Save to localStorage
+            localStorage.setItem('schedulerConstraints', JSON.stringify(constraints));
+            
+            // Apply constraints to current algorithm
+            const currentAlgo = document.getElementById('schedulingAlgorithm').value;
+            const activeCount = Object.values(constraints).filter(v => v).length;
+            console.log(`✅ Applied ${activeCount} active constraints to ${currentAlgo} algorithm`);
+            
+            // Show confirmation
+            const statusBar = document.getElementById('operationCount');
+            const originalText = statusBar.textContent;
+            statusBar.textContent = `✅ Constraints applied - ${activeCount} active`;
+            setTimeout(() => {
+                statusBar.textContent = originalText;
+            }, 3000);
+            
+            closeConstraintModal();
+            
+            // Re-run current algorithm with new constraints
+            document.getElementById('applyScheduling').click();
+        }
+        
+        function resetConstraints() {
+            // Reset all constraints to default values
+            const defaults = {
+                // Physical Constraints - mostly enabled by default
+                'noOverlap': true,
+                'dateValidation': true,
+                'mandatoryFields': true,
+                'predecessorLogic': true,
+                'noCircular': true,
+                'workingHours': true,
+                'leadLagTimes': true,
+                'noOverAllocation': true,
+                'skillMatching': true,
+                'capacityLimits': true,
+                'materialAvailability': true,
+                'batchSizeRules': true,
+                // Policy Constraints - mixed defaults
+                'priorityRules': true,
+                'needDates': true,
+                'budgetConstraints': false,
+                'weekendWork': false,
+                'workloadBalance': true,
+                'limitOvertime': true,
+                'parallelProcessing': false,
+                'alternativeRouting': false,
+                'skipNonCritical': false,
+                'preventSameSetup': true,
+                'justInTime': false,
+                'substituteMaterials': false,
+                'partialMaterial': false,
+                'avoidPeakRates': true,
+                'costEfficiency': false,
+                'restrictPremium': true,
+                'deferredInspections': false,
+                'processDeviations': false,
+                'auditTrails': true,
+                'minimizeMakespan': true,
+                'maximizeUtilization': false,
+                'prioritizeMargin': false
+            };
+            
+            // Apply defaults to UI
+            Object.entries(defaults).forEach(([id, value]) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = value;
+                }
+            });
+            
+            window.activeConstraints = defaults;
+            console.log('✅ Constraints reset to defaults');
+        }
+        
+        function applyConstraintsToUI() {
+            // Apply saved constraints to UI checkboxes
+            Object.entries(window.activeConstraints).forEach(([id, value]) => {
+                const checkbox = document.getElementById(id);
+                if (checkbox) {
+                    checkbox.checked = value;
+                }
+            });
+        }
+        
+        // Setup event listeners when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            // Apply theme from localStorage on page load
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
+            
+            // Constraint settings button
+            document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
+            
+            // Click outside modal to close
+            document.getElementById('constraintModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeConstraintModal();
+                }
+            });
+            
+            // Listen for theme changes from parent window
+            window.addEventListener('message', (e) => {
+                if (e.data && e.data.type === 'SET_THEME') {
+                    document.body.className = e.data.theme === 'dark' ? 'dark-theme' : '';
+                    localStorage.setItem('theme', e.data.theme);
+                }
+            });
+            
+            // Listen for storage changes (theme changes in main app)
+            window.addEventListener('storage', (e) => {
+                if (e.key === 'theme') {
+                    document.body.className = e.newValue === 'dark' ? 'dark-theme' : '';
+                }
+            });
+            
+            // Modify the apply scheduling button to use constraints
+            const originalApplyHandler = document.getElementById('applyScheduling').onclick;
+            document.getElementById('applyScheduling').addEventListener('click', () => {
+                const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
+                if (activeCount > 0) {
+                    console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1210,6 +1210,65 @@ router.get("/pt-operations", async (req, res) => {
   }
 });
 
+// PT Dependencies endpoint - reads from ptjobsuccessormanufacturingorders table
+router.get("/pt-dependencies", async (req, res) => {
+  try {
+    console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
+    
+    // Query PT dependencies with operation information
+    const ptDependenciesQuery = `
+      SELECT 
+        jsm.id as dependency_id,
+        jsm.manufacturing_order_id,
+        jsm.successor_operation_id,
+        jsm.transfer_hrs,
+        jsm.usage_qty_per_cycle,
+        
+        -- Get predecessor operation info by finding the operation that comes before the successor
+        curr_op.id as from_operation_id,
+        curr_op.external_id as from_external_id,
+        curr_op.name as from_operation_name,
+        
+        -- Get successor operation info
+        next_op.id as to_operation_id,
+        next_op.external_id as to_external_id,
+        next_op.name as to_operation_name
+        
+      FROM ptjobsuccessormanufacturingorders jsm
+      INNER JOIN ptjoboperations next_op ON jsm.successor_operation_id = next_op.id
+      -- Find the predecessor operation (the one that comes before the successor)
+      LEFT JOIN ptjoboperations curr_op ON 
+        SUBSTRING(curr_op.external_id, 1, LENGTH(curr_op.external_id) - 3) = 
+        SUBSTRING(next_op.external_id, 1, LENGTH(next_op.external_id) - 3)
+        AND CAST(RIGHT(curr_op.external_id, 2) AS INTEGER) = CAST(RIGHT(next_op.external_id, 2) AS INTEGER) - 1
+      WHERE curr_op.id IS NOT NULL
+      ORDER BY curr_op.external_id, next_op.external_id
+    `;
+
+    const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
+    
+    // Transform the data for the frontend
+    const dependenciesData = Array.isArray(rawDependencies) ? rawDependencies : rawDependencies.rows || [];
+    const dependencies = dependenciesData.map((dep: any) => ({
+      id: dep.dependency_id,
+      fromEvent: `op-${dep.from_operation_id}`,  // Match the event ID format used in the scheduler
+      toEvent: `op-${dep.to_operation_id}`,      // Match the event ID format used in the scheduler
+      type: 2, // Finish-to-Start dependency type (standard in Bryntum)
+      fromOperationName: dep.from_operation_name,
+      toOperationName: dep.to_operation_name,
+      fromExternalId: dep.from_external_id,
+      toExternalId: dep.to_external_id
+    }));
+
+    console.log(`Successfully fetched ${dependencies.length} PT dependencies`);
+    res.json(dependencies);
+    
+  } catch (error) {
+    console.error("Error fetching PT dependencies:", error);
+    res.status(500).json({ message: "Failed to fetch PT dependencies", error: (error as Error).message });
+  }
+});
+
 // PT Resources endpoint - reads from PT tables
 router.get("/pt-resources", async (req, res) => {
   try {
@@ -1348,7 +1407,7 @@ router.get("/schedulerpro.umd.js", (req, res) => {
 router.get("/scheduler-demo", (req, res) => {
   try {
     console.log('Serving production scheduler HTML...');
-    const htmlPath = path.join(process.cwd(), 'attached_assets', 'production-scheduler-noUnscheduled.html');
+    const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
     
     // Check if file exists
     if (!fs.existsSync(htmlPath)) {
