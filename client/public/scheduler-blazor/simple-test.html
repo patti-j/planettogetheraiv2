@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bryntum Module Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: white;
+    }
+    .log {
+      border: 1px solid #ddd;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: monospace;
+      white-space: pre-wrap;
+      background: #f5f5f5;
+      min-height: 400px;
+    }
+    .success { color: green; }
+    .error { color: red; }
+    .info { color: blue; }
+  </style>
+</head>
+<body>
+  <h1>Bryntum Scheduler Module Test</h1>
+  <div id="log" class="log">Starting test...\n</div>
+
+  <script type="module">
+    const log = document.getElementById('log');
+    
+    function addLog(msg, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      log.textContent += `[${timestamp}] [${type.toUpperCase()}] ${msg}\n`;
+      console.log(`[${type}] ${msg}`);
+    }
+    
+    addLog('Script started', 'info');
+    
+    // Test 1: Check if module file exists
+    try {
+      addLog('Test 1: Checking module file existence...', 'info');
+      const moduleUrl = './js/build/schedulerpro.wc.module.js';
+      const response = await fetch(moduleUrl, { method: 'HEAD' });
+      if (response.ok) {
+        addLog(`✅ Module file exists: ${moduleUrl}`, 'success');
+      } else {
+        addLog(`❌ Module file not found: ${moduleUrl} (status: ${response.status})`, 'error');
+      }
+    } catch (err) {
+      addLog(`❌ Error checking module: ${err.message}`, 'error');
+    }
+    
+    // Test 2: Try to import the module
+    try {
+      addLog('\nTest 2: Attempting to import Bryntum module...', 'info');
+      const module = await import('./js/build/schedulerpro.wc.module.js');
+      addLog('✅ Module imported successfully', 'success');
+      
+      // Check what's exported
+      const exports = Object.keys(module);
+      addLog(`Module exports: ${exports.join(', ')}`, 'info');
+      
+      // Test if SchedulerPro is available
+      if (module.SchedulerPro) {
+        addLog('✅ SchedulerPro class found', 'success');
+        
+        // Try to create an instance
+        try {
+          const testScheduler = new module.SchedulerPro({
+            appendTo: document.body,
+            height: 200,
+            width: 400,
+            startDate: new Date(),
+            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+          });
+          addLog('✅ SchedulerPro instance created!', 'success');
+          testScheduler.destroy();
+        } catch (err) {
+          addLog(`❌ Failed to create instance: ${err.message}`, 'error');
+        }
+      } else {
+        addLog('❌ SchedulerPro not found in module', 'error');
+      }
+      
+      // Test if WidgetHelper is available
+      if (module.WidgetHelper) {
+        addLog('✅ WidgetHelper found', 'success');
+      } else {
+        addLog('❌ WidgetHelper not found', 'error');
+      }
+      
+    } catch (err) {
+      addLog(`❌ Module import failed: ${err.message}`, 'error');
+      addLog(`Stack trace:\n${err.stack}`, 'error');
+    }
+    
+    // Test 3: Try importing scheduler-manager
+    try {
+      addLog('\nTest 3: Attempting to import scheduler-manager...', 'info');
+      const manager = await import('./js/bryntum-modules/scheduler-manager.js');
+      addLog('✅ Scheduler manager imported', 'success');
+      
+      if (manager.default) {
+        addLog('✅ Default export found in scheduler-manager', 'success');
+      } else {
+        addLog('❌ No default export in scheduler-manager', 'error');
+      }
+    } catch (err) {
+      addLog(`❌ Scheduler manager import failed: ${err.message}`, 'error');
+    }
+    
+    addLog('\n=== Test Complete ===', 'info');
+  </script>
+</body>
+</html>
