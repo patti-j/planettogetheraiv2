@@ -56,6 +56,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
   const [showFloatingNotification, setShowFloatingNotification] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<'max' | 'scheduling_assistant'>('max');
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -471,9 +472,13 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       // Let Max AI backend handle all navigation logic for better intent understanding
       // Removed frontend navigation pattern matching that was interfering with Max AI
       
-      // Otherwise, send to backend for AI processing
+      // Route to appropriate agent based on selection
       const authToken = localStorage.getItem('auth_token');
-      const response = await fetch('/api/max-ai/chat', {
+      const endpoint = selectedAgent === 'scheduling_assistant' 
+        ? '/api/ai/schedule/chat' 
+        : '/api/max-ai/chat';
+      
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -1122,6 +1127,37 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 )}
+              </div>
+
+              {/* Agent Selector */}
+              <div className="p-3 border-t bg-purple-50">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-purple-700">Select AI Agent:</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => setSelectedAgent('max')}
+                    className={`text-left p-2 rounded text-xs flex items-center gap-1 transition-colors ${
+                      selectedAgent === 'max' 
+                        ? 'bg-purple-600 text-white' 
+                        : 'bg-white hover:bg-purple-100 text-gray-700 border'
+                    }`}
+                  >
+                    <Sparkles className="h-3 w-3" />
+                    <span>Max AI</span>
+                  </button>
+                  <button
+                    onClick={() => setSelectedAgent('scheduling_assistant')}
+                    className={`text-left p-2 rounded text-xs flex items-center gap-1 transition-colors ${
+                      selectedAgent === 'scheduling_assistant' 
+                        ? 'bg-cyan-600 text-white' 
+                        : 'bg-white hover:bg-cyan-100 text-gray-700 border'
+                    }`}
+                  >
+                    <MessageSquare className="h-3 w-3" />
+                    <span>Scheduling</span>
+                  </button>
+                </div>
               </div>
 
               {/* Chat input area */}
