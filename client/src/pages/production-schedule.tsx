@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, ExternalLink } from 'lucide-react';
 import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
+import { Link } from 'wouter';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -42,6 +44,19 @@ export default function ProductionSchedule() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+      {/* Header with navigation */}
+      <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          Production Schedule
+        </h1>
+        <Link href="/production-scheduler-standalone">
+          <Button variant="outline" size="sm" className="gap-2">
+            <ExternalLink className="h-4 w-4" />
+            Open Standalone Scheduler
+          </Button>
+        </Link>
+      </div>
+      
       {/* Main Content - Full Screen */}
       <div className="flex-1 relative overflow-hidden">
         {/* Loading Overlay */}
