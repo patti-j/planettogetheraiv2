@@ -93,7 +93,7 @@ import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 import FederationDashboard from "@/pages/federation-dashboard";
 import ProductionSchedule from "@/pages/production-schedule";
-import ProductionSchedulerStandalone from "@/pages/ProductionSchedulerStandalone";
+import ProductionSchedulerReact from "@/pages/ProductionSchedulerReact";
 
 // Fully implemented features now being connected
 import ControlTower from "@/pages/control-tower";
@@ -301,7 +301,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/production-scheduler-standalone">
                 <ProtectedRoute feature="production-scheduling" action="view">
-                  <ProductionSchedulerStandalone />
+                  <ProductionSchedulerReact />
                 </ProtectedRoute>
               </Route>
               <Route path="/product-development">
