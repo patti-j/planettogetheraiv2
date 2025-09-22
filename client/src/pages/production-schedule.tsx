@@ -42,28 +42,7 @@ export default function ProductionSchedule() {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b bg-white dark:bg-gray-800 shadow-sm">
-        <div className="px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
-                Production Schedule
-              </h1>
-              <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                Visual Gantt chart scheduling with Bryntum Scheduler Pro
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500 dark:text-gray-400">
-                Powered by PT Data Integration
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
+      {/* Main Content - Full Screen */}
       <div className="flex-1 relative overflow-hidden">
         {/* Loading Overlay */}
         {isLoading && (
