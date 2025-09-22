@@ -547,6 +547,7 @@ export default function ApplicationApp() {
               <Route path="/" component={SmartHomeWrapper} />
               
               {/* Catch all route - redirect to dashboard */}
+              {/* Temporarily disabled to debug routing issue
               <Route>
                 {() => {
                   if (typeof window !== 'undefined') {
@@ -555,6 +556,7 @@ export default function ApplicationApp() {
                   return null;
                 }}
               </Route>
+              */}
               </Switch>
               </SplitScreenLayout>
             </OnboardingGate>
