@@ -1471,20 +1471,24 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           </Button>
         </div>
         </div>
+        </div>
         
-        {/* Agent Selector and Unified Mode */}
-        <div className="flex items-center gap-2 px-2">
-        {!unifiedMode && (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="h-7 px-2 text-white hover:bg-white/20 flex items-center gap-1"
-              >
-                <span className="text-xs">Switch Agent</span>
-                <ChevronDown className="h-3 w-3" />
-              </Button>
+        {/* Agent Selector and Unified Mode - More prominent */}
+        <div className="bg-white/10 rounded mx-2 p-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              {!unifiedMode && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="h-8 px-3 text-white border-white/30 bg-transparent hover:bg-white/20 flex items-center gap-2"
+                    >
+                      <Sparkles className="h-3 w-3" />
+                      <span className="text-xs font-medium">{currentAgent.displayName}</span>
+                      <ChevronDown className="h-3 w-3" />
+                    </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuLabel>Customer-Facing Agents</DropdownMenuLabel>
@@ -1530,19 +1534,20 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
             </DropdownMenuContent>
           </DropdownMenu>
         )}
-        
-        <Toggle
-          pressed={unifiedMode}
-          onPressedChange={setUnifiedMode}
-          size="sm"
-          className="h-7 px-2 text-white data-[state=on]:bg-white/20"
-          title="Toggle unified agent mode"
-        >
-          <Users className="h-3 w-3 mr-1" />
-          <span className="text-xs">Unified</span>
-        </Toggle>
-      </div>
-    </div>
+            </div>
+            
+            <Toggle
+              pressed={unifiedMode}
+              onPressedChange={setUnifiedMode}
+              size="sm"
+              className="h-8 px-3 text-white border border-white/30 bg-transparent hover:bg-white/20 data-[state=on]:bg-white/20"
+              title="Toggle unified agent mode"
+            >
+              <Users className="h-3 w-3 mr-1" />
+              <span className="text-xs font-medium">Unified</span>
+            </Toggle>
+          </div>
+        </div>
 
       {/* Consolidated Settings Panel - Only when needed */}
       {(showVoiceSettings || currentInsights.length > 0 || schedulerContext) && (
@@ -1826,8 +1831,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       {/* Messages */}
       <ScrollArea className="flex-1 p-3">
         <div className="space-y-3">
-          {/* AI Agent Selector */}
-          <AgentSelector compact={true} />
+          {/* Agent selector moved to header */}
 
           {/* Agent Recommendations */}
           {showRecommendations && (
