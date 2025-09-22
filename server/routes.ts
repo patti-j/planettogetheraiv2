@@ -1987,6 +1987,112 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
   }
 });
 
+// Dashboard metrics endpoint - returns real metrics from PT database
+router.get("/dashboard-metrics", requireAuth, async (req, res) => {
+  try {
+    // 1. Get active jobs count from ptjobs
+    const activeJobsQuery = `
+      SELECT COUNT(*) as count 
+      FROM ptjobs 
+      WHERE scheduled_status IN ('In Progress', 'Ready', 'Scheduled', 'Started')
+        AND (scheduled_end_date IS NULL OR scheduled_end_date > NOW())
+    `;
+    const activeJobsResult = await db.execute(sql.raw(activeJobsQuery));
+    const activeJobs = parseInt(activeJobsResult.rows[0]?.count || '0');
+
+    // 2. Calculate resource utilization (operations scheduled hours vs available hours)
+    const utilizationQuery = `
+      WITH resource_stats AS (
+        SELECT 
+          r.id,
+          r.name,
+          COUNT(DISTINCT jo.id) as operation_count,
+          SUM(
+            CASE 
+              WHEN jo.scheduled_start IS NOT NULL AND jo.scheduled_end IS NOT NULL
+              THEN EXTRACT(EPOCH FROM (jo.scheduled_end - jo.scheduled_start)) / 3600
+              ELSE 0
+            END
+          ) as scheduled_hours
+        FROM ptresources r
+        LEFT JOIN ptjobresources jr ON r.resource_id = jr.default_resource_id
+        LEFT JOIN ptjoboperations jo ON jr.operation_id = jo.id
+        WHERE r.active = true
+          AND jo.scheduled_start >= NOW() - INTERVAL '7 days'
+          AND jo.scheduled_start <= NOW() + INTERVAL '7 days'
+        GROUP BY r.id, r.name
+      )
+      SELECT 
+        CASE 
+          WHEN SUM(168) > 0 -- 168 hours in a week (7 * 24)
+          THEN ROUND((SUM(scheduled_hours) / SUM(168)) * 100, 1)
+          ELSE 0
+        END as utilization
+      FROM resource_stats
+    `;
+    const utilizationResult = await db.execute(sql.raw(utilizationQuery));
+    const utilization = parseFloat(utilizationResult.rows[0]?.utilization || '0');
+
+    // 3. Get alerts count from alerts table
+    const alertsQuery = `
+      SELECT COUNT(*) as count 
+      FROM alerts 
+      WHERE status = 'active' 
+        AND (dismissed_at IS NULL OR dismissed_at > NOW())
+    `;
+    const alertsResult = await db.execute(sql.raw(alertsQuery));
+    const alertsCount = parseInt(alertsResult.rows[0]?.count || '0');
+
+    // 4. Calculate on-time percentage (jobs completed on time vs total completed)
+    const onTimeQuery = `
+      WITH completed_jobs AS (
+        SELECT 
+          COUNT(*) as total,
+          COUNT(
+            CASE 
+              WHEN scheduled_end_date <= need_date_time 
+              THEN 1 
+              ELSE NULL 
+            END
+          ) as on_time
+        FROM ptjobs
+        WHERE scheduled_status IN ('Completed', 'Shipped', 'Delivered')
+          AND scheduled_end_date IS NOT NULL
+          AND need_date_time IS NOT NULL
+          AND scheduled_end_date >= NOW() - INTERVAL '30 days'
+      )
+      SELECT 
+        CASE 
+          WHEN total > 0 
+          THEN ROUND((on_time::numeric / total) * 100, 1)
+          ELSE 100
+        END as on_time_percentage
+      FROM completed_jobs
+    `;
+    const onTimeResult = await db.execute(sql.raw(onTimeQuery));
+    const onTimePercentage = parseFloat(onTimeResult.rows[0]?.on_time_percentage || '100');
+
+    // Return the metrics
+    res.json({
+      activeJobs,
+      utilization,
+      alertsCount,
+      onTimePercentage,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard metrics:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch dashboard metrics',
+      // Return default values on error so UI doesn't break
+      activeJobs: 0,
+      utilization: 0,
+      alertsCount: 0,
+      onTimePercentage: 100
+    });
+  }
+});
+
 // Health check
 router.get("/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });

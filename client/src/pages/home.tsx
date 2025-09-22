@@ -88,6 +88,14 @@ interface DashboardItem {
   };
 }
 
+interface DashboardMetrics {
+  activeJobs: number;
+  utilization: number;
+  alertsCount: number;
+  onTimePercentage: number;
+  timestamp: string;
+}
+
 export default function HomePage() {
   const { user } = useAuth();
   const isMobile = useDeviceType() === 'mobile';
@@ -99,23 +107,56 @@ export default function HomePage() {
     queryKey: ['/api/dashboard-configs'],
   });
 
+  // Fetch real dashboard metrics with retry
+  const { 
+    data: dashboardMetrics, 
+    isLoading: isLoadingMetrics, 
+    error: metricsError,
+    refetch: refetchMetrics 
+  } = useQuery<DashboardMetrics>({
+    queryKey: ['/api/dashboard-metrics'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+  });
+
   // Fetch data for the tabs using proper API endpoints
-  const { data: aiRecommendations = [], isLoading: isLoadingRecommendations, error: recommendationsError } = useQuery<ActionRecommendation[]>({
+  const { 
+    data: aiRecommendations = [], 
+    isLoading: isLoadingRecommendations, 
+    error: recommendationsError,
+    refetch: refetchRecommendations 
+  } = useQuery<ActionRecommendation[]>({
     queryKey: ['/api/ai/recommendations'],
     refetchInterval: 300000, // Refresh every 5 minutes
   });
 
-  const { data: systemEvents = [], isLoading: isLoadingEvents, error: eventsError } = useQuery<SystemEvent[]>({
+  const { 
+    data: systemEvents = [], 
+    isLoading: isLoadingEvents, 
+    error: eventsError,
+    refetch: refetchEvents 
+  } = useQuery<SystemEvent[]>({
     queryKey: ['/api/system/events'],
     refetchInterval: 60000, // Refresh every minute
   });
 
-  const { data: alerts = [], isLoading: isLoadingAlerts, error: alertsError } = useQuery<Alert[]>({
+  const { 
+    data: alerts = [], 
+    isLoading: isLoadingAlerts, 
+    error: alertsError,
+    refetch: refetchAlerts 
+  } = useQuery<Alert[]>({
     queryKey: ['/api/alerts'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
 
-  const { data: inboxMessages = [], isLoading: isLoadingInbox, error: inboxError } = useQuery<InboxMessage[]>({
+  const { 
+    data: inboxMessages = [], 
+    isLoading: isLoadingInbox, 
+    error: inboxError,
+    refetch: refetchInbox 
+  } = useQuery<InboxMessage[]>({
     queryKey: ['/api/inbox'],
     refetchInterval: 60000, // Refresh every minute
   });
@@ -206,29 +247,64 @@ export default function HomePage() {
             )}
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {/* Sample metrics from dashboard */}
-              <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
-                <Package className="w-6 h-6 mx-auto mb-2 text-blue-600" />
-                <div className="text-2xl font-bold">47</div>
-                <div className="text-sm text-muted-foreground">Active Jobs</div>
+            {/* Loading State */}
+            {isLoadingMetrics && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+                    <div className="w-6 h-6 mx-auto mb-2 bg-gray-300 dark:bg-gray-600 rounded" />
+                    <div className="h-8 bg-gray-300 dark:bg-gray-600 rounded mb-2 mx-auto w-16" />
+                    <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded mx-auto w-20" />
+                  </div>
+                ))}
               </div>
-              <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
-                <Activity className="w-6 h-6 mx-auto mb-2 text-green-600" />
-                <div className="text-2xl font-bold">78.5%</div>
-                <div className="text-sm text-muted-foreground">Utilization</div>
+            )}
+
+            {/* Error State with Retry */}
+            {metricsError && !isLoadingMetrics && (
+              <div className="text-center p-6 bg-red-50 dark:bg-red-950/20 rounded-lg">
+                <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-red-600" />
+                <p className="text-sm text-red-700 dark:text-red-400 mb-3">
+                  Failed to load dashboard metrics
+                </p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => refetchMetrics()}
+                  className="border-red-200 text-red-600"
+                  data-testid="retry-metrics-button"
+                >
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Retry
+                </Button>
               </div>
-              <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
-                <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-orange-600" />
-                <div className="text-2xl font-bold">3</div>
-                <div className="text-sm text-muted-foreground">Alerts</div>
+            )}
+
+            {/* Real Metrics Display */}
+            {!isLoadingMetrics && !metricsError && (
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg" data-testid="metric-active-jobs">
+                  <Package className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                  <div className="text-2xl font-bold">{dashboardMetrics?.activeJobs || 0}</div>
+                  <div className="text-sm text-muted-foreground">Active Jobs</div>
+                </div>
+                <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg" data-testid="metric-utilization">
+                  <Activity className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                  <div className="text-2xl font-bold">{dashboardMetrics?.utilization || 0}%</div>
+                  <div className="text-sm text-muted-foreground">Utilization</div>
+                </div>
+                <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg" data-testid="metric-alerts">
+                  <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+                  <div className="text-2xl font-bold">{dashboardMetrics?.alertsCount || 0}</div>
+                  <div className="text-sm text-muted-foreground">Alerts</div>
+                </div>
+                <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg" data-testid="metric-ontime">
+                  <Target className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                  <div className="text-2xl font-bold">{dashboardMetrics?.onTimePercentage || 0}%</div>
+                  <div className="text-sm text-muted-foreground">On-Time</div>
+                </div>
               </div>
-              <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
-                <Target className="w-6 h-6 mx-auto mb-2 text-purple-600" />
-                <div className="text-2xl font-bold">94.3%</div>
-                <div className="text-sm text-muted-foreground">On-Time</div>
-              </div>
-            </div>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -325,7 +401,13 @@ export default function HomePage() {
                     <p className="text-sm text-red-700 mb-4">
                       Unable to fetch the latest recommendations. Please check your connection and try again.
                     </p>
-                    <Button variant="outline" size="sm" className="border-red-200 text-red-600">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="border-red-200 text-red-600"
+                      onClick={() => refetchRecommendations()}
+                    >
+                      <RefreshCw className="w-4 h-4 mr-2" />
                       Retry
                     </Button>
                   </CardContent>
@@ -492,7 +574,7 @@ export default function HomePage() {
                       variant="outline" 
                       size="sm" 
                       className="border-red-200 text-red-600"
-                      onClick={() => eventsRefetch()}
+                      onClick={() => refetchEvents()}
                       data-testid="events-retry-button"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
@@ -619,7 +701,7 @@ export default function HomePage() {
                       variant="outline" 
                       size="sm" 
                       className="border-red-200 text-red-600"
-                      onClick={() => alertsRefetch()}
+                      onClick={() => refetchAlerts()}
                       data-testid="alerts-retry-button"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />
@@ -742,7 +824,7 @@ export default function HomePage() {
                       variant="outline" 
                       size="sm" 
                       className="border-red-200 text-red-600"
-                      onClick={() => inboxRefetch()}
+                      onClick={() => refetchInbox()}
                       data-testid="inbox-retry-button"
                     >
                       <RefreshCw className="w-4 h-4 mr-2" />

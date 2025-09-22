@@ -52,10 +52,10 @@ export default function ProductionSchedule() {
           variant="outline" 
           size="sm" 
           className="gap-2"
-          onClick={() => window.location.href = '/production-scheduler-standalone'}
+          onClick={() => window.location.href = '/production-scheduler-dhx'}
         >
           <ExternalLink className="h-4 w-4" />
-          Open Standalone Scheduler
+          Open Production Scheduler
         </Button>
       </div>
       
