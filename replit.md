@@ -3,7 +3,15 @@
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system specializing in production scheduling with a visual Gantt chart interface. Its vision is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding. The system provides complete supply chain visibility from procurement through production to sales, with traceability, quality management, and financial integration, emphasizing data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing. It aims to provide an enterprise-grade production deployment with unlimited horizontal scaling.
 
-**Latest Update (September 10, 2025)**: Completed Week 4 of Modular Federation Strategy:
+**Latest Update (September 22, 2025)**: Enhanced Agent Chat Panel:
+- **Multi-Agent Support**: Chat panel now supports switching between all customer-facing agents (Max AI Assistant and AI Scheduling Agent)
+- **Unified Agent Mode**: New unified mode allows posting a message that gets routed to all relevant agents simultaneously
+- **Visual Agent Indicators**: Each message clearly shows which agent responded with color-coded badges
+- **Agent Dropdown Selector**: Easy switching between agents via dropdown menu in the chat header
+- **Intelligent Routing**: Messages automatically route to appropriate backend endpoints based on selected agent
+- **Context Preservation**: Each agent maintains its own conversation history and context
+
+**Previous Update (September 10, 2025)**: Completed Week 4 of Modular Federation Strategy:
 - **Integration Testing**: Implemented comprehensive test harness with 115 tests (100% passing) covering all 8 modules
 - **Performance Optimization**: Added performance monitoring system with module load tracking, memory usage metrics, and performance budgets (<200ms core, <500ms non-core)
 - **Data Persistence**: Connected all federation modules to real PT database tables with real-time data synchronization
