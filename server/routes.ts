@@ -1247,13 +1247,16 @@ router.get("/pt-dependencies", async (req, res) => {
 
     const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
     
-    // Transform the data for the frontend
+    // Transform the data for the frontend - use correct Bryntum field names
     const dependenciesData = Array.isArray(rawDependencies) ? rawDependencies : rawDependencies.rows || [];
     const dependencies = dependenciesData.map((dep: any) => ({
       id: dep.dependency_id,
-      fromEvent: `op-${dep.from_operation_id}`,  // Match the event ID format used in the scheduler
-      toEvent: `op-${dep.to_operation_id}`,      // Match the event ID format used in the scheduler
+      from: `op-${dep.from_operation_id}`,  // Bryntum uses 'from' not 'fromEvent'
+      to: `op-${dep.to_operation_id}`,      // Bryntum uses 'to' not 'toEvent'
       type: 2, // Finish-to-Start dependency type (standard in Bryntum)
+      lag: 0,  // No lag between operations
+      lagUnit: 'hour',
+      // Keep additional fields for debugging
       fromOperationName: dep.from_operation_name,
       toOperationName: dep.to_operation_name,
       fromExternalId: dep.from_external_id,
