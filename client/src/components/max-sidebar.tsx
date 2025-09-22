@@ -21,6 +21,8 @@ import { useAgent } from "@/contexts/AgentContext";
 import { useAgentAnalysis } from "@/hooks/useAgentAnalysis";
 import { AgentSelector } from "@/components/agent-selector";
 import type { AgentMessage } from "@/types/agents";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Toggle } from "@/components/ui/toggle";
 import { 
   Bot, 
   Send, 
@@ -63,6 +65,7 @@ import {
   Play,
   Eye,
   ChevronDown,
+  Users,
 } from "lucide-react";
 // import WidgetStudioButton from "./widget-studio-button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -235,7 +238,9 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     messages, 
     addMessage, 
     clearMessages,
-    currentAnalysis
+    currentAnalysis,
+    switchToAgent,
+    availableAgents
   } = useAgent();
   const { analysis, isLoading: isAnalysisLoading } = useAgentAnalysis();
   
@@ -247,6 +252,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const [selectedVoice, setSelectedVoice] = useState('alloy');
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(true);
+  const [unifiedMode, setUnifiedMode] = useState(false);
+  const [agentMessages, setAgentMessages] = useState<Record<string, AgentMessage[]>>({ max: [], scheduling_assistant: [] });
 
   // Using new agent analysis system instead of old recommendation generation
 
@@ -567,41 +574,63 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   };
 
   const sendMessageMutation = useMutation({
-    mutationFn: async (message: string) => {
+    mutationFn: async (params: { message: string; agentId?: string }) => {
       const enhancedContext = captureEnhancedContext();
+      const { message, agentId = currentAgent.id } = params;
       
-      const response = await apiRequest('POST', '/api/ai-agent/chat', {
+      // Determine endpoint based on agent
+      let endpoint = '/api/ai-agent/chat'; // Default for Max
+      if (agentId === 'scheduling_assistant') {
+        endpoint = '/api/ai/schedule/chat';
+      }
+      
+      const response = await apiRequest('POST', endpoint, {
         message,
+        agentId: unifiedMode ? undefined : agentId, // In unified mode, let backend decide
         context: {
           page: window.location.pathname,
           user: user?.roles?.[0]?.name || user?.username,
           timestamp: new Date().toISOString(),
+          unifiedMode,
           ...enhancedContext
         }
       });
-      return await response.json();
+      return { ...await response.json(), agentId };
     },
     onSuccess: (response: any) => {
       // Debug the response to track the issue
       console.log('=== FRONTEND MESSAGE DEBUG ===');
+      console.log('Response from agent:', response.agentId);
       console.log('Response message preview:', response.message.substring(0, 200));
-      console.log('Response actions:', response.actions);
-      console.log('Message contains API table:', response.message.includes('API Function'));
-      console.log('Message contains job listing:', response.message.includes('Job ID') || response.message.includes('job name'));
       console.log('================================');
+      
+      // Get the agent that responded
+      const respondingAgent = availableAgents.find(a => a.id === response.agentId) || currentAgent;
       
       const assistantMessage: AgentMessage = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
+        agentId: response.agentId,
         content: response.message,
         timestamp: new Date(),
         context: {
-          page: window.location.pathname
+          page: window.location.pathname,
+          agentName: respondingAgent.displayName,
+          agentColor: respondingAgent.color
         },
         reasoning: response.reasoning,
         playbooksUsed: response.playbooksUsed,
         canvasAction: response.canvasAction
       };
+      
+      // In unified mode, store messages per agent
+      if (unifiedMode) {
+        setAgentMessages(prev => ({
+          ...prev,
+          [response.agentId]: [...(prev[response.agentId] || []), assistantMessage]
+        }));
+      }
+      
       setMessages(prev => [...prev, assistantMessage]);
 
       // Handle canvas actions
@@ -665,17 +694,38 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     const userMessage: AgentMessage = {
       id: Date.now().toString() + '_user',
       type: 'user',
+      agentId: currentAgent.id,
       content: inputMessage.trim(),
       timestamp: new Date(),
       context: {
-        page: window.location.pathname
+        page: window.location.pathname,
+        targetAgent: unifiedMode ? 'all' : currentAgent.id
       }
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInputMessage("");
     
-    sendMessageMutation.mutate(inputMessage.trim());
+    if (unifiedMode) {
+      // In unified mode, send to multiple agents
+      const customerFacingAgents = availableAgents.filter(a => 
+        a.id === 'max' || a.id === 'scheduling_assistant'
+      );
+      
+      // Send to each customer-facing agent
+      customerFacingAgents.forEach(agent => {
+        sendMessageMutation.mutate({ 
+          message: inputMessage.trim(), 
+          agentId: agent.id 
+        });
+      });
+    } else {
+      // Single agent mode
+      sendMessageMutation.mutate({ 
+        message: inputMessage.trim(), 
+        agentId: currentAgent.id 
+      });
+    }
   };
 
   const startListening = async () => {
@@ -1336,16 +1386,26 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     <div className={`h-full flex flex-col bg-white ${isKeyboardOpen ? 'keyboard-adjusted' : ''}`}>
       {/* Single Consolidated Header */}
       <div 
-        className={`p-4 ${getThemeClasses(false)} flex items-center justify-between cursor-move`}
+        className={`p-4 ${unifiedMode ? 'bg-gradient-to-r from-purple-600 to-cyan-600' : getThemeClasses(false)} flex flex-col gap-2 cursor-move`}
         onMouseDown={handleHeaderMouseDown}
         onTouchStart={handleHeaderTouchStart}
         style={{ touchAction: 'none' }}
       >
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-white" />
-          <h2 className="text-white text-sm font-medium">Max</h2>
-        </div>
-        <div className="flex gap-1">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {unifiedMode ? (
+              <>
+                <Users className="h-5 w-5 text-white" />
+                <h2 className="text-white text-sm font-medium">Unified Agent Mode</h2>
+              </>
+            ) : (
+              <>
+                <Sparkles className="h-5 w-5 text-white" />
+                <h2 className="text-white text-sm font-medium">{currentAgent.displayName}</h2>
+              </>
+            )}
+          </div>
+          <div className="flex gap-1">
           <Button
             variant="ghost"
             size="sm"
@@ -1416,7 +1476,79 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
             <X className="h-3 w-3" />
           </Button>
         </div>
+        </div>
+        
+        {/* Agent Selector and Unified Mode */}
+        <div className="flex items-center gap-2 px-2">
+        {!unifiedMode && (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-7 px-2 text-white hover:bg-white/20 flex items-center gap-1"
+              >
+                <span className="text-xs">Switch Agent</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuLabel>Customer-Facing Agents</DropdownMenuLabel>
+              <DropdownMenuItem 
+                onClick={() => switchToAgent('max')}
+                className={currentAgent.id === 'max' ? 'bg-purple-50' : ''}
+              >
+                <Sparkles className="h-4 w-4 mr-2" style={{ color: '#8B5CF6' }} />
+                Max AI Assistant
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={() => switchToAgent('scheduling_assistant')}
+                className={currentAgent.id === 'scheduling_assistant' ? 'bg-cyan-50' : ''}
+              >
+                <Calendar className="h-4 w-4 mr-2" style={{ color: '#06B6D4' }} />
+                AI Scheduling Agent
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Other Agents</DropdownMenuLabel>
+              {availableAgents
+                .filter(a => a.id !== 'max' && a.id !== 'scheduling_assistant')
+                .map(agent => {
+                  const IconComponent = agent.icon === 'Factory' ? Factory :
+                                       agent.icon === 'Shield' ? Shield :
+                                       agent.icon === 'Package' ? Package :
+                                       agent.icon === 'Wrench' ? Wrench :
+                                       agent.icon === 'Truck' ? Truck :
+                                       agent.icon === 'Target' ? Target :
+                                       agent.icon === 'Layers' ? Layers :
+                                       agent.icon === 'TrendingUp' ? TrendingUpIcon :
+                                       Sparkles;
+                  return (
+                    <DropdownMenuItem 
+                      key={agent.id}
+                      onClick={() => switchToAgent(agent.id)}
+                      className={currentAgent.id === agent.id ? 'bg-gray-50' : ''}
+                    >
+                      <IconComponent className="h-4 w-4 mr-2" style={{ color: agent.color }} />
+                      {agent.displayName}
+                    </DropdownMenuItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        )}
+        
+        <Toggle
+          pressed={unifiedMode}
+          onPressedChange={setUnifiedMode}
+          size="sm"
+          className="h-7 px-2 text-white data-[state=on]:bg-white/20"
+          title="Toggle unified agent mode"
+        >
+          <Users className="h-3 w-3 mr-1" />
+          <span className="text-xs">Unified</span>
+        </Toggle>
       </div>
+    </div>
 
       {/* Consolidated Settings Panel - Only when needed */}
       {(showVoiceSettings || currentInsights.length > 0 || schedulerContext) && (

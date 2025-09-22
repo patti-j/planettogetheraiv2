@@ -38,6 +38,42 @@ export const CORE_AGENTS: Agent[] = [
     department: 'orchestration'
   },
   {
+    id: 'scheduling_assistant',
+    name: 'scheduling_assistant',
+    displayName: 'AI Scheduling Agent',
+    description: 'Expert in PlanetTogether APS concepts, Bryntum scheduler features, and production scheduling best practices',
+    icon: 'Calendar',
+    color: '#06B6D4', // cyan
+    specialties: [
+      'PlanetTogether concepts',
+      'Bryntum scheduler',
+      'APS best practices',
+      'Finite capacity planning',
+      'Pegging and constraints'
+    ],
+    capabilities: [
+      {
+        id: 'pt_expertise',
+        name: 'PlanetTogether Expertise',
+        description: 'Deep knowledge of PlanetTogether features, pegging, what-if scenarios',
+        inputTypes: ['scheduling_questions', 'pt_concepts'],
+        outputTypes: ['explanations', 'best_practices'],
+        requiresData: ['ptjobs', 'ptjoboperations', 'ptresources']
+      },
+      {
+        id: 'bryntum_support',
+        name: 'Bryntum Scheduler Support',
+        description: 'Help with Bryntum Scheduler Pro features and configuration',
+        inputTypes: ['scheduler_issues', 'feature_questions'],
+        outputTypes: ['solutions', 'configuration_guidance'],
+        requiresData: []
+      }
+    ],
+    status: 'active',
+    priority: 2,
+    department: 'support'
+  },
+  {
     id: 'production_scheduling',
     name: 'production_scheduling',
     displayName: 'Production Scheduling Agent',
@@ -70,7 +106,7 @@ export const CORE_AGENTS: Agent[] = [
       }
     ],
     status: 'active',
-    priority: 2,
+    priority: 3,
     department: 'operations'
   },
   {
