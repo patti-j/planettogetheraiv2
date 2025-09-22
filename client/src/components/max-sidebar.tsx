@@ -16,7 +16,7 @@ import { useTour } from "@/contexts/TourContext";
 import { useMobileKeyboard } from "@/hooks/use-mobile-keyboard";
 import { useSplitScreen } from "@/contexts/SplitScreenContext";
 import { AIReasoning } from "@/components/max-ai-reasoning";
-import { SchedulerContextService } from "@/services/scheduler/SchedulerContextService";
+// import { SchedulerContextService } from "@/services/scheduler/SchedulerContextService";
 import { useAgent } from "@/contexts/AgentContext";
 import { useAgentAnalysis } from "@/hooks/useAgentAnalysis";
 import { AgentSelector } from "@/components/agent-selector";
@@ -405,7 +405,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   }, []);
 
   // Services
-  const schedulerContextService = SchedulerContextService.getInstance();
+  // const schedulerContextService = SchedulerContextService.getInstance();
   const [schedulerContext, setSchedulerContext] = useState<any>(null);
   
   // Generate page insights and capture scheduler context
@@ -415,16 +415,10 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     
     // Capture scheduler context if on scheduler page
     if (currentPage === '/production-scheduler') {
-      const context = schedulerContextService.getContext();
-      setSchedulerContext(context);
-      
-      // Update context periodically while on scheduler page
-      const interval = setInterval(() => {
-        const newContext = schedulerContextService.getContext();
-        setSchedulerContext(newContext);
-      }, 5000); // Update every 5 seconds
-      
-      return () => clearInterval(interval);
+      // Scheduler context integration disabled for now
+      // const context = schedulerContextService.getContext();
+      // setSchedulerContext(context);
+      setSchedulerContext(null);
     } else {
       setSchedulerContext(null);
     }
@@ -564,8 +558,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           conflicts: schedulerContext.events.conflicts,
           selectedEvent: schedulerContext.selectedEvent,
           selectedResource: schedulerContext.selectedResource,
-          criticalResources: schedulerContext.resources.criticalResources,
-          suggestions: schedulerContextService.getSuggestions()
+          criticalResources: schedulerContext.resources.criticalResources
+          // suggestions: schedulerContextService.getSuggestions()
         }
       };
     }
@@ -609,7 +603,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       
       const assistantMessage: AgentMessage = {
         id: Date.now().toString() + '_assistant',
-        type: 'assistant',
+        type: 'agent',
         agentId: response.agentId,
         content: response.message,
         timestamp: new Date(),
@@ -631,7 +625,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         }));
       }
       
-      setMessages(prev => [...prev, assistantMessage]);
+      addMessage(assistantMessage);
 
       // Handle canvas actions
       console.log('AI Response received:', response);
@@ -671,7 +665,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       // Instead of showing error toast, display helpful message in chat
       const errorMessage: AgentMessage = {
         id: Date.now().toString() + '_error',
-        type: 'assistant',
+        type: 'system',
         content: "I apologize, but I'm unable to help with that request right now. This might be because:\n\n• The request requires capabilities I don't currently have\n• There's a temporary connectivity issue\n• The request involves sensitive operations I cannot perform\n\nPlease try rephrasing your request or ask me about something else I can help with, like analyzing your production data, optimizing schedules, or explaining system features.",
         timestamp: new Date(),
         context: {
@@ -679,7 +673,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           action: 'error_response'
         }
       };
-      setMessages(prev => [...prev, errorMessage]);
+      addMessage(errorMessage);
 
       // Play error response if voice is enabled
       if (isVoiceEnabled) {
@@ -703,7 +697,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       }
     };
 
-    setMessages(prev => [...prev, userMessage]);
+    addMessage(userMessage);
     setInputMessage("");
     
     if (unifiedMode) {
@@ -1643,7 +1637,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 <div className="grid grid-cols-2 gap-1">
                   <button
                     onClick={async () => {
-                      const result = await schedulerContextService.executeSchedulingAlgorithm('ASAP');
+                      // const result = await schedulerContextService.executeSchedulingAlgorithm('ASAP');
+                      const result = { success: false, message: 'Scheduler service not available' };
                       toast({
                         title: result.success ? "ASAP Algorithm Applied" : "Algorithm Failed",
                         description: result.message,
@@ -1657,7 +1652,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   </button>
                   <button
                     onClick={async () => {
-                      const result = await schedulerContextService.executeSchedulingAlgorithm('ALAP');
+                      // const result = await schedulerContextService.executeSchedulingAlgorithm('ALAP');
+                      const result = { success: false, message: 'Scheduler service not available' };
                       toast({
                         title: result.success ? "ALAP Algorithm Applied" : "Algorithm Failed",
                         description: result.message,
@@ -1671,7 +1667,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   </button>
                   <button
                     onClick={async () => {
-                      const result = await schedulerContextService.executeSchedulingAlgorithm('CRITICAL_PATH');
+                      // const result = await schedulerContextService.executeSchedulingAlgorithm('CRITICAL_PATH');
+                      const result = { success: false, message: 'Scheduler service not available' };
                       toast({
                         title: result.success ? "Critical Path Applied" : "Algorithm Failed",
                         description: result.message,
@@ -1685,7 +1682,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   </button>
                   <button
                     onClick={async () => {
-                      const result = await schedulerContextService.executeSchedulingAlgorithm('LEVEL_RESOURCES');
+                      // const result = await schedulerContextService.executeSchedulingAlgorithm('LEVEL_RESOURCES');
+                      const result = { success: false, message: 'Scheduler service not available' };
                       toast({
                         title: result.success ? "Resources Leveled" : "Algorithm Failed",
                         description: result.message,
@@ -1699,7 +1697,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                   </button>
                   <button
                     onClick={async () => {
-                      const result = await schedulerContextService.executeSchedulingAlgorithm('DRUM_TOC');
+                      // const result = await schedulerContextService.executeSchedulingAlgorithm('DRUM_TOC');
+                      const result = { success: false, message: 'Scheduler service not available' };
                       toast({
                         title: result.success ? "TOC Applied" : "Algorithm Failed",
                         description: result.message,
