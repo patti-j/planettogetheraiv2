@@ -1,4 +1,4 @@
-import React, { useRef, useMemo, useCallback } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
@@ -9,75 +9,95 @@ export default function ProductionSchedulerReact() {
   const schedulerRef = useRef<any>(null);
 
   // Fetch operations data
-  const { data: operations = [], isLoading, refetch } = useQuery({
+  const { data: operationsData = [], isLoading: isLoadingOps, refetch: refetchOps } = useQuery({
     queryKey: ['/api/pt-operations'],
     refetchInterval: 60000,
   });
 
-  // Fetch resources data
-  const { data: resources = [] } = useQuery({
+  // Fetch resources data  
+  const { data: resourcesData = [], isLoading: isLoadingRes, refetch: refetchRes } = useQuery({
     queryKey: ['/api/resources'],
   });
 
   // Fetch dependencies data
-  const { data: dependencies = [] } = useQuery({
+  const { data: dependenciesData = [], refetch: refetchDeps } = useQuery({
     queryKey: ['/api/pt-dependencies'],
   });
 
-  // Configure the scheduler
-  const schedulerConfig = useMemo(() => {
-    const opsArray = Array.isArray(operations) ? operations : [];
-    const resArray = Array.isArray(resources) ? resources : [];
-    const depsArray = Array.isArray(dependencies) ? dependencies : [];
+  // Transform data for Bryntum - following the documentation pattern
+  const [events, setEvents] = useState<any[]>([]);
+  const [resources, setResources] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [dependencies, setDependencies] = useState<any[]>([]);
 
-    // Transform resources for Bryntum
-    const resourcesData = resArray.map((resource: any) => ({
+  useEffect(() => {
+    const opsArray = Array.isArray(operationsData) ? operationsData : [];
+    const resArray = Array.isArray(resourcesData) ? resourcesData : [];
+    const depsArray = Array.isArray(dependenciesData) ? dependenciesData : [];
+
+    // Transform resources - use actual IDs without prefixes
+    const transformedResources = resArray.map((resource: any) => ({
       id: resource.id,
-      name: resource.name || resource.resource_name || 'Resource',
-      type: resource.resource_type || 'equipment'
+      name: resource.name || resource.resource_name || `Resource ${resource.id}`,
+      type: resource.resource_type || 'equipment',
+      capacity: resource.capacity || 100
     }));
 
-    // Transform operations to events for Bryntum
-    const eventsData = opsArray
+    // Transform operations to events - use actual IDs without prefixes
+    const transformedEvents = opsArray
       .filter((op: any) => op.scheduledStart && op.scheduledEnd)
       .map((op: any) => ({
         id: op.id,
         name: op.name || 'Operation',
         startDate: op.scheduledStart,
         endDate: op.scheduledEnd,
-        resourceId: op.resourceId || op.actualResourceId,
         percentDone: op.percentFinished || 0,
         eventColor: op.jobPriority > 5 ? 'red' : op.jobPriority > 3 ? 'orange' : 'green'
       }));
 
-    // Transform dependencies  
-    const dependenciesData = depsArray.map((dep: any) => ({
-      id: dep.id || `dep_${dep.from}_${dep.to}`,
+    // Create assignments - CRITICAL: use 'event' and 'resource' properties
+    const transformedAssignments = opsArray
+      .filter((op: any) => op.scheduledStart && op.scheduledEnd && op.resourceId)
+      .map((op: any, index: number) => ({
+        id: index + 1, // Simple numeric ID for assignment
+        event: op.id,  // Reference to event ID (no prefix)
+        resource: op.resourceId  // Reference to resource ID (no prefix)
+      }));
+
+    // Transform dependencies - use actual IDs
+    const transformedDependencies = depsArray.map((dep: any, index: number) => ({
+      id: index + 1,
       from: dep.from,
       to: dep.to,
       type: dep.type || 2 // Finish-to-Start
     }));
 
-    return {
-      resources: resourcesData,
-      events: eventsData,
-      dependencies: dependenciesData,
-      assignments: eventsData
-        .filter((e: any) => e.resourceId)
-        .map((e: any) => ({
-          id: `a_${e.id}`,
-          event: e.id,
-          resource: e.resourceId
-        }))
-    };
-  }, [operations, resources, dependencies]);
+    // Update state with transformed data
+    setResources(transformedResources);
+    setEvents(transformedEvents);
+    setAssignments(transformedAssignments);
+    setDependencies(transformedDependencies);
+
+    // Debug log to verify data structure
+    console.log('Resources:', transformedResources.length, transformedResources.slice(0, 3));
+    console.log('Events:', transformedEvents.length, transformedEvents.slice(0, 3));
+    console.log('Assignments:', transformedAssignments.length, transformedAssignments.slice(0, 3));
+    console.log('Dependencies:', transformedDependencies.length, transformedDependencies.slice(0, 3));
+  }, [operationsData, resourcesData, dependenciesData]);
 
   // Calculate date range
-  const dateRange = useMemo(() => {
-    const opsArray = Array.isArray(operations) ? operations : [];
-    const dates = opsArray
-      .filter((op: any) => op.scheduledStart)
-      .map((op: any) => new Date(op.scheduledStart).getTime());
+  const { startDate, endDate } = useMemo(() => {
+    if (!events.length) {
+      const now = new Date();
+      return {
+        startDate: new Date(now.getFullYear(), now.getMonth(), 1),
+        endDate: new Date(now.getFullYear(), now.getMonth() + 2, 0)
+      };
+    }
+
+    const dates = events
+      .filter((e: any) => e.startDate)
+      .map((e: any) => new Date(e.startDate).getTime());
     
     if (dates.length === 0) {
       const now = new Date();
@@ -93,17 +113,22 @@ export default function ProductionSchedulerReact() {
     minDate.setDate(minDate.getDate() - 7);
     maxDate.setDate(maxDate.getDate() + 14);
     
-    return {
-      startDate: minDate,
-      endDate: maxDate
-    };
-  }, [operations]);
+    return { startDate: minDate, endDate: maxDate };
+  }, [events]);
 
-  const handleZoomToFit = useCallback(() => {
+  const handleZoomToFit = () => {
     if (schedulerRef.current?.instance) {
       schedulerRef.current.instance.zoomToFit();
     }
-  }, []);
+  };
+
+  const handleRefresh = () => {
+    refetchOps();
+    refetchRes();
+    refetchDeps();
+  };
+
+  const isLoading = isLoadingOps || isLoadingRes;
 
   if (isLoading) {
     return (
@@ -146,7 +171,7 @@ export default function ProductionSchedulerReact() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refetch()}
+            onClick={handleRefresh}
             className="gap-2"
           >
             <RefreshCw className="h-4 w-4" />
@@ -155,20 +180,20 @@ export default function ProductionSchedulerReact() {
         </div>
       </div>
 
-      {/* Scheduler Component */}
+      {/* Scheduler Component - Data binding per documentation */}
       <div className="flex-1 overflow-hidden">
         <BryntumSchedulerPro
           ref={schedulerRef}
           
-          // Data configuration
-          resources={schedulerConfig.resources}
-          events={schedulerConfig.events}
-          dependencies={schedulerConfig.dependencies}
-          assignments={schedulerConfig.assignments}
+          // Data props - passed directly as per documentation
+          resources={resources}
+          events={events}
+          assignments={assignments}
+          dependencies={dependencies}
           
           // Time axis configuration
-          startDate={dateRange.startDate}
-          endDate={dateRange.endDate}
+          startDate={startDate}
+          endDate={endDate}
           viewPreset="weekAndDayLetter"
           
           // Visual configuration
@@ -188,12 +213,23 @@ export default function ProductionSchedulerReact() {
               text: 'Type', 
               field: 'type', 
               width: 100 
+            },
+            {
+              text: 'Capacity',
+              field: 'capacity',
+              width: 80,
+              align: 'center'
             }
           ]}
           
-          // Features configuration - using simpler format
-          eventDragFeature={true}
-          eventResizeFeature={true}
+          // Features configuration
+          eventDragFeature={{
+            constrainDragToResource: false,
+            showExactDropPosition: true
+          }}
+          eventResizeFeature={{
+            showExactResizePosition: true
+          }}
           dependenciesFeature={true}
           timeRangesFeature={{
             showCurrentTimeLine: true
@@ -212,6 +248,12 @@ export default function ProductionSchedulerReact() {
                   }
                 }
               },
+              {
+                type: 'button',
+                text: 'Zoom to Fit',
+                icon: 'b-fa b-fa-expand',
+                onAction: handleZoomToFit
+              },
               '->',
               {
                 type: 'viewpresetcombo'
@@ -221,16 +263,18 @@ export default function ProductionSchedulerReact() {
           
           // Event handlers
           onEventDrop={(event: any) => {
-            console.log('Event dropped:', event.eventRecords);
+            console.log('Event dropped:', event);
+            // Here you would update the backend
           }}
           
           onEventResizeEnd={(event: any) => {
-            console.log('Event resized:', event.eventRecord);
+            console.log('Event resized:', event);
+            // Here you would update the backend
           }}
           
           // Ready handler
           onDataChange={() => {
-            // Auto-fit on data load
+            // Auto-fit on data load after a short delay
             setTimeout(() => {
               if (schedulerRef.current?.instance) {
                 schedulerRef.current.instance.zoomToFit();
