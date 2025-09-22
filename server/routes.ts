@@ -1215,34 +1215,37 @@ router.get("/pt-dependencies", async (req, res) => {
   try {
     console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
     
-    // Query PT dependencies with operation information
+    // Query PT dependencies - create dependencies between operations in the same job
     const ptDependenciesQuery = `
+      WITH job_operations AS (
+        -- Get all operations grouped by job
+        SELECT 
+          jo.id as op_id,
+          jo.job_id,
+          jo.external_id,
+          jo.name,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          -- Rank operations within each job by scheduled start time
+          ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start, jo.id) as sequence_num
+        FROM ptjoboperations jo
+        WHERE jo.job_id IS NOT NULL 
+          AND jo.scheduled_start IS NOT NULL
+      )
+      -- Create dependencies between consecutive operations in the same job
       SELECT 
-        jsm.id as dependency_id,
-        jsm.manufacturing_order_id,
-        jsm.successor_operation_id,
-        jsm.transfer_hrs,
-        jsm.usage_qty_per_cycle,
-        
-        -- Get predecessor operation info by finding the operation that comes before the successor
-        curr_op.id as from_operation_id,
-        curr_op.external_id as from_external_id,
-        curr_op.name as from_operation_name,
-        
-        -- Get successor operation info
-        next_op.id as to_operation_id,
-        next_op.external_id as to_external_id,
-        next_op.name as to_operation_name
-        
-      FROM ptjobsuccessormanufacturingorders jsm
-      INNER JOIN ptjoboperations next_op ON jsm.successor_operation_id = next_op.id
-      -- Find the predecessor operation (the one that comes before the successor)
-      LEFT JOIN ptjoboperations curr_op ON 
-        SUBSTRING(curr_op.external_id, 1, LENGTH(curr_op.external_id) - 3) = 
-        SUBSTRING(next_op.external_id, 1, LENGTH(next_op.external_id) - 3)
-        AND CAST(RIGHT(curr_op.external_id, 2) AS INTEGER) = CAST(RIGHT(next_op.external_id, 2) AS INTEGER) - 1
-      WHERE curr_op.id IS NOT NULL
-      ORDER BY curr_op.external_id, next_op.external_id
+        ROW_NUMBER() OVER () as dependency_id,
+        curr.op_id as from_operation_id,
+        curr.external_id as from_external_id,
+        curr.name as from_operation_name,
+        next.op_id as to_operation_id,
+        next.external_id as to_external_id,
+        next.name as to_operation_name
+      FROM job_operations curr
+      INNER JOIN job_operations next 
+        ON curr.job_id = next.job_id 
+        AND curr.sequence_num = next.sequence_num - 1
+      ORDER BY curr.job_id, curr.sequence_num
     `;
 
     const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
