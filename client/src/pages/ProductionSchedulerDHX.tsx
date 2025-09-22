@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Maximize, Calendar } from 'lucide-react';
 
 export default function ProductionSchedulerDHX() {
+  console.log('🚀 ProductionSchedulerDHX component is rendering');
   const ganttContainer = useRef<HTMLDivElement>(null);
   const isInitialized = useRef(false);
 
@@ -89,9 +90,31 @@ export default function ProductionSchedulerDHX() {
       ]
     };
 
-    // Initialize Gantt
-    gantt.init(ganttContainer.current);
-    isInitialized.current = true;
+    // Disable auto-scrolling to prevent errors
+    gantt.config.scroll_on_click = false;
+    gantt.config.autoscroll = false;
+    gantt.config.autoscroll_speed = 0;
+    gantt.config.show_tasks_outside_timescale = true;
+    
+    // Initialize Gantt with error handling
+    try {
+      // Use a timeout to ensure DOM is ready
+      setTimeout(() => {
+        if (ganttContainer.current) {
+          gantt.init(ganttContainer.current);
+          isInitialized.current = true;
+          console.log('✅ DHTMLX Gantt initialized successfully');
+          
+          // After initialization, if we have data, show the current date
+          if (gantt.getTaskByIndex(0)) {
+            const today = new Date();
+            gantt.showDate(today);
+          }
+        }
+      }, 100);
+    } catch (error) {
+      console.error('❌ Failed to initialize DHTMLX Gantt:', error);
+    }
 
     // Cleanup
     return () => {
