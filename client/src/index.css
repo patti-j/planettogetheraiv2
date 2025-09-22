@@ -2097,3 +2097,52 @@ html[data-ui-density="comfortable"] input.pl-9 {
   background: transparent;
   border: none;
 }
+
+/* Fix for Switch components - prevent density settings from affecting them */
+button[role="switch"] {
+  height: 24px !important;
+  width: 44px !important;
+  flex-shrink: 0 !important;
+  min-height: 24px !important;
+  min-width: 44px !important;
+  border-radius: 9999px !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  padding: 0 !important;
+}
+
+button[role="switch"] span {
+  display: block !important;
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 9999px !important;
+  transition: transform 0.2s !important;
+  background-color: white !important;
+  box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.1) !important;
+}
+
+button[role="switch"][data-state="unchecked"] span {
+  transform: translateX(2px) !important;
+}
+
+button[role="switch"][data-state="checked"] span {
+  transform: translateX(22px) !important;
+}
+
+button[role="switch"][data-state="unchecked"] {
+  background-color: rgb(203 213 225) !important; /* gray-300 */
+}
+
+button[role="switch"][data-state="checked"] {
+  background-color: rgb(59 130 246) !important; /* blue-500 */
+}
+
+/* Dark mode adjustments */
+.dark button[role="switch"][data-state="unchecked"] {
+  background-color: rgb(71 85 105) !important; /* gray-600 */
+}
+
+.dark button[role="switch"][data-state="checked"] {
+  background-color: rgb(59 130 246) !important; /* blue-500 */
+}
