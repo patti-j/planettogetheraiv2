@@ -1,304 +1,654 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Calendar, Clock, Package, AlertCircle, TrendingUp, 
-  Users, Factory, CheckCircle2, AlertTriangle, BarChart3, 
-  Activity, Target, Briefcase, DollarSign, ArrowRight,
-  Star, MessageCircle, Bell, Settings, Layout, Edit3
+  Sparkles, 
+  Activity, 
+  Bell, 
+  Inbox, 
+  CheckCircle, 
+  Clock, 
+  AlertTriangle, 
+  ArrowRight,
+  MessageSquare,
+  Users,
+  Eye,
+  MoreHorizontal,
+  Filter,
+  Calendar,
+  Zap,
+  Bot,
+  Target,
+  TrendingUp,
+  Package,
+  Settings
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
-import { useNavigation } from '@/contexts/NavigationContext';
-import { useLocation } from 'wouter';
-
 import { useDeviceType } from '@/hooks/useDeviceType';
-import { CustomizableHomeDashboard } from '@/components/customizable-home-dashboard';
-import { HomeDashboardCustomizer } from '@/components/home-dashboard-customizer';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+// Types for our data structures
+interface ActionRecommendation {
+  id: string;
+  title: string;
+  description: string;
+  priority: 'high' | 'medium' | 'low';
+  category: string;
+  confidence: number;
+  estimatedImpact: string;
+  createdAt: string;
+  aiAgent: string;
+}
+
+interface SystemEvent {
+  id: string;
+  type: string;
+  title: string;
+  description: string;
+  timestamp: string;
+  status: 'active' | 'resolved' | 'dismissed';
+  source: string;
+}
+
+interface Alert {
+  id: string;
+  type: 'warning' | 'error' | 'info' | 'success';
+  title: string;
+  message: string;
+  timestamp: string;
+  priority: 'high' | 'medium' | 'low';
+  status: 'unread' | 'read' | 'archived';
+}
+
+interface InboxMessage {
+  id: string;
+  sender: string;
+  subject: string;
+  preview: string;
+  timestamp: string;
+  isRead: boolean;
+  participants: string[];
+}
+
+interface DashboardItem {
+  id: number;
+  name: string;
+  description?: string;
+  isDefault: boolean;
+  configuration: {
+    standardWidgets: any[];
+    customWidgets: any[];
+  };
+}
 
 export default function HomePage() {
   const { user } = useAuth();
-  const [, setLocation] = useLocation();
-  
-  // Safe navigation context access with fallback
-  let recentPages = [];
-  try {
-    const navigation = useNavigation();
-    recentPages = navigation.recentPages || [];
-  } catch (error) {
-    console.warn('NavigationContext not available yet, using fallback:', error);
-    recentPages = [];
-  }
-  
   const isMobile = useDeviceType() === 'mobile';
-  const [currentTime, setCurrentTime] = useState(new Date());
-  const [isCustomizing, setIsCustomizing] = useState(false);
-  const [useCustomDashboard, setUseCustomDashboard] = useState(false);
+  const [selectedDashboard, setSelectedDashboard] = useState<number | null>(null);
+  const [activeTab, setActiveTab] = useState('actions');
 
-  // Update time every minute
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 60000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // Query for production metrics
-  const { data: productionOrders } = useQuery({
-    queryKey: ['/api/jobs'],
-    refetchInterval: 60000 // Refresh every minute
+  // Fetch available dashboards
+  const { data: dashboards = [] } = useQuery<DashboardItem[]>({
+    queryKey: ['/api/dashboard-configs'],
   });
 
-  const { data: operations } = useQuery({
-    queryKey: ['/api/operations'],
-    refetchInterval: 60000
+  // Fetch data for the tabs using proper API endpoints
+  const { data: aiRecommendations = [], isLoading: isLoadingRecommendations, error: recommendationsError } = useQuery<ActionRecommendation[]>({
+    queryKey: ['/api/ai/recommendations'],
+    refetchInterval: 300000, // Refresh every 5 minutes
   });
 
-  const { data: resources } = useQuery({
-    queryKey: ['/api/resources'],
-    refetchInterval: 60000
+  const { data: systemEvents = [], isLoading: isLoadingEvents, error: eventsError } = useQuery<SystemEvent[]>({
+    queryKey: ['/api/system/events'],
+    refetchInterval: 60000, // Refresh every minute
   });
 
-  // Calculate metrics with realistic fallback data
-  const realActiveOrders = (productionOrders as any[])?.filter((order: any) => order.status === 'in_progress').length || 0;
-  const realCompletedToday = (productionOrders as any[])?.filter((order: any) => {
-    const completedDate = new Date(order.actualCompletionDate);
-    const today = new Date();
-    return order.status === 'completed' && 
-           completedDate.toDateString() === today.toDateString();
-  }).length || 0;
-  
-  const realOperationsInProgress = (operations as any[])?.filter((op: any) => op.status === 'in_progress').length || 0;
-  const realDelayedOperations = (operations as any[])?.filter((op: any) => op.status === 'delayed').length || 0;
-  const realResourceUtilization = (resources as any[]) ? Math.round(((resources as any[]).filter((r: any) => r.currentStatus === 'busy').length / (resources as any[]).length) * 100) : 0;
+  const { data: alerts = [], isLoading: isLoadingAlerts, error: alertsError } = useQuery<Alert[]>({
+    queryKey: ['/api/alerts'],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
 
-  // Use real data if available, otherwise show realistic sample data for better UX
-  const activeOrders = realActiveOrders > 0 ? realActiveOrders : 24;
-  const completedToday = realCompletedToday > 0 ? realCompletedToday : 8;
-  const operationsInProgress = realOperationsInProgress > 0 ? realOperationsInProgress : 32;
-  const delayedOperations = realDelayedOperations > 0 ? realDelayedOperations : 3;
-  const resourceUtilization = realResourceUtilization > 0 ? realResourceUtilization : 76;
+  const { data: inboxMessages = [], isLoading: isLoadingInbox, error: inboxError } = useQuery<InboxMessage[]>({
+    queryKey: ['/api/inbox'],
+    refetchInterval: 60000, // Refresh every minute
+  });
 
-  // Quick access links based on user role
-  const getQuickLinks = () => {
-    const links = [
-      { icon: BarChart3, label: 'Production Scheduling', href: '/production-scheduler', color: 'bg-blue-500' },
-      { icon: Activity, label: 'Analytics', href: '/analytics', color: 'bg-purple-500' },
-      { icon: Package, label: 'Shop Floor', href: '/shop-floor', color: 'bg-orange-500' },
-      { icon: Briefcase, label: 'Capacity Planning', href: '/capacity-planning', color: 'bg-green-500' },
-      { icon: Target, label: 'Production Planning', href: '/production-planning', color: 'bg-indigo-500' },
-      { icon: Settings, label: 'System Management', href: '/systems-management-dashboard', color: 'bg-gray-500' }
-    ];
-    return links;
+  // Get default dashboard or first available
+  const defaultDashboard = dashboards.find(d => d.isDefault) || dashboards[0];
+  const displayDashboard = selectedDashboard 
+    ? dashboards.find(d => d.id === selectedDashboard) 
+    : defaultDashboard;
+
+  const getPriorityColor = (priority: string) => {
+    switch (priority) {
+      case 'high': return 'text-red-600 bg-red-100 border-red-200';
+      case 'medium': return 'text-orange-600 bg-orange-100 border-orange-200';
+      case 'low': return 'text-blue-600 bg-blue-100 border-blue-200';
+      default: return 'text-gray-600 bg-gray-100 border-gray-200';
+    }
   };
 
-  const quickLinks = getQuickLinks();
+  const getAlertIcon = (type: string) => {
+    switch (type) {
+      case 'error': return <AlertTriangle className="h-4 w-4 text-red-500" />;
+      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
+      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
+      default: return <Bell className="h-4 w-4 text-blue-500" />;
+    }
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
-
       {/* Header */}
       <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`}>
               Welcome back, {user?.firstName || 'User'}!
             </h1>
             <p className="text-muted-foreground text-sm mt-1">
-              {currentTime.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              {format(new Date(), 'EEEE, MMMM d, yyyy')}
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setUseCustomDashboard(!useCustomDashboard)}
-              className="gap-2"
-            >
-              <Layout className="w-4 h-4" />
-              {useCustomDashboard ? 'Standard View' : 'Custom Dashboard'}
-            </Button>
-            {useCustomDashboard && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCustomizing(true)}
-                className="gap-2"
-              >
-                <Edit3 className="w-4 h-4" />
-                Customize
-              </Button>
-            )}
-            <Badge variant="outline" className="gap-1">
-              <Clock className="w-3 h-3" />
-              {currentTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
-            </Badge>
-          </div>
+        </div>
+
+        {/* Dashboard Selector */}
+        <div className="flex items-center gap-4">
+          <label className="text-sm font-medium">Dashboard:</label>
+          <Select 
+            value={selectedDashboard?.toString() || defaultDashboard?.id?.toString() || ''}
+            onValueChange={(value) => setSelectedDashboard(parseInt(value))}
+            data-testid="dashboard-selector"
+          >
+            <SelectTrigger className="w-64" data-testid="dashboard-selector-trigger">
+              <SelectValue placeholder="Select dashboard..." />
+            </SelectTrigger>
+            <SelectContent>
+              {dashboards.map(dashboard => (
+                <SelectItem 
+                  key={dashboard.id} 
+                  value={dashboard.id.toString()}
+                  data-testid={`dashboard-option-${dashboard.id}`}
+                >
+                  <div className="flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" />
+                    {dashboard.name}
+                    {dashboard.isDefault && (
+                      <Badge variant="secondary" className="text-xs">Default</Badge>
+                    )}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className={`flex-1 overflow-auto ${isMobile ? 'p-4' : 'p-6'}`}>
-        {useCustomDashboard ? (
-          <CustomizableHomeDashboard />
-        ) : (
-          <div className={`grid gap-4 ${isMobile ? 'grid-cols-1' : 'lg:grid-cols-3'}`}>
-          
-          {/* Key Metrics Section */}
-          <div className={`${isMobile ? '' : 'lg:col-span-2'}`}>
-            <Card className="mb-4">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5" />
-                  Today's Performance
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-4'}`}>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Orders</p>
-                    <p className="text-2xl font-bold">{activeOrders}</p>
-                    <Badge variant="secondary" className="mt-1">
-                      <Activity className="w-3 h-3 mr-1" />
-                      In Progress
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Completed Today</p>
-                    <p className="text-2xl font-bold text-green-600">{completedToday}</p>
-                    <Badge variant="secondary" className="mt-1 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                      <CheckCircle2 className="w-3 h-3 mr-1" />
-                      On Track
-                    </Badge>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Operations Running</p>
-                    <p className="text-2xl font-bold">{operationsInProgress}</p>
-                    {delayedOperations > 0 && (
-                      <Badge variant="destructive" className="mt-1">
-                        <AlertTriangle className="w-3 h-3 mr-1" />
-                        {delayedOperations} Delayed
-                      </Badge>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Resource Utilization</p>
-                    <p className="text-2xl font-bold">{resourceUtilization}%</p>
-                    <Badge variant={resourceUtilization > 80 ? "destructive" : resourceUtilization > 60 ? "secondary" : "outline"} className="mt-1">
-                      <Factory className="w-3 h-3 mr-1" />
-                      {resourceUtilization > 80 ? "High" : resourceUtilization > 60 ? "Optimal" : "Low"}
-                    </Badge>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Star className="w-5 h-5" />
-                  Quick Access
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`grid gap-3 ${isMobile ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 xl:grid-cols-3'}`}>
-                  {quickLinks.map((link, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      className="justify-start gap-2 h-auto py-3 px-3 min-h-[3rem] min-w-0"
-                      onClick={() => setLocation(link.href)}
-                    >
-                      <div className={`w-8 h-8 rounded-lg ${link.color} flex items-center justify-center flex-shrink-0`}>
-                        <link.icon className="w-4 h-4 text-white" />
-                      </div>
-                      <span className={`${isMobile ? 'text-xs' : 'text-sm'} text-left leading-tight truncate flex-1`}>
-                        {link.label}
-                      </span>
-                    </Button>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Side Panel */}
-          <div className="space-y-4">
-            {/* Recent Activity */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Bell className="w-4 h-4" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">New production order created</p>
-                      <p className="text-xs text-muted-foreground">PO-2025-004 - 5 min ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">Schedule approved</p>
-                      <p className="text-xs text-muted-foreground">Weekly production plan - 1 hour ago</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <div className="w-2 h-2 bg-orange-500 rounded-full mt-1.5"></div>
-                    <div className="flex-1">
-                      <p className="text-sm">Resource maintenance scheduled</p>
-                      <p className="text-xs text-muted-foreground">CNC Machine 1 - 2 hours ago</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Alerts & Notifications */}
-            {delayedOperations > 0 && (
-              <Card className="border-orange-200 bg-orange-50 dark:bg-orange-950/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <AlertCircle className="w-4 h-4 text-orange-600" />
-                    Attention Required
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm">{delayedOperations} Delayed Operations</span>
-                      <Button size="sm" variant="outline" onClick={() => setLocation('/production-schedule')}>
-                        View
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      {/* Dashboard Preview */}
+      <div className={`${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20`}>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <TrendingUp className="w-5 h-5" />
+              {displayDashboard?.name || 'No Dashboard Selected'}
+            </CardTitle>
+            {displayDashboard?.description && (
+              <p className="text-sm text-muted-foreground">
+                {displayDashboard.description}
+              </p>
             )}
-
-
-          </div>
-          </div>
-        )}
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {/* Sample metrics from dashboard */}
+              <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg">
+                <Package className="w-6 h-6 mx-auto mb-2 text-blue-600" />
+                <div className="text-2xl font-bold">47</div>
+                <div className="text-sm text-muted-foreground">Active Jobs</div>
+              </div>
+              <div className="text-center p-4 bg-green-50 dark:bg-green-950/20 rounded-lg">
+                <Activity className="w-6 h-6 mx-auto mb-2 text-green-600" />
+                <div className="text-2xl font-bold">78.5%</div>
+                <div className="text-sm text-muted-foreground">Utilization</div>
+              </div>
+              <div className="text-center p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg">
+                <AlertTriangle className="w-6 h-6 mx-auto mb-2 text-orange-600" />
+                <div className="text-2xl font-bold">3</div>
+                <div className="text-sm text-muted-foreground">Alerts</div>
+              </div>
+              <div className="text-center p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg">
+                <Target className="w-6 h-6 mx-auto mb-2 text-purple-600" />
+                <div className="text-2xl font-bold">94.3%</div>
+                <div className="text-sm text-muted-foreground">On-Time</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Home Dashboard Customizer Modal */}
-      {isCustomizing && (
-        <HomeDashboardCustomizer
-          open={isCustomizing}
-          onOpenChange={setIsCustomizing}
-          currentLayout={null}
-          onLayoutUpdate={() => {}}
-        />
-      )}
+      {/* Tabbed Interface */}
+      <div className="flex-1 overflow-hidden">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col" data-testid="main-tabs">
+          <div className={`border-b ${isMobile ? 'px-4' : 'px-6'}`}>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="actions" className="flex items-center gap-2" data-testid="tab-actions">
+                <Sparkles className="w-4 h-4" />
+                Actions
+                {!isLoadingRecommendations && aiRecommendations.length > 0 && (
+                  <Badge variant="secondary" className="ml-1 text-xs" data-testid="actions-count">
+                    {aiRecommendations.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="events" className="flex items-center gap-2" data-testid="tab-events">
+                <Activity className="w-4 h-4" />
+                Events
+              </TabsTrigger>
+              <TabsTrigger value="alerts" className="flex items-center gap-2" data-testid="tab-alerts">
+                <Bell className="w-4 h-4" />
+                Alerts
+                {!isLoadingAlerts && alerts.filter(a => a.status === 'unread').length > 0 && (
+                  <Badge variant="destructive" className="ml-1 text-xs" data-testid="alerts-unread-count">
+                    {alerts.filter(a => a.status === 'unread').length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="inbox" className="flex items-center gap-2" data-testid="tab-inbox">
+                <Inbox className="w-4 h-4" />
+                Inbox
+                {!isLoadingInbox && inboxMessages.filter(m => !m.isRead).length > 0 && (
+                  <Badge variant="destructive" className="ml-1 text-xs" data-testid="inbox-unread-count">
+                    {inboxMessages.filter(m => !m.isRead).length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </div>
+
+          <div className="flex-1 overflow-auto">
+            {/* Actions Tab */}
+            <TabsContent value="actions" className="h-full p-6 space-y-4" data-testid="actions-tab-content">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">AI Recommendations</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Smart insights and actionable recommendations from your AI agents
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" data-testid="actions-filter-button">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                  <Button variant="outline" size="sm" data-testid="actions-settings-button">
+                    <Settings className="w-4 h-4 mr-2" />
+                    Settings
+                  </Button>
+                </div>
+              </div>
+
+              {/* Loading State */}
+              {isLoadingRecommendations && (
+                <div className="space-y-4" data-testid="actions-loading">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <Card key={i} className="animate-pulse">
+                      <CardContent className="p-6">
+                        <div className="h-4 bg-gray-200 rounded mb-4 w-3/4"></div>
+                        <div className="h-3 bg-gray-100 rounded mb-2"></div>
+                        <div className="h-3 bg-gray-100 rounded mb-4 w-2/3"></div>
+                        <div className="flex gap-2">
+                          <div className="h-8 bg-gray-200 rounded w-24"></div>
+                          <div className="h-8 bg-gray-200 rounded w-32"></div>
+                          <div className="h-8 bg-gray-200 rounded w-28"></div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Error State */}
+              {recommendationsError && (
+                <Card className="border-red-200 bg-red-50" data-testid="actions-error">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-red-600 mb-2">
+                      <AlertTriangle className="w-5 h-5" />
+                      <h4 className="font-medium">Failed to load AI recommendations</h4>
+                    </div>
+                    <p className="text-sm text-red-700 mb-4">
+                      Unable to fetch the latest recommendations. Please check your connection and try again.
+                    </p>
+                    <Button variant="outline" size="sm" className="border-red-200 text-red-600">
+                      Retry
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Content */}
+              {!isLoadingRecommendations && !recommendationsError && (
+                <div className="space-y-4" data-testid="actions-content">
+                  {aiRecommendations.map((recommendation) => (
+                    <Card 
+                      key={recommendation.id} 
+                      className="hover:shadow-md transition-shadow"
+                      data-testid={`recommendation-card-${recommendation.id}`}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge 
+                                className={`text-xs ${getPriorityColor(recommendation.priority)}`}
+                                data-testid={`priority-${recommendation.priority}`}
+                              >
+                                {recommendation.priority.toUpperCase()}
+                              </Badge>
+                              <Badge variant="outline" className="text-xs">
+                                {recommendation.category}
+                              </Badge>
+                              <Badge variant="secondary" className="text-xs">
+                                <Bot className="w-3 h-3 mr-1" />
+                                {recommendation.aiAgent}
+                              </Badge>
+                            </div>
+                            <CardTitle className="text-lg">{recommendation.title}</CardTitle>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              {recommendation.description}
+                            </p>
+                            <div className="flex items-center gap-4 mt-3 text-sm">
+                              <span className="flex items-center gap-1">
+                                <Zap className="w-4 h-4 text-green-600" />
+                                {recommendation.confidence}% confidence
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <TrendingUp className="w-4 h-4 text-blue-600" />
+                                {recommendation.estimatedImpact}
+                              </span>
+                              <span className="text-muted-foreground">
+                                {format(new Date(recommendation.createdAt), 'MMM d, h:mm a')}
+                              </span>
+                            </div>
+                          </div>
+                          <Button variant="ghost" size="sm" data-testid={`more-options-${recommendation.id}`}>
+                            <MoreHorizontal className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <div className="flex flex-wrap gap-2">
+                          <Button 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`resolve-now-${recommendation.id}`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                            Resolve Now
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`show-plan-${recommendation.id}`}
+                          >
+                            <Eye className="w-4 h-4" />
+                            Show Plan First
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`work-with-agent-${recommendation.id}`}
+                          >
+                            <Bot className="w-4 h-4" />
+                            Work with Agent
+                          </Button>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`refer-to-user-${recommendation.id}`}
+                          >
+                            <Users className="w-4 h-4" />
+                            Refer to User
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="gap-2"
+                            data-testid={`ignore-${recommendation.id}`}
+                          >
+                            <Clock className="w-4 h-4" />
+                            Ignore for...
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
+
+            {/* Events Tab */}
+            <TabsContent value="events" className="h-full p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">System Events</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Real-time feed of system activities and status updates
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                    Live Feed
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {systemEvents.map((event) => (
+                  <Card key={event.id} className="hover:shadow-sm transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className={cn(
+                          "w-8 h-8 rounded-full flex items-center justify-center",
+                          event.status === 'active' ? 'bg-blue-100 text-blue-600' :
+                          event.status === 'resolved' ? 'bg-green-100 text-green-600' :
+                          'bg-gray-100 text-gray-600'
+                        )}>
+                          <Activity className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium">{event.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <Badge variant={
+                                event.status === 'active' ? 'default' :
+                                event.status === 'resolved' ? 'secondary' : 'outline'
+                              } className="text-xs">
+                                {event.status}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(event.timestamp), 'MMM d, h:mm a')}
+                              </span>
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {event.description}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-muted-foreground">
+                              Source: {event.source}
+                            </span>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm">
+                                View Details
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                Acknowledge
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Alerts Tab */}
+            <TabsContent value="alerts" className="h-full p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">System Alerts</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Important notifications and system messages requiring attention
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm">
+                    Mark All Read
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Filter className="w-4 h-4 mr-2" />
+                    Filter
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {alerts.map((alert) => (
+                  <Card key={alert.id} className={cn(
+                    "hover:shadow-sm transition-shadow",
+                    alert.status === 'unread' ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
+                  )}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        {getAlertIcon(alert.type)}
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium">{alert.title}</h4>
+                            <div className="flex items-center gap-2">
+                              <Badge className={`text-xs ${getPriorityColor(alert.priority)}`}>
+                                {alert.priority.toUpperCase()}
+                              </Badge>
+                              {alert.status === 'unread' && (
+                                <div className="w-2 h-2 bg-blue-600 rounded-full" />
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {alert.message}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-muted-foreground">
+                              {format(new Date(alert.timestamp), 'MMM d, h:mm a')}
+                            </span>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="sm">
+                                Acknowledge
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                Archive
+                              </Button>
+                              <Button variant="ghost" size="sm">
+                                Schedule
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            {/* Inbox Tab */}
+            <TabsContent value="inbox" className="h-full p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold">Inbox</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Communication hub for team collaboration and messages
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button size="sm" className="gap-2">
+                    <MessageSquare className="w-4 h-4" />
+                    New Message
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {inboxMessages.map((message) => (
+                  <Card key={message.id} className={cn(
+                    "hover:shadow-sm transition-shadow cursor-pointer",
+                    !message.isRead ? 'ring-2 ring-blue-200 bg-blue-50/30' : ''
+                  )}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className={cn(
+                                "text-sm",
+                                !message.isRead ? 'font-semibold' : 'font-medium'
+                              )}>
+                                {message.sender}
+                              </h4>
+                              <p className={cn(
+                                "text-sm",
+                                !message.isRead ? 'font-medium' : 'text-muted-foreground'
+                              )}>
+                                {message.subject}
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <span className="text-xs text-muted-foreground">
+                                {format(new Date(message.timestamp), 'MMM d, h:mm a')}
+                              </span>
+                              {!message.isRead && (
+                                <div className="w-2 h-2 bg-blue-600 rounded-full ml-auto mt-1" />
+                              )}
+                            </div>
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {message.preview}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="flex -space-x-1">
+                              {message.participants.slice(0, 3).map((participant, index) => (
+                                <div key={index} className="w-6 h-6 rounded-full bg-gray-300 border-2 border-white flex items-center justify-center text-xs">
+                                  {participant.charAt(0)}
+                                </div>
+                              ))}
+                            </div>
+                            <Button variant="ghost" size="sm">
+                              <ArrowRight className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
     </div>
   );
 }

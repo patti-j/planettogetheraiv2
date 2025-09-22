@@ -1790,6 +1790,203 @@ router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (
   }
 });
 
+// AI Recommendations endpoint
+router.get("/ai/recommendations", requireAuth, async (req, res) => {
+  try {
+    // Get sample AI recommendations for now - in production this would be from AI service
+    const recommendations = [
+      {
+        id: '1',
+        title: 'Optimize Resource M-203 Schedule',
+        description: 'Machine M-203 shows 15% idle time. Recommend moving Job-447 earlier to improve utilization.',
+        priority: 'high',
+        category: 'Resource Optimization',
+        confidence: 92,
+        estimatedImpact: '+12% efficiency',
+        createdAt: new Date().toISOString(),
+        aiAgent: 'Production Optimizer'
+      },
+      {
+        id: '2',
+        title: 'Quality Alert Pattern Detected',
+        description: 'Batch quality issues correlate with morning shift changes. Recommend additional quality checks.',
+        priority: 'medium',
+        category: 'Quality Control',
+        confidence: 87,
+        estimatedImpact: '-8% defect rate',
+        createdAt: new Date(Date.now() - 3600000).toISOString(),
+        aiAgent: 'Quality Analyst'
+      },
+      {
+        id: '3',
+        title: 'Preventive Maintenance Optimization',
+        description: 'Analysis shows equipment downtime can be reduced by 23% with schedule adjustment.',
+        priority: 'medium',
+        category: 'Maintenance',
+        confidence: 78,
+        estimatedImpact: '+23% uptime',
+        createdAt: new Date(Date.now() - 7200000).toISOString(),
+        aiAgent: 'Maintenance Scheduler'
+      }
+    ];
+    
+    res.json(recommendations);
+  } catch (error: any) {
+    console.error('Error fetching AI recommendations:', error);
+    res.status(500).json({ error: 'Failed to fetch AI recommendations' });
+  }
+});
+
+// System Events endpoint
+router.get("/system/events", requireAuth, async (req, res) => {
+  try {
+    // Get sample system events for now - in production this would be from event log service
+    const events = [
+      {
+        id: '1',
+        type: 'schedule_updated',
+        title: 'Production Schedule Updated',
+        description: 'Weekly schedule optimized by AI scheduler - 3 jobs rescheduled for better efficiency',
+        timestamp: new Date().toISOString(),
+        status: 'active',
+        source: 'AI Scheduler'
+      },
+      {
+        id: '2',
+        type: 'maintenance_completed',
+        title: 'Preventive Maintenance Complete',
+        description: 'CNC Machine 1 maintenance completed ahead of schedule',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        status: 'resolved',
+        source: 'Maintenance System'
+      },
+      {
+        id: '3',
+        type: 'quality_alert',
+        title: 'Quality Inspection Alert',
+        description: 'Batch B-4522 flagged for additional quality review',
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+        status: 'active',
+        source: 'Quality Control'
+      },
+      {
+        id: '4',
+        type: 'production_milestone',
+        title: 'Production Milestone Achieved',
+        description: 'Plant A exceeded weekly production target by 8%',
+        timestamp: new Date(Date.now() - 14400000).toISOString(),
+        status: 'resolved',
+        source: 'Production Tracking'
+      }
+    ];
+    
+    res.json(events);
+  } catch (error: any) {
+    console.error('Error fetching system events:', error);
+    res.status(500).json({ error: 'Failed to fetch system events' });
+  }
+});
+
+// Inbox Messages endpoint
+router.get("/inbox", requireAuth, async (req, res) => {
+  try {
+    // Get sample inbox messages for now - in production this would be from messaging service
+    const messages = [
+      {
+        id: '1',
+        sender: 'Plant Manager A',
+        subject: 'Weekly Production Review',
+        preview: 'Can we schedule a review of this weeks production metrics and discuss the efficiency improvements...',
+        timestamp: new Date().toISOString(),
+        isRead: false,
+        participants: ['Plant Manager A', 'Production Supervisor']
+      },
+      {
+        id: '2',
+        sender: 'Quality Team',
+        subject: 'Batch B-4521 Quality Issue',
+        preview: 'We need to discuss the quality findings from yesterdays batch and implement corrective actions...',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        isRead: true,
+        participants: ['Quality Team', 'Shift Supervisor']
+      },
+      {
+        id: '3',
+        sender: 'Maintenance Crew',
+        subject: 'Equipment Maintenance Schedule',
+        preview: 'Proposing changes to the preventive maintenance schedule based on recent performance data...',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        isRead: false,
+        participants: ['Maintenance Crew', 'Operations Manager']
+      },
+      {
+        id: '4',
+        sender: 'Shift Supervisor',
+        subject: 'Resource Allocation Issue',
+        preview: 'Need approval for overtime assignments due to unexpected demand spike in Product Line C...',
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+        isRead: true,
+        participants: ['Shift Supervisor', 'Production Manager', 'HR Representative']
+      }
+    ];
+    
+    res.json(messages);
+  } catch (error: any) {
+    console.error('Error fetching inbox messages:', error);
+    res.status(500).json({ error: 'Failed to fetch inbox messages' });
+  }
+});
+
+// Dashboard Configurations endpoint
+router.get("/dashboard-configs", requireAuth, async (req, res) => {
+  try {
+    // Get sample dashboard configs for now - in production this would be from database
+    const dashboards = [
+      {
+        id: 1,
+        name: 'Executive Dashboard',
+        description: 'High-level overview of operations and KPIs for executive team',
+        isDefault: true,
+        createdAt: new Date(Date.now() - 86400000).toISOString(),
+        updatedAt: new Date().toISOString(),
+        configuration: {
+          standardWidgets: [],
+          customWidgets: []
+        }
+      },
+      {
+        id: 2,
+        name: 'Production Control',
+        description: 'Real-time production monitoring and control dashboard',
+        isDefault: false,
+        createdAt: new Date(Date.now() - 172800000).toISOString(),
+        updatedAt: new Date(Date.now() - 86400000).toISOString(),
+        configuration: {
+          standardWidgets: [],
+          customWidgets: []
+        }
+      },
+      {
+        id: 3,
+        name: 'Quality Metrics',
+        description: 'Quality control and compliance tracking dashboard',
+        isDefault: false,
+        createdAt: new Date(Date.now() - 259200000).toISOString(),
+        updatedAt: new Date(Date.now() - 172800000).toISOString(),
+        configuration: {
+          standardWidgets: [],
+          customWidgets: []
+        }
+      }
+    ];
+    
+    res.json(dashboards);
+  } catch (error: any) {
+    console.error('Error fetching dashboard configs:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
+  }
+});
+
 // Health check
 router.get("/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });
