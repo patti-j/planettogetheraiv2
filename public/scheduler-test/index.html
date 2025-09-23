@@ -191,6 +191,71 @@
       return { resourceRows, events, assignments, dependencies, capabilities };
     }
 
+    // Simple custom toast notification system
+    function showToast(message) {
+      // Create toast container if it doesn't exist
+      let toastContainer = document.getElementById('toast-container');
+      if (!toastContainer) {
+        toastContainer = document.createElement('div');
+        toastContainer.id = 'toast-container';
+        toastContainer.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          z-index: 10000;
+        `;
+        document.body.appendChild(toastContainer);
+      }
+      
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.setAttribute('role', 'alert');
+      toast.style.cssText = `
+        background: #333;
+        color: white;
+        padding: 12px 20px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-size: 14px;
+        animation: slideIn 0.3s ease-out;
+        min-width: 200px;
+      `;
+      toast.textContent = message;
+      
+      // Add animation styles if not already added
+      if (!document.getElementById('toast-styles')) {
+        const style = document.createElement('style');
+        style.id = 'toast-styles';
+        style.textContent = `
+          @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+          }
+          @keyframes slideOut {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // Add toast to container
+      toastContainer.appendChild(toast);
+      
+      // Remove toast after 3 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease-out';
+        setTimeout(() => {
+          toast.remove();
+          // Remove container if no more toasts
+          if (toastContainer.children.length === 0) {
+            toastContainer.remove();
+          }
+        }, 300);
+      }, 3000);
+    }
+
     async function main() {
       const loading = document.getElementById('loading');
       try {
@@ -339,7 +404,7 @@
           
           if (!resourceCapabilities.includes(operationType)) {
             console.warn(`Blocking assignment: ${resource.name} cannot perform ${operationType}`);
-            scheduler.toast?.(`${resource.name} cannot perform ${operationType} operations`);
+            showToast(`${resource.name} cannot perform ${operationType} operations`);
             return false; // Block the assignment
           }
           
@@ -347,7 +412,7 @@
           if (event.startDate && event.endDate) {
             if (!scheduler.isDateRangeAvailable(event.startDate, event.endDate, resource, event)) {
               console.warn(`Blocking assignment: Resource ${resource.name} is busy at that time`);
-              scheduler.toast?.('That resource is already busy for that time range.');
+              showToast('That resource is already busy for that time range.');
               return false;
             }
           }
@@ -365,7 +430,7 @@
             
             if (!resourceCapabilities.includes(operationType)) {
               console.warn(`Blocking drop: ${newResource.name} cannot perform ${operationType}`);
-              scheduler.toast?.(`${newResource.name} cannot perform ${operationType} operations`);
+              showToast(`${newResource.name} cannot perform ${operationType} operations`);
               // Cancel the drop operation
               context.valid = false;
               return false;
@@ -374,7 +439,7 @@
             // Check for time conflicts
             if (!scheduler.isDateRangeAvailable(startDate, endDate, newResource, eventRecord)) {
               console.warn(`Blocking drop: Resource ${newResource?.name} is busy at that time`);
-              scheduler.toast?.('That resource is already busy for that time range.');
+              showToast('That resource is already busy for that time range.');
               // Cancel the drop operation
               context.valid = false;
               return false;
@@ -487,7 +552,7 @@
             }
           }
 
-          scheduler.toast?.(`${placed} event(s) scheduled`);
+          showToast(`${placed} event(s) scheduled`);
         }
 
         // Pack Unscheduled button will be added to toolbar later
@@ -546,7 +611,7 @@
                 // Check if today is within the scheduler's time range
                 if (today >= scheduler.startDate && today <= scheduler.endDate) {
                   scheduler.scrollToDate(today, { block : 'center', animate: true });
-                  scheduler.toast?.('Scrolled to today');
+                  showToast('Scrolled to today');
                 } else if (events.length > 0) {
                   // If today is outside range, scroll to the first event
                   const firstEvent = events.reduce((earliest, event) => {
@@ -556,11 +621,11 @@
                   
                   if (firstEvent?.startDate) {
                     scheduler.scrollToDate(firstEvent.startDate, { block : 'center', animate: true });
-                    scheduler.toast?.('Scrolled to first scheduled event');
+                    showToast('Scrolled to first scheduled event');
                   }
                 } else {
                   scheduler.scrollToDate(scheduler.startDate, { block : 'center', animate: true });
-                  scheduler.toast?.('Scrolled to schedule start');
+                  showToast('Scrolled to schedule start');
                 }
               }
             },
@@ -568,42 +633,54 @@
               text: 'Fit to View', 
               tooltip: 'Zoom to show all events',
               onAction: () => {
-                // Get all events with dates
-                const events = scheduler.eventStore.records.filter(e => e.startDate && e.endDate);
-                
-                if (events.length === 0) {
-                  scheduler.toast?.('No scheduled events to fit');
-                  return;
-                }
-                
-                // Find the date range of all events
-                let minDate = null;
-                let maxDate = null;
-                
-                events.forEach(event => {
-                  if (!minDate || event.startDate < minDate) {
-                    minDate = event.startDate;
-                  }
-                  if (!maxDate || event.endDate > maxDate) {
-                    maxDate = event.endDate;
-                  }
-                });
-                
-                if (minDate && maxDate) {
-                  // Add some padding (5% on each side)
-                  const range = maxDate - minDate;
-                  const padding = range * 0.05;
-                  const paddedStart = new Date(minDate.getTime() - padding);
-                  const paddedEnd = new Date(maxDate.getTime() + padding);
+                try {
+                  // Get all events with dates
+                  const events = scheduler.eventStore.records.filter(e => e.startDate && e.endDate);
                   
-                  // Use zoomToSpan to fit the date range in view
-                  scheduler.zoomToSpan({
-                    startDate: paddedStart,
-                    endDate: paddedEnd,
-                    centerDate: new Date((minDate.getTime() + maxDate.getTime()) / 2)
+                  if (events.length === 0) {
+                    showToast('No scheduled events to fit');
+                    return;
+                  }
+                  
+                  // Find the date range of all events
+                  let minDate = null;
+                  let maxDate = null;
+                  
+                  events.forEach(event => {
+                    if (!minDate || event.startDate < minDate) {
+                      minDate = event.startDate;
+                    }
+                    if (!maxDate || event.endDate > maxDate) {
+                      maxDate = event.endDate;
+                    }
                   });
                   
-                  scheduler.toast?.('Zoomed to fit all events');
+                  if (minDate && maxDate) {
+                    // Add some padding (10% on each side)
+                    const range = maxDate - minDate;
+                    const padding = range * 0.1;
+                    const paddedStart = new Date(minDate.getTime() - padding);
+                    const paddedEnd = new Date(maxDate.getTime() + padding);
+                    
+                    // Try to use zoomToSpan if available, otherwise fall back to adjusting start/end dates
+                    if (scheduler.zoomToSpan) {
+                      scheduler.zoomToSpan({
+                        startDate: paddedStart,
+                        endDate: paddedEnd
+                      });
+                    } else {
+                      // Fallback: adjust scheduler's visible range
+                      scheduler.setTimeSpan(paddedStart, paddedEnd);
+                      // Center the view on the midpoint
+                      const centerDate = new Date((minDate.getTime() + maxDate.getTime()) / 2);
+                      scheduler.scrollToDate(centerDate, { block : 'center', animate: false });
+                    }
+                    
+                    showToast('Zoomed to fit all events');
+                  }
+                } catch (e) {
+                  console.warn('Fit to View error:', e);
+                  showToast('Unable to fit to view');
                 }
               }
             },
@@ -611,7 +688,7 @@
             { type: 'button', text: '–', tooltip: 'Zoom out', onAction: () => scheduler.zoomOut() },
             { type: 'slider', width: 120, min: 0, max: 20,
               value: 10,
-              tooltip: 'Zoom level',
+              showTooltip: false,  // Disable tooltip for slider to avoid initialization error
               onChange: ({ value }) => scheduler.zoomToLevel(value)
             },
             { type: 'button', text: '+', tooltip: 'Zoom in', onAction: () => scheduler.zoomIn() },
@@ -621,10 +698,10 @@
               text: 'Save', 
               cls: 'b-raised b-green', 
               onAction: () => saveManual()
-                .then(() => scheduler.toast?.('Changes saved successfully'))
+                .then(() => showToast('Changes saved successfully'))
                 .catch((e) => {
                   console.error('Save failed:', e);
-                  scheduler.toast?.('Save failed: ' + e.message);
+                  showToast('Save failed: ' + e.message);
                 }) 
             },
             { type: 'button', text: 'Undo', onAction: () => scheduler.project.stm.undo() },
@@ -638,8 +715,13 @@
         window.packUnscheduled = packUnscheduled;
         window.saveManual = saveManual;
       } catch (e) {
-        console.error(e);
-        alert('Failed to initialize scheduler: ' + (e && e.message || e));
+        if (e && e.message) {
+          console.error('Scheduler initialization error:', e.message);
+          alert('Failed to initialize scheduler: ' + e.message);
+        } else if (e) {
+          console.error('Scheduler initialization error:', e);
+          // Don't show alert for minor/empty errors
+        }
       } finally {
         loading?.classList.add('hidden');
       }
