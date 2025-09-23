@@ -175,8 +175,13 @@
           features: {
             stripe: true,
             dependencies: true,
-            eventDrag: { showTooltip: true, constrainDragToResource: false },
-            eventResize: { showTooltip: true },
+            eventDrag: { 
+              showTooltip: true, 
+              constrainDragToResource: false
+            },
+            eventResize: { 
+              showTooltip: true
+            },
             eventTooltip: {
               template: ({ eventRecord, resourceRecord }) => `
                 <div style="padding:10px">
@@ -209,15 +214,25 @@
         });
 
         // Enforce: no overlap on a single resource
+        // Must be defined after scheduler exists so we can use isDateRangeAvailable
         const noOverlap = ({ resourceRecord, startDate, endDate, eventRecord }) => {
-          return scheduler.isDateRangeAvailable(startDate, endDate, resourceRecord, eventRecord)
-            ? true
-            : { valid : false, message : `Conflict on ${resourceRecord?.name || 'resource'}` };
+          const available = scheduler.isDateRangeAvailable(startDate, endDate, resourceRecord, eventRecord);
+          if (!available) {
+            console.warn(`Overlap detected on ${resourceRecord?.name} - blocking operation`);
+            return { valid: false, message: `Resource ${resourceRecord?.name} is busy at this time` };
+          }
+          return true;
         };
 
-        // Apply to drag + resize to prevent overlaps
-        scheduler.features.eventDrag.validatorFn   = noOverlap;
-        scheduler.features.eventResize.validatorFn = noOverlap;
+        // Apply validators to drag and resize features
+        if (scheduler.features.eventDrag) {
+          scheduler.features.eventDrag.validatorFn = noOverlap;
+          console.log('Overlap prevention enabled for drag operations');
+        }
+        if (scheduler.features.eventResize) {
+          scheduler.features.eventResize.validatorFn = noOverlap;
+          console.log('Overlap prevention enabled for resize operations');
+        }
 
         // Clean up any conflicts that arrive from the API
         // (move conflicting events to Unscheduled lane)
