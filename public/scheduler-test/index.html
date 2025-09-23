@@ -208,8 +208,56 @@
           }
         });
 
+        // Enforce: no overlap on a single resource
+        const noOverlap = ({ resourceRecord, startDate, endDate, eventRecord }) => {
+          return scheduler.isDateRangeAvailable(startDate, endDate, resourceRecord, eventRecord)
+            ? true
+            : { valid : false, message : `Conflict on ${resourceRecord?.name || 'resource'}` };
+        };
+
+        // Apply to drag + resize to prevent overlaps
+        scheduler.features.eventDrag.validatorFn   = noOverlap;
+        scheduler.features.eventResize.validatorFn = noOverlap;
+
+        // Clean up any conflicts that arrive from the API
+        // (move conflicting events to Unscheduled lane)
+        const cleanupOverlaps = () => {
+          const p = scheduler.project;
+          const byRes = new Map();
+
+          p.assignmentStore.forEach(a => {
+            const ev = a.event, res = a.resource;
+            if (!ev || !res || !ev.startDate || !ev.endDate) return;
+
+            const key = res.id;
+            byRes.set(key, (byRes.get(key) || []).concat(ev));
+          });
+
+          // Simple check: if any overlap, unassign the later one
+          for (const [rid, evs] of byRes) {
+            evs.sort((a,b) => a.startDate - b.startDate);
+            for (let i = 1; i < evs.length; i++) {
+              const prev = evs[i-1], curr = evs[i];
+              if (prev.endDate > curr.startDate) {
+                // Move to Unscheduled lane by removing assignment
+                const asg = p.assignmentStore.find(r => r.eventId === curr.id && r.resourceId === rid);
+                if (asg) {
+                  p.assignmentStore.remove(asg);
+                  curr.isUnscheduled = true;
+                  curr.eventColor = '#808080';
+                  console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
+                }
+              }
+            }
+          }
+        };
+
+        // Run cleanup after a slight delay to ensure stores are populated
+        setTimeout(cleanupOverlaps, 100);
+
         // Expose for quick debugging
         window.scheduler = scheduler;
+        window.cleanupOverlaps = cleanupOverlaps;
       } catch (e) {
         console.error(e);
         alert('Failed to initialize scheduler: ' + (e && e.message || e));
