@@ -102,6 +102,7 @@ export default function HomePage() {
   const isMobile = useDeviceType() === 'mobile';
   const [selectedDashboard, setSelectedDashboard] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('actions');
+  const [isDashboardCollapsed, setIsDashboardCollapsed] = useState(false);
   const [workWithAgentModal, setWorkWithAgentModal] = useState<{
     isOpen: boolean;
     recommendation: ActionRecommendation | null;
@@ -234,11 +235,33 @@ export default function HomePage() {
               </SelectContent>
             </Select>
           </div>
+          
+          {/* Dashboard Toggle Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setIsDashboardCollapsed(!isDashboardCollapsed)}
+            className="gap-2"
+            data-testid="dashboard-toggle-button"
+          >
+            {isDashboardCollapsed ? (
+              <>
+                <Eye className="w-4 h-4" />
+                Show Dashboard
+              </>
+            ) : (
+              <>
+                <Archive className="w-4 h-4" />
+                Hide Dashboard
+              </>
+            )}
+          </Button>
         </div>
       </div>
 
-      {/* Dashboard Preview - 1/3 of vertical space */}
-      <div className={`h-1/3 ${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20 overflow-auto`}>
+      {/* Dashboard Preview - Collapsible */}
+      {!isDashboardCollapsed && (
+        <div className={`h-1/3 ${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20 overflow-auto`}>
         <Card className="h-full">
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-lg">
@@ -312,10 +335,11 @@ export default function HomePage() {
             )}
           </CardContent>
         </Card>
-      </div>
+        </div>
+      )}
 
-      {/* Tabbed Interface - 2/3 of vertical space */}
-      <div className="h-2/3 overflow-hidden">
+      {/* Tabbed Interface - Adaptive height */}
+      <div className={`${isDashboardCollapsed ? 'flex-1' : 'h-2/3'} overflow-hidden`}>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col" data-testid="main-tabs">
           <div className={`border-b ${isMobile ? 'px-4' : 'px-6'}`}>
             <TabsList className="grid w-full grid-cols-4">
