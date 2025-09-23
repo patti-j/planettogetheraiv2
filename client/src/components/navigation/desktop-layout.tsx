@@ -727,10 +727,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0 relative group"
                       data-testid="button-minimize-floating-ai"
                     >
-                      {(() => {
-                        const IconComponent = getAgentIcon(selectedFloatingAgent);
-                        return <IconComponent className="w-4 h-4" />;
-                      })()}
+                      <Sparkles className="w-4 h-4" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">
