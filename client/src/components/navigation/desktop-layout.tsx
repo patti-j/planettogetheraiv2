@@ -34,6 +34,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [isFloatingBubbleMinimized, setIsFloatingBubbleMinimized] = useState(false);
+  const floatingInputRef = useRef<HTMLInputElement>(null);
   
   // Panel force-show state for small screens
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -361,6 +362,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isFullScreen, toggleFullScreen]);
 
+  // Focus the floating input when the bubble expands
+  useEffect(() => {
+    if (!isFloatingBubbleMinimized && floatingInputRef.current) {
+      floatingInputRef.current.focus();
+    }
+  }, [isFloatingBubbleMinimized]);
+
   // Determine if panels should be hidden - only hide on actual mobile devices (touch + small screen)
   // Never hide panels on desktop, regardless of window size
   const isTouchDevice = typeof window !== 'undefined' && 'ontouchstart' in window;
@@ -673,6 +681,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 <Sparkles className="w-4 h-4" />
               </Button>
               <Input
+                ref={floatingInputRef}
                 placeholder="Ask anything..."
                 value={floatingPrompt}
                 onChange={(e) => setFloatingPrompt(e.target.value)}
