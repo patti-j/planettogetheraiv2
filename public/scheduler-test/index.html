@@ -288,7 +288,12 @@
             resourceStore:   { data: resourceRows },
             eventStore:      { data: events },
             assignmentStore: { data: assignments },
-            dependencyStore: { data: dependencies }
+            dependencyStore: { data: dependencies },
+            // Enable state tracking manager for undo/redo
+            stm: {
+              autoRecord: true,
+              disabled: false
+            }
           },
           features: {
             stripe: true,
@@ -594,8 +599,12 @@
           p.dependencyStore.commit();
         }
 
-        // Step 4: Enable Undo/Redo (safety net)
-        scheduler.project.stm.enable();
+        // Step 4: Enable Undo/Redo (ensure STM is properly configured)
+        // The STM is already enabled in project config, but ensure it's active
+        if (!scheduler.project.stm.enabled) {
+          scheduler.project.stm.enable();
+        }
+        console.log('STM enabled:', scheduler.project.stm.enabled);
         
         // Set all toolbar items at once to avoid separator issues
         scheduler.tbar = {
@@ -604,7 +613,7 @@
             { type: 'button', 
               text: 'Today', 
               tooltip: 'Scroll to today or first event',
-              onAction: () => {
+              onClick: () => {
                 const today = new Date();
                 const events = scheduler.eventStore.records;
                 
@@ -632,7 +641,15 @@
             { type: 'button', 
               text: 'Fit to View', 
               tooltip: 'Zoom to show all events',
-              onAction: () => {
+              onClick: () => {
+                // Use built-in zoomToFit if available  
+                if (scheduler.zoomToFit) {
+                  scheduler.zoomToFit({ animate: true });
+                  showToast('Zoomed to fit all events');
+                  return;
+                }
+                
+                // Fallback implementation if zoomToFit not available
                 try {
                   // Get all events with dates
                   const events = scheduler.eventStore.records.filter(e => e.startDate && e.endDate);
@@ -685,30 +702,61 @@
               }
             },
             '|',
-            { type: 'button', text: '–', tooltip: 'Zoom out', onAction: () => scheduler.zoomOut() },
+            { type: 'button', text: '–', tooltip: 'Zoom out', onClick: () => scheduler.zoomOut() },
             { type: 'slider', width: 120, min: 0, max: 20,
               value: 10,
               showTooltip: false,  // Disable tooltip for slider to avoid initialization error
               onChange: ({ value }) => scheduler.zoomToLevel(value)
             },
-            { type: 'button', text: '+', tooltip: 'Zoom in', onAction: () => scheduler.zoomIn() },
+            { type: 'button', text: '+', tooltip: 'Zoom in', onClick: () => scheduler.zoomIn() },
             '|',  // Use pipe separator instead of object separator
-            { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onAction: packUnscheduled },
+            { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onClick: packUnscheduled },
             { type: 'button', 
               text: 'Save', 
               cls: 'b-raised b-green', 
-              onAction: () => saveManual()
+              onClick: () => saveManual()
                 .then(() => showToast('Changes saved successfully'))
                 .catch((e) => {
                   console.error('Save failed:', e);
                   showToast('Save failed: ' + e.message);
                 }) 
             },
-            { type: 'button', text: 'Undo', onAction: () => scheduler.project.stm.undo() },
-            { type: 'button', text: 'Redo', onAction: () => scheduler.project.stm.redo() }
+            { type: 'button', 
+              text: 'Undo', 
+              tooltip: 'Undo last change',
+              onClick: () => {
+                const stm = scheduler.project.stm;
+                if (stm.canUndo) {
+                  console.log('Undoing last action...');
+                  stm.undo();
+                  showToast('Undone');
+                } else {
+                  showToast('Nothing to undo');
+                }
+              }
+            },
+            { type: 'button', 
+              text: 'Redo',
+              tooltip: 'Redo last undone change', 
+              onClick: () => {
+                const stm = scheduler.project.stm;
+                if (stm.canRedo) {
+                  console.log('Redoing last action...');
+                  stm.redo();
+                  showToast('Redone');
+                } else {
+                  showToast('Nothing to redo');
+                }
+              }
+            }
           ]
         };
 
+        // Monitor STM state changes for debugging
+        scheduler.project.stm.on('recordingstop', () => {
+          console.log('STM recorded action, can undo:', scheduler.project.stm.canUndo);
+        });
+        
         // Expose for quick debugging
         window.scheduler = scheduler;
         window.cleanupOverlaps = cleanupOverlaps;
