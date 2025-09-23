@@ -2,6 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 
+// Add link to CSS file as fallback
+if (typeof document !== 'undefined' && !document.querySelector('link[href*="schedulerpro.classic-light"]')) {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = '/schedulerpro.classic-light.css';
+  document.head.appendChild(link);
+}
+
 // Type definitions
 interface Resource {
   id: string | number;
@@ -466,7 +474,8 @@ const BryntumScheduler: React.FC = () => {
     rowHeight: 50,
     barMargin: 5,
     autoHeight: false,
-    minHeight: 600,
+    height: '100%',
+    minHeight: 800,
     project: {
       resourceStore: { data: resources },
       eventStore: { data: events },
@@ -871,28 +880,66 @@ const BryntumScheduler: React.FC = () => {
   }
 
   return (
-    <div className="h-screen flex flex-col">
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <ToastContainer toasts={toasts} />
-      <div className="flex-1 overflow-auto pt-scheduler-root">
-        <BryntumSchedulerPro ref={schedulerRef} {...schedulerConfig} />
+      <div 
+        className="pt-scheduler-root"
+        style={{ 
+          flex: 1, 
+          overflow: 'auto',
+          height: '100%',
+          minHeight: '800px',
+          position: 'relative'
+        }}
+      >
+        <BryntumSchedulerPro 
+          ref={schedulerRef} 
+          {...schedulerConfig}
+        />
       </div>
       <style>{`
+        /* Reset any transforms and ensure proper layout */
         .pt-scheduler-root { 
-          height: 100%; 
           transform: none !important; 
           zoom: normal !important;
-          min-height: 800px;
         }
+        
+        /* Ensure scheduler takes full height */
+        .pt-scheduler-root .b-schedulerpro,
+        .pt-scheduler-root .b-scheduler,
+        .pt-scheduler-root .b-grid-panel,
+        .pt-scheduler-root .b-grid-subgrid,
+        .pt-scheduler-root .b-grid-body-container,
+        .pt-scheduler-root .b-grid-body {
+          height: 100% !important;
+          min-height: 100% !important;
+        }
+        
+        /* Grid cell styling for proper alignment */
         .pt-scheduler-root .b-grid,
         .pt-scheduler-root .b-grid-body,
         .pt-scheduler-root .b-grid-row,
         .pt-scheduler-root .b-grid-cell,
         .pt-scheduler-root .b-sch-timeaxis-cell { 
-          font-size: 13px; 
-          line-height: 1.2; 
+          font-size: 13px !important; 
+          line-height: 1.2 !important; 
         }
-        .b-schedulerpro { 
-          min-height: 100%; 
+        
+        /* Ensure rows align with timeline */
+        .pt-scheduler-root .b-sch-timeaxis-cell,
+        .pt-scheduler-root .b-grid-cell {
+          box-sizing: border-box;
+        }
+        
+        /* Fix vertical alignment of events */
+        .pt-scheduler-root .b-sch-event-wrap {
+          align-items: center;
+        }
+        
+        /* Ensure proper scrollbar behavior */
+        .pt-scheduler-root .b-grid-vertical-scroller,
+        .pt-scheduler-root .b-grid-horizontal-scroller {
+          z-index: 1;
         }
       `}</style>
     </div>
