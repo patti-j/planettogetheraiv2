@@ -2146,3 +2146,54 @@ button[role="switch"][data-state="checked"] {
 .dark button[role="switch"][data-state="checked"] {
   background-color: rgb(59 130 246) !important; /* blue-500 */
 }
+
+/* DHTMLX Gantt Scheduler Styles */
+.gantt-container {
+  width: 100%;
+  height: 600px;
+  position: relative;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+/* Force operation task bars to be visible */
+.gantt_task_line.operation-task,
+.gantt_task_line.visible-bar {
+  background-color: #2196F3 !important;
+  border: 1px solid #1976D2 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
+  height: 20px !important;
+  position: absolute !important;
+}
+
+/* Ensure operations are visible even when nested */
+.gantt_task_line[task_id] {
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Resource row styling - transparent background */
+.gantt_task_line.resource-row,
+.gantt_task_line[task_id^="resource_"] {
+  background-color: transparent !important;
+  border: none !important;
+}
+
+/* Ensure task content is visible */
+.gantt_task_content {
+  color: white !important;
+  font-size: 11px !important;
+  padding: 2px 5px !important;
+}
+
+/* Make sure gantt container displays tasks */
+.gantt_task {
+  opacity: 1 !important;
+}
+
+.gantt_bars_area {
+  opacity: 1 !important;
+}

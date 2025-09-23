@@ -45,6 +45,10 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     gantt.config.duration_unit = "hour";
     gantt.config.work_time = true;
     
+    // Set initial date range to Aug 2025 (where our operations are)
+    gantt.config.start_date = new Date(2025, 7, 15); // Aug 15, 2025
+    gantt.config.end_date = new Date(2025, 8, 30); // Sep 30, 2025
+    
     // Configure scales (new format to avoid deprecation warning)
     gantt.config.scales = [
       {unit: "day", step: 1, format: "%d %M"},
@@ -98,6 +102,14 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
       return task.text;
     };
     
+    // Force task bars to be visible with proper styling
+    gantt.templates.task_class = function(start, end, task) {
+      if (task.type === 'project') {
+        return 'resource-row';
+      }
+      return 'operation-task visible-bar';
+    };
+    
     // Configure resource row colors
     gantt.templates.grid_row_class = function(start, end, task) {
       if (task.$level === 0) {
@@ -114,7 +126,7 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     gantt.config.drag_progress = false;
     
     // Show project tasks (resources) as bars across timeline
-    gantt.config.show_project_in_taskbar = true;
+    gantt.config.show_project_in_taskbar = false; // Disable resource bars to see operations clearly
     
     // Initialize Gantt
     gantt.init(ganttContainer);
@@ -183,14 +195,21 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
       resourceAssignmentCount.set(resourceId, (resourceAssignmentCount.get(resourceId) || 0) + 1);
       
       if (parentId) {
+        const startDate = op.scheduledStart ? new Date(op.scheduledStart) : new Date();
+        const endDate = op.scheduledEnd ? new Date(op.scheduledEnd) : new Date(startDate.getTime() + (op.duration || 4) * 60 * 60 * 1000);
+        
         tasks.push({
           id: op.id || op.operationId,
           text: op.operationName || op.name || 'Unnamed Operation',
-          start_date: op.scheduledStart ? new Date(op.scheduledStart) : new Date(),
+          start_date: startDate,
+          end_date: endDate,
           duration: op.duration || op.cycleHrs || 1,
           progress: op.percentFinished ? op.percentFinished / 100 : 0,
           parent: parentId,
-          color: op.color || '#2196F3'
+          type: "task", // Explicitly set as task type
+          render: "bar", // Render as a bar on timeline
+          color: op.color || '#2196F3',
+          bar_height: 20 // Set bar height for visibility
         });
       }
     });
@@ -258,25 +277,44 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
       });
     }, 100);
 
-    // Calculate date range based on operations
+    // Calculate date range based on operations and ensure proper display
     const operations = Array.isArray(operationsData) ? operationsData : [];
     if (operations.length > 0) {
-      const dates = operations
-        .map((op: any) => op.scheduledStart ? new Date(op.scheduledStart) : null)
-        .filter(Boolean) as Date[];
+      // Get dates from operations that have scheduled dates
+      const scheduledOps = operations.filter((op: any) => op.scheduledStart);
       
-      if (dates.length > 0) {
+      if (scheduledOps.length > 0) {
+        // Parse the dates from the operations
+        const dates = scheduledOps.map((op: any) => new Date(op.scheduledStart));
+        
         const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
         const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
         
-        // Add buffer for better visibility
-        minDate.setDate(minDate.getDate() - 1);
-        maxDate.setDate(maxDate.getDate() + 2);
+        console.log('📅 Operation date range:', { 
+          minDate: minDate.toISOString(), 
+          maxDate: maxDate.toISOString(),
+          totalOps: scheduledOps.length
+        });
+        
+        // Add buffer for better visibility - extend range
+        minDate.setDate(minDate.getDate() - 5);
+        maxDate.setDate(maxDate.getDate() + 10);
         
         // Set the display range
         gantt.config.start_date = minDate;
         gantt.config.end_date = maxDate;
-        // Don't call gantt.render() here - it's already rendered
+        gantt.config.show_tasks_outside_timescale = false;
+        
+        // Force the gantt to show the correct date range
+        setTimeout(() => {
+          gantt.render();
+          // Scroll to show the first operation
+          if (scheduledOps[0]?.scheduledStart) {
+            const firstOpDate = new Date(scheduledOps[0].scheduledStart);
+            gantt.showDate(firstOpDate);
+            console.log('📍 Scrolled to first operation date:', firstOpDate.toISOString());
+          }
+        }, 300);
       }
     }
     
