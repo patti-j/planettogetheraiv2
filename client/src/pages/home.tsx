@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { WorkWithAgentModal } from '@/components/WorkWithAgentModal';
 import { 
   Sparkles, 
   Activity, 
@@ -102,6 +103,18 @@ export default function HomePage() {
   const [selectedDashboard, setSelectedDashboard] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('actions');
   const [isDashboardCollapsed, setIsDashboardCollapsed] = useState(false);
+  const [workWithAgentModal, setWorkWithAgentModal] = useState<{
+    isOpen: boolean;
+    recommendation: ActionRecommendation | null;
+  }>({ isOpen: false, recommendation: null });
+
+  const openWorkWithAgent = (recommendation: ActionRecommendation) => {
+    setWorkWithAgentModal({ isOpen: true, recommendation });
+  };
+
+  const closeWorkWithAgent = () => {
+    setWorkWithAgentModal({ isOpen: false, recommendation: null });
+  };
 
   // Fetch available dashboards
   const { data: dashboards = [] } = useQuery<DashboardItem[]>({
@@ -503,6 +516,7 @@ export default function HomePage() {
                             variant="outline" 
                             size="sm" 
                             className="gap-2"
+                            onClick={() => openWorkWithAgent(recommendation)}
                             data-testid={`work-with-agent-${recommendation.id}`}
                           >
                             <Bot className="w-4 h-4" />
@@ -924,6 +938,13 @@ export default function HomePage() {
           </div>
         </Tabs>
       </div>
+
+      {/* Work with Agent Modal */}
+      <WorkWithAgentModal
+        isOpen={workWithAgentModal.isOpen}
+        onClose={closeWorkWithAgent}
+        recommendation={workWithAgentModal.recommendation}
+      />
     </div>
   );
 }
