@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { WorkWithAgentModal } from '@/components/WorkWithAgentModal';
 import { 
   Sparkles, 
@@ -19,6 +20,7 @@ import {
   Users,
   Eye,
   MoreHorizontal,
+  ChevronDown,
   Filter,
   Calendar,
   Zap,
@@ -495,23 +497,41 @@ export default function HomePage() {
                       </CardHeader>
                       <CardContent className="pt-0">
                         <div className="flex flex-wrap gap-2">
-                          <Button 
-                            size="sm" 
-                            className="gap-2"
-                            data-testid={`resolve-now-${recommendation.id}`}
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                            Resolve Now
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm" 
-                            className="gap-2"
-                            data-testid={`show-plan-${recommendation.id}`}
-                          >
-                            <Eye className="w-4 h-4" />
-                            Show Plan First
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                size="sm" 
+                                className="gap-2"
+                                data-testid={`resolve-dropdown-${recommendation.id}`}
+                              >
+                                <CheckCircle className="w-4 h-4" />
+                                Resolve
+                                <ChevronDown className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start" className="w-64">
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                data-testid={`resolve-now-${recommendation.id}`}
+                              >
+                                <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Resolve Now</div>
+                                  <div className="text-sm text-muted-foreground">Execute the action immediately</div>
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                data-testid={`show-plan-${recommendation.id}`}
+                              >
+                                <Eye className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Show Plan First</div>
+                                  <div className="text-sm text-muted-foreground">Review implementation steps</div>
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                           <Button 
                             variant="outline" 
                             size="sm" 
