@@ -42,13 +42,15 @@ export default function ProductionSchedulerReact() {
       console.log('Sample resource:', resArray[0]);
     }
 
-    // Transform resources - use resource_id as string ID from PT database
-    const transformedResources = resArray.map((resource: any) => ({
-      id: resource.id || resource.resource_id, // Use resource_id from PT database
-      name: resource.name || resource.resource_name || `Resource ${resource.id}`,
-      type: resource.resource_type || 'equipment',
-      capacity: resource.capacity || resource.online_hrs || 100
-    }));
+    // Transform resources - ensure ID is string for consistent matching
+    const transformedResources = resArray
+      .map((resource: any) => ({
+        id: String(resource.id || resource.resource_id), // Ensure ID is string
+        name: resource.name || resource.resource_name || `Resource ${resource.id}`,
+        type: resource.resource_type || 'equipment',
+        capacity: resource.capacity || resource.online_hrs || 100
+      }))
+      .sort((a, b) => Number(a.id) - Number(b.id)); // Sort by ID numerically, not alphabetically
 
     // Transform operations to events
     const transformedEvents: any[] = [];
@@ -79,7 +81,7 @@ export default function ProductionSchedulerReact() {
           transformedAssignments.push({
             id: assignmentId++,
             eventId: op.id || op.operation_id,  // Must be eventId (not event)
-            resourceId: resourceId  // Must be resourceId (not resource)
+            resourceId: String(resourceId)  // Ensure resourceId is string for matching
           });
         }
       }
@@ -104,6 +106,13 @@ export default function ProductionSchedulerReact() {
       assignments: transformedAssignments.length,
       dependencies: transformedDependencies.length
     });
+    
+    // Debug resource ID mapping
+    const resourceIds = new Set(transformedResources.map(r => String(r.id)));
+    const assignmentResourceIds = new Set(transformedAssignments.map(a => String(a.resourceId)));
+    console.log('Resource IDs available:', Array.from(resourceIds).sort());
+    console.log('Resource IDs in assignments:', Array.from(assignmentResourceIds).sort());
+    console.log('Mismatched resource IDs:', Array.from(assignmentResourceIds).filter(id => !resourceIds.has(id)));
 
     return {
       resources: transformedResources,
