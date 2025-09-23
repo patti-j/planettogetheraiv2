@@ -113,13 +113,15 @@
           name: op.name ?? op.operationName ?? `Op ${i + 1}`,
           startDate: start || null,
           endDate: end || null,
-          duration: op.duration,
+          duration: Math.min(op.duration || 4, 8), // Cap at 8 hours, default to 4
           durationUnit: op.durationUnit || 'hour',
           percentDone: op.percent_finished ?? op.percent_done ?? op.percentDone ?? 0,
           isUnscheduled: false,
           eventColor: opColor(op.name || op.operationName),
           draggable: true,
-          resizable: true
+          resizable: true,
+          jobName: op.jobName || op.job_name || '',
+          jobId: op.jobId || op.job_id || ''
         });
       }
 
@@ -186,6 +188,8 @@
               template: ({ eventRecord, resourceRecord }) => `
                 <div style="padding:10px">
                   <strong>${eventRecord.name}</strong><br>
+                  ${eventRecord.jobName ? `Job: <strong>${eventRecord.jobName}</strong><br>` : ''}
+                  ${eventRecord.jobId ? `Job #: ${eventRecord.jobId}<br>` : ''}
                   Resource: <em>${resourceRecord?.name ?? '—'}</em><br>
                   ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
                   ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || 'hour'}<br>` : ''}
