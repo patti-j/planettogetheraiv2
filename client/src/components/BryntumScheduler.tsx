@@ -770,6 +770,11 @@ const BryntumScheduler: React.FC = () => {
 
         // Validate assignment changes
         scheduler.project.assignmentStore.on('beforeAdd', ({ record }: any) => {
+          // Add null check for record before accessing properties
+          if (!record || !record.resourceId || !record.eventId) {
+            return;
+          }
+          
           const resource = scheduler.resourceStore.getById(record.resourceId);
           const event = scheduler.eventStore.getById(record.eventId);
 
