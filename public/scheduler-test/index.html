@@ -312,18 +312,39 @@
               showTooltip: true
             },
             eventTooltip: {
-              template: ({ eventRecord, resourceRecord }) => `
-                <div style="padding:10px">
-                  <strong>${eventRecord.name}</strong><br>
-                  ${eventRecord.jobName ? `Job: <strong>${eventRecord.jobName}</strong><br>` : ''}
-                  ${eventRecord.jobId ? `Job #: ${eventRecord.jobId}<br>` : ''}
-                  Resource: <em>${resourceRecord?.name ?? '—'}</em><br>
-                  ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
-                  ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || 'hour'}<br>` : ''}
-                  Progress: ${eventRecord.percentDone ?? 0}%
-                  ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠ Drag to a resource to schedule</span>' : ''}
-                </div>
-              `
+              template: ({ eventRecord, resourceRecord }) => {
+                // Calculate actual duration from dates
+                let durationText = '';
+                if (eventRecord.startDate && eventRecord.endDate) {
+                  const durationMs = eventRecord.endDate - eventRecord.startDate;
+                  const hours = Math.round(durationMs / (1000 * 60 * 60));
+                  if (hours < 24) {
+                    durationText = `Duration: ${hours} hour${hours !== 1 ? 's' : ''}`;
+                  } else {
+                    const days = Math.round(hours / 24);
+                    const remainingHours = hours % 24;
+                    if (remainingHours > 0) {
+                      durationText = `Duration: ${days} day${days !== 1 ? 's' : ''}, ${remainingHours} hour${remainingHours !== 1 ? 's' : ''}`;
+                    } else {
+                      durationText = `Duration: ${days} day${days !== 1 ? 's' : ''}`;
+                    }
+                  }
+                }
+                
+                return `
+                  <div style="padding:10px">
+                    <strong>${eventRecord.name}</strong><br>
+                    ${eventRecord.jobName ? `Job: <strong>${eventRecord.jobName}</strong><br>` : ''}
+                    ${eventRecord.jobId ? `Job #: ${eventRecord.jobId}<br>` : ''}
+                    Resource: <em>${resourceRecord?.name ?? '—'}</em><br>
+                    ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
+                    ${durationText ? `${durationText}<br>` : ''}
+                    ${eventRecord.endDate ? `End: ${eventRecord.endDate.toLocaleString()}<br>` : ''}
+                    Progress: ${eventRecord.percentDone ?? 0}%
+                    ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠ Drag to a resource to schedule</span>' : ''}
+                  </div>
+                `;
+              }
             },
             timeRanges: { showCurrentTimeLine: true },
             percentBar: true,
