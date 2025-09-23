@@ -536,13 +536,85 @@
         scheduler.tbar = {
           items: [
             '->',
-            { type: 'button', text: 'Today', onAction: () => scheduler.scrollToDate(new Date(), { block : 'center' }) },
-            { type: 'button', text: '–', onAction: () => scheduler.zoomOut() },
+            { type: 'button', 
+              text: 'Today', 
+              tooltip: 'Scroll to today or first event',
+              onAction: () => {
+                const today = new Date();
+                const events = scheduler.eventStore.records;
+                
+                // Check if today is within the scheduler's time range
+                if (today >= scheduler.startDate && today <= scheduler.endDate) {
+                  scheduler.scrollToDate(today, { block : 'center', animate: true });
+                  scheduler.toast?.('Scrolled to today');
+                } else if (events.length > 0) {
+                  // If today is outside range, scroll to the first event
+                  const firstEvent = events.reduce((earliest, event) => {
+                    if (!event.startDate) return earliest;
+                    return !earliest || event.startDate < earliest.startDate ? event : earliest;
+                  }, null);
+                  
+                  if (firstEvent?.startDate) {
+                    scheduler.scrollToDate(firstEvent.startDate, { block : 'center', animate: true });
+                    scheduler.toast?.('Scrolled to first scheduled event');
+                  }
+                } else {
+                  scheduler.scrollToDate(scheduler.startDate, { block : 'center', animate: true });
+                  scheduler.toast?.('Scrolled to schedule start');
+                }
+              }
+            },
+            { type: 'button', 
+              text: 'Fit to View', 
+              tooltip: 'Zoom to show all events',
+              onAction: () => {
+                // Get all events with dates
+                const events = scheduler.eventStore.records.filter(e => e.startDate && e.endDate);
+                
+                if (events.length === 0) {
+                  scheduler.toast?.('No scheduled events to fit');
+                  return;
+                }
+                
+                // Find the date range of all events
+                let minDate = null;
+                let maxDate = null;
+                
+                events.forEach(event => {
+                  if (!minDate || event.startDate < minDate) {
+                    minDate = event.startDate;
+                  }
+                  if (!maxDate || event.endDate > maxDate) {
+                    maxDate = event.endDate;
+                  }
+                });
+                
+                if (minDate && maxDate) {
+                  // Add some padding (5% on each side)
+                  const range = maxDate - minDate;
+                  const padding = range * 0.05;
+                  const paddedStart = new Date(minDate.getTime() - padding);
+                  const paddedEnd = new Date(maxDate.getTime() + padding);
+                  
+                  // Use zoomToSpan to fit the date range in view
+                  scheduler.zoomToSpan({
+                    startDate: paddedStart,
+                    endDate: paddedEnd,
+                    centerDate: new Date((minDate.getTime() + maxDate.getTime()) / 2)
+                  });
+                  
+                  scheduler.toast?.('Zoomed to fit all events');
+                }
+              }
+            },
+            '|',
+            { type: 'button', text: '–', tooltip: 'Zoom out', onAction: () => scheduler.zoomOut() },
             { type: 'slider', width: 120, min: 0, max: 20,
               value: 10,
+              tooltip: 'Zoom level',
               onChange: ({ value }) => scheduler.zoomToLevel(value)
             },
-            { type: 'button', text: '+', onAction: () => scheduler.zoomIn() },
+            { type: 'button', text: '+', tooltip: 'Zoom in', onAction: () => scheduler.zoomIn() },
             '|',  // Use pipe separator instead of object separator
             { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onAction: packUnscheduled },
             { type: 'button', 
