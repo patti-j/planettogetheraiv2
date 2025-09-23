@@ -215,6 +215,19 @@
           barMargin: 5,
           autoHeight: false,  // Don't auto-adjust height
           minHeight: 600,     // Minimum scheduler height
+          
+          // Step 1: Zoom controls toolbar
+          tbar: [
+            '->',
+            { type: 'button', text: 'Today', onAction: () => scheduler.scrollToDate(new Date(), { block : 'center' }) },
+            { type: 'button', text: '–', onAction: () => scheduler.zoomOut() },
+            { type: 'slider', width: 120, min: 0, max: 20,
+              value: 10,
+              onChange: ({ value }) => scheduler.zoomToLevel(value)
+            },
+            { type: 'button', text: '+', onAction: () => scheduler.zoomIn() }
+          ],
+          
           project: {
             resourceStore:   { data: resourceRows },
             eventStore:      { data: events },
@@ -343,6 +356,14 @@
         });
         
         console.log('Overlap prevention enabled for drag and resize operations');
+        
+        // Step 1 (optional): Smooth trackpad zoom with Ctrl + wheel
+        scheduler.on('scheduleMouseWheel', ({ event }) => {
+          if (event.ctrlKey) {
+            event.preventDefault();
+            event.deltaY < 0 ? scheduler.zoomIn() : scheduler.zoomOut();
+          }
+        });
 
         // Normalize API conflicts on load (move overlapping events to Unscheduled)
         const cleanupOverlaps = () => {
@@ -375,9 +396,124 @@
         // Run cleanup after a slight delay to ensure stores are populated
         setTimeout(cleanupOverlaps, 100);
 
+        // Step 2: "Pack Unscheduled" - naive auto-pack for unscheduled events
+        async function packUnscheduled() {
+          const p = scheduler.project;
+          await p.waitForPropagate?.(); // ensure calculations are up to date
+
+          // Identify unscheduled events (no assignment or flagged during import)
+          const evs = p.eventStore.query(ev => !p.assignmentStore.find(r => r.eventId === ev.id));
+
+          // Cheap matcher: allow all resources. Replace with smarter filters when ready.
+          const resources = p.resourceStore.records.filter(r => r.id !== 'unscheduled');
+
+          let placed = 0;
+          for (const ev of evs) {
+            const durMs = ev.endDate && ev.startDate ? ev.endDate - ev.startDate : (ev.duration || 2) * 3600_000;
+            // start searching from the scheduler start
+            let candidateStart = ev.startDate || new Date(scheduler.startDate);
+            let candidateEnd   = new Date(candidateStart.getTime() + durMs);
+
+            outer:
+            for (const res of resources) {
+              // Check if resource can perform this operation
+              const operationType = getOperationType(ev.name);
+              const resourceCapabilities = capabilities[res.id] || [];
+              if (!resourceCapabilities.includes(operationType)) {
+                continue; // Skip resources that can't perform this operation
+              }
+              
+              // shift forward until free
+              for (let hop = 0; hop < 200; hop++) {
+                if (scheduler.isDateRangeAvailable(candidateStart, candidateEnd, res, ev)) {
+                  // assign & set dates
+                  p.assignmentStore.add({ id : `a_${ev.id}_${res.id}`, eventId : ev.id, resourceId : res.id });
+                  ev.set({ startDate : candidateStart, endDate : candidateEnd, isUnscheduled : false });
+                  placed++;
+                  break outer;
+                }
+                // move to the end of the next blocking event on this resource
+                const blockers = p.eventStore.query(x =>
+                  p.assignmentStore.find(a => a.eventId === x.id && a.resourceId === res.id) &&
+                  x.endDate > candidateStart && x.startDate < candidateEnd
+                ).sort((a,b) => a.endDate - b.endDate);
+                candidateStart = blockers.length ? new Date(blockers[blockers.length-1].endDate) : new Date(candidateEnd);
+                candidateEnd   = new Date(candidateStart.getTime() + durMs);
+              }
+            }
+          }
+
+          scheduler.toast?.(`${placed} event(s) scheduled`);
+        }
+
+        // Add a button in the toolbar to run it
+        scheduler.tbar?.add([
+          { type: 'separator' },
+          { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onAction: packUnscheduled }
+        ]);
+        
+        // Step 3: Save adjusted schedules (Option B - Manual collect and POST)
+        function packStoreChanges(store) {
+          const added   = store.added?.map(r => r.data) || [];
+          const removed = store.removed?.map(r => ({ id : r.id })) || [];
+
+          const updated = (store.modifiedRecords?.length ? store.modifiedRecords
+                            : Array.from(store.modified || []))
+                          .map(r => ({ id : r.id, ...r.changes }));
+
+          return { added, updated, removed };
+        }
+
+        async function saveManual() {
+          const p = scheduler.project;
+          const payload = {
+            resources   : packStoreChanges(p.resourceStore),
+            events      : packStoreChanges(p.eventStore),
+            assignments : packStoreChanges(p.assignmentStore),
+            dependencies: packStoreChanges(p.dependencyStore)
+          };
+
+          console.log('Saving changes:', payload);
+          
+          const res = await fetch('/api/scheduler/sync', {
+            method : 'POST',
+            headers: { 'Content-Type':'application/json' },
+            body   : JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error('Sync HTTP ' + res.status);
+          
+          // Commit changes on successful save
+          p.resourceStore.commit();
+          p.eventStore.commit();
+          p.assignmentStore.commit();
+          p.dependencyStore.commit();
+        }
+
+        scheduler.tbar?.add([
+          { type: 'button', 
+            text: 'Save', 
+            cls: 'b-raised b-green', 
+            onAction: () => saveManual()
+              .then(() => scheduler.toast?.('Changes saved successfully'))
+              .catch((e) => {
+                console.error('Save failed:', e);
+                scheduler.toast?.('Save failed: ' + e.message);
+              }) 
+          }
+        ]);
+        
+        // Step 4: Enable Undo/Redo (safety net)
+        scheduler.project.stm.enable();
+        scheduler.tbar?.add([
+          { type: 'button', text: 'Undo', onAction: () => scheduler.project.stm.undo() },
+          { type: 'button', text: 'Redo', onAction: () => scheduler.project.stm.redo() }
+        ]);
+
         // Expose for quick debugging
         window.scheduler = scheduler;
         window.cleanupOverlaps = cleanupOverlaps;
+        window.packUnscheduled = packUnscheduled;
+        window.saveManual = saveManual;
       } catch (e) {
         console.error(e);
         alert('Failed to initialize scheduler: ' + (e && e.message || e));

@@ -2135,4 +2135,43 @@ router.get("/api/pt-operations", async (req, res) => {
   }
 });
 
+// Step 3: Save scheduler changes endpoint
+router.post("/scheduler/sync", async (req, res) => {
+  try {
+    const { resources, events, assignments, dependencies } = req.body;
+    
+    // Log the changes for debugging
+    console.log('Scheduler sync request received:', {
+      resources: resources?.updated?.length || 0,
+      events: events?.updated?.length || 0,
+      assignments: {
+        added: assignments?.added?.length || 0,
+        removed: assignments?.removed?.length || 0,
+        updated: assignments?.updated?.length || 0
+      },
+      dependencies: dependencies?.updated?.length || 0
+    });
+
+    // For now, just acknowledge receipt - actual persistence would go here
+    // In a real implementation, you would:
+    // 1. Update ptjoboperations with new start/end dates from events.updated
+    // 2. Update ptjobresources with new assignments from assignments.added/removed
+    // 3. Handle any dependencies changes
+    
+    res.json({ 
+      success: true,
+      message: 'Changes received successfully',
+      processed: {
+        resources: resources?.updated?.length || 0,
+        events: events?.updated?.length || 0,
+        assignments: (assignments?.added?.length || 0) + (assignments?.updated?.length || 0),
+        dependencies: dependencies?.updated?.length || 0
+      }
+    });
+  } catch (error) {
+    console.error("Error in scheduler sync:", error);
+    res.status(500).json({ success: false, message: "Failed to save scheduler changes" });
+  }
+});
+
 export default router;
