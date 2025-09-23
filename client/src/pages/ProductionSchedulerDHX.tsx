@@ -7,6 +7,7 @@ import { ArrowLeft, RefreshCw, Maximize, Calendar } from 'lucide-react';
 
 export default function ProductionSchedulerDHX() {
   console.log('🚀 ProductionSchedulerDHX component is rendering');
+  console.log('✅ DHTMLX Gantt library loaded:', typeof gantt !== 'undefined');
   const ganttContainer = useRef<HTMLDivElement>(null);
   const isInitialized = useRef(false);
 
@@ -27,7 +28,16 @@ export default function ProductionSchedulerDHX() {
   });
 
   useEffect(() => {
-    if (!ganttContainer.current || isInitialized.current) return;
+    console.log('📊 DHTMLX Initialization Check:', {
+      hasContainer: !!ganttContainer.current,
+      isInitialized: isInitialized.current,
+      ganttAvailable: typeof gantt !== 'undefined'
+    });
+    
+    if (!ganttContainer.current || isInitialized.current) {
+      console.log('⏭️ Skipping initialization:', { hasContainer: !!ganttContainer.current, isInitialized: isInitialized.current });
+      return;
+    }
     
     // Configure Gantt
     gantt.config.date_format = "%Y-%m-%d %H:%i:%s";
@@ -95,21 +105,44 @@ export default function ProductionSchedulerDHX() {
     gantt.config.autoscroll = false;
     gantt.config.autoscroll_speed = 0;
     gantt.config.show_tasks_outside_timescale = true;
+    gantt.config.initial_scroll = false;
+    gantt.config.preserve_scroll = true;
+    gantt.config.show_task_cells = false;
     
     // Initialize Gantt with error handling
     try {
       // Use a timeout to ensure DOM is ready
       setTimeout(() => {
         if (ganttContainer.current) {
-          gantt.init(ganttContainer.current);
-          isInitialized.current = true;
-          console.log('✅ DHTMLX Gantt initialized successfully');
+          console.log('🎯 Initializing DHTMLX Gantt with container:', ganttContainer.current);
           
-          // After initialization, if we have data, show the current date
-          if (gantt.getTaskByIndex(0)) {
-            const today = new Date();
-            gantt.showDate(today);
+          // Prevent the auto-show behavior completely
+          const originalShowTask = gantt.showTask;
+          const originalShowDate = gantt.showDate;
+          
+          // Temporarily disable show methods during initialization
+          gantt.showTask = () => {};
+          gantt.showDate = () => {};
+          
+          try {
+            gantt.init(ganttContainer.current);
+            isInitialized.current = true;
+            console.log('✅ DHTMLX Gantt initialized successfully');
+            
+            // Restore show methods after a delay
+            setTimeout(() => {
+              gantt.showTask = originalShowTask;
+              gantt.showDate = originalShowDate;
+              console.log('📅 Show methods restored');
+            }, 500);
+          } catch (initErr) {
+            console.error('❌ Error during Gantt initialization:', initErr);
+            // Still restore methods on error
+            gantt.showTask = originalShowTask;
+            gantt.showDate = originalShowDate;
           }
+        } else {
+          console.error('❌ Container not available after timeout');
         }
       }, 100);
     } catch (error) {
@@ -126,7 +159,23 @@ export default function ProductionSchedulerDHX() {
 
   // Load data when it changes
   useEffect(() => {
-    if (!isInitialized.current || isLoadingOps || isLoadingRes) return;
+    console.log('📊 Data Loading Check:', {
+      hasGanttContainer: !!gantt.$container,
+      isLoadingOps,
+      isLoadingRes,
+      operationsCount: operationsData?.length || 0,
+      resourcesCount: resourcesData?.length || 0,
+      dependenciesCount: dependenciesData?.length || 0
+    });
+    
+    if (!gantt.$container || isLoadingOps || isLoadingRes) {
+      console.log('⏭️ Skipping data load:', { 
+        hasContainer: !!gantt.$container, 
+        isLoadingOps, 
+        isLoadingRes 
+      });
+      return;
+    }
 
     const opsArray = Array.isArray(operationsData) ? operationsData : [];
     const resArray = Array.isArray(resourcesData) ? resourcesData : [];
@@ -163,11 +212,20 @@ export default function ProductionSchedulerDHX() {
     }));
 
     // Load data into Gantt
+    console.log('📋 Loading data into Gantt:', {
+      tasksCount: tasks.length,
+      linksCount: links.length,
+      firstTask: tasks[0],
+      firstLink: links[0]
+    });
+    
     gantt.clearAll();
     gantt.parse({
       data: tasks,
       links: links
     });
+    
+    console.log('✅ Data loaded into Gantt');
 
     // Auto-fit timeline
     if (tasks.length > 0) {
@@ -184,6 +242,19 @@ export default function ProductionSchedulerDHX() {
       gantt.config.start_date = minDate;
       gantt.config.end_date = maxDate;
       gantt.render();
+      
+      // After rendering, safely try to show current date
+      setTimeout(() => {
+        try {
+          if (tasks.length > 0 && gantt.$task_scale) {
+            const today = new Date();
+            gantt.showDate(today);
+            console.log('📅 Centered view on today\'s date');
+          }
+        } catch (err) {
+          console.log('⚠️ Could not center view (this is normal):', err?.message);
+        }
+      }, 300);
     }
 
     console.log('Loaded tasks:', tasks.length);
