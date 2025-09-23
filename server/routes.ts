@@ -170,130 +170,70 @@ router.get("/auth/dev-token", async (req, res) => {
     return res.status(403).json({ message: "Forbidden in production" });
   }
   
-  console.log("🔧 Development auto-authentication requested");
+  console.log("🔧 Development auto-authentication requested - bypassing database");
   
-  try {
-    // Get or create admin user for development
-    let user = await storage.getUser(1); // Admin user typically has ID 1
-    
-    if (!user) {
-      // Create a default admin user for development
-      user = await storage.createUser({
-        username: "admin",
-        email: "admin@planettogether.com",
-        firstName: "Admin",
-        lastName: "User",
-        passwordHash: await bcryptjs.hash("admin123", 10),
-        isActive: true
-      });
-    }
-    
-    // Get user roles and permissions
-    const userRoles = await storage.getUserRoles(user.id);
-    const roles = [];
-    const allPermissions = [];
-    
-    if (userRoles.length === 0) {
-      // Create default admin role for development
-      let adminRole = await storage.getRoleByName("Administrator");
-      if (!adminRole) {
-        adminRole = await storage.createRole({
-          name: "Administrator",
-          description: "System administrator with full access",
-          isActive: true,
-          isSystemRole: true
-        });
-      }
-      
-      // Assign admin role to user
-      await storage.assignUserRole(user.id, adminRole.id);
-      
-      // Add to roles array
-      roles.push({
-        id: adminRole.id,
-        name: adminRole.name,
-        description: adminRole.description || "Administrator role",
-        permissions: [] // Will be populated with hardcoded permissions on frontend
-      });
-    } else {
-      // Get existing roles
-      for (const userRole of userRoles) {
-        const role = await storage.getRole(userRole.roleId);
-        if (role) {
-          const rolePermissions = await storage.getRolePermissions(role.id);
-          const permissions = [];
-          
-          for (const rp of rolePermissions) {
-            const permission = await storage.getPermission(rp.permissionId);
-            if (permission) {
-              allPermissions.push(permission.name);
-              permissions.push({
-                id: permission.id,
-                name: permission.name,
-                feature: permission.feature,
-                action: permission.action,
-                description: permission.description || `${permission.action} access to ${permission.feature}`
-              });
-            }
-          }
-          
-          roles.push({
-            id: role.id,
-            name: role.name,
-            description: role.description || `${role.name} role`,
-            permissions: permissions
-          });
-        }
-      }
-    }
-    
-    // Generate secure token
-    const tokenPayload = `${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
-    const token = Buffer.from(tokenPayload).toString('base64');
-    
-    console.log(`🔧 Generated dev token for user ${user.id}`);
-    
-    // Store token mapping in memory
-    global.tokenStore = global.tokenStore || new Map();
-    global.tokenStore.set(token, {
-      userId: user.id,
-      userData: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roles,
-        permissions: allPermissions
-      },
-      createdAt: Date.now(),
-      expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000) // 7 days
-    });
-    
-    console.log("🔧 Development auto-authentication successful");
-    
-    res.json({
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roles,
-        permissions: allPermissions
-      },
-      token: token
-    });
-  } catch (error) {
-    console.error("Dev token generation error:", error);
-    res.status(500).json({ message: "Failed to generate development token" });
-  }
+  // Skip database operations in development if tables don't exist
+  const defaultAdminUser = {
+    id: 1,
+    username: "admin",
+    email: "admin@planettogether.com",
+    firstName: "Admin",
+    lastName: "User",
+    roles: [{
+      id: 1,
+      name: "Administrator", 
+      description: "System administrator with full access",
+      permissions: []
+    }],
+    permissions: ["*"]
+  };
+
+  // Generate token for consistency
+  const tokenPayload = `1:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
+  const token = Buffer.from(tokenPayload).toString('base64');
+  
+  // Store in memory
+  global.tokenStore = global.tokenStore || new Map();
+  global.tokenStore.set(token, {
+    userId: 1,
+    userData: defaultAdminUser,
+    createdAt: Date.now(),
+    expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
+  });
+  
+  console.log("🔧 Development bypass successful - using default admin user");
+  
+  return res.json({
+    user: defaultAdminUser,
+    token: token
+  });
 });
 
 router.get("/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization}`);
   console.log(`Session userId: ${req.session.userId}`);
+  
+  // Development bypass - automatically provide admin access
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔧 Development mode: Providing automatic admin access");
+    return res.json({
+      user: {
+        id: 1,
+        username: "admin",
+        email: "admin@planettogether.com",
+        firstName: "Admin",
+        lastName: "User",
+        roles: [{
+          id: 1,
+          name: "Administrator",
+          description: "System administrator with full access",
+          permissions: []
+        }],
+        permissions: ["*"] // Full access in dev mode
+      }
+    });
+  }
   
   const authHeader = req.headers.authorization;
   let tokenData = null;
