@@ -506,6 +506,34 @@
         // Run cleanup after a slight delay to ensure stores are populated
         setTimeout(() => {
           cleanupOverlaps();
+          
+          // Unschedule some operations for testing auto-scheduling
+          const p = scheduler.project;
+          const eventsToUnschedule = [
+            'Fermentation - IPA',
+            'Dry Hopping - IPA', 
+            'Packaging - IPA',
+            'Milling - Wheat',
+            'Mashing - Wheat',
+            'Fermentation - Wheat'
+          ];
+          
+          eventsToUnschedule.forEach(eventName => {
+            const event = p.eventStore.find(e => e.name === eventName);
+            if (event) {
+              // Find and remove its assignment
+              const assignment = p.assignmentStore.find(a => a.eventId === event.id);
+              if (assignment) {
+                p.assignmentStore.remove(assignment);
+                event.isUnscheduled = true;
+                event.eventColor = '#808080';
+                console.log(`Unscheduled: ${eventName}`);
+              }
+            }
+          });
+          
+          showToast(`${eventsToUnschedule.length} operations unscheduled for testing`);
+          
           // Refresh the scheduler display after cleanup
           scheduler.refresh();
         }, 100);
