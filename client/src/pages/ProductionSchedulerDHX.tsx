@@ -28,7 +28,12 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
 
   // Initialize DHTMLX Gantt
   useEffect(() => {
-    if (!ganttContainer.current || isInitialized) {
+    if (!ganttContainer.current) {
+      return;
+    }
+
+    // Only initialize once
+    if (isInitialized) {
       return;
     }
 
@@ -123,11 +128,16 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
         setIsInitialized(false);
       }
     };
-  }, [ganttContainer.current, isInitialized]);
+  }, []); // Only run once on mount
 
   // Load data - Resources as parent tasks, Operations as children
   useEffect(() => {
     if (!isInitialized || isLoadingOps || isLoadingRes) {
+      return;
+    }
+    
+    // Prevent multiple data loads
+    if (!operationsData || !resourcesData) {
       return;
     }
     
@@ -233,7 +243,7 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
         // Set the display range
         gantt.config.start_date = minDate;
         gantt.config.end_date = maxDate;
-        gantt.render();
+        // Don't call gantt.render() here - it's already rendered
       }
     }
     
