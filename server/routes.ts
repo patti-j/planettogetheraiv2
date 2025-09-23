@@ -1837,6 +1837,46 @@ router.get("/ai/recommendations", requireAuth, async (req, res) => {
   }
 });
 
+// Refer recommendation to users
+router.post("/recommendations/refer", requireAuth, async (req, res) => {
+  try {
+    const { userIds, message, recommendationId } = req.body;
+    
+    // Validate input
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: "User IDs are required" });
+    }
+    
+    if (!recommendationId) {
+      return res.status(400).json({ error: "Recommendation ID is required" });
+    }
+
+    // In a real implementation, this would:
+    // 1. Create referral records in the database
+    // 2. Send notifications to the referred users
+    // 3. Track referral status and responses
+    
+    console.log(`Recommendation ${recommendationId} referred to users:`, userIds);
+    if (message) {
+      console.log("Message:", message);
+    }
+
+    // Mock successful response
+    res.json({ 
+      success: true, 
+      message: `Recommendation referred to ${userIds.length} user${userIds.length > 1 ? 's' : ''}`,
+      referralId: `ref-${Date.now()}`,
+      userIds,
+      recommendationId,
+      message: message || null,
+      createdAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Error creating referral:", error);
+    res.status(500).json({ error: "Failed to create referral" });
+  }
+});
+
 // System Events endpoint
 router.get("/system/events", requireAuth, async (req, res) => {
   try {

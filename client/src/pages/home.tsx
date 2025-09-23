@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { WorkWithAgentModal } from '@/components/WorkWithAgentModal';
+import { ReferUserModal } from '@/components/ReferUserModal';
 import { 
   Sparkles, 
   Activity, 
@@ -109,6 +110,11 @@ export default function HomePage() {
     isOpen: boolean;
     recommendation: ActionRecommendation | null;
   }>({ isOpen: false, recommendation: null });
+  
+  const [referUserModal, setReferUserModal] = useState<{
+    isOpen: boolean;
+    recommendation: ActionRecommendation | null;
+  }>({ isOpen: false, recommendation: null });
 
   const openWorkWithAgent = (recommendation: ActionRecommendation) => {
     setWorkWithAgentModal({ isOpen: true, recommendation });
@@ -116,6 +122,14 @@ export default function HomePage() {
 
   const closeWorkWithAgent = () => {
     setWorkWithAgentModal({ isOpen: false, recommendation: null });
+  };
+
+  const openReferUser = (recommendation: ActionRecommendation) => {
+    setReferUserModal({ isOpen: true, recommendation });
+  };
+
+  const closeReferUser = () => {
+    setReferUserModal({ isOpen: false, recommendation: null });
   };
 
   // Fetch available dashboards
@@ -546,6 +560,7 @@ export default function HomePage() {
                             variant="outline" 
                             size="sm" 
                             className="gap-2"
+                            onClick={() => openReferUser(recommendation)}
                             data-testid={`refer-to-user-${recommendation.id}`}
                           >
                             <Users className="w-4 h-4" />
@@ -965,6 +980,14 @@ export default function HomePage() {
         onClose={closeWorkWithAgent}
         recommendation={workWithAgentModal.recommendation}
       />
+      
+      {referUserModal.recommendation && (
+        <ReferUserModal
+          isOpen={referUserModal.isOpen}
+          onClose={closeReferUser}
+          recommendation={referUserModal.recommendation}
+        />
+      )}
     </div>
   );
 }
