@@ -3,7 +3,7 @@ import bcryptjs from "bcryptjs";
 import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
-import { db } from "./db";
+import { db, directSql } from "./db";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { schedulingAI } from "./services/scheduling-ai";
@@ -2090,9 +2090,9 @@ router.get("/api/resources", async (req, res) => {
 });
 
 // Serve resource capabilities (what operations each resource can perform)
-router.get("/api/resource-capabilities", async (req, res) => {
+router.get("/resource-capabilities", async (req, res) => {
   try {
-    const result = await client.query(`
+    const result = await directSql(`
       SELECT resource_id, operation_type, can_perform 
       FROM resource_capabilities 
       WHERE can_perform = true
@@ -2101,17 +2101,23 @@ router.get("/api/resource-capabilities", async (req, res) => {
     
     // Group by resource for easier lookup
     const capabilities: Record<string, string[]> = {};
-    for (const row of result.rows) {
-      if (!capabilities[row.resource_id]) {
-        capabilities[row.resource_id] = [];
+    if (result && Array.isArray(result)) {
+      for (const row of result) {
+        if (!capabilities[row.resource_id]) {
+          capabilities[row.resource_id] = [];
+        }
+        capabilities[row.resource_id].push(row.operation_type);
       }
-      capabilities[row.resource_id].push(row.operation_type);
     }
     
-    res.json(capabilities);
+    // Explicitly set JSON content type and send response
+    res.setHeader('Content-Type', 'application/json');
+    res.status(200).send(JSON.stringify(capabilities));
   } catch (error) {
     console.error('Error fetching resource capabilities:', error);
-    res.status(500).json({ error: 'Failed to fetch resource capabilities' });
+    // Also set JSON header for error response
+    res.setHeader('Content-Type', 'application/json');
+    res.status(500).send(JSON.stringify({ error: 'Failed to fetch resource capabilities' }));
   }
 });
 
