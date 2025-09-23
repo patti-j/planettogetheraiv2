@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { gantt } from 'dhtmlx-gantt';
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css';
@@ -8,98 +8,100 @@ import { ArrowLeft, RefreshCw, Maximize, Calendar } from 'lucide-react';
 export default function ProductionSchedulerDHX() {
   console.log('🚀 ProductionSchedulerDHX component is rendering');
   console.log('✅ DHTMLX Gantt library loaded:', typeof gantt !== 'undefined');
-  const ganttContainer = useRef<HTMLDivElement>(null);
-  const isInitialized = useRef(false);
 
+  const ganttContainer = useRef<HTMLDivElement>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  
   // Fetch operations data
   const { data: operationsData = [], isLoading: isLoadingOps, refetch: refetchOps } = useQuery({
-    queryKey: ['/api/pt-operations'],
-    refetchInterval: 60000,
+    queryKey: ['/api/pt-operations']
   });
-
-  // Fetch resources data  
+  
+  // Fetch resources data 
   const { data: resourcesData = [], isLoading: isLoadingRes } = useQuery({
-    queryKey: ['/api/resources'],
+    queryKey: ['/api/resources']
   });
-
+  
   // Fetch dependencies data
-  const { data: dependenciesData = [] } = useQuery({
-    queryKey: ['/api/pt-dependencies'],
+  const { data: dependenciesData = [], isLoading: isLoadingDeps } = useQuery({
+    queryKey: ['/api/pt-dependencies']
   });
 
+  // Initialize DHTMLX Gantt
   useEffect(() => {
-    console.log('📊 DHTMLX Initialization Check:', {
-      hasContainer: !!ganttContainer.current,
-      isInitialized: isInitialized.current,
-      ganttAvailable: typeof gantt !== 'undefined'
-    });
-    
-    if (!ganttContainer.current || isInitialized.current) {
-      console.log('⏭️ Skipping initialization:', { hasContainer: !!ganttContainer.current, isInitialized: isInitialized.current });
+    if (isInitialized || !ganttContainer.current) {
       return;
     }
+
+    console.log('🎯 Initializing DHTMLX Gantt');
     
     // Configure Gantt
     gantt.config.date_format = "%Y-%m-%d %H:%i:%s";
     gantt.config.show_grid = true;
     gantt.config.show_chart = true;
     gantt.config.show_links = true;
+    gantt.config.xml_date = "%Y-%m-%d %H:%i:%s";
+    gantt.config.readonly = false;
+    gantt.config.drag_links = false;
+    gantt.config.drag_move = false;
+    gantt.config.drag_resize = false;
+    gantt.config.duration_unit = "hour";
+    gantt.config.work_time = true;
+    gantt.config.correct_work_time = true;
+    gantt.config.round_dnd_dates = true;
     gantt.config.show_progress = true;
-    gantt.config.drag_progress = true;
-    gantt.config.drag_resize = true;
-    gantt.config.drag_move = true;
-    gantt.config.drag_links = true;
-    gantt.config.details_on_dblclick = true;
-    gantt.config.autofit = true;
-    gantt.config.columns = [
-      { name: "text", label: "Operation", tree: true, width: 200 },
-      { name: "resource_name", label: "Resource", width: 100 },
-      { name: "start_date", label: "Start", width: 90 },
-      { name: "duration", label: "Duration", width: 60 },
-      { name: "add", label: "", width: 30 }
-    ];
-
-    // Set scale
+    gantt.config.sort = true;
+    gantt.config.autosize = true;
+    gantt.config.fit_tasks = true;
+    
+    // Configure scales
     gantt.config.scale_unit = "day";
     gantt.config.date_scale = "%d %M";
-    gantt.config.subscales = [
-      { unit: "hour", step: 1, format: "%H" }
-    ];
-    gantt.config.scale_height = 54;
+    gantt.config.min_column_width = 50;
+    gantt.config.scale_height = 90;
     
-    // Configure resource view
-    gantt.config.layout = {
-      css: "gantt_container",
-      rows: [
-        {
-          cols: [
-            {
-              view: "grid",
-              scrollX: "gridScroll",
-              scrollable: true,
-              width: 400
-            },
-            { resizer: true, width: 1 },
-            {
-              view: "timeline",
-              scrollX: "scrollHor",
-              scrollY: "scrollVer",
-              scrollable: true
-            },
-            {
-              view: "scrollbar",
-              id: "scrollVer"
-            }
-          ]
-        },
-        {
-          view: "scrollbar",
-          id: "scrollHor",
-          height: 20
-        }
-      ]
-    };
-
+    gantt.config.subscales = [
+      {
+        unit: "hour",
+        step: 6,
+        date: "%H:00"
+      }
+    ];
+    
+    // Configure columns for the grid
+    gantt.config.columns = [
+      {
+        name: "text",
+        label: "Operation",
+        tree: false,
+        width: 200
+      },
+      {
+        name: "start_date",
+        label: "Start",
+        align: "center",
+        width: 100
+      },
+      {
+        name: "duration",
+        label: "Duration",
+        align: "center",
+        width: 70
+      },
+      {
+        name: "resource_name",
+        label: "Resource",
+        align: "center",
+        width: 100
+      },
+      {
+        name: "job_name",
+        label: "Job",
+        align: "center",
+        width: 100
+      }
+    ];
+    
     // Disable auto-scrolling to prevent errors
     gantt.config.scroll_on_click = false;
     gantt.config.autoscroll = false;
@@ -111,132 +113,97 @@ export default function ProductionSchedulerDHX() {
     
     // Initialize Gantt with error handling
     try {
-      // Use a timeout to ensure DOM is ready
-      setTimeout(() => {
-        if (ganttContainer.current) {
-          console.log('🎯 Initializing DHTMLX Gantt with container:', ganttContainer.current);
-          
-          // Prevent the auto-show behavior completely
-          const originalShowTask = gantt.showTask;
-          const originalShowDate = gantt.showDate;
-          
-          // Temporarily disable show methods during initialization
-          gantt.showTask = () => {};
-          gantt.showDate = () => {};
-          
-          try {
-            gantt.init(ganttContainer.current);
-            isInitialized.current = true;
-            console.log('✅ DHTMLX Gantt initialized successfully');
-            
-            // Restore show methods after a delay
-            setTimeout(() => {
-              gantt.showTask = originalShowTask;
-              gantt.showDate = originalShowDate;
-              console.log('📅 Show methods restored');
-            }, 500);
-          } catch (initErr) {
-            console.error('❌ Error during Gantt initialization:', initErr);
-            // Still restore methods on error
-            gantt.showTask = originalShowTask;
-            gantt.showDate = originalShowDate;
-          }
-        } else {
-          console.error('❌ Container not available after timeout');
-        }
-      }, 100);
+      // Prevent the auto-show behavior completely
+      const originalShowTask = gantt.showTask;
+      const originalShowDate = gantt.showDate;
+      
+      // Temporarily disable show methods during initialization
+      gantt.showTask = () => {};
+      gantt.showDate = () => {};
+      
+      try {
+        gantt.init(ganttContainer.current);
+        setIsInitialized(true);
+        console.log('✅ DHTMLX Gantt initialized successfully');
+        
+        // Restore show methods after a delay
+        setTimeout(() => {
+          gantt.showTask = originalShowTask;
+          gantt.showDate = originalShowDate;
+          console.log('📅 Show methods restored');
+        }, 500);
+      } catch (initErr) {
+        console.error('❌ Error during Gantt initialization:', initErr);
+        // Still restore methods on error
+        gantt.showTask = originalShowTask;
+        gantt.showDate = originalShowDate;
+      }
     } catch (error) {
       console.error('❌ Failed to initialize DHTMLX Gantt:', error);
     }
-
-    // Cleanup
+    
     return () => {
-      if (ganttContainer.current && gantt.$container) {
+      // Cleanup on unmount
+      if (isInitialized) {
         gantt.clearAll();
       }
     };
-  }, []);
+  }, [ganttContainer.current, isInitialized]);
 
-  // Load data when it changes
+  // Load data into Gantt
   useEffect(() => {
-    console.log('📊 Data Loading Check:', {
-      hasGanttContainer: !!gantt.$container,
-      isLoadingOps,
-      isLoadingRes,
-      operationsCount: operationsData?.length || 0,
-      resourcesCount: resourcesData?.length || 0,
-      dependenciesCount: dependenciesData?.length || 0
-    });
-    
-    if (!gantt.$container || isLoadingOps || isLoadingRes) {
-      console.log('⏭️ Skipping data load:', { 
-        hasContainer: !!gantt.$container, 
-        isLoadingOps, 
-        isLoadingRes 
-      });
+    if (!isInitialized || isLoadingOps || isLoadingRes) {
       return;
     }
 
-    const opsArray = Array.isArray(operationsData) ? operationsData : [];
-    const resArray = Array.isArray(resourcesData) ? resourcesData : [];
-    const depsArray = Array.isArray(dependenciesData) ? dependenciesData : [];
+    // Clear existing data
+    gantt.clearAll();
 
-    // Transform operations to DHTMLX format
-    const tasks = opsArray
-      .filter((op: any) => op.startDate && op.endDate)
-      .map((op: any) => {
-        const startDate = new Date(op.startDate);
-        const endDate = new Date(op.endDate);
-        const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60)); // Hours
-
-        return {
-          id: op.id,
-          text: op.name || op.operationName || 'Operation',
-          start_date: startDate,
-          duration: duration / 24, // Convert to days for DHTMLX
-          progress: (op.percent_done || 0) / 100,
-          resource_id: op.resourceId ? parseInt(op.resourceId, 10) : null,
-          resource_name: op.resourceName || 'Unassigned',
-          color: op.priority > 5 ? '#ff5252' : op.priority > 3 ? '#ff9800' : '#4caf50',
-          job_id: op.jobId,
-          job_name: op.jobName
-        };
-      });
-
-    // Transform dependencies to DHTMLX format
-    const links = depsArray.map((dep: any) => ({
-      id: dep.id || `link_${dep.from}_${dep.to}`,
-      source: dep.from,
-      target: dep.to,
-      type: dep.type === 2 ? "0" : "1" // Convert to DHTMLX types (0=finish-to-start, 1=start-to-start)
+    // Transform operations data to Gantt tasks format
+    const tasks = (Array.isArray(operationsData) ? operationsData : []).map((op: any) => ({
+      id: op.id,
+      text: op.name || 'Unnamed Operation',
+      start_date: op.scheduledStart ? new Date(op.scheduledStart) : new Date(),
+      duration: op.duration || 1,
+      progress: op.percentFinished ? op.percentFinished / 100 : 0,
+      resource_id: op.resourceId || op.resourceDbId,
+      resource_name: op.resourceName || 'Unassigned',
+      color: op.color || '#2196F3',
+      job_id: op.jobId,
+      job_name: op.jobName || 'N/A'
     }));
 
-    // Load data into Gantt
+    // Transform dependencies to Gantt links format
+    const links = (Array.isArray(dependenciesData) ? dependenciesData : []).map((dep: any) => ({
+      id: dep.id,
+      source: dep.from,
+      target: dep.to,
+      type: dep.type || "0"
+    }));
+
     console.log('📋 Loading data into Gantt:', {
       tasksCount: tasks.length,
       linksCount: links.length,
       firstTask: tasks[0],
       firstLink: links[0]
     });
-    
-    gantt.clearAll();
+
+    // Load data
     gantt.parse({
       data: tasks,
       links: links
     });
-    
+
     console.log('✅ Data loaded into Gantt');
 
-    // Auto-fit timeline
+    // Calculate date range
     if (tasks.length > 0) {
-      const minDate = new Date(Math.min(...tasks.map((t: any) => t.start_date.getTime())));
-      const maxDate = new Date(Math.max(...tasks.map((t: any) => {
-        const endDate = new Date(t.start_date);
-        endDate.setDate(endDate.getDate() + t.duration);
-        return endDate.getTime();
-      })));
+      const dates = tasks.map((t: any) => t.start_date).filter((d: any) => d);
+      const minDate = new Date(Math.min(...dates.map((d: Date) => d.getTime())));
+      const maxDate = new Date(Math.max(...dates.map((d: Date) => d.getTime())));
       
-      minDate.setDate(minDate.getDate() - 7);
+      // Add padding
+      minDate.setDate(minDate.getDate() - 1);
       maxDate.setDate(maxDate.getDate() + 7);
       
       gantt.config.start_date = minDate;
@@ -251,7 +218,7 @@ export default function ProductionSchedulerDHX() {
             gantt.showDate(today);
             console.log('📅 Centered view on today\'s date');
           }
-        } catch (err) {
+        } catch (err: any) {
           console.log('⚠️ Could not center view (this is normal):', err?.message);
         }
       }, 300);
@@ -259,7 +226,7 @@ export default function ProductionSchedulerDHX() {
 
     console.log('Loaded tasks:', tasks.length);
     console.log('Loaded links:', links.length);
-  }, [operationsData, resourcesData, dependenciesData, isLoadingOps, isLoadingRes]);
+  }, [operationsData, resourcesData, dependenciesData, isLoadingOps, isLoadingRes, isInitialized]);
 
   const handleZoomToFit = () => {
     // DHTMLX Gantt doesn't have built-in zoom-to-fit, 
