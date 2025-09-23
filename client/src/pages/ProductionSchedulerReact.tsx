@@ -66,7 +66,6 @@ export default function ProductionSchedulerReact() {
     // Transform operations to events
     const transformedEvents: any[] = [];
     const transformedAssignments: any[] = [];
-    let assignmentId = 1;
 
     opsArray.forEach((op: any) => {
       // Check if operation has required data - PT API returns scheduledStart/scheduledEnd
@@ -74,9 +73,12 @@ export default function ProductionSchedulerReact() {
       const endDate = op.scheduledEnd || op.endDate;
       
       if (startDate && endDate) {
+        // CRITICAL: Ensure event ID is a string for consistency
+        const eventId = String(op.id || op.operation_id);
+        
         // Create the event - NOTE: Do NOT put resourceId on events when using AssignmentStore
         const event = {
-          id: op.id || op.operation_id, // Use operation ID from database
+          id: eventId, // Use STRING operation ID for consistency
           name: op.name || op.operationName || op.operation_name || 'Operation',
           startDate: new Date(startDate), // Ensure it's a Date object
           endDate: new Date(endDate), // Ensure it's a Date object
@@ -95,8 +97,8 @@ export default function ProductionSchedulerReact() {
         const resourceId = op.resourceId || op.resource_id || op.actual_resource_id;
         if (resourceId) {
           transformedAssignments.push({
-            id: `a_${op.id || op.operation_id}_${resourceId}`, // Synthetic ID for assignment
-            eventId: op.id || op.operation_id,  // Must be eventId (not event)
+            id: `a_${eventId}_${resourceId}`, // Synthetic ID for assignment
+            eventId: eventId,  // Must be STRING to match event.id
             resourceId: String(resourceId)  // MUST match the resource.id (string) in resourceStore
           });
         }
@@ -105,9 +107,9 @@ export default function ProductionSchedulerReact() {
 
     // Transform dependencies - use fromEvent/toEvent per Bryntum documentation
     const transformedDependencies = depsArray.map((dep: any, index: number) => ({
-      id: index + 1,
-      fromEvent: dep.from || dep.fromEvent || dep.predecessor_operation_id, // Predecessor operation ID
-      toEvent: dep.to || dep.toEvent || dep.successor_operation_id, // Successor operation ID
+      id: String(index + 1), // String ID for consistency
+      fromEvent: String(dep.from || dep.fromEvent || dep.predecessor_operation_id), // String ID
+      toEvent: String(dep.to || dep.toEvent || dep.successor_operation_id), // String ID
       type: dep.type || 2, // 2 = Finish-to-Start (default)
       lag: dep.lag || 0,
       lagUnit: dep.lagUnit || 'hour'
@@ -248,20 +250,25 @@ export default function ProductionSchedulerReact() {
         <BryntumSchedulerPro
           ref={schedulerRef}
           
-          // Data props - pass directly as per documentation
+          // Data configuration - using stores for resource-centric view
           resources={resources}
           events={events}
           assignments={assignments}
           dependencies={dependencies}
+          
+          // Enable assignment mode for resource-centric view
+          useInitialAnimation={false}
+          managedEventSizing={true}
           
           // Time axis configuration
           startDate={startDate}
           endDate={endDate}
           viewPreset="weekAndDayLetter"
           
-          // Visual configuration per Bryntum best practices
-          barMargin={5}
-          rowHeight={70}  // Increased from 45 to 70 for better visibility per documentation
+          // Visual configuration for resource-centric timeline view
+          barMargin={2}  // Smaller margin for better visibility
+          rowHeight={50}  // Adjusted for optimal resource row display
+          eventLayout="stack"  // Stack events on resource rows
           eventColor="eventColor"
           
           // Column configuration
