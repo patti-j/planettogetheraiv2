@@ -11,7 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
-import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users } from 'lucide-react';
+import { getActiveAgents } from '@/config/agents';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
@@ -34,6 +36,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [isFloatingBubbleMinimized, setIsFloatingBubbleMinimized] = useState(false);
+  const [selectedFloatingAgent, setSelectedFloatingAgent] = useState<string>('unified');
   const floatingInputRef = useRef<HTMLInputElement>(null);
   
   // Panel force-show state for small screens
@@ -150,35 +153,56 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const sendFloatingMessage = useMutation({
     mutationFn: async (message: string) => {
       const authToken = localStorage.getItem('authToken');
-      const response = await fetch('/api/max-ai/chat', {
+      
+      // Determine endpoint based on selected agent
+      let endpoint = '/api/max-ai/chat';
+      let requestBody: any = {
+        message,
+        context: {
+          currentPage: location,
+          selectedData: null,
+          recentActions: []
+        }
+      };
+
+      if (selectedFloatingAgent === 'scheduling_assistant') {
+        endpoint = '/api/ai/schedule/chat';
+        requestBody = { message: { role: 'user', content: message, source: 'floating' } };
+      } else if (selectedFloatingAgent === 'unified') {
+        // Use Max AI with unified routing indicator
+        requestBody.context.agentMode = 'unified';
+      } else if (selectedFloatingAgent !== 'max') {
+        // For other specific agents, add agent context to Max AI
+        requestBody.context.targetAgent = selectedFloatingAgent;
+      }
+
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           ...(authToken && { 'Authorization': `Bearer ${authToken}` })
         },
-        body: JSON.stringify({
-          message,
-          context: {
-            currentPage: location,
-            selectedData: null,
-            recentActions: []
-          }
-        })
+        body: JSON.stringify(requestBody)
       });
       
       if (!response.ok) {
-        throw new Error('Failed to get response from Max AI');
+        throw new Error(`Failed to get response from ${selectedFloatingAgent === 'unified' ? 'AI agents' : 'selected agent'}`);
       }
       return await response.json();
     },
     onSuccess: (data: any) => {
       setIsFloatingSending(false);
       
-      // Add user message to chat
+      // Determine which agent responded
+      const respondingAgent = selectedFloatingAgent === 'unified' ? 
+        (data?.agentId || 'max') : selectedFloatingAgent;
+      
+      // Add user message to chat with agent context
       addMessage({
         role: 'user',
         content: floatingPrompt,
-        source: 'floating'
+        source: 'floating',
+        agentId: respondingAgent
       });
       
       // Handle navigation actions from Max AI
@@ -189,17 +213,19 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         addMessage({
           role: 'assistant',
           content: data.content || `Taking you to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
-          source: 'floating'
+          source: 'floating',
+          agentId: respondingAgent
         });
       } else {
         // Add assistant response
-        if (data?.content || data?.message) {
-          const responseContent = data.content || data.message;
+        if (data?.content || data?.message || data?.response) {
+          const responseContent = data.content || data.message || data.response;
           
           addMessage({
             role: 'assistant',
             content: responseContent,
-            source: 'floating'
+            source: 'floating',
+            agentId: respondingAgent
           });
 
           // Temporarily disabled voice response to fix looping issue
@@ -211,18 +237,20 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     },
     onError: (error: any) => {
       setIsFloatingSending(false);
-      console.error("Floating Max AI Error:", error);
+      console.error("Floating AI Error:", error);
       
       addMessage({
         role: 'user',
         content: floatingPrompt,
-        source: 'floating'
+        source: 'floating',
+        agentId: selectedFloatingAgent
       });
       
       addMessage({
         role: 'assistant',
         content: 'I apologize, but I encountered an error processing your request. Please try again.',
-        source: 'floating'
+        source: 'floating',
+        agentId: selectedFloatingAgent
       });
       
       setFloatingPrompt('');
@@ -235,6 +263,23 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     setIsFloatingSending(true);
     sendFloatingMessage.mutate(floatingPrompt);
   };
+
+  // Helper function to get agent icon
+  const getAgentIcon = (agentId: string) => {
+    switch (agentId) {
+      case 'max': return Sparkles;
+      case 'scheduling_assistant': return Calendar;
+      case 'production_scheduling': return Calendar;
+      case 'shop_floor': return Factory;
+      case 'quality_management': return Shield;
+      case 'unified': return Users;
+      default: return Sparkles;
+    }
+  };
+
+  // Get active agents for selection
+  const activeAgents = getActiveAgents();
+  const unifiedOption = { id: 'unified', name: 'Unified Discussion', displayName: 'All Agents' };
 
   // Handle panel size changes and persistence
   const handlePanelResize = (sizes: number[]) => {
@@ -670,25 +715,68 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         ) : (
           // Expanded oval prompt
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
-              <Button
-                onClick={() => setIsFloatingBubbleMinimized(true)}
-                size="sm"
-                variant="ghost"
-                className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
-                data-testid="button-minimize-floating-ai"
-              >
-                <Sparkles className="w-4 h-4" />
-              </Button>
+            <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[340px] max-w-[480px]">
+              {/* Agent Selection Button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={() => setIsFloatingBubbleMinimized(true)}
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0 relative group"
+                      data-testid="button-minimize-floating-ai"
+                    >
+                      {(() => {
+                        const IconComponent = getAgentIcon(selectedFloatingAgent);
+                        return <IconComponent className="w-4 h-4" />;
+                      })()}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>{selectedFloatingAgent === 'unified' ? 'All Agents' : activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Current Agent'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Agent Selector Dropdown */}
+              <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
+                <SelectTrigger className="w-[100px] h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  <SelectItem value="unified" className="text-xs">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-3 h-3" />
+                      <span>All Agents</span>
+                    </div>
+                  </SelectItem>
+                  {activeAgents.map((agent) => {
+                    const IconComponent = getAgentIcon(agent.id);
+                    return (
+                      <SelectItem key={agent.id} value={agent.id} className="text-xs">
+                        <div className="flex items-center gap-2">
+                          <IconComponent className="w-3 h-3" />
+                          <span>{agent.displayName}</span>
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
+                </SelectContent>
+              </Select>
+
+              {/* Input Field */}
               <Input
                 ref={floatingInputRef}
-                placeholder="Ask anything..."
+                placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
                 value={floatingPrompt}
                 onChange={(e) => setFloatingPrompt(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground"
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground flex-1"
                 disabled={isFloatingSending}
               />
+
+              {/* Send Button */}
               <Button
                 onClick={handleFloatingSend}
                 size="sm"
