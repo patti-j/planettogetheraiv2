@@ -33,6 +33,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
+  const [isFloatingBubbleMinimized, setIsFloatingBubbleMinimized] = useState(false);
   
   // Panel force-show state for small screens
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -647,36 +648,54 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         </div>
       )}
       
-      {/* Floating Max AI Prompt - always visible, positioned higher to avoid Activity Center */}
+      {/* Floating Max AI Prompt - toggles between minimized circle and expanded oval */}
       <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 z-50">
-        <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
-          <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
-            <div className="flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-600 flex-shrink-0">
-              <Sparkles className="w-4 h-4 text-white" />
+        {isFloatingBubbleMinimized ? (
+          // Minimized circular icon
+          <Button
+            onClick={() => setIsFloatingBubbleMinimized(false)}
+            className="h-14 w-14 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 shadow-lg hover:shadow-xl transition-all duration-200"
+            data-testid="button-expand-floating-ai"
+          >
+            <Sparkles className="h-6 w-6 text-white" />
+          </Button>
+        ) : (
+          // Expanded oval prompt
+          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
+            <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[280px] max-w-[400px]">
+              <Button
+                onClick={() => setIsFloatingBubbleMinimized(true)}
+                size="sm"
+                variant="ghost"
+                className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                data-testid="button-minimize-floating-ai"
+              >
+                <Sparkles className="w-4 h-4" />
+              </Button>
+              <Input
+                placeholder="Ask anything..."
+                value={floatingPrompt}
+                onChange={(e) => setFloatingPrompt(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
+                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground"
+                disabled={isFloatingSending}
+              />
+              <Button
+                onClick={handleFloatingSend}
+                size="sm"
+                variant="ghost"
+                className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                disabled={!floatingPrompt.trim() || isFloatingSending}
+              >
+                {isFloatingSending ? (
+                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-3 h-3" />
+                )}
+              </Button>
             </div>
-            <Input
-              placeholder="Ask anything"
-              value={floatingPrompt}
-              onChange={(e) => setFloatingPrompt(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
-              className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground"
-              disabled={isFloatingSending}
-            />
-            <Button
-              onClick={handleFloatingSend}
-              size="sm"
-              variant="ghost"
-              className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
-              disabled={!floatingPrompt.trim() || isFloatingSending}
-            >
-              {isFloatingSending ? (
-                <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <Send className="w-3 h-3" />
-              )}
-            </Button>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Global Navigation Menu - only show when not pinned */}

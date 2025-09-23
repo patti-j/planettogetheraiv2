@@ -73,6 +73,7 @@ const VOICE_OPTIONS = [
 export default function IntegratedAIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isBubbleMinimized, setIsBubbleMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
@@ -640,13 +641,41 @@ export default function IntegratedAIAssistant() {
           </div>
         )}
         
-        {/* Main assistant button */}
-        <Button
-          onClick={() => setIsOpen(true)}
-          className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
-        >
-          <Sparkles className="h-6 w-6 text-white" />
-        </Button>
+        {/* AI Bubble - Toggle between oval prompt and circular icon */}
+        <div className="relative">
+          {isBubbleMinimized ? (
+            // Minimized circular icon
+            <Button
+              onClick={() => setIsBubbleMinimized(false)}
+              className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200"
+              data-testid="button-expand-ai-bubble"
+            >
+              <Sparkles className="h-6 w-6 text-white" />
+            </Button>
+          ) : (
+            // Expanded oval prompt
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-full px-6 py-3 flex items-center gap-3 cursor-pointer"
+                 onClick={() => setIsOpen(true)}
+                 data-testid="button-ask-anything"
+            >
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIsBubbleMinimized(true);
+                }}
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0 rounded-full hover:bg-white/20 text-white"
+                data-testid="button-minimize-ai-bubble"
+              >
+                <Sparkles className="h-4 w-4" />
+              </Button>
+              <span className="text-white font-medium text-sm whitespace-nowrap">
+                Ask anything...
+              </span>
+            </div>
+          )}
+        </div>
       </div>
     );
   }
