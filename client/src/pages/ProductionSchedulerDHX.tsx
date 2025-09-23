@@ -200,9 +200,8 @@ export default function ProductionSchedulerDHX() {
         resource_id: resource.id
       };
       tasks.push(resourceTask);
-      // Store both string and numeric versions of the key for compatibility
+      // Store with string key for consistent lookup
       resourceMap.set(String(resource.id), resourceTask.id);
-      resourceMap.set(resource.id, resourceTask.id);
     });
     
     // Add operations as children of resources
@@ -231,13 +230,6 @@ export default function ProductionSchedulerDHX() {
       }
     });
     
-    // Log resource distribution for debugging
-    console.log('🔍 Resource Assignment Distribution:');
-    resourceAssignmentCount.forEach((count, resourceId) => {
-      const resourceName = resourcesData.find((r: any) => String(r.id) === resourceId)?.name || `Resource ${resourceId}`;
-      console.log(`  ${resourceName} (ID: ${resourceId}): ${count} operations`);
-    });
-    
     // Transform dependencies
     const links = (Array.isArray(dependenciesData) ? dependenciesData : []).map((dep: any) => ({
       id: dep.id,
@@ -251,6 +243,12 @@ export default function ProductionSchedulerDHX() {
       operationsCount: operationsData.length,
       totalTasks: tasks.length,
       linksCount: links.length
+    });
+    
+    console.log('🔍 Resource Assignment Distribution:');
+    resourceAssignmentCount.forEach((count, resourceId) => {
+      const resourceName = resourcesData.find((r: any) => String(r.id) === resourceId)?.name || `Resource ${resourceId}`;
+      console.log(`  ${resourceName} (ID: ${resourceId}): ${count} operations`);
     });
 
     // Parse the data
@@ -420,7 +418,7 @@ export default function ProductionSchedulerDHX() {
       />
       
       {/* Custom CSS for resource timeline view */}
-      <style jsx global>{`
+      <style>{`
         /* Hide resource parent task bars on timeline */
         .resource-parent-hidden {
           display: none !important;
