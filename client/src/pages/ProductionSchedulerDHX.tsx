@@ -200,13 +200,20 @@ export default function ProductionSchedulerDHX() {
         resource_id: resource.id
       };
       tasks.push(resourceTask);
+      // Store both string and numeric versions of the key for compatibility
+      resourceMap.set(String(resource.id), resourceTask.id);
       resourceMap.set(resource.id, resourceTask.id);
     });
     
     // Add operations as children of resources
+    const resourceAssignmentCount = new Map();
     (Array.isArray(operationsData) ? operationsData : []).forEach((op: any) => {
-      const resourceId = op.resourceId || op.resourceDbId || 1;
-      const parentId = resourceMap.get(resourceId) || resourceMap.get(1);
+      // resourceId from API is a string, ensure we convert to string for map lookup
+      const resourceId = String(op.resourceId || op.resourceDbId || 1);
+      const parentId = resourceMap.get(resourceId) || resourceMap.get("1");
+      
+      // Track assignment distribution
+      resourceAssignmentCount.set(resourceId, (resourceAssignmentCount.get(resourceId) || 0) + 1);
       
       if (parentId) {
         tasks.push({
@@ -222,6 +229,13 @@ export default function ProductionSchedulerDHX() {
           $level: 1
         });
       }
+    });
+    
+    // Log resource distribution for debugging
+    console.log('🔍 Resource Assignment Distribution:');
+    resourceAssignmentCount.forEach((count, resourceId) => {
+      const resourceName = resourcesData.find((r: any) => String(r.id) === resourceId)?.name || `Resource ${resourceId}`;
+      console.log(`  ${resourceName} (ID: ${resourceId}): ${count} operations`);
     });
     
     // Transform dependencies
