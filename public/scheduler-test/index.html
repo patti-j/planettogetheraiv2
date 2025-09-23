@@ -139,8 +139,49 @@
       const assigned = new Set(assignments.map(a => a.eventId));
       for (const ev of events) if (!assigned.has(ev.id)) { ev.isUnscheduled = true; ev.eventColor = '#808080'; }
 
-      // Dependencies (none by default; add if you have them)
+      // Dependencies - connect successive operations within the same job
       const dependencies = [];
+      
+      // Group operations by jobId
+      const opsByJob = {};
+      for (const op of operations) {
+        const jobId = op.jobId || op.job_id;
+        if (!jobId) continue;
+        if (!opsByJob[jobId]) opsByJob[jobId] = [];
+        opsByJob[jobId].push(op);
+      }
+      
+      // Create dependencies for each job's operations
+      let depId = 1;
+      for (const jobId in opsByJob) {
+        const jobOps = opsByJob[jobId];
+        
+        // Sort by start date to get proper sequence
+        jobOps.sort((a, b) => {
+          const aStart = a.scheduled_start || a.startDate;
+          const bStart = b.scheduled_start || b.startDate;
+          if (!aStart || !bStart) return 0;
+          return new Date(aStart) - new Date(bStart);
+        });
+        
+        // Create dependency chain
+        for (let i = 0; i < jobOps.length - 1; i++) {
+          const fromOp = jobOps[i];
+          const toOp = jobOps[i + 1];
+          
+          dependencies.push({
+            id: `dep_${depId++}`,
+            from: S(fromOp.id),
+            to: S(toOp.id),
+            type: 2, // Finish-to-Start dependency
+            lag: 0,
+            lagUnit: 'hour'
+          });
+        }
+      }
+      
+      console.log(`Created ${dependencies.length} dependencies across ${Object.keys(opsByJob).length} jobs`);
+      console.log('Dependencies:', dependencies);
 
       return { resourceRows, events, assignments, dependencies };
     }
