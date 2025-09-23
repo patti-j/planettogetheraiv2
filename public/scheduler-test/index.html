@@ -197,14 +197,14 @@
           },
           columns: [
             { type: 'rownumber', width: 40 },
-            { text: 'Resource', field: 'name', width: 200, flex: 1,
-              renderer: ({ record }) => `<strong>${record.name}</strong><br/><small style="color:#666">${record.id}</small>` },
-            { text: 'Dept', field: 'category', width: 100 }
+            { text: 'Resource', field: 'name', width: 220, flex: 1,
+              renderer: ({ record }) => `${record.name} (${record.id})` },
+            { text: 'Department', field: 'category', width: 120 }
           ],
           // show assigned rid on each chip for clarity
           eventRenderer: ({ eventRecord, assignmentRecord }) => {
-            const rid = assignmentRecord?.resourceId ?? '—';
-            return `${eventRecord.name} <span style="opacity:.6">[rid:${rid}]</span>`;
+            const rid = assignmentRecord?.resourceId ?? 'unassigned';
+            return `${eventRecord.name} [${rid}]`;
           }
         });
 
