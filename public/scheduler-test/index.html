@@ -524,10 +524,31 @@
               // Find and remove its assignment
               const assignment = p.assignmentStore.find(a => a.eventId === event.id);
               if (assignment) {
+                // Store original dates before removing assignment
+                const originalStart = event.startDate;
+                const originalDuration = event.duration || 2;
+                
                 p.assignmentStore.remove(assignment);
+                
+                // Add event to unscheduled with assignment
+                p.assignmentStore.add({ 
+                  id: `a_${event.id}_unscheduled`, 
+                  eventId: event.id, 
+                  resourceId: 'unscheduled' 
+                });
+                
+                // Keep the dates if they exist, or set them to today if not
+                if (!originalStart) {
+                  // If no original date, place it starting from today
+                  const today = new Date();
+                  today.setHours(8, 0, 0, 0);
+                  event.startDate = today;
+                  event.endDate = new Date(today.getTime() + originalDuration * 3600000);
+                }
+                
                 event.isUnscheduled = true;
                 event.eventColor = '#808080';
-                console.log(`Unscheduled: ${eventName}`);
+                console.log(`Unscheduled: ${eventName} at`, event.startDate);
               }
             }
           });
