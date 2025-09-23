@@ -189,16 +189,6 @@ export default function HomePage() {
     <div className="flex flex-col h-full bg-background">
       {/* Header */}
       <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h1 className={`font-bold ${isMobile ? 'text-xl' : 'text-2xl'}`}>
-              Welcome back, {user?.firstName || 'User'}!
-            </h1>
-            <p className="text-muted-foreground text-sm mt-1">
-              {format(new Date(), 'EEEE, MMMM d, yyyy')}
-            </p>
-          </div>
-        </div>
 
         {/* Dashboard Selector */}
         <div className="flex items-center gap-4">
