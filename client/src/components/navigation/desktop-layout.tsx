@@ -738,8 +738,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               {/* Agent Selector Dropdown */}
               <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                <SelectTrigger className="w-[100px] h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0">
-                  <SelectValue />
+                <SelectTrigger className="w-8 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
+                  <ChevronDown className="w-3 h-3" />
                 </SelectTrigger>
                 <SelectContent align="start">
                   <SelectItem value="unified" className="text-xs">
