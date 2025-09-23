@@ -216,17 +216,8 @@
           autoHeight: false,  // Don't auto-adjust height
           minHeight: 600,     // Minimum scheduler height
           
-          // Step 1: Zoom controls toolbar
-          tbar: [
-            '->',
-            { type: 'button', text: 'Today', onAction: () => scheduler.scrollToDate(new Date(), { block : 'center' }) },
-            { type: 'button', text: '–', onAction: () => scheduler.zoomOut() },
-            { type: 'slider', width: 120, min: 0, max: 20,
-              value: 10,
-              onChange: ({ value }) => scheduler.zoomToLevel(value)
-            },
-            { type: 'button', text: '+', onAction: () => scheduler.zoomIn() }
-          ],
+          // Combined toolbar with all controls
+          tbar: [],
           
           project: {
             resourceStore:   { data: resourceRows },
@@ -236,7 +227,13 @@
           },
           features: {
             stripe: true,
-            dependencies: true,
+            dependencies: {
+              disabled: false,
+              showTooltip: true,
+              drawOnEventResize: true,
+              markerStyle: 'arrow',  // Make sure arrow markers are visible
+              lineStyle: 'solid'     // Use solid lines for better visibility
+            },
             eventDrag: { 
               showTooltip: true, 
               constrainDragToResource: false
@@ -394,7 +391,11 @@
         };
 
         // Run cleanup after a slight delay to ensure stores are populated
-        setTimeout(cleanupOverlaps, 100);
+        setTimeout(() => {
+          cleanupOverlaps();
+          // Refresh the scheduler display after cleanup
+          scheduler.refresh();
+        }, 100);
 
         // Step 2: "Pack Unscheduled" - naive auto-pack for unscheduled events
         async function packUnscheduled() {
@@ -446,11 +447,7 @@
           scheduler.toast?.(`${placed} event(s) scheduled`);
         }
 
-        // Add a button in the toolbar to run it
-        scheduler.tbar?.add([
-          { type: 'separator' },
-          { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onAction: packUnscheduled }
-        ]);
+        // Pack Unscheduled button will be added to toolbar later
         
         // Step 3: Save adjusted schedules (Option B - Manual collect and POST)
         function packStoreChanges(store) {
@@ -489,25 +486,36 @@
           p.dependencyStore.commit();
         }
 
-        scheduler.tbar?.add([
-          { type: 'button', 
-            text: 'Save', 
-            cls: 'b-raised b-green', 
-            onAction: () => saveManual()
-              .then(() => scheduler.toast?.('Changes saved successfully'))
-              .catch((e) => {
-                console.error('Save failed:', e);
-                scheduler.toast?.('Save failed: ' + e.message);
-              }) 
-          }
-        ]);
-        
         // Step 4: Enable Undo/Redo (safety net)
         scheduler.project.stm.enable();
-        scheduler.tbar?.add([
-          { type: 'button', text: 'Undo', onAction: () => scheduler.project.stm.undo() },
-          { type: 'button', text: 'Redo', onAction: () => scheduler.project.stm.redo() }
-        ]);
+        
+        // Set all toolbar items at once to avoid separator issues
+        scheduler.tbar = {
+          items: [
+            '->',
+            { type: 'button', text: 'Today', onAction: () => scheduler.scrollToDate(new Date(), { block : 'center' }) },
+            { type: 'button', text: '–', onAction: () => scheduler.zoomOut() },
+            { type: 'slider', width: 120, min: 0, max: 20,
+              value: 10,
+              onChange: ({ value }) => scheduler.zoomToLevel(value)
+            },
+            { type: 'button', text: '+', onAction: () => scheduler.zoomIn() },
+            '|',  // Use pipe separator instead of object separator
+            { type: 'button', text: 'Pack Unscheduled', cls: 'b-raised', onAction: packUnscheduled },
+            { type: 'button', 
+              text: 'Save', 
+              cls: 'b-raised b-green', 
+              onAction: () => saveManual()
+                .then(() => scheduler.toast?.('Changes saved successfully'))
+                .catch((e) => {
+                  console.error('Save failed:', e);
+                  scheduler.toast?.('Save failed: ' + e.message);
+                }) 
+            },
+            { type: 'button', text: 'Undo', onAction: () => scheduler.project.stm.undo() },
+            { type: 'button', text: 'Redo', onAction: () => scheduler.project.stm.redo() }
+          ]
+        };
 
         // Expose for quick debugging
         window.scheduler = scheduler;
