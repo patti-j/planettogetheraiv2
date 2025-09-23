@@ -8,7 +8,7 @@ import 'dhtmlx-gantt/codebase/dhtmlxgantt.css';
 interface ProductionSchedulerDHXProps {}
 
 export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) {
-  const ganttContainer = useRef<HTMLDivElement>(null);
+  const [ganttContainer, setGanttContainer] = useState<HTMLDivElement | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
   // Fetch operations data
@@ -29,11 +29,11 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
   // Initialize DHTMLX Gantt
   useEffect(() => {
     console.log('🔄 DHTMLX Init Check:', {
-      hasContainer: !!ganttContainer.current,
+      hasContainer: !!ganttContainer,
       isInitialized: isInitialized
     });
     
-    if (!ganttContainer.current || isInitialized) {
+    if (!ganttContainer || isInitialized) {
       return;
     }
 
@@ -117,7 +117,7 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     gantt.config.show_project_in_taskbar = true;
     
     // Initialize Gantt
-    gantt.init(ganttContainer.current);
+    gantt.init(ganttContainer);
     console.log('✅ DHTMLX Gantt initialized');
     setIsInitialized(true);
     
@@ -126,12 +126,12 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
 
     // Cleanup on unmount
     return () => {
-      if (ganttContainer.current && gantt) {
+      if (ganttContainer && gantt) {
         gantt.clearAll();
         setIsInitialized(false);
       }
     };
-  }, []); // Only run once on mount
+  }, [ganttContainer]); // Run when container is ready
 
   // Load data - Resources as parent tasks, Operations as children
   useEffect(() => {
@@ -237,8 +237,26 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     console.log('Operations:', opsCount);
     console.log('Links:', links.length);
     
-    // Force render after parsing
-    gantt.render();
+    // Force render and refresh after parsing
+    setTimeout(() => {
+      gantt.render();
+      gantt.refreshData();
+      // Force a complete redraw
+      if (ganttContainer) {
+        gantt.init(ganttContainer);
+        gantt.parse(ganttData);
+      }
+      console.log('🔄 DHTMLX Gantt refreshed and reinitialized');
+      
+      // Debug: Check if DHTMLX created elements
+      const ganttElements = document.querySelectorAll('.gantt_grid, .gantt_task, .gantt_ver_scroll');
+      console.log('📊 DHTMLX DOM elements created:', {
+        gridElements: document.querySelectorAll('.gantt_grid').length,
+        taskElements: document.querySelectorAll('.gantt_task').length,
+        scrollElements: document.querySelectorAll('.gantt_ver_scroll').length,
+        containerChildren: ganttContainer?.children.length || 0
+      });
+    }, 100);
 
     // Calculate date range based on operations
     const operations = Array.isArray(operationsData) ? operationsData : [];
@@ -283,13 +301,17 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
             </div>
           </div>
         </div>
-        <div className="flex-1 relative">
+        <div className="flex-1 relative" style={{ minHeight: '600px' }}>
           {(isLoadingOps || isLoadingRes) ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-lg">Loading scheduler data...</div>
             </div>
           ) : (
-            <div ref={ganttContainer} className="w-full h-full dhtmlx-gantt-container" />
+            <div 
+              ref={setGanttContainer} 
+              className="dhtmlx-gantt-container"
+              style={{ width: '100%', height: '600px' }}
+            />
           )}
         </div>
       </Card>
@@ -298,6 +320,14 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
         .dhtmlx-gantt-container {
           width: 100%;
           height: 100%;
+          min-height: 500px;
+          position: relative;
+        }
+        
+        /* DHTMLX Gantt specific styles to ensure visibility */
+        .gantt_container {
+          width: 100% !important;
+          height: 100% !important;
         }
         
         .resource-grid-row {
