@@ -28,12 +28,12 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
 
   // Initialize DHTMLX Gantt
   useEffect(() => {
-    if (!ganttContainer.current) {
-      return;
-    }
-
-    // Only initialize once
-    if (isInitialized) {
+    console.log('🔄 DHTMLX Init Check:', {
+      hasContainer: !!ganttContainer.current,
+      isInitialized: isInitialized
+    });
+    
+    if (!ganttContainer.current || isInitialized) {
       return;
     }
 
@@ -120,6 +120,9 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     gantt.init(ganttContainer.current);
     console.log('✅ DHTMLX Gantt initialized');
     setIsInitialized(true);
+    
+    // Force initial render
+    gantt.render();
 
     // Cleanup on unmount
     return () => {
@@ -215,15 +218,27 @@ export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) 
     });
 
     // Parse the data
-    gantt.parse({
+    const ganttData = {
       data: tasks,
       links: links
+    };
+    
+    console.log('📦 About to parse DHTMLX Gantt data:', {
+      tasksCount: tasks.length,
+      linksCount: links.length,
+      firstTask: tasks[0],
+      firstLink: links[0]
     });
-
+    
+    gantt.parse(ganttData);
+    
     console.log('✅ Resource-Grouped View loaded');
     console.log('Resources:', resourceMap.size);
     console.log('Operations:', opsCount);
     console.log('Links:', links.length);
+    
+    // Force render after parsing
+    gantt.render();
 
     // Calculate date range based on operations
     const operations = Array.isArray(operationsData) ? operationsData : [];
