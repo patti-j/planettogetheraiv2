@@ -91,9 +91,18 @@ app.use((req, res, next) => {
     log("⚠️  OpenAI API key not configured - AI features will be limited");
   }
   
+  // Serve scheduler-test specifically
+  app.get('/scheduler-test', (req, res) => {
+    res.sendFile(path.resolve('public/scheduler-test/index.html'));
+  });
+  
+  app.get('/scheduler-test/', (req, res) => {
+    res.sendFile(path.resolve('public/scheduler-test/index.html'));
+  });
+
   // Serve HTML files directly from public directory with no caching
   app.get('/*.html', (req, res) => {
-    const filePath = `client/public${req.path}`;
+    const filePath = `public${req.path}`;
     
     // Set no-cache headers
     res.set({
