@@ -2089,6 +2089,32 @@ router.get("/api/resources", async (req, res) => {
   }
 });
 
+// Serve resource capabilities (what operations each resource can perform)
+router.get("/api/resource-capabilities", async (req, res) => {
+  try {
+    const result = await client.query(`
+      SELECT resource_id, operation_type, can_perform 
+      FROM resource_capabilities 
+      WHERE can_perform = true
+      ORDER BY resource_id, operation_type
+    `);
+    
+    // Group by resource for easier lookup
+    const capabilities: Record<string, string[]> = {};
+    for (const row of result.rows) {
+      if (!capabilities[row.resource_id]) {
+        capabilities[row.resource_id] = [];
+      }
+      capabilities[row.resource_id].push(row.operation_type);
+    }
+    
+    res.json(capabilities);
+  } catch (error) {
+    console.error('Error fetching resource capabilities:', error);
+    res.status(500).json({ error: 'Failed to fetch resource capabilities' });
+  }
+});
+
 router.get("/api/pt-operations", async (req, res) => {
   try {
     // Check if demo mode is requested (limit operations for demo)

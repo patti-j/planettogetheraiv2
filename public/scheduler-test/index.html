@@ -70,13 +70,18 @@
         };
       }
       // MODE B: Default to API fetch
-      const [r, o] = await Promise.all([ fetch(RESOURCES_ENDPOINT), fetch(OPERATIONS_ENDPOINT) ]);
+      const [r, o, c] = await Promise.all([ 
+        fetch(RESOURCES_ENDPOINT), 
+        fetch(OPERATIONS_ENDPOINT),
+        fetch('/api/resource-capabilities')
+      ]);
       const resources = r.ok ? await r.json() : [];
       const operations = o.ok ? await o.json() : [];
-      return { resources: A(resources), operations: A(operations) };
+      const capabilities = c.ok ? await c.json() : {};
+      return { resources: A(resources), operations: A(operations), capabilities };
     }
 
-    function buildStores({ resources, operations }) {
+    function buildStores({ resources, operations, capabilities }) {
       // Resource canonical id = STRING resource_id
       const resourceRows = [
         { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
@@ -183,7 +188,7 @@
       console.log(`Created ${dependencies.length} dependencies across ${Object.keys(opsByJob).length} jobs`);
       console.log('Dependencies:', dependencies);
 
-      return { resourceRows, events, assignments, dependencies };
+      return { resourceRows, events, assignments, dependencies, capabilities };
     }
 
     async function main() {
@@ -195,10 +200,11 @@
         const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23,59,59,999);
 
         const raw = await loadData();
-        const { resourceRows, events, assignments, dependencies } = buildStores(raw);
+        const { resourceRows, events, assignments, dependencies, capabilities } = buildStores(raw);
 
         console.table(resourceRows.slice(0,10).map(r => ({ id: r.id, name: r.name })));
         console.table(assignments.slice(0,10));
+        console.log('Resource Capabilities:', capabilities);
 
         const scheduler = new SchedulerPro({
           appendTo: document.getElementById('scheduler'),
@@ -258,26 +264,81 @@
           }
         });
 
-        // Enforce: no two operations on the same resource at the same time
-        const noOverlap = ({ resourceRecord, startDate, endDate, eventRecord }) => {
-          return scheduler.isDateRangeAvailable(startDate, endDate, resourceRecord, eventRecord)
-            ? true
-            : { valid: false, message: `Conflict on ${resourceRecord?.name || 'resource'}` };
+        // Helper function to get operation type from event name
+        const getOperationType = (eventName) => {
+          if (!eventName) return 'Other';
+          const name = eventName.toLowerCase();
+          if (name.includes('mill')) return 'Milling';
+          if (name.includes('mash') && name.includes('decoction')) return 'Decoction';
+          if (name.includes('mash')) return 'Mashing';
+          if (name.includes('lauter')) return 'Lautering';
+          if (name.includes('boil')) return 'Boiling';
+          if (name.includes('ferment')) return 'Fermentation';
+          if (name.includes('lager')) return 'Lagering';
+          if (name.includes('condition')) return 'Conditioning';
+          if (name.includes('packag')) return 'Packaging';
+          if (name.includes('dry hop')) return 'Dry Hopping';
+          return 'Other';
         };
 
-        scheduler.features.eventDrag.validatorFn   = noOverlap;
-        scheduler.features.eventResize.validatorFn = noOverlap;
+        // Enforce: Check both resource capabilities AND no overlaps
+        const validateOperation = ({ resourceRecord, startDate, endDate, eventRecord }) => {
+          // Skip validation for unscheduled lane
+          if (!resourceRecord || resourceRecord.id === 'unscheduled') {
+            return true;
+          }
+
+          // Check resource capabilities
+          const operationType = getOperationType(eventRecord?.name);
+          const resourceCapabilities = capabilities[resourceRecord.id] || [];
+          
+          if (!resourceCapabilities.includes(operationType)) {
+            console.warn(`Resource ${resourceRecord.name} cannot perform ${operationType} operations`);
+            return { 
+              valid: false, 
+              message: `${resourceRecord.name} cannot perform ${operationType} operations` 
+            };
+          }
+
+          // Check for overlaps
+          const available = scheduler.isDateRangeAvailable(startDate, endDate, resourceRecord, eventRecord);
+          if (!available) {
+            return { valid: false, message: `Time conflict on ${resourceRecord?.name}` };
+          }
+
+          return true;
+        };
+
+        // Apply validators including capability check
+        scheduler.features.eventDrag.validatorFn   = validateOperation;
+        scheduler.features.eventResize.validatorFn = validateOperation;
 
         // Also guard assignment changes created via DnD between rows
         scheduler.on('beforeEventDropFinalize', ({ context }) => {
           const { eventRecord, newResource, startDate, endDate } = context;
-          if (!scheduler.isDateRangeAvailable(startDate, endDate, newResource, eventRecord)) {
-            console.warn(`Blocking drop: Resource ${newResource?.name} is busy at that time`);
-            // Show a toast message if available
-            if (scheduler.toast) {
-              scheduler.toast('That resource is already busy for that time range.');
+          
+          // Skip validation for unscheduled lane
+          if (newResource && newResource.id !== 'unscheduled') {
+            // Check capabilities first
+            const operationType = getOperationType(eventRecord?.name);
+            const resourceCapabilities = capabilities[newResource.id] || [];
+            
+            if (!resourceCapabilities.includes(operationType)) {
+              console.warn(`Blocking drop: ${newResource.name} cannot perform ${operationType}`);
+              if (scheduler.toast) {
+                scheduler.toast(`${newResource.name} cannot perform ${operationType} operations`);
+              }
+              return false;
             }
-            return false;
+            
+            // Check for time conflicts
+            if (!scheduler.isDateRangeAvailable(startDate, endDate, newResource, eventRecord)) {
+              console.warn(`Blocking drop: Resource ${newResource?.name} is busy at that time`);
+              if (scheduler.toast) {
+                scheduler.toast('That resource is already busy for that time range.');
+              }
+              return false;
+            }
           }
         });
         
