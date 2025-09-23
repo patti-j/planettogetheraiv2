@@ -323,6 +323,36 @@
         scheduler.features.eventDrag.validatorFn   = validateOperation;
         scheduler.features.eventResize.validatorFn = validateOperation;
 
+        // Validate ALL assignment changes (not just drag and drop)
+        scheduler.project.assignmentStore.on('beforeAdd', ({ record, source }) => {
+          const resource = scheduler.resourceStore.getById(record.resourceId);
+          const event = scheduler.eventStore.getById(record.eventId);
+          
+          // Skip validation for unscheduled lane
+          if (!resource || !event || resource.id === 'unscheduled') {
+            return;
+          }
+          
+          // Check resource capabilities
+          const operationType = getOperationType(event.name);
+          const resourceCapabilities = capabilities[resource.id] || [];
+          
+          if (!resourceCapabilities.includes(operationType)) {
+            console.warn(`Blocking assignment: ${resource.name} cannot perform ${operationType}`);
+            scheduler.toast?.(`${resource.name} cannot perform ${operationType} operations`);
+            return false; // Block the assignment
+          }
+          
+          // Check for time conflicts (if event has dates)
+          if (event.startDate && event.endDate) {
+            if (!scheduler.isDateRangeAvailable(event.startDate, event.endDate, resource, event)) {
+              console.warn(`Blocking assignment: Resource ${resource.name} is busy at that time`);
+              scheduler.toast?.('That resource is already busy for that time range.');
+              return false;
+            }
+          }
+        });
+
         // Also guard assignment changes created via DnD between rows
         scheduler.on('beforeEventDropFinalize', ({ context }) => {
           const { eventRecord, newResource, startDate, endDate } = context;
@@ -335,24 +365,37 @@
             
             if (!resourceCapabilities.includes(operationType)) {
               console.warn(`Blocking drop: ${newResource.name} cannot perform ${operationType}`);
-              if (scheduler.toast) {
-                scheduler.toast(`${newResource.name} cannot perform ${operationType} operations`);
-              }
+              scheduler.toast?.(`${newResource.name} cannot perform ${operationType} operations`);
+              // Cancel the drop operation
+              context.valid = false;
               return false;
             }
             
             // Check for time conflicts
             if (!scheduler.isDateRangeAvailable(startDate, endDate, newResource, eventRecord)) {
               console.warn(`Blocking drop: Resource ${newResource?.name} is busy at that time`);
-              if (scheduler.toast) {
-                scheduler.toast('That resource is already busy for that time range.');
-              }
+              scheduler.toast?.('That resource is already busy for that time range.');
+              // Cancel the drop operation
+              context.valid = false;
               return false;
             }
           }
         });
+
+        // Also validate when events are dragged to different resources
+        scheduler.on('beforeEventDrag', ({ eventRecord, resourceRecord, context }) => {
+          if (resourceRecord && resourceRecord.id !== 'unscheduled') {
+            const operationType = getOperationType(eventRecord?.name);
+            const resourceCapabilities = capabilities[resourceRecord.id] || [];
+            
+            if (!resourceCapabilities.includes(operationType)) {
+              // Show a visual indicator that this is not allowed
+              context.external.invalid = true;
+            }
+          }
+        });
         
-        console.log('Overlap prevention enabled for drag and resize operations');
+        console.log('Overlap prevention and capability validation enabled for all operations');
         
         // Step 1 (optional): Smooth trackpad zoom with Ctrl + wheel
         scheduler.on('scheduleMouseWheel', ({ event }) => {
