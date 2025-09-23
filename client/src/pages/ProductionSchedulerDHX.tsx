@@ -1,158 +1,251 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { gantt } from 'dhtmlx-gantt';
 import 'dhtmlx-gantt/codebase/dhtmlxgantt.css';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, RefreshCw, Maximize, Calendar } from 'lucide-react';
 
-export default function ProductionSchedulerDHX() {
-  console.log('🚀 ProductionSchedulerDHX component is rendering');
-  console.log('✅ DHTMLX Gantt library loaded:', typeof gantt !== 'undefined');
+interface ProductionSchedulerDHXProps {}
 
+export default function ProductionSchedulerDHX({}: ProductionSchedulerDHXProps) {
   const ganttContainer = useRef<HTMLDivElement>(null);
   const [isInitialized, setIsInitialized] = useState(false);
-  
+
   // Fetch operations data
-  const { data: operationsData = [], isLoading: isLoadingOps, refetch: refetchOps } = useQuery({
-    queryKey: ['/api/pt-operations']
-  });
-  
-  // Fetch resources data 
-  const { data: resourcesData = [], isLoading: isLoadingRes } = useQuery({
-    queryKey: ['/api/resources']
-  });
-  
-  // Fetch dependencies data
-  const { data: dependenciesData = [], isLoading: isLoadingDeps } = useQuery({
-    queryKey: ['/api/pt-dependencies']
+  const { data: operationsData, isLoading: isLoadingOps } = useQuery({
+    queryKey: ['/api/scheduler/operations-dhx'],
   });
 
-  // Initialize DHTMLX Gantt - Resource View with Hidden Operation Rows
+  // Fetch resources data
+  const { data: resourcesData, isLoading: isLoadingRes } = useQuery({
+    queryKey: ['/api/scheduler/resources-dhx'],
+  });
+
+  // Fetch dependencies data
+  const { data: dependenciesData, isLoading: isLoadingDeps } = useQuery({
+    queryKey: ['/api/scheduler/dependencies-dhx'],
+  });
+
+  // Initialize DHTMLX Gantt with Resource Timeline Extension
   useEffect(() => {
-    if (isInitialized || !ganttContainer.current) {
+    if (!ganttContainer.current || isInitialized) {
       return;
     }
 
-    console.log('🎯 Initializing DHTMLX Gantt - Resource Timeline View');
+    console.log('🎯 Initializing DHTMLX Gantt - Resource Timeline Extension');
+    
+    // Enable the resource panel plugin (Pro feature)
+    try {
+      // @ts-ignore - Resource panel is a Pro feature that may not be in type definitions
+      gantt.plugins({
+        resource_panel: true,
+        grouping: true
+      });
+    } catch (error) {
+      console.warn('Resource panel plugin not available - trying alternative approach:', error);
+    }
     
     // Configure date format
     gantt.config.date_format = "%Y-%m-%d %H:%i:%s";
     gantt.config.xml_date = "%Y-%m-%d %H:%i:%s";
     gantt.config.duration_unit = "hour";
     gantt.config.work_time = true;
-    gantt.config.correct_work_time = true;
-    gantt.config.round_dnd_dates = true;
     
-    // Set row height for resources
-    gantt.config.row_height = 44;
-    gantt.config.bar_height = 16;
-    gantt.config.open_tree_initially = true;
+    // Enable resource processing
+    gantt.config.process_resource_assignments = true;
+    gantt.config.resource_store = "resource";
+    gantt.config.resource_property = "$resources";
+    
+    // Configure resource timeline layout
+    gantt.config.layout = {
+      css: "gantt_container",
+      rows: [
+        // Main Gantt area (top)
+        {
+          gravity: 2,
+          cols: [
+            {
+              view: "grid",
+              width: 400,
+              scrollY: "scrollVer",
+              config: gantt.config.columns || []
+            },
+            { resizer: true, width: 1 },
+            {
+              view: "timeline",
+              scrollX: "scrollHor",
+              scrollY: "scrollVer"
+            },
+            {
+              view: "scrollbar",
+              id: "scrollVer",
+              group: "vertical"
+            }
+          ]
+        },
+        { resizer: true, width: 1 },
+        // Resource Panel (bottom)
+        {
+          gravity: 1,
+          config: { height: 400 },
+          cols: [
+            {
+              view: "resourceGrid",
+              width: 400,
+              scrollY: "resourceVScroll",
+              bind: "resource",
+              config: {
+                columns: [
+                  {
+                    name: "text",
+                    label: "Resource Name",
+                    tree: false,
+                    width: 250
+                  },
+                  {
+                    name: "capacity",
+                    label: "Capacity",
+                    align: "center",
+                    width: 70,
+                    template: function(resource: any) {
+                      return resource.capacity || "24h";
+                    }
+                  },
+                  {
+                    name: "workload",
+                    label: "Load %",
+                    align: "center",
+                    width: 70,
+                    template: function(resource: any) {
+                      return resource.workload || "0%";
+                    }
+                  }
+                ]
+              }
+            },
+            { resizer: true, width: 1 },
+            {
+              view: "resourceTimeline",
+              scrollX: "scrollHor",
+              scrollY: "resourceVScroll",
+              bind: "resource"
+            },
+            {
+              view: "scrollbar",
+              id: "resourceVScroll",
+              group: "vertical"
+            }
+          ]
+        },
+        {
+          view: "scrollbar",
+          id: "scrollHor",
+          group: "horizontal"
+        }
+      ]
+    };
     
     // Configure scales
-    gantt.config.scale_unit = "day";
-    gantt.config.date_scale = "%d %M";
-    gantt.config.min_column_width = 50;
-    gantt.config.scale_height = 90;
-    
-    gantt.config.subscales = [
+    gantt.config.scales = [
+      {
+        unit: "day",
+        format: "%d %M"
+      },
       {
         unit: "hour",
-        step: 6,
-        date: "%H:00"
+        format: "%H:00"
       }
     ];
     
-    // Configure grid columns
+    // Configure grid columns for main gantt
     gantt.config.columns = [
       {
         name: "text",
-        label: "Resource",
+        label: "Operation",
         tree: false,
         width: 180
       },
       {
-        name: "capacity",
-        label: "Capacity",
+        name: "job_name",
+        label: "Job",
         align: "center",
-        width: 70,
+        width: 100,
         template: function(task: any) {
-          return task.capacity || "";
+          return task.job_name || "";
         }
+      },
+      {
+        name: "duration",
+        label: "Duration",
+        align: "center",
+        width: 60
       }
     ];
     
-    // Disable drag and drop for now
+    // Configure resource cell rendering
+    gantt.templates.resource_cell_value = function(start_date, end_date, resource, tasks) {
+      let totalLoad = 0;
+      let capacity = resource.capacity || 24;
+      
+      tasks.forEach(function(task: any) {
+        if (task.$resource_assignments) {
+          const assignment = task.$resource_assignments.find((a: any) => a.resource_id == resource.id);
+          if (assignment) {
+            totalLoad += assignment.value || task.duration;
+          }
+        }
+      });
+      
+      const loadPercent = Math.round((totalLoad / capacity) * 100);
+      let cssClass = "resource_normal";
+      if (loadPercent > 100) cssClass = "resource_overloaded";
+      else if (loadPercent > 80) cssClass = "resource_high_load";
+      
+      return `<div class="${cssClass}">${loadPercent}%</div>`;
+    };
+    
+    // Configure resource cell styling
+    gantt.templates.resource_cell_class = function(start_date, end_date, resource, tasks) {
+      let totalLoad = 0;
+      let capacity = resource.capacity || 24;
+      
+      tasks.forEach(function(task: any) {
+        if (task.$resource_assignments) {
+          const assignment = task.$resource_assignments.find((a: any) => a.resource_id == resource.id);
+          if (assignment) {
+            totalLoad += assignment.value || task.duration;
+          }
+        }
+      });
+      
+      const loadPercent = (totalLoad / capacity) * 100;
+      if (loadPercent > 100) return "resource_overloaded";
+      if (loadPercent > 80) return "resource_high_load";
+      return "resource_normal";
+    };
+    
+    // Disable some features for now
     gantt.config.readonly = true;
     gantt.config.drag_links = false;
     gantt.config.drag_move = false;
     gantt.config.drag_resize = false;
-    gantt.config.show_links = true;
-    gantt.config.show_progress = true;
-    gantt.config.sort = false;
-    
-    // Disable auto-scrolling to prevent errors
-    gantt.config.scroll_on_click = false;
-    gantt.config.autoscroll = false;
-    gantt.config.autoscroll_speed = 0;
-    gantt.config.show_tasks_outside_timescale = true;
-    gantt.config.initial_scroll = false;
-    gantt.config.preserve_scroll = true;
-    
-    // Custom task text template for operations
-    gantt.templates.task_text = function(start: any, end: any, task: any) {
-      return task.text || "";
-    };
-    
-    // Tooltip template for operations
-    gantt.templates.tooltip_text = function(start: Date, end: Date, task: any) {
-      return `<b>Operation:</b> ${task.text}<br/>
-              <b>Job:</b> ${task.job_name || 'N/A'}<br/>
-              <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
-              <b>End:</b> ${gantt.templates.tooltip_date_format(end)}<br/>
-              <b>Duration:</b> ${task.duration} hours<br/>
-              <b>Progress:</b> ${Math.round((task.progress || 0) * 100)}%`;
-    };
-    
-    // Initialize Gantt with error handling
-    try {
-      // Prevent the auto-show behavior completely
-      const originalShowTask = gantt.showTask;
-      const originalShowDate = gantt.showDate;
-      
-      // Temporarily disable show methods during initialization
-      gantt.showTask = () => {};
-      gantt.showDate = () => {};
-      
-      try {
-        gantt.init(ganttContainer.current);
-        setIsInitialized(true);
-        console.log('✅ DHTMLX Gantt initialized - Resource Timeline View');
-        
-        // Restore show methods after a delay
-        setTimeout(() => {
-          gantt.showTask = originalShowTask;
-          gantt.showDate = originalShowDate;
-          console.log('📅 Show methods restored');
-        }, 500);
-      } catch (initErr) {
-        console.error('❌ Error during Gantt initialization:', initErr);
-        // Still restore methods on error
-        gantt.showTask = originalShowTask;
-        gantt.showDate = originalShowDate;
-      }
-    } catch (error) {
-      console.error('❌ Failed to initialize DHTMLX Gantt:', error);
-    }
-    
+    gantt.config.drag_progress = false;
+
+    // Initialize Gantt
+    gantt.init(ganttContainer.current);
+    console.log('✅ DHTMLX Gantt Resource Timeline initialized');
+    setIsInitialized(true);
+
+    // Cleanup on unmount
     return () => {
-      // Cleanup on unmount
-      if (isInitialized) {
+      if (ganttContainer.current && gantt) {
         gantt.clearAll();
+        setIsInitialized(false);
       }
     };
   }, [ganttContainer.current, isInitialized]);
 
-  // Load data - Resources as parent tasks, Operations as children
+  // Load data with resource assignments
   useEffect(() => {
     if (!isInitialized || isLoadingOps || isLoadingRes) {
       return;
@@ -161,46 +254,68 @@ export default function ProductionSchedulerDHX() {
     // Clear existing data
     gantt.clearAll();
     
-    // Create tasks array with resources as parent tasks
+    // Create resource datastore
+    let resourceStore: any;
+    try {
+      resourceStore = gantt.createDatastore({
+        name: "resource",
+        type: "treeDatastore",
+        initItem: function(item: any) {
+          item.id = item.id || gantt.uid();
+          return item;
+        }
+      });
+    } catch (error) {
+      console.warn('Could not create resource datastore:', error);
+    }
+    
+    // Prepare resources
+    const resources = (Array.isArray(resourcesData) ? resourcesData : []).map((resource: any) => ({
+      id: String(resource.id),
+      text: resource.name || `Resource ${resource.id}`,
+      capacity: resource.available_hours || 24,
+      workload: 0,
+      parent: null,
+      open: true
+    }));
+    
+    // Parse resources to datastore if available
+    if (resourceStore) {
+      resourceStore.parse(resources);
+      console.log('📚 Resource datastore populated:', resources.length);
+    }
+    
+    // Create tasks with resource assignments
     const tasks: any[] = [];
-    const resourceMap = new Map();
-    
-    // Add resources as parent tasks  
-    (Array.isArray(resourcesData) ? resourcesData : []).forEach((resource: any) => {
-      const resourceTask = {
-        id: `resource_${resource.id}`,
-        text: resource.name || `Resource ${resource.id}`,
-        type: "project",
-        open: true,
-        capacity: resource.available_hours || 24
-      };
-      tasks.push(resourceTask);
-      resourceMap.set(String(resource.id), resourceTask.id);
-    });
-    
-    // Add operations as children of resources
     const resourceAssignmentCount = new Map();
     
     (Array.isArray(operationsData) ? operationsData : []).forEach((op: any) => {
-      // Ensure resource_id is a string to match resource map keys
       const resourceId = String(op.resourceId || op.resourceDbId || 1);
-      const parentId = resourceMap.get(resourceId);
       
       // Track assignment distribution
       resourceAssignmentCount.set(resourceId, (resourceAssignmentCount.get(resourceId) || 0) + 1);
       
-      if (parentId) {
-        tasks.push({
-          id: op.id,
-          text: op.name || 'Unnamed Operation',
-          start_date: op.scheduledStart ? new Date(op.scheduledStart) : new Date(),
-          duration: op.duration || 1,
-          progress: op.percentFinished ? op.percentFinished / 100 : 0,
-          parent: parentId,
-          color: op.color || '#2196F3',
-          job_name: op.jobName || 'N/A'
-        });
-      }
+      const task = {
+        id: op.id,
+        text: op.name || 'Unnamed Operation',
+        start_date: op.scheduledStart ? new Date(op.scheduledStart) : new Date(),
+        duration: op.duration || 1,
+        progress: op.percentFinished ? op.percentFinished / 100 : 0,
+        color: op.color || '#2196F3',
+        job_name: op.jobName || 'N/A',
+        parent: 0,
+        // Resource assignment properties
+        $resources: [resourceId],
+        $resource_assignments: [
+          {
+            resource_id: resourceId,
+            value: op.duration || 1,
+            mode: "hours"
+          }
+        ]
+      };
+      
+      tasks.push(task);
     });
     
     // Transform dependencies
@@ -211,9 +326,9 @@ export default function ProductionSchedulerDHX() {
       type: dep.type || "0"
     }));
 
-    console.log('📋 Loading Resource Timeline View:', {
-      resourceCount: resourceMap.size,
-      operationsCount: operationsData.length,
+    console.log('📋 Loading Resource Timeline Data:', {
+      resourceCount: resources.length,
+      operationsCount: tasks.length,
       linksCount: links.length
     });
     
@@ -229,165 +344,119 @@ export default function ProductionSchedulerDHX() {
       links: links
     });
 
-    console.log('✅ Resource Timeline View loaded');
-    console.log('Resources:', resourceMap.size);
-    console.log('Operations:', operationsData.length);
+    console.log('✅ Resource Timeline Data loaded');
+    console.log('Resources:', resources.length);
+    console.log('Operations:', tasks.length);
     console.log('Links:', links.length);
 
     // Calculate date range based on operations
     const operations = Array.isArray(operationsData) ? operationsData : [];
     if (operations.length > 0) {
-      const dates: Date[] = operations
+      const dates = operations
         .map((op: any) => op.scheduledStart ? new Date(op.scheduledStart) : null)
-        .filter((d: any): d is Date => d && d instanceof Date && !isNaN(d.getTime()));
+        .filter(Boolean) as Date[];
       
       if (dates.length > 0) {
-        const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
-        const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
+        const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
         
-        // Add padding
+        // Add buffer for better visibility
         minDate.setDate(minDate.getDate() - 1);
-        maxDate.setDate(maxDate.getDate() + 7);
+        maxDate.setDate(maxDate.getDate() + 2);
         
+        // Set the display range
         gantt.config.start_date = minDate;
         gantt.config.end_date = maxDate;
         gantt.render();
-        
-        // After rendering, safely try to show current date
-        setTimeout(() => {
-          try {
-            const today = new Date();
-            gantt.showDate(today);
-            console.log('📅 Centered view on today\'s date');
-          } catch (err: any) {
-            console.log('⚠️ Could not center view (this is normal):', err?.message);
-          }
-        }, 300);
       }
     }
-  }, [operationsData, resourcesData, dependenciesData, isLoadingOps, isLoadingRes, isInitialized]);
+    
+  }, [operationsData, resourcesData, dependenciesData, isInitialized]);
 
-  const handleZoomToFit = () => {
-    if (ganttContainer.current) {
-      gantt.render();
-    }
-  };
+  console.log('🚀 ProductionSchedulerDHX component is rendering');
+  console.log('✅ DHTMLX Gantt library loaded:', typeof gantt !== 'undefined');
 
-  const handleRefresh = () => {
-    refetchOps();
-  };
-
-  const handleToday = () => {
-    const today = new Date();
-    gantt.showDate(today);
-  };
-
-  const handleZoomIn = () => {
-    const currentScale = gantt.config.scale_unit;
-    if (currentScale === 'month') {
-      gantt.config.scale_unit = 'week';
-      gantt.config.date_scale = 'Week %W';
-    } else if (currentScale === 'week') {
-      gantt.config.scale_unit = 'day';
-      gantt.config.date_scale = '%d %M';
-    }
-    gantt.render();
-  };
-
-  const handleZoomOut = () => {
-    const currentScale = gantt.config.scale_unit;
-    if (currentScale === 'day') {
-      gantt.config.scale_unit = 'week';
-      gantt.config.date_scale = 'Week %W';
-    } else if (currentScale === 'week') {
-      gantt.config.scale_unit = 'month';
-      gantt.config.date_scale = '%F %Y';
-    }
-    gantt.render();
-  };
-
-  if (isLoadingOps || isLoadingRes) {
-    return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <div className="text-center">
-          <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-lg">Loading scheduler data...</p>
-        </div>
-      </div>
-    );
+  if (!operationsData || !resourcesData) {
+    const resCount = Array.isArray(resourcesData) ? resourcesData.length : 0;
+    const opsCount = Array.isArray(operationsData) ? operationsData.length : 0;
+    const depsCount = Array.isArray(dependenciesData) ? dependenciesData.length : 0;
+    
+    console.log('📋 Loading Resource Timeline View:', {
+      resourceCount: resCount,
+      operationsCount: opsCount,
+      totalTasks: resCount + opsCount,
+      linksCount: depsCount
+    });
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => window.location.href = '/production-schedule'}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Production Schedule
-        </Button>
-        <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Production Scheduler - Resource Timeline
-        </h1>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToday}
-            className="gap-2"
-            title="Go to Today"
-          >
-            <Calendar className="h-4 w-4" />
-            Today
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomIn}
-            title="Zoom In"
-          >
-            +
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomOut}
-            title="Zoom Out"
-          >
-            −
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleZoomToFit}
-            className="gap-2"
-            title="Fit to View"
-          >
-            <Maximize className="h-4 w-4" />
-            Fit
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            className="gap-2"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+    <div className="h-screen w-full p-4 bg-gray-50">
+      <Card className="h-full flex flex-col">
+        <div className="flex-shrink-0 p-4 border-b">
+          <div className="flex items-center justify-between">
+            <h1 className="text-2xl font-bold">DHTMLX Resource Timeline</h1>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm">
+                Export
+              </Button>
+              <Button variant="outline" size="sm">
+                Settings
+              </Button>
+            </div>
+          </div>
         </div>
-      </div>
-
-      {/* Gantt Component */}
-      <div 
-        ref={ganttContainer} 
-        className="flex-1 w-full"
-        style={{ height: 'calc(100vh - 60px)' }}
-      />
+        <div className="flex-1 relative">
+          {(isLoadingOps || isLoadingRes) ? (
+            <div className="flex items-center justify-center h-full">
+              <div className="text-lg">Loading scheduler data...</div>
+            </div>
+          ) : (
+            <div ref={ganttContainer} className="w-full h-full dhtmlx-gantt-container" />
+          )}
+        </div>
+      </Card>
+      
+      <style>{`
+        .dhtmlx-gantt-container {
+          width: 100%;
+          height: 100%;
+        }
+        
+        :global(.gantt_container) {
+          width: 100%;
+          height: 100%;
+        }
+        
+        :global(.resource_normal) {
+          background-color: #66bb6a;
+          color: white;
+          text-align: center;
+          padding: 2px;
+        }
+        
+        :global(.resource_high_load) {
+          background-color: #ffa726;
+          color: white;
+          text-align: center;
+          padding: 2px;
+        }
+        
+        :global(.resource_overloaded) {
+          background-color: #ff6b6b;
+          color: white;
+          text-align: center;
+          padding: 2px;
+        }
+        
+        :global(.gantt_resource_panel .gantt_grid_data .gantt_row) {
+          border-bottom: 1px solid #e0e0e0;
+        }
+        
+        :global(.gantt_resource_task) {
+          background: rgba(100, 150, 200, 0.8);
+          border: 1px solid #6496c8;
+        }
+      `}</style>
     </div>
   );
 }
