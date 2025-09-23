@@ -42,15 +42,26 @@ export default function ProductionSchedulerReact() {
       console.log('Sample resource:', resArray[0]);
     }
 
-    // Transform resources - ensure ID is string for consistent matching
+    // Transform resources - Use resource_id (STRING) as canonical ID per Bryntum best practices
     const transformedResources = resArray
       .map((resource: any) => ({
-        id: String(resource.id || resource.resource_id), // Ensure ID is string
+        // CRITICAL: Use resource_id (string) as the canonical ID, NOT the numeric id
+        id: String(resource.resource_id || resource.id), // resource_id is the STRING identifier
         name: resource.name || resource.resource_name || `Resource ${resource.id}`,
-        type: resource.resource_type || 'equipment',
-        capacity: resource.capacity || resource.online_hrs || 100
+        type: resource.resource_type || resource.category || 'equipment',
+        capacity: resource.capacity || resource.efficiency || 100,
+        category: resource.plantName || resource.plant_name || 'Default',
+        isBottleneck: resource.isBottleneck || false
       }))
-      .sort((a, b) => Number(a.id) - Number(b.id)); // Sort by ID numerically, not alphabetically
+      .sort((a, b) => {
+        // Sort by numeric value if possible, otherwise alphabetically
+        const aNum = parseInt(a.id);
+        const bNum = parseInt(b.id);
+        if (!isNaN(aNum) && !isNaN(bNum)) {
+          return aNum - bNum;
+        }
+        return a.id.localeCompare(b.id);
+      });
 
     // Transform operations to events
     const transformedEvents: any[] = [];
@@ -63,36 +74,43 @@ export default function ProductionSchedulerReact() {
       const endDate = op.scheduledEnd || op.endDate;
       
       if (startDate && endDate) {
-        // Create the event
+        // Create the event - NOTE: Do NOT put resourceId on events when using AssignmentStore
         const event = {
           id: op.id || op.operation_id, // Use operation ID from database
           name: op.name || op.operationName || op.operation_name || 'Operation',
           startDate: new Date(startDate), // Ensure it's a Date object
           endDate: new Date(endDate), // Ensure it's a Date object
           percentDone: op.percentFinished || op.percent_done || 0,
-          eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green'
+          eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green',
+          // Add custom fields for tooltips/columns
+          jobName: op.jobName || op.job_name,
+          jobId: op.jobId || op.job_id,
+          priority: op.priority || 5,
+          dueDate: op.dueDate || op.due_date
         };
         transformedEvents.push(event);
 
         // Create assignment if there's a resource
-        // Use resourceId from PT data (it's a string like "1", "2", etc.)
+        // CRITICAL: Use the STRING resource_id that matches resourceStore.id
         const resourceId = op.resourceId || op.resource_id || op.actual_resource_id;
         if (resourceId) {
           transformedAssignments.push({
-            id: assignmentId++,
+            id: `a_${op.id || op.operation_id}_${resourceId}`, // Synthetic ID for assignment
             eventId: op.id || op.operation_id,  // Must be eventId (not event)
-            resourceId: String(resourceId)  // Ensure resourceId is string for matching
+            resourceId: String(resourceId)  // MUST match the resource.id (string) in resourceStore
           });
         }
       }
     });
 
-    // Transform dependencies - use direct IDs
+    // Transform dependencies - use fromEvent/toEvent per Bryntum documentation
     const transformedDependencies = depsArray.map((dep: any, index: number) => ({
       id: index + 1,
-      from: dep.from,
-      to: dep.to,
-      type: dep.type || 2 // Finish-to-Start
+      fromEvent: dep.from || dep.fromEvent || dep.predecessor_operation_id, // Predecessor operation ID
+      toEvent: dep.to || dep.toEvent || dep.successor_operation_id, // Successor operation ID
+      type: dep.type || 2, // 2 = Finish-to-Start (default)
+      lag: dep.lag || 0,
+      lagUnit: dep.lagUnit || 'hour'
     }));
 
     // Debug log transformed data
@@ -241,9 +259,9 @@ export default function ProductionSchedulerReact() {
           endDate={endDate}
           viewPreset="weekAndDayLetter"
           
-          // Visual configuration
+          // Visual configuration per Bryntum best practices
           barMargin={5}
-          rowHeight={45}
+          rowHeight={70}  // Increased from 45 to 70 for better visibility per documentation
           eventColor="eventColor"
           
           // Column configuration
@@ -252,6 +270,11 @@ export default function ProductionSchedulerReact() {
               text: 'Resource', 
               field: 'name', 
               width: 200
+            },
+            {
+              text: 'Category',
+              field: 'category',
+              width: 120
             },
             { 
               text: 'Type', 
@@ -263,10 +286,17 @@ export default function ProductionSchedulerReact() {
               field: 'capacity',
               width: 80,
               align: 'center'
+            },
+            {
+              text: 'Bottleneck',
+              field: 'isBottleneck',
+              width: 80,
+              align: 'center',
+              renderer: ({ value }: any) => value ? '⚠️' : ''
             }
           ]}
           
-          // Features configuration  
+          // Features configuration per Bryntum best practices 
           eventDragFeature={{
             constrainDragToResource: false,
             showExactDropPosition: true
@@ -278,6 +308,8 @@ export default function ProductionSchedulerReact() {
           timeRangesFeature={{
             showCurrentTimeLine: true
           }}
+          stripeFeature={true}  // Add striping for better row visibility
+          percentBarFeature={true}  // Show percentage completion bars
           
           // Toolbar configuration
           tbar={{
