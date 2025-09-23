@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users } from 'lucide-react';
+import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize } from 'lucide-react';
 import { getActiveAgents } from '@/config/agents';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -695,6 +695,31 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>Hide panels to see more content</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        </div>
+      )}
+
+      {/* Floating Exit Fullscreen Button - only visible in fullscreen mode */}
+      {isFullScreen && (
+        <div className="fixed top-4 right-4 z-50">
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={toggleFullScreen}
+                  size="sm"
+                  variant="outline"
+                  className="bg-background/90 backdrop-blur-sm shadow-lg border-2 hover:bg-muted flex items-center gap-2"
+                  data-testid="button-exit-fullscreen"
+                >
+                  <Minimize className="h-4 w-4" />
+                  <span className="text-sm font-medium">Exit Fullscreen</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="left">
+                <p>Exit fullscreen mode (or press Escape)</p>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
