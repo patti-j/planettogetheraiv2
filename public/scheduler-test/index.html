@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>PlanetTogether Scheduler — Standalone Smoke Test</title>
+
+  <!-- Bryntum theme CSS (adjust path if yours is different) -->
+  <link rel="stylesheet" href="/schedulerpro.classic-light.css" />
+
+  <style>
+    html, body { height: 100%; margin: 0; }
+    #app { height: 100%; }
+    .pt-scheduler-root { height: 100%; transform: none !important; zoom: normal !important; }
+    .pt-scheduler-root .b-grid,
+    .pt-scheduler-root .b-grid-body,
+    .pt-scheduler-root .b-grid-row,
+    .pt-scheduler-root .b-grid-cell,
+    .pt-scheduler-root .b-sch-timeaxis-cell { font-size: 14px; line-height: 1.3; }
+    .pt-scheduler-root .b-grid-row,
+    .pt-scheduler-root .b-sch-timeaxis-cell { height: 80px !important; }
+    .loading { position:absolute; inset:0; display:grid; place-items:center; background: rgba(0,0,0,.03); font-family: system-ui, sans-serif; }
+    .hidden { display:none; }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="loading" class="loading">Loading scheduler…</div>
+    <div id="scheduler" class="pt-scheduler-root"></div>
+  </div>
+
+  <!-- Bryntum UMD bundle (adjust path if served elsewhere) -->
+  <script src="/schedulerpro.umd.js"></script>
+
+  <script>
+  (function () {
+    // === Configure your endpoints (or inject globals) ===
+    const RESOURCES_ENDPOINT  = '/api/resources';
+    const OPERATIONS_ENDPOINT = '/api/pt-operations';
+
+    // Helpers
+    const A = (p) => Array.isArray(p) ? p
+              : (Array.isArray(p?.data) ? p.data
+              : (Array.isArray(p?.results) ? p.results
+              : (Array.isArray(p?.items) ? p.items : [])));
+    const S = (v) => (v==null ? undefined : (typeof v === 'string' ? v : String(v)));
+
+    const opColor = (name) => {
+      const s = (name || '').toLowerCase();
+      if (s.includes('whirlpool')) return 'blue';
+      if (s.includes('boil')) return 'indigo';
+      if (s.includes('mash')) return 'cyan';
+      if (s.includes('ferment')) return 'green';
+      if (s.includes('matur')) return 'purple';
+      return 'teal';
+    };
+
+    async function loadData() {
+      // MODE A: If you set globals in the page before this script, we use them
+      if (Array.isArray(window.__RESOURCES__) || Array.isArray(window.__OPERATIONS__)) {
+        return {
+          resources: A(window.__RESOURCES__),
+          operations: A(window.__OPERATIONS__)
+        };
+      }
+      // MODE B: Default to API fetch
+      const [r, o] = await Promise.all([ fetch(RESOURCES_ENDPOINT), fetch(OPERATIONS_ENDPOINT) ]);
+      const resources = r.ok ? await r.json() : [];
+      const operations = o.ok ? await o.json() : [];
+      return { resources: A(resources), operations: A(operations) };
+    }
+
+    function buildStores({ resources, operations }) {
+      // Resource canonical id = STRING resource_id
+      const resourceRows = [
+        { id: 'unscheduled', name: 'Unscheduled', category: 'Queue', eventColor: '#808080' },
+        ...resources.map((r, i) => ({
+          id: S(r.resource_id) ?? S(r.id) ?? `r${i}`,
+          name: r.name ?? r.displayName ?? `Resource ${i + 1}`,
+          category: r.category ?? r.plantName ?? r.area ?? 'Default',
+          active: r.active !== false,
+          eventColor: r.isBottleneck ? 'red' : (i % 2 ? 'green' : 'blue')
+        }))
+      ];
+
+      // Events (no resourceId here if using assignments)
+      const events = [];
+      const seen = new Set();
+      for (let i = 0; i < operations.length; i++) {
+        const op = operations[i];
+        const id = S(op.id) ?? `e${i}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+
+        const start = op.startDate ? new Date(op.startDate)
+                    : (op.scheduled_start ? new Date(op.scheduled_start) : null);
+        let end = op.endDate ? new Date(op.endDate)
+                : (op.scheduled_end ? new Date(op.scheduled_end) : null);
+        if (start && !end && op.duration) {
+          end = new Date(start);
+          const hrs = op.durationUnit === 'day' ? (op.duration * 24) : (+op.duration || 0);
+          end.setHours(end.getHours() + hrs);
+        }
+
+        events.push({
+          id,
+          name: op.name ?? op.operationName ?? `Op ${i + 1}`,
+          startDate: start || null,
+          endDate: end || null,
+          duration: op.duration,
+          durationUnit: op.durationUnit || 'hour',
+          percentDone: op.percent_finished ?? op.percent_done ?? op.percentDone ?? 0,
+          isUnscheduled: false,
+          eventColor: opColor(op.name || op.operationName),
+          draggable: true,
+          resizable: true
+        });
+      }
+
+      // Assignments from op.resourceId -> resource.resource_id (string domain)
+      const resSet = new Set(resourceRows.map(r => r.id));
+      const assignments = [];
+      for (const op of operations) {
+        const eid = S(op.id);
+        const rid = S(op.resourceId ?? op.resource_id);
+        if (!eid) continue;
+        if (rid && resSet.has(rid)) assignments.push({ id: `a_${eid}`, eventId: eid, resourceId: rid });
+      }
+
+      // Orphans → keep visible and gray on Unscheduled lane
+      const assigned = new Set(assignments.map(a => a.eventId));
+      for (const ev of events) if (!assigned.has(ev.id)) { ev.isUnscheduled = true; ev.eventColor = '#808080'; }
+
+      // Dependencies (none by default; add if you have them)
+      const dependencies = [];
+
+      return { resourceRows, events, assignments, dependencies };
+    }
+
+    async function main() {
+      const loading = document.getElementById('loading');
+      try {
+        const { SchedulerPro } = window.bryntum.schedulerpro;
+
+        const start = new Date(); start.setHours(0,0,0,0);
+        const end   = new Date(start); end.setDate(start.getDate() + 14); end.setHours(23,59,59,999);
+
+        const raw = await loadData();
+        const { resourceRows, events, assignments, dependencies } = buildStores(raw);
+
+        console.table(resourceRows.slice(0,10).map(r => ({ id: r.id, name: r.name })));
+        console.table(assignments.slice(0,10));
+
+        const scheduler = new SchedulerPro({
+          appendTo: document.getElementById('scheduler'),
+          startDate: start,
+          endDate: end,
+          viewPreset: 'dayAndWeek',
+          rowHeight: 80,
+          barMargin: 8,
+          project: {
+            resourceStore:   { data: resourceRows },
+            eventStore:      { data: events },
+            assignmentStore: { data: assignments },
+            dependencyStore: { data: dependencies }
+          },
+          features: {
+            stripe: true,
+            dependencies: true,
+            eventDrag: { showTooltip: true, constrainDragToResource: false },
+            eventResize: { showTooltip: true },
+            eventTooltip: {
+              template: ({ eventRecord, resourceRecord }) => `
+                <div style="padding:10px">
+                  <strong>${eventRecord.name}</strong><br>
+                  Resource: <em>${resourceRecord?.name ?? '—'}</em><br>
+                  ${eventRecord.startDate ? `Start: ${eventRecord.startDate.toLocaleString()}<br>` : ''}
+                  ${eventRecord.duration ? `Duration: ${eventRecord.duration} ${eventRecord.durationUnit || 'hour'}<br>` : ''}
+                  Progress: ${eventRecord.percentDone ?? 0}%
+                  ${eventRecord.isUnscheduled ? '<br><span style="color:orange;font-weight:bold;">⚠ Drag to a resource to schedule</span>' : ''}
+                </div>
+              `
+            },
+            timeRanges: { showCurrentTimeLine: true },
+            percentBar: true,
+            nonWorkingTime: true,
+            eventMenu: true,
+            scheduleMenu: true
+          },
+          columns: [
+            { type: 'rownumber', width: 44 },
+            { text: 'Resource (id)', field: 'name', width: 260,
+              renderer: ({ record }) => `${record.name} — [${record.id}]` },
+            { text: 'Category', field: 'category', width: 160 }
+          ],
+          // show assigned rid on each chip for clarity
+          eventRenderer: ({ eventRecord, assignmentRecord }) => {
+            const rid = assignmentRecord?.resourceId ?? '—';
+            return `${eventRecord.name} <span style="opacity:.6">[rid:${rid}]</span>`;
+          }
+        });
+
+        // Expose for quick debugging
+        window.scheduler = scheduler;
+      } catch (e) {
+        console.error(e);
+        alert('Failed to initialize scheduler: ' + (e && e.message || e));
+      } finally {
+        loading?.classList.add('hidden');
+      }
+    }
+
+    // Kick off
+    main();
+  })();
+  </script>
+</body>
+</html>

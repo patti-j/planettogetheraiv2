@@ -2138,4 +2138,29 @@ router.get("/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });
 });
 
+// API endpoints for the Bryntum scheduler
+router.get("/api/resources", async (req, res) => {
+  try {
+    const resources = await storage.getResources();
+    res.json(resources);
+  } catch (error) {
+    console.error("Error fetching resources:", error);
+    res.status(500).json({ message: "Failed to fetch resources" });
+  }
+});
+
+router.get("/api/pt-operations", async (req, res) => {
+  try {
+    // Check if demo mode is requested (limit operations for demo)
+    const isDemoMode = req.query.demo !== 'false';
+    const limit = isDemoMode ? 50 : null; // Show only 50 operations for demo
+    
+    const operations = await storage.getDiscreteOperations(limit);
+    res.json(operations);
+  } catch (error) {
+    console.error("Error fetching PT operations:", error);
+    res.status(500).json({ message: "Failed to fetch PT operations" });
+  }
+});
+
 export default router;
