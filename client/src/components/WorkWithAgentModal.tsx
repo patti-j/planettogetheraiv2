@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   ArrowLeft, 
   Bot, 
-  Send, 
   Calendar,
   Package,
   Users,
@@ -45,7 +43,6 @@ interface WorkWithAgentModalProps {
 }
 
 export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWithAgentModalProps) {
-  const [message, setMessage] = useState('');
   const [isConnected, setIsConnected] = useState(true);
 
   if (!isOpen || !recommendation) return null;
@@ -59,13 +56,6 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
     }
   };
 
-  const handleSendMessage = () => {
-    if (message.trim()) {
-      // Here you would integrate with the actual AI agent
-      console.log('Sending message to agent:', message);
-      setMessage('');
-    }
-  };
 
   const systemTools = [
     {
@@ -224,32 +214,6 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
             </div>
           </div>
 
-          {/* Chat Input */}
-          <div className="border-t border-gray-200 dark:border-gray-700 p-4">
-            <div className="flex gap-3">
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder={`Discuss "${recommendation.title}" with Production Scheduling`}
-                className="min-h-[60px] resize-none"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                data-testid="agent-message-input"
-              />
-              <Button
-                onClick={handleSendMessage}
-                disabled={!message.trim()}
-                className="px-4"
-                data-testid="send-message-button"
-              >
-                <Send className="w-4 h-4" />
-              </Button>
-            </div>
-          </div>
         </div>
 
         {/* Right Panel - System Tools */}
