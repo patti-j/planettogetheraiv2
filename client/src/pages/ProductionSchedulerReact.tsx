@@ -16,7 +16,7 @@ export default function ProductionSchedulerReact() {
 
   // Fetch resources data  
   const { data: resourcesData = [], isLoading: isLoadingRes, refetch: refetchRes } = useQuery({
-    queryKey: ['/api/resources'],
+    queryKey: ['/api/pt-resources'],
   });
 
   // Fetch dependencies data
@@ -42,12 +42,12 @@ export default function ProductionSchedulerReact() {
       console.log('Sample resource:', resArray[0]);
     }
 
-    // Transform resources - use actual IDs from PT database
+    // Transform resources - use resource_id as string ID from PT database
     const transformedResources = resArray.map((resource: any) => ({
-      id: resource.id, // Use numeric ID from database
+      id: resource.id || resource.resource_id, // Use resource_id from PT database
       name: resource.name || resource.resource_name || `Resource ${resource.id}`,
       type: resource.resource_type || 'equipment',
-      capacity: resource.capacity || 100
+      capacity: resource.capacity || resource.online_hrs || 100
     }));
 
     // Transform operations to events
@@ -56,27 +56,30 @@ export default function ProductionSchedulerReact() {
     let assignmentId = 1;
 
     opsArray.forEach((op: any) => {
-      // Check if operation has required data - API returns startDate/endDate
-      if (op.startDate && op.endDate) {
+      // Check if operation has required data - PT API returns scheduledStart/scheduledEnd
+      const startDate = op.scheduledStart || op.startDate;
+      const endDate = op.scheduledEnd || op.endDate;
+      
+      if (startDate && endDate) {
         // Create the event
         const event = {
-          id: op.id, // Use numeric ID from database
-          name: op.name || op.operationName || 'Operation',
-          startDate: new Date(op.startDate), // Ensure it's a Date object
-          endDate: new Date(op.endDate), // Ensure it's a Date object
-          percentDone: op.percent_done || 0,
+          id: op.id || op.operation_id, // Use operation ID from database
+          name: op.name || op.operationName || op.operation_name || 'Operation',
+          startDate: new Date(startDate), // Ensure it's a Date object
+          endDate: new Date(endDate), // Ensure it's a Date object
+          percentDone: op.percentFinished || op.percent_done || 0,
           eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green'
         };
         transformedEvents.push(event);
 
         // Create assignment if there's a resource
-        // Convert string resourceId to number to match resource IDs
-        const resourceId = op.resourceId ? parseInt(op.resourceId, 10) : null;
-        if (resourceId && !isNaN(resourceId)) {
+        // Use resourceId from PT data (it's a string like "1", "2", etc.)
+        const resourceId = op.resourceId || op.resource_id || op.actual_resource_id;
+        if (resourceId) {
           transformedAssignments.push({
             id: assignmentId++,
-            event: op.id,  // Direct reference to event ID
-            resource: resourceId  // Direct reference to resource ID (as number)
+            eventId: op.id || op.operation_id,  // Must be eventId (not event)
+            resourceId: resourceId  // Must be resourceId (not resource)
           });
         }
       }
@@ -113,10 +116,10 @@ export default function ProductionSchedulerReact() {
   // Calculate date range
   const { startDate, endDate } = useMemo(() => {
     if (!events.length) {
-      const now = new Date();
+      // Default to Aug-Sep 2025 where our PT operations are scheduled
       return {
-        startDate: new Date(now.getFullYear(), now.getMonth(), 1),
-        endDate: new Date(now.getFullYear(), now.getMonth() + 2, 0)
+        startDate: new Date(2025, 7, 15), // Aug 15, 2025
+        endDate: new Date(2025, 9, 30) // Oct 30, 2025
       };
     }
 
@@ -239,8 +242,7 @@ export default function ProductionSchedulerReact() {
             { 
               text: 'Resource', 
               field: 'name', 
-              width: 200,
-              tree: true
+              width: 200
             },
             { 
               text: 'Type', 
