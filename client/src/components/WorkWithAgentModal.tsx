@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { 
   ArrowLeft, 
   Bot, 
@@ -13,7 +14,9 @@ import {
   Activity,
   AlertTriangle,
   Target,
-  Clock
+  Clock,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 interface ActionRecommendation {
@@ -44,6 +47,7 @@ interface WorkWithAgentModalProps {
 
 export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWithAgentModalProps) {
   const [isConnected, setIsConnected] = useState(true);
+  const [isDetailsMinimized, setIsDetailsMinimized] = useState(false);
 
   if (!isOpen || !recommendation) return null;
 
@@ -116,135 +120,175 @@ export function WorkWithAgentModal({ isOpen, onClose, recommendation }: WorkWith
       </div>
 
       <div className="flex h-[calc(100vh-73px)]">
-        {/* Left Panel - Action Details */}
-        <div className="w-80 border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-          <div className="p-6">
-            <h2 className="text-lg font-semibold mb-4">Action Details</h2>
-            
-            <div className="flex items-center gap-2 mb-4">
-              <Badge className={`text-xs ${getPriorityColor(recommendation.priority)}`}>
-                {recommendation.priority.toUpperCase()}
-              </Badge>
-              <Badge variant="outline" className="text-xs">
-                pending
-              </Badge>
+        {/* Left Panel - Action Details (Collapsible) */}
+        <div className={`${isDetailsMinimized ? 'w-12' : 'w-80'} border-r border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 transition-all duration-300 ease-in-out`}>
+          <div className="flex flex-col h-full">
+            {/* Minimize/Expand Button */}
+            <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-700">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsDetailsMinimized(!isDetailsMinimized)}
+                className="h-8 w-8 p-0"
+                data-testid="toggle-details-panel"
+              >
+                {isDetailsMinimized ? (
+                  <ChevronRight className="h-4 w-4" />
+                ) : (
+                  <ChevronLeft className="h-4 w-4" />
+                )}
+              </Button>
             </div>
 
-            <div className="mb-6">
-              <div className="flex items-center gap-2 mb-2">
-                <AlertTriangle className="w-4 h-4 text-orange-600" />
-                <span className="text-sm font-medium">{recommendation.title}</span>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium mb-2">Situation</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {recommendation.situation || 
-                   "Station 7 temperature sensor reading 185°F, approaching critical threshold of 200°F. This is causing reduced efficiency and potential quality risks."}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2">Analysis</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {recommendation.analysis || 
-                   "High temperatures can damage components and affect product quality. Immediate action prevents costly downtime and maintains production targets."}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2">Recommended Action</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {recommendation.recommendedAction || 
-                   "Reduce line speed by 5% and activate secondary cooling system. Schedule maintenance for cooling unit during next planned downtime."}
-                </p>
-              </div>
-
-              <div>
-                <h4 className="text-sm font-medium mb-2">Expected Impact</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Temperature:</span>
-                    <span>185°F → 165°F</span>
+            {/* Content - hidden when minimized */}
+            {!isDetailsMinimized && (
+              <div className="flex-1 overflow-y-auto">
+                <div className="p-6">
+                  <h2 className="text-lg font-semibold mb-4">Action Details</h2>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <Badge className={`text-xs ${getPriorityColor(recommendation.priority)}`}>
+                      {recommendation.priority.toUpperCase()}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      pending
+                    </Badge>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Quality Risk:</span>
-                    <span>Medium → Low</span>
+
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <AlertTriangle className="w-4 h-4 text-orange-600" />
+                      <span className="text-sm font-medium">{recommendation.title}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
-                    <span>87% → 90%</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Center Panel - Agent Conversation */}
-        <div className="flex-1 flex flex-col">
-          <div className="flex-1 p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="flex items-center gap-2">
-                <Bot className="w-6 h-6 text-blue-600" />
-                <h3 className="text-lg font-semibold">Discuss with Production Scheduling</h3>
-              </div>
-              {isConnected && (
-                <div className="flex items-center gap-1 text-sm text-green-600">
-                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                  Connected
-                </div>
-              )}
-            </div>
+                  <div className="space-y-4">
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Situation</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {recommendation.situation || 
+                         "Station 7 temperature sensor reading 185°F, approaching critical threshold of 200°F. This is causing reduced efficiency and potential quality risks."}
+                      </p>
+                    </div>
 
-            <p className="text-gray-600 dark:text-gray-400 mb-8">
-              Work together to resolve: {recommendation.title}
-            </p>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Analysis</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {recommendation.analysis || 
+                         "High temperatures can damage components and affect product quality. Immediate action prevents costly downtime and maintains production targets."}
+                      </p>
+                    </div>
 
-            <div className="flex flex-col items-center justify-center flex-1 max-w-md mx-auto">
-              <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-                <CheckCircle className="w-8 h-8 text-blue-600" />
-              </div>
-              <h4 className="text-lg font-medium mb-2">Ready to resolve this action</h4>
-              <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
-                Start a conversation with Production Scheduling to work through the resolution
-              </p>
-            </div>
-          </div>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Recommended Action</h4>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {recommendation.recommendedAction || 
+                         "Reduce line speed by 5% and activate secondary cooling system. Schedule maintenance for cooling unit during next planned downtime."}
+                      </p>
+                    </div>
 
-        </div>
-
-        {/* Right Panel - System Tools */}
-        <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 overflow-y-auto">
-          <div className="p-6">
-            <h3 className="text-lg font-semibold mb-4">System Tools</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-              Select a tool to help resolve this action:
-            </p>
-
-            <div className="space-y-3">
-              {systemTools.map((tool, index) => (
-                <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`system-tool-${index}`}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${tool.color}`}>
-                        <tool.icon className="w-5 h-5" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-sm mb-1">{tool.title}</h4>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          {tool.description}
-                        </p>
+                    <div>
+                      <h4 className="text-sm font-medium mb-2">Expected Impact</h4>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Temperature:</span>
+                          <span>185°F → 165°F</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Quality Risk:</span>
+                          <span>Medium → Low</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-600 dark:text-gray-400">Efficiency:</span>
+                          <span>87% → 90%</span>
+                        </div>
                       </div>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Minimized state - show icon only */}
+            {isDetailsMinimized && (
+              <div className="flex-1 flex items-start justify-center pt-4">
+                <AlertTriangle className="w-6 h-6 text-orange-600" />
+              </div>
+            )}
           </div>
         </div>
+
+        {/* Resizable Panel Group for Center and Right Panels */}
+        <ResizablePanelGroup direction="horizontal" className="flex-1">
+          {/* Center Panel - Agent Conversation */}
+          <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+            <div className="flex flex-col h-full">
+              <div className="flex-1 p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="flex items-center gap-2">
+                    <Bot className="w-6 h-6 text-blue-600" />
+                    <h3 className="text-lg font-semibold">Discuss with Production Scheduling</h3>
+                  </div>
+                  {isConnected && (
+                    <div className="flex items-center gap-1 text-sm text-green-600">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      Connected
+                    </div>
+                  )}
+                </div>
+
+                <p className="text-gray-600 dark:text-gray-400 mb-8">
+                  Work together to resolve: {recommendation.title}
+                </p>
+
+                <div className="flex flex-col items-center justify-center flex-1 max-w-md mx-auto">
+                  <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+                    <CheckCircle className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <h4 className="text-lg font-medium mb-2">Ready to resolve this action</h4>
+                  <p className="text-gray-600 dark:text-gray-400 text-center mb-6">
+                    Start a conversation with Production Scheduling to work through the resolution
+                  </p>
+                </div>
+              </div>
+            </div>
+          </ResizablePanel>
+
+          {/* Resizable Handle */}
+          <ResizableHandle withHandle className="w-[6px] bg-gradient-to-r from-border/40 via-border/60 to-border/40 hover:from-primary/15 hover:via-primary/25 hover:to-primary/15 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
+
+          {/* Right Panel - System Tools */}
+          <ResizablePanel defaultSize={50} minSize={30} maxSize={70}>
+            <div className="h-full bg-gray-50 dark:bg-gray-900 overflow-y-auto border-l border-gray-200 dark:border-gray-700">
+              <div className="p-6">
+                <h3 className="text-lg font-semibold mb-4">System Tools</h3>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
+                  Select a tool to help resolve this action:
+                </p>
+
+                <div className="space-y-3">
+                  {systemTools.map((tool, index) => (
+                    <Card key={index} className="cursor-pointer hover:shadow-md transition-shadow" data-testid={`system-tool-${index}`}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start gap-3">
+                          <div className={`p-2 rounded-lg bg-gray-100 dark:bg-gray-800 ${tool.color}`}>
+                            <tool.icon className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium text-sm mb-1">{tool.title}</h4>
+                            <p className="text-xs text-gray-600 dark:text-gray-400">
+                              {tool.description}
+                            </p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </ResizablePanel>
+        </ResizablePanelGroup>
       </div>
     </div>
   );
