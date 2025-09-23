@@ -1160,36 +1160,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 </div>
               </div>
 
-              {/* Chat input area */}
-              <div className="p-3 border-t bg-background">
-                <div className="flex items-center gap-2">
-                  <Input
-                    placeholder="Ask Max AI anything..."
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                        handleSendMessage();
-                      }
-                    }}
-                    className="flex-1"
-                    disabled={sendMessageMutation.isPending}
-                  />
-                  <Button
-                    onClick={() => handleSendMessage()}
-                    size="sm"
-                    disabled={!prompt.trim() || sendMessageMutation.isPending}
-                    className={cn("min-w-[32px]", getThemeGradient(aiSettings.aiThemeColor))}
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Send className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-              </div>
 
             </TabsContent>
 
