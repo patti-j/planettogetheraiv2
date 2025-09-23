@@ -62,7 +62,7 @@ export default function ProductionSchedulerDHX() {
       }
     ];
     
-    // Configure grid columns - resources only
+    // Configure grid columns
     gantt.config.columns = [
       {
         name: "text",
@@ -75,11 +75,8 @@ export default function ProductionSchedulerDHX() {
         label: "Capacity",
         align: "center",
         width: 70,
-        template: function(obj: any) {
-          if (obj.$level === 0) {
-            return obj.capacity || "24h";
-          }
-          return "";
+        template: function(task: any) {
+          return task.capacity || "";
         }
       }
     ];
@@ -101,36 +98,19 @@ export default function ProductionSchedulerDHX() {
     gantt.config.initial_scroll = false;
     gantt.config.preserve_scroll = true;
     
-    // Template to hide resource parent bars on timeline
-    gantt.templates.task_class = function(start: any, end: any, task: any) {
-      if (task.$level === 0) {
-        return "resource-parent-hidden";
-      }
-      return "operation-task";
-    };
-    
-    // Template to style resource rows in grid
-    gantt.templates.grid_row_class = function(start: any, end: any, task: any) {
-      if (task.$level === 0) {
-        return "resource-grid-row";
-      }
-      return "operation-grid-row-hidden"; // Hide operation rows in grid
-    };
-    
-    // Template to style resource rows in timeline
-    gantt.templates.task_row_class = function(start: any, end: any, task: any) {
-      if (task.$level === 0) {
-        return "resource-timeline-row";
-      }
-      return "";
-    };
-    
-    // Custom task text template
+    // Custom task text template for operations
     gantt.templates.task_text = function(start: any, end: any, task: any) {
-      if (task.$level === 0) {
-        return ""; // No text for resource rows
-      }
       return task.text || "";
+    };
+    
+    // Tooltip template for operations
+    gantt.templates.tooltip_text = function(start: Date, end: Date, task: any) {
+      return `<b>Operation:</b> ${task.text}<br/>
+              <b>Job:</b> ${task.job_name || 'N/A'}<br/>
+              <b>Start:</b> ${gantt.templates.tooltip_date_format(start)}<br/>
+              <b>End:</b> ${gantt.templates.tooltip_date_format(end)}<br/>
+              <b>Duration:</b> ${task.duration} hours<br/>
+              <b>Progress:</b> ${Math.round((task.progress || 0) * 100)}%`;
     };
     
     // Initialize Gantt with error handling
@@ -172,7 +152,7 @@ export default function ProductionSchedulerDHX() {
     };
   }, [ganttContainer.current, isInitialized]);
 
-  // Load data - Resources as parents, Operations as children
+  // Load data - Resources as parent tasks, Operations as children
   useEffect(() => {
     if (!isInitialized || isLoadingOps || isLoadingRes) {
       return;
@@ -181,35 +161,30 @@ export default function ProductionSchedulerDHX() {
     // Clear existing data
     gantt.clearAll();
     
-    // Create tasks array starting with resources
+    // Create tasks array with resources as parent tasks
     const tasks: any[] = [];
-    
-    // Add resources as parent tasks
     const resourceMap = new Map();
+    
+    // Add resources as parent tasks  
     (Array.isArray(resourcesData) ? resourcesData : []).forEach((resource: any) => {
       const resourceTask = {
         id: `resource_${resource.id}`,
         text: resource.name || `Resource ${resource.id}`,
-        start_date: new Date("2025-08-22"), // Default start
-        duration: 30 * 24, // 30 days default
-        capacity: resource.available_hours || 24,
-        type: "project", // Makes it a parent
+        type: "project",
         open: true,
-        parent: 0,
-        $level: 0,
-        resource_id: resource.id
+        capacity: resource.available_hours || 24
       };
       tasks.push(resourceTask);
-      // Store with string key for consistent lookup
       resourceMap.set(String(resource.id), resourceTask.id);
     });
     
     // Add operations as children of resources
     const resourceAssignmentCount = new Map();
+    
     (Array.isArray(operationsData) ? operationsData : []).forEach((op: any) => {
-      // resourceId from API is a string, ensure we convert to string for map lookup
+      // Ensure resource_id is a string to match resource map keys
       const resourceId = String(op.resourceId || op.resourceDbId || 1);
-      const parentId = resourceMap.get(resourceId) || resourceMap.get("1");
+      const parentId = resourceMap.get(resourceId);
       
       // Track assignment distribution
       resourceAssignmentCount.set(resourceId, (resourceAssignmentCount.get(resourceId) || 0) + 1);
@@ -223,9 +198,7 @@ export default function ProductionSchedulerDHX() {
           progress: op.percentFinished ? op.percentFinished / 100 : 0,
           parent: parentId,
           color: op.color || '#2196F3',
-          job_name: op.jobName || 'N/A',
-          resource_id: resourceId,
-          $level: 1
+          job_name: op.jobName || 'N/A'
         });
       }
     });
@@ -241,13 +214,12 @@ export default function ProductionSchedulerDHX() {
     console.log('📋 Loading Resource Timeline View:', {
       resourceCount: resourceMap.size,
       operationsCount: operationsData.length,
-      totalTasks: tasks.length,
       linksCount: links.length
     });
     
     console.log('🔍 Resource Assignment Distribution:');
     resourceAssignmentCount.forEach((count, resourceId) => {
-      const resourceName = resourcesData.find((r: any) => String(r.id) === resourceId)?.name || `Resource ${resourceId}`;
+      const resourceName = (resourcesData as any[])?.find((r: any) => String(r.id) === resourceId)?.name || `Resource ${resourceId}`;
       console.log(`  ${resourceName} (ID: ${resourceId}): ${count} operations`);
     });
 
@@ -265,13 +237,13 @@ export default function ProductionSchedulerDHX() {
     // Calculate date range based on operations
     const operations = Array.isArray(operationsData) ? operationsData : [];
     if (operations.length > 0) {
-      const dates = operations
+      const dates: Date[] = operations
         .map((op: any) => op.scheduledStart ? new Date(op.scheduledStart) : null)
-        .filter((d: any) => d && d instanceof Date && !isNaN(d.getTime()));
+        .filter((d: any): d is Date => d && d instanceof Date && !isNaN(d.getTime()));
       
       if (dates.length > 0) {
-        const minDate = new Date(Math.min(...dates.map((d: Date) => d.getTime())));
-        const maxDate = new Date(Math.max(...dates.map((d: Date) => d.getTime())));
+        const minDate = new Date(Math.min(...dates.map((d) => d.getTime())));
+        const maxDate = new Date(Math.max(...dates.map((d) => d.getTime())));
         
         // Add padding
         minDate.setDate(minDate.getDate() - 1);
@@ -416,73 +388,6 @@ export default function ProductionSchedulerDHX() {
         className="flex-1 w-full"
         style={{ height: 'calc(100vh - 60px)' }}
       />
-      
-      {/* Custom CSS for resource timeline view */}
-      <style>{`
-        /* Hide resource parent task bars on timeline */
-        .resource-parent-hidden {
-          display: none !important;
-        }
-        
-        /* Hide operation rows in grid - CRITICAL */
-        .operation-grid-row-hidden {
-          display: none !important;
-        }
-        
-        /* Style resource rows in grid */
-        .resource-grid-row {
-          background-color: #f3f4f6 !important;
-          font-weight: 600 !important;
-          border-bottom: 1px solid #d1d5db !important;
-        }
-        
-        /* Style resource rows in timeline */
-        .resource-timeline-row {
-          background-color: #fafafa !important;
-          border-bottom: 1px solid #e5e7eb !important;
-        }
-        
-        /* Hide the tree expand/collapse icons */
-        .gantt_tree_icon {
-          display: none !important;
-        }
-        
-        .gantt_tree_indent {
-          display: none !important;
-        }
-        
-        /* Dark mode support */
-        .dark .resource-grid-row {
-          background-color: #374151 !important;
-          border-bottom: 1px solid #4b5563 !important;
-        }
-        
-        .dark .resource-timeline-row {
-          background-color: #1f2937 !important;
-          border-bottom: 1px solid #374151 !important;
-        }
-        
-        /* Style operation task bars */
-        .operation-task {
-          border-radius: 3px !important;
-        }
-        
-        /* Make operation bars smaller and allow stacking */
-        .gantt_task_line {
-          height: 16px !important;
-          margin-top: 2px !important;
-        }
-        
-        .gantt_task_content {
-          font-size: 11px !important;
-          line-height: 16px !important;
-        }
-        
-        /* Ensure resource rows have appropriate height */
-        .resource-timeline-row {
-          min-height: 44px !important;
-        }
-      `}</style>
     </div>
   );
 }
