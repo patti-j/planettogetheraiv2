@@ -16,7 +16,7 @@ export default function SchedulerPage() {
         </p>
       </div>
       
-      <div className="flex-grow overflow-hidden">
+      <div className="h-[calc(100vh-96px)]">
         <BryntumScheduler />
       </div>
     </div>
