@@ -318,25 +318,28 @@ const BryntumScheduler: React.FC = () => {
     });
 
     // Batch all changes for efficiency
-    p.batch(() => {
-      for (const [rid, evs] of byRes) {
-        evs.sort((a: any, b: any) => a.startDate - b.startDate);
-        for (let i = 1; i < evs.length; i++) {
-          const prev = evs[i - 1];
-          const curr = evs[i];
-          if (prev.endDate > curr.startDate) {
-            const asg = p.assignmentStore.find((r: any) => r.eventId === curr.id && r.resourceId === rid);
-            if (asg) {
-              // Update assignment to unscheduled using set()
-              asg.set({ resourceId: 'unscheduled' });
-              curr.set({ isUnscheduled: true, eventColor: '#808080' });
-              console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
-              showToast(`Moved overlapping event "${curr.name}" to Unscheduled`);
-            }
+    // Bryntum uses beginBatch/endBatch, not batch()
+    p.beginBatch();
+    
+    for (const [rid, evs] of byRes) {
+      evs.sort((a: any, b: any) => a.startDate - b.startDate);
+      for (let i = 1; i < evs.length; i++) {
+        const prev = evs[i - 1];
+        const curr = evs[i];
+        if (prev.endDate > curr.startDate) {
+          const asg = p.assignmentStore.find((r: any) => r.eventId === curr.id && r.resourceId === rid);
+          if (asg) {
+            // Update assignment to unscheduled using set()
+            asg.set({ resourceId: 'unscheduled' });
+            curr.set({ isUnscheduled: true, eventColor: '#808080' });
+            console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
+            showToast(`Moved overlapping event "${curr.name}" to Unscheduled`);
           }
         }
       }
-    });
+    }
+    
+    p.endBatch();
 
     // Commit changes to update the DOM
     await p.commitAsync();
@@ -351,24 +354,26 @@ const BryntumScheduler: React.FC = () => {
     if (!event) return;
 
     // Batch changes
-    p.batch(() => {
-      const assignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
-      if (assignment && assignment.resourceId !== 'unscheduled') {
-        // Update the existing assignment to unscheduled using set()
-        assignment.set({ resourceId: 'unscheduled' });
-        event.set({ isUnscheduled: true, eventColor: '#808080' });
-        console.log(`Moved event "${event.name}" to Unscheduled`);
-        showToast(`Moved "${event.name}" to Unscheduled`);
-      } else if (!assignment) {
-        // Create new assignment to unscheduled if none exists
-        p.assignmentStore.add({
-          id: `a_${eventId}_unscheduled`,
-          eventId: eventId,
-          resourceId: 'unscheduled',
-        });
-        event.set({ isUnscheduled: true, eventColor: '#808080' });
-      }
-    });
+    p.beginBatch();
+    
+    const assignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+    if (assignment && assignment.resourceId !== 'unscheduled') {
+      // Update the existing assignment to unscheduled using set()
+      assignment.set({ resourceId: 'unscheduled' });
+      event.set({ isUnscheduled: true, eventColor: '#808080' });
+      console.log(`Moved event "${event.name}" to Unscheduled`);
+      showToast(`Moved "${event.name}" to Unscheduled`);
+    } else if (!assignment) {
+      // Create new assignment to unscheduled if none exists
+      p.assignmentStore.add({
+        id: `a_${eventId}_unscheduled`,
+        eventId: eventId,
+        resourceId: 'unscheduled',
+      });
+      event.set({ isUnscheduled: true, eventColor: '#808080' });
+    }
+    
+    p.endBatch();
 
     // Commit changes
     await p.commitAsync();
@@ -395,29 +400,31 @@ const BryntumScheduler: React.FC = () => {
     }
 
     // Batch all changes
-    p.batch(() => {
-      // Find existing assignment
-      const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
-      
-      if (existingAssignment) {
-        // Update existing assignment's resource using set()
-        existingAssignment.set({ resourceId: targetResourceId });
-      } else {
-        // Create new assignment if none exists
-        p.assignmentStore.add({
-          id: `a_${eventId}_${targetResourceId}`,
-          eventId: eventId,
-          resourceId: targetResourceId,
-        });
-      }
+    p.beginBatch();
+    
+    // Find existing assignment
+    const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+    
+    if (existingAssignment) {
+      // Update existing assignment's resource using set()
+      existingAssignment.set({ resourceId: targetResourceId });
+    } else {
+      // Create new assignment if none exists
+      p.assignmentStore.add({
+        id: `a_${eventId}_${targetResourceId}`,
+        eventId: eventId,
+        resourceId: targetResourceId,
+      });
+    }
 
-      // Update event properties using set()
-      if (targetResourceId === 'unscheduled') {
-        event.set({ isUnscheduled: true, eventColor: '#808080' });
-      } else {
-        event.set({ isUnscheduled: false, eventColor: opColor(event.name) });
-      }
-    });
+    // Update event properties using set()
+    if (targetResourceId === 'unscheduled') {
+      event.set({ isUnscheduled: true, eventColor: '#808080' });
+    } else {
+      event.set({ isUnscheduled: false, eventColor: opColor(event.name) });
+    }
+    
+    p.endBatch();
 
     // Commit changes
     await p.commitAsync();
@@ -440,8 +447,9 @@ const BryntumScheduler: React.FC = () => {
     let placed = 0;
     
     // Batch all changes for efficiency
-    p.batch(() => {
-      for (const ev of evs) {
+    p.beginBatch();
+    
+    for (const ev of evs) {
         const durMs = ev.endDate && ev.startDate
           ? ev.endDate - ev.startDate
           : (ev.duration || 2) * 3600000;
@@ -494,7 +502,8 @@ const BryntumScheduler: React.FC = () => {
           }
         }
       }
-    });
+    
+    p.endBatch();
 
     // Commit all changes
     await p.commitAsync();
@@ -867,42 +876,44 @@ const BryntumScheduler: React.FC = () => {
           ];
 
           // Batch all changes for unscheduling test events
-          p.batch(() => {
-            eventsToUnschedule.forEach((eventName: string) => {
-              const event = p.eventStore.find((e: any) => e.name === eventName);
-              if (event) {
-                const assignment = p.assignmentStore.find((a: any) => a.eventId === event.id);
-                if (assignment) {
-                  const originalStart = event.startDate;
-                  const originalDuration = event.duration || 2;
+          p.beginBatch();
+          
+          eventsToUnschedule.forEach((eventName: string) => {
+            const event = p.eventStore.find((e: any) => e.name === eventName);
+            if (event) {
+              const assignment = p.assignmentStore.find((a: any) => a.eventId === event.id);
+              if (assignment) {
+                const originalStart = event.startDate;
+                const originalDuration = event.duration || 2;
 
-                  p.assignmentStore.remove(assignment);
-                  p.assignmentStore.add({
-                    id: `a_${event.id}_unscheduled`,
-                    eventId: event.id,
-                    resourceId: 'unscheduled',
+                p.assignmentStore.remove(assignment);
+                p.assignmentStore.add({
+                  id: `a_${event.id}_unscheduled`,
+                  eventId: event.id,
+                  resourceId: 'unscheduled',
+                });
+
+                if (!originalStart) {
+                  const today = new Date();
+                  today.setHours(8, 0, 0, 0);
+                  event.set({
+                    startDate: today,
+                    duration: originalDuration,
+                    durationUnit: 'hour',
+                    isUnscheduled: true,
+                    eventColor: '#808080'
                   });
-
-                  if (!originalStart) {
-                    const today = new Date();
-                    today.setHours(8, 0, 0, 0);
-                    event.set({
-                      startDate: today,
-                      duration: originalDuration,
-                      durationUnit: 'hour',
-                      isUnscheduled: true,
-                      eventColor: '#808080'
-                    });
-                  } else {
-                    event.set({
-                      isUnscheduled: true,
-                      eventColor: '#808080'
-                    });
-                  }
+                } else {
+                  event.set({
+                    isUnscheduled: true,
+                    eventColor: '#808080'
+                  });
                 }
               }
-            });
+            }
           });
+          
+          p.endBatch();
 
           // Commit changes after batch
           await p.commitAsync();
