@@ -2,103 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 
-// Add link to CSS file as fallback
-if (typeof document !== 'undefined' && !document.querySelector('link[href*="schedulerpro.classic-light"]')) {
-  const link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.href = '/schedulerpro.classic-light.css';
-  document.head.appendChild(link);
-}
-
-// Add custom CSS for vertical alignment fixes
-if (typeof document !== 'undefined' && !document.querySelector('#bryntum-alignment-fixes')) {
-  const style = document.createElement('style');
-  style.id = 'bryntum-alignment-fixes';
-  style.textContent = `
-    /* Ensure consistent row height for resource grid and timeline */
-    .b-grid-row,
-    .b-sch-timeaxis-cell {
-      height: 50px !important;
-      line-height: 50px !important;
-    }
-    
-    /* Fix event wrapper positioning within rows */
-    .b-sch-event-wrap {
-      position: absolute !important;
-      top: 50% !important;
-      transform: translateY(-50%) !important;
-      margin: 0 !important;
-    }
-    
-    /* Ensure events are properly sized and positioned */
-    .b-sch-event {
-      height: calc(100% - 10px) !important;
-      max-height: 40px !important;
-      position: relative !important;
-      top: auto !important;
-      transform: none !important;
-    }
-    
-    /* Fix resource row cells alignment */
-    .b-grid-cell {
-      height: 50px !important;
-      line-height: 50px !important;
-      vertical-align: middle !important;
-    }
-    
-    /* Ensure timeline rows match resource grid rows */
-    .b-sch-timeaxis-cell,
-    .b-sch-resourcetimeranges {
-      height: 50px !important;
-    }
-    
-    /* Fix vertical alignment of timeline content */
-    .b-sch-foreground-canvas,
-    .b-sch-background-canvas {
-      top: 0 !important;
-    }
-    
-    /* Ensure proper row alignment in scheduler */
-    .b-schedulerpro .b-grid-row,
-    .b-schedulerpro .b-sch-timeaxis-cell {
-      box-sizing: border-box !important;
-      border-bottom: 1px solid #e0e0e0 !important;
-    }
-    
-    /* Fix event bar vertical centering */
-    .b-sch-event-wrap .b-sch-event {
-      display: flex !important;
-      align-items: center !important;
-      margin-top: 5px !important;
-      margin-bottom: 5px !important;
-    }
-    
-    /* Remove any unwanted transforms on event containers */
-    .b-sch-event-wrap[style*="transform"] {
-      transform: translateY(-50%) !important;
-    }
-    
-    /* Ensure resource column rows have same height */
-    .b-grid-subgrid-normal .b-grid-row {
-      height: 50px !important;
-      min-height: 50px !important;
-      max-height: 50px !important;
-    }
-    
-    /* Fix timeline viewport alignment */
-    .b-sch-timeaxis-viewport {
-      top: 0 !important;
-    }
-    
-    /* Ensure row synchronization between grids */
-    .b-grid-row[data-index],
-    .b-sch-timeaxis-cell[data-index] {
-      height: 50px !important;
-    }
-  `;
-  document.head.appendChild(style);
-}
-
 // Type definitions
 interface Resource {
   id: string | number;
@@ -562,9 +465,6 @@ const BryntumScheduler: React.FC = () => {
     viewPreset: 'dayAndWeek',
     rowHeight: 50,
     barMargin: 5,
-    autoHeight: false,
-    height: '100%',
-    minHeight: 800,
     project: {
       resourceStore: { data: resources },
       eventStore: { data: events },
@@ -969,68 +869,12 @@ const BryntumScheduler: React.FC = () => {
   }
 
   return (
-    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ToastContainer toasts={toasts} />
-      <div 
-        className="pt-scheduler-root"
-        style={{ 
-          flex: 1, 
-          overflow: 'auto',
-          height: '100%',
-          minHeight: '800px',
-          position: 'relative'
-        }}
-      >
-        <BryntumSchedulerPro 
-          ref={schedulerRef} 
-          {...schedulerConfig}
-        />
-      </div>
-      <style>{`
-        /* Reset any transforms and ensure proper layout */
-        .pt-scheduler-root { 
-          transform: none !important; 
-          zoom: normal !important;
-        }
-        
-        /* Ensure scheduler takes full height */
-        .pt-scheduler-root .b-schedulerpro,
-        .pt-scheduler-root .b-scheduler,
-        .pt-scheduler-root .b-grid-panel,
-        .pt-scheduler-root .b-grid-subgrid,
-        .pt-scheduler-root .b-grid-body-container,
-        .pt-scheduler-root .b-grid-body {
-          height: 100% !important;
-          min-height: 100% !important;
-        }
-        
-        /* Grid cell styling for proper alignment */
-        .pt-scheduler-root .b-grid,
-        .pt-scheduler-root .b-grid-body,
-        .pt-scheduler-root .b-grid-row,
-        .pt-scheduler-root .b-grid-cell,
-        .pt-scheduler-root .b-sch-timeaxis-cell { 
-          font-size: 13px !important; 
-          line-height: 1.2 !important; 
-        }
-        
-        /* Ensure rows align with timeline */
-        .pt-scheduler-root .b-sch-timeaxis-cell,
-        .pt-scheduler-root .b-grid-cell {
-          box-sizing: border-box;
-        }
-        
-        /* Fix vertical alignment of events */
-        .pt-scheduler-root .b-sch-event-wrap {
-          align-items: center;
-        }
-        
-        /* Ensure proper scrollbar behavior */
-        .pt-scheduler-root .b-grid-vertical-scroller,
-        .pt-scheduler-root .b-grid-horizontal-scroller {
-          z-index: 1;
-        }
-      `}</style>
+      <BryntumSchedulerPro 
+        ref={schedulerRef} 
+        {...schedulerConfig}
+      />
     </div>
   );
 };
