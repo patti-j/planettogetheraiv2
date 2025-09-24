@@ -1621,39 +1621,55 @@
                 
                 console.log('Jobs found:', Object.keys(jobGroups));
                 
-                // PICK JUST ONE JOB TO FOCUS ON
-                // Let's find a HKN job (brewery job) that has multiple operations
-                const targetJob = Object.keys(jobGroups).find(jobId => 
-                    jobId && jobId.includes('HKN') && jobGroups[jobId].length > 2
-                );
+                // CREATE DEPENDENCIES FOR ALL JOBS WITH SUCCESSIVE OPERATIONS
+                console.log('\n🔗 Creating dependencies for all jobs with successive operations...');
                 
-                if (targetJob) {
-                    console.log(`\n🎯 FOCUSING ON SINGLE JOB: ${targetJob}`);
-                    const jobOps = jobGroups[targetJob];
-                    console.log(`This job has ${jobOps.length} operations`);
+                // Group ALL operations by job (not just brewery ops)
+                const allJobGroups = {};
+                events.forEach(op => {
+                    const jobId = op.jobId || op.jobName || 'NO_JOB';
+                    if (jobId !== 'NO_JOB') {
+                        if (!allJobGroups[jobId]) {
+                            allJobGroups[jobId] = [];
+                        }
+                        allJobGroups[jobId].push(op);
+                    }
+                });
+                
+                console.log(`Found ${Object.keys(allJobGroups).length} jobs total`);
+                
+                // Define process order for brewery operations
+                const processOrder = {
+                    'mill': 1,
+                    'mash': 2,
+                    'lauter': 3,
+                    'boil': 4,
+                    'kettle': 4,
+                    'whirlpool': 5,
+                    'cool': 6,
+                    'ferment': 7,
+                    'condition': 8,
+                    'packag': 9,
+                    'dry hop': 6.5  // Between fermentation and conditioning
+                };
+                
+                let totalDepsCreated = 0;
+                
+                // Process each job
+                Object.entries(allJobGroups).forEach(([jobId, jobOps]) => {
+                    if (jobOps.length < 2) {
+                        // Skip jobs with only one operation
+                        return;
+                    }
                     
-                    // Log all operations in this job
-                    jobOps.forEach(op => {
-                        console.log(`  - ${op.name} (ID: ${op.id}) on ${op.resourceName}`);
-                    });
+                    console.log(`\n  Job ${jobId}: ${jobOps.length} operations`);
                     
-                    // Define process order
-                    const processOrder = {
-                        'mill': 1,
-                        'mash': 2,
-                        'lauter': 3,
-                        'boil': 4,
-                        'kettle': 4,
-                        'whirlpool': 5,
-                        'cool': 6,
-                        'ferment': 7
-                    };
-                    
-                    // Assign process order
+                    // Try to determine process order for each operation
                     jobOps.forEach(op => {
                         const opName = (op.name || '').toLowerCase();
-                        let order = 99;
+                        let order = 999; // Default high number for unknown operations
                         
+                        // Check if it's a brewery operation
                         for (const [key, value] of Object.entries(processOrder)) {
                             if (opName.includes(key)) {
                                 order = value;
@@ -1661,40 +1677,55 @@
                             }
                         }
                         
+                        // If not a brewery operation, try to use scheduled start time as order
+                        if (order === 999 && op.startDate) {
+                            order = new Date(op.startDate).getTime();
+                        }
+                        
                         op.processOrder = order;
                     });
                     
-                    // Sort by process order
-                    const sortedOps = jobOps.sort((a, b) => a.processOrder - b.processOrder);
-                    
-                    console.log('\n📋 Operations in brewery process order:');
-                    sortedOps.forEach(op => {
-                        console.log(`  ${op.processOrder}. ${op.name} (ID: ${op.id})`);
+                    // Sort operations by process order (or by scheduled time)
+                    const sortedOps = jobOps.sort((a, b) => {
+                        // First try process order
+                        if (a.processOrder !== b.processOrder) {
+                            return a.processOrder - b.processOrder;
+                        }
+                        // Then try scheduled start time
+                        if (a.startDate && b.startDate) {
+                            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                        }
+                        // Finally, use ID as tiebreaker
+                        return a.id - b.id;
                     });
                     
-                    // Create dependencies ONLY for this one job
-                    console.log('\n🔗 Creating dependencies for this job:');
+                    // Create dependencies between successive operations
                     for (let i = 0; i < sortedOps.length - 1; i++) {
                         const from = sortedOps[i];
                         const to = sortedOps[i + 1];
                         
-                        // Only link if both are brewery operations
-                        if (from.processOrder < 99 && to.processOrder < 99) {
+                        // Check if dependency already exists
+                        const existingDep = dependencies.find(d => 
+                            d.from === from.id && d.to === to.id
+                        );
+                        
+                        if (!existingDep) {
+                            const depId = `dep_job${jobId}_${i}_${from.id}_${to.id}`;
                             dependencies.push({
-                                id: `dep_${i}_${from.id}_${to.id}`,
+                                id: depId,
                                 from: from.id,
                                 to: to.id,
                                 type: 2, // Finish-to-Start
                                 lag: 0,
                                 lagUnit: 'hour'
                             });
-                            console.log(`  ✅ ${from.name} → ${to.name}`);
+                            console.log(`    ✅ ${from.name} → ${to.name}`);
+                            totalDepsCreated++;
                         }
                     }
-                } else {
-                    console.log('❌ No suitable HKN brewery job found with multiple operations');
-                    console.log('Available jobs:', Object.keys(jobGroups).slice(0, 10));
-                }
+                });
+                
+                console.log(`\n✅ Created ${totalDepsCreated} new dependencies across all jobs`);
                 
                 console.log(`\n===== DEPENDENCY GENERATION END =====`);
                 console.log(`TOTAL DEPENDENCIES CREATED: ${dependencies.length}`);
