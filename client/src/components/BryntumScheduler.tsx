@@ -226,12 +226,18 @@ const BryntumScheduler: React.FC = () => {
           }
         }
 
-        // Mark orphans as unscheduled
+        // Ensure all events have assignments (assign orphans to unscheduled)
         const assigned = new Set(assignmentsData.map((a) => a.eventId));
         for (const ev of eventsData) {
           if (!assigned.has(ev.id)) {
             ev.isUnscheduled = true;
             ev.eventColor = '#808080';
+            // Add assignment to unscheduled resource
+            assignmentsData.push({
+              id: `a_${ev.id}_unscheduled`,
+              eventId: ev.id,
+              resourceId: 'unscheduled',
+            });
           }
         }
 
@@ -298,7 +304,7 @@ const BryntumScheduler: React.FC = () => {
     p.assignmentStore.forEach((a: any) => {
       const ev = a.event;
       const res = a.resource;
-      if (!ev || !res || !ev.startDate || !ev.endDate) return;
+      if (!ev || !res || !ev.startDate || !ev.endDate || res.id === 'unscheduled') return;
       const list = byRes.get(res.id) ?? [];
       list.push(ev);
       byRes.set(res.id, list);
@@ -312,7 +318,8 @@ const BryntumScheduler: React.FC = () => {
         if (prev.endDate > curr.startDate) {
           const asg = p.assignmentStore.find((r: any) => r.eventId === curr.id && r.resourceId === rid);
           if (asg) {
-            p.assignmentStore.remove(asg);
+            // Update assignment to unscheduled instead of removing
+            asg.resourceId = 'unscheduled';
             curr.isUnscheduled = true;
             curr.eventColor = '#808080';
             console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
@@ -323,12 +330,91 @@ const BryntumScheduler: React.FC = () => {
     }
   };
 
+  const moveToUnscheduled = (eventId: string) => {
+    const scheduler = schedulerRef.current?.instance;
+    if (!scheduler) return;
+
+    const p = scheduler.project;
+    const event = p.eventStore.getById(eventId);
+    if (!event) return;
+
+    const assignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+    if (assignment && assignment.resourceId !== 'unscheduled') {
+      // Update the existing assignment to unscheduled
+      assignment.resourceId = 'unscheduled';
+      event.isUnscheduled = true;
+      event.eventColor = '#808080';
+      console.log(`Moved event "${event.name}" to Unscheduled`);
+      showToast(`Moved "${event.name}" to Unscheduled`);
+    } else if (!assignment) {
+      // Create new assignment to unscheduled if none exists
+      p.assignmentStore.add({
+        id: `a_${eventId}_unscheduled`,
+        eventId: eventId,
+        resourceId: 'unscheduled',
+      });
+      event.isUnscheduled = true;
+      event.eventColor = '#808080';
+    }
+  };
+
+  const handleScheduleOperation = (eventId: string, targetResourceId: string) => {
+    const scheduler = schedulerRef.current?.instance;
+    if (!scheduler) return false;
+
+    const p = scheduler.project;
+    const event = p.eventStore.getById(eventId);
+    const targetResource = p.resourceStore.getById(targetResourceId);
+    
+    if (!event || !targetResource) return false;
+
+    // Check capabilities
+    if (targetResourceId !== 'unscheduled') {
+      const operationType = getOperationType(event.name);
+      const resourceCapabilities = capabilities[targetResourceId] || [];
+      if (!resourceCapabilities.includes(operationType)) {
+        showToast(`${targetResource.name} cannot perform ${operationType} operations`);
+        return false;
+      }
+    }
+
+    // Find existing assignment
+    const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+    
+    if (existingAssignment) {
+      // Update existing assignment's resource
+      existingAssignment.resourceId = targetResourceId;
+    } else {
+      // Create new assignment if none exists
+      p.assignmentStore.add({
+        id: `a_${eventId}_${targetResourceId}`,
+        eventId: eventId,
+        resourceId: targetResourceId,
+      });
+    }
+
+    // Update event properties
+    if (targetResourceId === 'unscheduled') {
+      event.isUnscheduled = true;
+      event.eventColor = '#808080';
+    } else {
+      event.isUnscheduled = false;
+      event.eventColor = opColor(event.name);
+    }
+
+    return true;
+  };
+
   const packUnscheduled = () => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
 
     const p = scheduler.project;
-    const evs = p.eventStore.query((ev: any) => !p.assignmentStore.find((r: any) => r.eventId === ev.id));
+    // Find events assigned to unscheduled resource
+    const evs = p.eventStore.query((ev: any) => {
+      const assignment = p.assignmentStore.find((a: any) => a.eventId === ev.id);
+      return assignment && assignment.resourceId === 'unscheduled';
+    });
     const resources = p.resourceStore.records.filter((r: any) => r.id !== 'unscheduled');
 
     let placed = 0;
@@ -348,15 +434,23 @@ const BryntumScheduler: React.FC = () => {
 
         for (let hop = 0; hop < 200; hop++) {
           if (scheduler.isDateRangeAvailable(candidateStart, candidateEnd, res, ev)) {
-            p.assignmentStore.add({
-              id: `a_${ev.id}_${res.id}`,
-              eventId: ev.id,
-              resourceId: res.id,
-            });
+            // Update existing assignment from unscheduled to target resource
+            const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === ev.id);
+            if (existingAssignment) {
+              existingAssignment.resourceId = res.id;
+            } else {
+              // Should not happen, but create if missing
+              p.assignmentStore.add({
+                id: `a_${ev.id}_${res.id}`,
+                eventId: ev.id,
+                resourceId: res.id,
+              });
+            }
             ev.set({
               startDate: candidateStart,
               endDate: candidateEnd,
               isUnscheduled: false,
+              eventColor: opColor(ev.name),
             });
             placed++;
             break outer;
