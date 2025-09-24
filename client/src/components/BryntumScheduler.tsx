@@ -222,7 +222,7 @@ const BryntumScheduler: React.FC = () => {
           const rid = S(op.resourceId ?? op.resource_id);
           if (!eid) continue;
           if (rid && resSet.has(rid)) {
-            assignmentsData.push({ id: `a_${eid}`, eventId: eid, resourceId: rid });
+            assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
           }
         }
 
@@ -283,6 +283,13 @@ const BryntumScheduler: React.FC = () => {
         setDependencies(dependenciesData);
         setCapabilities(capabilitiesData);
         setLoading(false);
+
+        // Commit initial data after it's loaded into stores
+        setTimeout(() => {
+          if (schedulerRef.current?.instance) {
+            schedulerRef.current.instance.project.commitAsync();
+          }
+        }, 100);
       } catch (error) {
         console.error('Error loading scheduler data:', error);
         showToast('Failed to load scheduler data');
@@ -294,7 +301,7 @@ const BryntumScheduler: React.FC = () => {
   }, []);
 
   // Helper functions for scheduler operations
-  const cleanupOverlaps = () => {
+  const cleanupOverlaps = async () => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
 
@@ -310,27 +317,32 @@ const BryntumScheduler: React.FC = () => {
       byRes.set(res.id, list);
     });
 
-    for (const [rid, evs] of byRes) {
-      evs.sort((a: any, b: any) => a.startDate - b.startDate);
-      for (let i = 1; i < evs.length; i++) {
-        const prev = evs[i - 1];
-        const curr = evs[i];
-        if (prev.endDate > curr.startDate) {
-          const asg = p.assignmentStore.find((r: any) => r.eventId === curr.id && r.resourceId === rid);
-          if (asg) {
-            // Update assignment to unscheduled instead of removing
-            asg.resourceId = 'unscheduled';
-            curr.isUnscheduled = true;
-            curr.eventColor = '#808080';
-            console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
-            showToast(`Moved overlapping event "${curr.name}" to Unscheduled`);
+    // Batch all changes for efficiency
+    p.batch(() => {
+      for (const [rid, evs] of byRes) {
+        evs.sort((a: any, b: any) => a.startDate - b.startDate);
+        for (let i = 1; i < evs.length; i++) {
+          const prev = evs[i - 1];
+          const curr = evs[i];
+          if (prev.endDate > curr.startDate) {
+            const asg = p.assignmentStore.find((r: any) => r.eventId === curr.id && r.resourceId === rid);
+            if (asg) {
+              // Update assignment to unscheduled using set()
+              asg.set({ resourceId: 'unscheduled' });
+              curr.set({ isUnscheduled: true, eventColor: '#808080' });
+              console.log(`Moved overlapping event "${curr.name}" from ${rid} to Unscheduled`);
+              showToast(`Moved overlapping event "${curr.name}" to Unscheduled`);
+            }
           }
         }
       }
-    }
+    });
+
+    // Commit changes to update the DOM
+    await p.commitAsync();
   };
 
-  const moveToUnscheduled = (eventId: string) => {
+  const moveToUnscheduled = async (eventId: string) => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
 
@@ -338,27 +350,31 @@ const BryntumScheduler: React.FC = () => {
     const event = p.eventStore.getById(eventId);
     if (!event) return;
 
-    const assignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
-    if (assignment && assignment.resourceId !== 'unscheduled') {
-      // Update the existing assignment to unscheduled
-      assignment.resourceId = 'unscheduled';
-      event.isUnscheduled = true;
-      event.eventColor = '#808080';
-      console.log(`Moved event "${event.name}" to Unscheduled`);
-      showToast(`Moved "${event.name}" to Unscheduled`);
-    } else if (!assignment) {
-      // Create new assignment to unscheduled if none exists
-      p.assignmentStore.add({
-        id: `a_${eventId}_unscheduled`,
-        eventId: eventId,
-        resourceId: 'unscheduled',
-      });
-      event.isUnscheduled = true;
-      event.eventColor = '#808080';
-    }
+    // Batch changes
+    p.batch(() => {
+      const assignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+      if (assignment && assignment.resourceId !== 'unscheduled') {
+        // Update the existing assignment to unscheduled using set()
+        assignment.set({ resourceId: 'unscheduled' });
+        event.set({ isUnscheduled: true, eventColor: '#808080' });
+        console.log(`Moved event "${event.name}" to Unscheduled`);
+        showToast(`Moved "${event.name}" to Unscheduled`);
+      } else if (!assignment) {
+        // Create new assignment to unscheduled if none exists
+        p.assignmentStore.add({
+          id: `a_${eventId}_unscheduled`,
+          eventId: eventId,
+          resourceId: 'unscheduled',
+        });
+        event.set({ isUnscheduled: true, eventColor: '#808080' });
+      }
+    });
+
+    // Commit changes
+    await p.commitAsync();
   };
 
-  const handleScheduleOperation = (eventId: string, targetResourceId: string) => {
+  const handleScheduleOperation = async (eventId: string, targetResourceId: string) => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return false;
 
@@ -378,34 +394,38 @@ const BryntumScheduler: React.FC = () => {
       }
     }
 
-    // Find existing assignment
-    const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
-    
-    if (existingAssignment) {
-      // Update existing assignment's resource
-      existingAssignment.resourceId = targetResourceId;
-    } else {
-      // Create new assignment if none exists
-      p.assignmentStore.add({
-        id: `a_${eventId}_${targetResourceId}`,
-        eventId: eventId,
-        resourceId: targetResourceId,
-      });
-    }
+    // Batch all changes
+    p.batch(() => {
+      // Find existing assignment
+      const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === eventId);
+      
+      if (existingAssignment) {
+        // Update existing assignment's resource using set()
+        existingAssignment.set({ resourceId: targetResourceId });
+      } else {
+        // Create new assignment if none exists
+        p.assignmentStore.add({
+          id: `a_${eventId}_${targetResourceId}`,
+          eventId: eventId,
+          resourceId: targetResourceId,
+        });
+      }
 
-    // Update event properties
-    if (targetResourceId === 'unscheduled') {
-      event.isUnscheduled = true;
-      event.eventColor = '#808080';
-    } else {
-      event.isUnscheduled = false;
-      event.eventColor = opColor(event.name);
-    }
+      // Update event properties using set()
+      if (targetResourceId === 'unscheduled') {
+        event.set({ isUnscheduled: true, eventColor: '#808080' });
+      } else {
+        event.set({ isUnscheduled: false, eventColor: opColor(event.name) });
+      }
+    });
+
+    // Commit changes
+    await p.commitAsync();
 
     return true;
   };
 
-  const packUnscheduled = () => {
+  const packUnscheduled = async () => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
 
@@ -418,59 +438,66 @@ const BryntumScheduler: React.FC = () => {
     const resources = p.resourceStore.records.filter((r: any) => r.id !== 'unscheduled');
 
     let placed = 0;
-    for (const ev of evs) {
-      const durMs = ev.endDate && ev.startDate
-        ? ev.endDate - ev.startDate
-        : (ev.duration || 2) * 3600000;
-      let candidateStart = ev.startDate || new Date(scheduler.startDate);
-      let candidateEnd = new Date(candidateStart.getTime() + durMs);
+    
+    // Batch all changes for efficiency
+    p.batch(() => {
+      for (const ev of evs) {
+        const durMs = ev.endDate && ev.startDate
+          ? ev.endDate - ev.startDate
+          : (ev.duration || 2) * 3600000;
+        let candidateStart = ev.startDate || new Date(scheduler.startDate);
+        let candidateEnd = new Date(candidateStart.getTime() + durMs);
 
-      outer: for (const res of resources) {
-        const operationType = getOperationType(ev.name);
-        const resourceCapabilities = capabilities[res.id] || [];
-        if (!resourceCapabilities.includes(operationType)) {
-          continue;
-        }
-
-        for (let hop = 0; hop < 200; hop++) {
-          if (scheduler.isDateRangeAvailable(candidateStart, candidateEnd, res, ev)) {
-            // Update existing assignment from unscheduled to target resource
-            const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === ev.id);
-            if (existingAssignment) {
-              existingAssignment.resourceId = res.id;
-            } else {
-              // Should not happen, but create if missing
-              p.assignmentStore.add({
-                id: `a_${ev.id}_${res.id}`,
-                eventId: ev.id,
-                resourceId: res.id,
-              });
-            }
-            ev.set({
-              startDate: candidateStart,
-              endDate: candidateEnd,
-              isUnscheduled: false,
-              eventColor: opColor(ev.name),
-            });
-            placed++;
-            break outer;
+        outer: for (const res of resources) {
+          const operationType = getOperationType(ev.name);
+          const resourceCapabilities = capabilities[res.id] || [];
+          if (!resourceCapabilities.includes(operationType)) {
+            continue;
           }
 
-          const blockers = p.eventStore
-            .query(
-              (x: any) =>
-                p.assignmentStore.find((a: any) => a.eventId === x.id && a.resourceId === res.id) &&
-                x.endDate > candidateStart &&
-                x.startDate < candidateEnd
-            )
-            .sort((a: any, b: any) => a.endDate - b.endDate);
-          candidateStart = blockers.length
-            ? new Date(blockers[blockers.length - 1].endDate)
-            : new Date(candidateEnd);
-          candidateEnd = new Date(candidateStart.getTime() + durMs);
+          for (let hop = 0; hop < 200; hop++) {
+            if (scheduler.isDateRangeAvailable(candidateStart, candidateEnd, res, ev)) {
+              // Update existing assignment from unscheduled to target resource
+              const existingAssignment = p.assignmentStore.find((a: any) => a.eventId === ev.id);
+              if (existingAssignment) {
+                existingAssignment.set({ resourceId: res.id });
+              } else {
+                // Should not happen, but create if missing
+                p.assignmentStore.add({
+                  id: `a_${ev.id}_${res.id}`,
+                  eventId: ev.id,
+                  resourceId: res.id,
+                });
+              }
+              ev.set({
+                startDate: candidateStart,
+                endDate: candidateEnd,
+                isUnscheduled: false,
+                eventColor: opColor(ev.name),
+              });
+              placed++;
+              break outer;
+            }
+
+            const blockers = p.eventStore
+              .query(
+                (x: any) =>
+                  p.assignmentStore.find((a: any) => a.eventId === x.id && a.resourceId === res.id) &&
+                  x.endDate > candidateStart &&
+                  x.startDate < candidateEnd
+              )
+              .sort((a: any, b: any) => a.endDate - b.endDate);
+            candidateStart = blockers.length
+              ? new Date(blockers[blockers.length - 1].endDate)
+              : new Date(candidateEnd);
+            candidateEnd = new Date(candidateStart.getTime() + durMs);
+          }
         }
       }
-    }
+    });
+
+    // Commit all changes
+    await p.commitAsync();
 
     showToast(`${placed} event(s) scheduled`);
   };
@@ -775,7 +802,9 @@ const BryntumScheduler: React.FC = () => {
           type: 'button' as const,
           text: 'Pack Unscheduled',
           cls: 'b-raised',
-          onClick: packUnscheduled,
+          onClick: async () => {
+            await packUnscheduled();
+          },
         },
         {
           type: 'button' as const,
@@ -823,8 +852,8 @@ const BryntumScheduler: React.FC = () => {
         const scheduler = source;
 
         // Cleanup overlaps after initial load
-        setTimeout(() => {
-          cleanupOverlaps();
+        setTimeout(async () => {
+          await cleanupOverlaps();
 
           // Unschedule some operations for testing
           const p = scheduler.project;
@@ -837,33 +866,46 @@ const BryntumScheduler: React.FC = () => {
             'Fermentation - Wheat',
           ];
 
-          eventsToUnschedule.forEach((eventName: string) => {
-            const event = p.eventStore.find((e: any) => e.name === eventName);
-            if (event) {
-              const assignment = p.assignmentStore.find((a: any) => a.eventId === event.id);
-              if (assignment) {
-                const originalStart = event.startDate;
-                const originalDuration = event.duration || 2;
+          // Batch all changes for unscheduling test events
+          p.batch(() => {
+            eventsToUnschedule.forEach((eventName: string) => {
+              const event = p.eventStore.find((e: any) => e.name === eventName);
+              if (event) {
+                const assignment = p.assignmentStore.find((a: any) => a.eventId === event.id);
+                if (assignment) {
+                  const originalStart = event.startDate;
+                  const originalDuration = event.duration || 2;
 
-                p.assignmentStore.remove(assignment);
-                p.assignmentStore.add({
-                  id: `a_${event.id}_unscheduled`,
-                  eventId: event.id,
-                  resourceId: 'unscheduled',
-                });
+                  p.assignmentStore.remove(assignment);
+                  p.assignmentStore.add({
+                    id: `a_${event.id}_unscheduled`,
+                    eventId: event.id,
+                    resourceId: 'unscheduled',
+                  });
 
-                if (!originalStart) {
-                  const today = new Date();
-                  today.setHours(8, 0, 0, 0);
-                  event.startDate = today;
-                  event.duration = originalDuration;
-                  event.durationUnit = 'hour';
+                  if (!originalStart) {
+                    const today = new Date();
+                    today.setHours(8, 0, 0, 0);
+                    event.set({
+                      startDate: today,
+                      duration: originalDuration,
+                      durationUnit: 'hour',
+                      isUnscheduled: true,
+                      eventColor: '#808080'
+                    });
+                  } else {
+                    event.set({
+                      isUnscheduled: true,
+                      eventColor: '#808080'
+                    });
+                  }
                 }
-                event.isUnscheduled = true;
-                event.eventColor = '#808080';
               }
-            }
+            });
           });
+
+          // Commit changes after batch
+          await p.commitAsync();
         }, 100);
 
         // Validate assignment changes
