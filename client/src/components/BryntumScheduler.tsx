@@ -10,6 +10,95 @@ if (typeof document !== 'undefined' && !document.querySelector('link[href*="sche
   document.head.appendChild(link);
 }
 
+// Add custom CSS for vertical alignment fixes
+if (typeof document !== 'undefined' && !document.querySelector('#bryntum-alignment-fixes')) {
+  const style = document.createElement('style');
+  style.id = 'bryntum-alignment-fixes';
+  style.textContent = `
+    /* Ensure consistent row height for resource grid and timeline */
+    .b-grid-row,
+    .b-sch-timeaxis-cell {
+      height: 50px !important;
+      line-height: 50px !important;
+    }
+    
+    /* Fix event wrapper positioning within rows */
+    .b-sch-event-wrap {
+      position: absolute !important;
+      top: 50% !important;
+      transform: translateY(-50%) !important;
+      margin: 0 !important;
+    }
+    
+    /* Ensure events are properly sized and positioned */
+    .b-sch-event {
+      height: calc(100% - 10px) !important;
+      max-height: 40px !important;
+      position: relative !important;
+      top: auto !important;
+      transform: none !important;
+    }
+    
+    /* Fix resource row cells alignment */
+    .b-grid-cell {
+      height: 50px !important;
+      line-height: 50px !important;
+      vertical-align: middle !important;
+    }
+    
+    /* Ensure timeline rows match resource grid rows */
+    .b-sch-timeaxis-cell,
+    .b-sch-resourcetimeranges {
+      height: 50px !important;
+    }
+    
+    /* Fix vertical alignment of timeline content */
+    .b-sch-foreground-canvas,
+    .b-sch-background-canvas {
+      top: 0 !important;
+    }
+    
+    /* Ensure proper row alignment in scheduler */
+    .b-schedulerpro .b-grid-row,
+    .b-schedulerpro .b-sch-timeaxis-cell {
+      box-sizing: border-box !important;
+      border-bottom: 1px solid #e0e0e0 !important;
+    }
+    
+    /* Fix event bar vertical centering */
+    .b-sch-event-wrap .b-sch-event {
+      display: flex !important;
+      align-items: center !important;
+      margin-top: 5px !important;
+      margin-bottom: 5px !important;
+    }
+    
+    /* Remove any unwanted transforms on event containers */
+    .b-sch-event-wrap[style*="transform"] {
+      transform: translateY(-50%) !important;
+    }
+    
+    /* Ensure resource column rows have same height */
+    .b-grid-subgrid-normal .b-grid-row {
+      height: 50px !important;
+      min-height: 50px !important;
+      max-height: 50px !important;
+    }
+    
+    /* Fix timeline viewport alignment */
+    .b-sch-timeaxis-viewport {
+      top: 0 !important;
+    }
+    
+    /* Ensure row synchronization between grids */
+    .b-grid-row[data-index],
+    .b-sch-timeaxis-cell[data-index] {
+      height: 50px !important;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
 // Type definitions
 interface Resource {
   id: string | number;
