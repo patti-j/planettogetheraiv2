@@ -2,39 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 
-// Custom styles to fix vertical alignment
-const customSchedulerStyles = `
-  /* Force events to align within their rows */
-  .b-sch-event-wrap {
-    position: absolute !important;
-    top: 10px !important;
-    bottom: 10px !important;
-    height: auto !important;
-  }
-  
-  .b-sch-event {
-    position: relative !important;
-    top: 0 !important;
-    margin: 0 !important;
-    transform: none !important;
-    height: 100% !important;
-  }
-  
-  /* Ensure consistent row height */
-  .b-grid-row {
-    height: 60px !important;
-  }
-  
-  .b-sch-timeaxis-cell {
-    height: 60px !important;
-  }
-  
-  /* Prevent events from floating between rows */
-  .b-sch-event-wrap[data-event-id] {
-    display: block !important;
-  }
-`;
-
 // Type definitions
 interface Resource {
   id: string | number;
@@ -498,10 +465,7 @@ const BryntumScheduler: React.FC = () => {
     viewPreset: 'dayAndWeek',
     rowHeight: 60,  // Fixed row height for consistency
     barMargin: 10,  // Margin from top/bottom of row
-    // Fix vertical alignment issues
-    eventLayout: 'none',        // Disable layout algorithm to prevent floating
-    fillTicks: true,            // Ensure events fill the time ticks properly
-    eventStyle: 'plain' as const,        // Use plain event style for better alignment
+    eventStyle: 'plain' as const,        // Use plain event style
     maintainSelectionOnDatasetChange: true,
     allowOverlap: false,        // Prevent events from overlapping
     passStartEndParameters: true,
@@ -763,15 +727,6 @@ const BryntumScheduler: React.FC = () => {
       paint: ({ source }: any) => {
         // Setup event handlers after scheduler is painted
         const scheduler = source;
-        
-        // Ensure proper vertical alignment on initial load
-        scheduler.refreshRows();
-        
-        // Force re-layout of events to ensure proper positioning
-        setTimeout(() => {
-          scheduler.refresh();
-          scheduler.refreshRows();
-        }, 250);
 
         // Cleanup overlaps after initial load
         setTimeout(() => {
@@ -921,7 +876,6 @@ const BryntumScheduler: React.FC = () => {
 
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <style>{customSchedulerStyles}</style>
       <ToastContainer toasts={toasts} />
       <BryntumSchedulerPro 
         ref={schedulerRef} 
