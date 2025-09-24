@@ -92,7 +92,7 @@ import CanvasPage from "@/pages/canvas";
 import SMSPage from "@/pages/sms";
 import { FederationPerformanceDashboard } from "@/components/federation-performance-dashboard";
 import FederationDashboard from "@/pages/federation-dashboard";
-import ProductionSchedule from "@/pages/production-schedule";
+import ProductionScheduler from "@/pages/production-scheduler";
 import ProductionSchedulerReact from "@/pages/ProductionSchedulerReact";
 import Scheduler from "@/pages/Scheduler";
 
@@ -295,9 +295,9 @@ export default function ApplicationApp() {
                   <ProductionPlanning />
                 </ProtectedRoute>
               </Route>
-              <Route path="/production-schedule">
+              <Route path="/production-scheduler">
                 <ProtectedRoute feature="production-scheduling" action="view">
-                  <ProductionSchedule />
+                  <ProductionScheduler />
                 </ProtectedRoute>
               </Route>
               <Route path="/production-scheduler-standalone">

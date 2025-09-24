@@ -9,7 +9,7 @@ import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
  * This component embeds the standalone HTML scheduler via iframe,
  * providing full Bryntum functionality with PT data integration.
  */
-export default function ProductionSchedule() {
+export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -65,7 +65,7 @@ export default function ProductionSchedule() {
         {/* Scheduler iframe with cache busting */}
         <iframe
           ref={iframeRef}
-          src={`/api/scheduler-demo?v=${Date.now()}`}
+          src={`/api/production-scheduler?v=${Date.now()}`}
           className="w-full h-full border-0"
           title="Production Scheduler"
           data-testid="production-scheduler-iframe"
