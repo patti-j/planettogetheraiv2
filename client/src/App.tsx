@@ -28,7 +28,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 // Check authentication status
 function useAuthStatus() {
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
+  const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // For session-based authentication, we need to check the server
@@ -167,7 +167,7 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
-  const publicPaths = ['/', '/login', '/home', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
+  const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if this is a portal route - handle separately from main app
