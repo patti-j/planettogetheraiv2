@@ -1050,6 +1050,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     // Send to AI via command endpoint (handles both text and attachments)
     setIsSendingCommand(true);
     try {
+      console.log("Sending AI command:", currentPrompt, "attachments:", attachments.length);
       // Always send as FormData for consistency with backend
       const formData = new FormData();
       formData.append('command', currentPrompt || '');
@@ -1059,6 +1060,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         formData.append('attachments', attachment.file);
       }
 
+      console.log("Making request to /api/ai-agent/command");
       const response = await fetch('/api/ai-agent/command', {
         method: 'POST',
         headers: {
@@ -1067,16 +1069,20 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         body: formData
       });
 
+      console.log("Response status:", response.status, "ok:", response.ok);
+      
       if (response.ok) {
         const result = await response.json();
-        console.log("AI Agent response:", result);
+        console.log("AI Agent response JSON:", result);
         if (result.success) {
+          console.log("Success case, adding message:", result.message);
           addMessage({
             role: 'assistant',
             content: result.message || 'Command processed successfully',
             source: 'panel'
           });
         } else {
+          console.log("Error case, adding error message:", result.message);
           addMessage({
             role: 'assistant',
             content: result.message || 'Sorry, there was an error processing your message.',
@@ -1084,7 +1090,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           });
         }
       } else {
-        throw new Error(`Server responded with ${response.status}`);
+        console.log("Response not ok, status:", response.status);
+        const errorText = await response.text();
+        console.log("Error response text:", errorText);
+        throw new Error(`Server responded with ${response.status}: ${errorText}`);
       }
       
       // Clear attachments after successful send
