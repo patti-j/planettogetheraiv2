@@ -2223,16 +2223,35 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
     console.log("AI Agent command received:", { 
       command: command || "No command provided",
       filesCount: files.length,
-      fileNames: files.map(f => f.originalname)
+      fileNames: files.map(f => f.originalname),
+      hasJSONAttachments: !!req.body.attachments
     });
 
-    // Convert uploaded files to attachment format
-    const attachments = files.map(file => ({
-      name: file.originalname,
-      type: file.mimetype,
-      size: file.size,
-      content: file.buffer
-    }));
+    // Handle both FormData files and JSON attachments
+    let attachments = [];
+    
+    // FormData files (from ai-left-panel)
+    if (files.length > 0) {
+      attachments = files.map(file => ({
+        name: file.originalname,
+        type: file.mimetype,
+        size: file.size,
+        content: file.buffer
+      }));
+    }
+    
+    // JSON attachments (from integrated-ai-assistant)
+    if (req.body.attachments && Array.isArray(req.body.attachments)) {
+      const jsonAttachments = req.body.attachments.map(att => ({
+        name: att.name,
+        type: att.type,
+        size: att.size,
+        content: att.content ? Buffer.from(att.content, 'base64') : null
+      }));
+      attachments = [...attachments, ...jsonAttachments];
+    }
+
+    console.log("Total attachments:", attachments.length);
 
     // Import the AI agent processing function
     const { processCommand } = await import("./ai-agent");
