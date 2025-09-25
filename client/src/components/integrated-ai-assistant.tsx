@@ -558,8 +558,9 @@ export default function IntegratedAIAssistant() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent/chat", {
-        message,
+      const response = await apiRequest("POST", "/api/ai-agent/command", {
+        command: message,
+        attachments: attachments.map(a => ({ name: a.name, type: a.type, size: a.size, content: a.content, url: a.url })),
         context: contextData,
         conversationHistory: messages.slice(-5) // Send last 5 messages for context
       });
@@ -575,6 +576,7 @@ export default function IntegratedAIAssistant() {
       };
       
       setMessages(prev => [...prev, assistantMessage]);
+      setAttachments([]);
       
       // Speak the response if voice is enabled
       if (isVoiceEnabled) {
@@ -623,6 +625,50 @@ export default function IntegratedAIAssistant() {
     if (recognition.current) {
       setIsListening(false);
       recognition.current.stop();
+    }
+  };
+
+  // File attachment handlers
+  const MAX_FILE_MB = 8;
+  const handlePickFiles = () => fileInputRef.current?.click();
+  const handleRemoveAttachment = (id: string) => setAttachments(prev => prev.filter(a => a.id !== id));
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); setIsDragOver(true); };
+  const handleDragLeave = () => setIsDragOver(false);
+  const handleDrop = (e: React.DragEvent) => { 
+    e.preventDefault(); 
+    setIsDragOver(false); 
+    if (e.dataTransfer?.files?.length) processFiles(e.dataTransfer.files); 
+  };
+  const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => { 
+    if (e.target.files?.length) processFiles(e.target.files); 
+    e.target.value = ""; 
+  };
+  const processFiles = async (files: FileList | File[]) => {
+    setIsProcessingFiles(true);
+    try {
+      const items = await Promise.all(Array.from(files).map(async (file) => {
+        if (file.size > MAX_FILE_MB * 1024 * 1024) throw new Error(`File too large: ${file.name}`);
+        const id = `${Date.now()}_${file.name}`;
+        let content: string | undefined;
+        let url: string | undefined;
+        if (file.type.startsWith('image/')) {
+          const buf = await file.arrayBuffer();
+          const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          content = `data:${file.type};base64,${b64}`;
+        } else if (file.type.startsWith('text/') || file.type === 'application/json') {
+          content = await file.text();
+        } else if (file.type === 'application/pdf') {
+          const buf = await file.arrayBuffer();
+          const b64 = btoa(String.fromCharCode(...new Uint8Array(buf)));
+          content = `data:${file.type};base64,${b64}`;
+        }
+        return { id, name: file.name, type: file.type, size: file.size, content, url, file };
+      }));
+      setAttachments(prev => [...prev, ...items]);
+    } catch (err: any) {
+      toast({ title: 'File error', description: err?.message || 'Failed to add files', variant: 'destructive' });
+    } finally { 
+      setIsProcessingFiles(false); 
     }
   };
 
@@ -1056,9 +1102,46 @@ export default function IntegratedAIAssistant() {
                     rows={window.innerWidth < 768 ? 2 : 2}
                     style={{ minHeight: '40px' }}
                   />
+                  {attachments.length > 0 && (
+                    <div className="px-3 py-2 space-y-1 border-t border-gray-200" data-testid="list-attachments">
+                      {attachments.map(a => (
+                        <div key={a.id} className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1">
+                          <FileText className="h-3 w-3 text-gray-500" />
+                          <span className="truncate flex-1">{a.name}</span>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleRemoveAttachment(a.id)} 
+                            className="h-5 w-5 p-0"
+                            data-testid={`button-remove-attachment-${a.id}`}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
+                  <input 
+                    hidden 
+                    multiple 
+                    ref={fileInputRef} 
+                    type="file" 
+                    onChange={handleFileInput} 
+                    data-testid="input-attach-files" 
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handlePickFiles} 
+                    className="px-2 h-10" 
+                    title="Attach files" 
+                    data-testid="button-attach-files"
+                  >
+                    <Paperclip className="h-4 w-4" />
+                  </Button>
                     onClick={isListening ? stopListening : startListening}
                     className={`px-2 h-10 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
                   >
