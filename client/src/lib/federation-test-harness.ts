@@ -51,7 +51,7 @@ interface TestHarnessReport {
 
 // Contract validation helpers
 const MODULE_CONTRACTS = {
-  'core-platform': [
+  '@planettogether/core-platform': [
     'getCurrentUser', 'getUserPermissions', 'getPlants', 'getPlantById',
     'navigateTo', 'getCurrentRoute', 'getTheme', 'setTheme'
   ],
@@ -59,28 +59,28 @@ const MODULE_CONTRACTS = {
     'getAvailableAgents', 'getCurrentAgent', 'switchToAgent',
     'requestAnalysis', 'getAgentCapabilities', 'sendMessageToAgent', 'subscribeToAgentUpdates'
   ],
-  'production-scheduling': [
+  '@planettogether/production-scheduling': [
     'getJobs', 'getJobById', 'updateJob', 'createJob',
     'getJobOperations', 'updateOperation', 'scheduleOperation',
     'getResources', 'getResourceUtilization', 'optimizeSchedule',
     'detectBottlenecks', 'onScheduleUpdate', 'onJobStatusChange'
   ],
-  'shop-floor': [
+  '@planettogether/shop-floor': [
     'getCurrentOperations', 'updateOperationStatus', 'reportProgress',
     'getEquipmentStatus', 'reportEquipmentIssue', 'getOperatorTasks',
     'completeTask', 'onOperationStatusChange', 'onEquipmentAlert'
   ],
-  'quality-management': [
+  '@planettogether/quality-management': [
     'getInspections', 'createInspection', 'updateInspectionResults',
     'getQualityStandards', 'validateQuality', 'getQualityMetrics',
     'getDefectAnalysis', 'onQualityAlert', 'onInspectionComplete'
   ],
-  'inventory-planning': [
+  '@planettogether/inventory-planning': [
     'getInventoryItems', 'updateInventoryLevel', 'getInventoryTransactions',
     'getDemandForecast', 'updateForecast', 'getReorderRecommendations',
     'calculateSafetyStock', 'onStockLevelChange', 'onReorderAlert'
   ],
-  'analytics-reporting': [
+  '@planettogether/analytics-reporting': [
     'getKPIs', 'calculateKPI', 'getDashboards', 'createDashboard',
     'updateDashboard', 'generateReport', 'exportReport',
     'subscribeToMetricUpdates', 'getRealtimeData'
@@ -179,7 +179,7 @@ export class FederationTestHarness {
 
       // Phase 3: Integration data flows
       if (!silent) console.log('\n🔄 Phase 3: Testing Integration Data Flows...');
-      await this.testIntegrationFlows(silent);
+      await this.testIntegrationFlows();
 
       // Phase 4: Error recovery and fallbacks
       if (!silent) console.log('\n🛡️ Phase 4: Testing Error Recovery...');
@@ -203,13 +203,13 @@ export class FederationTestHarness {
   // Test all modules initialization and contracts
   private async testAllModules(silent: boolean = false) {
     const moduleIds = [
-      'core-platform',
-      'agent-system', 
-      'production-scheduling',
-      'shop-floor',
-      'quality-management',
-      'inventory-planning',
-      'analytics-reporting',
+      '@planettogether/core-platform',
+      '@planettogether/agent-system', 
+      '@planettogether/production-scheduling',
+      '@planettogether/shop-floor',
+      '@planettogether/quality-management',
+      '@planettogether/inventory-planning',
+      '@planettogether/analytics-reporting',
       'shared-components'
     ];
 
@@ -392,8 +392,8 @@ export class FederationTestHarness {
 
     // Test 1: Production → Shop Floor event flow
     const test1 = await this.testEventFlow(
-      'production-scheduling',
-      'shop-floor',
+      '@planettogether/production-scheduling',
+      '@planettogether/shop-floor',
       'schedule:updated',
       { jobId: 1, status: 'scheduled' }
     );
@@ -402,8 +402,8 @@ export class FederationTestHarness {
 
     // Test 2: Shop Floor → Quality event flow
     const test2 = await this.testEventFlow(
-      'shop-floor',
-      'quality-management',
+      '@planettogether/shop-floor',
+      '@planettogether/quality-management',
       'operation:completed',
       { operationId: 1, quality: 'pending' }
     );
@@ -412,8 +412,8 @@ export class FederationTestHarness {
 
     // Test 3: Quality → Analytics event flow
     const test3 = await this.testEventFlow(
-      'quality-management',
-      'analytics-reporting',
+      '@planettogether/quality-management',
+      '@planettogether/analytics-reporting',
       'inspection:completed',
       { inspectionId: 1, result: 'pass' }
     );
@@ -422,8 +422,8 @@ export class FederationTestHarness {
 
     // Test 4: Inventory → Production event flow
     const test4 = await this.testEventFlow(
-      'inventory-planning',
-      'production-scheduling',
+      '@planettogether/inventory-planning',
+      '@planettogether/production-scheduling',
       'stock:low',
       { itemId: 1, level: 10, reorderPoint: 50 }
     );
@@ -485,7 +485,7 @@ export class FederationTestHarness {
   private async testBroadcastEvent(): Promise<TestResult> {
     return new Promise((resolve) => {
       const listeners = new Map<string, boolean>();
-      const modules = ['production-scheduling', 'shop-floor', 'quality-management'];
+      const modules = ['@planettogether/production-scheduling', '@planettogether/shop-floor', '@planettogether/quality-management'];
       const cleanups: Function[] = [];
 
       modules.forEach(module => {
@@ -551,8 +551,8 @@ export class FederationTestHarness {
 
     try {
       // Get production scheduling module
-      const scheduling = await federationRegistry.getModule('production-scheduling');
-      const shopFloor = await federationRegistry.getModule('shop-floor');
+      const scheduling = await federationRegistry.getModule('@planettogether/production-scheduling');
+      const shopFloor = await federationRegistry.getModule('@planettogether/shop-floor');
 
       // Test job creation and propagation
       details.push({
@@ -601,8 +601,8 @@ export class FederationTestHarness {
     const details: TestResult[] = [];
 
     try {
-      const shopFloor = await federationRegistry.getModule('shop-floor');
-      const quality = await federationRegistry.getModule('quality-management');
+      const shopFloor = await federationRegistry.getModule('@planettogether/shop-floor');
+      const quality = await federationRegistry.getModule('@planettogether/quality-management');
 
       // Test operation completion triggers quality check
       details.push({
@@ -651,8 +651,8 @@ export class FederationTestHarness {
     const details: TestResult[] = [];
 
     try {
-      const quality = await federationRegistry.getModule('quality-management');
-      const analytics = await federationRegistry.getModule('analytics-reporting');
+      const quality = await federationRegistry.getModule('@planettogether/quality-management');
+      const analytics = await federationRegistry.getModule('@planettogether/analytics-reporting');
 
       // Test quality metrics collection
       details.push({
@@ -701,8 +701,8 @@ export class FederationTestHarness {
     const details: TestResult[] = [];
 
     try {
-      const inventory = await federationRegistry.getModule('inventory-planning');
-      const scheduling = await federationRegistry.getModule('production-scheduling');
+      const inventory = await federationRegistry.getModule('@planettogether/inventory-planning');
+      const scheduling = await federationRegistry.getModule('@planettogether/production-scheduling');
 
       // Test stock level monitoring
       details.push({
@@ -751,7 +751,7 @@ export class FederationTestHarness {
     const details: TestResult[] = [];
 
     try {
-      const corePlatform = await federationRegistry.getModule('core-platform');
+      const corePlatform = await federationRegistry.getModule('@planettogether/core-platform');
 
       // Test authentication
       const userResult = await (corePlatform as any).getCurrentUser();
@@ -803,7 +803,7 @@ export class FederationTestHarness {
     const details: TestResult[] = [];
 
     try {
-      const agentSystem = await federationRegistry.getModule('agent-system');
+      const agentSystem = await federationRegistry.getModule('@planettogether/agent-system');
 
       // Test agent availability
       const agentsResult = await (agentSystem as any).getAvailableAgents();
@@ -934,7 +934,7 @@ export class FederationTestHarness {
   private async testGracefulDegradation(): Promise<TestResult> {
     try {
       // Test that system continues when optional dependencies fail
-      const module = await federationRegistry.getModule('production-scheduling');
+      const module = await federationRegistry.getModule('@planettogether/production-scheduling');
       
       // Module should still work even if some features are unavailable
       return {

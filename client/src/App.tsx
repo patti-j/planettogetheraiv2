@@ -173,12 +173,12 @@ export default function App() {
   // Check if this is a portal route - handle separately from main app
   const isPortalRoute = currentPath.startsWith('/portal');
   
-  // Run federation tests in development mode
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      runTestsInDevelopment();
-    }
-  }, []);
+  // Federation tests disabled to prevent AI functionality interference
+  // useEffect(() => {
+  //   if (import.meta.env.DEV) {
+  //     runTestsInDevelopment();
+  //   }
+  // }, []);
   
   // Handle redirect for unauthenticated users trying to access protected routes
   useEffect(() => {
