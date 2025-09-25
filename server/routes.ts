@@ -39,6 +39,29 @@ const upload = multer({
   }
 });
 
+// Configure multer for general file uploads (documents, images, etc.)
+const uploadFiles = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 25 * 1024 * 1024, // 25MB limit for general files
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept common file types for AI analysis
+    const allowedTypes = [
+      'image/', 'text/', 'application/pdf', 'application/json',
+      'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    ];
+    
+    const isAllowed = allowedTypes.some(type => file.mimetype.startsWith(type));
+    if (isAllowed || file.fieldname === 'attachments') {
+      cb(null, true);
+    } else {
+      cb(new Error('File type not supported for AI analysis'));
+    }
+  }
+});
+
 // Serve Bryntum static assets
 router.get('/schedulerpro.classic-light.css', (req, res) => {
   const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
@@ -2192,20 +2215,30 @@ router.post("/scheduler/sync", async (req, res) => {
 });
 
 // AI Agent command endpoint - handles text commands with file attachments
-router.post("/api/ai-agent/command", async (req, res) => {
+router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async (req, res) => {
   try {
-    const { command, attachments } = req.body;
+    const command = req.body.command || '';
+    const files = req.files as Express.Multer.File[] || [];
     
     console.log("AI Agent command received:", { 
       command: command || "No command provided",
-      attachmentsCount: attachments?.length || 0 
+      filesCount: files.length,
+      fileNames: files.map(f => f.originalname)
     });
+
+    // Convert uploaded files to attachment format
+    const attachments = files.map(file => ({
+      name: file.originalname,
+      type: file.mimetype,
+      size: file.size,
+      content: file.buffer
+    }));
 
     // Import the AI agent processing function
     const { processCommand } = await import("./ai-agent");
 
     // Process the command with attachments
-    const result = await processCommand(command, attachments || []);
+    const result = await processCommand(command, attachments);
 
     console.log("AI Agent command result:", result);
 
@@ -2270,6 +2303,52 @@ router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to transcribe voice recording",
+      error: error.message
+    });
+  }
+});
+
+// AI Text-to-Speech endpoint
+router.post("/api/ai/text-to-speech", async (req, res) => {
+  try {
+    const { text, voice = 'alloy', speed = 1.0 } = req.body;
+    
+    if (!text || !text.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "No text provided for speech synthesis"
+      });
+    }
+
+    console.log("Text-to-speech request:", { textLength: text.length, voice, speed });
+
+    // Import OpenAI for text-to-speech
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    // Generate speech using OpenAI TTS
+    const mp3 = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+      input: text,
+      speed: speed
+    });
+
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+    
+    res.set({
+      'Content-Type': 'audio/mpeg',
+      'Content-Length': buffer.length.toString(),
+      'Cache-Control': 'no-cache'
+    });
+    
+    res.send(buffer);
+
+  } catch (error) {
+    console.error("Text-to-speech error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate speech",
       error: error.message
     });
   }

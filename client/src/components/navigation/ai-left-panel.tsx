@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,6 +58,27 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
   const [showFloatingNotification, setShowFloatingNotification] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<'max' | 'scheduling_assistant'>('max');
+  
+  // File attachment state
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    content?: string;
+    url?: string;
+    file: File; // Keep original File for upload
+  }>>([]);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Voice recording state
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingTimeout, setRecordingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [recordingTimeLeft, setRecordingTimeLeft] = useState<number>(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const [isSendingCommand, setIsSendingCommand] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -814,11 +835,204 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   };
 
-  const handleSendMessage = (messageToSend?: string) => {
+  // File processing functions
+  const processFile = async (file: File): Promise<any> => {
+    return new Promise((resolve, reject) => {
+      const fileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const reader = new FileReader();
+      
+      reader.onload = (e) => {
+        const result = e.target?.result;
+        if (!result) {
+          reject(new Error("Failed to read file"));
+          return;
+        }
+
+        const attachment = {
+          id: fileId,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          content: typeof result === 'string' ? result : '',
+          url: file.type.startsWith("image/") ? (typeof result === 'string' ? result : '') : undefined,
+          file: file // Store original File for upload
+        };
+
+        resolve(attachment);
+      };
+
+      reader.onerror = () => reject(new Error("Failed to read file"));
+
+      if (file.type.startsWith("image/")) {
+        reader.readAsDataURL(file);
+      } else {
+        reader.readAsText(file);
+      }
+    });
+  };
+
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    setIsProcessingFiles(true);
+    try {
+      const processedFiles = await Promise.all(files.map(processFile));
+      setAttachments(prev => [...prev, ...processedFiles]);
+    } catch (error) {
+      console.error("File processing error:", error);
+    } finally {
+      setIsProcessingFiles(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const removeAttachment = (attachmentId: string) => {
+    setAttachments(prev => prev.filter(att => att.id !== attachmentId));
+  };
+
+  const getFileIcon = (type: string) => {
+    if (type.startsWith("image/")) return Image;
+    if (type.includes("text") || type.includes("json")) return FileText;
+    return File;
+  };
+
+  // Drag and drop handlers
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    const files = Array.from(e.dataTransfer.files);
+    if (files.length === 0) return;
+
+    setIsProcessingFiles(true);
+    try {
+      const processedFiles = await Promise.all(files.map(processFile));
+      setAttachments(prev => [...prev, ...processedFiles]);
+    } catch (error) {
+      console.error("File drop processing error:", error);
+    } finally {
+      setIsProcessingFiles(false);
+    }
+  };
+
+  // Voice recording functions
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const audioChunks: BlobPart[] = [];
+
+      recorder.ondataavailable = (event) => {
+        audioChunks.push(event.data);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+        await handleTranscription(audioBlob);
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
+      setRecordingTimeLeft(10);
+
+      // Start countdown timer
+      const countdownInterval = setInterval(() => {
+        setRecordingTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(countdownInterval);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Auto-stop after 10 seconds
+      const timeout = setTimeout(() => {
+        if (recorder.state === 'recording') {
+          recorder.stop();
+          setIsRecording(false);
+          setRecordingTimeLeft(0);
+        }
+        clearInterval(countdownInterval);
+      }, 10000);
+
+      setRecordingTimeout(timeout);
+    } catch (error) {
+      console.error('Failed to start recording:', error);
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setRecordingTimeLeft(0);
+      
+      if (recordingTimeout) {
+        clearTimeout(recordingTimeout);
+        setRecordingTimeout(null);
+      }
+    }
+  };
+
+  const handleTranscription = async (audioBlob: Blob) => {
+    setIsTranscribing(true);
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const response = await fetch('/api/ai-agent/voice', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        throw new Error('Transcription failed');
+      }
+
+      const result = await response.json();
+      
+      if (result.success && result.text) {
+        // Add transcribed text to the input field for user review
+        setPrompt(prev => prev + (prev ? ' ' : '') + result.text);
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
+  const handleSendMessage = async (messageToSend?: string) => {
     // Use provided message or fall back to prompt state
     const currentPrompt = messageToSend || prompt;
     
-    if (!currentPrompt.trim()) return;
+    if (!currentPrompt.trim() && attachments.length === 0) return;
     
     // Only clear the prompt state if we're using it (not a provided message)
     if (!messageToSend) {
@@ -826,14 +1040,58 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
 
     // Add user message immediately to chat UI
+    const messageContent = currentPrompt || (attachments.length > 0 ? "Attached files for analysis" : "");
     addMessage({
       role: 'user',
-      content: currentPrompt,
+      content: messageContent,
       source: 'panel'
     });
 
-    // Send to AI (response will be added in mutation onSuccess)
-    sendMessageMutation.mutate(currentPrompt);
+    // Send to AI via command endpoint (handles both text and attachments)
+    setIsSendingCommand(true);
+    try {
+      // Always send as FormData for consistency with backend
+      const formData = new FormData();
+      formData.append('command', currentPrompt || '');
+      
+      // Add each attachment using original File object
+      for (const attachment of attachments) {
+        formData.append('attachments', attachment.file);
+      }
+
+      const response = await fetch('/api/ai-agent/command', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success && result.message) {
+          addMessage({
+            role: 'assistant',
+            content: result.message,
+            source: 'panel'
+          });
+        }
+      } else {
+        throw new Error(`Server responded with ${response.status}`);
+      }
+      
+      // Clear attachments after successful send
+      setAttachments([]);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      addMessage({
+        role: 'assistant',
+        content: 'Sorry, there was an error processing your message. Please try again.',
+        source: 'panel'
+      });
+    } finally {
+      setIsSendingCommand(false);
+    }
   };
 
   return (
@@ -1027,8 +1285,25 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             )}
 
             {/* Chat Tab with its own layout */}
-            <TabsContent value="chat" className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden">
+            <TabsContent 
+              value="chat" 
+              className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
               <div className="relative flex-1 overflow-hidden">
+                {/* Drag overlay */}
+                {isDragOver && (
+                  <div className="absolute inset-0 z-50 bg-primary/10 border-2 border-dashed border-primary rounded-lg flex items-center justify-center">
+                    <div className="text-center">
+                      <Paperclip className="w-8 h-8 mx-auto mb-2 text-primary" />
+                      <p className="text-sm font-medium text-primary">Drop files here to attach</p>
+                      <p className="text-xs text-muted-foreground">Images, documents, PDFs supported</p>
+                    </div>
+                  </div>
+                )}
+                
                 <div 
                   className="absolute inset-0 pr-2 overflow-y-auto" 
                   ref={scrollAreaRef}
@@ -1160,6 +1435,130 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                 </div>
               </div>
 
+              {/* Attachments Preview */}
+              {attachments.length > 0 && (
+                <div className="p-3 border-t bg-gray-50 dark:bg-gray-800 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Attachments ({attachments.length})
+                    </h4>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setAttachments([])}
+                      className="text-gray-500 hover:text-red-500 h-6 px-2"
+                    >
+                      Clear All
+                    </Button>
+                  </div>
+                  <div className="space-y-1">
+                    {attachments.map((attachment) => {
+                      const FileIcon = getFileIcon(attachment.type);
+                      return (
+                        <div key={attachment.id} className="flex items-center gap-2 p-2 bg-white dark:bg-gray-700 rounded border text-sm">
+                          <FileIcon className="w-4 h-4 text-gray-600" />
+                          <span className="flex-1 truncate">{attachment.name}</span>
+                          <span className="text-xs text-gray-500">
+                            {(attachment.size / 1024).toFixed(1)}KB
+                          </span>
+                          {attachment.type.startsWith("image/") && attachment.url && (
+                            <img 
+                              src={attachment.url} 
+                              alt={attachment.name}
+                              className="w-6 h-6 object-cover rounded"
+                            />
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeAttachment(attachment.id)}
+                            className="text-gray-400 hover:text-red-500 h-6 w-6 p-0"
+                          >
+                            <X className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Message Input */}
+              <div className="p-3 border-t bg-background space-y-2">
+                {/* Hidden file input */}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  multiple
+                  accept="image/*,.txt,.json,.pdf,.doc,.docx"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+                
+                <form 
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }} 
+                  className="flex gap-2"
+                >
+                  <Input
+                    value={prompt}
+                    onChange={(e) => setPrompt(e.target.value)}
+                    placeholder={
+                      isTranscribing ? "Transcribing voice..." : 
+                      isRecording ? `Recording... ${recordingTimeLeft}s` : 
+                      "Type, attach files, or record voice..."
+                    }
+                    disabled={isSendingCommand || isRecording || isTranscribing}
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+                  
+                  <Button
+                    type="button"
+                    variant={isRecording ? "destructive" : "outline"}
+                    size="icon"
+                    onClick={isRecording ? stopRecording : startRecording}
+                    disabled={isSendingCommand || isTranscribing}
+                    title={isRecording ? `Stop recording (${recordingTimeLeft}s left)` : "Start voice recording (10s max)"}
+                    className={isRecording ? "animate-pulse" : ""}
+                  >
+                    {isRecording ? (
+                      <StopCircle className="w-4 h-4" />
+                    ) : isTranscribing ? (
+                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
+                    ) : (
+                      <Mic className="w-4 h-4" />
+                    )}
+                  </Button>
+                  
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isProcessingFiles || isSendingCommand || isRecording}
+                    title="Attach files (images, documents, PDFs)"
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
+                  
+                  <Button
+                    type="submit"
+                    disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand || isRecording || isTranscribing}
+                    size="icon"
+                    className={getThemeGradient(aiSettings.aiThemeColor).replace('bg-gradient-to-r', '') + " text-white"}
+                  >
+                    {isSendingCommand ? "..." : <Send className="w-4 h-4" />}
+                  </Button>
+                </form>
+              </div>
 
             </TabsContent>
 
