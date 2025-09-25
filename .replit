@@ -97,4 +97,4 @@ localPort = 45281
 externalPort = 4200
 
 [agent]
-integrations = ["javascript_openai:1.0.0"]
+integrations = ["javascript_openai:1.0.0", "javascript_database:1.0.0"]
