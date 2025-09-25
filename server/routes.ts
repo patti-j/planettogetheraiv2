@@ -2093,10 +2093,10 @@ router.get("/api/resources", async (req, res) => {
 router.get("/resource-capabilities", async (req, res) => {
   try {
     const result = await directSql(`
-      SELECT resource_id, operation_type, can_perform 
-      FROM resource_capabilities 
-      WHERE can_perform = true
-      ORDER BY resource_id, operation_type
+      SELECT resource_id, capability_id, throughput_modifier 
+      FROM ptresourcecapabilities 
+      WHERE use_throughput_modifier = true
+      ORDER BY resource_id, capability_id
     `);
     
     // Group by resource for easier lookup

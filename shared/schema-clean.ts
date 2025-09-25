@@ -121,7 +121,7 @@ export const capabilities = pgTable("capabilities", {
   description: text("description"),
 });
 
-export const resourceCapabilities = pgTable("resource_capabilities", {
+export const resourceCapabilities = pgTable("ptresourcecapabilities", {
   id: serial("id").primaryKey(),
   resourceId: integer("resource_id").references(() => resources.id).notNull(),
   capabilityId: integer("capability_id").references(() => capabilities.id).notNull(),

@@ -379,7 +379,7 @@ const getCategoryColor = (category: string): string => {
 // Feature to table mapping - defines which tables are relevant for each manufacturing feature
 const featureTableMapping: Record<string, string[]> = {
   'scheduling': [
-    'production_orders', 'planned_orders', 'operations', 'resources', 'resource_capabilities', 'capabilities',
+    'production_orders', 'planned_orders', 'operations', 'resources', 'ptresourcecapabilities', 'capabilities',
     'shift_templates', 'resource_shift_assignments', 'resource_downtime', 'resource_overtime',
     'production_versions', 'routings', 'routing_operations', 'work_centers', 'calendar_exceptions',
     'recipes', 'bills_of_materials', 'bom_items', 'bom_material_requirements', 'bom_product_outputs', 'capacity_planning_scenarios'
@@ -442,7 +442,7 @@ const featureTableMapping: Record<string, string[]> = {
     // Production control for discrete manufacturing
     'production_orders', 'production_versions', 'planned_orders',
     // Resources and infrastructure
-    'work_centers', 'resources', 'resource_capabilities', 'capabilities', 'resource_requirements',
+    'work_centers', 'resources', 'ptresourcecapabilities', 'capabilities', 'resource_requirements',
     // Material Requirements (BOM-based for discrete manufacturing)
     'material_requirements',
     // Products and items
@@ -461,7 +461,7 @@ const featureTableMapping: Record<string, string[]> = {
     // Production control for process manufacturing
     'production_orders', 'production_versions', 'planned_orders',
     // Resources and infrastructure
-    'work_centers', 'resources', 'resource_capabilities', 'capabilities', 'resource_requirements',
+    'work_centers', 'resources', 'ptresourcecapabilities', 'capabilities', 'resource_requirements',
     // Plants and storage for process manufacturing
     'plants', 'storage_locations',
     // Quality for process manufacturing
@@ -479,7 +479,7 @@ const featureTableMapping: Record<string, string[]> = {
     // Production Versions (links BOMs/recipes to plants)
     'production_versions',
     // Core Engineering Infrastructure
-    'work_centers', 'resources', 'plants', 'capabilities', 'resource_capabilities', 'resource_requirements', 'storage_locations',
+    'work_centers', 'resources', 'plants', 'capabilities', 'ptresourcecapabilities', 'resource_requirements', 'storage_locations',
     // Product & Technical Data
     'product_masters', 'products', 'product_categories', 'product_structures', 'items',
     'engineering_changes', 'specifications', 'documents', 'alternate_routings', 'operations',
