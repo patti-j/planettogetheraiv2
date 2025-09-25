@@ -1069,10 +1069,17 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
       if (response.ok) {
         const result = await response.json();
-        if (result.success && result.message) {
+        console.log("AI Agent response:", result);
+        if (result.success) {
           addMessage({
             role: 'assistant',
-            content: result.message,
+            content: result.message || 'Command processed successfully',
+            source: 'panel'
+          });
+        } else {
+          addMessage({
+            role: 'assistant',
+            content: result.message || 'Sorry, there was an error processing your message.',
             source: 'panel'
           });
         }
