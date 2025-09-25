@@ -1,4 +1,4 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, numeric, decimal, primaryKey, index, unique, uniqueIndex, pgEnum, smallint } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -393,6 +393,61 @@ export const playbookUsage = pgTable("playbook_usage", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Voice recordings cache for AI chat and tour narration
+export const voiceRecordingsCache = pgTable("voice_recordings_cache", {
+  id: serial("id").primaryKey(),
+  textHash: varchar("text_hash", { length: 64 }).notNull(), // SHA-256 hash of the text content
+  role: varchar("role", { length: 50 }).notNull(), // director, production-scheduler, etc.
+  stepId: varchar("step_id", { length: 100 }).notNull().default(''), // tour step identifier, empty string for non-tour content
+  voice: varchar("voice", { length: 20 }).notNull(), // AI voice used (nova, alloy, etc.)
+  audioData: text("audio_data").notNull(), // Base64 encoded audio file
+  mimeType: varchar("mime_type", { length: 64 }).notNull(), // audio/mpeg, audio/webm, etc.
+  encoding: varchar("encoding", { length: 32 }), // codec/encoding info
+  sampleRate: integer("sample_rate"), // sample rate in Hz
+  channels: smallint("channels").default(1), // number of audio channels
+  fileSize: integer("file_size").notNull(), // in bytes
+  duration: integer("duration"), // in milliseconds
+  createdAt: timestamp("created_at").defaultNow(),
+  lastUsedAt: timestamp("last_used_at").defaultNow(),
+  usageCount: integer("usage_count").default(1),
+}, (table) => {
+  return {
+    // Composite unique index to allow same text with different voices/roles
+    uniqueCache: uniqueIndex("unique_voice_cache").on(table.textHash, table.voice, table.role, table.stepId),
+    // Index for LRU eviction
+    lastUsedIdx: index("voice_cache_last_used_idx").on(table.lastUsedAt),
+  };
+});
+
+// Microphone recordings for user voice input and transcription
+export const microphoneRecordings = pgTable("microphone_recordings", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  blobHash: varchar("blob_hash", { length: 64 }).notNull(), // SHA-256 hash for deduplication
+  mimeType: varchar("mime_type", { length: 64 }).notNull(), // audio/webm, audio/wav, etc.
+  sampleRate: integer("sample_rate"), // sample rate in Hz
+  channels: smallint("channels").default(1), // number of audio channels
+  durationMs: integer("duration_ms").notNull(), // duration in milliseconds
+  sizeBytes: integer("size_bytes").notNull(), // file size in bytes
+  source: varchar("source", { length: 50 }).notNull(), // 'chat', 'tour', 'mobile', etc.
+  status: varchar("status", { length: 20 }).notNull().default('pending'), // 'pending', 'transcribed', 'error'
+  transcriptText: text("transcript_text"), // transcribed text result
+  language: varchar("language", { length: 10 }).default('en'), // language code (en, es, fr, etc.)
+  errorMessage: text("error_message"), // error details if transcription failed
+  audioData: text("audio_data").notNull(), // Base64 encoded audio file
+  createdAt: timestamp("created_at").defaultNow(),
+  transcribedAt: timestamp("transcribed_at"),
+}, (table) => {
+  return {
+    // Unique constraint for deduplication - prevent same recording per user
+    uniqueUserBlob: uniqueIndex("unique_user_blob").on(table.userId, table.blobHash),
+    // Index for user's recordings
+    userIdx: index("mic_recordings_user_idx").on(table.userId),
+    // Index for status queries
+    statusIdx: index("mic_recordings_status_idx").on(table.status),
+  };
+});
+
 // ============================================
 // AI Scheduling Conversation Tables
 // ============================================
@@ -453,6 +508,8 @@ export const insertAgentActionSchema = createInsertSchema(agentActions);
 export const insertAiMemorySchema = createInsertSchema(aiMemories);
 export const insertPlaybookSchema = createInsertSchema(playbooks);
 export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage);
+export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache);
+export const insertMicrophoneRecordingSchema = createInsertSchema(microphoneRecordings);
 
 // Legacy schema aliases for backward compatibility  
 export const insertResourceSchema = insertPtResourceSchema;
@@ -526,6 +583,10 @@ export type Playbook = typeof playbooks.$inferSelect;
 export type InsertPlaybook = z.infer<typeof insertPlaybookSchema>;
 export type PlaybookUsage = typeof playbookUsage.$inferSelect;
 export type InsertPlaybookUsage = z.infer<typeof insertPlaybookUsageSchema>;
+export type VoiceRecordingsCache = typeof voiceRecordingsCache.$inferSelect;
+export type InsertVoiceRecordingsCache = z.infer<typeof insertVoiceRecordingsCacheSchema>;
+export type MicrophoneRecording = typeof microphoneRecordings.$inferSelect;
+export type InsertMicrophoneRecording = z.infer<typeof insertMicrophoneRecordingSchema>;
 
 // Product development types (placeholders)
 export type StrategyDocument = PtPlant; // Placeholder
