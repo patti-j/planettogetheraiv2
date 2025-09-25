@@ -614,17 +614,93 @@ export default function IntegratedAIAssistant() {
     setInputMessage("");
   };
 
-  const startListening = () => {
-    if (recognition.current) {
+  const startListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        await handleAudioRecording(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setMediaRecorder(recorder);
+      setIsRecording(true);
       setIsListening(true);
-      recognition.current.start();
+      setRecordingTimeLeft(10);
+
+      // Start countdown timer
+      const interval = setInterval(() => {
+        setRecordingTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            stopListening();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Auto-stop after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        stopListening();
+      }, 10000);
+
+      setRecordingTimeout(timeout);
+    } catch (error) {
+      toast({
+        title: "Recording Error",
+        description: "Unable to access microphone. Please check permissions.",
+        variant: "destructive",
+      });
     }
   };
 
   const stopListening = () => {
-    if (recognition.current) {
-      setIsListening(false);
-      recognition.current.stop();
+    if (mediaRecorder && mediaRecorder.state === 'recording') {
+      mediaRecorder.stop();
+    }
+    if (recordingTimeout) {
+      clearTimeout(recordingTimeout);
+      setRecordingTimeout(null);
+    }
+    setIsRecording(false);
+    setIsListening(false);
+    setRecordingTimeLeft(0);
+  };
+
+  const handleAudioRecording = async (audioBlob: Blob) => {
+    try {
+      setIsTranscribing(true);
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+      
+      const response = await fetch('/api/ai-agent/transcribe', {
+        method: 'POST',
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.text) {
+          setInputMessage(data.text);
+        }
+      } else {
+        throw new Error('Transcription failed');
+      }
+    } catch (error) {
+      toast({
+        title: "Transcription Error",
+        description: "Unable to process audio. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsTranscribing(false);
     }
   };
 
@@ -1142,11 +1218,27 @@ export default function IntegratedAIAssistant() {
                   >
                     <Paperclip className="h-4 w-4" />
                   </Button>
-                    onClick={isListening ? stopListening : startListening}
-                    className={`px-2 h-10 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
-                  >
-                    {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
-                  </Button>
+                  <div className="flex items-center gap-1">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={isListening ? stopListening : startListening}
+                      className={`px-2 h-10 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
+                      data-testid="button-voice-recording"
+                    >
+                      {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+                    </Button>
+                    {isListening && recordingTimeLeft > 0 && (
+                      <span className="text-xs font-mono text-red-500 min-w-[2ch]" data-testid="text-recording-countdown">
+                        {recordingTimeLeft}s
+                      </span>
+                    )}
+                    {isTranscribing && (
+                      <span className="text-xs text-blue-500" data-testid="text-transcribing-status">
+                        Processing...
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <Button
                   onClick={handleSendMessage}
