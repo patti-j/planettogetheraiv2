@@ -112,7 +112,7 @@ export function AuthAdapterProvider({ children }: { children: ReactNode }) {
     onSuccess: async (data) => {
       try {
         const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
+        const redirectPath = isMobile ? '/mobile-home' : '/home';
         
         await queryClient.invalidateQueries({ queryKey: ["/api/auth/me"] });
         
