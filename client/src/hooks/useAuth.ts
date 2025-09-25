@@ -345,7 +345,7 @@ export function useAuth() {
       try {
         // Detect if user is on mobile device
         const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
+        const redirectPath = isMobile ? '/mobile-home' : '/home';
         
         console.log(`Login successful, redirecting to ${redirectPath} (mobile: ${isMobile})`);
         
@@ -366,16 +366,14 @@ export function useAuth() {
         
         // Add a small delay to ensure state is properly updated
         setTimeout(() => {
-          if (isMobile) {
-            console.log("Desktop login successful, redirecting to /dashboard");
-          }
+          console.log(`Login successful, redirecting to ${redirectPath}`);
           window.location.href = redirectPath;
         }, 150);
       } catch (error) {
         console.error("Post-login processing error:", error);
         // Even if invalidation fails, still redirect based on device type
         const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const redirectPath = isMobile ? '/mobile-home' : '/dashboard';
+        const redirectPath = isMobile ? '/mobile-home' : '/home';
         setTimeout(() => {
           window.location.href = redirectPath;
         }, 150);
