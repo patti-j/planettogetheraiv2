@@ -9,6 +9,7 @@ import { systemMonitoringAgent } from "./monitoring-agent";
 import { schedulingAI } from "./services/scheduling-ai";
 import path from "path";
 import fs from "fs";
+import multer from "multer";
 
 // Extend the global namespace to include tokenStore
 declare global {
@@ -21,6 +22,22 @@ declare global {
 }
 
 const router = express.Router();
+
+// Configure multer for file uploads (specifically for voice recordings)
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit for audio files
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept audio files
+    if (file.mimetype.startsWith('audio/') || file.fieldname === 'audio') {
+      cb(null, true);
+    } else {
+      cb(new Error('Only audio files are allowed for voice transcription'));
+    }
+  }
+});
 
 // Serve Bryntum static assets
 router.get('/schedulerpro.classic-light.css', (req, res) => {
@@ -2171,6 +2188,90 @@ router.post("/scheduler/sync", async (req, res) => {
   } catch (error) {
     console.error("Error in scheduler sync:", error);
     res.status(500).json({ success: false, message: "Failed to save scheduler changes" });
+  }
+});
+
+// AI Agent command endpoint - handles text commands with file attachments
+router.post("/api/ai-agent/command", async (req, res) => {
+  try {
+    const { command, attachments } = req.body;
+    
+    console.log("AI Agent command received:", { 
+      command: command || "No command provided",
+      attachmentsCount: attachments?.length || 0 
+    });
+
+    // Import the AI agent processing function
+    const { processCommand } = await import("./ai-agent");
+
+    // Process the command with attachments
+    const result = await processCommand(command, attachments || []);
+
+    console.log("AI Agent command result:", result);
+
+    res.json({
+      success: result.success,
+      message: result.message,
+      data: result.data,
+      actions: result.actions || [],
+      canvasAction: result.canvasAction
+    });
+
+  } catch (error) {
+    console.error("AI Agent command error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to process AI command",
+      error: error.message
+    });
+  }
+});
+
+// AI Agent voice transcription endpoint - handles audio file uploads
+router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
+  try {
+    console.log("Voice transcription request received");
+
+    // Check if file was uploaded
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "No audio file provided"
+      });
+    }
+
+    console.log("Processing audio file:", req.file.originalname, "Size:", req.file.buffer.length, "bytes");
+
+    // Import OpenAI for voice transcription
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    // Create a file-like object for OpenAI from the buffer
+    const audioFile = new File([req.file.buffer], req.file.originalname || "audio.wav", { 
+      type: req.file.mimetype || "audio/wav" 
+    });
+
+    // Transcribe using OpenAI Whisper
+    const transcription = await openai.audio.transcriptions.create({
+      file: audioFile,
+      model: "whisper-1",
+    });
+
+    console.log("Voice transcription result:", transcription.text);
+
+    res.json({
+      success: true,
+      text: transcription.text,
+      message: "Voice transcribed successfully"
+    });
+
+  } catch (error) {
+    console.error("Voice transcription error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to transcribe voice recording",
+      error: error.message
+    });
   }
 });
 

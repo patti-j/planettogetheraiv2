@@ -3375,3 +3375,96 @@ Return JSON format:
     };
   }
 }
+
+// Main command processing function - handles both text and attachments
+export async function processCommand(command: string, attachments: AttachmentFile[] = []): Promise<AIAgentResponse> {
+  try {
+    console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
+
+    // Get system context for manufacturing data
+    let jobCount = 0;
+    let operationCount = 0;
+    let resourceCount = 0;
+
+    try {
+      const jobs = await storage.getJobs();
+      const operations = await storage.getDiscreteOperations();
+      const resources = await storage.getResources();
+      
+      jobCount = jobs.length;
+      operationCount = operations.length;
+      resourceCount = resources.length;
+    } catch (error) {
+      console.warn("Could not fetch system context:", error);
+      // Continue with defaults
+    }
+
+    const contextSummary = {
+      jobCount,
+      operationCount,
+      resourceCount,
+      hasAttachments: attachments.length > 0,
+      attachmentTypes: attachments.map(a => a.type).join(", ")
+    };
+
+    // If attachments are present, use the attachment-aware processing
+    if (attachments && attachments.length > 0) {
+      console.log("Processing command with attachments:", attachments.map(a => ({ name: a.name, type: a.type, size: a.size })));
+      return await processCommandWithAttachments(command, attachments, contextSummary);
+    }
+
+    // For text-only commands, use the existing OpenAI processing logic
+    console.log("Processing text-only command");
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `AI agent for manufacturing production system. Context: ${contextSummary.jobCount} jobs, ${contextSummary.operationCount} operations, ${contextSummary.resourceCount} resources.
+
+Available actions: LIST_JOBS, LIST_OPERATIONS, LIST_RESOURCES, LIST_PLANTS, CREATE_JOB, CREATE_OPERATION, CREATE_RESOURCE, CREATE_KANBAN_BOARD, ANALYZE_LATE_JOBS, GET_STATUS, NAVIGATE_TO_PAGE, OPEN_DASHBOARD, CREATE_DASHBOARD, OPEN_GANTT_CHART, OPEN_ANALYTICS, OPEN_BOARDS, OPEN_REPORTS, OPEN_SHOP_FLOOR, OPEN_VISUAL_FACTORY, OPEN_CAPACITY_PLANNING, OPEN_OPTIMIZATION_STUDIO, OPEN_PRODUCTION_PLANNING, OPEN_SYSTEMS_INTEGRATION, OPEN_ROLE_MANAGEMENT, CREATE_ANALYTICS_WIDGET, TRIGGER_UI_ACTION, SHOW_SCHEDULE_EVALUATION, MAXIMIZE_VIEW, MINIMIZE_VIEW, SHOW_CANVAS, CANVAS_CONTENT, CREATE_CHART, CREATE_PIE_CHART, CREATE_LINE_CHART, CREATE_BAR_CHART, CREATE_HISTOGRAM, CREATE_GANTT_CHART.
+
+For each command, return JSON with action type and relevant data. Handle manufacturing queries intelligently.`
+        },
+        {
+          role: "user",
+          content: command
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1000
+    });
+
+    const aiContent = response.choices[0].message.content || "";
+    console.log("AI response content:", aiContent);
+
+    // Try to parse as JSON, fall back to plain text
+    let aiResponse;
+    try {
+      aiResponse = JSON.parse(aiContent);
+    } catch {
+      aiResponse = {
+        action: "GENERAL_RESPONSE",
+        message: aiContent,
+        success: true
+      };
+    }
+
+    return {
+      success: true,
+      message: aiResponse.message || "Command processed successfully",
+      data: aiResponse.data || null,
+      actions: aiResponse.actions || [],
+      canvasAction: aiResponse.canvasAction
+    };
+
+  } catch (error) {
+    console.error("Command processing error:", error);
+    return {
+      success: false,
+      message: "Failed to process command. Please try again.",
+      data: null
+    };
+  }
+}
