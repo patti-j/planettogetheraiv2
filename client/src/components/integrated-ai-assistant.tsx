@@ -34,7 +34,12 @@ import {
   Eye,
   Dock,
   Move,
-  Sparkles
+  Sparkles,
+  Paperclip,
+  StopCircle,
+  Image,
+  FileText,
+  File
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -85,6 +90,27 @@ export default function IntegratedAIAssistant() {
   const [showMemorySettings, setShowMemorySettings] = useState(false);
   const [memoryData, setMemoryData] = useState<any[]>([]);
   const [trainingData, setTrainingData] = useState<any[]>([]);
+  
+  // File attachment state
+  const [attachments, setAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    content?: string;
+    url?: string;
+    file: File;
+  }>>([]);
+  const [isProcessingFiles, setIsProcessingFiles] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice recording state (replace basic browser speech with OpenAI)
+  const [isRecording, setIsRecording] = useState(false);
+  const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [recordingTimeout, setRecordingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [recordingTimeLeft, setRecordingTimeLeft] = useState<number>(0);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   
   // Calculate initial position and size based on screen size
   const getInitialDimensions = () => {
