@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { useDeviceType } from '@/hooks/useDeviceType';
 import { CustomizableHeader } from '@/components/customizable-header';
 import { AILeftPanel } from './ai-left-panel';
-import { BottomDrawer } from './bottom-drawer';
 import { SlideOutMenu } from './slide-out-menu';
 import { MinimizedNavPanel } from './minimized-nav-panel';
 import TopMenu from '@/components/top-menu';
@@ -556,8 +555,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   />
                 )}
                 
-                {/* Main content area - with bottom padding for activity center */}
-                <div className="flex-1 overflow-auto pb-10">
+                {/* Main content area */}
+                <div className="flex-1 overflow-auto">
                   {children}
                 </div>
               </div>
@@ -616,8 +615,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                     />
                   )}
                   
-                  {/* Main content area - with bottom padding for activity center */}
-                  <div className="flex-1 overflow-auto pb-10">
+                  {/* Main content area */}
+                  <div className="flex-1 overflow-auto">
                     {children}
                   </div>
                 </div>
@@ -643,15 +642,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             />
           )}
           
-          {/* Main content area - with bottom padding for activity center */}
-          <div className="flex-1 overflow-auto pb-10">
+          {/* Main content area */}
+          <div className="flex-1 overflow-auto">
             {children}
           </div>
         </div>
       )}
       
-      {/* Bottom drawer for notifications - hidden in full screen */}
-      {!isFullScreen && <BottomDrawer />}
 
       {/* Panel Toggle Button - Show when panels are hidden due to mobile device */}
       {!isFullScreen && shouldHidePanels && (
