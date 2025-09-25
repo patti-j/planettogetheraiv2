@@ -1493,7 +1493,8 @@ async function executeAction(action: string, parameters: any, message: string, c
         };
 
       case "SEARCH_JOBS":
-        const jobs = await storage.getJobs();
+        const jobOperations = await storage.getJobOperations();
+        const jobs = Array.from(new Set(jobOperations.map(op => op.jobId))).map(jobId => ({ id: jobId, name: `Job ${jobId}`, description: '' }));
         const filteredJobs = jobs.filter(job => 
           job.name.toLowerCase().includes(parameters.query?.toLowerCase() || "") ||
           job.description?.toLowerCase().includes(parameters.query?.toLowerCase() || "")
@@ -1506,7 +1507,7 @@ async function executeAction(action: string, parameters: any, message: string, c
         };
 
       case "SEARCH_OPERATIONS":
-        const operations = await storage.getOperations();
+        const operations = await storage.getJobOperations();
         const filteredOperations = operations.filter(op => 
           op.name.toLowerCase().includes(parameters.query?.toLowerCase() || "") ||
           op.description?.toLowerCase().includes(parameters.query?.toLowerCase() || "")
@@ -3253,8 +3254,9 @@ export async function generateTourContent(config: {
     const { title, description, targetRoles, focusAreas, voiceEnabled, type, systemContext } = config;
     
     // Get current system data for context
-    const jobs = systemContext?.jobs || await storage.getJobs();
-    const operations = systemContext?.operations || await storage.getOperations();
+    const jobOperations = await storage.getJobOperations();
+    const jobs = systemContext?.jobs || Array.from(new Set(jobOperations.map(op => op.jobId))).map(jobId => ({ id: jobId, name: `Job ${jobId}`, status: 'active' }));
+    const operations = systemContext?.operations || await storage.getJobOperations();
     const resources = systemContext?.resources || await storage.getResources();
     
     const systemPrompt = `You are an expert manufacturing tour guide creating dynamic guided tours for PlanetTogether manufacturing management platform.
@@ -3387,11 +3389,10 @@ export async function processCommand(command: string, attachments: AttachmentFil
     let resourceCount = 0;
 
     try {
-      const jobs = await storage.getJobs();
-      const operations = await storage.getDiscreteOperations();
+      const operations = await storage.getJobOperations();
       const resources = await storage.getResources();
       
-      jobCount = jobs.length;
+      jobCount = new Set(operations.map(op => op.jobId)).size; // Count unique jobs from operations
       operationCount = operations.length;
       resourceCount = resources.length;
     } catch (error) {
