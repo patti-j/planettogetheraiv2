@@ -68,7 +68,10 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
   const [isRecording, setIsRecording] = useState(false);
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [isListening, setIsListening] = useState(false);
+  const [recordingTimeLeft, setRecordingTimeLeft] = useState(10);
   const audioChunks = useRef<Blob[]>([]);
+  const recordingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   // Message queue state
   const [messageQueue, setMessageQueue] = useState<QueuedMessage[]>([]);
@@ -610,8 +613,12 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
       const formData = new FormData();
       formData.append("audio", audioBlob, "audio.wav");
       
+      const authToken = localStorage.getItem('auth_token');
       const response = await fetch("/api/ai-agent/voice", {
         method: "POST",
+        headers: {
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
         body: formData
       });
       
@@ -624,22 +631,24 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
     onSuccess: (data: { text: string }) => {
       const transcribedText = data.text;
       
-      // Add user message with transcribed text
-      const userMessage: AIMessage = {
-        id: Date.now().toString(),
-        type: "user",
-        content: transcribedText,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, userMessage]);
-      
-      // Add voice command to queue
-      addToQueue(transcribedText);
+      if (transcribedText) {
+        // Add transcribed text to input field so user can review before sending
+        setInput(prevInput => {
+          const newText = prevInput ? `${prevInput} ${transcribedText}` : transcribedText;
+          return newText;
+        });
+        
+        toast({
+          title: "Voice transcribed",
+          description: `"${transcribedText.substring(0, 50)}${transcribedText.length > 50 ? '...' : ''}"`,
+        });
+      }
     },
     onError: (error) => {
+      console.error("Voice transcription error:", error);
       toast({
-        title: "Voice Error",
-        description: "Failed to process voice command",
+        title: "Voice transcription failed",
+        description: "Unable to transcribe voice recording. Please try again.",
         variant: "destructive"
       });
     }
@@ -686,14 +695,29 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
     setAttachments([]);
   };
 
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      setIsListening(false);
+      setRecordingTimeLeft(10);
+      
+      // Clear timers
+      if (recordingTimerRef.current) {
+        clearTimeout(recordingTimerRef.current);
+        recordingTimerRef.current = null;
+      }
+      if (recordingIntervalRef.current) {
+        clearInterval(recordingIntervalRef.current);
+        recordingIntervalRef.current = null;
+      }
+    }
+  };
+
   const toggleRecording = async () => {
     if (isRecording) {
-      // Stop recording
-      if (mediaRecorder) {
-        mediaRecorder.stop();
-        setIsRecording(false);
-        setIsListening(false);
-      }
+      // Stop recording manually
+      stopRecording();
     } else {
       // Start recording - initialize microphone if needed
       const recorder = await initializeMicrophone();
@@ -701,6 +725,27 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
         recorder.start();
         setIsRecording(true);
         setIsListening(true);
+        setRecordingTimeLeft(10);
+        
+        // Start countdown timer
+        recordingIntervalRef.current = setInterval(() => {
+          setRecordingTimeLeft(prev => {
+            if (prev <= 1) {
+              // Auto-stop at 0
+              return 10;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+        
+        // Auto-stop after 10 seconds
+        recordingTimerRef.current = setTimeout(() => {
+          stopRecording();
+          toast({
+            title: "Recording stopped",
+            description: "10-second recording limit reached",
+          });
+        }, 10000);
       }
     }
   };
@@ -1147,9 +1192,14 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
         {/* Input */}
         <div className="space-y-2">
           {isListening && (
-            <div className="flex items-center gap-2 text-red-500 text-sm">
-              <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-              Listening...
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 text-red-500 text-sm">
+                <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                Recording...
+              </div>
+              <div className="text-xs text-gray-600 dark:text-gray-400 font-mono">
+                {recordingTimeLeft}s left
+              </div>
             </div>
           )}
           
