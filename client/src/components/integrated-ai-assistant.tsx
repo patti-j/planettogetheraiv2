@@ -680,7 +680,7 @@ export default function IntegratedAIAssistant() {
       const formData = new FormData();
       formData.append('audio', audioBlob, 'recording.wav');
       
-      const response = await fetch('/api/ai-agent/transcribe', {
+      const response = await fetch('/api/ai-agent/voice', {
         method: 'POST',
         body: formData,
       });
