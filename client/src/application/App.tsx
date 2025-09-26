@@ -298,7 +298,7 @@ export default function ApplicationApp() {
               </Route>
               <Route path="/production-scheduler">
                 <ProtectedRoute feature="production-scheduling" action="view">
-                  <ProductionScheduler />
+                  <ProductionSchedulerReact />
                 </ProtectedRoute>
               </Route>
               <Route path="/production-scheduler-standalone">
