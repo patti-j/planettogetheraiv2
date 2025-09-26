@@ -2259,9 +2259,9 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
     // Process the command with attachments
     const result = await processCommand(command, attachments);
 
-    console.log("AI Agent command result:", result);
+    console.log("AI Agent command result:", JSON.stringify(result));
 
-    res.json({
+    const response = {
       success: result.success,
       message: result.message,
       response: result.message,  // Add 'response' field for compatibility
@@ -2269,7 +2269,10 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
       data: result.data,
       actions: result.actions || [],
       canvasAction: result.canvasAction
-    });
+    };
+
+    console.log("Sending response:", JSON.stringify(response));
+    res.json(response);
 
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);

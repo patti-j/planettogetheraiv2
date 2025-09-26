@@ -3383,56 +3383,12 @@ export async function processCommand(command: string, attachments: AttachmentFil
   try {
     console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
 
-    // TEMPORARY FIX: Return a simple response while fixing the full AI agent
-    if (!process.env.OPENAI_API_KEY) {
-      return {
-        success: false,
-        message: "OpenAI API key is not configured. Please set up your API key to use the AI assistant.",
-        data: null
-      };
-    }
-
-    // For now, just use OpenAI to respond to the command
-    try {
-      const messages: any[] = [
-        {
-          role: "system",
-          content: "You are Max, an intelligent manufacturing assistant for the PlanetTogether SCM + APS system. You help users with production planning, scheduling, and supply chain management. Be helpful, concise, and professional."
-        },
-        {
-          role: "user",
-          content: command
-        }
-      ];
-
-      // If there are attachments, mention them
-      if (attachments && attachments.length > 0) {
-        messages[1].content += `\n\n[User has attached ${attachments.length} file(s): ${attachments.map(a => a.name).join(', ')}]`;
-      }
-
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
-        messages,
-        temperature: 0.7,
-        max_tokens: 500
-      });
-
-      const response = completion.choices[0]?.message?.content || "I understand your request but I'm having trouble formulating a response. Please try again.";
-
-      return {
-        success: true,
-        message: response,
-        data: null
-      };
-      
-    } catch (openaiError) {
-      console.error("OpenAI API error:", openaiError);
-      return {
-        success: true, // Return success: true but with a fallback message
-        message: "I'm here to help! While I'm having some technical difficulties accessing my full capabilities, I can still assist you with information about PlanetTogether's manufacturing features, production scheduling, and supply chain management. What would you like to know?",
-        data: null
-      };
-    }
+    // TEMPORARY FIX: Just return a simple static response to test the connection
+    return {
+      success: true,
+      message: `Hello! I received your message: "${command}". I'm Max, your AI assistant for PlanetTogether. How can I help you with production scheduling today?`,
+      data: null
+    };
 
     /* DISABLED TEMPORARILY - Complex AI agent logic with TypeScript errors
     // Get system context for manufacturing data  
