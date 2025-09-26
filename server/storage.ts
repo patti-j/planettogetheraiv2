@@ -645,6 +645,7 @@ export class DatabaseStorage implements IStorage {
           j.priority,
           j.need_date_time as due_date,
           -- Use PT Resource Capabilities to match operations to appropriate resources
+          -- CRITICAL: Order CASE statements from most specific to least specific
           CASE 
             WHEN LOWER(jo.name) LIKE '%packag%' THEN (
               SELECT r.id FROM ptresources r 
@@ -678,7 +679,7 @@ export class DatabaseStorage implements IStorage {
               WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
-            WHEN LOWER(jo.name) LIKE '%lager%' THEN (
+            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN (
               SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 5 AND r.active = true 
@@ -700,7 +701,8 @@ export class DatabaseStorage implements IStorage {
               SELECT r.id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
             )
           END as matched_resource_id,
-          -- Get the resource name using capabilities
+          -- Get the resource name using capabilities  
+          -- CRITICAL: Order CASE statements from most specific to least specific
           CASE 
             WHEN LOWER(jo.name) LIKE '%packag%' THEN (
               SELECT r.name FROM ptresources r 
@@ -734,7 +736,7 @@ export class DatabaseStorage implements IStorage {
               WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
-            WHEN LOWER(jo.name) LIKE '%lager%' THEN (
+            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN (
               SELECT r.name FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 5 AND r.active = true 
