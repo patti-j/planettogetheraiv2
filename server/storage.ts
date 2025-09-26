@@ -76,6 +76,7 @@ export interface IStorage {
   getPtResourcesWithDetails(): Promise<any[]>;
   getPtOperationsWithDetails(): Promise<any[]>;
   getPtDependencies(): Promise<any[]>;
+  getDiscreteOperations(limit?: number | null): Promise<any[]>;
 
   // Error logging
   logError(error: any): Promise<void>;
@@ -616,6 +617,66 @@ export class DatabaseStorage implements IStorage {
       return dependencies;
     } catch (error) {
       console.error('Error fetching PT dependencies:', error);
+      return [];
+    }
+  }
+
+  // Get discrete operations (from PT job operations)
+  async getDiscreteOperations(limit?: number | null): Promise<any[]> {
+    try {
+      const query = sql`
+        SELECT 
+          jo.id,
+          jo.operation_id,
+          jo.job_id,
+          jo.name as operation_name,
+          jo.description,
+          jo.resource_id,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          jo.actual_start,
+          jo.actual_end,
+          jo.status,
+          jo.priority,
+          jo.setup_time,
+          jo.run_time,
+          jo.teardown_time,
+          mo.name as job_name,
+          mo.due_date,
+          r.name as resource_name
+        FROM ptjoboperations jo
+        LEFT JOIN ptmanufacturingorders mo ON jo.job_id = mo.id
+        LEFT JOIN ptresources r ON jo.resource_id = r.id
+        WHERE jo.scheduled_start IS NOT NULL
+        ORDER BY jo.scheduled_start, jo.id
+        ${limit ? sql`LIMIT ${limit}` : sql``}
+      `;
+      
+      const result = await db.execute(query);
+      
+      // Transform the operations for the scheduler
+      return result.rows.map((op: any) => ({
+        id: op.id,
+        operationId: op.operation_id,
+        jobId: op.job_id,
+        name: op.operation_name || 'Operation',
+        jobName: op.job_name,
+        resourceId: op.resource_id,
+        resourceName: op.resource_name,
+        scheduledStart: op.scheduled_start,
+        scheduledEnd: op.scheduled_end,
+        actualStart: op.actual_start,
+        actualEnd: op.actual_end,
+        status: op.status || 'pending',
+        priority: op.priority || 5,
+        setupTime: op.setup_time || 0,
+        runTime: op.run_time || 0,
+        teardownTime: op.teardown_time || 0,
+        dueDate: op.due_date,
+        percentFinished: op.status === 'completed' ? 100 : op.status === 'in_progress' ? 50 : 0
+      }));
+    } catch (error) {
+      console.error('Error fetching discrete operations:', error);
       return [];
     }
   }
