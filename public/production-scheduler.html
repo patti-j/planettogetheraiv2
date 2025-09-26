@@ -1408,11 +1408,11 @@
                     let startDate;
                     
                     // Always use the operation's actual scheduled time or a default
-                    if (operation.startTime || operation.start_date || operation.scheduled_start) {
-                        const originalDate = new Date(operation.startTime || operation.start_date || operation.scheduled_start);
-                        const dayOffset = Math.floor((originalDate - new Date(2025, 7, 22)) / (1000 * 60 * 60 * 24));
-                        startDate = new Date(2025, 8, 3 + dayOffset); // Start from Sept 3, 2025
-                        startDate.setHours(originalDate.getHours(), originalDate.getMinutes(), 0, 0);
+                    if (operation.scheduledStart) {
+                        // Use the actual scheduled start time directly
+                        startDate = new Date(operation.scheduledStart);
+                    } else if (operation.startTime || operation.start_date) {
+                        startDate = new Date(operation.startTime || operation.start_date);
                     } else {
                         // Fallback to a default if no date - spread across resources
                         const resourceIndex = resources.findIndex(r => r.id === resourceId) || 0;
@@ -1426,7 +1426,15 @@
                         resourceId = resources[index % resources.length]?.id || resources[0]?.id;
                     }
                     
-                    const duration = operation.duration ? (operation.duration / 60) : 2; // Convert minutes to hours, fallback to 2 hours
+                    // Calculate duration from scheduled times if available
+                    let duration = 2; // Default 2 hours
+                    if (operation.scheduledEnd && operation.scheduledStart) {
+                        const endDate = new Date(operation.scheduledEnd);
+                        const startMs = new Date(operation.scheduledStart).getTime();
+                        duration = (endDate.getTime() - startMs) / (1000 * 60 * 60); // Convert to hours
+                    } else if (operation.duration) {
+                        duration = operation.duration / 60; // Convert minutes to hours
+                    }
                     
                     return {
                         id: operation.id,
