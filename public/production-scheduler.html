@@ -1523,11 +1523,24 @@
             }
             schedulerInitialized = true;
             
+            console.log('📅 Starting scheduler initialization...');
+            
             try {
                 // Mark first task as in progress
                 
-                // Initialize scheduler using global bryntum object
-                const { SchedulerPro } = bryntum.schedulerpro;
+                // Check if Bryntum library is loaded
+                if (typeof bryntum === 'undefined') {
+                    console.error('❌ Bryntum library not found');
+                    return;
+                }
+                
+                if (!bryntum.schedulerpro) {
+                    console.error('❌ Bryntum SchedulerPro module not found');
+                    console.log('Available Bryntum modules:', Object.keys(bryntum));
+                    return;
+                }
+                
+                console.log('✅ Bryntum library loaded successfully');
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
@@ -2452,7 +2465,7 @@
                 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
-                window.scheduler = new SchedulerPro({
+                window.scheduler = new bryntum.schedulerpro.SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
