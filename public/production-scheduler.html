@@ -1890,14 +1890,17 @@
                     // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
 
-                    // Project configuration for ASAP scheduling
+                    // Project configuration with strict no-overlap constraints
                     project: {
                         autoLoad: false,
                         autoSync: false,
-                        // Use ASAP scheduling with resource constraints
+                        // Use ASAP scheduling with strict resource constraints
                         schedulingEngine: {
-                            multiplePerResource: true, // Allow multiple tasks per resource
-                            allowOverlap: false // Prevent overlapping on same resource
+                            multiplePerResource: false, // Only one task at a time per resource
+                            allowOverlap: false, // Strictly prevent overlapping on same resource
+                            // Additional constraints
+                            scheduleOverlapEvents: false, // Don't allow overlapping during scheduling
+                            constraintResolution: 'honor' // Honor all constraints strictly
                         }
                     },
 
@@ -1909,14 +1912,14 @@
                         eventDrag: {
                             showTooltip: true,
                             constrainDragToResource: false, // Allow dragging between resources
-                            // Validate that target resource has required capability
-                            validatorFn({ draggedRecords, targetRecord }) {
+                            // Validate that target resource has required capability AND no time overlap
+                            validatorFn({ draggedRecords, targetRecord, startDate, endDate }) {
                                 // Check each dragged operation
                                 for (const draggedRecord of draggedRecords) {
                                     const operationName = draggedRecord.name || draggedRecord.operationName;
                                     const requiredCapability = getRequiredCapability(operationName);
                                     
-                                    // If operation requires a specific capability
+                                    // 1. Check capability requirements
                                     if (requiredCapability !== null) {
                                         const targetResourceId = targetRecord?.id;
                                         const targetCapabilities = resourceCapabilities[targetResourceId] || [];
@@ -1936,14 +1939,87 @@
                                             };
                                         }
                                     }
+                                    
+                                    // 2. Check for time overlaps with existing operations on the target resource
+                                    if (targetRecord && startDate && endDate) {
+                                        // Get all events on the target resource
+                                        const resourceEvents = window.scheduler.eventStore.query(event => 
+                                            event.resourceId === targetRecord.id && 
+                                            event.id !== draggedRecord.id // Exclude the dragged event itself
+                                        );
+                                        
+                                        // Check for overlaps
+                                        for (const existingEvent of resourceEvents) {
+                                            const existingStart = existingEvent.startDate;
+                                            const existingEnd = existingEvent.endDate;
+                                            
+                                            // Check if the dragged operation would overlap with this existing operation
+                                            // Overlap occurs if: draggedStart < existingEnd AND draggedEnd > existingStart
+                                            if (startDate < existingEnd && endDate > existingStart) {
+                                                console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord.name}: Time conflict with ${existingEvent.name}`);
+                                                const conflictStart = existingStart.toLocaleString('en-US', { 
+                                                    month: 'short', 
+                                                    day: 'numeric', 
+                                                    hour: 'numeric', 
+                                                    minute: '2-digit' 
+                                                });
+                                                const conflictEnd = existingEnd.toLocaleString('en-US', { 
+                                                    month: 'short', 
+                                                    day: 'numeric', 
+                                                    hour: 'numeric', 
+                                                    minute: '2-digit' 
+                                                });
+                                                return {
+                                                    valid: false,
+                                                    message: `Resource busy: ${existingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
+                                                };
+                                            }
+                                        }
+                                    }
                                 }
                                 return true; // Valid drop
                             }
                         },
                         
-                        // Enable resize with tooltip
+                        // Enable resize with overlap validation
                         eventResize: {
-                            showTooltip: true
+                            showTooltip: true,
+                            // Validate that resized event doesn't overlap with other operations on the same resource
+                            validatorFn({ eventRecord, startDate, endDate }) {
+                                // Get all events on the same resource
+                                const resourceEvents = window.scheduler.eventStore.query(event => 
+                                    event.resourceId === eventRecord.resourceId && 
+                                    event.id !== eventRecord.id // Exclude the resized event itself
+                                );
+                                
+                                // Check for overlaps
+                                for (const existingEvent of resourceEvents) {
+                                    const existingStart = existingEvent.startDate;
+                                    const existingEnd = existingEvent.endDate;
+                                    
+                                    // Check if the resized operation would overlap with this existing operation
+                                    if (startDate < existingEnd && endDate > existingStart) {
+                                        console.warn(`⚠️ Cannot resize ${eventRecord.name}: Time conflict with ${existingEvent.name}`);
+                                        const conflictStart = existingStart.toLocaleString('en-US', { 
+                                            month: 'short', 
+                                            day: 'numeric', 
+                                            hour: 'numeric', 
+                                            minute: '2-digit' 
+                                        });
+                                        const conflictEnd = existingEnd.toLocaleString('en-US', { 
+                                            month: 'short', 
+                                            day: 'numeric', 
+                                            hour: 'numeric', 
+                                            minute: '2-digit' 
+                                        });
+                                        return {
+                                            valid: false,
+                                            message: `Cannot resize: ${existingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
+                                        };
+                                    }
+                                }
+                                return true; // Valid resize
+                            }
                         },
                         
                         // Event tooltips on hover
