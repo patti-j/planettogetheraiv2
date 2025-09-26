@@ -43,8 +43,13 @@ export default function Login() {
           credentials: 'include' // Include session cookie
         });
         if (response.ok) {
-          // Session is valid, redirect to dashboard
-          setLocation('/dashboard');
+          // Session is valid, redirect to home page
+          const isMobile = window.innerWidth < 768;
+          if (isMobile) {
+            setLocation('/mobile-home');
+          } else {
+            setLocation('/home');
+          }
           return;
         }
       } catch (error) {

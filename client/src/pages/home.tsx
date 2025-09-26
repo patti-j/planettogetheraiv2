@@ -31,7 +31,8 @@ import {
   Package,
   Settings,
   RefreshCw,
-  Archive
+  Archive,
+  X
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceType } from '@/hooks/useDeviceType';
@@ -566,15 +567,83 @@ export default function HomePage() {
                             <Users className="w-4 h-4" />
                             Refer to User
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="gap-2"
-                            data-testid={`ignore-${recommendation.id}`}
-                          >
-                            <Clock className="w-4 h-4" />
-                            Ignore for...
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button 
+                                variant="outline" 
+                                size="sm" 
+                                className="gap-2 rounded-md"
+                                data-testid={`ignore-${recommendation.id}`}
+                              >
+                                <X className="w-4 h-4" />
+                                Ignore
+                                <ChevronDown className="w-3 h-3 ml-1" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[260px]">
+                              <div className="px-3 py-2 border-b">
+                                <div className="flex items-center gap-2 font-medium">
+                                  <X className="w-4 h-4" />
+                                  Ignore Action
+                                </div>
+                              </div>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                onClick={() => console.log('Ignore for 1 hour')}
+                                data-testid={`ignore-1hour-${recommendation.id}`}
+                              >
+                                <Clock className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Ignore for 1 hour</div>
+                                  <div className="text-sm text-muted-foreground">Hide until 1 hour from now</div>
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                onClick={() => console.log('Ignore for 1 day')}
+                                data-testid={`ignore-1day-${recommendation.id}`}
+                              >
+                                <Clock className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Ignore for 1 day</div>
+                                  <div className="text-sm text-muted-foreground">Hide until tomorrow</div>
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                onClick={() => console.log('Ignore for 1 week')}
+                                data-testid={`ignore-1week-${recommendation.id}`}
+                              >
+                                <Calendar className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Ignore for 1 week</div>
+                                  <div className="text-sm text-muted-foreground">Hide until next week</div>
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                onClick={() => console.log('Ignore permanently')}
+                                data-testid={`ignore-permanently-${recommendation.id}`}
+                              >
+                                <X className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Ignore permanently</div>
+                                  <div className="text-sm text-muted-foreground">Never show this action again</div>
+                                </div>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="flex items-start gap-3 p-4 cursor-pointer"
+                                onClick={() => console.log('Custom duration')}
+                                data-testid={`ignore-custom-${recommendation.id}`}
+                              >
+                                <Clock className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="font-medium">Custom duration...</div>
+                                  <div className="text-sm text-muted-foreground">Set a specific time period</div>
+                                </div>
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </CardContent>
                     </Card>
