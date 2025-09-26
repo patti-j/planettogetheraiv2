@@ -1379,7 +1379,7 @@ router.get("/schedulerpro.umd.js", (req, res) => {
 });
 
 // Serve Bryntum Production Scheduler HTML  
-router.get("/production-scheduler", (req, res) => {
+router.get("/api/production-scheduler", (req, res) => {
   try {
     console.log('Serving production scheduler HTML...');
     const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
