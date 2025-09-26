@@ -894,13 +894,51 @@
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
-            <!-- Max AI button removed - use main app's left panel -->
-            <!-- <button id="maxAIBtn" class="max-ai-btn">🤖 Hide AI</button> -->
+            <button id="hamburgerBtn" class="hamburger-btn">☰ Menu</button>
+            <button id="maxAIBtn" class="max-ai-btn">✨ Max AI</button>
             <span id="lastUpdate">Last updated: --</span>
         </div>
     </div>
     
-    <!-- Max AI Assistant removed - using main app's left panel instead -->
+    <!-- Navigation Menu -->
+    <div id="navMenu" class="nav-menu">
+        <div class="nav-menu-header">
+            <h3>Navigation</h3>
+            <button id="closeMenu" class="close-menu">×</button>
+        </div>
+        <div class="nav-menu-items">
+            <a href="/" class="nav-item">🏠 Dashboard</a>
+            <a href="/production-scheduler" class="nav-item">📅 Production Schedule</a>
+            <a href="/inventory" class="nav-item">📦 Inventory</a>
+            <a href="/analytics" class="nav-item">📊 Analytics</a>
+            <a href="/master-data" class="nav-item">🗃️ Master Data</a>
+            <a href="/settings" class="nav-item">⚙️ Settings</a>
+        </div>
+    </div>
+
+    <!-- Max AI Assistant Panel -->
+    <div id="maxAIPanel" class="max-ai-panel closed">
+        <div class="max-ai-header">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span style="font-size: 1.2rem;">✨</span>
+                <h3 style="margin: 0;">Max AI Assistant</h3>
+            </div>
+            <button id="closeMaxAI" class="close-max-ai">×</button>
+        </div>
+        <div style="flex: 1; padding: 1rem; overflow-y: auto;">
+            <div style="background: #f8f9fa; padding: 1rem; border-radius: 8px; margin-bottom: 1rem;">
+                <h4 style="margin: 0 0 0.5rem 0; color: #333;">Production Intelligence</h4>
+                <p style="margin: 0; font-size: 0.9rem; color: #666;">Ask me anything about your production schedule, operations, or optimization opportunities.</p>
+            </div>
+            <div id="aiChatMessages" style="max-height: 300px; overflow-y: auto; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; background: white; margin-bottom: 1rem;">
+                <div style="color: #666; font-style: italic;">AI Assistant ready to help with production scheduling...</div>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="aiChatInput" placeholder="Ask about production schedule..." style="flex: 1; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                <button id="aiSendBtn" style="padding: 0.5rem 1rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Send</button>
+            </div>
+        </div>
+    </div>
 
     <div class="toolbar">
         <div class="toolbar-group">
@@ -2036,9 +2074,77 @@
                     };
                 }
 
-                // Hamburger menu removed - clean navigation
-                
-                // Max AI Handler - removed, using main app's left panel
+                // Hamburger menu functionality
+                const hamburgerBtn = document.getElementById('hamburgerBtn');
+                const navMenu = document.getElementById('navMenu');
+                const closeMenu = document.getElementById('closeMenu');
+
+                hamburgerBtn.addEventListener('click', function() {
+                    navMenu.classList.add('open');
+                });
+
+                closeMenu.addEventListener('click', function() {
+                    navMenu.classList.remove('open');
+                });
+
+                // Click outside to close nav menu
+                document.addEventListener('click', function(event) {
+                    if (!navMenu.contains(event.target) && !hamburgerBtn.contains(event.target)) {
+                        navMenu.classList.remove('open');
+                    }
+                });
+
+                // Max AI Handler functionality
+                const maxAIBtn = document.getElementById('maxAIBtn');
+                const maxAIPanel = document.getElementById('maxAIPanel');
+                const closeMaxAI = document.getElementById('closeMaxAI');
+                const aiChatInput = document.getElementById('aiChatInput');
+                const aiSendBtn = document.getElementById('aiSendBtn');
+                const aiChatMessages = document.getElementById('aiChatMessages');
+
+                maxAIBtn.addEventListener('click', function() {
+                    maxAIPanel.classList.toggle('closed');
+                    maxAIBtn.textContent = maxAIPanel.classList.contains('closed') ? '✨ Max AI' : '✨ Hide AI';
+                });
+
+                closeMaxAI.addEventListener('click', function() {
+                    maxAIPanel.classList.add('closed');
+                    maxAIBtn.textContent = '✨ Max AI';
+                });
+
+                // AI Chat functionality
+                function addAIMessage(message, isUser = false) {
+                    const messageDiv = document.createElement('div');
+                    messageDiv.style.cssText = `
+                        margin-bottom: 0.5rem; 
+                        padding: 0.5rem; 
+                        border-radius: 4px; 
+                        ${isUser ? 'background: #e3f2fd; text-align: right;' : 'background: #f5f5f5;'}
+                    `;
+                    messageDiv.textContent = message;
+                    aiChatMessages.appendChild(messageDiv);
+                    aiChatMessages.scrollTop = aiChatMessages.scrollHeight;
+                }
+
+                function sendAIMessage() {
+                    const message = aiChatInput.value.trim();
+                    if (message) {
+                        addAIMessage(message, true);
+                        aiChatInput.value = '';
+                        
+                        // Simulate AI response
+                        setTimeout(() => {
+                            addAIMessage("I'm analyzing your production schedule. How can I help optimize your operations?");
+                        }, 500);
+                    }
+                }
+
+                aiSendBtn.addEventListener('click', sendAIMessage);
+                aiChatInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        sendAIMessage();
+                    }
+                });
                 // const maxAIBtn = document.getElementById('maxAIBtn');
                 // const maxAI = document.getElementById('maxAI');
                 // const closeMaxAI = document.getElementById('closeMaxAI');
