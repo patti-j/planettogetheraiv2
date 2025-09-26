@@ -8,19 +8,34 @@ import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
  * This component embeds the standalone HTML scheduler via iframe,
  * providing full Bryntum functionality with PT data integration.
+ * Optimized for mobile and tablet devices.
  */
 export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     // Set page title
     document.title = 'Production Schedule - PlanetTogether';
+    
+    // Detect mobile device
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
 
     // Handle iframe load event
     const handleLoad = () => {
       setIsLoading(false);
       console.log('✅ Production scheduler loaded successfully');
+      
+      // Ensure iframe is touch-friendly on mobile
+      if (iframeRef.current && isMobile) {
+        iframeRef.current.style.touchAction = 'pan-x pan-y';
+      }
     };
 
     const iframe = iframeRef.current;
@@ -38,8 +53,9 @@ export default function ProductionScheduler() {
       if (iframe) {
         iframe.removeEventListener('load', handleLoad);
       }
+      window.removeEventListener('resize', checkMobile);
     };
-  }, []);
+  }, [isMobile]);
 
   return (
     <div className="h-full flex flex-col">
@@ -48,13 +64,13 @@ export default function ProductionScheduler() {
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
-            <Card className="p-6 flex flex-col items-center gap-4 shadow-lg">
-              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <Card className={`p-6 flex flex-col items-center gap-4 shadow-lg ${isMobile ? 'mx-4' : ''}`}>
+              <Loader2 className={`animate-spin text-blue-600 ${isMobile ? 'h-6 w-6' : 'h-8 w-8'}`} />
               <div className="text-center">
-                <p className="font-semibold text-gray-900 dark:text-gray-100">
+                <p className={`font-semibold text-gray-900 dark:text-gray-100 ${isMobile ? 'text-sm' : ''}`}>
                   Loading Production Scheduler
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className={`text-gray-500 dark:text-gray-400 mt-1 ${isMobile ? 'text-xs' : 'text-sm'}`}>
                   Initializing Bryntum components...
                 </p>
               </div>
@@ -62,7 +78,7 @@ export default function ProductionScheduler() {
           </div>
         )}
 
-        {/* Scheduler iframe with cache busting */}
+        {/* Scheduler iframe with cache busting - optimized for mobile */}
         <iframe
           ref={iframeRef}
           src={`/api/production-scheduler?v=${Date.now()}`}
@@ -72,11 +88,16 @@ export default function ProductionScheduler() {
           style={{
             display: isLoading ? 'none' : 'block',
             backgroundColor: 'white',
+            // Ensure iframe is scrollable on mobile
+            WebkitOverflowScrolling: 'touch' as any,
+            overflow: 'auto',
           }}
+          // Allow fullscreen for better mobile experience
+          allowFullScreen
         />
         
-        {/* AI Scheduling Agent positioned within the content area */}
-        <SchedulingAgent />
+        {/* AI Scheduling Agent positioned within the content area - hide on mobile for more screen space */}
+        {!isMobile && <SchedulingAgent />}
       </div>
     </div>
   );

@@ -57,6 +57,7 @@
             gap: 1rem;
             border-bottom: 1px solid #e0e0e0;
             flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .toolbar-group {
@@ -122,6 +123,73 @@
         .toolbar button svg {
             width: 16px;
             height: 16px;
+        }
+        
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .toolbar {
+                padding: 0.5rem 1rem;
+                gap: 0.5rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .toolbar-group {
+                padding-right: 0.75rem;
+                flex-shrink: 0;
+            }
+            
+            .toolbar label {
+                display: none; /* Hide labels on mobile to save space */
+            }
+            
+            .toolbar button span:not(.icon-text) {
+                display: none; /* Hide button text on mobile, keep icons */
+            }
+            
+            .toolbar button {
+                padding: 0.5rem;
+                min-width: 40px;
+                min-height: 40px;
+            }
+            
+            .toolbar select {
+                max-width: 120px;
+            }
+            
+            /* Make scheduler touch-friendly */
+            .b-sch-event {
+                min-height: 30px !important;
+            }
+            
+            .b-grid-cell {
+                padding: 4px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .toolbar {
+                padding: 0.5rem;
+            }
+            
+            /* Stack toolbar items vertically on very small screens */
+            .toolbar-group {
+                border-right: none;
+                width: 100%;
+                justify-content: space-between;
+            }
         }
 
         .scheduler-container {
@@ -1773,19 +1841,54 @@
                     }
                 }
 
+                // Detect mobile device
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
+                
+                // Choose appropriate view preset based on device
+                let viewPreset = 'dayAndWeek';
+                let resourceColumnWidth = 200;
+                let categoryColumnWidth = 150;
+                
+                if (isMobile) {
+                    viewPreset = 'weekAndDay';  // Wider view for mobile
+                    resourceColumnWidth = 120;
+                    categoryColumnWidth = 0; // Hide category on mobile
+                } else if (isTablet) {
+                    viewPreset = 'weekAndDay';
+                    resourceColumnWidth = 150;
+                    categoryColumnWidth = 100;
+                }
+                
+                // Configure columns based on device
+                const schedulerColumns = [
+                    { text: 'Resource', field: 'name', width: resourceColumnWidth, locked: isMobile }
+                ];
+                
+                if (!isMobile) {
+                    schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
+                }
+                
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
-                    columns: [
-                        { text: 'Resource', field: 'name', width: 200 },
-                        { text: 'Category', field: 'category', width: 150 }
-                    ],
+                    columns: schedulerColumns,
 
-                    viewPreset: 'dayAndWeek',
-                    rowHeight: 60,
-                    barMargin: 8,
+                    viewPreset: viewPreset,
+                    rowHeight: isMobile ? 50 : 60,
+                    barMargin: isMobile ? 5 : 8,
+                    
+                    // Enable horizontal scrolling on mobile
+                    scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
+                    
+                    // Zoom level for better mobile view
+                    zoomLevel: isMobile ? 0 : 5,
+                    zoomOnMouseWheel: !isMobile,
+                    
+                    // Enable pinch zoom on mobile
+                    pinchZoom: isMobile,
 
                     // Project configuration for ASAP scheduling
                     project: {
