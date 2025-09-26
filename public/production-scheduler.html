@@ -3444,6 +3444,14 @@
                                     // Store the schedule ID for future updates
                                     window.currentScheduleId = selectedSchedule.id;
                                     
+                                    // Zoom to fit the entire schedule in view
+                                    if (window.scheduler.zoomToFit) {
+                                        window.scheduler.zoomToFit({
+                                            leftMargin: 50,
+                                            rightMargin: 50
+                                        });
+                                    }
+                                    
                                     // Update status
                                     document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
                                     updateStatus();
@@ -3477,6 +3485,15 @@
                                     const selectedSchedule = localSchedules[index].data;
                                     if (selectedSchedule.scheduleData || selectedSchedule.data) {
                                         await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
+                                        
+                                        // Zoom to fit the entire schedule in view
+                                        if (window.scheduler.zoomToFit) {
+                                            window.scheduler.zoomToFit({
+                                                leftMargin: 50,
+                                                rightMargin: 50
+                                            });
+                                        }
+                                        
                                         console.log('✅ Local schedule loaded');
                                     }
                                 }
