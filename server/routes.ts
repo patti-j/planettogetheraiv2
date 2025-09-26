@@ -1378,28 +1378,29 @@ router.get("/schedulerpro.umd.js", (req, res) => {
   }
 });
 
-// Serve Bryntum Production Scheduler HTML  
-router.get("/production-scheduler", (req, res) => {
-  try {
-    console.log('Serving production scheduler HTML...');
-    const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
-    
-    // Check if file exists
-    if (!fs.existsSync(htmlPath)) {
-      console.error('Demo HTML file not found at:', htmlPath);
-      return res.status(404).send('Demo HTML file not found');
-    }
-    
-    // Read and send the HTML file
-    const htmlContent = fs.readFileSync(htmlPath, 'utf8');
-    console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.send(htmlContent);
-  } catch (error) {
-    console.error('Error serving demo HTML:', error);
-    res.status(500).send('Error loading demo page');
-  }
-});
+// Commented out - Let React handle the production-scheduler route
+// The production scheduler should use the React component with full app layout
+// router.get("/production-scheduler", (req, res) => {
+//   try {
+//     console.log('Serving production scheduler HTML...');
+//     const htmlPath = path.join(process.cwd(), 'public', 'production-scheduler.html');
+//     
+//     // Check if file exists
+//     if (!fs.existsSync(htmlPath)) {
+//       console.error('Demo HTML file not found at:', htmlPath);
+//       return res.status(404).send('Demo HTML file not found');
+//     }
+//     
+//     // Read and send the HTML file
+//     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
+//     console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
+//     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+//     res.send(htmlContent);
+//   } catch (error) {
+//     console.error('Error serving demo HTML:', error);
+//     res.status(500).send('Error loading demo page');
+//   }
+// });
 
 // ============================================
 // AI Scheduling Routes
