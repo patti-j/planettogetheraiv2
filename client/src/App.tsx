@@ -182,6 +182,12 @@ export default function App() {
   
   // Handle redirect for unauthenticated users trying to access protected routes
   useEffect(() => {
+    // In development mode, always let ApplicationApp handle its own authentication
+    const isDev = import.meta.env.MODE === 'development';
+    if (isDev) {
+      return; // Skip redirect logic in development
+    }
+    
     if (!isPortalRoute && !isPublicPath && !isAuthenticated && !isLoading) {
       // User is trying to access a protected route without authentication
       // Redirect to login page
@@ -206,7 +212,11 @@ export default function App() {
   
   // Determine if we should show website or app (but not for portal routes)
   // Only show website for actual public paths, not for protected routes
+  // In development mode, prefer ApplicationApp for non-public paths regardless of auth status
+  const isDev = import.meta.env.MODE === 'development';
   const shouldShowWebsite = !isPortalRoute && isPublicPath;
+  const shouldShowApplication = !isPortalRoute && !isPublicPath && (isDev || isAuthenticated);
+  
 
 
   // Show loading screen only when actually verifying a token (but not for portal routes)
@@ -254,9 +264,17 @@ export default function App() {
                     ) : shouldShowWebsite ? (
                       // Show website for public paths only
                       <WebsiteApp />
-                    ) : (
-                      // Authenticated users on non-public paths see the Application
+                    ) : shouldShowApplication ? (
+                      // Show application for protected routes (dev mode or authenticated users)
                       <ApplicationApp />
+                    ) : (
+                      // Fallback: redirect to login
+                      <>
+                        {(() => {
+                          window.location.href = '/login';
+                          return null;
+                        })()}
+                      </>
                     )}
                     </ViewModeProvider>
                   </SplitScreenProvider>
