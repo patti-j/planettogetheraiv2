@@ -1506,17 +1506,29 @@
                     return null;
                 }
                 
-                // Helper function to assign colors based on operation type
+                // Helper function to assign colors based on operation type (brewing-specific)
                 function getOperationColor(operationName) {
-                    if (!operationName) return 'blue';
+                    if (!operationName) return '#2563eb'; // Blue
                     const name = operationName.toLowerCase();
-                    if (name.includes('milling') || name.includes('machining')) return 'blue';
-                    if (name.includes('assembly')) return 'green';
-                    if (name.includes('packaging')) return 'orange';
-                    if (name.includes('quality') || name.includes('testing')) return 'purple';
-                    if (name.includes('filtration')) return 'teal';
-                    if (name.includes('carbonation')) return 'yellow';
-                    return 'blue'; // default
+                    
+                    // Brewing-specific operations with distinct colors
+                    if (name.includes('milling') || name.includes('mill')) return '#2563eb'; // Blue
+                    if (name.includes('mash')) return '#7c3aed'; // Purple  
+                    if (name.includes('lauter')) return '#0891b2'; // Cyan
+                    if (name.includes('boil')) return '#dc2626'; // Red
+                    if (name.includes('ferment') || name.includes('lager')) return '#059669'; // Green
+                    if (name.includes('condition') || name.includes('dry hop')) return '#0d9488'; // Teal
+                    if (name.includes('packag')) return '#ea580c'; // Orange
+                    if (name.includes('pasteur')) return '#7c2d12'; // Brown
+                    
+                    // Generic manufacturing operations
+                    if (name.includes('machining')) return '#2563eb'; // Blue
+                    if (name.includes('assembly')) return '#059669'; // Green
+                    if (name.includes('quality') || name.includes('testing')) return '#7c3aed'; // Purple
+                    if (name.includes('filtration')) return '#0d9488'; // Teal
+                    if (name.includes('carbonation')) return '#eab308'; // Yellow
+                    
+                    return '#2563eb'; // Default blue
                 }
                 
                 console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
