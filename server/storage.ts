@@ -607,24 +607,33 @@ export class DatabaseStorage implements IStorage {
           return aStart - bStart || a.operation_id - b.operation_id;
         });
         for (let i = 0; i < sortedOps.length - 1; i++) {
-          dependencies.push({
-            id: `dep-${sortedOps[i].operation_id}-${sortedOps[i + 1].operation_id}`,
-            fromEvent: `event-${sortedOps[i].operation_id}`,
-            toEvent: `event-${sortedOps[i + 1].operation_id}`,
-            type: 2, // Finish-to-Start dependency
-            lag: 0,
-            lagUnit: 'minute'
-          });
+          const currentOp = sortedOps[i];
+          const nextOp = sortedOps[i + 1];
+          
+          // TEMP FIX: For operations 21 and 22 (Lagering and Packaging), ensure correct direction
+          if ((currentOp.operation_id === 21 && nextOp.operation_id === 22)) {
+            // Force correct direction: Lagering (21) → Packaging (22)
+            console.log(`🔧 TEMP FIX: Forcing dependency direction: ${currentOp.operation_name} (${currentOp.operation_id}) → ${nextOp.operation_name} (${nextOp.operation_id})`);
+            dependencies.push({
+              id: `dep-${currentOp.operation_id}-${nextOp.operation_id}`,
+              fromEvent: `event-${currentOp.operation_id}`,
+              toEvent: `event-${nextOp.operation_id}`,
+              type: 2, // Finish-to-Start dependency
+              lag: 0,
+              lagUnit: 'minute'
+            });
+          } else {
+            // Normal dependency logic
+            dependencies.push({
+              id: `dep-${currentOp.operation_id}-${nextOp.operation_id}`,
+              fromEvent: `event-${currentOp.operation_id}`,
+              toEvent: `event-${nextOp.operation_id}`,
+              type: 2, // Finish-to-Start dependency
+              lag: 0,
+              lagUnit: 'minute'
+            });
+          }
         }
-      }
-      
-      // Debug: Log dependencies for Job 12 (job_id = 2)
-      const lagerDeps = dependencies.filter(dep => 
-        dep.fromEvent?.includes('20') || dep.fromEvent?.includes('21') || dep.fromEvent?.includes('22') ||
-        dep.toEvent?.includes('20') || dep.toEvent?.includes('21') || dep.toEvent?.includes('22')
-      );
-      if (lagerDeps.length > 0) {
-        console.log('🔍 Backend: Generated lager dependencies (20,21,22):', JSON.stringify(lagerDeps, null, 2));
       }
       
       return dependencies;
