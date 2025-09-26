@@ -1458,9 +1458,17 @@
                     if (capabilitiesResponse && capabilitiesResponse.ok) {
                         const capabilitiesData = await capabilitiesResponse.json();
                         console.log('✅ Resource capabilities fetched successfully');
+                        console.log('Capabilities data:', capabilitiesData);
                         capabilitiesData.forEach(resource => {
                             resourceCapabilities[resource.id] = resource.capabilities || [];
+                            console.log(`Resource ${resource.name} (ID: ${resource.id}) has capabilities:`, resource.capabilities);
                         });
+                        // Log specific resources for debugging
+                        console.log('🍺 Bright Tank 1 capabilities:', resourceCapabilities[8]);
+                        console.log('🍺 Bright Tank 2 capabilities:', resourceCapabilities[9]);
+                        console.log('🍺 Fermenter Tank 1 capabilities:', resourceCapabilities[5]);
+                        console.log('🍺 Fermenter Tank 2 capabilities:', resourceCapabilities[6]);
+                        console.log('🍺 Fermenter Tank 3 capabilities:', resourceCapabilities[7]);
                     }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
@@ -1937,13 +1945,17 @@
                             validatorFn({ draggedRecords, targetRecord, startDate, endDate }) {
                                 // Check each dragged operation
                                 for (const draggedRecord of draggedRecords) {
-                                    const operationName = draggedRecord.name || draggedRecord.operationName;
+                                    const operationName = draggedRecord.name || draggedRecord.operationName || '';
                                     const requiredCapability = getRequiredCapability(operationName);
                                     
                                     // 1. Check capability requirements
-                                    if (requiredCapability !== null) {
-                                        const targetResourceId = targetRecord?.id;
+                                    if (requiredCapability !== null && targetRecord) {
+                                        const targetResourceId = targetRecord.id;
                                         const targetCapabilities = resourceCapabilities[targetResourceId] || [];
+                                        
+                                        // Log for debugging
+                                        console.log(`🔍 Validating drag: Operation "${operationName}" requires capability ${requiredCapability}`);
+                                        console.log(`🔍 Target resource "${targetRecord.name}" (ID: ${targetResourceId}) has capabilities:`, targetCapabilities);
                                         
                                         // Check if target resource has the required capability
                                         if (!targetCapabilities.includes(requiredCapability)) {
@@ -1953,10 +1965,21 @@
                                                 4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
                                                 7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
                                             };
-                                            console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord?.name}: Missing ${capabilityNames[requiredCapability]} capability`);
+                                            
+                                            // Special case: Be very explicit about fermentation restrictions
+                                            if (requiredCapability === 5) {
+                                                console.error(`❌ BLOCKED: Fermentation operations can ONLY be placed on Fermenter Tanks!`);
+                                                console.error(`❌ ${targetRecord.name} does not have fermentation capability`);
+                                                return {
+                                                    valid: false,
+                                                    message: `❌ Fermentation can ONLY be done on Fermenter Tanks!\n${targetRecord.name} is not a fermenter.`
+                                                };
+                                            }
+                                            
+                                            console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord.name}: Missing ${capabilityNames[requiredCapability]} capability`);
                                             return {
                                                 valid: false,
-                                                message: `${targetRecord?.name} lacks ${capabilityNames[requiredCapability]} capability`
+                                                message: `${targetRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`
                                             };
                                         }
                                     }
