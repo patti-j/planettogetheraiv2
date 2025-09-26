@@ -1343,15 +1343,8 @@
                         console.log('✅ Resources fetched successfully:', resources.length);
                     } else {
                         console.error('❌ Failed to fetch resources:', resourcesResponse.status);
-                        // Fallback sample data
-                        resources = [
-                            { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-                            { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
-                            { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
-                            { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
-                            { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
-                            { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
-                        ];
+                        // No fallback - let resources stay empty rather than showing wrong equipment
+                        resources = [];
                     }
                     
                     // REMOVED: Unscheduled resource line
@@ -1382,15 +1375,8 @@
                     }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
-                    // Use fallback sample data
-                    resources = [
-                        { id: 'cnc1', name: 'CNC Machine 1', category: 'Machining' },
-                        { id: 'cnc2', name: 'CNC Machine 2', category: 'Machining' },
-                        { id: 'assembly1', name: 'Assembly Line 1', category: 'Assembly' },
-                        { id: 'assembly2', name: 'Assembly Line 2', category: 'Assembly' },
-                        { id: 'qc1', name: 'Quality Control 1', category: 'Inspection' },
-                        { id: 'packaging1', name: 'Packaging Station 1', category: 'Packaging' }
-                    ];
+                    // No fallback - let resources stay empty rather than showing wrong equipment
+                    resources = [];
                 }
 
                 // Map resources to create resource lookup by both ID and name
@@ -1567,50 +1553,10 @@
                 
                 console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
                 
-                // If we have no PT operations, create sample events for demo
+                // If we have no PT operations, don't create fake demo data
                 if (events.length === 0) {
-                    console.log('🔧 No PT operations found, creating sample data for demo');
-                    events = [
-                        {
-                            id: 1,
-                            name: 'Sample Operation - Demo',
-                            startDate: createDate(0), // Sept 3, 8 AM
-                            duration: 4,
-                            durationUnit: 'hour',
-                            resourceId: resources[0]?.id || 'cnc1',
-                            percentDone: 25,
-                            eventColor: 'blue',
-                            constraintType: 'startnoearlierthan',
-                            constraintDate: createDate(0),
-                            manuallyScheduled: false
-                        },
-                        {
-                            id: 2,
-                            name: 'Assembly Process - Demo',
-                            startDate: createDate(5), // Sept 3, 1 PM
-                            duration: 3,
-                            durationUnit: 'hour',
-                            resourceId: resources[1]?.id || 'assembly1',
-                            percentDone: 60,
-                            eventColor: 'green',
-                            constraintType: 'startnoearlierthan',
-                            constraintDate: createDate(5),
-                            manuallyScheduled: false
-                        },
-                        {
-                            id: 3,
-                            name: 'Quality Control - Demo',
-                            startDate: createDate(26), // Sept 4, 10 AM
-                            duration: 2,
-                            durationUnit: 'hour',
-                            resourceId: resources[2]?.id || 'qc1',
-                            percentDone: 0,
-                            eventColor: 'purple',
-                            constraintType: 'startnoearlierthan',
-                            constraintDate: createDate(26),
-                            manuallyScheduled: false
-                        }
-                    ];
+                    console.log('📊 No PT operations found - scheduler will be empty until operations are added');
+                    // Keep events array empty - better to show an empty scheduler than wrong data
                 }
 
                 // Load dependencies from database instead of generating them
