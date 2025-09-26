@@ -1507,18 +1507,21 @@
                 }
                 
                 // Helper function to assign colors based on operation type (brewing-specific)
+                // CRITICAL: Order checks from most specific to least specific to avoid mismatches
                 function getOperationColor(operationName) {
                     if (!operationName) return '#2563eb'; // Blue
                     const name = operationName.toLowerCase();
                     
                     // Brewing-specific operations with distinct colors
+                    // Check packaging FIRST before lager to avoid "Packaging - Lager" matching lager
+                    if (name.includes('packag')) return '#ea580c'; // Orange
                     if (name.includes('milling') || name.includes('mill')) return '#2563eb'; // Blue
                     if (name.includes('mash')) return '#7c3aed'; // Purple  
                     if (name.includes('lauter')) return '#0891b2'; // Cyan
                     if (name.includes('boil')) return '#dc2626'; // Red
-                    if (name.includes('ferment') || name.includes('lager')) return '#059669'; // Green
+                    if (name.includes('ferment')) return '#059669'; // Green
+                    if (name.includes('lager') && !name.includes('packag')) return '#059669'; // Green (but not packaging)
                     if (name.includes('condition') || name.includes('dry hop')) return '#0d9488'; // Teal
-                    if (name.includes('packag')) return '#ea580c'; // Orange
                     if (name.includes('pasteur')) return '#7c2d12'; // Brown
                     
                     // Generic manufacturing operations
