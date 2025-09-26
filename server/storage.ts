@@ -631,22 +631,17 @@ export class DatabaseStorage implements IStorage {
           jo.job_id,
           jo.name as operation_name,
           jo.description,
-          jo.resource_id,
           jo.scheduled_start,
           jo.scheduled_end,
-          jo.actual_start,
-          jo.actual_end,
-          jo.status,
-          jo.priority,
-          jo.setup_time,
-          jo.run_time,
-          jo.teardown_time,
+          jo.percent_finished,
+          jo.setup_hours,
+          jo.cycle_hrs,
+          jo.post_processing_hours,
           j.name as job_name,
-          j.due_date,
-          r.name as resource_name
+          j.priority,
+          j.need_date_time as due_date
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
-        LEFT JOIN ptresources r ON jo.resource_id = r.id
         WHERE jo.scheduled_start IS NOT NULL
         ORDER BY jo.scheduled_start, jo.id
         ${limit ? sql`LIMIT ${limit}` : sql``}
@@ -661,19 +656,14 @@ export class DatabaseStorage implements IStorage {
         jobId: op.job_id,
         name: op.operation_name || 'Operation',
         jobName: op.job_name,
-        resourceId: op.resource_id,
-        resourceName: op.resource_name,
         scheduledStart: op.scheduled_start,
         scheduledEnd: op.scheduled_end,
-        actualStart: op.actual_start,
-        actualEnd: op.actual_end,
-        status: op.status || 'pending',
         priority: op.priority || 5,
-        setupTime: op.setup_time || 0,
-        runTime: op.run_time || 0,
-        teardownTime: op.teardown_time || 0,
+        setupTime: op.setup_hours || 0,
+        runTime: op.cycle_hrs || 0,
+        teardownTime: op.post_processing_hours || 0,
         dueDate: op.due_date,
-        percentFinished: op.status === 'completed' ? 100 : op.status === 'in_progress' ? 50 : 0
+        percentFinished: op.percent_finished || 0
       }));
     } catch (error) {
       console.error('Error fetching discrete operations:', error);
