@@ -727,6 +727,16 @@
             border-color: #666;
         }
         
+        /* Animation styles */
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
         /* Constraint Settings Styles */
         .constraint-modal {
             display: none;
@@ -1004,14 +1014,17 @@
                 <option value="levelResources">Level Resources</option>
                 <option value="drum">Drum (TOC)</option>
             </select>
-            <button id="constraintSettings" title="Configure Constraints">
-                <span>Constraints</span>
-            </button>
             <button id="applyScheduling">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
                 <span>Apply</span>
+            </button>
+            <button id="constraintSettings" title="Configure Constraints">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                </svg>
+                <span>Constraints</span>
             </button>
         </div>
 
@@ -3268,6 +3281,140 @@
                 const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
                 if (activeCount > 0) {
                     console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
+                }
+            });
+            
+            // Add functionality for Save button
+            document.getElementById('saveSchedule').addEventListener('click', async () => {
+                try {
+                    // Show saving status
+                    const saveBtn = document.getElementById('saveSchedule');
+                    const originalHTML = saveBtn.innerHTML;
+                    saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6-8.485"></path></svg><span>Saving...</span>';
+                    saveBtn.disabled = true;
+                    
+                    // Get current schedule data from scheduler
+                    if (window.scheduler) {
+                        const events = window.scheduler.eventStore.records;
+                        const scheduleData = events.map(event => ({
+                            id: event.id,
+                            resourceId: event.resourceId,
+                            startDate: event.startDate,
+                            endDate: event.endDate,
+                            name: event.name,
+                            percentDone: event.percentDone
+                        }));
+                        
+                        // Save to localStorage for now (can be extended to save to backend)
+                        localStorage.setItem('savedSchedule', JSON.stringify({
+                            timestamp: new Date().toISOString(),
+                            algorithm: document.getElementById('schedulingAlgorithm').value,
+                            data: scheduleData
+                        }));
+                        
+                        // Update last update time
+                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                        
+                        console.log('✅ Schedule saved successfully');
+                        
+                        // Show success message
+                        saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Saved!</span>';
+                        
+                        // Reset button after delay
+                        setTimeout(() => {
+                            saveBtn.innerHTML = originalHTML;
+                            saveBtn.disabled = false;
+                        }, 2000);
+                    }
+                } catch (error) {
+                    console.error('❌ Error saving schedule:', error);
+                    alert('Failed to save schedule. Please try again.');
+                }
+            });
+            
+            // Add functionality for Refresh button
+            document.getElementById('refreshSchedule').addEventListener('click', async () => {
+                try {
+                    // Show refreshing status
+                    const refreshBtn = document.getElementById('refreshSchedule');
+                    refreshBtn.classList.add('animate-spin');
+                    refreshBtn.disabled = true;
+                    
+                    console.log('🔄 Refreshing schedule data...');
+                    
+                    // Reload data from backend
+                    const [resourcesRes, operationsRes, dependenciesRes, capabilitiesRes] = await Promise.all([
+                        fetch('/api/resources'),
+                        fetch('/api/pt-operations'),
+                        fetch('/api/pt-dependencies'),
+                        fetch('/api/resources-with-capabilities')
+                    ]);
+                    
+                    const resources = await resourcesRes.json();
+                    const operations = await operationsRes.json();
+                    const dependencies = await dependenciesRes.json();
+                    const capabilities = await capabilitiesRes.json();
+                    
+                    // Update scheduler with fresh data
+                    if (window.scheduler) {
+                        // Clear existing data
+                        window.scheduler.eventStore.removeAll();
+                        window.scheduler.resourceStore.removeAll();
+                        window.scheduler.dependencyStore.removeAll();
+                        
+                        // Reload resources
+                        window.scheduler.resourceStore.data = resources.map(r => ({
+                            id: r.id,
+                            name: r.name,
+                            category: r.resource_type || 'Equipment'
+                        }));
+                        
+                        // Reload events
+                        const events = operations.map(op => {
+                            const startDate = op.scheduled_start ? new Date(op.scheduled_start) : new Date();
+                            const endDate = op.scheduled_end ? new Date(op.scheduled_end) : new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
+                            
+                            return {
+                                id: op.id,
+                                resourceId: op.matched_resource_id || 1,
+                                name: op.operation_name || 'Unknown Operation',
+                                startDate: startDate,
+                                endDate: endDate,
+                                percentDone: op.percent_finished || 0,
+                                eventColor: getOperationColor(op.operation_name || ''),
+                                jobName: op.job_name
+                            };
+                        });
+                        window.scheduler.eventStore.data = events;
+                        
+                        // Reload dependencies if any
+                        if (dependencies && dependencies.length > 0) {
+                            window.scheduler.dependencyStore.data = dependencies.map(dep => ({
+                                id: dep.id,
+                                from: dep.from_event,
+                                to: dep.to_event,
+                                type: 2 // Finish to Start
+                            }));
+                        }
+                        
+                        // Update status
+                        updateStatus();
+                        
+                        // Update last update time
+                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                        
+                        console.log('✅ Schedule refreshed successfully');
+                    }
+                    
+                    // Reset button
+                    refreshBtn.classList.remove('animate-spin');
+                    refreshBtn.disabled = false;
+                    
+                } catch (error) {
+                    console.error('❌ Error refreshing schedule:', error);
+                    alert('Failed to refresh schedule. Please check your connection and try again.');
+                    document.getElementById('refreshSchedule').classList.remove('animate-spin');
+                    document.getElementById('refreshSchedule').disabled = false;
                 }
             });
         });
