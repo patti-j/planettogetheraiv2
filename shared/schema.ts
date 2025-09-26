@@ -229,6 +229,22 @@ export const ptResources = pgTable("ptresources", {
 });
 
 // ============================================
+// Production Scheduler - Saved Schedules
+// ============================================
+
+export const savedSchedules = pgTable("saved_schedules", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  scheduleData: jsonb("schedule_data").notNull(), // Contains events, resources, dependencies
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Additional info like algorithm used, constraints, etc.
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================
 // AI Agent Team System
 // ============================================
 
@@ -500,6 +516,7 @@ export const insertRecentPageSchema = createInsertSchema(recentPages);
 export const insertProductionOrderSchema = createInsertSchema(productionOrders);
 export const insertSchedulingConversationSchema = createInsertSchema(schedulingConversations);
 export const insertSchedulingMessageSchema = createInsertSchema(schedulingMessages);
+export const insertSavedScheduleSchema = createInsertSchema(savedSchedules);
 
 // AI Agent Team System schemas
 export const insertAiAgentTeamSchema = createInsertSchema(aiAgentTeam);
@@ -569,6 +586,8 @@ export type SchedulingConversation = typeof schedulingConversations.$inferSelect
 export type InsertSchedulingConversation = z.infer<typeof insertSchedulingConversationSchema>;
 export type SchedulingMessage = typeof schedulingMessages.$inferSelect;
 export type InsertSchedulingMessage = z.infer<typeof insertSchedulingMessageSchema>;
+export type SavedSchedule = typeof savedSchedules.$inferSelect;
+export type InsertSavedSchedule = z.infer<typeof insertSavedScheduleSchema>;
 
 // AI Agent Team System types
 export type AiAgentTeam = typeof aiAgentTeam.$inferSelect;

@@ -2,14 +2,15 @@ import {
   users, roles, permissions, userRoles, rolePermissions, 
   companyOnboarding, userPreferences, recentPages,
   ptPlants, ptResources, ptJobOperations, ptManufacturingOrders,
-  schedulingConversations, schedulingMessages,
+  schedulingConversations, schedulingMessages, savedSchedules,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
   type RecentPage, type InsertRecentPage,
   type PtPlant, type PtResource, type PtJobOperation, type PtManufacturingOrder,
   type SchedulingConversation, type InsertSchedulingConversation,
-  type SchedulingMessage, type InsertSchedulingMessage
+  type SchedulingMessage, type InsertSchedulingMessage,
+  type SavedSchedule, type InsertSavedSchedule
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -77,6 +78,13 @@ export interface IStorage {
   getPtOperationsWithDetails(): Promise<any[]>;
   getPtDependencies(): Promise<any[]>;
   getDiscreteOperations(limit?: number | null): Promise<any[]>;
+
+  // Saved Schedules
+  createSavedSchedule(data: InsertSavedSchedule): Promise<SavedSchedule>;
+  getSavedSchedules(userId: number): Promise<SavedSchedule[]>;
+  getSavedSchedule(id: number, userId: number): Promise<SavedSchedule | undefined>;
+  updateSavedSchedule(id: number, userId: number, data: Partial<InsertSavedSchedule>): Promise<SavedSchedule | undefined>;
+  deleteSavedSchedule(id: number, userId: number): Promise<boolean>;
 
   // Error logging
   logError(error: any): Promise<void>;
@@ -788,6 +796,76 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error fetching discrete operations:', error);
       return [];
+    }
+  }
+
+  // Saved Schedules
+  async createSavedSchedule(data: InsertSavedSchedule): Promise<SavedSchedule> {
+    try {
+      const [schedule] = await db.insert(savedSchedules).values(data).returning();
+      return schedule;
+    } catch (error) {
+      console.error('Error creating saved schedule:', error);
+      throw error;
+    }
+  }
+
+  async getSavedSchedules(userId: number): Promise<SavedSchedule[]> {
+    try {
+      return await db.select()
+        .from(savedSchedules)
+        .where(and(eq(savedSchedules.userId, userId), eq(savedSchedules.isActive, true)))
+        .orderBy(desc(savedSchedules.updatedAt));
+    } catch (error) {
+      console.error('Error fetching saved schedules:', error);
+      return [];
+    }
+  }
+
+  async getSavedSchedule(id: number, userId: number): Promise<SavedSchedule | undefined> {
+    try {
+      const [schedule] = await db.select()
+        .from(savedSchedules)
+        .where(and(
+          eq(savedSchedules.id, id), 
+          eq(savedSchedules.userId, userId),
+          eq(savedSchedules.isActive, true)
+        ));
+      return schedule || undefined;
+    } catch (error) {
+      console.error('Error fetching saved schedule:', error);
+      return undefined;
+    }
+  }
+
+  async updateSavedSchedule(id: number, userId: number, data: Partial<InsertSavedSchedule>): Promise<SavedSchedule | undefined> {
+    try {
+      const [updated] = await db.update(savedSchedules)
+        .set({ ...data, updatedAt: new Date() })
+        .where(and(
+          eq(savedSchedules.id, id),
+          eq(savedSchedules.userId, userId)
+        ))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating saved schedule:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSavedSchedule(id: number, userId: number): Promise<boolean> {
+    try {
+      const result = await db.update(savedSchedules)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(and(
+          eq(savedSchedules.id, id),
+          eq(savedSchedules.userId, userId)
+        ));
+      return true;
+    } catch (error) {
+      console.error('Error deleting saved schedule:', error);
+      return false;
     }
   }
 
