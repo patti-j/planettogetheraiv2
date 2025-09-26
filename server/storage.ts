@@ -642,62 +642,68 @@ export class DatabaseStorage implements IStorage {
           j.need_date_time as due_date,
           -- Use PT Resource Capabilities to match operations to appropriate resources
           CASE 
+            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
+              SELECT r.id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 8 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
             WHEN LOWER(jo.name) LIKE '%mill%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 1 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%mash%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 2 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 3 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%boil%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%lager%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%condition%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 6 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%dry hop%' THEN (
-              SELECT r.resource_id FROM ptresources r 
+              SELECT r.id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 7 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
-            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.resource_id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 8 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
             ELSE (
-              SELECT r.resource_id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
+              SELECT r.id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
             )
           END as matched_resource_id,
           -- Get the resource name using capabilities
           CASE 
+            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 8 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
             WHEN LOWER(jo.name) LIKE '%mill%' THEN (
               SELECT r.name FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
@@ -740,12 +746,6 @@ export class DatabaseStorage implements IStorage {
               SELECT r.name FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 7 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 8 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             ELSE (
