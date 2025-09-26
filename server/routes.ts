@@ -1771,7 +1771,7 @@ router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (
 });
 
 // AI Recommendations endpoint
-router.get("/ai/recommendations", requireAuth, async (req, res) => {
+router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   try {
     // Get sample AI recommendations for now - in production this would be from AI service
     const recommendations = [
@@ -1857,8 +1857,8 @@ router.post("/recommendations/refer", requireAuth, async (req, res) => {
   }
 });
 
-// System Events endpoint
-router.get("/system/events", requireAuth, async (req, res) => {
+// System Events endpoint  
+router.get("/api/system/events", requireAuth, async (req, res) => {
   try {
     // Get sample system events for now - in production this would be from event log service
     const events = [
@@ -1908,7 +1908,7 @@ router.get("/system/events", requireAuth, async (req, res) => {
 });
 
 // Inbox Messages endpoint
-router.get("/inbox", requireAuth, async (req, res) => {
+router.get("/api/inbox", requireAuth, async (req, res) => {
   try {
     // Get sample inbox messages for now - in production this would be from messaging service
     const messages = [
@@ -2380,6 +2380,85 @@ router.post("/api/ai/text-to-speech", async (req, res) => {
       message: "Failed to generate speech",
       error: errorMessage
     });
+  }
+});
+
+// Alerts endpoint
+router.get("/api/alerts", requireAuth, async (req, res) => {
+  try {
+    // Get sample alerts for now - in production this would be from alerts service
+    const alerts = [
+      {
+        id: 1,
+        type: "critical",
+        title: "Production Line 1 - Maintenance Required",
+        message: "Scheduled maintenance overdue by 48 hours",
+        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+        status: "active",
+        severity: "high"
+      },
+      {
+        id: 2,
+        type: "warning",
+        title: "Inventory Level Low",
+        message: "Raw material ABC below reorder point",
+        timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+        status: "active",
+        severity: "medium"
+      },
+      {
+        id: 3,
+        type: "info",
+        title: "Schedule Optimization Complete",
+        message: "Production schedule optimized, 15% efficiency gain",
+        timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+        status: "acknowledged",
+        severity: "low"
+      }
+    ];
+    
+    res.json(alerts);
+  } catch (error) {
+    console.error("Error fetching alerts:", error);
+    res.status(500).json({ message: "Failed to fetch alerts" });
+  }
+});
+
+// Dashboard Metrics endpoint
+router.get("/api/dashboard-metrics", requireAuth, async (req, res) => {
+  try {
+    // Get sample dashboard metrics - in production this would be from analytics service
+    const metrics = {
+      productionEfficiency: {
+        value: 87.5,
+        change: 2.3,
+        trend: "up"
+      },
+      onTimeDelivery: {
+        value: 94.2,
+        change: -1.1,
+        trend: "down"
+      },
+      resourceUtilization: {
+        value: 78.9,
+        change: 5.2,
+        trend: "up"
+      },
+      qualityRate: {
+        value: 98.7,
+        change: 0.4,
+        trend: "up"
+      },
+      activeJobs: 42,
+      pendingOrders: 18,
+      completedToday: 24,
+      upcomingMaintenance: 3
+    };
+    
+    res.json(metrics);
+  } catch (error) {
+    console.error("Error fetching dashboard metrics:", error);
+    res.status(500).json({ message: "Failed to fetch dashboard metrics" });
   }
 });
 
