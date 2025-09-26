@@ -2073,6 +2073,210 @@
                 
                 unscheduledStore.on('change', updateUnscheduledCount);
                 
+                // Create drag helper for unscheduled operations to scheduler
+                const dragHelper = new bryntum.schedulerpro.DragHelper({
+                    cloneTarget: true,
+                    autoSizeClonedTarget: false,
+                    targetSelector: '.b-grid-row',
+                    dropTargetSelector: '.b-sch-timeaxis-cell',
+                    
+                    // Create visual drag proxy
+                    createProxy(element) {
+                        const record = unscheduledGrid.getRecordFromElement(element);
+                        if (!record) return null;
+                        
+                        const proxy = document.createElement('div');
+                        const duration = record.duration || 1;
+                        
+                        // Style it to look like a scheduled event
+                        proxy.className = 'b-sch-event-wrap b-sch-event b-drag-proxy';
+                        proxy.style.width = '150px';
+                        proxy.style.padding = '8px';
+                        proxy.style.background = '#4CAF50';
+                        proxy.style.color = 'white';
+                        proxy.style.borderRadius = '4px';
+                        proxy.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
+                        proxy.innerHTML = `
+                            <div style="font-weight: bold;">${record.name}</div>
+                            <div style="font-size: 12px; margin-top: 4px;">⏱ ${duration} ${record.durationUnit || 'hour'}${duration > 1 ? 's' : ''}</div>
+                        `;
+                        
+                        return proxy;
+                    },
+                    
+                    // Validate drag
+                    validatorFn(context) {
+                        const { element } = context;
+                        const record = unscheduledGrid.getRecordFromElement(context.grabbed);
+                        
+                        if (!record || !window.scheduler) {
+                            return false;
+                        }
+                        
+                        // Get the scheduler's timeline element and calculate position
+                        const schedulerEl = window.scheduler.timeAxisSubGrid.element;
+                        const schedulerRect = schedulerEl.getBoundingClientRect();
+                        const dragRect = element.getBoundingClientRect();
+                        
+                        // Check if we're over the scheduler
+                        const isOverScheduler = (
+                            dragRect.left < schedulerRect.right &&
+                            dragRect.right > schedulerRect.left &&
+                            dragRect.top < schedulerRect.bottom &&
+                            dragRect.bottom > schedulerRect.top
+                        );
+                        
+                        if (!isOverScheduler) {
+                            context.valid = false;
+                            element.classList.add('b-drag-invalid');
+                            element.classList.remove('b-drag-valid');
+                            return false;
+                        }
+                        
+                        // Get resource and date from position
+                        const resourceRecord = window.scheduler.resolveResourceRecord(context.target);
+                        const date = window.scheduler.getDateFromCoordinate(
+                            dragRect.left - schedulerRect.left,
+                            'round',
+                            false
+                        );
+                        
+                        // Validate resource capabilities
+                        if (resourceRecord) {
+                            const operationName = record.name || '';
+                            const requiredCapability = getRequiredCapability(operationName);
+                            
+                            if (requiredCapability !== null) {
+                                const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
+                                
+                                if (!targetCapabilities.includes(requiredCapability)) {
+                                    context.valid = false;
+                                    element.classList.add('b-drag-invalid');
+                                    element.classList.remove('b-drag-valid');
+                                    return false;
+                                }
+                            }
+                        }
+                        
+                        context.valid = date && resourceRecord;
+                        
+                        if (context.valid) {
+                            element.classList.add('b-drag-valid');
+                            element.classList.remove('b-drag-invalid');
+                        } else {
+                            element.classList.add('b-drag-invalid');
+                            element.classList.remove('b-drag-valid');
+                        }
+                        
+                        return context.valid;
+                    },
+                    
+                    // Handle drop
+                    onDrop(context) {
+                        if (!context.valid || !window.scheduler) return;
+                        
+                        const record = unscheduledGrid.getRecordFromElement(context.grabbed);
+                        if (!record) return;
+                        
+                        // Get scheduler element position
+                        const schedulerEl = window.scheduler.timeAxisSubGrid.element;
+                        const schedulerRect = schedulerEl.getBoundingClientRect();
+                        const dragRect = context.element.getBoundingClientRect();
+                        
+                        // Calculate the resource and date from drop position
+                        const resourceRecord = window.scheduler.resolveResourceRecord(context.target);
+                        const date = window.scheduler.getDateFromCoordinate(
+                            dragRect.left - schedulerRect.left,
+                            'round',
+                            false
+                        );
+                        
+                        if (date && resourceRecord) {
+                            // Create the event in the scheduler
+                            const newEvent = window.scheduler.eventStore.add({
+                                name: record.name,
+                                startDate: date,
+                                duration: record.duration || 1,
+                                durationUnit: record.durationUnit || 'hour',
+                                resourceId: resourceRecord.id,
+                                operationType: record.operationType,
+                                jobNumber: record.jobNumber,
+                                isUnscheduled: false,
+                                eventColor: getOperationColor(record.operationType)
+                            })[0];
+                            
+                            if (newEvent) {
+                                // Remove from unscheduled grid
+                                unscheduledStore.remove(record);
+                                
+                                // Show success notification
+                                showNotification(`✅ Scheduled "${record.name}" on ${resourceRecord.name}`, 'success');
+                                console.log(`✅ Scheduled operation "${record.name}" on resource "${resourceRecord.name}" at ${date}`);
+                                
+                                // Refresh the scheduler
+                                window.scheduler.refresh();
+                            }
+                        }
+                    }
+                });
+                
+                // Helper function to get operation color
+                function getOperationColor(operationType) {
+                    const typeColors = {
+                        'milling': '#8B4513',
+                        'mashing': '#D2691E', 
+                        'lautering': '#DEB887',
+                        'boiling': '#FF8C00',
+                        'fermentation': '#4B0082',
+                        'conditioning': '#4682B4',
+                        'dry_hopping': '#228B22',
+                        'packaging': '#708090',
+                        'pasteurization': '#DC143C'
+                    };
+                    return typeColors[operationType?.toLowerCase()] || '#666';
+                }
+                
+                // Notification helper
+                function showNotification(message, type = 'info') {
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        bottom: 20px;
+                        right: 20px;
+                        padding: 15px 20px;
+                        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
+                        color: white;
+                        border-radius: 4px;
+                        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                        z-index: 10000;
+                        animation: slideIn 0.3s ease-out;
+                    `;
+                    notification.textContent = message;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideOut 0.3s ease-in';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                }
+                
+                // Add animation styles
+                if (!document.querySelector('#drag-animations')) {
+                    const style = document.createElement('style');
+                    style.id = 'drag-animations';
+                    style.textContent = `
+                        @keyframes slideIn {
+                            from { transform: translateX(100%); opacity: 0; }
+                            to { transform: translateX(0); opacity: 1; }
+                        }
+                        @keyframes slideOut {
+                            from { transform: translateX(0); opacity: 1; }
+                            to { transform: translateX(100%); opacity: 0; }
+                        }
+                    `;
+                    document.head.appendChild(style);
+                }
+                
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
