@@ -57,7 +57,9 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **Mobile Responsiveness**: Mobile-first design with enhanced login page accessibility and proper viewport handling.
 - **AI Alert System**: Configurable AI analysis triggers (scheduled, event-based, threshold-based, continuous) with OpenAI GPT-4o integration.
 - **Data Schema Visualization**: Interactive lasso selection tool for focused analysis of table groups.
-- **PT Table Structure Integrity**: The system exclusively uses PT (PlanetTogether) tables for ALL manufacturing-related data. Legacy non-PT tables are deprecated and must not be used. Specific PT tables required include `ptjoboperations`, `ptjobs`, `ptresources`, `ptjobresources`, `ptjobsuccessormanufacturingorders`, `ptmanufacturingorders`, and `ptjobactivities`. Adding columns to PT tables is allowed, but deleting PT tables or columns, or using non-PT tables for manufacturing data, is forbidden. Integration requires mapping to PT column names and using PT's specific timestamp names and external_id fields.
+- **PT Table Structure Integrity**: The system exclusively uses PT (PlanetTogether) tables for ALL manufacturing-related data. Legacy non-PT tables are deprecated and must not be used. Specific PT tables required include `ptjoboperations`, `ptjobs`, `ptresources`, `ptjobresources`, `ptjobsuccessormanufacturingorders`, `ptmanufacturingorders`, `ptjobactivities`, and `ptresourcecapabilities`. Adding columns to PT tables is allowed, but deleting PT tables or columns, or using non-PT tables for manufacturing data, is forbidden. Integration requires mapping to PT column names and using PT's specific timestamp names and external_id fields.
+- **PT Resource Capabilities System**: Implemented proper resource-operation matching using the `ptresourcecapabilities` table with capability mappings (1=MILLING, 2=MASHING, 3=LAUTERING, 4=BOILING, 5=FERMENTATION, 6=CONDITIONING, 7=DRY_HOPPING, 8=PACKAGING, 9=PASTEURIZATION). This replaces hardcoded resource assignment logic and ensures operations are scheduled on appropriate equipment based on their capabilities.
+- **External Database Integration**: Established connection to external PT database via `EXTERNAL_DATABASE_URL` for importing missing PT table data. Import script available at `server/scripts/import-external-tables.ts` for automated data migration from external sources when local tables are empty.
 - **External Partners Portal**: Single multi-tenant portal architecture for suppliers, customers, and OEM partners, incorporating AI-first features like intelligent onboarding and predictive analytics.
 - **AI Agents Control Panel**: Centralized management interface for all AI agents (Max AI Assistant, System Monitoring Agent, Production Optimization Agent, Quality Analysis Agent, Predictive Maintenance Agent) with status, configuration, frequency, and performance controls.
 - **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, performance visualization, and real-time plant monitoring with automated algorithm selection and parameter tuning.
@@ -75,3 +77,39 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **Date Handling**: date-fns
 - **Charting**: Recharts, Chart.js
 - **Session Management**: connect-pg-simple
+
+## Data Management & Import Procedures
+
+### External Database Integration
+**Environment Variable**: `EXTERNAL_DATABASE_URL` - Connection string to external PlanetTogether database for data import purposes.
+
+**Import Script**: `server/scripts/import-external-tables.ts`
+- **Purpose**: Generic script for importing PT table data from external databases
+- **Usage**: `npx tsx server/scripts/import-external-tables.ts [table_name]`
+- **Features**: 
+  - Checks local vs external record counts
+  - Prevents duplicate imports
+  - Handles table schema validation
+  - Supports custom default data creation for specific tables
+
+### PT Resource Capabilities Implementation (September 2024)
+**Problem**: Operations were being assigned to inappropriate resources due to hardcoded logic.
+**Solution**: Implemented proper PT Resource Capabilities table with capability-based resource matching.
+
+**Procedure**:
+1. **External Data Check**: Connected to external database to check for existing `ptresourcecapabilities` data
+2. **Capability Mapping**: Created standardized capability IDs:
+   - 1 = MILLING (Grain Mill)
+   - 2 = MASHING (Mash Tun)
+   - 3 = LAUTERING (Lauter Tun)
+   - 4 = BOILING (Brew Kettle)
+   - 5 = FERMENTATION (Fermenter Tanks)
+   - 6 = CONDITIONING (Bright Tanks)
+   - 7 = DRY_HOPPING (Bright Tanks)
+   - 8 = PACKAGING (Filler Lines)
+   - 9 = PASTEURIZATION (Pasteurizer)
+3. **Data Population**: Populated local `ptresourcecapabilities` table with proper capability assignments
+4. **Query Update**: Modified `getDiscreteOperations()` to use capabilities-based JOINs instead of hardcoded LIKE patterns
+5. **Testing**: Verified operations now match to appropriate resources based on their capabilities
+
+**Result**: Operations are now properly scheduled on equipment that has the required capabilities, preventing resource mismatches and improving scheduling accuracy.
