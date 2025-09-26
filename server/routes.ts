@@ -2228,7 +2228,7 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
     });
 
     // Handle both FormData files and JSON attachments
-    let attachments = [];
+    let attachments: Array<{ name: string; type: string; size: number; content: Buffer | null }> = [];
     
     // FormData files (from ai-left-panel)
     if (files.length > 0) {
@@ -2242,10 +2242,10 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
     
     // JSON attachments (from integrated-ai-assistant)
     if (req.body.attachments && Array.isArray(req.body.attachments)) {
-      const jsonAttachments = req.body.attachments.map(att => ({
-        name: att.name,
-        type: att.type,
-        size: att.size,
+      const jsonAttachments = req.body.attachments.map((att: any) => ({
+        name: att.name || 'unknown',
+        type: att.type || 'application/octet-stream',
+        size: att.size || 0,
         content: att.content ? Buffer.from(att.content, 'base64') : null
       }));
       attachments = [...attachments, ...jsonAttachments];
@@ -2264,17 +2264,22 @@ router.post("/api/ai-agent/command", uploadFiles.array('attachments', 10), async
     res.json({
       success: result.success,
       message: result.message,
+      response: result.message,  // Add 'response' field for compatibility
+      reply: result.message,      // Add 'reply' field for compatibility
       data: result.data,
       actions: result.actions || [],
       canvasAction: result.canvasAction
     });
 
   } catch (error) {
-    console.error("AI Agent command error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("AI Agent command error:", errorMessage);
     res.status(500).json({
       success: false,
       message: "Failed to process AI command",
-      error: error.message
+      response: "Failed to process AI command",
+      reply: "Failed to process AI command",
+      error: errorMessage
     });
   }
 });
@@ -2318,11 +2323,12 @@ router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Voice transcription error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Voice transcription error:", errorMessage);
     res.status(500).json({
       success: false,
       message: "Failed to transcribe voice recording",
-      error: error.message
+      error: errorMessage
     });
   }
 });
@@ -2364,11 +2370,12 @@ router.post("/api/ai/text-to-speech", async (req, res) => {
     res.send(buffer);
 
   } catch (error) {
-    console.error("Text-to-speech error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Text-to-speech error:", errorMessage);
     res.status(500).json({
       success: false,
       message: "Failed to generate speech",
-      error: error.message
+      error: errorMessage
     });
   }
 });

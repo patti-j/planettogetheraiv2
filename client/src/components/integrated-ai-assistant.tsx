@@ -567,10 +567,12 @@ export default function IntegratedAIAssistant() {
       return await response.json();
     },
     onSuccess: (data) => {
+      // Handle both 'response' and 'message' fields from backend
+      const responseText = data.response || data.message || data.reply || 'No response received';
       const assistantMessage: Message = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
-        content: data.response,
+        content: responseText,
         timestamp: new Date(),
         context: contextData
       };
@@ -1197,9 +1199,6 @@ export default function IntegratedAIAssistant() {
                       ))}
                     </div>
                   )}
-                  <Button
-                    variant="outline"
-                    size="sm"
                   <input 
                     hidden 
                     multiple 
