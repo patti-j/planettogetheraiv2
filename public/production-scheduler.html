@@ -3332,90 +3332,20 @@
                 }
             });
             
-            // Add functionality for Refresh button
-            document.getElementById('refreshSchedule').addEventListener('click', async () => {
-                try {
-                    // Show refreshing status
-                    const refreshBtn = document.getElementById('refreshSchedule');
-                    refreshBtn.classList.add('animate-spin');
-                    refreshBtn.disabled = true;
-                    
-                    console.log('🔄 Refreshing schedule data...');
-                    
-                    // Reload data from backend
-                    const [resourcesRes, operationsRes, dependenciesRes, capabilitiesRes] = await Promise.all([
-                        fetch('/api/resources'),
-                        fetch('/api/pt-operations'),
-                        fetch('/api/pt-dependencies'),
-                        fetch('/api/resources-with-capabilities')
-                    ]);
-                    
-                    const resources = await resourcesRes.json();
-                    const operations = await operationsRes.json();
-                    const dependencies = await dependenciesRes.json();
-                    const capabilities = await capabilitiesRes.json();
-                    
-                    // Update scheduler with fresh data
-                    if (window.scheduler) {
-                        // Clear existing data
-                        window.scheduler.eventStore.removeAll();
-                        window.scheduler.resourceStore.removeAll();
-                        window.scheduler.dependencyStore.removeAll();
-                        
-                        // Reload resources
-                        window.scheduler.resourceStore.data = resources.map(r => ({
-                            id: r.id,
-                            name: r.name,
-                            category: r.resource_type || 'Equipment'
-                        }));
-                        
-                        // Reload events
-                        const events = operations.map(op => {
-                            const startDate = op.scheduled_start ? new Date(op.scheduled_start) : new Date();
-                            const endDate = op.scheduled_end ? new Date(op.scheduled_end) : new Date(startDate.getTime() + 4 * 60 * 60 * 1000);
-                            
-                            return {
-                                id: op.id,
-                                resourceId: op.matched_resource_id || 1,
-                                name: op.operation_name || 'Unknown Operation',
-                                startDate: startDate,
-                                endDate: endDate,
-                                percentDone: op.percent_finished || 0,
-                                eventColor: getOperationColor(op.operation_name || ''),
-                                jobName: op.job_name
-                            };
-                        });
-                        window.scheduler.eventStore.data = events;
-                        
-                        // Reload dependencies if any
-                        if (dependencies && dependencies.length > 0) {
-                            window.scheduler.dependencyStore.data = dependencies.map(dep => ({
-                                id: dep.id,
-                                from: dep.from_event,
-                                to: dep.to_event,
-                                type: 2 // Finish to Start
-                            }));
-                        }
-                        
-                        // Update status
-                        updateStatus();
-                        
-                        // Update last update time
-                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
-                        
-                        console.log('✅ Schedule refreshed successfully');
-                    }
-                    
-                    // Reset button
-                    refreshBtn.classList.remove('animate-spin');
-                    refreshBtn.disabled = false;
-                    
-                } catch (error) {
-                    console.error('❌ Error refreshing schedule:', error);
-                    alert('Failed to refresh schedule. Please check your connection and try again.');
-                    document.getElementById('refreshSchedule').classList.remove('animate-spin');
-                    document.getElementById('refreshSchedule').disabled = false;
-                }
+            // Add functionality for Refresh button - simply reload the page
+            document.getElementById('refreshSchedule').addEventListener('click', () => {
+                // Show refreshing status
+                const refreshBtn = document.getElementById('refreshSchedule');
+                refreshBtn.classList.add('animate-spin');
+                refreshBtn.disabled = true;
+                
+                console.log('🔄 Refreshing schedule data...');
+                
+                // Simply reload the page to get fresh data
+                // This ensures all data is fetched with proper authentication
+                setTimeout(() => {
+                    window.location.reload(true); // Force reload from server, not cache
+                }, 300); // Small delay for visual feedback
             });
         });
     </script>
