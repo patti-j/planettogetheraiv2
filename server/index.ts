@@ -121,18 +121,11 @@ app.use((req, res, next) => {
   // Serve Bryntum static assets from public directory
   app.use(express.static(path.resolve(import.meta.dirname, "public")));
 
-  // Register API routes
-  app.use('/api', routes);
+  // IMPORTANT: Register API routes BEFORE Vite middleware
+  // This ensures API routes are handled before Vite's catch-all
+  app.use(routes);  // Note: No '/api' prefix here since routes already have /api prefix
 
-  // Error handler
-  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    const status = err.status || err.statusCode || 500;
-    const message = err.message || "Internal Server Error";
-    res.status(status).json({ message });
-    log(`Error: ${message}`);
-  });
-
-  // Create server
+  // Create server (needed for Vite HMR)
   const port = 5000;
   const server = app.listen(port, "0.0.0.0", () => {
     log(`🏭 PlanetTogether serving on port ${port}`);
@@ -140,11 +133,20 @@ app.use((req, res, next) => {
     log(`🎯 Environment: ${process.env.NODE_ENV || 'development'}`);
   });
 
-  // Setup Vite in development
+  // Setup Vite AFTER API routes in development
+  // This way Vite's catch-all only handles non-API routes
   if (app.get("env") === "development") {
     await setupVite(app, server);
   } else {
     serveStatic(app);
   }
+
+  // Error handler (must be last)
+  app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    log(`Error: ${message}`);
+  });
   // Server is already listening above
 })();

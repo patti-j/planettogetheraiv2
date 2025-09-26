@@ -3395,6 +3395,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
     let jobCount = 0;
     let operationCount = 0;
     let resourceCount = 0;
+    */
 
     try {
       const operations = await storage.getJobOperations();
@@ -3417,7 +3418,7 @@ export async function processCommand(command: string, attachments: AttachmentFil
     };
 
     // If attachments are present, use the attachment-aware processing
-    if (attachments && attachments.length > 0) {*/
+    if (attachments && attachments.length > 0) {
       console.log("Processing command with attachments:", attachments.map(a => ({ name: a.name, type: a.type, size: a.size })));
       return await processCommandWithAttachments(command, attachments, contextSummary);
     }
