@@ -3383,14 +3383,99 @@ export async function processCommand(command: string, attachments: AttachmentFil
   try {
     console.log("Processing AI command:", { command, attachmentsCount: attachments.length });
 
-    // TEMPORARY FIX: Just return a simple static response to test the connection
-    return {
-      success: true,
-      message: `Hello! I received your message: "${command}". I'm Max, your AI assistant for PlanetTogether. How can I help you with production scheduling today?`,
-      data: null
-    };
+    // Process with OpenAI for simplicity and reliability
+    if (attachments && attachments.length > 0) {
+      // Handle image attachments with OpenAI Vision
+      const imageAttachments = attachments.filter(a => a.type.startsWith('image/'));
+      
+      if (imageAttachments.length > 0) {
+        const messages: any[] = [
+          {
+            role: "system",
+            content: "You are Max, an AI assistant for PlanetTogether manufacturing system. Analyze images and provide helpful insights about manufacturing processes, production schedules, quality control, or any other content shown."
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: command
+              }
+            ]
+          }
+        ];
+        
+        // Add image attachments to the message
+        for (const attachment of imageAttachments) {
+          if (attachment.content) {
+            messages[1].content.push({
+              type: "image_url",
+              image_url: {
+                url: `data:${attachment.type};base64,${attachment.content.toString('base64')}`
+              }
+            });
+          }
+        }
+        
+        try {
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o",
+            messages: messages,
+            max_tokens: 500
+          });
+          
+          const aiMessage = response.choices[0]?.message?.content || "I couldn't analyze the image properly.";
+          
+          return {
+            success: true,
+            message: aiMessage,
+            data: null
+          };
+        } catch (error) {
+          console.error("OpenAI Vision API error:", error);
+          return {
+            success: false,
+            message: "I encountered an error while analyzing your image. Please try again.",
+            data: null
+          };
+        }
+      }
+    }
+    
+    // For text-only commands, use regular OpenAI completion
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          {
+            role: "system",
+            content: "You are Max, an AI assistant for PlanetTogether manufacturing system. Help users with production scheduling, resource management, and manufacturing operations."
+          },
+          {
+            role: "user",
+            content: command
+          }
+        ],
+        max_tokens: 500
+      });
+      
+      const aiMessage = response.choices[0]?.message?.content || "I couldn't process your request.";
+      
+      return {
+        success: true,
+        message: aiMessage,
+        data: null
+      };
+    } catch (error) {
+      console.error("OpenAI API error:", error);
+      return {
+        success: false,
+        message: "I encountered an error processing your request. Please try again.",
+        data: null
+      };
+    }
 
-    /* DISABLED TEMPORARILY - Complex AI agent logic with TypeScript errors
+    /* DISABLED - Complex AI agent logic with TypeScript errors
     // Get system context for manufacturing data  
     let jobCount = 0;
     let operationCount = 0;
