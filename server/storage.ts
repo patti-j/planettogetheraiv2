@@ -459,8 +459,12 @@ export class DatabaseStorage implements IStorage {
           WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
           WHEN LOWER(name) LIKE '%cool%' THEN 6
           WHEN LOWER(name) LIKE '%ferment%' THEN 7
+          WHEN LOWER(name) LIKE '%bright%' OR LOWER(name) LIKE '%condition%' THEN 8
+          WHEN LOWER(name) LIKE '%pasteur%' THEN 9
+          WHEN LOWER(name) LIKE '%filler%' OR LOWER(name) LIKE '%packag%' THEN 10
+          WHEN LOWER(name) LIKE '%can%' THEN 11
           -- Any other resources go after the main process
-          ELSE 8
+          ELSE 12
         END, name
         LIMIT 12
       `);
