@@ -618,6 +618,15 @@ export class DatabaseStorage implements IStorage {
         }
       }
       
+      // Debug: Log dependencies for Job 12 (job_id = 2)
+      const lagerDeps = dependencies.filter(dep => 
+        dep.fromEvent?.includes('20') || dep.fromEvent?.includes('21') || dep.fromEvent?.includes('22') ||
+        dep.toEvent?.includes('20') || dep.toEvent?.includes('21') || dep.toEvent?.includes('22')
+      );
+      if (lagerDeps.length > 0) {
+        console.log('🔍 Backend: Generated lager dependencies (20,21,22):', JSON.stringify(lagerDeps, null, 2));
+      }
+      
       return dependencies;
     } catch (error) {
       console.error('Error fetching PT dependencies:', error);
