@@ -1327,13 +1327,15 @@
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
                 let ptOperations = [];
+                let resourceCapabilities = {};
                 
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
-                    const [resourcesResponse, operationsResponse, dependenciesResponse] = await Promise.all([
+                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
-                        fetch('/api/pt-dependencies')
+                        fetch('/api/pt-dependencies'),
+                        fetch('/api/resources-with-capabilities')
                     ]);
                     
                     if (resourcesResponse.ok) {
@@ -1369,6 +1371,15 @@
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
+                    
+                    // Process resource capabilities
+                    if (capabilitiesResponse && capabilitiesResponse.ok) {
+                        const capabilitiesData = await capabilitiesResponse.json();
+                        console.log('✅ Resource capabilities fetched successfully');
+                        capabilitiesData.forEach(resource => {
+                            resourceCapabilities[resource.id] = resource.capabilities || [];
+                        });
+                    }
                 } catch (error) {
                     console.error('❌ Error fetching data:', error);
                     // Use fallback sample data
@@ -1391,6 +1402,27 @@
                     // Also create a name-based lookup for better matching
                     resourceByName.set(resource.name?.toLowerCase(), resource);
                 });
+                
+                // Define capability mappings for brewing operations
+                // Based on PT Resource Capabilities: 1=MILLING, 2=MASHING, 3=LAUTERING, 
+                // 4=BOILING, 5=FERMENTATION, 6=CONDITIONING, 7=DRY_HOPPING, 8=PACKAGING, 9=PASTEURIZATION
+                function getRequiredCapability(operationName) {
+                    if (!operationName) return null;
+                    const name = operationName.toLowerCase();
+                    
+                    // Check most specific patterns first to avoid mismatches
+                    if (name.includes('packag')) return 8;
+                    if (name.includes('mill')) return 1;
+                    if (name.includes('mash')) return 2;
+                    if (name.includes('lauter')) return 3;
+                    if (name.includes('boil')) return 4;
+                    if (name.includes('ferment')) return 5;
+                    if (name.includes('condition')) return 6;
+                    if (name.includes('dry hop')) return 7;
+                    if (name.includes('pasteur')) return 9;
+                    
+                    return null; // No specific capability required
+                }
                 
                 // Transform PT operations into Bryntum events format with ASAP constraints
                 let events = ptOperations.map((operation, index) => {
@@ -1828,10 +1860,35 @@
                         eventDrag: {
                             showTooltip: true,
                             constrainDragToResource: false, // Allow dragging between resources
-                            // Enable dragging from unscheduled to other resources
+                            // Validate that target resource has required capability
                             validatorFn({ draggedRecords, targetRecord }) {
-                                // Allow all drag operations
-                                return true;
+                                // Check each dragged operation
+                                for (const draggedRecord of draggedRecords) {
+                                    const operationName = draggedRecord.name || draggedRecord.operationName;
+                                    const requiredCapability = getRequiredCapability(operationName);
+                                    
+                                    // If operation requires a specific capability
+                                    if (requiredCapability !== null) {
+                                        const targetResourceId = targetRecord?.id;
+                                        const targetCapabilities = resourceCapabilities[targetResourceId] || [];
+                                        
+                                        // Check if target resource has the required capability
+                                        if (!targetCapabilities.includes(requiredCapability)) {
+                                            // Show a tooltip explaining why the drop is invalid
+                                            const capabilityNames = {
+                                                1: 'Milling', 2: 'Mashing', 3: 'Lautering',
+                                                4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
+                                                7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
+                                            };
+                                            console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord?.name}: Missing ${capabilityNames[requiredCapability]} capability`);
+                                            return {
+                                                valid: false,
+                                                message: `${targetRecord?.name} lacks ${capabilityNames[requiredCapability]} capability`
+                                            };
+                                        }
+                                    }
+                                }
+                                return true; // Valid drop
                             }
                         },
                         
