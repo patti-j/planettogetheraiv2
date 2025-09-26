@@ -42,9 +42,9 @@ export default function ProductionScheduler() {
   }, []);
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
-      {/* Main Content - Full Screen */}
-      <div className="flex-1 relative overflow-hidden">
+    <div className="h-full flex flex-col">
+      {/* Main Content - Uses available height instead of h-screen */}
+      <div className="flex-1 relative overflow-hidden bg-gray-50 dark:bg-gray-900">
         {/* Loading Overlay */}
         {isLoading && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
@@ -74,10 +74,10 @@ export default function ProductionScheduler() {
             backgroundColor: 'white',
           }}
         />
+        
+        {/* AI Scheduling Agent positioned within the content area */}
+        <SchedulingAgent />
       </div>
-
-      {/* AI Scheduling Agent */}
-      <SchedulingAgent />
     </div>
   );
 }

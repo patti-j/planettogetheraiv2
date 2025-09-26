@@ -189,7 +189,7 @@ export default function ProductionSchedulerReact() {
 
   if (isLoading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+      <div className="h-full flex items-center justify-center bg-gray-50 dark:bg-gray-900">
         <div className="text-center">
           <RefreshCw className="w-8 h-8 animate-spin mx-auto mb-4 text-blue-600" />
           <p className="text-lg">Loading scheduler data...</p>
@@ -199,20 +199,11 @@ export default function ProductionSchedulerReact() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-white dark:bg-gray-900">
-      {/* Header */}
+    <div className="h-full flex flex-col bg-white dark:bg-gray-900">
+      {/* Scheduler Controls Bar */}
       <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="gap-2"
-          onClick={() => window.location.href = '/production-schedule'}
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Production Schedule
-        </Button>
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Production Scheduler - React Integration
+          Production Scheduler
         </h1>
         <div className="flex gap-2">
           <Button

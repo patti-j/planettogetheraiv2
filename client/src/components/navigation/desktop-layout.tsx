@@ -419,9 +419,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const isActualMobile = isTouchDevice && windowWidth < 768;
   const shouldHidePanels = isActualMobile && !forcePanelsVisible;
   
-  // Check if we're on production scheduler page (which uses an iframe and shouldn't have resizable panels)
-  const isProductionScheduler = location === '/production-scheduler';
-  const showPanels = !isFullScreen && !shouldHidePanels && !isProductionScheduler;
+  // Show panels normally (removed special case for production scheduler)
+  const showPanels = !isFullScreen && !shouldHidePanels;
   
   // VERY OBVIOUS DEBUG LOGGING
   console.log('🚨🚨🚨 DESKTOP LAYOUT IS RENDERING 🚨🚨🚨');
@@ -432,7 +431,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     aiPanelSize,
     isAiPanelCollapsed,
     location,
-    isProductionScheduler,
     windowWidth,
     isFullScreen
   });
@@ -442,73 +440,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // Only do this for screens smaller than 320px (actual mobile devices)
   if (windowWidth < 320) {
     return <>{children}</>;
-  }
-
-  // Special layout for production scheduler (iframe page)
-  if (isProductionScheduler) {
-    return (
-      <div className="h-screen flex flex-col">
-        {!isFullScreen && <CustomizableHeader />}
-        <div className="flex-1 flex">
-          {/* Simple AI panel for production scheduler - fixed width to avoid iframe conflicts */}
-          <div className="w-80 border-r border-border bg-background">
-            <AILeftPanel />
-          </div>
-          
-          {/* Main content and navigation with resizable navigation panel */}
-          {isNavigationPinned ? (
-            <ResizablePanelGroup direction="horizontal" className="flex-1">
-              {/* Main content panel */}
-              <ResizablePanel minSize={50}>
-                <div className="flex flex-col h-full">
-                  {!isFullScreen && (
-                    <TopMenu 
-                      onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
-                      isNavPanelOpen={isNavigationOpen}
-                    />
-                  )}
-                  <div className="flex-1 overflow-auto">
-                    {children}
-                  </div>
-                </div>
-              </ResizablePanel>
-              
-              {/* Resizable handle for navigation panel */}
-              <ResizableHandle withHandle className="w-[6px] bg-gradient-to-r from-border/40 via-border/60 to-border/40 hover:from-primary/15 hover:via-primary/25 hover:to-primary/15 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
-              
-              {/* Navigation panel - resizable */}
-              <ResizablePanel 
-                defaultSize={navPanelSize} 
-                minSize={15} 
-                maxSize={35}
-                className="min-w-0"
-              >
-                <div className="h-full flex flex-col bg-background border-l border-border">
-                  <SlideOutMenu 
-                    isOpen={true}
-                    onClose={() => {}}
-                    width={undefined}
-                  />
-                </div>
-              </ResizablePanel>
-            </ResizablePanelGroup>
-          ) : (
-            /* Main content only when navigation is not pinned */
-            <div className="flex-1 flex flex-col">
-              {!isFullScreen && (
-                <TopMenu 
-                  onToggleNavPanel={() => setIsNavigationOpen(!isNavigationOpen)}
-                  isNavPanelOpen={isNavigationOpen}
-                />
-              )}
-              <div className="flex-1 overflow-auto">
-                {children}
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
   }
 
   // For desktop, use the new enhanced navigation components
