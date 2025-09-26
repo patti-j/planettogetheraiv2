@@ -2000,6 +2000,79 @@
                     schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
                 }
                 
+                // Create unscheduled operations store and grid
+                const unscheduledStore = new bryntum.schedulerpro.EventStore({
+                    data: [],
+                    modelClass: bryntum.schedulerpro.EventModel
+                });
+                
+                // Track unscheduled operations for the grid
+                window.unscheduledOperations = [];
+                
+                // Create the unscheduled grid
+                const unscheduledGrid = new bryntum.grid.Grid({
+                    appendTo: 'unscheduled-grid',
+                    features: {
+                        stripe: true,
+                        sort: 'name'
+                    },
+                    columns: [
+                        {
+                            text: 'Operation',
+                            field: 'name',
+                            flex: 2,
+                            htmlEncode: false,
+                            renderer: ({ record }) => {
+                                const duration = record.duration || 1;
+                                const durationUnit = record.durationUnit || 'hour';
+                                const jobInfo = record.jobNumber ? `<span style="color: #666; font-size: 11px;">Job: ${record.jobNumber}</span>` : '';
+                                return `
+                                    <div style="display: flex; flex-direction: column; gap: 2px;">
+                                        <div style="font-weight: 500;">${record.name}</div>
+                                        ${jobInfo}
+                                        <div style="color: #888; font-size: 12px;">⏱ ${duration} ${durationUnit}${duration > 1 ? 's' : ''}</div>
+                                    </div>
+                                `;
+                            }
+                        },
+                        {
+                            text: 'Type',
+                            field: 'operationType',
+                            width: 100,
+                            renderer: ({ value }) => {
+                                const typeColors = {
+                                    'milling': '#8B4513',
+                                    'mashing': '#D2691E',
+                                    'lautering': '#DEB887',
+                                    'boiling': '#FF8C00',
+                                    'fermentation': '#4B0082',
+                                    'conditioning': '#4682B4',
+                                    'dry_hopping': '#228B22',
+                                    'packaging': '#708090',
+                                    'pasteurization': '#DC143C'
+                                };
+                                const color = typeColors[value?.toLowerCase()] || '#666';
+                                return `<span style="color: ${color}; font-weight: 500;">${value || 'Unknown'}</span>`;
+                            }
+                        }
+                    ],
+                    store: unscheduledStore,
+                    rowHeight: 65,
+                    emptyText: 'No unscheduled operations'
+                });
+                
+                // Update unscheduled count display
+                function updateUnscheduledCount() {
+                    const count = unscheduledStore.count;
+                    const countElement = document.getElementById('unscheduled-count');
+                    if (countElement) {
+                        countElement.textContent = count.toString();
+                        countElement.style.background = count > 0 ? '#ff5722' : '#4caf50';
+                    }
+                }
+                
+                unscheduledStore.on('change', updateUnscheduledCount);
+                
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
