@@ -3445,11 +3445,44 @@
                                     window.currentScheduleId = selectedSchedule.id;
                                     
                                     // Zoom to fit the entire schedule in view
-                                    if (window.scheduler.zoomToFit) {
-                                        window.scheduler.zoomToFit({
-                                            leftMargin: 50,
-                                            rightMargin: 50
+                                    const events = window.scheduler.eventStore.records;
+                                    if (events && events.length > 0) {
+                                        // Find the earliest and latest dates in the schedule
+                                        let minDate = null;
+                                        let maxDate = null;
+                                        
+                                        events.forEach(event => {
+                                            if (!minDate || event.startDate < minDate) {
+                                                minDate = new Date(event.startDate);
+                                            }
+                                            if (!maxDate || event.endDate > maxDate) {
+                                                maxDate = new Date(event.endDate);
+                                            }
                                         });
+                                        
+                                        if (minDate && maxDate) {
+                                            // Add some padding (1 day before and after)
+                                            minDate.setDate(minDate.getDate() - 1);
+                                            maxDate.setDate(maxDate.getDate() + 1);
+                                            
+                                            // Set the time span to show all events
+                                            window.scheduler.setTimeSpan(minDate, maxDate);
+                                            
+                                            // Adjust zoom level to fit the view
+                                            // Calculate the number of days to show
+                                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+                                            
+                                            // Set appropriate zoom level based on days
+                                            if (daysDiff <= 7) {
+                                                window.scheduler.zoomLevel = 10; // Hour view
+                                            } else if (daysDiff <= 14) {
+                                                window.scheduler.zoomLevel = 8; // Day view
+                                            } else if (daysDiff <= 30) {
+                                                window.scheduler.zoomLevel = 6; // Week view
+                                            } else {
+                                                window.scheduler.zoomLevel = 4; // Month view
+                                            }
+                                        }
                                     }
                                     
                                     // Update status
@@ -3487,11 +3520,44 @@
                                         await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
                                         
                                         // Zoom to fit the entire schedule in view
-                                        if (window.scheduler.zoomToFit) {
-                                            window.scheduler.zoomToFit({
-                                                leftMargin: 50,
-                                                rightMargin: 50
+                                        const events = window.scheduler.eventStore.records;
+                                        if (events && events.length > 0) {
+                                            // Find the earliest and latest dates in the schedule
+                                            let minDate = null;
+                                            let maxDate = null;
+                                            
+                                            events.forEach(event => {
+                                                if (!minDate || event.startDate < minDate) {
+                                                    minDate = new Date(event.startDate);
+                                                }
+                                                if (!maxDate || event.endDate > maxDate) {
+                                                    maxDate = new Date(event.endDate);
+                                                }
                                             });
+                                            
+                                            if (minDate && maxDate) {
+                                                // Add some padding (1 day before and after)
+                                                minDate.setDate(minDate.getDate() - 1);
+                                                maxDate.setDate(maxDate.getDate() + 1);
+                                                
+                                                // Set the time span to show all events
+                                                window.scheduler.setTimeSpan(minDate, maxDate);
+                                                
+                                                // Adjust zoom level to fit the view
+                                                // Calculate the number of days to show
+                                                const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+                                                
+                                                // Set appropriate zoom level based on days
+                                                if (daysDiff <= 7) {
+                                                    window.scheduler.zoomLevel = 10; // Hour view
+                                                } else if (daysDiff <= 14) {
+                                                    window.scheduler.zoomLevel = 8; // Day view
+                                                } else if (daysDiff <= 30) {
+                                                    window.scheduler.zoomLevel = 6; // Week view
+                                                } else {
+                                                    window.scheduler.zoomLevel = 4; // Month view
+                                                }
+                                            }
                                         }
                                         
                                         console.log('✅ Local schedule loaded');
