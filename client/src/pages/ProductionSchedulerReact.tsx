@@ -24,6 +24,31 @@ export default function ProductionSchedulerReact() {
     queryKey: ['/api/pt-dependencies'],
   });
 
+  // Helper function to assign colors based on operation type (matching standalone HTML version)
+  const getOperationColor = (operationName: string): string => {
+    if (!operationName) return 'blue';
+    const name = operationName.toLowerCase();
+    
+    // Brewing-specific operations
+    if (name.includes('milling') || name.includes('mill')) return '#2563eb'; // Blue
+    if (name.includes('mash')) return '#7c3aed'; // Purple  
+    if (name.includes('lauter')) return '#0891b2'; // Cyan
+    if (name.includes('boil')) return '#dc2626'; // Red
+    if (name.includes('ferment') || name.includes('lager')) return '#059669'; // Green
+    if (name.includes('condition') || name.includes('dry hop')) return '#0d9488'; // Teal
+    if (name.includes('packag')) return '#ea580c'; // Orange
+    if (name.includes('pasteur')) return '#7c2d12'; // Brown
+    
+    // Generic manufacturing operations
+    if (name.includes('machining')) return '#2563eb'; // Blue
+    if (name.includes('assembly')) return '#059669'; // Green
+    if (name.includes('quality') || name.includes('testing')) return '#7c3aed'; // Purple
+    if (name.includes('filtration')) return '#0d9488'; // Teal
+    if (name.includes('carbonation')) return '#eab308'; // Yellow
+    
+    return '#2563eb'; // Default blue
+  };
+
   // Transform data using useMemo to avoid re-renders
   const { resources, events, assignments, dependencies } = useMemo(() => {
     const opsArray = Array.isArray(operationsData) ? operationsData : [];
@@ -77,13 +102,14 @@ export default function ProductionSchedulerReact() {
         const eventId = String(op.id || op.operation_id);
         
         // Create the event - NOTE: Do NOT put resourceId on events when using AssignmentStore
+        const operationName = op.name || op.operationName || op.operation_name || 'Operation';
         const event = {
           id: eventId, // Use STRING operation ID for consistency
-          name: op.name || op.operationName || op.operation_name || 'Operation',
+          name: operationName,
           startDate: new Date(startDate), // Ensure it's a Date object
           endDate: new Date(endDate), // Ensure it's a Date object
           percentDone: op.percentFinished || op.percent_done || 0,
-          eventColor: op.priority > 5 ? 'red' : op.priority > 3 ? 'orange' : 'green',
+          eventColor: getOperationColor(operationName), // Use operation-based coloring
           // Add custom fields for tooltips/columns
           jobName: op.jobName || op.job_name,
           jobId: op.jobId || op.job_id,
