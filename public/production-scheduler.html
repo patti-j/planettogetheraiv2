@@ -1599,6 +1599,13 @@
                         if (dependencies.length > 0) {
                             console.log('Sample dependency:', dependencies[0]);
                         }
+                        
+                        // Debug: Check specific lager dependencies
+                        const lagerDeps = dependencies.filter(dep => 
+                            dep.from?.includes('20') || dep.from?.includes('21') || dep.from?.includes('22') ||
+                            dep.to?.includes('20') || dep.to?.includes('21') || dep.to?.includes('22')
+                        );
+                        console.log('🔍 Lager dependencies (20,21,22):', lagerDeps);
                     } else {
                         console.warn('Failed to fetch dependencies, using empty array');
                     }
