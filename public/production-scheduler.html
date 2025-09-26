@@ -1439,13 +1439,13 @@
                     
                     return {
                         id: operation.id,
-                        name: operation.name || `${operation.jobName || 'Job'}: ${operation.operationName || 'Operation'}`,
+                        name: operation.name || `${operation.jobName || 'Job'}: ${operation.name || 'Operation'}`,
                         startDate: startDate,
                         duration: duration,
                         durationUnit: 'hour',
                         resourceId: resourceId,
                         percentDone: operation.percent_done || 0,
-                        eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.operationName)),
+                        eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.name)),
                         // ASAP scheduling constraints (not for unscheduled operations)
                         constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
                         constraintDate: isUnscheduled ? null : startDate,
@@ -1454,7 +1454,7 @@
                         // Additional PT operation data
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
                         jobName: operation.jobName,
-                        operationName: operation.operationName,
+                        operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
                         ptData: operation // Keep original PT data for algorithms
@@ -1935,7 +1935,7 @@
                             // Mark as scheduled now
                             eventRecord.isUnscheduled = false;
                             // Update color to match the operation type
-                            eventRecord.eventColor = getOperationColor(eventRecord.operationName);
+                            eventRecord.eventColor = getOperationColor(eventRecord.name);
                             // Apply ASAP constraint now that it's scheduled
                             eventRecord.constraintType = 'startnoearlierthan';
                             eventRecord.constraintDate = eventRecord.startDate;
