@@ -10,7 +10,7 @@ import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitScreenProvider } from "@/contexts/SplitScreenContext";
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
 import { runTestsInDevelopment } from "./lib/federation-test-harness";
 // FederationTestStatus removed - not needed
 
@@ -27,7 +27,7 @@ import AIScenarioCreator from "@/pages/ai-scenario-creator";
 
 // Check authentication status
 function useAuthStatus() {
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const [currentPath] = useLocation();
   const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
@@ -159,14 +159,14 @@ function useAuthStatus() {
     return () => {
       window.removeEventListener('logout', handleLogout);
     };
-  }, [isPublicPath, currentPath]); // Add currentPath as dependency
+  }, [isPublicPath, currentPath]);
 
   return { isAuthenticated, isLoading };
 }
 
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
-  const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+  const [currentPath] = useLocation();
   const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
@@ -193,7 +193,7 @@ export default function App() {
       // Redirect to login page
       window.location.href = '/login';
     }
-  }, [isPortalRoute, isPublicPath, isAuthenticated, isLoading]);
+  }, [isPortalRoute, isPublicPath, isAuthenticated, isLoading, currentPath]);
   
   // If on root path and not authenticated, show website (don't redirect)
   // Authenticated users at root path will see the ApplicationApp
