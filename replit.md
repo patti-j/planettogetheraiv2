@@ -64,6 +64,54 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **AI Agents Control Panel**: Centralized management interface for all AI agents (Max AI Assistant, System Monitoring Agent, Production Optimization Agent, Quality Analysis Agent, Predictive Maintenance Agent) with status, configuration, frequency, and performance controls.
 - **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, performance visualization, and real-time plant monitoring with automated algorithm selection and parameter tuning.
 
+### Production Scheduler Architecture (CRITICAL)
+
+The Production Scheduler uses a **hybrid iframe/React architecture** that requires careful routing configuration to maintain the application's unified navigation system. This architecture was chosen to integrate the powerful Bryntum Scheduler Pro library while maintaining the app's consistent UI/UX.
+
+#### Architecture Pattern
+1. **React Wrapper Component** (`client/src/pages/production-scheduler.tsx`):
+   - This is the main React component that users navigate to via `/production-scheduler`
+   - Contains an iframe that loads the Bryntum scheduler HTML
+   - Wrapped by the app's `DesktopLayout` component which provides:
+     - Hamburger menu navigation
+     - Max AI panel integration  
+     - Consistent header/footer
+     - Theme support
+
+2. **Standalone HTML File** (`public/production-scheduler.html`):
+   - Contains the actual Bryntum Scheduler Pro implementation
+   - Completely self-contained with NO navigation elements
+   - Loads PT data via API calls to `/api/resources`, `/api/pt-operations`, etc.
+   - Handles all scheduling logic, drag-drop, and Gantt visualization
+
+3. **Backend API Route** (`server/routes.ts`):
+   - MUST use `/api/production-scheduler` route (NOT `/production-scheduler`)
+   - Serves the HTML file when requested by the iframe
+   - Critical: Using `/production-scheduler` would bypass React routing!
+
+#### Routing Configuration
+- **Frontend Route**: `/production-scheduler` → React app with navigation wrapper
+- **API Route**: `/api/production-scheduler` → Raw HTML for iframe
+- **Why This Matters**: If the backend uses `/production-scheduler`, it serves raw HTML directly, bypassing the React wrapper and losing all navigation!
+
+#### Key Components
+- `ProductionScheduler` component: React wrapper with iframe
+- `DesktopLayout`: Provides hamburger menu and AI panels
+- `production-scheduler.html`: Bryntum implementation (NO navigation!)
+- Backend route: Must use `/api/` prefix
+
+#### Common Pitfalls to Avoid
+1. **DO NOT** add navigation elements (hamburger menu, AI buttons) to `production-scheduler.html`
+2. **DO NOT** use `/production-scheduler` as a backend route - always use `/api/production-scheduler`
+3. **DO NOT** try to integrate Bryntum directly into React - the iframe approach is intentional
+4. **ALWAYS** ensure the HTML file remains clean and focused only on the scheduler
+5. **ALWAYS** let the React wrapper handle all navigation and UI chrome
+
+#### Dependency Management
+- The scheduler uses CASE statement ordering for operation-resource matching
+- More specific patterns (e.g., "packaging") must come before general patterns
+- Dependencies use `fromEvent`/`toEvent` fields in backend, mapped to `from`/`to` in frontend
+
 ## External Dependencies
 
 - **Database Provider**: Neon Database (serverless PostgreSQL)
