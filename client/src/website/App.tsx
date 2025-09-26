@@ -170,11 +170,6 @@ export default function WebsiteApp() {
             </WebsiteLayout>
           </Route>
           
-          <Route path="/home">
-            <WebsiteLayout>
-              <MarketingHome />
-            </WebsiteLayout>
-          </Route>
           
           <Route path="/">
             <WebsiteLayout>
