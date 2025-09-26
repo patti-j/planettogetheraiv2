@@ -126,6 +126,85 @@
         }
         
         /* Mobile responsive styles */
+        /* Unscheduled grid styles */
+        .scheduler-main-container {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #unscheduled-grid-container {
+            width: 350px;
+            flex-shrink: 0;
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
+        }
+        
+        .unscheduled-header {
+            padding: 12px 16px;
+            background: linear-gradient(to bottom, #fafafa, #f5f5f5);
+            border-bottom: 1px solid #e0e0e0;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #333;
+        }
+        
+        .unscheduled-count {
+            background: #007bff;
+            color: white;
+            padding: 2px 10px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        #unscheduled-grid {
+            flex: 1;
+            overflow: hidden;
+        }
+        
+        #scheduler-wrapper {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        /* Drag proxy styling */
+        .b-drag-proxy {
+            z-index: 10000 !important;
+            opacity: 0.85;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+        
+        .b-drag-invalid .b-drag-proxy {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
+        .b-drag-valid .b-drag-proxy {
+            opacity: 0.95;
+            cursor: move;
+        }
+        
+        .b-drag-proxy.b-sch-event-wrap {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
+        
         @media (max-width: 768px) {
             .header {
                 padding: 0.75rem 1rem;
@@ -153,6 +232,15 @@
             
             .toolbar button span:not(.icon-text) {
                 display: none; /* Hide button text on mobile, keep icons */
+            }
+            
+            /* Hide unscheduled grid on mobile */
+            #unscheduled-grid-container {
+                display: none;
+            }
+            
+            .scheduler-main-container {
+                padding: 5px;
             }
             
             .toolbar button {
@@ -1055,10 +1143,24 @@
         </div>
     </div>
 
-    <div class="scheduler-container">
-        <div id="scheduler"></div>
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-spinner"></div>
+    <div class="scheduler-main-container">
+        <!-- Unscheduled Operations Grid -->
+        <div id="unscheduled-grid-container">
+            <div class="unscheduled-header">
+                <span>📋 Unscheduled Operations</span>
+                <span class="unscheduled-count" id="unscheduled-count">0</span>
+            </div>
+            <div id="unscheduled-grid"></div>
+        </div>
+        
+        <!-- Scheduler Container -->
+        <div id="scheduler-wrapper">
+            <div class="scheduler-container">
+                <div id="scheduler"></div>
+                <div class="loading-overlay" id="loadingOverlay">
+                    <div class="loading-spinner"></div>
+                </div>
+            </div>
         </div>
     </div>
 
