@@ -1037,6 +1037,14 @@
                 </svg>
                 <span>Save</span>
             </button>
+            <button id="loadScheduleBtn" onclick="loadSchedule()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Load</span>
+            </button>
             <button id="refreshSchedule" class="icon-only" title="Refresh">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polyline points="23 4 23 10 17 10"></polyline>
@@ -3284,7 +3292,7 @@
                 }
             });
             
-            // Add functionality for Save button
+            // Add functionality for Save button using Bryntum's built-in methods
             document.getElementById('saveSchedule').addEventListener('click', async () => {
                 try {
                     // Show saving status
@@ -3293,32 +3301,70 @@
                     saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6-8.485"></path></svg><span>Saving...</span>';
                     saveBtn.disabled = true;
                     
-                    // Get current schedule data from scheduler
-                    if (window.scheduler) {
-                        const events = window.scheduler.eventStore.records;
-                        const scheduleData = events.map(event => ({
-                            id: event.id,
-                            resourceId: event.resourceId,
-                            startDate: event.startDate,
-                            endDate: event.endDate,
-                            name: event.name,
-                            percentDone: event.percentDone
-                        }));
+                    // Use Bryntum's built-in project serialization
+                    if (window.scheduler && window.scheduler.project) {
+                        // Get the project's complete state using Bryntum's toJSON method
+                        const projectData = window.scheduler.project.toJSON();
                         
-                        // Save to localStorage for now (can be extended to save to backend)
-                        localStorage.setItem('savedSchedule', JSON.stringify({
-                            timestamp: new Date().toISOString(),
-                            algorithm: document.getElementById('schedulingAlgorithm').value,
-                            data: scheduleData
-                        }));
+                        // Prompt for save name
+                        const scheduleName = prompt('Enter a name for this schedule:', `Schedule - ${new Date().toLocaleDateString()}`);
                         
-                        // Update last update time
-                        document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
+                        if (!scheduleName) {
+                            saveBtn.innerHTML = originalHTML;
+                            saveBtn.disabled = false;
+                            return;
+                        }
                         
-                        console.log('✅ Schedule saved successfully');
+                        // Prepare save data
+                        const saveData = {
+                            name: scheduleName,
+                            description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
+                            scheduleData: projectData,
+                            metadata: {
+                                algorithm: document.getElementById('schedulingAlgorithm').value,
+                                savedAt: new Date().toISOString(),
+                                constraints: window.activeConstraints || {},
+                                stats: window.currentStats || {}
+                            }
+                        };
                         
-                        // Show success message
-                        saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Saved!</span>';
+                        // Get auth token from parent window or localStorage
+                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        
+                        // Save to database
+                        const response = await fetch('/api/saved-schedules', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': authToken ? `Bearer ${authToken}` : ''
+                            },
+                            body: JSON.stringify(saveData)
+                        });
+                        
+                        if (response.ok) {
+                            const savedSchedule = await response.json();
+                            
+                            // Also save to localStorage as backup
+                            localStorage.setItem('lastSavedSchedule', JSON.stringify(saveData));
+                            
+                            // Update last update time
+                            document.getElementById('lastUpdate').textContent = `Last saved: ${new Date().toLocaleTimeString()}`;
+                            
+                            console.log('✅ Schedule saved to database:', savedSchedule.id);
+                            
+                            // Show success message
+                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Saved!</span>';
+                            
+                            // Store the saved schedule ID for future updates
+                            window.currentScheduleId = savedSchedule.id;
+                        } else {
+                            // Fallback to localStorage if API fails
+                            localStorage.setItem('savedSchedule_' + Date.now(), JSON.stringify(saveData));
+                            console.warn('⚠️ Saved to local storage (database save failed)');
+                            
+                            // Show warning
+                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Saved Locally</span>';
+                        }
                         
                         // Reset button after delay
                         setTimeout(() => {
@@ -3328,9 +3374,122 @@
                     }
                 } catch (error) {
                     console.error('❌ Error saving schedule:', error);
-                    alert('Failed to save schedule. Please try again.');
+                    
+                    // Try to save to localStorage as fallback
+                    try {
+                        const fallbackData = {
+                            name: `Backup - ${new Date().toLocaleTimeString()}`,
+                            timestamp: new Date().toISOString(),
+                            data: window.scheduler.project.toJSON()
+                        };
+                        localStorage.setItem('scheduleBackup_' + Date.now(), JSON.stringify(fallbackData));
+                        alert('Schedule saved to local storage as backup');
+                    } catch (e) {
+                        alert('Failed to save schedule. Please try again.');
+                    }
+                    
+                    document.getElementById('saveSchedule').innerHTML = document.getElementById('saveSchedule').innerHTML;
+                    document.getElementById('saveSchedule').disabled = false;
                 }
             });
+            
+            // Add Load Schedule functionality
+            window.loadSchedule = async function() {
+                try {
+                    // Get auth token
+                    const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                    
+                    // Fetch saved schedules from database
+                    const response = await fetch('/api/saved-schedules', {
+                        headers: {
+                            'Authorization': authToken ? `Bearer ${authToken}` : ''
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const schedules = await response.json();
+                        
+                        if (schedules.length === 0) {
+                            alert('No saved schedules found');
+                            return;
+                        }
+                        
+                        // Create a simple selection dialog
+                        const scheduleList = schedules.map((s, i) => 
+                            `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
+                        ).join('\n');
+                        
+                        const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
+                        
+                        if (selection) {
+                            const index = parseInt(selection) - 1;
+                            if (index >= 0 && index < schedules.length) {
+                                const selectedSchedule = schedules[index];
+                                
+                                // Load the schedule using Bryntum's loadInlineData method
+                                if (window.scheduler && window.scheduler.project) {
+                                    // Load the project data
+                                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
+                                    
+                                    // Restore metadata if available
+                                    if (selectedSchedule.metadata) {
+                                        if (selectedSchedule.metadata.algorithm) {
+                                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                                        }
+                                        if (selectedSchedule.metadata.constraints) {
+                                            window.activeConstraints = selectedSchedule.metadata.constraints;
+                                        }
+                                    }
+                                    
+                                    // Store the schedule ID for future updates
+                                    window.currentScheduleId = selectedSchedule.id;
+                                    
+                                    // Update status
+                                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                                    updateStatus();
+                                    
+                                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                                }
+                            }
+                        }
+                    } else {
+                        // Fallback to localStorage
+                        const localSchedules = [];
+                        for (let i = 0; i < localStorage.length; i++) {
+                            const key = localStorage.key(i);
+                            if (key && (key.startsWith('savedSchedule_') || key.startsWith('scheduleBackup_'))) {
+                                try {
+                                    const data = JSON.parse(localStorage.getItem(key));
+                                    localSchedules.push({ key, data });
+                                } catch (e) {}
+                            }
+                        }
+                        
+                        if (localSchedules.length > 0) {
+                            const scheduleList = localSchedules.map((s, i) => 
+                                `${i + 1}. ${s.data.name || 'Unnamed'} (Local)`
+                            ).join('\n');
+                            
+                            const selection = prompt(`Select a local schedule to load:\n\n${scheduleList}\n\nEnter number:`);
+                            if (selection) {
+                                const index = parseInt(selection) - 1;
+                                if (index >= 0 && index < localSchedules.length) {
+                                    const selectedSchedule = localSchedules[index].data;
+                                    if (selectedSchedule.scheduleData || selectedSchedule.data) {
+                                        await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
+                                        console.log('✅ Local schedule loaded');
+                                    }
+                                }
+                            }
+                        } else {
+                            alert('No saved schedules found');
+                        }
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading schedule:', error);
+                    alert('Failed to load schedule. Please try again.');
+                }
+            };
             
             // Add functionality for Refresh button - simply reload the page
             document.getElementById('refreshSchedule').addEventListener('click', () => {

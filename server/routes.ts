@@ -2421,6 +2421,130 @@ router.post("/api/ai/text-to-speech", async (req, res) => {
   }
 });
 
+// ============================================
+// Saved Schedules endpoints
+// ============================================
+
+// Get all saved schedules for a user
+router.get("/api/saved-schedules", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    
+    const schedules = await storage.getSavedSchedules(userId);
+    res.json(schedules);
+  } catch (error) {
+    console.error("Error fetching saved schedules:", error);
+    res.status(500).json({ message: "Failed to fetch saved schedules" });
+  }
+});
+
+// Get a specific saved schedule
+router.get("/api/saved-schedules/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const scheduleId = parseInt(req.params.id);
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    
+    const schedule = await storage.getSavedSchedule(scheduleId, userId);
+    if (!schedule) {
+      return res.status(404).json({ message: "Schedule not found" });
+    }
+    
+    res.json(schedule);
+  } catch (error) {
+    console.error("Error fetching saved schedule:", error);
+    res.status(500).json({ message: "Failed to fetch saved schedule" });
+  }
+});
+
+// Create a new saved schedule
+router.post("/api/saved-schedules", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    
+    const { name, description, scheduleData, metadata } = req.body;
+    
+    if (!name || !scheduleData) {
+      return res.status(400).json({ message: "Name and schedule data are required" });
+    }
+    
+    const newSchedule = await storage.createSavedSchedule({
+      userId,
+      name,
+      description: description || null,
+      scheduleData,
+      metadata: metadata || {}
+    });
+    
+    res.status(201).json(newSchedule);
+  } catch (error) {
+    console.error("Error saving schedule:", error);
+    res.status(500).json({ message: "Failed to save schedule" });
+  }
+});
+
+// Update a saved schedule
+router.put("/api/saved-schedules/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const scheduleId = parseInt(req.params.id);
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    
+    const { name, description, scheduleData, metadata } = req.body;
+    
+    const updatedSchedule = await storage.updateSavedSchedule(scheduleId, userId, {
+      name,
+      description,
+      scheduleData,
+      metadata
+    });
+    
+    if (!updatedSchedule) {
+      return res.status(404).json({ message: "Schedule not found or unauthorized" });
+    }
+    
+    res.json(updatedSchedule);
+  } catch (error) {
+    console.error("Error updating schedule:", error);
+    res.status(500).json({ message: "Failed to update schedule" });
+  }
+});
+
+// Delete a saved schedule
+router.delete("/api/saved-schedules/:id", requireAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const scheduleId = parseInt(req.params.id);
+    
+    if (!userId) {
+      return res.status(401).json({ message: "User not authenticated" });
+    }
+    
+    const success = await storage.deleteSavedSchedule(scheduleId, userId);
+    
+    if (!success) {
+      return res.status(404).json({ message: "Schedule not found or unauthorized" });
+    }
+    
+    res.json({ message: "Schedule deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting schedule:", error);
+    res.status(500).json({ message: "Failed to delete schedule" });
+  }
+});
+
 // Alerts endpoint
 router.get("/api/alerts", requireAuth, async (req, res) => {
   try {
