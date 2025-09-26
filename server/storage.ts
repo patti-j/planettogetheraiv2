@@ -621,7 +621,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Get discrete operations (from PT job operations)
+  // Get discrete operations (from PT job operations) with intelligent resource matching
   async getDiscreteOperations(limit?: number | null): Promise<any[]> {
     try {
       const query = sql`
@@ -639,7 +639,67 @@ export class DatabaseStorage implements IStorage {
           jo.post_processing_hours,
           j.name as job_name,
           j.priority,
-          j.need_date_time as due_date
+          j.need_date_time as due_date,
+          -- Intelligent resource assignment based on operation type
+          CASE 
+            WHEN LOWER(jo.name) LIKE '%mill%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%mill%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%mash%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%mash%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%lauter%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%boil%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%kettle%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%ferm%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%condition%' OR LOWER(jo.name) LIKE '%dry hop%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%bright%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
+              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%filler%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            ELSE (
+              SELECT r.resource_id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
+            )
+          END as matched_resource_id,
+          -- Also get the resource name for display
+          CASE 
+            WHEN LOWER(jo.name) LIKE '%mill%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%mill%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%mash%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%mash%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%lauter%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%boil%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%kettle%' AND r.active = true LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%ferm%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%condition%' OR LOWER(jo.name) LIKE '%dry hop%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%bright%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
+              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%filler%' AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            ELSE (
+              SELECT r.name FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
+            )
+          END as matched_resource_name
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
         WHERE jo.scheduled_start IS NOT NULL
@@ -649,13 +709,15 @@ export class DatabaseStorage implements IStorage {
       
       const result = await db.execute(query);
       
-      // Transform the operations for the scheduler
+      // Transform the operations for the scheduler with proper resource assignments
       return result.rows.map((op: any) => ({
         id: op.id,
         operationId: op.operation_id,
         jobId: op.job_id,
         name: op.operation_name || 'Operation',
         jobName: op.job_name,
+        resourceId: op.matched_resource_id, // Use the intelligently matched resource
+        resourceName: op.matched_resource_name, // Include resource name for display
         scheduledStart: op.scheduled_start,
         scheduledEnd: op.scheduled_end,
         priority: op.priority || 5,
