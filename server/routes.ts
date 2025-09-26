@@ -2394,8 +2394,8 @@ router.get("/api/alerts", requireAuth, async (req, res) => {
         title: "Production Line 1 - Maintenance Required",
         message: "Scheduled maintenance overdue by 48 hours",
         timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
-        status: "active",
-        severity: "high"
+        status: "unread",
+        priority: "high"
       },
       {
         id: 2,
@@ -2403,8 +2403,8 @@ router.get("/api/alerts", requireAuth, async (req, res) => {
         title: "Inventory Level Low",
         message: "Raw material ABC below reorder point",
         timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
-        status: "active",
-        severity: "medium"
+        status: "read",
+        priority: "medium"
       },
       {
         id: 3,
@@ -2412,8 +2412,8 @@ router.get("/api/alerts", requireAuth, async (req, res) => {
         title: "Schedule Optimization Complete",
         message: "Production schedule optimized, 15% efficiency gain",
         timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
-        status: "acknowledged",
-        severity: "low"
+        status: "read",
+        priority: "low"
       }
     ];
     
