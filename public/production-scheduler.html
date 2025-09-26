@@ -1552,6 +1552,33 @@
                         if (ptOperations.length > 0) {
                             console.log('✅ First PT operation sample:', ptOperations[0]);
                         }
+                        
+                        // Separate scheduled and unscheduled operations
+                        const scheduledOps = [];
+                        const unscheduledOps = [];
+                        
+                        ptOperations.forEach(op => {
+                            // An operation is unscheduled if it has no resource_id or no start_date
+                            if (!op.resource_id || !op.start_date) {
+                                unscheduledOps.push({
+                                    id: `unscheduled-${op.id}`,
+                                    name: op.operation_name || `Operation ${op.id}`,
+                                    duration: op.duration || 1,
+                                    durationUnit: 'hour',
+                                    operationType: op.operation_type || 'unknown',
+                                    jobNumber: op.external_id?.split('-')[0] || null,
+                                    originalId: op.id
+                                });
+                            } else {
+                                scheduledOps.push(op);
+                            }
+                        });
+                        
+                        // Store for later use
+                        window.unscheduledOperationsData = unscheduledOps;
+                        ptOperations = scheduledOps; // Only use scheduled ones for main processing
+                        
+                        console.log(`📊 Operations split: ${scheduledOps.length} scheduled, ${unscheduledOps.length} unscheduled`);
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
@@ -2072,6 +2099,48 @@
                 }
                 
                 unscheduledStore.on('change', updateUnscheduledCount);
+                
+                // Function to populate unscheduled grid after data is loaded
+                window.populateUnscheduledGrid = function() {
+                    if (window.unscheduledOperationsData && unscheduledStore) {
+                        unscheduledStore.data = window.unscheduledOperationsData;
+                        updateUnscheduledCount();
+                        console.log(`📋 Loaded ${window.unscheduledOperationsData.length} unscheduled operations into grid`);
+                        
+                        // Add some sample unscheduled operations if none exist
+                        if (window.unscheduledOperationsData.length === 0) {
+                            const sampleUnscheduled = [
+                                {
+                                    id: 'unscheduled-sample-1',
+                                    name: 'Milling - Batch B1',
+                                    duration: 2,
+                                    durationUnit: 'hour',
+                                    operationType: 'Milling',
+                                    jobNumber: 'JOB004'
+                                },
+                                {
+                                    id: 'unscheduled-sample-2', 
+                                    name: 'Fermentation - IPA Batch',
+                                    duration: 168, // 7 days
+                                    durationUnit: 'hour',
+                                    operationType: 'Fermentation',
+                                    jobNumber: 'JOB005'
+                                },
+                                {
+                                    id: 'unscheduled-sample-3',
+                                    name: 'Packaging - Bottles',
+                                    duration: 4,
+                                    durationUnit: 'hour',
+                                    operationType: 'Packaging',
+                                    jobNumber: 'JOB006'
+                                }
+                            ];
+                            unscheduledStore.data = sampleUnscheduled;
+                            updateUnscheduledCount();
+                            console.log('📋 Added sample unscheduled operations for demo');
+                        }
+                    }
+                };
                 
                 // Create drag helper for unscheduled operations to scheduler
                 const dragHelper = new bryntum.schedulerpro.DragHelper({
@@ -3427,6 +3496,11 @@
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Populate unscheduled grid after scheduler loads
+                if (window.populateUnscheduledGrid) {
+                    window.populateUnscheduledGrid();
+                }
                 
                 // Check for pending scheduler commands from Max AI (after navigation)
                 const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
