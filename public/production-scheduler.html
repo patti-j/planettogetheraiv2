@@ -1588,9 +1588,9 @@
                     if (dependenciesResponse && dependenciesResponse.ok) {
                         const fetchedDeps = await dependenciesResponse.json();
                         dependencies = fetchedDeps.map(dep => ({
-                            id: `dep-${dep.id}`,
-                            from: dep.from,  // Use correct Bryntum field name
-                            to: dep.to,      // Use correct Bryntum field name
+                            id: dep.id,
+                            from: dep.fromEvent,  // Correct backend field name
+                            to: dep.toEvent,      // Correct backend field name  
                             type: dep.type || 2, // Default to Finish-to-Start
                             lag: dep.lag || 0,
                             lagUnit: dep.lagUnit || 'hour'
