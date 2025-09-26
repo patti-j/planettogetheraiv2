@@ -668,6 +668,12 @@ export class DatabaseStorage implements IStorage {
               WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
+            WHEN LOWER(jo.name) LIKE '%lager%' THEN (
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 5 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
             WHEN LOWER(jo.name) LIKE '%condition%' THEN (
               SELECT r.resource_id FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
@@ -713,6 +719,12 @@ export class DatabaseStorage implements IStorage {
               WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 5 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%lager%' THEN (
               SELECT r.name FROM ptresources r 
               JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
               WHERE rc.capability_id = 5 AND r.active = true 

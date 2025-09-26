@@ -96,7 +96,7 @@ async function importTable(tableName: string) {
       VALUES ${placeholders}
     `;
 
-    await db.execute(sql.raw(insertQuery, values));
+    await db.execute(sql.raw(insertQuery, ...values));
     
     console.log(`✅ Successfully imported ${externalData.length} records into ${tableName}`);
     return true;
@@ -134,12 +134,12 @@ async function createDefaultCapabilities() {
 
     let nextId = 1;
     for (const mapping of capabilityMappings) {
-      await db.execute(sql.raw(`
+      await db.execute(sql`
         INSERT INTO ptresourcecapabilities (
           id, publish_date, instance_id, resource_id, capability_id, 
           throughput_modifier, setup_hours_override, use_throughput_modifier, use_setup_hours_override
-        ) VALUES ($1, NOW(), 'DEFAULT', $2, $3, 1.0, 0.0, false, false)
-      `, [nextId, mapping.resource_id, mapping.capability_id]));
+        ) VALUES (${nextId}, NOW(), 'DEFAULT', ${mapping.resource_id}, ${mapping.capability_id}, 1.0, 0.0, false, false)
+      `);
       
       console.log(`✅ Added capability ${mapping.capability} to resource ${mapping.resource_id}`);
       nextId++;
