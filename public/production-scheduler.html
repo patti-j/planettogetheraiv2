@@ -172,7 +172,29 @@
         
         #unscheduled-grid {
             flex: 1;
-            overflow: hidden;
+            overflow-y: auto;
+            padding: 8px;
+        }
+        
+        .unscheduled-item {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 10px;
+            margin-bottom: 8px;
+            cursor: move;
+            transition: all 0.2s;
+        }
+        
+        .unscheduled-item:hover {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+            transform: translateY(-1px);
+            border-color: #4CAF50;
+        }
+        
+        .unscheduled-item.dragging {
+            opacity: 0.5;
+            transform: scale(0.95);
         }
         
         #scheduler-wrapper {
@@ -2027,70 +2049,77 @@
                     schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
                 }
                 
-                // Create unscheduled operations store and grid
-                const unscheduledStore = new bryntum.schedulerpro.EventStore({
-                    data: [],
-                    modelClass: bryntum.schedulerpro.EventModel
-                });
-                
-                // Track unscheduled operations for the grid
+                // Track unscheduled operations
                 window.unscheduledOperations = [];
+                window.unscheduledOperationsData = [];
                 
-                // Create the unscheduled grid
-                const unscheduledGrid = new bryntum.grid.Grid({
-                    appendTo: 'unscheduled-grid',
-                    features: {
-                        stripe: true,
-                        sort: 'name'
-                    },
-                    columns: [
-                        {
-                            text: 'Operation',
-                            field: 'name',
-                            flex: 2,
-                            htmlEncode: false,
-                            renderer: ({ record }) => {
-                                const duration = record.duration || 1;
-                                const durationUnit = record.durationUnit || 'hour';
-                                const jobInfo = record.jobNumber ? `<span style="color: #666; font-size: 11px;">Job: ${record.jobNumber}</span>` : '';
-                                return `
-                                    <div style="display: flex; flex-direction: column; gap: 2px;">
-                                        <div style="font-weight: 500;">${record.name}</div>
-                                        ${jobInfo}
-                                        <div style="color: #888; font-size: 12px;">⏱ ${duration} ${durationUnit}${duration > 1 ? 's' : ''}</div>
-                                    </div>
-                                `;
-                            }
-                        },
-                        {
-                            text: 'Type',
-                            field: 'operationType',
-                            width: 100,
-                            renderer: ({ value }) => {
-                                const typeColors = {
-                                    'milling': '#8B4513',
-                                    'mashing': '#D2691E',
-                                    'lautering': '#DEB887',
-                                    'boiling': '#FF8C00',
-                                    'fermentation': '#4B0082',
-                                    'conditioning': '#4682B4',
-                                    'dry_hopping': '#228B22',
-                                    'packaging': '#708090',
-                                    'pasteurization': '#DC143C'
-                                };
-                                const color = typeColors[value?.toLowerCase()] || '#666';
-                                return `<span style="color: ${color}; font-weight: 500;">${value || 'Unknown'}</span>`;
-                            }
-                        }
-                    ],
-                    store: unscheduledStore,
-                    rowHeight: 65,
-                    emptyText: 'No unscheduled operations'
-                });
+                // Simple HTML-based unscheduled operations list
+                function createUnscheduledItem(operation) {
+                    const item = document.createElement('div');
+                    item.className = 'unscheduled-item';
+                    item.draggable = true;
+                    item.dataset.operationId = operation.id;
+                    item.dataset.operation = JSON.stringify(operation);
+                    
+                    const typeColors = {
+                        'milling': '#8B4513',
+                        'mashing': '#D2691E',
+                        'lautering': '#DEB887',
+                        'boiling': '#FF8C00',
+                        'fermentation': '#4B0082',
+                        'conditioning': '#4682B4',
+                        'dry_hopping': '#228B22',
+                        'packaging': '#708090',
+                        'pasteurization': '#DC143C'
+                    };
+                    
+                    const color = typeColors[operation.operationType?.toLowerCase()] || '#666';
+                    const duration = operation.duration || 1;
+                    const jobInfo = operation.jobNumber ? `<div style="color: #999; font-size: 11px;">Job: ${operation.jobNumber}</div>` : '';
+                    
+                    item.innerHTML = `
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div style="flex: 1;">
+                                <div style="font-weight: 600; color: #333;">${operation.name}</div>
+                                ${jobInfo}
+                                <div style="color: #666; font-size: 12px; margin-top: 4px;">⏱ ${duration} ${operation.durationUnit || 'hour'}${duration > 1 ? 's' : ''}</div>
+                            </div>
+                            <div style="padding: 2px 8px; background: ${color}; color: white; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                                ${operation.operationType || 'Unknown'}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Add drag events
+                    item.addEventListener('dragstart', handleDragStart);
+                    item.addEventListener('dragend', handleDragEnd);
+                    
+                    return item;
+                }
+                
+                let draggedOperation = null;
+                let dragProxy = null;
+                
+                function handleDragStart(e) {
+                    const operation = JSON.parse(e.target.dataset.operation);
+                    draggedOperation = operation;
+                    e.target.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'copy';
+                    e.dataTransfer.setData('text/plain', JSON.stringify(operation));
+                }
+                
+                function handleDragEnd(e) {
+                    e.target.classList.remove('dragging');
+                    draggedOperation = null;
+                    if (dragProxy) {
+                        dragProxy.remove();
+                        dragProxy = null;
+                    }
+                }
                 
                 // Update unscheduled count display
                 function updateUnscheduledCount() {
-                    const count = unscheduledStore.count;
+                    const count = window.unscheduledOperationsData ? window.unscheduledOperationsData.length : 0;
                     const countElement = document.getElementById('unscheduled-count');
                     if (countElement) {
                         countElement.textContent = count.toString();
@@ -2098,56 +2127,80 @@
                     }
                 }
                 
-                unscheduledStore.on('change', updateUnscheduledCount);
-                
                 // Function to populate unscheduled grid after data is loaded
                 window.populateUnscheduledGrid = function() {
-                    if (window.unscheduledOperationsData && unscheduledStore) {
-                        unscheduledStore.data = window.unscheduledOperationsData;
+                    const gridElement = document.getElementById('unscheduled-grid');
+                    if (!gridElement) return;
+                    
+                    gridElement.innerHTML = ''; // Clear existing items
+                    
+                    if (window.unscheduledOperationsData && window.unscheduledOperationsData.length > 0) {
+                        window.unscheduledOperationsData.forEach(op => {
+                            const item = createUnscheduledItem(op);
+                            gridElement.appendChild(item);
+                        });
                         updateUnscheduledCount();
-                        console.log(`📋 Loaded ${window.unscheduledOperationsData.length} unscheduled operations into grid`);
+                        console.log(`📋 Loaded ${window.unscheduledOperationsData.length} unscheduled operations`);
+                    } else {
+                        // Add sample unscheduled operations if none exist
+                        const sampleUnscheduled = [
+                            {
+                                id: 'unscheduled-sample-1',
+                                name: 'Milling - Batch B1',
+                                duration: 2,
+                                durationUnit: 'hour',
+                                operationType: 'Milling',
+                                jobNumber: 'JOB004'
+                            },
+                            {
+                                id: 'unscheduled-sample-2',
+                                name: 'Fermentation - IPA Batch',
+                                duration: 168, // 7 days
+                                durationUnit: 'hour',
+                                operationType: 'Fermentation',
+                                jobNumber: 'JOB005'
+                            },
+                            {
+                                id: 'unscheduled-sample-3',
+                                name: 'Packaging - Bottles',
+                                duration: 4,
+                                durationUnit: 'hour',
+                                operationType: 'Packaging',
+                                jobNumber: 'JOB006'
+                            }
+                        ];
                         
-                        // Add some sample unscheduled operations if none exist
-                        if (window.unscheduledOperationsData.length === 0) {
-                            const sampleUnscheduled = [
-                                {
-                                    id: 'unscheduled-sample-1',
-                                    name: 'Milling - Batch B1',
-                                    duration: 2,
-                                    durationUnit: 'hour',
-                                    operationType: 'Milling',
-                                    jobNumber: 'JOB004'
-                                },
-                                {
-                                    id: 'unscheduled-sample-2', 
-                                    name: 'Fermentation - IPA Batch',
-                                    duration: 168, // 7 days
-                                    durationUnit: 'hour',
-                                    operationType: 'Fermentation',
-                                    jobNumber: 'JOB005'
-                                },
-                                {
-                                    id: 'unscheduled-sample-3',
-                                    name: 'Packaging - Bottles',
-                                    duration: 4,
-                                    durationUnit: 'hour',
-                                    operationType: 'Packaging',
-                                    jobNumber: 'JOB006'
-                                }
-                            ];
-                            unscheduledStore.data = sampleUnscheduled;
-                            updateUnscheduledCount();
-                            console.log('📋 Added sample unscheduled operations for demo');
-                        }
+                        window.unscheduledOperationsData = sampleUnscheduled;
+                        sampleUnscheduled.forEach(op => {
+                            const item = createUnscheduledItem(op);
+                            gridElement.appendChild(item);
+                        });
+                        updateUnscheduledCount();
+                        console.log('📋 Added sample unscheduled operations for demo');
                     }
                 };
                 
-                // Create drag helper for unscheduled operations to scheduler
-                const dragHelper = new bryntum.schedulerpro.DragHelper({
-                    cloneTarget: true,
-                    autoSizeClonedTarget: false,
-                    targetSelector: '.b-grid-row',
-                    dropTargetSelector: '.b-sch-timeaxis-cell',
+                // Enable scheduler to accept drops
+                if (window.scheduler) {
+                    window.scheduler.element.addEventListener('dragover', (e) => {
+                        if (draggedOperation) {
+                            e.preventDefault();
+                            e.dataTransfer.dropEffect = 'copy';
+                        }
+                    });
+                    
+                    window.scheduler.element.addEventListener('drop', (e) => {
+                        if (!draggedOperation || !window.scheduler) return;
+                        
+                        e.preventDefault();
+                        
+                        // Get the resource and date from drop position
+                        const resourceRecord = window.scheduler.resolveResourceRecord(e.target);
+                        const date = window.scheduler.getDateFromCoordinate(
+                            e.offsetX,
+                            'round',
+                            false
+                        );
                     
                     // Create visual drag proxy
                     createProxy(element) {
@@ -2285,9 +2338,57 @@
                                 // Refresh the scheduler
                                 window.scheduler.refresh();
                             }
+                        
+                        if (date && resourceRecord) {
+                            // Validate resource capabilities
+                            const operationName = draggedOperation.name || '';
+                            const requiredCapability = getRequiredCapability(operationName);
+                            
+                            if (requiredCapability !== null) {
+                                const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
+                                
+                                if (!targetCapabilities.includes(requiredCapability)) {
+                                    const capabilityNames = {
+                                        1: 'Milling', 2: 'Mashing', 3: 'Lautering',
+                                        4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
+                                        7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
+                                    };
+                                    showNotification(`❌ ${resourceRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`, 'error');
+                                    return;
+                                }
+                            }
+                            
+                            // Create the event in the scheduler
+                            const newEvent = window.scheduler.eventStore.add({
+                                name: draggedOperation.name,
+                                startDate: date,
+                                duration: draggedOperation.duration || 1,
+                                durationUnit: draggedOperation.durationUnit || 'hour',
+                                resourceId: resourceRecord.id,
+                                operationType: draggedOperation.operationType,
+                                jobNumber: draggedOperation.jobNumber,
+                                eventColor: getOperationColor(draggedOperation.operationType)
+                            })[0];
+                            
+                            if (newEvent) {
+                                // Remove from unscheduled list
+                                const itemElement = document.querySelector(`[data-operation-id="${draggedOperation.id}"]`);
+                                if (itemElement) {
+                                    itemElement.remove();
+                                }
+                                
+                                // Update data array
+                                window.unscheduledOperationsData = window.unscheduledOperationsData.filter(
+                                    op => op.id !== draggedOperation.id
+                                );
+                                
+                                updateUnscheduledCount();
+                                showNotification(`✅ Scheduled "${draggedOperation.name}" on ${resourceRecord.name}`, 'success');
+                                window.scheduler.refresh();
+                            }
                         }
-                    }
-                });
+                    });
+                }
                 
                 // Helper function to get operation color
                 function getOperationColor(operationType) {
