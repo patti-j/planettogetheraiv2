@@ -80,7 +80,7 @@ router.get('/fonts/*', (req, res) => {
 });
 
 // Authentication routes
-router.post("/auth/login", async (req, res) => {
+router.post("/api/auth/login", async (req, res) => {
   try {
     console.log("=== LOGIN DEBUG ===");
     const { username, password } = req.body;
@@ -193,7 +193,7 @@ router.post("/auth/login", async (req, res) => {
   }
 });
 
-router.post("/auth/logout", (req, res) => {
+router.post("/api/auth/logout", (req, res) => {
   req.session.destroy((err) => {
     if (err) {
       return res.status(500).json({ message: "Could not log out" });
@@ -204,7 +204,7 @@ router.post("/auth/logout", (req, res) => {
 });
 
 // Development-only endpoint for auto-authentication
-router.get("/auth/dev-token", async (req, res) => {
+router.get("/api/auth/dev-token", async (req, res) => {
   // Only allow in development mode
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({ message: "Forbidden in production" });
@@ -249,7 +249,7 @@ router.get("/auth/dev-token", async (req, res) => {
   });
 });
 
-router.get("/auth/me", async (req, res) => {
+router.get("/api/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization}`);
   console.log(`Session userId: ${req.session.userId}`);
