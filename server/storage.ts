@@ -621,7 +621,7 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Get discrete operations (from PT job operations) with intelligent resource matching
+  // Get discrete operations (from PT job operations) using PT Resource Capabilities table
   async getDiscreteOperations(limit?: number | null): Promise<any[]> {
     try {
       const query = sql`
@@ -640,60 +640,100 @@ export class DatabaseStorage implements IStorage {
           j.name as job_name,
           j.priority,
           j.need_date_time as due_date,
-          -- Intelligent resource assignment based on operation type
+          -- Use PT Resource Capabilities to match operations to appropriate resources
           CASE 
             WHEN LOWER(jo.name) LIKE '%mill%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%mill%' AND r.active = true LIMIT 1
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 1 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%mash%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%mash%' AND r.active = true LIMIT 1
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 2 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%lauter%' AND r.active = true LIMIT 1
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 3 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%boil%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%kettle%' AND r.active = true LIMIT 1
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%ferm%' AND r.active = true 
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
-            WHEN LOWER(jo.name) LIKE '%condition%' OR LOWER(jo.name) LIKE '%dry hop%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%bright%' AND r.active = true 
+            WHEN LOWER(jo.name) LIKE '%condition%' THEN (
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 6 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN (
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 7 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.resource_id FROM ptresources r WHERE LOWER(r.name) LIKE '%filler%' AND r.active = true 
+              SELECT r.resource_id FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 8 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             ELSE (
               SELECT r.resource_id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
             )
           END as matched_resource_id,
-          -- Also get the resource name for display
+          -- Get the resource name using capabilities
           CASE 
             WHEN LOWER(jo.name) LIKE '%mill%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%mill%' AND r.active = true LIMIT 1
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 1 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%mash%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%mash%' AND r.active = true LIMIT 1
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 2 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%lauter%' AND r.active = true LIMIT 1
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 3 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%boil%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%kettle%' AND r.active = true LIMIT 1
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%ferm%' AND r.active = true 
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 5 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
-            WHEN LOWER(jo.name) LIKE '%condition%' OR LOWER(jo.name) LIKE '%dry hop%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%bright%' AND r.active = true 
+            WHEN LOWER(jo.name) LIKE '%condition%' THEN (
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 6 AND r.active = true 
+              ORDER BY r.id LIMIT 1
+            )
+            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN (
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 7 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.name FROM ptresources r WHERE LOWER(r.name) LIKE '%filler%' AND r.active = true 
+              SELECT r.name FROM ptresources r 
+              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
+              WHERE rc.capability_id = 8 AND r.active = true 
               ORDER BY r.id LIMIT 1
             )
             ELSE (
