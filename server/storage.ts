@@ -641,11 +641,11 @@ export class DatabaseStorage implements IStorage {
           jo.setup_time,
           jo.run_time,
           jo.teardown_time,
-          mo.name as job_name,
-          mo.due_date,
+          j.name as job_name,
+          j.due_date,
           r.name as resource_name
         FROM ptjoboperations jo
-        LEFT JOIN ptmanufacturingorders mo ON jo.job_id = mo.id
+        LEFT JOIN ptjobs j ON jo.job_id = j.id
         LEFT JOIN ptresources r ON jo.resource_id = r.id
         WHERE jo.scheduled_start IS NOT NULL
         ORDER BY jo.scheduled_start, jo.id
