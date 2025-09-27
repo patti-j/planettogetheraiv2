@@ -14,7 +14,42 @@ import {
   WidgetType,
   InsertDashboard,
   InsertWidget,
-  InsertWidgetType
+  InsertWidgetType,
+  // Command & Control schemas
+  scheduleJobCommandSchema,
+  rescheduleJobCommandSchema,
+  prioritizeJobCommandSchema,
+  cancelJobCommandSchema,
+  assignResourceCommandSchema,
+  reassignResourceCommandSchema,
+  updateResourceAvailabilitySchema,
+  qualityHoldCommandSchema,
+  releaseHoldCommandSchema,
+  qualityInspectionCommandSchema,
+  startOperationCommandSchema,
+  stopOperationCommandSchema,
+  pauseOperationCommandSchema,
+  commandResponseSchema,
+  type ScheduleJobCommand,
+  type RescheduleJobCommand,
+  type PrioritizeJobCommand,
+  type CancelJobCommand,
+  type AssignResourceCommand,
+  type ReassignResourceCommand,
+  type UpdateResourceAvailability,
+  type QualityHoldCommand,
+  type ReleaseHoldCommand,
+  type QualityInspectionCommand,
+  type StartOperationCommand,
+  type StopOperationCommand,
+  type PauseOperationCommand,
+  type CommandResponse,
+} from "@shared/schema";
+
+// Import PT Tables from minimal schema matching actual database structure
+import {
+  ptJobs,
+  ptJobOperations
 } from "@shared/schema";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
@@ -4002,5 +4037,616 @@ async function getCurrentRealtimeData(dataType: string) {
       return { value: Math.random() * 100, lastUpdated: new Date().toISOString() };
   }
 }
+
+// ============================================
+// Command & Control APIs for External Agents
+// ============================================
+
+// Helper function to generate unique command IDs
+function generateCommandId(): string {
+  return `cmd_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+// Helper function to create standardized command responses
+function createCommandResponse(
+  success: boolean, 
+  commandId: string, 
+  message: string, 
+  data?: any, 
+  warnings?: string[], 
+  errors?: string[]
+): CommandResponse {
+  return {
+    success,
+    commandId,
+    message,
+    data,
+    warnings,
+    errors
+  };
+}
+
+// JOB SCHEDULING COMMANDS
+
+// POST /api/v1/commands/schedule-job - Create a new production job
+router.post("/api/v1/commands/schedule-job", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Schedule Job requested by user ${(req as any).userId}`);
+    
+    const command = scheduleJobCommandSchema.parse(req.body);
+    
+    // Create job using correct minimal schema
+    const newJob = await db.insert(ptJobs).values({
+      externalId: crypto.randomUUID(),
+      name: `Job-${Date.now()}`,
+      description: `Production job for ${command.operations.map(op => op.operationName).join(', ')}`,
+      priority: command.priority,
+      needDateTime: new Date(command.needDateTime),
+      scheduledStatus: "planned"
+    }).returning();
+
+    const job = newJob[0];
+    
+    // Create operations for the job using correct minimal schema
+    const operations = [];
+    for (let i = 0; i < command.operations.length; i++) {
+      const operation = command.operations[i];
+      const opResult = await db.insert(ptJobOperations).values({
+        jobId: job.id, // Link to job's primary key
+        externalId: crypto.randomUUID(),
+        name: operation.operationName,
+        description: operation.description,
+        operationId: `OP-${Date.now()}-${i}`,
+        cycleHrs: operation.processTime.toString(),
+        setupHours: (operation.setupTime || 0).toString(),
+        postProcessingHours: (operation.teardownTime || 0).toString(),
+        requiredFinishQty: "1",
+        percentFinished: "0"
+      }).returning();
+      
+      operations.push(opResult[0]);
+    }
+    
+    const result = { job, operations };
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Production job scheduled successfully with ${operations.length} operations`,
+      {
+        job: job,
+        operations: operations
+      }
+    );
+
+    log(`✅ Command ${commandId}: Job scheduled successfully`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Schedule job failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to schedule job",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// PUT /api/v1/commands/reschedule-job/:id - Reschedule an existing job
+router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    const jobId = parseInt(req.params.id);
+    log(`🎯 Command ${commandId}: Reschedule Job ${jobId} requested by user ${req.userId}`);
+    
+    const command = rescheduleJobCommandSchema.parse(req.body);
+    
+    // Update job scheduling information
+    const updatedJob = await db.update(ptJobs)
+      .set({
+        scheduledStartDateTime: new Date(command.newStartDateTime),
+        scheduledEndDateTime: command.newEndDateTime ? new Date(command.newEndDateTime) : undefined,
+      })
+      .where(eq(ptJobs.jobId, jobId))
+      .returning();
+
+    if (updatedJob.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Job ${jobId} not found`,
+        null,
+        null,
+        [`Job with ID ${jobId} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Job ${jobId} rescheduled successfully`,
+      {
+        job: updatedJob[0],
+        reason: command.reason
+      }
+    );
+
+    log(`✅ Command ${commandId}: Job ${jobId} rescheduled successfully`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Reschedule job failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to reschedule job",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// POST /api/v1/commands/prioritize-job - Change job priority
+router.post("/api/v1/commands/prioritize-job", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Prioritize Job requested by user ${req.userId}`);
+    
+    const command = prioritizeJobCommandSchema.parse(req.body);
+    
+    const updatedJob = await db.update(ptJobs)
+      .set({ priority: command.newPriority })
+      .where(eq(ptJobs.jobId, command.jobId))
+      .returning();
+
+    if (updatedJob.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Job ${command.jobId} not found`,
+        null,
+        null,
+        [`Job with ID ${command.jobId} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Job ${command.jobId} priority updated to ${command.newPriority}`,
+      {
+        job: updatedJob[0],
+        reason: command.reason
+      }
+    );
+
+    log(`✅ Command ${commandId}: Job ${command.jobId} priority updated`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Prioritize job failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to prioritize job",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// POST /api/v1/commands/cancel-job/:id - Cancel a job
+router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    const jobId = parseInt(req.params.id);
+    log(`🎯 Command ${commandId}: Cancel Job ${jobId} requested by user ${req.userId}`);
+    
+    const command = cancelJobCommandSchema.parse(req.body);
+    
+    const updatedJob = await db.update(ptJobs)
+      .set({ cancelled: true })
+      .where(eq(ptJobs.jobId, jobId))
+      .returning();
+
+    if (updatedJob.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Job ${jobId} not found`,
+        null,
+        null,
+        [`Job with ID ${jobId} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Job ${jobId} cancelled successfully`,
+      {
+        job: updatedJob[0],
+        reason: command.reason
+      }
+    );
+
+    log(`✅ Command ${commandId}: Job ${jobId} cancelled`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Cancel job failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to cancel job",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// RESOURCE MANAGEMENT COMMANDS
+
+// POST /api/v1/commands/assign-resource - Assign resource to operation
+router.post("/api/v1/commands/assign-resource", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Assign Resource requested by user ${req.userId}`);
+    
+    const command = assignResourceCommandSchema.parse(req.body);
+    
+    // Check if resource exists and is available
+    const resource = await db.query.ptResources.findFirst({
+      where: eq(ptResources.resourceId, command.resourceId)
+    });
+
+    if (!resource) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Resource ${command.resourceId} not found`,
+        null,
+        null,
+        [`Resource with ID ${command.resourceId} does not exist`]
+      ));
+      return;
+    }
+
+    // Create resource assignment
+    const assignment = await db.query.ptJobResources.insert({
+      publishDate: new Date(),
+      instanceId: crypto.randomUUID(),
+      operationId: command.operationId,
+      defaultResourceId: command.resourceId,
+      isPrimary: command.isPrimary,
+      startDateTime: command.startDateTime ? new Date(command.startDateTime) : undefined,
+      endDateTime: command.endDateTime ? new Date(command.endDateTime) : undefined
+    }).returning();
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Resource ${command.resourceId} assigned to operation ${command.operationId}`,
+      {
+        assignment: assignment[0],
+        resource: resource
+      }
+    );
+
+    log(`✅ Command ${commandId}: Resource assigned successfully`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Assign resource failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to assign resource",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// QUALITY CONTROL COMMANDS
+
+// POST /api/v1/commands/quality-hold - Place quality hold on job/operation
+router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Quality Hold requested by user ${req.userId}`);
+    
+    const command = qualityHoldCommandSchema.parse(req.body);
+    
+    // For now, we'll simulate placing a hold by updating job/operation status
+    let updatedEntity;
+    let entityType: string;
+    
+    if (command.jobId) {
+      updatedEntity = await db.update(ptJobs)
+        .set({ 
+          holdUntil: command.expectedResolutionTime ? new Date(command.expectedResolutionTime) : undefined 
+        })
+        .where(eq(ptJobs.jobId, command.jobId))
+        .returning();
+      entityType = 'job';
+    } else if (command.operationId) {
+      updatedEntity = await db.update(ptJobOperations)
+        .set({ status: 'on_hold' })
+        .where(eq(ptJobOperations.operationId, command.operationId))
+        .returning();
+      entityType = 'operation';
+    }
+
+    if (!updatedEntity || updatedEntity.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `${entityType} not found`,
+        null,
+        null,
+        [`${entityType} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Quality hold placed on ${entityType} - ${command.holdType} (${command.severity})`,
+      {
+        holdId: commandId,
+        entityType,
+        entity: updatedEntity[0],
+        holdDetails: {
+          type: command.holdType,
+          reason: command.reason,
+          severity: command.severity,
+          expectedResolution: command.expectedResolutionTime
+        }
+      }
+    );
+
+    log(`✅ Command ${commandId}: Quality hold placed on ${entityType}`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Quality hold failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to place quality hold",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// PRODUCTION CONTROL COMMANDS
+
+// POST /api/v1/commands/start-operation - Start an operation
+router.post("/api/v1/commands/start-operation", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Start Operation requested by user ${req.userId}`);
+    
+    const command = startOperationCommandSchema.parse(req.body);
+    
+    const updatedOperation = await db.update(ptJobOperations)
+      .set({ 
+        status: 'in_progress',
+        startDate: command.actualStartDateTime ? new Date(command.actualStartDateTime) : new Date()
+      })
+      .where(eq(ptJobOperations.operationId, command.operationId))
+      .returning();
+
+    if (updatedOperation.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Operation ${command.operationId} not found`,
+        null,
+        null,
+        [`Operation with ID ${command.operationId} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Operation ${command.operationId} started successfully`,
+      {
+        operation: updatedOperation[0],
+        startTime: updatedOperation[0].startDate,
+        notes: command.operatorNotes
+      }
+    );
+
+    log(`✅ Command ${commandId}: Operation ${command.operationId} started`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Start operation failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to start operation",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
+
+// POST /api/v1/commands/stop-operation - Stop an operation
+router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => {
+  try {
+    const commandId = generateCommandId();
+    log(`🎯 Command ${commandId}: Stop Operation requested by user ${req.userId}`);
+    
+    const command = stopOperationCommandSchema.parse(req.body);
+    
+    let status = 'completed';
+    if (command.reason !== 'completed') {
+      status = 'stopped';
+    }
+
+    const updatedOperation = await db.update(ptJobOperations)
+      .set({ 
+        status: status,
+        endDate: command.actualEndDateTime ? new Date(command.actualEndDateTime) : new Date()
+      })
+      .where(eq(ptJobOperations.operationId, command.operationId))
+      .returning();
+
+    if (updatedOperation.length === 0) {
+      res.status(404).json(createCommandResponse(
+        false,
+        commandId,
+        `Operation ${command.operationId} not found`,
+        null,
+        null,
+        [`Operation with ID ${command.operationId} does not exist`]
+      ));
+      return;
+    }
+
+    const response = createCommandResponse(
+      true,
+      commandId,
+      `Operation ${command.operationId} stopped - ${command.reason}`,
+      {
+        operation: updatedOperation[0],
+        endTime: updatedOperation[0].endDate,
+        reason: command.reason,
+        reasonDetails: command.reasonDetails,
+        notes: command.operatorNotes
+      }
+    );
+
+    log(`✅ Command ${commandId}: Operation ${command.operationId} stopped`);
+    res.json(response);
+  } catch (error) {
+    const commandId = generateCommandId();
+    log(`❌ Command ${commandId}: Stop operation failed - ${error.message}`);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json(createCommandResponse(
+        false,
+        commandId,
+        "Invalid request data",
+        null,
+        null,
+        error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      ));
+    } else {
+      res.status(500).json(createCommandResponse(
+        false,
+        commandId,
+        "Failed to stop operation",
+        null,
+        null,
+        [error.message]
+      ));
+    }
+  }
+});
 
 export default router;

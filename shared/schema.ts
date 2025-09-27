@@ -102,6 +102,61 @@ export const widgetTypes = pgTable("widget_types", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// ============================================
+// PT Manufacturing Tables (Minimal Schema)
+// ============================================
+
+// Minimal ptjobs table matching actual database structure (9 columns)
+export const ptJobs = pgTable("ptjobs", {
+  id: serial("id").primaryKey(),
+  externalId: varchar("external_id"),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  priority: integer("priority").default(1),
+  needDateTime: timestamp("need_date_time"),
+  scheduledStatus: varchar("scheduled_status"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Minimal ptjoboperations table matching actual database structure (16 columns)
+export const ptJobOperations = pgTable("ptjoboperations", {
+  id: serial("id").primaryKey(),
+  jobId: integer("job_id").references(() => ptJobs.id),
+  externalId: varchar("external_id"),
+  name: varchar("name").notNull(),
+  description: text("description"),
+  operationId: varchar("operation_id"),
+  baseOperationId: varchar("base_operation_id"),
+  requiredFinishQty: numeric("required_finish_qty"),
+  cycleHrs: numeric("cycle_hrs"),
+  setupHours: numeric("setup_hours"),
+  postProcessingHours: numeric("post_processing_hours"),
+  scheduledStart: timestamp("scheduled_start"),
+  scheduledEnd: timestamp("scheduled_end"),
+  percentFinished: numeric("percent_finished").default('0'),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// PT Schema Insert/Select Types
+export const insertPtJobSchema = createInsertSchema(ptJobs).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPtJobOperationSchema = createInsertSchema(ptJobOperations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type PtJob = typeof ptJobs.$inferSelect;
+export type InsertPtJob = z.infer<typeof insertPtJobSchema>;
+export type PtJobOperation = typeof ptJobOperations.$inferSelect;
+export type InsertPtJobOperation = z.infer<typeof insertPtJobOperationSchema>;
+
 // Dashboard and Widget Insert/Select Schemas
 export const insertDashboardSchema = createInsertSchema(dashboards).omit({
   id: true,
@@ -213,34 +268,6 @@ export const ptPlants = pgTable("ptplants", {
   operationalMetrics: jsonb("operational_metrics").default(sql`'{}'::jsonb`),
 });
 
-export const ptJobOperations = pgTable("ptjoboperations", {
-  id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 38 }).notNull(),
-  plantId: integer("plant_id").notNull(),
-  manufacturingOrderId: integer("manufacturing_order_id"),
-  operationId: integer("operation_id"),
-  sequenceNumber: integer("sequence_number"),
-  operationName: text("operation_name"),
-  description: text("description"),
-  duration: integer("duration"),
-  setupTime: integer("setup_time").default(0),
-  processTime: integer("process_time"),
-  teardownTime: integer("teardown_time").default(0),
-  queueTime: integer("queue_time").default(0),
-  moveTime: integer("move_time").default(0),
-  waitTime: integer("wait_time").default(0),
-  resourceId: integer("resource_id"),
-  workCenterName: text("work_center_name"),
-  status: varchar("status", { length: 50 }).default("planned"),
-  startDate: timestamp("start_date"),
-  endDate: timestamp("end_date"),
-  actualStartDate: timestamp("actual_start_date"),
-  actualEndDate: timestamp("actual_end_date"),
-  isActive: boolean("is_active").default(true),
-  createdAt: timestamp("created_at").defaultNow(),
-  updatedAt: timestamp("updated_at").defaultNow(),
-});
 
 export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   id: serial("id").primaryKey(),
@@ -570,7 +597,6 @@ export const insertRolePermissionSchema = createInsertSchema(rolePermissions);
 export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding);
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences);
 export const insertPtPlantSchema = createInsertSchema(ptPlants);
-export const insertPtJobOperationSchema = createInsertSchema(ptJobOperations);
 export const insertPtManufacturingOrderSchema = createInsertSchema(ptManufacturingOrders);
 export const insertPtResourceSchema = createInsertSchema(ptResources);
 export const insertRecentPageSchema = createInsertSchema(recentPages);
@@ -692,3 +718,145 @@ export type JobOperation = PtJobOperation;
 export type InsertJobOperation = InsertPtJobOperation;
 export type ProductionOrder = PtManufacturingOrder;
 export type InsertProductionOrder = InsertPtManufacturingOrder;
+
+// ============================================
+// Command & Control API Schemas
+// ============================================
+
+// Job Scheduling Commands
+export const scheduleJobCommandSchema = z.object({
+  customers: z.string().optional(),
+  needDateTime: z.string().datetime(),
+  classification: z.string().optional(),
+  type: z.string().optional(),
+  priority: z.number().int().min(1).max(10).default(5),
+  importance: z.number().int().min(1).max(10).default(5),
+  hot: z.boolean().default(false),
+  hotReason: z.string().optional(),
+  operations: z.array(z.object({
+    operationName: z.string(),
+    description: z.string().optional(),
+    processTime: z.number().int().positive(),
+    setupTime: z.number().int().min(0).default(0),
+    teardownTime: z.number().int().min(0).default(0),
+    resourceRequirements: z.array(z.string()).optional(), // capability names
+  })).min(1),
+});
+
+export const rescheduleJobCommandSchema = z.object({
+  jobId: z.number().int().positive(),
+  newStartDateTime: z.string().datetime(),
+  newEndDateTime: z.string().datetime().optional(),
+  reason: z.string().min(1),
+});
+
+export const prioritizeJobCommandSchema = z.object({
+  jobId: z.number().int().positive(),
+  newPriority: z.number().int().min(1).max(10),
+  reason: z.string().min(1),
+});
+
+export const cancelJobCommandSchema = z.object({
+  jobId: z.number().int().positive(),
+  reason: z.string().min(1),
+});
+
+// Resource Management Commands
+export const assignResourceCommandSchema = z.object({
+  operationId: z.number().int().positive(),
+  resourceId: z.number().int().positive(),
+  isPrimary: z.boolean().default(true),
+  startDateTime: z.string().datetime().optional(),
+  endDateTime: z.string().datetime().optional(),
+});
+
+export const reassignResourceCommandSchema = z.object({
+  fromOperationId: z.number().int().positive(),
+  toOperationId: z.number().int().positive(),
+  resourceId: z.number().int().positive(),
+  reason: z.string().min(1),
+});
+
+export const updateResourceAvailabilitySchema = z.object({
+  resourceId: z.number().int().positive(),
+  availableFrom: z.string().datetime(),
+  availableTo: z.string().datetime(),
+  availability: z.number().min(0).max(1).default(1), // 0 = unavailable, 1 = fully available
+  reason: z.string().optional(),
+});
+
+// Quality Control Commands
+export const qualityHoldCommandSchema = z.object({
+  jobId: z.number().int().positive().optional(),
+  operationId: z.number().int().positive().optional(),
+  holdType: z.enum(['quality', 'safety', 'maintenance', 'material']),
+  reason: z.string().min(1),
+  severity: z.enum(['low', 'medium', 'high', 'critical']).default('medium'),
+  expectedResolutionTime: z.string().datetime().optional(),
+}).refine(data => data.jobId || data.operationId, {
+  message: "Either jobId or operationId must be provided"
+});
+
+export const releaseHoldCommandSchema = z.object({
+  holdId: z.string(),
+  resolutionNotes: z.string().min(1),
+  approvedBy: z.string().min(1),
+});
+
+export const qualityInspectionCommandSchema = z.object({
+  operationId: z.number().int().positive(),
+  inspectionType: z.enum(['incoming', 'in-process', 'final', 'random']),
+  priority: z.enum(['low', 'normal', 'high', 'urgent']).default('normal'),
+  inspectorAssigned: z.string().optional(),
+  dueDateTime: z.string().datetime().optional(),
+  notes: z.string().optional(),
+});
+
+// Production Control Commands
+export const startOperationCommandSchema = z.object({
+  operationId: z.number().int().positive(),
+  resourceId: z.number().int().positive().optional(),
+  actualStartDateTime: z.string().datetime().optional(),
+  operatorNotes: z.string().optional(),
+});
+
+export const stopOperationCommandSchema = z.object({
+  operationId: z.number().int().positive(),
+  actualEndDateTime: z.string().datetime().optional(),
+  reason: z.enum(['completed', 'quality_issue', 'equipment_failure', 'material_shortage', 'other']),
+  reasonDetails: z.string().optional(),
+  operatorNotes: z.string().optional(),
+});
+
+export const pauseOperationCommandSchema = z.object({
+  operationId: z.number().int().positive(),
+  reason: z.enum(['break', 'maintenance', 'material_wait', 'quality_check', 'other']),
+  reasonDetails: z.string().optional(),
+  expectedResumeTime: z.string().datetime().optional(),
+});
+
+// Command Response Types
+export const commandResponseSchema = z.object({
+  success: z.boolean(),
+  commandId: z.string(),
+  message: z.string(),
+  data: z.any().optional(),
+  warnings: z.array(z.string()).optional(),
+  errors: z.array(z.string()).optional(),
+});
+
+// Type exports for Command & Control
+export type ScheduleJobCommand = z.infer<typeof scheduleJobCommandSchema>;
+export type RescheduleJobCommand = z.infer<typeof rescheduleJobCommandSchema>;
+export type PrioritizeJobCommand = z.infer<typeof prioritizeJobCommandSchema>;
+export type CancelJobCommand = z.infer<typeof cancelJobCommandSchema>;
+export type AssignResourceCommand = z.infer<typeof assignResourceCommandSchema>;
+export type ReassignResourceCommand = z.infer<typeof reassignResourceCommandSchema>;
+export type UpdateResourceAvailability = z.infer<typeof updateResourceAvailabilitySchema>;
+export type QualityHoldCommand = z.infer<typeof qualityHoldCommandSchema>;
+export type ReleaseHoldCommand = z.infer<typeof releaseHoldCommandSchema>;
+export type QualityInspectionCommand = z.infer<typeof qualityInspectionCommandSchema>;
+export type StartOperationCommand = z.infer<typeof startOperationCommandSchema>;
+export type StopOperationCommand = z.infer<typeof stopOperationCommandSchema>;
+export type PauseOperationCommand = z.infer<typeof pauseOperationCommandSchema>;
+export type CommandResponse = z.infer<typeof commandResponseSchema>;
