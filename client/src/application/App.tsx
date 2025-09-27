@@ -548,7 +548,17 @@ export default function ApplicationApp() {
               </Route>
               
               {/* Default Route - Home page */}
-              <Route path="/" component={SmartHomeWrapper} />
+              <Route path="/">
+                {() => {
+                  // In development mode, redirect to /home to skip any login issues
+                  if (import.meta.env.MODE === 'development') {
+                    window.location.replace('/home');
+                    return null;
+                  }
+                  // In production, use SmartHomeWrapper as before
+                  return <SmartHomeWrapper />;
+                }}
+              </Route>
               
               {/* Catch all route - redirect to dashboard */}
               {/* Temporarily disabled to debug routing issue
