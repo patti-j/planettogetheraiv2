@@ -724,7 +724,7 @@ export default function HomePage() {
               {/* Content */}
               {!isLoadingEvents && !eventsError && (
                 <div className="space-y-3" data-testid="events-content">
-                  {systemEvents.map((event) => (
+                  {(systemEvents || []).map((event) => (
                     <Card 
                       key={event.id} 
                       className="hover:shadow-sm transition-shadow"
