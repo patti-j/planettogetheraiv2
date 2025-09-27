@@ -11,13 +11,14 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize } from 'lucide-react';
+import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize, Mic, MicOff, Paperclip, StopCircle } from 'lucide-react';
 import { getActiveAgents } from '@/config/agents';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
+import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
   children: React.ReactNode;
@@ -37,6 +38,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [isFloatingBubbleMinimized, setIsFloatingBubbleMinimized] = useState(false);
   const [selectedFloatingAgent, setSelectedFloatingAgent] = useState<string>('unified');
   const floatingInputRef = useRef<HTMLInputElement>(null);
+  
+  // Voice recording state for floating bubble
+  const [isFloatingRecording, setIsFloatingRecording] = useState(false);
+  const [floatingMediaRecorder, setFloatingMediaRecorder] = useState<MediaRecorder | null>(null);
+  const [floatingRecordingTimeout, setFloatingRecordingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
+  const [floatingRecordingTimeLeft, setFloatingRecordingTimeLeft] = useState<number>(0);
+  const [isFloatingTranscribing, setIsFloatingTranscribing] = useState(false);
+  
+  // File attachment state for floating bubble
+  const [floatingAttachments, setFloatingAttachments] = useState<Array<{
+    id: string;
+    name: string;
+    type: string;
+    size: number;
+    content?: string;
+    url?: string;
+    file: File;
+  }>>([]);
+  const [isFloatingProcessingFiles, setIsFloatingProcessingFiles] = useState(false);
+  const floatingFileInputRef = useRef<HTMLInputElement>(null);
   
   // Panel force-show state for small screens
   const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
@@ -261,6 +282,147 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     
     setIsFloatingSending(true);
     sendFloatingMessage.mutate(floatingPrompt);
+  };
+
+  // Voice recording handlers for floating bubble
+  const startFloatingListening = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks: Blob[] = [];
+
+      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/wav' });
+        await handleFloatingAudioRecording(blob);
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      recorder.start();
+      setFloatingMediaRecorder(recorder);
+      setIsFloatingRecording(true);
+      setFloatingRecordingTimeLeft(10);
+
+      // Start countdown timer
+      const interval = setInterval(() => {
+        setFloatingRecordingTimeLeft(prev => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            stopFloatingListening();
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      // Auto-stop after 10 seconds
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        stopFloatingListening();
+      }, 10000);
+
+      setFloatingRecordingTimeout(timeout);
+    } catch (error) {
+      console.error('Floating recording error:', error);
+    }
+  };
+
+  const stopFloatingListening = () => {
+    if (floatingMediaRecorder && floatingMediaRecorder.state === 'recording') {
+      floatingMediaRecorder.stop();
+    }
+    if (floatingRecordingTimeout) {
+      clearTimeout(floatingRecordingTimeout);
+      setFloatingRecordingTimeout(null);
+    }
+    setIsFloatingRecording(false);
+    setFloatingRecordingTimeLeft(0);
+  };
+
+  const handleFloatingAudioRecording = async (audioBlob: Blob) => {
+    setIsFloatingTranscribing(true);
+    
+    try {
+      const formData = new FormData();
+      formData.append('audio', audioBlob, 'recording.wav');
+
+      const authToken = localStorage.getItem('auth_token');
+      const response = await fetch('/api/ai/whisper-transcribe', {
+        method: 'POST',
+        headers: {
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+        },
+        body: formData
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.transcript) {
+          setFloatingPrompt(data.transcript);
+          // Auto-send the transcribed message
+          setTimeout(() => {
+            setFloatingPrompt(data.transcript);
+            sendFloatingMessage.mutate(data.transcript);
+          }, 100);
+        }
+      }
+    } catch (error) {
+      console.error('Transcription error:', error);
+    } finally {
+      setIsFloatingTranscribing(false);
+    }
+  };
+
+  // File attachment handlers for floating bubble
+  const handleFloatingFileUpload = () => {
+    floatingFileInputRef.current?.click();
+  };
+
+  const handleFloatingFilesSelected = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files?.length) return;
+
+    setIsFloatingProcessingFiles(true);
+
+    try {
+      const items = await Promise.all(Array.from(files).map(async (file) => {
+        const id = Date.now() + Math.random().toString();
+        
+        // Read file content for text files
+        let content: string | undefined;
+        let url: string | undefined;
+
+        if (file.type.startsWith('text/') || file.type === 'application/json') {
+          content = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string || '');
+            reader.readAsText(file);
+          });
+        } else if (file.type.startsWith('image/')) {
+          url = await new Promise<string>((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target?.result as string || '');
+            reader.readAsDataURL(file);
+          });
+        }
+
+        return { id, name: file.name, type: file.type, size: file.size, content, url, file };
+      }));
+      
+      setFloatingAttachments(prev => [...prev, ...items]);
+    } catch (err) {
+      console.error('Error processing files:', err);
+    } finally {
+      setIsFloatingProcessingFiles(false);
+      // Reset file input
+      if (event.target) {
+        event.target.value = '';
+      }
+    }
+  };
+
+  const removeFloatingAttachment = (id: string) => {
+    setFloatingAttachments(prev => prev.filter(a => a.id !== id));
   };
 
   // Helper function to get agent icon
@@ -714,6 +876,75 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 </SelectContent>
               </Select>
 
+              {/* File attachment input (hidden) */}
+              <input
+                ref={floatingFileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFloatingFilesSelected}
+                accept=".txt,.md,.json,.csv,.xml,.html,.css,.js,.ts,.tsx,.jsx,.py,.sql,.log,image/*"
+              />
+
+              {/* Clipboard/File Attachment Button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={handleFloatingFileUpload}
+                      size="sm"
+                      variant="ghost"
+                      className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                      disabled={isFloatingProcessingFiles || isFloatingSending}
+                    >
+                      {isFloatingProcessingFiles ? (
+                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Paperclip className="w-3 h-3" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>Attach files</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* Voice Recording Button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      onClick={isFloatingRecording ? stopFloatingListening : startFloatingListening}
+                      size="sm"
+                      variant="ghost"
+                      className={cn(
+                        "rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0",
+                        isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
+                        isFloatingTranscribing && "opacity-50"
+                      )}
+                      disabled={isFloatingTranscribing || isFloatingSending}
+                    >
+                      {isFloatingTranscribing ? (
+                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : isFloatingRecording ? (
+                        <div className="flex items-center">
+                          <StopCircle className="w-3 h-3" />
+                          {floatingRecordingTimeLeft > 0 && (
+                            <span className="ml-1 text-xs">{floatingRecordingTimeLeft}s</span>
+                          )}
+                        </div>
+                      ) : (
+                        <Mic className="w-3 h-3" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p>{isFloatingRecording ? `Recording... ${floatingRecordingTimeLeft}s left` : isFloatingTranscribing ? 'Transcribing...' : 'Voice message'}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               {/* Input Field */}
               <Input
                 ref={floatingInputRef}
@@ -724,6 +955,28 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground flex-1"
                 disabled={isFloatingSending}
               />
+
+              {/* Attachment Pills */}
+              {floatingAttachments.length > 0 && (
+                <div className="flex gap-1 flex-wrap max-w-[200px]">
+                  {floatingAttachments.map((attachment) => (
+                    <div
+                      key={attachment.id}
+                      className="flex items-center gap-1 bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs max-w-[100px]"
+                    >
+                      <span className="truncate">{attachment.name}</span>
+                      <Button
+                        onClick={() => removeFloatingAttachment(attachment.id)}
+                        size="sm"
+                        variant="ghost"
+                        className="h-4 w-4 p-0 hover:bg-muted-foreground/20"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {/* Send Button */}
               <Button
