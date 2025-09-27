@@ -1541,6 +1541,8 @@
                 }
                 
                 console.log('✅ Bryntum library loaded successfully');
+                console.log('📊 Available Bryntum modules:', Object.keys(bryntum));
+                console.log('📊 SchedulerPro type:', typeof bryntum.schedulerpro.SchedulerPro);
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
@@ -1558,14 +1560,24 @@
                 let ptOperations = [];
                 let resourceCapabilities = {};
                 
+                console.log('🔄 Starting to fetch data from APIs...');
+                
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
+                    console.log('🔄 Fetching resources...');
                     const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
                         fetch('/api/pt-dependencies'),
                         fetch('/api/resources-with-capabilities')
                     ]);
+                    
+                    console.log('📊 API Response statuses:', {
+                        resources: resourcesResponse?.status,
+                        operations: operationsResponse?.status,
+                        dependencies: dependenciesResponse?.status,
+                        capabilities: capabilitiesResponse?.status
+                    });
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
@@ -2486,6 +2498,15 @@
 
                     // Project configuration with strict no-overlap constraints
                     project: {
+                        // Load the data inline
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true,
+                        
                         autoLoad: false,
                         autoSync: false,
                         // Use ASAP scheduling with strict resource constraints
@@ -2689,17 +2710,6 @@
                         };
                     },
 
-                    project: {
-                        // Use correct property names (not deprecated)
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
-                        
-                        // Enable automatic scheduling
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true
-                    },
-
                     startDate: (() => {
                         // Start from today (September 3, 2025)
                         const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
@@ -2719,6 +2729,17 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
+                
+                // Unmask the scheduler after it's fully initialized
+                // The scheduler might show a loading mask by default
+                setTimeout(() => {
+                    if (scheduler.masked) {
+                        console.log('📊 Unmasking scheduler after initialization');
+                        scheduler.unmask();
+                    }
+                    console.log('✅ Scheduler fully initialized with', events.length, 'events and', resources.length, 'resources');
+                    updateStatus();
+                }, 100);
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
