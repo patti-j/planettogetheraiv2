@@ -376,7 +376,7 @@ const WidgetPreview = ({ widget }: { widget: any }) => {
   return (
     <div className="w-full min-h-64 border rounded-lg bg-white p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold">{widget.title || 'Untitled Widget'}</h3>
+        <h3 className="text-lg font-semibold">{widget.title || widget.name || 'Untitled Widget'}</h3>
         {isSystemWidget && (
           <Badge variant="outline" className="bg-gray-100 text-gray-600">
             <Settings className="h-3 w-3 mr-1" />
@@ -519,7 +519,7 @@ export default function UIDesignStudio() {
           return data.map((widget: any) => ({
             id: widget.id?.toString() || '',
             type: 'widget' as const,
-            title: widget.title || 'Untitled Widget',
+            title: widget.title || widget.name || 'Untitled Widget',
             description: widget.subtitle || widget.description || '',
             configuration: widget.configuration || widget.config || {},
             data: widget.data || {}, // Preserve the data field for pre-built widgets

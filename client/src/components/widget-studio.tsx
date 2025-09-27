@@ -1059,7 +1059,7 @@ export function WidgetStudio({ open, onOpenChange, existingWidget, widgetType }:
                 <CardContent>
                   <div className="space-y-4">
                     <div className="p-4 bg-muted rounded-lg">
-                      <h3 className="font-semibold mb-2">{widgetConfig.title || 'Untitled Widget'}</h3>
+                      <h3 className="font-semibold mb-2">{widgetConfig.title || widgetConfig.name || 'Untitled Widget'}</h3>
                       <p className="text-sm text-muted-foreground mb-4">
                         {widgetConfig.description || 'No description provided'}
                       </p>

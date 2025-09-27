@@ -89,7 +89,7 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
       const transformedItems: CanvasItem[] = dbWidgets.map((widget: any) => ({
         id: widget.id.toString(),
         type: widget.widgetType || 'chart',
-        title: widget.title || 'Untitled Widget',
+        title: widget.title || widget.name || 'Untitled Widget',
         content: {
           ...widget.data,
           chartType: widget.configuration?.chartType || widget.widgetSubtype || 'bar',

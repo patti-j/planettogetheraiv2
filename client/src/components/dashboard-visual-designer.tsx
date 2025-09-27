@@ -766,7 +766,7 @@ export function DashboardVisualDesigner({
     
     return {
       id: `widget-${widget.id}`,
-      title: widget.title || "Untitled Widget",
+      title: widget.title || widget.name || "Untitled Widget",
       type: widgetType,
       icon,
       category,
