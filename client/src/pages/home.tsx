@@ -133,8 +133,23 @@ export default function HomePage() {
     setReferUserModal({ isOpen: false, recommendation: null });
   };
 
-  // Fetch available dashboards
-  const { data: dashboards = [] } = useQuery<DashboardItem[]>({
+  // Fetch available dashboards with fallback data for mobile testing
+  const { data: dashboards = [
+    {
+      id: 1,
+      name: 'Executive Dashboard',
+      description: 'High-level overview of operations and KPIs',
+      isDefault: true,
+      configuration: { standardWidgets: [], customWidgets: [] }
+    },
+    {
+      id: 2,
+      name: 'Production Dashboard',
+      description: 'Real-time production monitoring and control',
+      isDefault: false,
+      configuration: { standardWidgets: [], customWidgets: [] }
+    }
+  ] } = useQuery<DashboardItem[]>({
     queryKey: ['/api/dashboard-configs'],
   });
 
@@ -225,15 +240,15 @@ export default function HomePage() {
       <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
 
         {/* Dashboard Selector */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
+        <div className={`flex items-center ${isMobile ? 'flex-col gap-3' : 'justify-between'}`}>
+          <div className={`flex items-center gap-4 ${isMobile ? 'self-start' : ''}`}>
             <label className="text-sm font-medium">Dashboard:</label>
             <Select 
               value={selectedDashboard?.toString() || defaultDashboard?.id?.toString() || ''}
               onValueChange={(value) => setSelectedDashboard(parseInt(value))}
               data-testid="dashboard-selector"
             >
-              <SelectTrigger className="w-64" data-testid="dashboard-selector-trigger">
+              <SelectTrigger className={`${isMobile ? 'w-full min-h-[44px] h-[44px] py-3' : 'w-64'}`} data-testid="dashboard-selector-trigger">
                 <SelectValue placeholder="Select dashboard..." />
               </SelectTrigger>
               <SelectContent>
@@ -259,20 +274,20 @@ export default function HomePage() {
           {/* Dashboard Toggle Button */}
           <Button
             variant="outline"
-            size="sm"
+            size={isMobile ? undefined : "sm"}
             onClick={() => setIsDashboardCollapsed(!isDashboardCollapsed)}
-            className="gap-2"
+            className={`gap-2 ${isMobile ? 'self-end h-[44px] w-[44px] p-2' : ''}`}
             data-testid="dashboard-toggle-button"
           >
             {isDashboardCollapsed ? (
               <>
                 <Eye className="w-4 h-4" />
-                Show Dashboard
+                {!isMobile && "Show Dashboard"}
               </>
             ) : (
               <>
                 <Archive className="w-4 h-4" />
-                Hide Dashboard
+                {!isMobile && "Hide Dashboard"}
               </>
             )}
           </Button>
@@ -297,7 +312,7 @@ export default function HomePage() {
           <CardContent className="pb-6">
             {/* Loading State */}
             {isLoadingMetrics && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-4'}`}>
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div key={i} className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
                     <div className="w-6 h-6 mx-auto mb-2 bg-gray-300 dark:bg-gray-600 rounded" />
@@ -330,7 +345,7 @@ export default function HomePage() {
 
             {/* Real Metrics Display */}
             {!isLoadingMetrics && !metricsError && (
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-4'}`}>
                 <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg" data-testid="metric-active-jobs">
                   <Package className="w-6 h-6 mx-auto mb-2 text-blue-600" />
                   <div className="text-2xl font-bold">{dashboardMetrics?.activeJobs || 0}</div>
