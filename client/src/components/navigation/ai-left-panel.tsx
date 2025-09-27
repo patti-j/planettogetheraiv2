@@ -48,7 +48,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     const saved = localStorage.getItem('ai-panel-collapsed');
     return saved === 'true';
   });
-  const [activeTab, setActiveTab] = useState('chat');
+  const [activeTab, setActiveTab] = useState('simulations');
   const [prompt, setPrompt] = useState('');
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -57,7 +57,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
   const [showFloatingNotification, setShowFloatingNotification] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<'max' | 'scheduling_assistant'>('max');
   
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{
@@ -1249,10 +1248,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             !isActive && "opacity-60"
                           )}
                           onClick={() => {
-                            if (isActive && (agent.id === 'max' || agent.id === 'scheduling_assistant')) {
-                              setSelectedAgent(agent.id === 'max' ? 'max' : 'scheduling_assistant');
-                              setActiveTab('chat');
-                            }
+                            // Chat functionality moved to floating bubble
                           }}
                         >
                           <CardHeader className="pb-2">
@@ -1688,7 +1684,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
-              setActiveTab('chat');
+              setActiveTab('simulations');
             }}
             title="Open Agents Panel"
             style={{ padding: '8px', background: 'none', border: 'none' }}
@@ -1761,7 +1757,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   size="sm"
                   onClick={() => {
                     setIsCollapsed(false);
-                    setActiveTab('chat');
+                    setActiveTab('simulations');
                     setShowFloatingNotification(false);
                     setTimeout(() => setFloatingNotification(null), 300);
                     // Auto-scroll to bottom after a brief delay to ensure panel is expanded
