@@ -1998,41 +1998,401 @@ router.get("/api/inbox", requireAuth, async (req, res) => {
 // Dashboard Configurations endpoint
 router.get("/dashboard-configs", requireAuth, async (req, res) => {
   try {
-    // Get sample dashboard configs for now - in production this would be from database
+    // Get sample dashboard configs with comprehensive widgets for manufacturing roles
     const dashboards = [
       {
         id: 1,
         name: 'Executive Dashboard',
         description: 'High-level overview of operations and KPIs for executive team',
         isDefault: true,
+        roleTargets: ['Plant Manager', 'Executive', 'General Manager'],
         createdAt: new Date(Date.now() - 86400000).toISOString(),
         updatedAt: new Date().toISOString(),
         configuration: {
-          standardWidgets: [],
+          standardWidgets: [
+            {
+              id: 'exec-kpi-overview',
+              type: 'kpi-grid',
+              title: 'Key Performance Indicators',
+              position: { x: 0, y: 0, w: 8, h: 4 },
+              config: {
+                metrics: [
+                  { name: 'Overall Equipment Effectiveness', value: 87.5, unit: '%', trend: 'up', target: 90 },
+                  { name: 'Production Volume', value: 1247, unit: 'units', trend: 'up', target: 1200 },
+                  { name: 'Quality Rate', value: 99.2, unit: '%', trend: 'stable', target: 99.5 },
+                  { name: 'On-Time Delivery', value: 94.8, unit: '%', trend: 'down', target: 95 }
+                ]
+              }
+            },
+            {
+              id: 'exec-production-chart',
+              type: 'production-trend-chart',
+              title: 'Production Trends (30 Days)',
+              position: { x: 8, y: 0, w: 6, h: 4 },
+              config: {
+                chartType: 'line',
+                timeRange: '30d',
+                metrics: ['production_volume', 'quality_rate']
+              }
+            },
+            {
+              id: 'exec-alerts-summary',
+              type: 'alert-summary',
+              title: 'Critical Alerts',
+              position: { x: 0, y: 4, w: 6, h: 3 },
+              config: {
+                alertTypes: ['critical', 'high'],
+                showTrends: true
+              }
+            },
+            {
+              id: 'exec-financial-summary',
+              type: 'financial-overview',
+              title: 'Financial Impact',
+              position: { x: 6, y: 4, w: 8, h: 3 },
+              config: {
+                currency: 'USD',
+                showComparisons: true,
+                metrics: ['cost_savings', 'revenue_impact', 'efficiency_gains']
+              }
+            }
+          ],
           customWidgets: []
         }
       },
       {
         id: 2,
-        name: 'Production Control',
+        name: 'Production Control Dashboard',
         description: 'Real-time production monitoring and control dashboard',
         isDefault: false,
+        roleTargets: ['Production Manager', 'Operations Manager', 'Shift Supervisor'],
         createdAt: new Date(Date.now() - 172800000).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
         configuration: {
-          standardWidgets: [],
-          customWidgets: []
+          standardWidgets: [
+            {
+              id: 'prod-live-status',
+              type: 'live-production-status',
+              title: 'Live Production Status',
+              position: { x: 0, y: 0, w: 10, h: 3 },
+              config: {
+                refreshInterval: 30,
+                showResourceUtilization: true,
+                displayMode: 'cards'
+              }
+            },
+            {
+              id: 'prod-job-queue',
+              type: 'job-queue-monitor',
+              title: 'Job Queue & Schedule',
+              position: { x: 10, y: 0, w: 6, h: 6 },
+              config: {
+                showNext: 10,
+                enableDragDrop: true,
+                showPriorities: true
+              }
+            },
+            {
+              id: 'prod-resource-utilization',
+              type: 'resource-utilization',
+              title: 'Resource Utilization',
+              position: { x: 0, y: 3, w: 5, h: 4 },
+              config: {
+                viewMode: 'gauge',
+                showTargets: true,
+                alertThresholds: { low: 60, high: 95 }
+              }
+            },
+            {
+              id: 'prod-throughput',
+              type: 'throughput-monitor',
+              title: 'Hourly Throughput',
+              position: { x: 5, y: 3, w: 5, h: 4 },
+              config: {
+                timeWindow: '24h',
+                showTargets: true,
+                chartType: 'bar'
+              }
+            },
+            {
+              id: 'prod-bottlenecks',
+              type: 'bottleneck-analysis',
+              title: 'Current Bottlenecks',
+              position: { x: 0, y: 7, w: 8, h: 3 },
+              config: {
+                autoDetect: true,
+                showRecommendations: true
+              }
+            },
+            {
+              id: 'prod-downtime',
+              type: 'downtime-tracker',
+              title: 'Downtime Analysis',
+              position: { x: 8, y: 7, w: 8, h: 3 },
+              config: {
+                timeRange: '7d',
+                categorizeReasons: true,
+                showCosts: true
+              }
+            }
+          ],
+          customWidgets: [
+            {
+              id: 'custom-efficiency-heatmap',
+              type: 'custom-chart',
+              title: 'Production Efficiency Heatmap',
+              position: { x: 10, y: 6, w: 6, h: 4 },
+              config: {
+                chartLibrary: 'recharts',
+                dataSource: '/api/production-efficiency-heatmap',
+                refreshInterval: 300
+              }
+            }
+          ]
         }
       },
       {
         id: 3,
-        name: 'Quality Metrics',
+        name: 'Quality Control Dashboard',
         description: 'Quality control and compliance tracking dashboard',
         isDefault: false,
+        roleTargets: ['Quality Manager', 'QC Inspector', 'Compliance Officer'],
         createdAt: new Date(Date.now() - 259200000).toISOString(),
         updatedAt: new Date(Date.now() - 172800000).toISOString(),
         configuration: {
-          standardWidgets: [],
+          standardWidgets: [
+            {
+              id: 'quality-overview',
+              type: 'quality-metrics-overview',
+              title: 'Quality Metrics Overview',
+              position: { x: 0, y: 0, w: 8, h: 3 },
+              config: {
+                metrics: [
+                  { name: 'Defect Rate', value: 0.8, unit: '%', target: 0.5 },
+                  { name: 'First Pass Yield', value: 98.2, unit: '%', target: 98.5 },
+                  { name: 'Customer Complaints', value: 3, unit: 'count', target: 2 },
+                  { name: 'Inspection Coverage', value: 94.5, unit: '%', target: 95 }
+                ]
+              }
+            },
+            {
+              id: 'spc-charts',
+              type: 'spc-control-charts',
+              title: 'Statistical Process Control',
+              position: { x: 8, y: 0, w: 8, h: 6 },
+              config: {
+                parameters: ['temperature', 'pressure', 'pH', 'viscosity'],
+                controlLimits: true,
+                showTrends: true
+              }
+            },
+            {
+              id: 'batch-quality',
+              type: 'batch-quality-tracker',
+              title: 'Batch Quality Status',
+              position: { x: 0, y: 3, w: 8, h: 4 },
+              config: {
+                showRecent: 20,
+                highlightIssues: true,
+                enableDrillDown: true
+              }
+            },
+            {
+              id: 'compliance-status',
+              type: 'compliance-dashboard',
+              title: 'Compliance Status',
+              position: { x: 0, y: 7, w: 6, h: 3 },
+              config: {
+                standards: ['ISO9001', 'FDA', 'GMP'],
+                showExpirations: true,
+                alertOnNonCompliance: true
+              }
+            },
+            {
+              id: 'quality-costs',
+              type: 'cost-of-quality',
+              title: 'Cost of Quality Analysis',
+              position: { x: 6, y: 7, w: 6, h: 3 },
+              config: {
+                categories: ['prevention', 'appraisal', 'internal_failure', 'external_failure'],
+                showTrends: true,
+                timeRange: '3m'
+              }
+            },
+            {
+              id: 'corrective-actions',
+              type: 'corrective-actions-tracker',
+              title: 'Corrective Actions',
+              position: { x: 12, y: 7, w: 4, h: 3 },
+              config: {
+                showOverdue: true,
+                priorityLevels: true
+              }
+            }
+          ],
+          customWidgets: []
+        }
+      },
+      {
+        id: 4,
+        name: 'Maintenance Dashboard',
+        description: 'Predictive and preventive maintenance management',
+        isDefault: false,
+        roleTargets: ['Maintenance Manager', 'Maintenance Technician', 'Reliability Engineer'],
+        createdAt: new Date(Date.now() - 345600000).toISOString(),
+        updatedAt: new Date(Date.now() - 259200000).toISOString(),
+        configuration: {
+          standardWidgets: [
+            {
+              id: 'maint-equipment-health',
+              type: 'equipment-health-overview',
+              title: 'Equipment Health Status',
+              position: { x: 0, y: 0, w: 10, h: 4 },
+              config: {
+                showCritical: true,
+                healthScoring: true,
+                predictiveAlerts: true
+              }
+            },
+            {
+              id: 'maint-schedule',
+              type: 'maintenance-schedule',
+              title: 'Maintenance Schedule',
+              position: { x: 10, y: 0, w: 6, h: 4 },
+              config: {
+                viewMode: 'calendar',
+                showOverdue: true,
+                timeHorizon: '30d'
+              }
+            },
+            {
+              id: 'maint-work-orders',
+              type: 'work-order-manager',
+              title: 'Active Work Orders',
+              position: { x: 0, y: 4, w: 8, h: 4 },
+              config: {
+                statusFilters: ['open', 'in_progress'],
+                prioritySort: true,
+                showAssignments: true
+              }
+            },
+            {
+              id: 'maint-kpis',
+              type: 'maintenance-kpis',
+              title: 'Maintenance KPIs',
+              position: { x: 8, y: 4, w: 8, h: 4 },
+              config: {
+                metrics: [
+                  { name: 'MTBF', value: 168, unit: 'hours', target: 180 },
+                  { name: 'MTTR', value: 2.4, unit: 'hours', target: 2.0 },
+                  { name: 'Planned Maintenance %', value: 78, unit: '%', target: 80 },
+                  { name: 'Maintenance Cost/Unit', value: 12.5, unit: '$', target: 12.0 }
+                ]
+              }
+            },
+            {
+              id: 'maint-parts-inventory',
+              type: 'spare-parts-inventory',
+              title: 'Spare Parts Status',
+              position: { x: 0, y: 8, w: 6, h: 3 },
+              config: {
+                showLowStock: true,
+                criticalParts: true,
+                reorderAlerts: true
+              }
+            },
+            {
+              id: 'maint-costs',
+              type: 'maintenance-costs',
+              title: 'Maintenance Costs',
+              position: { x: 6, y: 8, w: 5, h: 3 },
+              config: {
+                breakdown: ['labor', 'parts', 'contractors'],
+                budgetComparison: true,
+                timeRange: '6m'
+              }
+            },
+            {
+              id: 'maint-reliability',
+              type: 'reliability-analysis',
+              title: 'Reliability Trends',
+              position: { x: 11, y: 8, w: 5, h: 3 },
+              config: {
+                trendAnalysis: true,
+                failureModes: true,
+                predictiveModel: 'enabled'
+              }
+            }
+          ],
+          customWidgets: []
+        }
+      },
+      {
+        id: 5,
+        name: 'Shift Operations Dashboard',
+        description: 'Real-time operations dashboard for shift supervisors',
+        isDefault: false,
+        roleTargets: ['Shift Supervisor', 'Operations Coordinator', 'Floor Manager'],
+        createdAt: new Date(Date.now() - 432000000).toISOString(),
+        updatedAt: new Date(Date.now() - 345600000).toISOString(),
+        configuration: {
+          standardWidgets: [
+            {
+              id: 'shift-handover',
+              type: 'shift-handover-summary',
+              title: 'Shift Handover',
+              position: { x: 0, y: 0, w: 8, h: 3 },
+              config: {
+                showPreviousShift: true,
+                keyMetrics: true,
+                openIssues: true
+              }
+            },
+            {
+              id: 'shift-performance',
+              type: 'shift-performance-tracker',
+              title: 'Current Shift Performance',
+              position: { x: 8, y: 0, w: 8, h: 3 },
+              config: {
+                realTimeUpdate: true,
+                targetComparison: true,
+                progressIndicators: true
+              }
+            },
+            {
+              id: 'operator-assignments',
+              type: 'operator-assignment-board',
+              title: 'Operator Assignments',
+              position: { x: 0, y: 3, w: 6, h: 4 },
+              config: {
+                skillMatching: true,
+                availabilityStatus: true,
+                rotationSchedule: true
+              }
+            },
+            {
+              id: 'production-alerts',
+              type: 'production-alert-monitor',
+              title: 'Production Alerts',
+              position: { x: 6, y: 3, w: 5, h: 4 },
+              config: {
+                severityLevels: true,
+                autoRefresh: 15,
+                alertHistory: true
+              }
+            },
+            {
+              id: 'safety-incidents',
+              type: 'safety-incident-tracker',
+              title: 'Safety Incidents',
+              position: { x: 11, y: 3, w: 5, h: 4 },
+              config: {
+                showNearMisses: true,
+                incidentTypes: true,
+                reportingStatus: true
+              }
+            }
+          ],
           customWidgets: []
         }
       }
@@ -2042,6 +2402,330 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
   } catch (error: any) {
     console.error('Error fetching dashboard configs:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
+  }
+});
+
+// Canvas Widgets API endpoints
+router.get("/api/canvas/widgets", requireAuth, async (req, res) => {
+  try {
+    // Get sample widget library with comprehensive manufacturing widgets
+    const widgets = [
+      {
+        id: 'kpi-grid',
+        name: 'KPI Grid',
+        category: 'Performance',
+        description: 'Display multiple key performance indicators in a grid layout',
+        icon: 'gauge',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 8, h: 4 },
+        supportedSizes: [
+          { w: 4, h: 2 }, { w: 6, h: 3 }, { w: 8, h: 4 }, { w: 12, h: 6 }
+        ],
+        configSchema: {
+          metrics: { type: 'array', required: true },
+          displayMode: { type: 'select', options: ['grid', 'list', 'cards'] },
+          showTrends: { type: 'boolean', default: true },
+          refreshInterval: { type: 'number', default: 30 }
+        }
+      },
+      {
+        id: 'production-trend-chart',
+        name: 'Production Trends',
+        category: 'Production',
+        description: 'Line or bar chart showing production trends over time',
+        icon: 'trending-up',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 8, h: 4 },
+        configSchema: {
+          chartType: { type: 'select', options: ['line', 'bar', 'area'] },
+          timeRange: { type: 'select', options: ['1d', '7d', '30d', '90d'] },
+          metrics: { type: 'multiselect', required: true },
+          showTargets: { type: 'boolean', default: false }
+        }
+      },
+      {
+        id: 'live-production-status',
+        name: 'Live Production Status',
+        category: 'Production',
+        description: 'Real-time status of production lines and resources',
+        icon: 'activity',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 10, h: 3 },
+        configSchema: {
+          refreshInterval: { type: 'number', default: 30, min: 5, max: 300 },
+          displayMode: { type: 'select', options: ['cards', 'list', 'table'] },
+          showResourceUtilization: { type: 'boolean', default: true },
+          alertsEnabled: { type: 'boolean', default: true }
+        }
+      },
+      {
+        id: 'resource-utilization',
+        name: 'Resource Utilization',
+        category: 'Resources',
+        description: 'Monitor equipment and resource utilization rates',
+        icon: 'cpu',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 6, h: 4 },
+        configSchema: {
+          viewMode: { type: 'select', options: ['gauge', 'bar', 'donut'] },
+          alertThresholds: { 
+            type: 'object', 
+            properties: {
+              low: { type: 'number', default: 60 },
+              high: { type: 'number', default: 95 }
+            }
+          },
+          showTargets: { type: 'boolean', default: true }
+        }
+      },
+      {
+        id: 'quality-metrics-overview',
+        name: 'Quality Metrics',
+        category: 'Quality',
+        description: 'Overview of quality control metrics and performance',
+        icon: 'check-circle',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 8, h: 3 },
+        configSchema: {
+          displayMetrics: { type: 'multiselect', required: true },
+          showTrends: { type: 'boolean', default: true },
+          alertOnTarget: { type: 'boolean', default: true }
+        }
+      },
+      {
+        id: 'equipment-health-overview',
+        name: 'Equipment Health',
+        category: 'Maintenance',
+        description: 'Monitor equipment health and predictive maintenance alerts',
+        icon: 'wrench',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 10, h: 4 },
+        configSchema: {
+          healthScoring: { type: 'boolean', default: true },
+          predictiveAlerts: { type: 'boolean', default: true },
+          showCritical: { type: 'boolean', default: true },
+          maintenanceTypes: { type: 'multiselect', options: ['preventive', 'predictive', 'corrective'] }
+        }
+      },
+      {
+        id: 'job-queue-monitor',
+        name: 'Job Queue Monitor',
+        category: 'Production',
+        description: 'Monitor and manage production job queues and scheduling',
+        icon: 'list',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 6, h: 6 },
+        configSchema: {
+          showNext: { type: 'number', default: 10, min: 5, max: 50 },
+          enableDragDrop: { type: 'boolean', default: false },
+          showPriorities: { type: 'boolean', default: true },
+          statusFilters: { type: 'multiselect', options: ['queued', 'active', 'paused', 'completed'] }
+        }
+      },
+      {
+        id: 'alert-summary',
+        name: 'Alert Summary',
+        category: 'Monitoring',
+        description: 'Summary of system alerts and notifications',
+        icon: 'bell',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 6, h: 3 },
+        configSchema: {
+          alertTypes: { type: 'multiselect', options: ['critical', 'high', 'medium', 'low'] },
+          showTrends: { type: 'boolean', default: false },
+          groupByType: { type: 'boolean', default: true },
+          maxAlerts: { type: 'number', default: 10 }
+        }
+      },
+      {
+        id: 'throughput-monitor',
+        name: 'Throughput Monitor',
+        category: 'Production',
+        description: 'Monitor production throughput and capacity metrics',
+        icon: 'bar-chart-3',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 6, h: 4 },
+        configSchema: {
+          timeWindow: { type: 'select', options: ['1h', '8h', '24h', '7d'] },
+          chartType: { type: 'select', options: ['bar', 'line', 'area'] },
+          showTargets: { type: 'boolean', default: true },
+          capacityOverlay: { type: 'boolean', default: false }
+        }
+      },
+      {
+        id: 'bottleneck-analysis',
+        name: 'Bottleneck Analysis',
+        category: 'Analytics',
+        description: 'Identify and analyze production bottlenecks',
+        icon: 'zap-off',
+        configurable: true,
+        dataSourceRequired: true,
+        defaultSize: { w: 8, h: 3 },
+        configSchema: {
+          autoDetect: { type: 'boolean', default: true },
+          showRecommendations: { type: 'boolean', default: true },
+          analysisDepth: { type: 'select', options: ['basic', 'detailed', 'comprehensive'] },
+          timeHorizon: { type: 'select', options: ['current', '24h', '7d'] }
+        }
+      }
+    ];
+    
+    res.json(widgets);
+  } catch (error: any) {
+    console.error('Error fetching widgets:', error);
+    res.status(500).json({ error: 'Failed to fetch widget library' });
+  }
+});
+
+router.post("/api/canvas/widgets", requireAuth, async (req, res) => {
+  try {
+    const { type, title, position, config, dashboardId } = req.body;
+    
+    // For now, return the created widget data
+    // In production, this would save to database
+    const newWidget = {
+      id: `widget-${Date.now()}`,
+      type,
+      title,
+      position,
+      config,
+      dashboardId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    res.status(201).json(newWidget);
+  } catch (error: any) {
+    console.error('Error creating widget:', error);
+    res.status(500).json({ error: 'Failed to create widget' });
+  }
+});
+
+router.put("/api/canvas/widgets/:widgetId", requireAuth, async (req, res) => {
+  try {
+    const { widgetId } = req.params;
+    const updateData = req.body;
+    
+    // For now, return the updated widget data
+    // In production, this would update in database
+    const updatedWidget = {
+      id: widgetId,
+      ...updateData,
+      updatedAt: new Date().toISOString()
+    };
+    
+    res.json(updatedWidget);
+  } catch (error: any) {
+    console.error('Error updating widget:', error);
+    res.status(500).json({ error: 'Failed to update widget' });
+  }
+});
+
+router.delete("/api/canvas/widgets/:widgetId", requireAuth, async (req, res) => {
+  try {
+    const { widgetId } = req.params;
+    
+    // For now, just return success
+    // In production, this would delete from database
+    res.json({ success: true, message: 'Widget deleted successfully' });
+  } catch (error: any) {
+    console.error('Error deleting widget:', error);
+    res.status(500).json({ error: 'Failed to delete widget' });
+  }
+});
+
+// Widget data endpoints for specific widget types
+router.get("/api/widget-data/production-efficiency-heatmap", requireAuth, async (req, res) => {
+  try {
+    // Sample heatmap data for production efficiency
+    const heatmapData = {
+      timeRange: '7d',
+      data: [
+        { resource: 'Line 1', hour: 0, efficiency: 85, day: 'Monday' },
+        { resource: 'Line 1', hour: 1, efficiency: 92, day: 'Monday' },
+        { resource: 'Line 1', hour: 2, efficiency: 88, day: 'Monday' },
+        { resource: 'Line 2', hour: 0, efficiency: 78, day: 'Monday' },
+        { resource: 'Line 2', hour: 1, efficiency: 95, day: 'Monday' },
+        { resource: 'Line 2', hour: 2, efficiency: 91, day: 'Monday' },
+        // Add more sample data...
+      ],
+      metadata: {
+        minEfficiency: 65,
+        maxEfficiency: 98,
+        avgEfficiency: 87.3,
+        targetEfficiency: 90
+      }
+    };
+    
+    res.json(heatmapData);
+  } catch (error: any) {
+    console.error('Error fetching heatmap data:', error);
+    res.status(500).json({ error: 'Failed to fetch heatmap data' });
+  }
+});
+
+router.get("/api/widget-data/live-production-status", requireAuth, async (req, res) => {
+  try {
+    // Sample live production status data
+    const productionStatus = {
+      timestamp: new Date().toISOString(),
+      resources: [
+        {
+          id: 'line-1',
+          name: 'Production Line 1',
+          status: 'running',
+          utilization: 92.5,
+          currentJob: 'Job-447',
+          targetRate: 150,
+          actualRate: 142,
+          efficiency: 94.7,
+          nextMaintenance: '2024-09-30T10:00:00Z'
+        },
+        {
+          id: 'line-2', 
+          name: 'Production Line 2',
+          status: 'running',
+          utilization: 87.3,
+          currentJob: 'Job-448',
+          targetRate: 120,
+          actualRate: 118,
+          efficiency: 98.3,
+          nextMaintenance: '2024-10-02T14:00:00Z'
+        },
+        {
+          id: 'line-3',
+          name: 'Production Line 3', 
+          status: 'maintenance',
+          utilization: 0,
+          currentJob: null,
+          targetRate: 100,
+          actualRate: 0,
+          efficiency: 0,
+          nextMaintenance: '2024-09-28T16:00:00Z'
+        }
+      ],
+      summary: {
+        totalLines: 3,
+        activeLines: 2,
+        avgUtilization: 59.9,
+        totalProduction: 260,
+        productionTarget: 370
+      }
+    };
+    
+    res.json(productionStatus);
+  } catch (error: any) {
+    console.error('Error fetching production status:', error);
+    res.status(500).json({ error: 'Failed to fetch production status' });
   }
 });
 
