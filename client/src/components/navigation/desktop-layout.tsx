@@ -634,7 +634,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             </ResizablePanel>
             
             {/* Resizable handle for AI panel */}
-            <ResizableHandle withHandle className="w-[6px] bg-gradient-to-r from-border/40 via-border/60 to-border/40 hover:from-primary/15 hover:via-primary/25 hover:to-primary/15 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
+            <ResizableHandle withHandle className="w-[1px] bg-border/80 hover:bg-primary/20 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
             
             {/* Main content panel */}
             <ResizablePanel minSize={30}>
@@ -694,7 +694,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </ResizablePanel>
               
               {/* Resizable handle for AI panel */}
-              <ResizableHandle withHandle className="w-[6px] bg-gradient-to-r from-border/40 via-border/60 to-border/40 hover:from-primary/15 hover:via-primary/25 hover:to-primary/15 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
+              <ResizableHandle withHandle className="w-[1px] bg-border/80 hover:bg-primary/20 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
               
               {/* Main content panel */}
               <ResizablePanel minSize={30}>
