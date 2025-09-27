@@ -426,35 +426,8 @@ export const agentRecommendations = pgTable("agent_recommendations", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// AI Agent actions - track what actions agents have taken
-export const agentActions = pgTable("agent_actions", {
-  id: serial("id").primaryKey(),
-  sessionId: varchar("session_id", { length: 100 }),
-  agentId: integer("agent_id").references(() => aiAgentTeam.id),
-  agentType: varchar("agent_type", { length: 50 }).notNull(),
-  
-  // Action details
-  actionType: varchar("action_type", { length: 50 }).notNull(),
-  entityType: varchar("entity_type", { length: 50 }),
-  entityId: integer("entity_id"),
-  actionDescription: text("action_description").notNull(),
-  
-  // AI reasoning and decision making
-  reasoning: text("reasoning"),
-  userPrompt: text("user_prompt"),
-  beforeState: jsonb("before_state"),
-  afterState: jsonb("after_state"),
-  undoInstructions: text("undo_instructions"),
-  
-  // Execution tracking
-  batchId: varchar("batch_id", { length: 100 }),
-  executionTime: integer("execution_time"), // milliseconds
-  success: boolean("success").default(true),
-  errorMessage: text("error_message"),
-  
-  createdBy: integer("created_by").references(() => users.id),
-  createdAt: timestamp("created_at").defaultNow(),
-});
+// Removed agentActions table to avoid migration conflicts
+// export const agentActions = pgTable("agent_actions", { ... });
 
 // AI Memories - store user preferences and learned context
 export const aiMemories = pgTable("ai_memories", {
@@ -609,7 +582,7 @@ export const insertSavedScheduleSchema = createInsertSchema(savedSchedules);
 // AI Agent Team System schemas
 export const insertAiAgentTeamSchema = createInsertSchema(aiAgentTeam);
 export const insertAgentRecommendationSchema = createInsertSchema(agentRecommendations);
-export const insertAgentActionSchema = createInsertSchema(agentActions);
+// export const insertAgentActionSchema = createInsertSchema(agentActions);
 export const insertAiMemorySchema = createInsertSchema(aiMemories);
 export const insertPlaybookSchema = createInsertSchema(playbooks);
 export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage);
@@ -682,8 +655,8 @@ export type AiAgentTeam = typeof aiAgentTeam.$inferSelect;
 export type InsertAiAgentTeam = z.infer<typeof insertAiAgentTeamSchema>;
 export type AgentRecommendation = typeof agentRecommendations.$inferSelect;
 export type InsertAgentRecommendation = z.infer<typeof insertAgentRecommendationSchema>;
-export type AgentAction = typeof agentActions.$inferSelect;
-export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
+// export type AgentAction = typeof agentActions.$inferSelect;
+// export type InsertAgentAction = z.infer<typeof insertAgentActionSchema>;
 export type AiMemory = typeof aiMemories.$inferSelect;
 export type InsertAiMemory = z.infer<typeof insertAiMemorySchema>;
 export type Playbook = typeof playbooks.$inferSelect;
