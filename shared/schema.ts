@@ -59,6 +59,67 @@ export const rolePermissions = pgTable("role_permissions", {
 });
 
 // ============================================
+// API Keys & Agent Authentication Tables
+// ============================================
+
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  keyId: varchar("key_id", { length: 32 }).unique().notNull(), // public identifier
+  keyHash: text("key_hash").notNull(), // hashed secret key
+  name: varchar("name", { length: 255 }).notNull(), // human-readable name
+  description: text("description"),
+  userId: integer("user_id").references(() => users.id).notNull(), // creator
+  roleId: integer("role_id").references(() => roles.id), // assigned role for permissions
+  scope: jsonb("scope").default(sql`'[]'::jsonb`), // permitted endpoints/features
+  isActive: boolean("is_active").default(true),
+  lastUsedAt: timestamp("last_used_at"),
+  expiresAt: timestamp("expires_at"), // null = never expires
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const apiKeyUsage = pgTable("api_key_usage", {
+  id: serial("id").primaryKey(),
+  apiKeyId: integer("api_key_id").references(() => apiKeys.id).notNull(),
+  endpoint: varchar("endpoint", { length: 255 }).notNull(),
+  method: varchar("method", { length: 10 }).notNull(),
+  ipAddress: varchar("ip_address", { length: 45 }),
+  userAgent: text("user_agent"),
+  responseStatus: integer("response_status"),
+  responseTime: integer("response_time_ms"),
+  requestSize: integer("request_size_bytes"),
+  responseSize: integer("response_size_bytes"),
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+export const oauthClients = pgTable("oauth_clients", {
+  id: serial("id").primaryKey(),
+  clientId: varchar("client_id", { length: 64 }).unique().notNull(),
+  clientSecret: text("client_secret").notNull(), // hashed
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  redirectUris: jsonb("redirect_uris").default(sql`'[]'::jsonb`),
+  scopes: jsonb("scopes").default(sql`'[]'::jsonb`),
+  grantTypes: jsonb("grant_types").default(sql`'["client_credentials"]'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const oauthTokens = pgTable("oauth_tokens", {
+  id: serial("id").primaryKey(),
+  clientId: integer("client_id").references(() => oauthClients.id).notNull(),
+  tokenHash: text("token_hash").notNull().unique(),
+  tokenType: varchar("token_type", { length: 20 }).default("Bearer"),
+  scopes: jsonb("scopes").default(sql`'[]'::jsonb`),
+  expiresAt: timestamp("expires_at").notNull(),
+  isRevoked: boolean("is_revoked").default(false),
+  lastUsedAt: timestamp("last_used_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
 // Dashboard and Widget System
 // ============================================
 
@@ -154,8 +215,6 @@ export const insertPtJobOperationSchema = createInsertSchema(ptJobOperations).om
 
 export type PtJob = typeof ptJobs.$inferSelect;
 export type InsertPtJob = z.infer<typeof insertPtJobSchema>;
-export type PtJobOperation = typeof ptJobOperations.$inferSelect;
-export type InsertPtJobOperation = z.infer<typeof insertPtJobOperationSchema>;
 
 // Dashboard and Widget Insert/Select Schemas
 export const insertDashboardSchema = createInsertSchema(dashboards).omit({
@@ -594,6 +653,34 @@ export const insertRoleSchema = createInsertSchema(roles);
 export const insertPermissionSchema = createInsertSchema(permissions);
 export const insertUserRoleSchema = createInsertSchema(userRoles);
 export const insertRolePermissionSchema = createInsertSchema(rolePermissions);
+
+// API Keys & Authentication schemas
+export const insertApiKeySchema = createInsertSchema(apiKeys).omit({
+  id: true,
+  keyHash: true, // never allow direct input of hash
+  lastUsedAt: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertApiKeyUsageSchema = createInsertSchema(apiKeyUsage).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertOauthClientSchema = createInsertSchema(oauthClients).omit({
+  id: true,
+  clientSecret: true, // never allow direct input of secret
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertOauthTokenSchema = createInsertSchema(oauthTokens).omit({
+  id: true,
+  tokenHash: true, // never allow direct input of hash
+  lastUsedAt: true,
+  createdAt: true,
+});
 export const insertCompanyOnboardingSchema = createInsertSchema(companyOnboarding);
 export const insertUserPreferencesSchema = createInsertSchema(userPreferences);
 export const insertPtPlantSchema = createInsertSchema(ptPlants);
@@ -684,6 +771,51 @@ export type UserRole = typeof userRoles.$inferSelect;
 export type InsertUserRole = z.infer<typeof insertUserRoleSchema>;
 export type RolePermission = typeof rolePermissions.$inferSelect;
 export type InsertRolePermission = z.infer<typeof insertRolePermissionSchema>;
+
+// API Keys & Authentication types
+export type ApiKey = typeof apiKeys.$inferSelect;
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKeyUsage = typeof apiKeyUsage.$inferSelect;
+export type InsertApiKeyUsage = z.infer<typeof insertApiKeyUsageSchema>;
+export type OauthClient = typeof oauthClients.$inferSelect;
+export type InsertOauthClient = z.infer<typeof insertOauthClientSchema>;
+export type OauthToken = typeof oauthTokens.$inferSelect;
+export type InsertOauthToken = z.infer<typeof insertOauthTokenSchema>;
+
+// Database Relations for API Keys
+export const apiKeysRelations = relations(apiKeys, ({ one, many }) => ({
+  user: one(users, {
+    fields: [apiKeys.userId],
+    references: [users.id],
+  }),
+  role: one(roles, {
+    fields: [apiKeys.roleId],
+    references: [roles.id],
+  }),
+  usage: many(apiKeyUsage),
+}));
+
+export const apiKeyUsageRelations = relations(apiKeyUsage, ({ one }) => ({
+  apiKey: one(apiKeys, {
+    fields: [apiKeyUsage.apiKeyId],
+    references: [apiKeys.id],
+  }),
+}));
+
+export const oauthClientsRelations = relations(oauthClients, ({ one, many }) => ({
+  createdBy: one(users, {
+    fields: [oauthClients.createdBy],
+    references: [users.id],
+  }),
+  tokens: many(oauthTokens),
+}));
+
+export const oauthTokensRelations = relations(oauthTokens, ({ one }) => ({
+  client: one(oauthClients, {
+    fields: [oauthTokens.clientId],
+    references: [oauthClients.id],
+  }),
+}));
 export type CompanyOnboarding = typeof companyOnboarding.$inferSelect;
 export type InsertCompanyOnboarding = z.infer<typeof insertCompanyOnboardingSchema>;
 export type UserPreferences = typeof userPreferences.$inferSelect;

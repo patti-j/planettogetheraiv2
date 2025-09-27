@@ -4653,6 +4653,193 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
 });
 
 // =============================================================================
+// ENHANCED AUTHENTICATION API - Task 5: API Keys & OAuth 2.0
+// =============================================================================
+
+import bcrypt from 'bcryptjs';
+import crypto from 'crypto';
+import { apiKeys, apiKeyUsage, oauthClients, oauthTokens, users, roles } from '@shared/schema';
+import { enhancedAuth, requirePermission, AuthenticatedRequest } from './enhanced-auth-middleware';
+import { insertApiKeySchema, insertOauthClientSchema, ApiKey, OauthClient } from '@shared/schema';
+import { desc, eq, and } from 'drizzle-orm';
+
+// POST /api/v1/auth/api-keys - Create new API key
+router.post("/api/v1/auth/api-keys", enhancedAuth, requirePermission('auth', 'manage'), async (req: AuthenticatedRequest, res) => {
+  try {
+    const validatedData = insertApiKeySchema.parse(req.body);
+    
+    // Generate key ID and secret
+    const keyId = crypto.randomBytes(16).toString('hex');
+    const secret = crypto.randomBytes(32).toString('hex');
+    const fullKey = `pt_key_${keyId}_${secret}`;
+    
+    // Hash the secret for storage
+    const keyHash = await bcrypt.hash(secret, 12);
+    
+    // Insert API key
+    const [apiKey] = await db.insert(apiKeys).values({
+      keyId,
+      keyHash,
+      name: validatedData.name,
+      description: validatedData.description,
+      userId: req.user!.id,
+      roleId: validatedData.roleId,
+      scope: validatedData.scope,
+      expiresAt: validatedData.expiresAt,
+    }).returning();
+
+    console.log(`🔑 [API Keys] Created new API key: ${validatedData.name} for user ${req.user!.username}`);
+
+    res.json({
+      success: true,
+      apiKey: {
+        id: apiKey.id,
+        keyId: apiKey.keyId,
+        name: apiKey.name,
+        description: apiKey.description,
+        scope: apiKey.scope,
+        expiresAt: apiKey.expiresAt,
+        createdAt: apiKey.createdAt,
+        fullKey: fullKey // Only returned once during creation
+      }
+    });
+
+  } catch (error) {
+    console.error('🚨 [API Keys] Creation failed:', error);
+    res.status(400).json({
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to create API key'
+    });
+  }
+});
+
+// GET /api/v1/auth/api-keys - List API keys for current user
+router.get("/api/v1/auth/api-keys", enhancedAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const userApiKeys = await db.query.apiKeys.findMany({
+      where: eq(apiKeys.userId, req.user!.id),
+      with: {
+        role: true
+      },
+      orderBy: [desc(apiKeys.createdAt)]
+    });
+
+    const sanitizedKeys = userApiKeys.map(key => ({
+      id: key.id,
+      keyId: key.keyId,
+      name: key.name,
+      description: key.description,
+      scope: key.scope,
+      isActive: key.isActive,
+      lastUsedAt: key.lastUsedAt,
+      expiresAt: key.expiresAt,
+      createdAt: key.createdAt,
+      role: key.role ? { id: key.role.id, name: key.role.name } : null
+    }));
+
+    res.json({
+      success: true,
+      apiKeys: sanitizedKeys
+    });
+
+  } catch (error) {
+    console.error('🚨 [API Keys] List failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch API keys'
+    });
+  }
+});
+
+// DELETE /api/v1/auth/api-keys/:id - Revoke API key
+router.delete("/api/v1/auth/api-keys/:id", enhancedAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const keyId = parseInt(req.params.id);
+    
+    // Find the API key and verify ownership
+    const apiKey = await db.query.apiKeys.findFirst({
+      where: and(
+        eq(apiKeys.id, keyId),
+        eq(apiKeys.userId, req.user!.id)
+      )
+    });
+
+    if (!apiKey) {
+      return res.status(404).json({
+        success: false,
+        error: 'API key not found'
+      });
+    }
+
+    // Deactivate the key
+    await db.update(apiKeys)
+      .set({ isActive: false, updatedAt: new Date() })
+      .where(eq(apiKeys.id, keyId));
+
+    console.log(`🗑️ [API Keys] Revoked API key: ${apiKey.name} for user ${req.user!.username}`);
+
+    res.json({
+      success: true,
+      message: 'API key revoked successfully'
+    });
+
+  } catch (error) {
+    console.error('🚨 [API Keys] Revocation failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to revoke API key'
+    });
+  }
+});
+
+// GET /api/v1/auth/api-keys/:id/usage - Get API key usage analytics
+router.get("/api/v1/auth/api-keys/:id/usage", enhancedAuth, async (req: AuthenticatedRequest, res) => {
+  try {
+    const keyId = parseInt(req.params.id);
+    
+    // Verify API key ownership
+    const apiKey = await db.query.apiKeys.findFirst({
+      where: and(
+        eq(apiKeys.id, keyId),
+        eq(apiKeys.userId, req.user!.id)
+      )
+    });
+
+    if (!apiKey) {
+      return res.status(404).json({
+        success: false,
+        error: 'API key not found'
+      });
+    }
+
+    // Get usage statistics
+    const usage = await db.query.apiKeyUsage.findMany({
+      where: eq(apiKeyUsage.apiKeyId, keyId),
+      orderBy: [desc(apiKeyUsage.timestamp)],
+      limit: parseInt(req.query.limit as string) || 100
+    });
+
+    res.json({
+      success: true,
+      usage: usage.map(u => ({
+        endpoint: u.endpoint,
+        method: u.method,
+        responseStatus: u.responseStatus,
+        responseTime: u.responseTime,
+        timestamp: u.timestamp
+      }))
+    });
+
+  } catch (error) {
+    console.error('🚨 [API Keys] Usage fetch failed:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to fetch API key usage'
+    });
+  }
+});
+
+// =============================================================================
 // SEMANTIC QUERY API - Task 4: Natural Language Manufacturing Queries
 // =============================================================================
 
