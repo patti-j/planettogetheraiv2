@@ -30,6 +30,9 @@ import {
   stopOperationCommandSchema,
   pauseOperationCommandSchema,
   commandResponseSchema,
+  // Semantic Query schemas  
+  semanticQuerySchema,
+  type SemanticQueryResponse,
   type ScheduleJobCommand,
   type RescheduleJobCommand,
   type PrioritizeJobCommand,
@@ -4645,6 +4648,454 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
         null,
         [error.message]
       ));
+    }
+  }
+});
+
+// =============================================================================
+// SEMANTIC QUERY API - Task 4: Natural Language Manufacturing Queries
+// =============================================================================
+
+// CRITICAL SECURITY: SQL Safety Validation Function
+interface SQLSafetyResult {
+  safe: boolean;
+  reason?: string;
+}
+
+function validateSQLSafety(sqlQuery: string, maxResults: number): SQLSafetyResult {
+  const cleanQuery = sqlQuery.trim().toLowerCase();
+  
+  // 1. Ensure it's exactly one statement (no semicolons except at end)
+  const statements = sqlQuery.split(';').filter(s => s.trim());
+  if (statements.length > 1) {
+    return { safe: false, reason: "Multiple statements not allowed" };
+  }
+  
+  // 2. Must start with SELECT (case insensitive)
+  if (!cleanQuery.startsWith('select')) {
+    return { safe: false, reason: "Only SELECT statements allowed" };
+  }
+  
+  // 3. Block dangerous statement patterns (not just keywords)
+  const dangerousStatementPatterns = [
+    /\binsert\s+into\b/i,
+    /\bupdate\s+\w+\s+set\b/i,
+    /\bdelete\s+from\b/i,
+    /\bdrop\s+\w+/i,
+    /\bcreate\s+\w+/i,
+    /\balter\s+\w+/i,
+    /\btruncate\s+\w+/i,
+    /\bgrant\s+\w+/i,
+    /\brevoke\s+\w+/i,
+    /\bexec\s*\(/i,
+    /\bexecute\s*\(/i,
+    /\bpg_sleep\s*\(/i,
+    /\bwaitfor\s+delay/i,
+    /\binformation_schema\./i,
+    /\bpg_catalog\./i
+  ];
+  
+  for (const pattern of dangerousStatementPatterns) {
+    if (pattern.test(cleanQuery)) {
+      return { safe: false, reason: `Blocked dangerous SQL pattern: ${pattern.source}` };
+    }
+  }
+  
+  // Block SQL injection comment patterns
+  const commentPatterns = [
+    /--.*$/m,
+    /\/\*.*?\*\//g,
+    /\bchar\s*\(/i,
+    /\bascii\s*\(/i,
+    /\bsubstring\s*\([^)]*,\s*\d+\s*,\s*1\s*\)/i  // Common injection pattern
+  ];
+  
+  for (const pattern of commentPatterns) {
+    if (pattern.test(sqlQuery)) {
+      return { safe: false, reason: `Blocked SQL injection pattern` };
+    }
+  }
+  
+  // 4. Handle LIMIT clause requirement (allow COUNT without LIMIT)
+  const isCountQuery = /select\s+count\s*\(/i.test(cleanQuery);
+  const isAggregateQuery = /select\s+(count|sum|avg|min|max)\s*\(/i.test(cleanQuery);
+  
+  if (!isAggregateQuery && !cleanQuery.includes('limit')) {
+    return { safe: false, reason: "LIMIT clause is required for non-aggregate queries" };
+  }
+  
+  if (cleanQuery.includes('limit')) {
+    const limitMatch = cleanQuery.match(/limit\s+(\d+)/);
+    if (!limitMatch) {
+      return { safe: false, reason: "Invalid LIMIT clause format" };
+    }
+    
+    const limitValue = parseInt(limitMatch[1]);
+    if (limitValue > maxResults) {
+      return { safe: false, reason: `LIMIT ${limitValue} exceeds maximum ${maxResults}` };
+    }
+  }
+  
+  // 5. CRITICAL: Extract and validate ALL referenced tables
+  const allowedTables = ['ptjobs', 'ptjoboperations', 'alerts'];
+  const referencedTables = extractAllTableReferences(sqlQuery);
+  
+  // Every referenced table must be in the allowed list
+  const unauthorizedTables = referencedTables.filter(table => 
+    !allowedTables.includes(table.toLowerCase())
+  );
+  
+  if (unauthorizedTables.length > 0) {
+    return { safe: false, reason: `Unauthorized tables referenced: ${unauthorizedTables.join(', ')}` };
+  }
+  
+  if (referencedTables.length === 0) {
+    return { safe: false, reason: "No valid tables found in query" };
+  }
+  
+  // 6. Block complex or suspicious patterns
+  const suspiciousPatterns = [
+    /union\s+select/i,
+    /\/\*.*\*\//,
+    /--.*$/m,
+    /;.*select/i,
+    /select.*into\s+/i,
+    /exec\s*\(/i
+  ];
+  
+  for (const pattern of suspiciousPatterns) {
+    if (pattern.test(sqlQuery)) {
+      return { safe: false, reason: "Suspicious SQL pattern detected" };
+    }
+  }
+  
+  return { safe: true };
+}
+
+// CRITICAL SECURITY: Extract ALL table references from SQL
+function extractAllTableReferences(sqlQuery: string): string[] {
+  const tables: Set<string> = new Set();
+  const cleanQuery = sqlQuery.replace(/\s+/g, ' ').trim();
+  
+  // Pattern to match table references after FROM, JOIN, INTO, UPDATE
+  // This captures: FROM table, JOIN table, LEFT JOIN table, etc.
+  const tablePatterns = [
+    // FROM clauses
+    /\bfrom\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi,
+    // JOIN clauses (any type of join)
+    /\b(?:inner\s+join|left\s+join|right\s+join|full\s+join|cross\s+join|join)\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi,
+    // UPDATE clauses
+    /\bupdate\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi,
+    // INSERT INTO clauses
+    /\binsert\s+into\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi,
+    // DELETE FROM clauses
+    /\bdelete\s+from\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi
+  ];
+  
+  // Extract table names using each pattern
+  for (const pattern of tablePatterns) {
+    let match;
+    while ((match = pattern.exec(cleanQuery)) !== null) {
+      const tableName = match[1].toLowerCase();
+      // Skip SQL keywords that might be captured
+      if (!['select', 'where', 'and', 'or', 'on', 'as', 'by'].includes(tableName)) {
+        tables.add(tableName);
+      }
+    }
+  }
+  
+  // Handle subqueries - look for nested SELECT statements
+  // This is a simplified check for obvious subquery patterns
+  const subqueryPattern = /\(\s*select\s+.*?\bfrom\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi;
+  let subMatch;
+  while ((subMatch = subqueryPattern.exec(cleanQuery)) !== null) {
+    const tableName = subMatch[1].toLowerCase();
+    if (!['select', 'where', 'and', 'or', 'on', 'as', 'by'].includes(tableName)) {
+      tables.add(tableName);
+    }
+  }
+  
+  // Handle WITH clauses (CTEs)
+  const ctePattern = /\bwith\s+[a-zA-Z_][a-zA-Z0-9_]*\s+as\s*\(\s*select\s+.*?\bfrom\s+([a-zA-Z_][a-zA-Z0-9_]*)/gi;
+  let cteMatch;
+  while ((cteMatch = ctePattern.exec(cleanQuery)) !== null) {
+    const tableName = cteMatch[1].toLowerCase();
+    if (!['select', 'where', 'and', 'or', 'on', 'as', 'by'].includes(tableName)) {
+      tables.add(tableName);
+    }
+  }
+  
+  return Array.from(tables);
+}
+
+// POST /api/v1/query/semantic - Natural language query processing
+router.post("/api/v1/query/semantic", requireAuth, async (req, res) => {
+  const startTime = Date.now();
+  let queryId = `semantic_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+  
+  try {
+    console.log(`🧠 [Semantic Query] ${queryId}: Processing natural language query`);
+    
+    // Parse and validate request
+    const semanticQuery = semanticQuerySchema.parse(req.body);
+    const { query, context, maxResults, includeMetadata } = semanticQuery;
+    
+    console.log(`🧠 [Semantic Query] ${queryId}:`, {
+      query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
+      context,
+      maxResults,
+      user: req.userId
+    });
+
+    // Initialize OpenAI
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+
+    // Step 1: Analyze query intent and generate SQL
+    const intentAnalysis = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a manufacturing data analyst AI that converts natural language queries into SQL for a PlanetTogether manufacturing system database.
+
+DATABASE SCHEMA (Available Tables Only):
+- ptjobs: id, external_id, name, description, priority, need_date_time, scheduled_status, created_at, updated_at
+- ptjoboperations: id, job_id, external_id, name, description, operation_id, required_finish_qty, cycle_hrs, setup_hours, post_processing_hours, scheduled_start, scheduled_end, percent_finished, created_at, updated_at
+- alerts: id, title, description, severity, status, type, detected_at, created_at
+
+Note: Only query these confirmed available tables. Do not reference ptresources, ptjobresources, or ptmanufacturingorders unless you know they exist.
+
+QUERY CONTEXT: ${context}
+
+Your task:
+1. Understand the user's intent
+2. Generate appropriate SQL query (read-only SELECT only)
+3. Provide confidence score
+4. Suggest related queries
+
+Respond with JSON:
+{
+  "intent": "Brief description of what user is asking",
+  "confidence": 0.0-1.0,
+  "sql_query": "SELECT statement only",
+  "data_source": "Primary table being queried",
+  "explanation": "How you interpreted the query",
+  "suggestions": ["Related query 1", "Related query 2"],
+  "requires_joins": boolean,
+  "estimated_complexity": "low|medium|high"
+}
+
+SAFETY RULES:
+- Only generate SELECT queries (no INSERT, UPDATE, DELETE, DROP)
+- Use proper SQL syntax with quotes for column names containing special characters
+- Limit results with LIMIT clause (max ${maxResults})
+- Handle date/time queries appropriately
+- Be defensive about potential SQL injection
+
+Examples:
+- "How many jobs are running?" → COUNT(*) FROM ptjobs WHERE scheduled_status = 'running'
+- "What resources are overutilized?" → SELECT * FROM ptresources WHERE utilization > 80
+- "Show me high priority operations" → JOIN ptjobs and ptjoboperations WHERE priority > 7`
+        },
+        {
+          role: "user",
+          content: query
+        }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.2
+    });
+
+    const analysis = JSON.parse(intentAnalysis.choices[0].message.content || '{}');
+    
+    console.log(`🧠 [Semantic Query] ${queryId}: Intent analysis:`, {
+      intent: analysis.intent,
+      confidence: analysis.confidence,
+      dataSource: analysis.data_source
+    });
+
+    // Step 2: SQL Safety Validation and Execution
+    let queryResults = [];
+    let actualResultCount = 0;
+    
+    if (analysis.confidence >= 0.6 && analysis.sql_query) {
+      // CRITICAL: Server-side SQL safety validation
+      const sqlSafetyCheck = validateSQLSafety(analysis.sql_query, maxResults);
+      if (!sqlSafetyCheck.safe) {
+        console.error(`🧠 [Semantic Query] ${queryId}: SQL safety violation:`, sqlSafetyCheck.reason);
+        
+        const executionTime = Date.now() - startTime;
+        res.status(400).json({
+          success: false,
+          query,
+          intent: analysis.intent || "Unsafe query blocked",
+          context,
+          data: null,
+          metadata: {
+            executionTime,
+            dataSource: analysis.data_source || "security",
+            confidence: analysis.confidence || 0,
+            resultCount: 0,
+            error: "Query blocked for security reasons"
+          },
+          suggestions: [
+            "Try a simpler query about jobs or operations",
+            "Ask for counts or basic information",
+            "Avoid complex joins or system tables"
+          ],
+          securityNotice: "Query was blocked to protect system security"
+        });
+        return;
+      }
+      
+      try {
+        console.log(`🧠 [Semantic Query] ${queryId}: Executing validated SQL:`, analysis.sql_query);
+        const queryResult = await db.execute(sql.raw(analysis.sql_query));
+        queryResults = queryResult.rows;
+        actualResultCount = queryResults.length;
+        
+        console.log(`🧠 [Semantic Query] ${queryId}: Query executed, ${actualResultCount} results`);
+      } catch (sqlError) {
+        console.error(`🧠 [Semantic Query] ${queryId}: SQL execution failed:`, sqlError.message);
+        
+        // If SQL fails, provide a helpful error response
+        const executionTime = Date.now() - startTime;
+        res.status(400).json({
+          success: false,
+          query,
+          intent: analysis.intent || "Unable to understand query",
+          context,
+          data: null,
+          metadata: {
+            executionTime,
+            dataSource: analysis.data_source || "unknown",
+            confidence: analysis.confidence || 0,
+            sqlQuery: includeMetadata ? analysis.sql_query : undefined,
+            resultCount: 0,
+            error: "Failed to execute generated query"
+          },
+          suggestions: analysis.suggestions || [
+            "Try asking about jobs, resources, or operations",
+            "Be more specific about what data you want to see",
+            "Ask about counts, lists, or status information"
+          ]
+        });
+        return;
+      }
+    } else {
+      console.log(`🧠 [Semantic Query] ${queryId}: Low confidence (${analysis.confidence}), not executing SQL`);
+    }
+
+    // Step 3: Format results for user-friendly presentation
+    let formattedData = queryResults;
+    
+    if (queryResults.length > 0 && analysis.data_source) {
+      // Apply context-specific formatting based on the primary data source
+      switch (analysis.data_source) {
+        case 'ptjobs':
+          formattedData = queryResults.map(row => ({
+            id: row.id,
+            name: row.name || 'Unnamed Job',
+            priority: row.priority,
+            status: row.scheduled_status,
+            dueDate: row.need_date_time,
+            description: row.description
+          }));
+          break;
+          
+        case 'ptjoboperations':
+          formattedData = queryResults.map(row => ({
+            id: row.id,
+            name: row.name || 'Unnamed Operation',
+            jobId: row.job_id,
+            duration: `${row.cycle_hrs || 0}h`,
+            progress: `${row.percent_finished || 0}%`,
+            status: row.scheduled_start ? 'scheduled' : 'pending'
+          }));
+          break;
+          
+        case 'ptresources':
+          formattedData = queryResults.map(row => ({
+            id: row.id,
+            name: row.name || 'Unnamed Resource',
+            type: row.type,
+            capacity: row.capacity,
+            utilization: `${row.utilization || 0}%`,
+            status: row.active ? 'active' : 'inactive'
+          }));
+          break;
+          
+        default:
+          // Keep original format for other tables
+          formattedData = queryResults;
+      }
+    }
+
+    // Step 4: Build response
+    const executionTime = Date.now() - startTime;
+    const response: SemanticQueryResponse = {
+      success: true,
+      query,
+      intent: analysis.intent || "General manufacturing query",
+      context,
+      data: formattedData,
+      metadata: {
+        executionTime,
+        dataSource: analysis.data_source || "multiple",
+        confidence: analysis.confidence || 0.5,
+        sqlQuery: includeMetadata ? analysis.sql_query : undefined,
+        resultCount: actualResultCount
+      },
+      suggestions: analysis.suggestions || [],
+      relatedQueries: [
+        "Show me all active resources",
+        "What jobs have high priority?",
+        "How many operations are scheduled for today?",
+        "Which resources are over capacity?"
+      ]
+    };
+
+    console.log(`🧠 [Semantic Query] ${queryId}: Success - ${actualResultCount} results in ${executionTime}ms`);
+    res.json(response);
+
+  } catch (error) {
+    const executionTime = Date.now() - startTime;
+    console.error(`🧠 [Semantic Query] ${queryId}: Error:`, error);
+    
+    if (error instanceof z.ZodError) {
+      res.status(400).json({
+        success: false,
+        query: req.body.query || "Invalid query",
+        intent: "Validation failed",
+        context: req.body.context || "general",
+        data: null,
+        metadata: {
+          executionTime,
+          dataSource: "validation",
+          confidence: 0,
+          resultCount: 0
+        },
+        error: "Invalid request format",
+        validationErrors: error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        query: req.body.query || "Unknown query",
+        intent: "System error",
+        context: req.body.context || "general",
+        data: null,
+        metadata: {
+          executionTime,
+          dataSource: "system",
+          confidence: 0,
+          resultCount: 0
+        },
+        error: "Internal server error processing semantic query"
+      });
     }
   }
 });

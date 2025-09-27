@@ -644,6 +644,35 @@ export const insertArchitectureComponentSchema = createInsertSchema(ptPlants); /
 export const insertDiscreteOperationSchema = insertPtJobOperationSchema;
 export const insertRecipeOperationSchema = insertPtJobOperationSchema;
 
+// Semantic Query Schemas
+export const semanticQuerySchema = z.object({
+  query: z.string().min(1, "Query cannot be empty"),
+  context: z.enum(["production", "quality", "resources", "scheduling", "general"]).optional().default("general"),
+  maxResults: z.number().int().min(1).max(100).optional().default(10),
+  includeMetadata: z.boolean().optional().default(false)
+});
+
+export type SemanticQuery = z.infer<typeof semanticQuerySchema>;
+
+export const semanticQueryResponseSchema = z.object({
+  success: z.boolean(),
+  query: z.string(),
+  intent: z.string(),
+  context: z.string(),
+  data: z.any(),
+  metadata: z.object({
+    executionTime: z.number(),
+    dataSource: z.string(),
+    confidence: z.number(),
+    sqlQuery: z.string().optional(),
+    resultCount: z.number()
+  }),
+  suggestions: z.array(z.string()).optional(),
+  relatedQueries: z.array(z.string()).optional()
+});
+
+export type SemanticQueryResponse = z.infer<typeof semanticQueryResponseSchema>;
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
