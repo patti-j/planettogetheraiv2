@@ -1,8 +1,8 @@
 import { db } from "./db";
 import { 
-  users, plants, resources, productionOrders, unifiedWidgets, widgetDeployments,
-  type User, type Plant, type Resource, type ProductionOrder, type UnifiedWidget, type WidgetDeployment,
-  type InsertUser, type InsertPlant, type InsertResource, type InsertProductionOrder, type InsertUnifiedWidget, type InsertWidgetDeployment
+  users, plants, resources, productionOrders, widgets,
+  type User, type Plant, type Resource, type ProductionOrder, type Widget,
+  type InsertUser, type InsertPlant, type InsertResource, type InsertProductionOrder, type InsertWidget
 } from "@shared/schema";
 import { eq, desc, and, or } from "drizzle-orm";
 
@@ -28,13 +28,13 @@ export interface IStorage {
   createProductionOrder(order: InsertProductionOrder): Promise<ProductionOrder>;
 
   // Widgets
-  getWidgets(): Promise<UnifiedWidget[]>;
-  getWidget(id: number): Promise<UnifiedWidget | undefined>;
-  createWidget(widget: InsertUnifiedWidget): Promise<UnifiedWidget>;
-  updateWidget(id: number, updates: Partial<InsertUnifiedWidget>): Promise<UnifiedWidget | undefined>;
+  getWidgets(): Promise<Widget[]>;
+  getWidget(id: number): Promise<Widget | undefined>;
+  createWidget(widget: InsertWidget): Promise<Widget>;
+  updateWidget(id: number, updates: Partial<InsertWidget>): Promise<Widget | undefined>;
   deleteWidget(id: number): Promise<boolean>;
-  getWidgetsByPlatform(platform: string): Promise<UnifiedWidget[]>;
-  getWidgetsByCategory(category: string): Promise<UnifiedWidget[]>;
+  getWidgetsByPlatform(platform: string): Promise<Widget[]>;
+  getWidgetsByCategory(category: string): Promise<Widget[]>;
 }
 
 export class DatabaseStorage implements IStorage {
