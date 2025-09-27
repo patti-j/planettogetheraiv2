@@ -1492,7 +1492,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       AI Features
                     </h3>
                     
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="auto-suggestions" className="text-sm cursor-pointer">
                         Auto-suggestions
                       </Label>
@@ -1503,7 +1503,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="show-insights" className="text-sm cursor-pointer">
                         Show insights
                       </Label>
@@ -1514,7 +1514,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="stream-responses" className="text-sm cursor-pointer">
                         Stream responses
                       </Label>
@@ -1535,7 +1535,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       Voice Settings
                     </h3>
                     
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="enable-voice" className="text-sm cursor-pointer">
                         Enable Voice Responses
                       </Label>
@@ -1661,7 +1661,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       Notifications
                     </h3>
                     
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="notifications" className="text-sm cursor-pointer">
                         AI notifications
                       </Label>
@@ -1672,7 +1672,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       />
                     </div>
 
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between pr-2">
                       <Label htmlFor="sound" className="text-sm cursor-pointer">
                         Sound alerts
                       </Label>
