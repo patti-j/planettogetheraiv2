@@ -1310,13 +1310,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   </Button>
                 )}
               </div>
-
-              {/* Note about using floating chat bubble */}
-              <div className="p-3 border-t bg-muted/50 text-center">
-                <p className="text-xs text-muted-foreground">
-                  Use the floating chat bubble to send messages
-                </p>
-              </div>
             </TabsContent>
 
             {/* Simulations Tab */}
