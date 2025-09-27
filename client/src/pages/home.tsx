@@ -173,7 +173,7 @@ export default function HomePage() {
   });
 
   const { 
-    data: alerts = [], 
+    data: alertsData, 
     isLoading: isLoadingAlerts, 
     error: alertsError,
     refetch: refetchAlerts 
@@ -181,6 +181,9 @@ export default function HomePage() {
     queryKey: ['/api/alerts'],
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  // Ensure alerts is always an array to prevent null errors
+  const alerts = alertsData || [];
 
   const { 
     data: inboxMessages = [], 
