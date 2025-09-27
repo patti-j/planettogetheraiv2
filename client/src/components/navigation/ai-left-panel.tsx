@@ -1212,90 +1212,99 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               value="chat" 
               className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden"
             >
-              <div className="relative flex-1 overflow-hidden">
+              <div className="relative flex-1 overflow-hidden border rounded-md bg-background/50">
                 <div 
-                  className="absolute inset-0 pr-2 overflow-y-auto" 
+                  className="absolute inset-0 p-3 overflow-y-auto" 
                   ref={scrollAreaRef}
                   onScroll={handleScroll}
                   style={{ height: '100%' }}
                 >
-                  <div className="space-y-4 pb-4">
-                    {chatMessages
-                    .sort((a, b) => {
-                      // First sort by timestamp
-                      const timeA = new Date(a.createdAt).getTime();
-                      const timeB = new Date(b.createdAt).getTime();
-                      const timeDiff = timeA - timeB;
-                      
-                      // If times are very close (within 5 seconds), ensure user messages come before assistant messages
-                      if (Math.abs(timeDiff) < 5000) {
-                        // If one is user and one is assistant, prioritize user message first
-                        if (a.role === 'user' && b.role === 'assistant') return -1;
-                        if (a.role === 'assistant' && b.role === 'user') return 1;
-                        // If both are same role, use ID for order
-                        return a.id - b.id;
-                      }
-                      return timeDiff;
-                    })
-                    .map((message) => (
-                    <div
-                      key={message.id}
-                      className={cn(
-                        "flex",
-                        message.role === 'user' && "justify-end"
-                      )}
-                    >
+                  {chatMessages.length === 0 ? (
+                    // Empty State
+                    <div className="flex flex-col items-center justify-center h-full text-center">
+                      <MessageSquare className="w-12 h-12 text-muted-foreground/50 mb-3" />
+                      <p className="text-sm text-muted-foreground mb-1">No conversation yet</p>
+                      <p className="text-xs text-muted-foreground/70">Messages will appear here when you start chatting</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4 pb-4">
+                      {chatMessages
+                      .sort((a, b) => {
+                        // First sort by timestamp
+                        const timeA = new Date(a.createdAt).getTime();
+                        const timeB = new Date(b.createdAt).getTime();
+                        const timeDiff = timeA - timeB;
+                        
+                        // If times are very close (within 5 seconds), ensure user messages come before assistant messages
+                        if (Math.abs(timeDiff) < 5000) {
+                          // If one is user and one is assistant, prioritize user message first
+                          if (a.role === 'user' && b.role === 'assistant') return -1;
+                          if (a.role === 'assistant' && b.role === 'user') return 1;
+                          // If both are same role, use ID for order
+                          return a.id - b.id;
+                        }
+                        return timeDiff;
+                      })
+                      .map((message) => (
                       <div
+                        key={message.id}
                         className={cn(
-                          "flex flex-col gap-1 max-w-[90%]",
-                          message.role === 'user' && "items-end"
+                          "flex",
+                          message.role === 'user' && "justify-end"
                         )}
                       >
-                        <div className={cn(
-                          "relative group",
-                          message.role === 'assistant' && "pr-8"
-                        )}>
-                          <div
-                            className={cn(
-                              "rounded-lg px-3 py-2 text-sm",
-                              message.role === 'user'
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted"
-                            )}
-                          >
-                            {message.role === 'assistant' 
-                              ? renderContentWithClickableKeywords(message.content)
-                              : message.content
-                            }
-                          </div>
-                          
-                          {/* Copy button for assistant messages */}
-                          {message.role === 'assistant' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => copyToClipboard(message.content, message.id.toString())}
-                              className={cn(
-                                "absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
-                                "bg-background/80 hover:bg-background border border-border/50"
-                              )}
-                              title="Copy message"
-                            >
-                              {copiedMessageId === message.id.toString() ? (
-                                <Check className="h-3 w-3 text-green-600" />
-                              ) : (
-                                <Copy className="h-3 w-3" />
-                              )}
-                            </Button>
+                        <div
+                          className={cn(
+                            "flex flex-col gap-1 max-w-[90%]",
+                            message.role === 'user' && "items-end"
                           )}
+                        >
+                          <div className={cn(
+                            "relative group",
+                            message.role === 'assistant' && "pr-8"
+                          )}>
+                            <div
+                              className={cn(
+                                "rounded-lg px-3 py-2 text-sm",
+                                message.role === 'user'
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted"
+                              )}
+                            >
+                              {message.role === 'assistant' 
+                                ? renderContentWithClickableKeywords(message.content)
+                                : message.content
+                              }
+                            </div>
+                            
+                            {/* Copy button for assistant messages */}
+                            {message.role === 'assistant' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => copyToClipboard(message.content, message.id.toString())}
+                                className={cn(
+                                  "absolute top-1 right-1 h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity",
+                                  "bg-background/80 hover:bg-background border border-border/50"
+                                )}
+                                title="Copy message"
+                              >
+                                {copiedMessageId === message.id.toString() ? (
+                                  <Check className="h-3 w-3 text-green-600" />
+                                ) : (
+                                  <Copy className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground px-1">
+                            {new Date(message.createdAt).toLocaleTimeString()}
+                          </span>
                         </div>
-                        <span className="text-xs text-muted-foreground px-1">
-                          {new Date(message.createdAt).toLocaleTimeString()}
-                        </span>
                       </div>
+                    ))}
                     </div>
-                  ))}
-                  </div>
+                  )}
                 </div>
                 
                 {/* Scroll to bottom button */}
