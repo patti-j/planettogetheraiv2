@@ -1521,12 +1521,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Input
                     value={prompt}
                     onChange={(e) => setPrompt(e.target.value)}
-                    placeholder={
-                      isTranscribing ? "Transcribing voice..." : 
-                      isRecording ? `Recording... ${recordingTimeLeft}s` : 
-                      "Type, attach files, or record voice..."
-                    }
-                    disabled={isSendingCommand || isRecording || isTranscribing}
+                    placeholder="Type your message here..."
+                    disabled={isSendingCommand}
                     className="flex-1"
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
@@ -1537,37 +1533,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   />
                   
                   <Button
-                    type="button"
-                    variant={isRecording ? "destructive" : "outline"}
-                    size="icon"
-                    onClick={isRecording ? stopRecording : startRecording}
-                    disabled={isSendingCommand || isTranscribing}
-                    title={isRecording ? `Stop recording (${recordingTimeLeft}s left)` : "Start voice recording (10s max)"}
-                    className={isRecording ? "animate-pulse" : ""}
-                  >
-                    {isRecording ? (
-                      <StopCircle className="w-4 h-4" />
-                    ) : isTranscribing ? (
-                      <div className="w-4 h-4 animate-spin rounded-full border-2 border-gray-300 border-t-gray-600"></div>
-                    ) : (
-                      <Mic className="w-4 h-4" />
-                    )}
-                  </Button>
-                  
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isProcessingFiles || isSendingCommand || isRecording}
-                    title="Attach files (images, documents, PDFs)"
-                  >
-                    <Paperclip className="w-4 h-4" />
-                  </Button>
-                  
-                  <Button
                     type="submit"
-                    disabled={(!prompt.trim() && attachments.length === 0) || isSendingCommand || isRecording || isTranscribing}
+                    disabled={!prompt.trim() || isSendingCommand}
                     size="icon"
                     className={getThemeGradient(aiSettings.aiThemeColor).replace('bg-gradient-to-r', '') + " text-white"}
                   >
