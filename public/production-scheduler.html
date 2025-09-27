@@ -12,9 +12,6 @@
     <!-- Bryntum Scheduler Pro CSS -->
     <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
-    <!-- Bryntum Scheduler Pro JavaScript -->
-    <script src="/schedulerpro.umd.js"></script>
-    
     <style>
         * {
             margin: 0;
@@ -129,107 +126,6 @@
         }
         
         /* Mobile responsive styles */
-        /* Unscheduled grid styles */
-        .scheduler-main-container {
-            display: flex;
-            height: 100%;
-            width: 100%;
-            gap: 10px;
-            padding: 10px;
-            box-sizing: border-box;
-            flex: 1;
-            overflow: hidden;
-        }
-        
-        #unscheduled-grid-container {
-            width: 350px;
-            flex-shrink: 0;
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 8px;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        }
-        
-        .unscheduled-header {
-            padding: 12px 16px;
-            background: linear-gradient(to bottom, #fafafa, #f5f5f5);
-            border-bottom: 1px solid #e0e0e0;
-            font-weight: 600;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            color: #333;
-        }
-        
-        .unscheduled-count {
-            background: #007bff;
-            color: white;
-            padding: 2px 10px;
-            border-radius: 14px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        
-        #unscheduled-grid {
-            flex: 1;
-            overflow-y: auto;
-            padding: 8px;
-        }
-        
-        .unscheduled-item {
-            background: white;
-            border: 1px solid #e0e0e0;
-            border-radius: 6px;
-            padding: 10px;
-            margin-bottom: 8px;
-            cursor: move;
-            transition: all 0.2s;
-        }
-        
-        .unscheduled-item:hover {
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-            transform: translateY(-1px);
-            border-color: #4CAF50;
-        }
-        
-        .unscheduled-item.dragging {
-            opacity: 0.5;
-            transform: scale(0.95);
-        }
-        
-        #scheduler-wrapper {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        
-        /* Drag proxy styling */
-        .b-drag-proxy {
-            z-index: 10000 !important;
-            opacity: 0.85;
-            pointer-events: none;
-            transition: opacity 0.2s;
-        }
-        
-        .b-drag-invalid .b-drag-proxy {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-        
-        .b-drag-valid .b-drag-proxy {
-            opacity: 0.95;
-            cursor: move;
-        }
-        
-        .b-drag-proxy.b-sch-event-wrap {
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
-        }
-        
         @media (max-width: 768px) {
             .header {
                 padding: 0.75rem 1rem;
@@ -257,15 +153,6 @@
             
             .toolbar button span:not(.icon-text) {
                 display: none; /* Hide button text on mobile, keep icons */
-            }
-            
-            /* Hide unscheduled grid on mobile */
-            #unscheduled-grid-container {
-                display: none;
-            }
-            
-            .scheduler-main-container {
-                padding: 5px;
             }
             
             .toolbar button {
@@ -1168,24 +1055,10 @@
         </div>
     </div>
 
-    <div class="scheduler-main-container">
-        <!-- Unscheduled Operations Grid -->
-        <div id="unscheduled-grid-container">
-            <div class="unscheduled-header">
-                <span>📋 Unscheduled Operations</span>
-                <span class="unscheduled-count" id="unscheduled-count">0</span>
-            </div>
-            <div id="unscheduled-grid"></div>
-        </div>
-        
-        <!-- Scheduler Container -->
-        <div id="scheduler-wrapper">
-            <div class="scheduler-container">
-                <div id="scheduler"></div>
-                <div class="loading-overlay" id="loadingOverlay">
-                    <div class="loading-spinner"></div>
-                </div>
-            </div>
+    <div class="scheduler-container">
+        <div id="scheduler"></div>
+        <div class="loading-overlay" id="loadingOverlay">
+            <div class="loading-spinner"></div>
         </div>
     </div>
 
@@ -1523,26 +1396,11 @@
             }
             schedulerInitialized = true;
             
-            console.log('📅 Starting scheduler initialization...');
-            
             try {
                 // Mark first task as in progress
                 
-                // Check if Bryntum library is loaded
-                if (typeof bryntum === 'undefined') {
-                    console.error('❌ Bryntum library not found');
-                    return;
-                }
-                
-                if (!bryntum.schedulerpro) {
-                    console.error('❌ Bryntum SchedulerPro module not found');
-                    console.log('Available Bryntum modules:', Object.keys(bryntum));
-                    return;
-                }
-                
-                console.log('✅ Bryntum library loaded successfully');
-                console.log('📊 Available Bryntum modules:', Object.keys(bryntum));
-                console.log('📊 SchedulerPro type:', typeof bryntum.schedulerpro.SchedulerPro);
+                // Initialize scheduler using global bryntum object
+                const { SchedulerPro } = bryntum.schedulerpro;
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
@@ -1560,24 +1418,14 @@
                 let ptOperations = [];
                 let resourceCapabilities = {};
                 
-                console.log('🔄 Starting to fetch data from APIs...');
-                
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
-                    console.log('🔄 Fetching resources...');
                     const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
                         fetch('/api/pt-dependencies'),
                         fetch('/api/resources-with-capabilities')
                     ]);
-                    
-                    console.log('📊 API Response statuses:', {
-                        resources: resourcesResponse?.status,
-                        operations: operationsResponse?.status,
-                        dependencies: dependenciesResponse?.status,
-                        capabilities: capabilitiesResponse?.status
-                    });
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
@@ -1602,33 +1450,6 @@
                         if (ptOperations.length > 0) {
                             console.log('✅ First PT operation sample:', ptOperations[0]);
                         }
-                        
-                        // Separate scheduled and unscheduled operations
-                        const scheduledOps = [];
-                        const unscheduledOps = [];
-                        
-                        ptOperations.forEach(op => {
-                            // An operation is unscheduled if it has no resource_id or no start_date
-                            if (!op.resource_id || !op.start_date) {
-                                unscheduledOps.push({
-                                    id: `unscheduled-${op.id}`,
-                                    name: op.operation_name || `Operation ${op.id}`,
-                                    duration: op.duration || 1,
-                                    durationUnit: 'hour',
-                                    operationType: op.operation_type || 'unknown',
-                                    jobNumber: op.external_id?.split('-')[0] || null,
-                                    originalId: op.id
-                                });
-                            } else {
-                                scheduledOps.push(op);
-                            }
-                        });
-                        
-                        // Store for later use
-                        window.unscheduledOperationsData = unscheduledOps;
-                        ptOperations = scheduledOps; // Only use scheduled ones for main processing
-                        
-                        console.log(`📊 Operations split: ${scheduledOps.length} scheduled, ${unscheduledOps.length} unscheduled`);
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
@@ -2077,407 +1898,9 @@
                     schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
                 }
                 
-                // Track unscheduled operations
-                window.unscheduledOperations = [];
-                window.unscheduledOperationsData = [];
-                
-                // Simple HTML-based unscheduled operations list
-                function createUnscheduledItem(operation) {
-                    const item = document.createElement('div');
-                    item.className = 'unscheduled-item';
-                    item.draggable = true;
-                    item.dataset.operationId = operation.id;
-                    item.dataset.operation = JSON.stringify(operation);
-                    
-                    const typeColors = {
-                        'milling': '#8B4513',
-                        'mashing': '#D2691E',
-                        'lautering': '#DEB887',
-                        'boiling': '#FF8C00',
-                        'fermentation': '#4B0082',
-                        'conditioning': '#4682B4',
-                        'dry_hopping': '#228B22',
-                        'packaging': '#708090',
-                        'pasteurization': '#DC143C'
-                    };
-                    
-                    const color = typeColors[operation.operationType?.toLowerCase()] || '#666';
-                    const duration = operation.duration || 1;
-                    const jobInfo = operation.jobNumber ? `<div style="color: #999; font-size: 11px;">Job: ${operation.jobNumber}</div>` : '';
-                    
-                    item.innerHTML = `
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <div style="flex: 1;">
-                                <div style="font-weight: 600; color: #333;">${operation.name}</div>
-                                ${jobInfo}
-                                <div style="color: #666; font-size: 12px; margin-top: 4px;">⏱ ${duration} ${operation.durationUnit || 'hour'}${duration > 1 ? 's' : ''}</div>
-                            </div>
-                            <div style="padding: 2px 8px; background: ${color}; color: white; border-radius: 4px; font-size: 11px; font-weight: 500;">
-                                ${operation.operationType || 'Unknown'}
-                            </div>
-                        </div>
-                    `;
-                    
-                    // Add drag events
-                    item.addEventListener('dragstart', handleDragStart);
-                    item.addEventListener('dragend', handleDragEnd);
-                    
-                    return item;
-                }
-                
-                let draggedOperation = null;
-                let dragProxy = null;
-                
-                function handleDragStart(e) {
-                    const operation = JSON.parse(e.target.dataset.operation);
-                    draggedOperation = operation;
-                    e.target.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'copy';
-                    e.dataTransfer.setData('text/plain', JSON.stringify(operation));
-                }
-                
-                function handleDragEnd(e) {
-                    e.target.classList.remove('dragging');
-                    draggedOperation = null;
-                    if (dragProxy) {
-                        dragProxy.remove();
-                        dragProxy = null;
-                    }
-                }
-                
-                // Update unscheduled count display
-                function updateUnscheduledCount() {
-                    const count = window.unscheduledOperationsData ? window.unscheduledOperationsData.length : 0;
-                    const countElement = document.getElementById('unscheduled-count');
-                    if (countElement) {
-                        countElement.textContent = count.toString();
-                        countElement.style.background = count > 0 ? '#ff5722' : '#4caf50';
-                    }
-                }
-                
-                // Function to populate unscheduled grid after data is loaded
-                window.populateUnscheduledGrid = function() {
-                    const gridElement = document.getElementById('unscheduled-grid');
-                    if (!gridElement) return;
-                    
-                    gridElement.innerHTML = ''; // Clear existing items
-                    
-                    if (window.unscheduledOperationsData && window.unscheduledOperationsData.length > 0) {
-                        window.unscheduledOperationsData.forEach(op => {
-                            const item = createUnscheduledItem(op);
-                            gridElement.appendChild(item);
-                        });
-                        updateUnscheduledCount();
-                        console.log(`📋 Loaded ${window.unscheduledOperationsData.length} unscheduled operations`);
-                    } else {
-                        // Add sample unscheduled operations if none exist
-                        const sampleUnscheduled = [
-                            {
-                                id: 'unscheduled-sample-1',
-                                name: 'Milling - Batch B1',
-                                duration: 2,
-                                durationUnit: 'hour',
-                                operationType: 'Milling',
-                                jobNumber: 'JOB004'
-                            },
-                            {
-                                id: 'unscheduled-sample-2',
-                                name: 'Fermentation - IPA Batch',
-                                duration: 168, // 7 days
-                                durationUnit: 'hour',
-                                operationType: 'Fermentation',
-                                jobNumber: 'JOB005'
-                            },
-                            {
-                                id: 'unscheduled-sample-3',
-                                name: 'Packaging - Bottles',
-                                duration: 4,
-                                durationUnit: 'hour',
-                                operationType: 'Packaging',
-                                jobNumber: 'JOB006'
-                            }
-                        ];
-                        
-                        window.unscheduledOperationsData = sampleUnscheduled;
-                        sampleUnscheduled.forEach(op => {
-                            const item = createUnscheduledItem(op);
-                            gridElement.appendChild(item);
-                        });
-                        updateUnscheduledCount();
-                        console.log('📋 Added sample unscheduled operations for demo');
-                    }
-                };
-                
-                // Enable scheduler to accept drops
-                if (window.scheduler) {
-                    window.scheduler.element.addEventListener('dragover', (e) => {
-                        if (draggedOperation) {
-                            e.preventDefault();
-                            e.dataTransfer.dropEffect = 'copy';
-                        }
-                    });
-                    
-                    window.scheduler.element.addEventListener('drop', (e) => {
-                        if (!draggedOperation || !window.scheduler) return;
-                        
-                        e.preventDefault();
-                        
-                        // Get the resource and date from drop position
-                        const resourceRecord = window.scheduler.resolveResourceRecord(e.target);
-                        const date = window.scheduler.getDateFromCoordinate(
-                            e.offsetX,
-                            'round',
-                            false
-                        );
-                    
-                    // Create visual drag proxy
-                    createProxy(element) {
-                        const record = unscheduledGrid.getRecordFromElement(element);
-                        if (!record) return null;
-                        
-                        const proxy = document.createElement('div');
-                        const duration = record.duration || 1;
-                        
-                        // Style it to look like a scheduled event
-                        proxy.className = 'b-sch-event-wrap b-sch-event b-drag-proxy';
-                        proxy.style.width = '150px';
-                        proxy.style.padding = '8px';
-                        proxy.style.background = '#4CAF50';
-                        proxy.style.color = 'white';
-                        proxy.style.borderRadius = '4px';
-                        proxy.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-                        proxy.innerHTML = `
-                            <div style="font-weight: bold;">${record.name}</div>
-                            <div style="font-size: 12px; margin-top: 4px;">⏱ ${duration} ${record.durationUnit || 'hour'}${duration > 1 ? 's' : ''}</div>
-                        `;
-                        
-                        return proxy;
-                    },
-                    
-                    // Validate drag
-                    validatorFn(context) {
-                        const { element } = context;
-                        const record = unscheduledGrid.getRecordFromElement(context.grabbed);
-                        
-                        if (!record || !window.scheduler) {
-                            return false;
-                        }
-                        
-                        // Get the scheduler's timeline element and calculate position
-                        const schedulerEl = window.scheduler.timeAxisSubGrid.element;
-                        const schedulerRect = schedulerEl.getBoundingClientRect();
-                        const dragRect = element.getBoundingClientRect();
-                        
-                        // Check if we're over the scheduler
-                        const isOverScheduler = (
-                            dragRect.left < schedulerRect.right &&
-                            dragRect.right > schedulerRect.left &&
-                            dragRect.top < schedulerRect.bottom &&
-                            dragRect.bottom > schedulerRect.top
-                        );
-                        
-                        if (!isOverScheduler) {
-                            context.valid = false;
-                            element.classList.add('b-drag-invalid');
-                            element.classList.remove('b-drag-valid');
-                            return false;
-                        }
-                        
-                        // Get resource and date from position
-                        const resourceRecord = window.scheduler.resolveResourceRecord(context.target);
-                        const date = window.scheduler.getDateFromCoordinate(
-                            dragRect.left - schedulerRect.left,
-                            'round',
-                            false
-                        );
-                        
-                        // Validate resource capabilities
-                        if (resourceRecord) {
-                            const operationName = record.name || '';
-                            const requiredCapability = getRequiredCapability(operationName);
-                            
-                            if (requiredCapability !== null) {
-                                const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
-                                
-                                if (!targetCapabilities.includes(requiredCapability)) {
-                                    context.valid = false;
-                                    element.classList.add('b-drag-invalid');
-                                    element.classList.remove('b-drag-valid');
-                                    return false;
-                                }
-                            }
-                        }
-                        
-                        context.valid = date && resourceRecord;
-                        
-                        if (context.valid) {
-                            element.classList.add('b-drag-valid');
-                            element.classList.remove('b-drag-invalid');
-                        } else {
-                            element.classList.add('b-drag-invalid');
-                            element.classList.remove('b-drag-valid');
-                        }
-                        
-                        return context.valid;
-                    },
-                    
-                    // Handle drop
-                    onDrop(context) {
-                        if (!context.valid || !window.scheduler) return;
-                        
-                        const record = unscheduledGrid.getRecordFromElement(context.grabbed);
-                        if (!record) return;
-                        
-                        // Get scheduler element position
-                        const schedulerEl = window.scheduler.timeAxisSubGrid.element;
-                        const schedulerRect = schedulerEl.getBoundingClientRect();
-                        const dragRect = context.element.getBoundingClientRect();
-                        
-                        // Calculate the resource and date from drop position
-                        const resourceRecord = window.scheduler.resolveResourceRecord(context.target);
-                        const date = window.scheduler.getDateFromCoordinate(
-                            dragRect.left - schedulerRect.left,
-                            'round',
-                            false
-                        );
-                        
-                        if (date && resourceRecord) {
-                            // Create the event in the scheduler
-                            const newEvent = window.scheduler.eventStore.add({
-                                name: record.name,
-                                startDate: date,
-                                duration: record.duration || 1,
-                                durationUnit: record.durationUnit || 'hour',
-                                resourceId: resourceRecord.id,
-                                operationType: record.operationType,
-                                jobNumber: record.jobNumber,
-                                isUnscheduled: false,
-                                eventColor: getOperationColor(record.operationType)
-                            })[0];
-                            
-                            if (newEvent) {
-                                // Remove from unscheduled grid
-                                unscheduledStore.remove(record);
-                                
-                                // Show success notification
-                                showNotification(`✅ Scheduled "${record.name}" on ${resourceRecord.name}`, 'success');
-                                console.log(`✅ Scheduled operation "${record.name}" on resource "${resourceRecord.name}" at ${date}`);
-                                
-                                // Refresh the scheduler
-                                window.scheduler.refresh();
-                            }
-                        
-                        if (date && resourceRecord) {
-                            // Validate resource capabilities
-                            const operationName = draggedOperation.name || '';
-                            const requiredCapability = getRequiredCapability(operationName);
-                            
-                            if (requiredCapability !== null) {
-                                const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
-                                
-                                if (!targetCapabilities.includes(requiredCapability)) {
-                                    const capabilityNames = {
-                                        1: 'Milling', 2: 'Mashing', 3: 'Lautering',
-                                        4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
-                                        7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
-                                    };
-                                    showNotification(`❌ ${resourceRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`, 'error');
-                                    return;
-                                }
-                            }
-                            
-                            // Create the event in the scheduler
-                            const newEvent = window.scheduler.eventStore.add({
-                                name: draggedOperation.name,
-                                startDate: date,
-                                duration: draggedOperation.duration || 1,
-                                durationUnit: draggedOperation.durationUnit || 'hour',
-                                resourceId: resourceRecord.id,
-                                operationType: draggedOperation.operationType,
-                                jobNumber: draggedOperation.jobNumber,
-                                eventColor: getOperationColor(draggedOperation.operationType)
-                            })[0];
-                            
-                            if (newEvent) {
-                                // Remove from unscheduled list
-                                const itemElement = document.querySelector(`[data-operation-id="${draggedOperation.id}"]`);
-                                if (itemElement) {
-                                    itemElement.remove();
-                                }
-                                
-                                // Update data array
-                                window.unscheduledOperationsData = window.unscheduledOperationsData.filter(
-                                    op => op.id !== draggedOperation.id
-                                );
-                                
-                                updateUnscheduledCount();
-                                showNotification(`✅ Scheduled "${draggedOperation.name}" on ${resourceRecord.name}`, 'success');
-                                window.scheduler.refresh();
-                            }
-                        }
-                    });
-                }
-                
-                // Helper function to get operation color
-                function getOperationColor(operationType) {
-                    const typeColors = {
-                        'milling': '#8B4513',
-                        'mashing': '#D2691E', 
-                        'lautering': '#DEB887',
-                        'boiling': '#FF8C00',
-                        'fermentation': '#4B0082',
-                        'conditioning': '#4682B4',
-                        'dry_hopping': '#228B22',
-                        'packaging': '#708090',
-                        'pasteurization': '#DC143C'
-                    };
-                    return typeColors[operationType?.toLowerCase()] || '#666';
-                }
-                
-                // Notification helper
-                function showNotification(message, type = 'info') {
-                    const notification = document.createElement('div');
-                    notification.style.cssText = `
-                        position: fixed;
-                        bottom: 20px;
-                        right: 20px;
-                        padding: 15px 20px;
-                        background: ${type === 'success' ? '#4CAF50' : type === 'error' ? '#f44336' : '#2196F3'};
-                        color: white;
-                        border-radius: 4px;
-                        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-                        z-index: 10000;
-                        animation: slideIn 0.3s ease-out;
-                    `;
-                    notification.textContent = message;
-                    document.body.appendChild(notification);
-                    
-                    setTimeout(() => {
-                        notification.style.animation = 'slideOut 0.3s ease-in';
-                        setTimeout(() => notification.remove(), 300);
-                    }, 3000);
-                }
-                
-                // Add animation styles
-                if (!document.querySelector('#drag-animations')) {
-                    const style = document.createElement('style');
-                    style.id = 'drag-animations';
-                    style.textContent = `
-                        @keyframes slideIn {
-                            from { transform: translateX(100%); opacity: 0; }
-                            to { transform: translateX(0); opacity: 1; }
-                        }
-                        @keyframes slideOut {
-                            from { transform: translateX(0); opacity: 1; }
-                            to { transform: translateX(100%); opacity: 0; }
-                        }
-                    `;
-                    document.head.appendChild(style);
-                }
-                
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
-                window.scheduler = new bryntum.schedulerpro.SchedulerPro({
+                window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
@@ -2498,15 +1921,6 @@
 
                     // Project configuration with strict no-overlap constraints
                     project: {
-                        // Load the data inline
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
-                        
-                        // Enable automatic scheduling
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true,
-                        
                         autoLoad: false,
                         autoSync: false,
                         // Use ASAP scheduling with strict resource constraints
@@ -2710,6 +2124,17 @@
                         };
                     },
 
+                    project: {
+                        // Use correct property names (not deprecated)
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true
+                    },
+
                     startDate: (() => {
                         // Start from today (September 3, 2025)
                         const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
@@ -2729,17 +2154,6 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
-                
-                // Unmask the scheduler after it's fully initialized
-                // The scheduler might show a loading mask by default
-                setTimeout(() => {
-                    if (scheduler.masked) {
-                        console.log('📊 Unmasking scheduler after initialization');
-                        scheduler.unmask();
-                    }
-                    console.log('✅ Scheduler fully initialized with', events.length, 'events and', resources.length, 'resources');
-                    updateStatus();
-                }, 100);
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
@@ -3634,11 +3048,6 @@
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
-                
-                // Populate unscheduled grid after scheduler loads
-                if (window.populateUnscheduledGrid) {
-                    window.populateUnscheduledGrid();
-                }
                 
                 // Check for pending scheduler commands from Max AI (after navigation)
                 const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
