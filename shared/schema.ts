@@ -59,6 +59,94 @@ export const rolePermissions = pgTable("role_permissions", {
 });
 
 // ============================================
+// Dashboard and Widget System
+// ============================================
+
+export const dashboards = pgTable("dashboards", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  isDefault: boolean("is_default").default(false),
+  roleId: integer("role_id").references(() => roles.id),
+  userId: integer("user_id").references(() => users.id),
+  configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const widgets = pgTable("widgets", {
+  id: serial("id").primaryKey(),
+  dashboardId: integer("dashboard_id").references(() => dashboards.id).notNull(),
+  type: varchar("type", { length: 100 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  position: jsonb("position").notNull(), // {x, y, w, h}
+  config: jsonb("config").default(sql`'{}'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const widgetTypes = pgTable("widget_types", {
+  id: varchar("id", { length: 100 }).primaryKey(), // e.g., 'kpi-grid'
+  name: varchar("name", { length: 255 }).notNull(),
+  category: varchar("category", { length: 100 }).notNull(),
+  description: text("description"),
+  icon: varchar("icon", { length: 100 }),
+  configurable: boolean("configurable").default(true),
+  dataSourceRequired: boolean("data_source_required").default(true),
+  defaultSize: jsonb("default_size").notNull(), // {w, h}
+  supportedSizes: jsonb("supported_sizes").default(sql`'[]'::jsonb`),
+  configSchema: jsonb("config_schema").default(sql`'{}'::jsonb`),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Dashboard and Widget Insert/Select Schemas
+export const insertDashboardSchema = createInsertSchema(dashboards).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWidgetSchema = createInsertSchema(widgets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertWidgetTypeSchema = createInsertSchema(widgetTypes).omit({
+  createdAt: true,
+});
+
+export type Dashboard = typeof dashboards.$inferSelect;
+export type InsertDashboard = z.infer<typeof insertDashboardSchema>;
+export type Widget = typeof widgets.$inferSelect;
+export type InsertWidget = z.infer<typeof insertWidgetSchema>;
+export type WidgetType = typeof widgetTypes.$inferSelect;
+export type InsertWidgetType = z.infer<typeof insertWidgetTypeSchema>;
+
+// Dashboard Relations
+export const dashboardsRelations = relations(dashboards, ({ one, many }) => ({
+  role: one(roles, {
+    fields: [dashboards.roleId],
+    references: [roles.id],
+  }),
+  user: one(users, {
+    fields: [dashboards.userId],
+    references: [users.id],
+  }),
+  widgets: many(widgets),
+}));
+
+export const widgetsRelations = relations(widgets, ({ one }) => ({
+  dashboard: one(dashboards, {
+    fields: [widgets.dashboardId],
+    references: [dashboards.id],
+  }),
+}));
+
+// ============================================
 // Company Onboarding & Configuration
 // ============================================
 

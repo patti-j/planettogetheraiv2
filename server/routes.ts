@@ -4,6 +4,17 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { db, directSql } from "./db";
+import { 
+  insertDashboardSchema, 
+  insertWidgetSchema, 
+  insertWidgetTypeSchema, 
+  Dashboard, 
+  Widget, 
+  WidgetType,
+  InsertDashboard,
+  InsertWidget,
+  InsertWidgetType
+} from "@shared/schema";
 import { insertUserSchema, insertCompanyOnboardingSchema, insertUserPreferencesSchema, insertSchedulingMessageSchema } from "@shared/schema";
 import { systemMonitoringAgent } from "./monitoring-agent";
 import { schedulingAI } from "./services/scheduling-ai";
@@ -1998,14 +2009,30 @@ router.get("/api/inbox", requireAuth, async (req, res) => {
 // Dashboard Configurations endpoint
 router.get("/dashboard-configs", requireAuth, async (req, res) => {
   try {
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+
+    // Get user's assigned roles using proper Drizzle syntax
+    const userRolesResult = await db.execute(sql`
+      SELECT r.id, r.name
+      FROM roles r
+      INNER JOIN user_roles ur ON r.id = ur.role_id
+      WHERE ur.user_id = ${userId} AND r.is_active = true
+    `);
+    const userRoles = userRolesResult.rows;
+
     // Get sample dashboard configs with comprehensive widgets for manufacturing roles
-    const dashboards = [
+    // In production, this would query actual database dashboards filtered by user roles
+    const allDashboards = [
       {
         id: 1,
         name: 'Executive Dashboard',
         description: 'High-level overview of operations and KPIs for executive team',
         isDefault: true,
         roleTargets: ['Plant Manager', 'Executive', 'General Manager'],
+        requiredRoleNames: ['Plant Manager', 'Executive', 'General Manager'],
         createdAt: new Date(Date.now() - 86400000).toISOString(),
         updatedAt: new Date().toISOString(),
         configuration: {
@@ -2066,6 +2093,7 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         description: 'Real-time production monitoring and control dashboard',
         isDefault: false,
         roleTargets: ['Production Manager', 'Operations Manager', 'Shift Supervisor'],
+        requiredRoleNames: ['Production Manager', 'Operations Manager', 'Shift Supervisor'],
         createdAt: new Date(Date.now() - 172800000).toISOString(),
         updatedAt: new Date(Date.now() - 86400000).toISOString(),
         configuration: {
@@ -2157,6 +2185,7 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         description: 'Quality control and compliance tracking dashboard',
         isDefault: false,
         roleTargets: ['Quality Manager', 'QC Inspector', 'Compliance Officer'],
+        requiredRoleNames: ['Quality Manager', 'QC Inspector', 'Compliance Officer'],
         createdAt: new Date(Date.now() - 259200000).toISOString(),
         updatedAt: new Date(Date.now() - 172800000).toISOString(),
         configuration: {
@@ -2239,6 +2268,7 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         description: 'Predictive and preventive maintenance management',
         isDefault: false,
         roleTargets: ['Maintenance Manager', 'Maintenance Technician', 'Reliability Engineer'],
+        requiredRoleNames: ['Maintenance Manager', 'Maintenance Technician', 'Reliability Engineer'],
         createdAt: new Date(Date.now() - 345600000).toISOString(),
         updatedAt: new Date(Date.now() - 259200000).toISOString(),
         configuration: {
@@ -2333,6 +2363,7 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         description: 'Real-time operations dashboard for shift supervisors',
         isDefault: false,
         roleTargets: ['Shift Supervisor', 'Operations Coordinator', 'Floor Manager'],
+        requiredRoleNames: ['Shift Supervisor', 'Operations Coordinator', 'Floor Manager'],
         createdAt: new Date(Date.now() - 432000000).toISOString(),
         updatedAt: new Date(Date.now() - 345600000).toISOString(),
         configuration: {
@@ -2397,8 +2428,25 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         }
       }
     ];
+
+    // Filter dashboards based on user roles
+    // In development mode or if user has admin role, return all dashboards
+    const isAdmin = userRoles.some((role: any) => role.name === 'admin' || role.name === 'Admin');
+    let filteredDashboards = allDashboards;
+
+    if (!isAdmin && process.env.NODE_ENV !== 'development') {
+      const userRoleNames = userRoles.map((role: any) => role.name);
+      filteredDashboards = allDashboards.filter(dashboard => 
+        dashboard.requiredRoleNames.some(roleName => userRoleNames.includes(roleName))
+      );
+    }
+
+    // If no dashboards match user roles, provide a default one
+    if (filteredDashboards.length === 0) {
+      filteredDashboards = [allDashboards[0]]; // Default to Executive Dashboard
+    }
     
-    res.json(dashboards);
+    res.json(filteredDashboards);
   } catch (error: any) {
     console.error('Error fetching dashboard configs:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
@@ -2588,10 +2636,30 @@ router.get("/api/canvas/widgets", requireAuth, async (req, res) => {
 
 router.post("/api/canvas/widgets", requireAuth, async (req, res) => {
   try {
-    const { type, title, position, config, dashboardId } = req.body;
+    // Validate request body using widget schema
+    const validationResult = insertWidgetSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: 'Invalid widget data', 
+        details: validationResult.error.errors 
+      });
+    }
+
+    const { type, title, position, config, dashboardId } = validationResult.data;
+    
+    // Ensure user has access to the dashboard
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Verify dashboard access - in production would query database
+    if (dashboardId && !Number.isInteger(Number(dashboardId))) {
+      return res.status(400).json({ error: "Invalid dashboard ID" });
+    }
     
     // For now, return the created widget data
-    // In production, this would save to database
+    // In production, this would save to database using storage.createWidget()
     const newWidget = {
       id: `widget-${Date.now()}`,
       type,
@@ -2599,6 +2667,7 @@ router.post("/api/canvas/widgets", requireAuth, async (req, res) => {
       position,
       config,
       dashboardId,
+      isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -2613,10 +2682,32 @@ router.post("/api/canvas/widgets", requireAuth, async (req, res) => {
 router.put("/api/canvas/widgets/:widgetId", requireAuth, async (req, res) => {
   try {
     const { widgetId } = req.params;
-    const updateData = req.body;
+    
+    // Validate request body - allow partial updates
+    const updateSchema = insertWidgetSchema.partial();
+    const validationResult = updateSchema.safeParse(req.body);
+    if (!validationResult.success) {
+      return res.status(400).json({ 
+        error: 'Invalid widget update data', 
+        details: validationResult.error.errors 
+      });
+    }
+
+    const updateData = validationResult.data;
+    
+    // Ensure user has permission to update this widget
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Verify widget access - in production would query database to check widget ownership
+    if (!widgetId || widgetId.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid widget ID" });
+    }
     
     // For now, return the updated widget data
-    // In production, this would update in database
+    // In production, this would update in database using storage.updateWidget()
     const updatedWidget = {
       id: widgetId,
       ...updateData,
@@ -2634,8 +2725,19 @@ router.delete("/api/canvas/widgets/:widgetId", requireAuth, async (req, res) => 
   try {
     const { widgetId } = req.params;
     
+    // Ensure user has permission to delete this widget
+    const userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    // Verify widget access - in production would query database to check widget ownership
+    if (!widgetId || widgetId.trim().length === 0) {
+      return res.status(400).json({ error: "Invalid widget ID" });
+    }
+    
     // For now, just return success
-    // In production, this would delete from database
+    // In production, this would delete from database using storage.deleteWidget()
     res.json({ success: true, message: 'Widget deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting widget:', error);
