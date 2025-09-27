@@ -1,5 +1,6 @@
 import express from "express";
 import bcryptjs from "bcryptjs";
+import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
@@ -33,6 +34,41 @@ declare global {
 }
 
 const router = express.Router();
+
+// JWT Utilities - Secure token generation and verification
+const JWT_SECRET = process.env.SESSION_SECRET || 'dev-secret-key-change-in-production';
+const JWT_EXPIRES_IN = '7d'; // 7 days
+
+interface JWTPayload {
+  userId: number;
+  username: string;
+  email: string;
+  iat?: number;
+  exp?: number;
+}
+
+function generateJWT(user: any): string {
+  const payload: JWTPayload = {
+    userId: user.id,
+    username: user.username,
+    email: user.email
+  };
+  
+  return jwt.sign(payload, JWT_SECRET, { 
+    expiresIn: JWT_EXPIRES_IN,
+    algorithm: 'HS256'
+  });
+}
+
+function verifyJWT(token: string): JWTPayload | null {
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET, { algorithms: ['HS256'] }) as JWTPayload;
+    return decoded;
+  } catch (error) {
+    console.error('[JWT] Token verification failed:', error instanceof Error ? error.message : 'Unknown error');
+    return null;
+  }
+}
 
 // Configure multer for file uploads (specifically for voice recordings)
 const upload = multer({
@@ -161,9 +197,8 @@ router.post("/api/auth/login", async (req, res) => {
     // Update last login
     await storage.updateUser(user.id, { lastLogin: new Date() });
 
-    // Generate secure token (user ID + timestamp + secure secret from env)
-    const tokenPayload = `${user.id}:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
-    const token = Buffer.from(tokenPayload).toString('base64');
+    // Generate secure JWT token
+    const token = generateJWT(user);
     
     console.log(`Generated token for user ${user.id}`);
     
@@ -239,9 +274,8 @@ router.get("/api/auth/dev-token", async (req, res) => {
     permissions: ["*"]
   };
 
-  // Generate token for consistency
-  const tokenPayload = `1:${Date.now()}:${process.env.SESSION_SECRET || 'dev-secret-key'}`;
-  const token = Buffer.from(tokenPayload).toString('base64');
+  // Generate JWT token for consistency
+  const token = generateJWT(defaultAdminUser);
   
   // Store in memory
   global.tokenStore = global.tokenStore || new Map();
@@ -1476,149 +1510,118 @@ function checkRateLimit(userId: number): boolean {
   return true;
 }
 
-// Authentication middleware for AI routes - aligned with main auth system
+// JWT-based authentication middleware - secure and stateless
 async function requireAuth(req: any, res: any, next: any) {
-  console.log('[AI Auth] Authenticating request...');
+  console.log('[JWT Auth] Authenticating request...');
   const authHeader = req.headers.authorization;
   
   // Check for Bearer token in authorization header
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('[AI Auth] Missing or invalid authorization header');
+    console.log('[JWT Auth] Missing or invalid authorization header');
     return res.status(401).json({ message: 'Authentication required' });
   }
   
   const token = authHeader.substring(7);
-  console.log('[AI Auth] Token received, length:', token.length);
+  console.log('[JWT Auth] Token received, length:', token.length);
   
-  // Initialize token store if needed
-  global.tokenStore = global.tokenStore || new Map();
-  let tokenData = global.tokenStore.get(token);
+  // Verify JWT token
+  const decoded = verifyJWT(token);
+  if (!decoded) {
+    console.log('[JWT Auth] Invalid or expired token');
+    return res.status(401).json({ message: 'Invalid or expired token' });
+  }
   
-  // If token not in memory store, try to reconstruct from token (for server restart resilience)
-  if (!tokenData) {
-    console.log('[AI Auth] Token not in memory store, attempting to reconstruct...');
+  console.log('[JWT Auth] JWT verified for user:', decoded.userId);
+  
+  // Fetch user from database to get current roles and permissions
+  try {
+    const user = await storage.getUser(decoded.userId);
     
-    try {
-      const decoded = Buffer.from(token, 'base64').toString();
-      const [userId, timestamp, secret] = decoded.split(':');
-      const expectedSecret = process.env.SESSION_SECRET || 'dev-secret-key';
-      
-      console.log('[AI Auth] Decoded token - userId:', userId, 'timestamp:', timestamp);
-      
-      // Validate token format
-      if (secret !== expectedSecret) {
-        console.log('[AI Auth] Invalid token secret');
-        return res.status(401).json({ message: 'Invalid token' });
-      }
-      
-      if (isNaN(Number(userId)) || isNaN(Number(timestamp))) {
-        console.log('[AI Auth] Invalid token format - userId or timestamp is not a number');
-        return res.status(401).json({ message: 'Invalid token format' });
-      }
-      
-      // Check token age (7 days max)
-      const tokenAge = Date.now() - Number(timestamp);
-      const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-      
-      if (tokenAge > maxAge) {
-        console.log('[AI Auth] Token expired - age:', Math.floor(tokenAge / 1000 / 60 / 60), 'hours');
-        return res.status(401).json({ message: 'Token expired' });
-      }
-      
-      // Token is valid but not in memory store - fetch user from database
-      console.log('[AI Auth] Token valid, fetching user', userId, 'from database...');
-      
-      try {
-        const user = await storage.getUser(Number(userId));
-        
-        if (!user) {
-          console.log('[AI Auth] User not found in database');
-          return res.status(401).json({ message: 'User not found' });
-        }
-        
-        if (!user.isActive) {
-          console.log('[AI Auth] User account is inactive');
-          return res.status(401).json({ message: 'User account inactive' });
-        }
-        
-        // Get user roles and permissions from database
-        console.log('[AI Auth] Fetching user roles and permissions...');
-        const userRoles = await storage.getUserRoles(user.id);
-        const roles = [];
-        const allPermissions: string[] = [];
-        
-        for (const userRole of userRoles) {
-          const role = await storage.getRole(userRole.roleId);
-          if (role) {
-            const rolePermissions = await storage.getRolePermissions(role.id);
-            const permissions = [];
-            
-            for (const rp of rolePermissions) {
-              const permission = await storage.getPermission(rp.permissionId);
-              if (permission) {
-                allPermissions.push(permission.name);
-                permissions.push({
-                  id: permission.id,
-                  name: permission.name,
-                  feature: permission.feature,
-                  action: permission.action,
-                  description: permission.description || `${permission.action} access to ${permission.feature}`
-                });
-              }
-            }
-            
-            roles.push({
-              id: role.id,
-              name: role.name,
-              description: role.description || `${role.name} role with assigned permissions`,
-              permissions: permissions
-            });
-          }
-        }
-        
-        // Reconstruct token data
-        tokenData = {
-          userId: user.id,
-          userData: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            roles: roles,
-            permissions: allPermissions
-          },
-          createdAt: Number(timestamp),
-          expiresAt: Number(timestamp) + maxAge
-        };
-        
-        // Store in memory for future requests
-        global.tokenStore.set(token, tokenData);
-        console.log('[AI Auth] Token reconstructed and cached for user:', user.id);
-        
-      } catch (dbError) {
-        console.error('[AI Auth] Database error while fetching user:', dbError);
-        return res.status(500).json({ message: 'Authentication service error' });
-      }
-      
-    } catch (error) {
-      console.error('[AI Auth] Error reconstructing token:', error);
-      return res.status(401).json({ message: 'Invalid token' });
+    if (!user) {
+      console.log('[JWT Auth] User not found in database');
+      return res.status(401).json({ message: 'User not found' });
     }
+    
+    if (!user.isActive) {
+      console.log('[JWT Auth] User account is inactive');
+      return res.status(401).json({ message: 'User account inactive' });
+    }
+    
+    // Get current user roles and permissions from database
+    console.log('[JWT Auth] Fetching user roles and permissions...');
+    try {
+      const userRoles = await storage.getUserRoles(user.id);
+      const roles = [];
+      const allPermissions: string[] = [];
+      
+      for (const userRole of userRoles) {
+        const role = await storage.getRole(userRole.roleId);
+        if (role) {
+          const rolePermissions = await storage.getRolePermissions(role.id);
+          const permissions = [];
+          
+          for (const rp of rolePermissions) {
+            const permission = await storage.getPermission(rp.permissionId);
+            if (permission) {
+              allPermissions.push(permission.name);
+              permissions.push({
+                id: permission.id,
+                name: permission.name,
+                feature: permission.feature,
+                action: permission.action,
+                description: permission.description || `${permission.action} access to ${permission.feature}`
+              });
+            }
+          }
+          
+          roles.push({
+            id: role.id,
+            name: role.name,
+            description: role.description || `${role.name} role with assigned permissions`,
+            permissions: permissions
+          });
+        }
+      }
+      
+      // Set authentication data on request
+      req.userId = user.id;
+      req.user = user;
+      req.userData = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: roles,
+        permissions: allPermissions
+      };
+      
+      console.log('[JWT Auth] Authentication successful for user:', user.id);
+      next();
+      
+    } catch (roleError) {
+      // If role fetching fails, still allow access with basic user info for development
+      console.warn('[JWT Auth] Role fetching failed, allowing basic access:', roleError instanceof Error ? roleError.message : 'Unknown error');
+      
+      req.userId = user.id;
+      req.user = user;
+      req.userData = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        roles: [],
+        permissions: []
+      };
+      
+      next();
+    }
+    
+  } catch (dbError) {
+    console.error('[JWT Auth] Database error while fetching user:', dbError);
+    return res.status(500).json({ message: 'Authentication service error' });
   }
-  
-  // Check if token is expired
-  if (tokenData.expiresAt && Date.now() > tokenData.expiresAt) {
-    console.log('[AI Auth] Token expired for user:', tokenData.userId);
-    global.tokenStore.delete(token);
-    return res.status(401).json({ message: 'Token expired' });
-  }
-  
-  // Authentication successful - set userId and continue
-  req.userId = tokenData.userId;
-  req.userData = tokenData.userData; // Also include full user data for potential use
-  console.log('[AI Auth] Authentication successful for user:', tokenData.userId);
-  next();
 }
 
 // Main AI query endpoint
