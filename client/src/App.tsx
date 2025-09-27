@@ -167,7 +167,11 @@ function useAuthStatus() {
 export default function App() {
   const { isAuthenticated, isLoading } = useAuthStatus();
   const [currentPath] = useLocation();
-  const publicPaths = ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
+  // In development mode, exclude root path from public paths so it goes to ApplicationApp
+  const isDev = import.meta.env.MODE === 'development';
+  const publicPaths = isDev 
+    ? ['/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation']
+    : ['/', '/login', '/portal/login', '/marketing', '/pricing', '/solutions-comparison', '/whats-coming', '/clear-storage', '/technology-stack', '/demo-tour', '/presentation'];
   const isPublicPath = publicPaths.includes(currentPath);
   
   // Check if this is a portal route - handle separately from main app
@@ -213,7 +217,6 @@ export default function App() {
   // Determine if we should show website or app (but not for portal routes)
   // Only show website for actual public paths, not for protected routes
   // In development mode, prefer ApplicationApp for non-public paths regardless of auth status
-  const isDev = import.meta.env.MODE === 'development';
   const shouldShowWebsite = !isPortalRoute && isPublicPath;
   const shouldShowApplication = !isPortalRoute && !isPublicPath && (isDev || isAuthenticated);
   
