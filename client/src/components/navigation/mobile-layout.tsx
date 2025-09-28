@@ -1,6 +1,6 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Clock, Trash2 } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Clock, Trash2, Menu, Home } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -378,275 +378,72 @@ export function MobileLayout({ children }: MobileLayoutProps) {
 
   return (
     <>
-      {/* Mobile header - fixed at top */}
+      {/* Mobile header - fixed at top with main navigation */}
       <div className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-800 border-b dark:border-gray-700 shadow-sm z-40" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
-        <div className="flex items-center gap-3 px-4 py-2">
+        <div className="flex items-center justify-between px-4 py-3">
           {/* Logo */}
-          <Logo size="small" showText={false} />
+          <div className="flex items-center gap-3">
+            <Logo size="small" showText={false} />
+            <h1 className="text-lg font-semibold text-gray-900 dark:text-white">PlanetTogether</h1>
+          </div>
           
-          {/* Max Search/Command Input */}
-          <div className="flex-1 relative flex items-center gap-2">
-            <div className="flex-1 relative">
-              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                <Sparkles className="h-4 w-4 text-purple-500" />
-                <Search className="h-4 w-4 text-gray-400" />
-              </div>
-              <Input
-                type="text"
-                placeholder="Ask Max anything..."
-                value={maxCommand}
-                onChange={(e) => setMaxCommand(e.target.value)}
-                onKeyDown={handleMaxCommand}
-                className="pl-12 pr-4 h-9 text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700 mobile-header-search"
-                disabled={sendMessageMutation.isPending}
-              />
-            </div>
-            {isVoiceEnabled && (
-              <Button
-                size="sm"
-                variant={isListening ? "default" : "ghost"}
-                onClick={toggleVoiceInput}
-                className={`h-9 w-9 p-0 ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
-                disabled={sendMessageMutation.isPending}
-              >
-                {isListening ? (
-                  <Mic className="h-4 w-4 text-white animate-pulse" />
-                ) : (
-                  <MicOff className="h-4 w-4" />
-                )}
-              </Button>
-            )}
-            {/* Settings Button - Opens Max AI Settings */}
+          {/* Navigation Controls */}
+          <div className="flex items-center gap-2">
+            {/* Home Button */}
             <Button
               size="sm"
               variant="ghost"
-              onClick={() => setShowMaxSettings(true)}
-              className="h-9 w-9 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
-              title="Max AI Settings"
+              onClick={() => setLocation('/home')}
+              className="h-9 w-9 p-0"
+              title="Home"
             >
-              <Settings className="h-4 w-4" />
+              <Home className="h-4 w-4" />
+            </Button>
+            
+            {/* Recent Pages */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setRecentDialogOpen(true)}
+              className="h-9 w-9 p-0"
+              title="Recent Pages"
+            >
+              <Clock className="h-4 w-4" />
+            </Button>
+            
+            {/* Main Menu Button */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setMobileMenuOpen(true)}
+              className="h-9 w-9 p-0"
+              title="Menu"
+            >
+              <Menu className="h-4 w-4" />
+            </Button>
+            
+            {/* Profile */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setProfileDialogOpen(true)}
+              className="h-9 w-9 p-0"
+              title="Profile"
+            >
+              <Avatar className="h-6 w-6">
+                <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                  {user?.first_name?.[0]}{user?.last_name?.[0]}
+                </AvatarFallback>
+              </Avatar>
             </Button>
           </div>
         </div>
       </div>
       
-      {/* Max AI Thinking Indicator - shows when processing */}
-      {showMaxThinking && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-amber-500 to-orange-500 shadow-xl">
-          <div className="relative bg-white dark:bg-gray-900 rounded-lg p-4 shadow-lg">
-            <div className="flex items-center gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-amber-600 dark:text-amber-400 animate-pulse" />
-                </div>
-              </div>
-              <div className="flex-1">
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Max is thinking...</h3>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
       
-      {/* Max AI Response Display - shows below header when there's a response */}
-      {showMaxResponse && maxResponse && (
-        <div className="fixed top-16 left-0 right-0 z-30 p-3 bg-gradient-to-r from-purple-600 to-indigo-600 shadow-xl" style={{ maxHeight: '200px', overflow: 'hidden' }}>
-          <div className="relative bg-white dark:bg-gray-900 rounded-lg shadow-lg h-full overflow-y-auto p-4" style={{ maxHeight: '176px' }}>
-            {/* Close button */}
-            <button
-              onClick={() => setShowMaxResponse(false)}
-              className="absolute top-2 right-2 p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors z-10"
-              title="Close"
-            >
-              <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-            </button>
-            
-            <div className="flex items-start gap-3">
-              <div className="flex-shrink-0">
-                <div className="w-10 h-10 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
-                  <Sparkles className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-              <div className="flex-1 min-w-0 pr-6">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-2">Max</h3>
-                <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
-                  {renderContentWithClickableKeywords(maxResponse.content)}
-                </div>
-                {/* Quick Yes/No buttons for questions */}
-                {(maxResponse.content.includes('?') && (
-                  maxResponse.content.toLowerCase().includes('would you like') ||
-                  maxResponse.content.toLowerCase().includes('do you want') ||
-                  maxResponse.content.toLowerCase().includes('should') ||
-                  maxResponse.content.toLowerCase().includes('need help') ||
-                  maxResponse.content.toLowerCase().includes('want help') ||
-                  maxResponse.content.toLowerCase().includes('assistance') ||
-                  maxResponse.content.toLowerCase().includes('review') ||
-                  maxResponse.content.toLowerCase().includes('check')
-                )) && (
-                  <div className="mt-3 flex gap-2">
-                    <button
-                      onClick={() => {
-                        // Create contextual response based on Max's message content
-                        let contextualYes = "Yes, please help me with that.";
-                        const content = maxResponse.content.toLowerCase();
-                        
-                        if (content.includes('alert')) {
-                          contextualYes = "Yes, please show me details about the alerts.";
-                        } else if (content.includes('review') || content.includes('check')) {
-                          contextualYes = "Yes, please review that for me.";
-                        } else if (content.includes('analyze') || content.includes('analysis')) {
-                          contextualYes = "Yes, please analyze that.";
-                        } else if (content.includes('schedule') || content.includes('production')) {
-                          contextualYes = "Yes, please help with the production schedule.";
-                        }
-                        
-                        addMessage({
-                          id: Date.now().toString(),
-                          content: contextualYes,
-                          role: 'user',
-                          timestamp: new Date()
-                        });
-                        sendMessageMutation.mutate(contextualYes);
-                      }}
-                      className="px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm font-medium"
-                    >
-                      Yes, help me
-                    </button>
-                    <button
-                      onClick={() => {
-                        const contextualNo = `No, I don't need help with that right now.`;
-                        addMessage({
-                          id: Date.now().toString(),
-                          content: contextualNo,
-                          role: 'user',
-                          timestamp: new Date()
-                        });
-                        sendMessageMutation.mutate(contextualNo);
-                      }}
-                      className="px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm font-medium"
-                    >
-                      No, thanks
-                    </button>
-                  </div>
-                )}
-                {maxResponse.suggestions && maxResponse.suggestions.length > 0 && (
-                  <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">Quick Actions:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {maxResponse.suggestions.map((suggestion, idx) => (
-                        <button
-                          key={idx}
-                          onClick={() => {
-                            setMaxCommand(suggestion);
-                            // Automatically execute the suggestion
-                            addMessage({
-                              id: Date.now().toString(),
-                              content: suggestion,
-                              role: 'user',
-                              timestamp: new Date()
-                            });
-                            sendMessageMutation.mutate(suggestion);
-                          }}
-                          className="text-xs px-3 py-1.5 bg-purple-50 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-colors"
-                        >
-                          {suggestion}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Main content area - with padding for fixed header and footer */}
-      <div className={`${showMaxResponse ? 'pt-32' : 'pt-16'} pb-20 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0 transition-all duration-300`}>
+      {/* Main content area - with padding for fixed header and bottom Max interface */}
+      <div className="pt-16 pb-24 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0">
         {children}
-      </div>
-      
-      {/* Mobile footer bar - always visible */}
-      <div 
-        className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg pointer-events-auto" 
-        style={{ 
-          paddingBottom: 'env(safe-area-inset-bottom, 0px)', 
-          minHeight: '65px', 
-          zIndex: 1000000 
-        }}
-      >
-        <div className="flex items-center justify-around px-2 py-2">
-          {/* Home Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              // Navigate to proper home dashboard (not production schedule)
-              console.log('Mobile home button clicked, navigating to /home');
-              setLocation('/home');
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
-            style={{ minWidth: '44px', minHeight: '44px' }}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-            </svg>
-            <span className="text-[10px]">Home</span>
-          </button>
-          
-          {/* Menu Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setMobileMenuOpen(!mobileMenuOpen);
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
-            style={{ minWidth: '44px', minHeight: '44px' }}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-            <span className="text-[10px]">Menu</span>
-          </button>
-          
-          {/* Recent Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setRecentDialogOpen(!recentDialogOpen);
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
-            style={{ minWidth: '44px', minHeight: '44px' }}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <span className="text-[10px]">Recent</span>
-          </button>
-          
-          {/* Profile Button */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-              setProfileDialogOpen(!profileDialogOpen);
-            }}
-            className="flex flex-col items-center gap-1 p-2 h-auto text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors pointer-events-auto touch-manipulation"
-            style={{ minWidth: '44px', minHeight: '44px' }}
-          >
-            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-            </svg>
-            <span className="text-[10px]">Profile</span>
-          </button>
-        </div>
       </div>
 
       {/* Mobile Menu Sidebar */}
@@ -1029,6 +826,100 @@ export function MobileLayout({ children }: MobileLayoutProps) {
           </div>
         </div>
       )}
+
+      {/* Bottom Max AI Interface - fixed at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        {/* Max AI Response Display - shows above input when there's a response */}
+        {showMaxResponse && maxResponse && (
+          <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-3">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-4 max-h-32 overflow-y-auto">
+              <div className="flex items-start gap-3">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center">
+                    <Sparkles className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0 pr-2">
+                  <div className="text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
+                    {renderContentWithClickableKeywords(maxResponse.content)}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowMaxResponse(false)}
+                  className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full transition-colors"
+                  title="Close"
+                >
+                  <X className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Max AI Thinking Indicator */}
+        {showMaxThinking && (
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 p-3">
+            <div className="bg-white dark:bg-gray-900 rounded-lg p-3">
+              <div className="flex items-center gap-3">
+                <div className="w-6 h-6 bg-amber-100 dark:bg-amber-900/50 rounded-full flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-amber-600 dark:text-amber-400 animate-pulse" />
+                </div>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Max is thinking...</span>
+                <div className="flex items-center gap-1 ml-auto">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-amber-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Max Input Interface */}
+        <div className="p-3">
+          <div className="flex items-center gap-2">
+            <div className="flex-1 relative">
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <Sparkles className="h-4 w-4 text-purple-500" />
+                <Search className="h-4 w-4 text-gray-400" />
+              </div>
+              <Input
+                type="text"
+                placeholder="Ask Max anything..."
+                value={maxCommand}
+                onChange={(e) => setMaxCommand(e.target.value)}
+                onKeyDown={handleMaxCommand}
+                className="pl-12 pr-4 h-10 text-sm bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
+                disabled={sendMessageMutation.isPending}
+              />
+            </div>
+            {isVoiceEnabled && (
+              <Button
+                size="sm"
+                variant={isListening ? "default" : "ghost"}
+                onClick={toggleVoiceInput}
+                className={`h-10 w-10 p-0 ${isListening ? 'bg-red-500 hover:bg-red-600' : ''}`}
+                disabled={sendMessageMutation.isPending}
+              >
+                {isListening ? (
+                  <Mic className="h-4 w-4 text-white animate-pulse" />
+                ) : (
+                  <MicOff className="h-4 w-4" />
+                )}
+              </Button>
+            )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowMaxSettings(true)}
+              className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Max AI Settings"
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
     </>
   );
 }
