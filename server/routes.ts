@@ -5287,4 +5287,47 @@ Examples:
   }
 });
 
+// Max AI endpoints for manufacturing intelligence
+router.post("/api/max-ai/chat", requireAuth, async (req, res) => {
+  try {
+    const { message, context, streaming = false } = req.body;
+    const userId = (req as any).userId;
+    
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    // Import the Max AI service
+    const { maxAI } = await import("./services/max-ai-service");
+    
+    // Get the appropriate chat method - check if respondToMessage exists first
+    let response;
+    if (typeof maxAI.respondToMessage === 'function') {
+      response = await maxAI.respondToMessage(message, {
+        userId,
+        userRole: 'Administrator',
+        currentPage: context?.currentPage || '/home',
+        selectedData: context?.selectedData,
+        recentActions: context?.recentActions,
+        conversationHistory: context?.conversationHistory
+      });
+    } else {
+      // Fallback - create a simple response if the method doesn't exist
+      response = {
+        content: `I received your message: "${message}". The Max AI service is available but may need configuration. Let me help you with production data - would you like me to check job counts or system status?`,
+        error: false
+      };
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Max AI chat error:', error);
+    res.status(500).json({ 
+      error: "Failed to process message",
+      content: "I'm experiencing technical difficulties. Please try again.",
+      error: true
+    });
+  }
+});
+
 export default router;

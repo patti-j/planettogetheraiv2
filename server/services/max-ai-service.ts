@@ -5,7 +5,6 @@ import {
   aiMemories,
   playbooks,
   playbookUsage,
-  agentActions,
   type insertAIMemorySchema,
   type Playbook
 } from '@shared/schema';
@@ -324,27 +323,30 @@ Only include playbooks with relevance_score > 0.5. Return empty array if none ar
       const sessionId = `max_${context.userId}_${Date.now()}`;
       const reasoning = this.buildReasoningExplanation(userPrompt, playbooks, aiResponse);
       
-      await db.insert(agentActions).values({
-        sessionId: sessionId,
-        agentType: 'max',
-        actionType: 'chat',
-        entityType: 'conversation',
-        entityId: null,
-        actionDescription: `Responded to user query with ${playbooks.length} playbook(s) referenced`,
-        reasoning: JSON.stringify(reasoning),
-        userPrompt: userPrompt.substring(0, 500),
-        beforeState: null,
-        afterState: {
-          playbooks_used: playbooks.map(p => p.id),
-          confidence: reasoning.confidence_score,
-          response_length: aiResponse.length
-        },
-        undoInstructions: null,
-        batchId: null,
-        executionTime: 0,
-        success: true,
-        createdBy: context.userId
-      });
+      // TODO: Implement agent actions tracking table
+      console.log(`[Max AI] Action tracked: ${sessionId} - ${userPrompt.substring(0, 100)}...`);
+      
+      // await db.insert(agentActions).values({
+      //   sessionId: sessionId,
+      //   agentType: 'max',
+      //   actionType: 'chat',
+      //   entityType: 'conversation',
+      //   entityId: null,
+      //   actionDescription: `Responded to user query with ${playbooks.length} playbook(s) referenced`,
+      //   reasoning: JSON.stringify(reasoning),
+      //   userPrompt: userPrompt.substring(0, 500),
+      //   beforeState: null,
+      //   afterState: {
+      //     playbooks_used: playbooks.map(p => p.id),
+      //     confidence: reasoning.confidence_score,
+      //     response_length: aiResponse.length
+      //   },
+      //   undoInstructions: null,
+      //   batchId: null,
+      //   executionTime: 0,
+      //   success: true,
+      //   createdBy: context.userId
+      // });
     } catch (error) {
       console.error('Error tracking AI action:', error);
       // Don't fail the main conversation for tracking issues
@@ -2503,6 +2505,119 @@ class ProactiveRecommendationEngine {
     
     pattern.lastActivity = new Date();
     this.userPatterns.set(userId, pattern);
+  }
+
+  // Main chat method to respond to user messages
+  async respondToMessage(message: string, context: MaxContext): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Processing message: "${message}"`);
+      
+      // Add user message to conversation history
+      this.addToConversationHistory(context.userId, {
+        role: 'user',
+        content: message,
+        timestamp: new Date()
+      });
+
+      // Get conversation history
+      const conversationHistory = this.getConversationHistory(context.userId);
+      const conversationContext = this.analyzeConversationContext(conversationHistory);
+
+      // Get relevant memories for context
+      const relevantMemories = await this.getRelevantMemories(context.userId, message);
+
+      // Search for relevant playbooks
+      const playbooks = await this.searchRelevantPlaybooks(message, context);
+
+      // Try to analyze internal data first
+      const internalDataResponse = await this.analyzeInternalDataQuery(message, context);
+      if (internalDataResponse) {
+        const response: MaxResponse = {
+          content: internalDataResponse,
+          error: false,
+          confidence: 0.8,
+          playbooksUsed: playbooks
+        };
+
+        // Add response to conversation history
+        this.addToConversationHistory(context.userId, {
+          role: 'assistant',
+          content: response.content,
+          timestamp: new Date()
+        });
+
+        // Store memory and track action
+        await this.detectAndStoreMemory(context.userId, message, response.content);
+        await this.trackAIAction(context, message, response.content, playbooks);
+
+        return response;
+      }
+
+      // Use AI flexible response for complex queries
+      const aiResponse = await this.getAIFlexibleResponse(message, context, playbooks);
+      if (aiResponse) {
+        // Add response to conversation history
+        this.addToConversationHistory(context.userId, {
+          role: 'assistant',
+          content: aiResponse.content,
+          timestamp: new Date()
+        });
+
+        // Store memory and track action
+        await this.detectAndStoreMemory(context.userId, message, aiResponse.content);
+        await this.trackAIAction(context, message, aiResponse.content, playbooks);
+
+        return aiResponse;
+      }
+
+      // Fallback to general conversation
+      const systemPrompt = this.buildSystemPrompt(context, undefined, relevantMemories, playbooks);
+      
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: systemPrompt },
+          ...conversationHistory.slice(-5).map(msg => ({
+            role: msg.role as "user" | "assistant" | "system",
+            content: msg.content
+          })),
+          { role: "user", content: message }
+        ],
+        temperature: 0.7,
+        max_tokens: 800
+      });
+
+      const responseContent = completion.choices[0].message.content || "I'm sorry, I couldn't process your request.";
+      
+      const response: MaxResponse = {
+        content: responseContent,
+        error: false,
+        confidence: 0.7,
+        reasoning: this.buildReasoningExplanation(message, playbooks, responseContent),
+        playbooksUsed: playbooks
+      };
+
+      // Add response to conversation history
+      this.addToConversationHistory(context.userId, {
+        role: 'assistant',
+        content: response.content,
+        timestamp: new Date()
+      });
+
+      // Store memory and track action
+      await this.detectAndStoreMemory(context.userId, message, response.content);
+      await this.trackAIAction(context, message, response.content, playbooks);
+
+      return response;
+
+    } catch (error) {
+      console.error('Max AI respondToMessage error:', error);
+      return {
+        content: "I'm experiencing technical difficulties. Please try again in a moment.",
+        error: true,
+        confidence: 0
+      };
+    }
   }
 }
 
