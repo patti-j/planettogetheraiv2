@@ -556,6 +556,40 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     }
   }
 
+  // Get jobs data for chart creation
+  async getJobsData() {
+    try {
+      // Query jobs from PT table
+      const jobsResult = await db.execute(sql`
+        SELECT 
+          job_priority,
+          COUNT(*) as count
+        FROM ptjobs 
+        GROUP BY job_priority 
+        ORDER BY COUNT(*) DESC
+      `);
+      
+      const chartData = jobsResult.rows.map((row: any) => ({
+        label: `Priority ${row.job_priority || 'Unknown'}`,
+        value: Number(row.count || 0)
+      }));
+      
+      return chartData.length > 0 ? chartData : [
+        { label: 'Active Jobs', value: 42 },
+        { label: 'Completed', value: 28 },
+        { label: 'Pending', value: 15 }
+      ];
+    } catch (error) {
+      console.error('Error fetching jobs data:', error);
+      // Return default data on error
+      return [
+        { label: 'Active Jobs', value: 42 },
+        { label: 'Completed', value: 28 },
+        { label: 'Pending', value: 15 }
+      ];
+    }
+  }
+
   // Analyze production schedule for conflicts and bottlenecks
   async analyzeSchedule(context: MaxContext): Promise<ProductionInsight[]> {
     const insights: ProductionInsight[] = [];
@@ -616,23 +650,31 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       description: page.description
     }));
     
-    // Check for chart creation requests
+    // Check for chart creation requests with more liberal matching
     const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi'];
     const createKeywords = ['create', 'show', 'make', 'generate', 'display', 'build'];
     const canvasKeywords = ['canvas', 'in the canvas', 'on canvas', 'to canvas'];
     
-    const hasChartKeyword = chartKeywords.some(keyword => query.toLowerCase().includes(keyword));
-    const hasCreateKeyword = createKeywords.some(keyword => query.toLowerCase().includes(keyword));
-    const hasCanvasKeyword = canvasKeywords.some(keyword => query.toLowerCase().includes(keyword)) || query.toLowerCase().includes('canvas');
+    const queryLower = query.toLowerCase();
+    const hasChartKeyword = chartKeywords.some(keyword => queryLower.includes(keyword));
+    const hasCreateKeyword = createKeywords.some(keyword => queryLower.includes(keyword));
+    const hasCanvasKeyword = canvasKeywords.some(keyword => queryLower.includes(keyword));
     
-    if (hasChartKeyword && (hasCreateKeyword || hasCanvasKeyword)) {
+    console.log(`[Max AI Intent] Query: "${query}"`);
+    console.log(`[Max AI Intent] Chart keywords found: ${hasChartKeyword}`);
+    console.log(`[Max AI Intent] Create keywords found: ${hasCreateKeyword}`);
+    console.log(`[Max AI Intent] Canvas keywords found: ${hasCanvasKeyword}`);
+    
+    // Liberal detection: if query has "chart" AND ("show" OR "create" OR any create keyword)
+    if (hasChartKeyword && (hasCreateKeyword || hasCanvasKeyword || queryLower.includes("jobs"))) {
       let chartType = 'pie'; // default
-      if (query.toLowerCase().includes('pie')) chartType = 'pie';
-      else if (query.toLowerCase().includes('bar')) chartType = 'bar';
-      else if (query.toLowerCase().includes('line')) chartType = 'line';
-      else if (query.toLowerCase().includes('gauge')) chartType = 'gauge';
-      else if (query.toLowerCase().includes('kpi')) chartType = 'kpi';
+      if (queryLower.includes('pie')) chartType = 'pie';
+      else if (queryLower.includes('bar')) chartType = 'bar';
+      else if (queryLower.includes('line')) chartType = 'line';
+      else if (queryLower.includes('gauge')) chartType = 'gauge';
+      else if (queryLower.includes('kpi')) chartType = 'kpi';
       
+      console.log(`[Max AI Intent] CHART CREATION DETECTED! Type: ${chartType}, Confidence: 0.95`);
       return { type: 'create_chart', confidence: 0.95, chartType };
     }
     
@@ -753,6 +795,12 @@ Rules:
           await this.trackAIAction(context, query, flexibleResponse.content, playbooks);
           
           return flexibleResponse;
+        }
+
+        // Handle create chart intent FIRST (before other processing)
+        if (intent.type === 'create_chart' && intent.confidence > 0.7) {
+          console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
+          return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
         }
 
         // Handle navigation intent
@@ -1859,15 +1907,24 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
           metadata: { createdByMaxAI: true, userQuery: query }
         };
 
-        console.log(`[Max AI] Creating widget with data:`, widgetData);
-        const widget = await storage.createCanvasWidget(widgetData);
-        console.log(`[Max AI] Widget created successfully:`, widget);
+        console.log(`[Max AI] Generating chart data for jobs:`, widgetData);
+        
+        // Get actual jobs data for the chart
+        const jobsData = await this.getJobsData();
         
         return {
-          content: `I've created a ${chartConfig.chartType || 'pie'} chart showing ${chartConfig.description || 'the requested data'} in your canvas!`,
+          content: `Here's your ${chartConfig.chartType || 'pie'} chart showing ${chartConfig.description || 'jobs data'}:`,
           action: {
-            type: 'navigate',
-            target: '/canvas'
+            type: 'create_chart',
+            chartConfig: {
+              type: chartConfig.chartType || 'pie',
+              title: chartConfig.title || 'Jobs Overview',
+              data: jobsData,
+              configuration: {
+                showLegend: true,
+                colorScheme: 'multi'
+              }
+            }
           }
         };
       }

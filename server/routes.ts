@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
+import { maxAI } from "./services/max-ai-service";
 import { db, directSql } from "./db";
 import { 
   insertDashboardSchema, 
@@ -5297,27 +5298,30 @@ router.post("/api/max-ai/chat", requireAuth, async (req, res) => {
       return res.status(400).json({ error: "Message is required" });
     }
 
-    // Import the Max AI service
-    const { maxAI } = await import("./services/max-ai-service");
+    // Use imported Max AI service - DEBUG ENHANCED
+    console.log(`[Max AI Chat] Processing request: "${message}"`);
+    console.log(`[Max AI Chat] maxAI object:`, maxAI);
+    console.log(`[Max AI Chat] maxAI type:`, typeof maxAI);
+    console.log(`[Max AI Chat] maxAI keys:`, Object.keys(maxAI || {}));
+    console.log(`[Max AI Chat] respondToMessage exists:`, typeof maxAI?.respondToMessage);
+    console.log(`[Max AI Chat] All methods:`, Object.getOwnPropertyNames(Object.getPrototypeOf(maxAI || {})));
     
-    // Get the appropriate chat method - check if respondToMessage exists first
-    let response;
-    if (typeof maxAI.respondToMessage === 'function') {
-      response = await maxAI.respondToMessage(message, {
-        userId,
-        userRole: 'Administrator',
-        currentPage: context?.currentPage || '/home',
-        selectedData: context?.selectedData,
-        recentActions: context?.recentActions,
-        conversationHistory: context?.conversationHistory
-      });
-    } else {
-      // Fallback - create a simple response if the method doesn't exist
-      response = {
-        content: `I received your message: "${message}". The Max AI service is available but may need configuration. Let me help you with production data - would you like me to check job counts or system status?`,
-        error: false
-      };
+    if (typeof maxAI?.generateResponse !== 'function') {
+      console.error(`[Max AI Chat] CRITICAL: generateResponse is not a function!`);
+      throw new Error(`Max AI service method not available: ${typeof maxAI?.generateResponse}`);
     }
+    
+    // Call the Max AI service directly
+    console.log(`[Max AI Chat] Calling generateResponse...`);
+    const response = await maxAI.generateResponse(message, {
+      userId,
+      userRole: 'Administrator',
+      currentPage: context?.currentPage || '/home',
+      selectedData: context?.selectedData,
+      recentActions: context?.recentActions,
+      conversationHistory: context?.conversationHistory
+    });
+    console.log(`[Max AI Chat] Response received:`, response);
 
     res.json(response);
   } catch (error) {
