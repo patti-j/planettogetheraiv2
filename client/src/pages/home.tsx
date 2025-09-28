@@ -296,9 +296,9 @@ export default function HomePage() {
 
       {/* Dashboard Preview - Collapsible */}
       {!isDashboardCollapsed && (
-        <div className={`h-1/3 ${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20 overflow-auto`}>
-        <Card className="h-full">
-          <CardHeader className="pb-3">
+        <div className={`flex-shrink-0 ${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20`} style={{ maxHeight: isMobile ? '300px' : '350px' }}>
+        <Card className="h-full flex flex-col">
+          <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="flex items-center gap-2 text-lg">
               <TrendingUp className="w-5 h-5" />
               {displayDashboard?.name || 'No Dashboard Selected'}
@@ -309,7 +309,7 @@ export default function HomePage() {
               </p>
             )}
           </CardHeader>
-          <CardContent className="pb-6">
+          <CardContent className="pb-6 flex-1 overflow-auto">
             {/* Loading State */}
             {isLoadingMetrics && (
               <div className={`grid gap-4 ${isMobile ? 'grid-cols-2' : 'grid-cols-1 md:grid-cols-4'}`}>
@@ -374,7 +374,7 @@ export default function HomePage() {
       )}
 
       {/* Tabbed Interface - Adaptive height */}
-      <div className={`${isDashboardCollapsed ? 'flex-1' : 'h-2/3'} overflow-hidden`}>
+      <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col" data-testid="main-tabs">
           <div className={`border-b ${isMobile ? 'px-4' : 'px-6'}`}>
             <TabsList className="grid w-full grid-cols-4">
