@@ -48,7 +48,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     const saved = localStorage.getItem('ai-panel-collapsed');
     return saved === 'true';
   });
-  const [activeTab, setActiveTab] = useState('simulations');
+  const [activeTab, setActiveTab] = useState('chat');
   const [prompt, setPrompt] = useState('');
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
@@ -811,8 +811,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   useEffect(() => {
     localStorage.setItem('ai-panel-collapsed', isCollapsed.toString());
     
-    // When panel opens (isCollapsed becomes false), scroll to bottom after a short delay
+    // When panel opens (isCollapsed becomes false), reset to default chat tab and scroll to bottom
     if (!isCollapsed) {
+      // Reset to default chat tab when opening
+      setActiveTab('chat');
+      
       // Small delay to ensure the panel animation completes and messages are rendered
       setTimeout(() => {
         scrollToBottom();
@@ -1831,7 +1834,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
-              setActiveTab('simulations');
             }}
             title="Open Agents Panel"
             style={{ padding: '8px', background: 'none', border: 'none' }}
@@ -1844,7 +1846,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             className="relative cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
-              setActiveTab('insights');
             }}
             title="View AI Insights (3 new)"
             style={{ padding: '8px', background: 'none', border: 'none' }}
@@ -1859,7 +1860,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             className="cursor-pointer"
             onClick={() => {
               setIsCollapsed(false);
-              setActiveTab('simulations');
             }}
             title="Run AI Simulations"
             style={{ padding: '8px', background: 'none', border: 'none' }}
@@ -1904,7 +1904,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   size="sm"
                   onClick={() => {
                     setIsCollapsed(false);
-                    setActiveTab('simulations');
                     setShowFloatingNotification(false);
                     setTimeout(() => setFloatingNotification(null), 300);
                     // Auto-scroll to bottom after a brief delay to ensure panel is expanded
