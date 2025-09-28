@@ -431,7 +431,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
               title="Profile"
             >
               <Avatar className="h-6 w-6">
-                <AvatarFallback className="text-xs bg-gradient-to-r from-blue-500 to-purple-600 text-white">
+                <AvatarFallback className="text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300">
                   {user?.first_name?.[0]}{user?.last_name?.[0]}
                 </AvatarFallback>
               </Avatar>
