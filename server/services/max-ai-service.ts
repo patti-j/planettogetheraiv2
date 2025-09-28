@@ -1,11 +1,10 @@
 import { OpenAI } from 'openai';
 import { db } from '../db';
 import { 
-  alerts,
   aiMemories,
   playbooks,
   playbookUsage,
-  type insertAIMemorySchema,
+  insertAiMemorySchema,
   type Playbook
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
@@ -490,7 +489,8 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       
       // Handle alert queries
       if (lowerQuery.includes('alert')) {
-        const alertList = await db.select().from(alerts).where(eq(alerts.status, 'active'));
+        // TODO: Implement alerts table
+        const alertList: any[] = [];
         return `There are currently ${alertList.length} active alerts in the system. ${alertList.length > 0 ? 'Would you like me to analyze them?' : 'Everything looks good!'}`;
       }
       
@@ -505,16 +505,18 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
   async getProductionStatus(context: MaxContext) {
     try {
       // Get active alerts
-      const alertList = await db.select({
-        id: alerts.id,
-        title: alerts.title,
-        description: alerts.description,
-        severity: alerts.severity,
-        status: alerts.status,
-        type: alerts.type
-      }).from(alerts)
-        .where(eq(alerts.status, 'active'))
-        .limit(5);
+      // TODO: Implement alerts table
+      const alertList: any[] = [];
+      // const alertList = await db.select({
+      //   id: alerts.id,
+      //   title: alerts.title,
+      //   description: alerts.description,
+      //   severity: alerts.severity,
+      //   status: alerts.status,
+      //   type: alerts.type
+      // }).from(alerts)
+      //   .where(eq(alerts.status, 'active'))
+      //   .limit(5);
 
       // Get job count from PT Publish table
       let totalJobs = 0;
@@ -1918,18 +1920,20 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
     
     if (isRequestingAlertAnalysis) {
       try {
-        const activeAlerts = await db.select({
-          id: alerts.id,
-          title: alerts.title,
-          description: alerts.description,
-          severity: alerts.severity,
-          type: alerts.type,
-          createdAt: alerts.createdAt
-        })
-          .from(alerts)
-          .where(eq(alerts.status, 'active'))
-          .orderBy(desc(alerts.createdAt))
-          .limit(5);
+        // TODO: Implement alerts table
+        const activeAlerts: any[] = [];
+        // const activeAlerts = await db.select({
+        //   id: alerts.id,
+        //   title: alerts.title,
+        //   description: alerts.description,
+        //   severity: alerts.severity,
+        //   type: alerts.type,
+        //   createdAt: alerts.createdAt
+        // })
+        //   .from(alerts)
+        //   .where(eq(alerts.status, 'active'))
+        //   .orderBy(desc(alerts.createdAt))
+        //   .limit(5);
 
         if (activeAlerts.length > 0) {
           enriched += `\n\nActive Alerts (${activeAlerts.length} total):`;
