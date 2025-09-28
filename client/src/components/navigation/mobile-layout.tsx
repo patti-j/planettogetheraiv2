@@ -115,6 +115,29 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         });
         return;
       }
+
+      // Handle chart creation actions from Max AI
+      if (data?.action?.type === 'create_chart' && data?.action?.chartConfig) {
+        console.log('Mobile Layout - Handling create_chart action:', data.action);
+        
+        // Show chart creation response in mobile
+        setMaxResponse({
+          content: `📊 Chart created: ${data.action.chartConfig.title || 'Data Visualization'}`,
+          suggestions: ["Show me another chart", "Navigate to dashboard", "What insights do you see?"],
+          chartData: data.action.chartConfig
+        });
+        setShowMaxResponse(true);
+        
+        // Also add to Max panel with chart info
+        addMessage({
+          id: Date.now().toString(),
+          content: `📊 Created ${data.action.chartConfig.type} chart: ${data.action.chartConfig.title || 'Data Visualization'}`,
+          role: 'assistant',
+          timestamp: new Date(),
+          chartData: data.action.chartConfig
+        });
+        return;
+      }
       
       // Store response for display
       if (data?.content || data?.message) {

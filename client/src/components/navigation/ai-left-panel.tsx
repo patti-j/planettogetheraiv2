@@ -562,6 +562,42 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
+      // Handle chart creation actions from Max AI
+      if (data?.action?.type === 'create_chart') {
+        console.log('AI Left Panel - Handling create_chart action:', data.action);
+        
+        // Process chart data and add to canvas via Max Dock
+        if (data.action.chartConfig && setCanvasItems) {
+          const chartItem: CanvasItem = {
+            id: `chart_${Date.now()}`,
+            type: 'chart',
+            title: data.action.title || 'AI Generated Chart',
+            content: {
+              chartType: data.action.chartType || data.action.chartConfig.chartType || 'bar',
+              data: data.action.chartConfig.data || data.action.data || [],
+              configuration: data.action.chartConfig
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          // Add chart item to canvas
+          setCanvasItems(prev => [...prev, chartItem]);
+          
+          // Show canvas if not visible
+          if (!isCanvasVisible) {
+            setCanvasVisible(true);
+          }
+        }
+        
+        // Show chart creation confirmation
+        await addMessage({
+          role: 'assistant',
+          content: data.content || 'I\'ve created a chart for you and added it to the canvas.',
+          source: 'panel'
+        });
+        return;
+      }
+      
       // Store response for display
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;
