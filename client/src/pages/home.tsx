@@ -240,15 +240,15 @@ export default function HomePage() {
       <div className={`border-b ${isMobile ? 'p-4' : 'p-6'}`}>
 
         {/* Dashboard Selector */}
-        <div className={`flex items-center ${isMobile ? 'flex-col gap-3' : 'justify-between'}`}>
-          <div className={`flex items-center gap-4 ${isMobile ? 'self-start' : ''}`}>
-            <label className="text-sm font-medium">Dashboard:</label>
+        <div className={`flex items-center gap-3 ${isMobile ? '' : 'justify-between'}`}>
+          <div className={`flex items-center gap-2 ${isMobile ? 'flex-1 min-w-0' : ''}`}>
+            <label className={`text-sm font-medium ${isMobile ? 'flex-shrink-0' : ''}`}>Dashboard:</label>
             <Select 
               value={selectedDashboard?.toString() || defaultDashboard?.id?.toString() || ''}
               onValueChange={(value) => setSelectedDashboard(parseInt(value))}
               data-testid="dashboard-selector"
             >
-              <SelectTrigger className={`${isMobile ? 'w-full min-h-[44px] h-[44px] py-3' : 'w-64'}`} data-testid="dashboard-selector-trigger">
+              <SelectTrigger className={`${isMobile ? 'flex-1 min-h-[44px] h-[44px] py-3' : 'w-64'}`} data-testid="dashboard-selector-trigger">
                 <SelectValue placeholder="Select dashboard..." />
               </SelectTrigger>
               <SelectContent>
@@ -276,7 +276,7 @@ export default function HomePage() {
             variant="outline"
             size={isMobile ? undefined : "sm"}
             onClick={() => setIsDashboardCollapsed(!isDashboardCollapsed)}
-            className={`gap-2 ${isMobile ? 'self-end h-[44px] w-[44px] p-2' : ''}`}
+            className={`gap-2 ${isMobile ? 'h-[44px] w-[44px] p-2 flex-shrink-0' : ''}`}
             data-testid="dashboard-toggle-button"
           >
             {isDashboardCollapsed ? (
