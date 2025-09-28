@@ -562,15 +562,15 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       // Query jobs from PT table
       const jobsResult = await db.execute(sql`
         SELECT 
-          job_priority,
+          priority,
           COUNT(*) as count
         FROM ptjobs 
-        GROUP BY job_priority 
+        GROUP BY priority 
         ORDER BY COUNT(*) DESC
       `);
       
       const chartData = jobsResult.rows.map((row: any) => ({
-        label: `Priority ${row.job_priority || 'Unknown'}`,
+        label: `Priority ${row.priority || 'Unknown'}`,
         value: Number(row.count || 0)
       }));
       
