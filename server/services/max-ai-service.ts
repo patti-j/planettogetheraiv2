@@ -722,16 +722,20 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
   // AI-powered dynamic chart generation
   async getDynamicChart(query: string, context: MaxContext): Promise<any> {
     try {
-      console.log('[Max AI] Starting dynamic chart generation for query:', query);
+      console.log('[Max AI] 🎨 Starting dynamic chart generation for query:', query);
       
       // Get data catalog summary for AI context
+      console.log('[Max AI] 📚 Fetching data catalog summary...');
       const catalogSummary = await dataCatalog.summarizeForAI();
+      console.log('[Max AI] ✅ Data catalog summary ready');
       
       // Extract intent using OpenAI
+      console.log('[Max AI] 🧠 Extracting intent using OpenAI...');
       const intent = await this.extractIntent(query, catalogSummary);
+      console.log('[Max AI] 📊 Intent extracted:', intent);
       
       if (intent.confidence < 0.6) {
-        // Low confidence - provide clarification
+        console.log('[Max AI] ⚠️ Low confidence intent, requesting clarification');
         const clarification = await semanticRegistry.getSummaryForClarification();
         return {
           content: `I'm not sure exactly what you're looking for. Here's what data I have available:\n\n${clarification}\n\nCould you be more specific about what you'd like to see?`,
@@ -740,10 +744,16 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       }
       
       // Generate and execute SQL from intent
+      console.log('[Max AI] 🔍 Generating SQL from intent...');
       const sqlQuery = this.generateSQLFromIntent(intent);
+      console.log('[Max AI] 📝 SQL Query:', sqlQuery);
+      
+      console.log('[Max AI] ⚡ Executing SQL query...');
       const chartData = await this.executeSafeSQL(sqlQuery);
+      console.log('[Max AI] 📈 Chart data received:', chartData?.length, 'rows');
       
       if (!chartData || chartData.length === 0) {
+        console.log('[Max AI] ❌ No data found for chart');
         return {
           content: `I found the data you're looking for, but there are no records that match your criteria. Try adjusting your request or check if the data exists.`,
           action: { type: 'no_data' }
@@ -751,12 +761,16 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       }
       
       // Build chart configuration
+      console.log('[Max AI] 🛠️ Building chart configuration...');
       const chartConfig = this.buildChartConfig(intent, chartData);
+      console.log('[Max AI] 📊 Chart config built:', { type: chartConfig.type, dataPoints: chartConfig.data?.length });
       
       // Save to database
+      console.log('[Max AI] 💾 Saving chart widget to database...');
       await this.saveChartWidget(chartConfig, query);
+      console.log('[Max AI] ✅ Chart widget saved successfully');
       
-      return {
+      const response = {
         content: `Here's your ${chartConfig.type} chart showing ${intent.rationale}:`,
         action: {
           type: 'create_chart',
@@ -764,8 +778,12 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         }
       };
       
+      console.log('[Max AI] 🎯 Chart generation complete! Returning response with action type:', response.action.type);
+      return response;
+      
     } catch (error) {
-      console.error('[Max AI] Error in dynamic chart generation:', error);
+      console.error('[Max AI] 💥 Error in dynamic chart generation:', error);
+      console.error('[Max AI] 🔥 Error stack:', error.stack);
       return {
         content: 'I encountered an error while creating your chart. Please try rephrasing your request.',
         error: true
@@ -1064,16 +1082,16 @@ Return only the JSON object, no other text.`;
     console.log(`[Max AI Intent] Create keywords found: ${hasCreateKeyword}`);
     console.log(`[Max AI Intent] Canvas keywords found: ${hasCanvasKeyword}`);
     
-    // Liberal detection: if query has "chart" AND ("show" OR "create" OR any create keyword)
-    if (hasChartKeyword && (hasCreateKeyword || hasCanvasKeyword || queryLower.includes("jobs"))) {
-      let chartType = 'pie'; // default
+    // Enhanced detection: if query has "chart" OR "graph" AND ("show" OR "create" OR any create keyword OR "jobs")
+    if ((hasChartKeyword || queryLower.includes("graph")) && (hasCreateKeyword || hasCanvasKeyword || queryLower.includes("jobs"))) {
+      let chartType = 'bar'; // default to bar for better data display
       if (queryLower.includes('pie')) chartType = 'pie';
       else if (queryLower.includes('bar')) chartType = 'bar';
       else if (queryLower.includes('line')) chartType = 'line';
       else if (queryLower.includes('gauge')) chartType = 'gauge';
       else if (queryLower.includes('kpi')) chartType = 'kpi';
       
-      console.log(`[Max AI Intent] CHART CREATION DETECTED! Type: ${chartType}, Confidence: 0.95`);
+      console.log(`[Max AI Intent] 🎯 CHART CREATION DETECTED! Query: "${query}", Type: ${chartType}, Confidence: 0.95`);
       return { type: 'create_chart', confidence: 0.95, chartType };
     }
     
@@ -1571,6 +1589,7 @@ Respond with JSON:
         }
         return analysisResponse;
       } else if (intent.intent === 'CREATE') {
+        console.log(`[Max AI] 🔧 CREATE intent detected, routing to handleCreateIntent for query: "${query}"`);
         return await this.handleCreateIntent(query, intent, context);
       } else {
         // Let the main AI response handle HELP and CHAT

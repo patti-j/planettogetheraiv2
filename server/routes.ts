@@ -2986,6 +2986,69 @@ router.delete("/api/canvas/widgets/:widgetId", async (req, res) => {
   }
 });
 
+// Get single widget by ID - returns JSON widget data
+router.get("/api/widgets/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const widgetId = Number(id); // Coerce to number for proper DB query
+    console.log('🔍 [Widget API] Fetching widget:', widgetId);
+    
+    if (isNaN(widgetId)) {
+      return res.status(400).json({ error: 'Invalid widget ID' });
+    }
+    
+    // Query widget from database
+    const result = await db.execute(sql`SELECT * FROM widgets WHERE id = ${widgetId} AND is_active = true`);
+    
+    if (result.rows.length === 0) {
+      console.log('❌ [Widget API] Widget not found:', widgetId);
+      return res.status(404).json({ error: 'Widget not found' });
+    }
+    
+    const widget = result.rows[0] as any;
+    console.log('✅ [Widget API] Widget found:', widget.title);
+    
+    // Parse config if it's stored as JSON string
+    let config = widget.config;
+    if (typeof config === 'string') {
+      try {
+        config = JSON.parse(config);
+      } catch (error) {
+        console.error('❌ [Widget API] Error parsing widget config:', error);
+        config = {};
+      }
+    }
+    
+    // Generate chart data if it's a chart widget
+    if (widget.type === 'bar' && config?.dataSource === 'dynamic') {
+      try {
+        const { MaxAIService } = await import('./services/max-ai-service');
+        const maxAI = new MaxAIService();
+        
+        // Use the same method that generates dynamic charts in the canvas widgets endpoint
+        const userQuery = config.userQuery || '';
+        const chartData = await maxAI.getDynamicChart(userQuery);
+        
+        // Add chart data to widget response
+        widget.chartData = chartData.data || [];
+        console.log('📊 [Widget API] Chart data generated:', widget.chartData.length, 'items');
+      } catch (error) {
+        console.error('❌ [Widget API] Error generating chart data:', error);
+        // Continue without chart data rather than failing
+        widget.chartData = [];
+      }
+    }
+    
+    // Ensure config is properly included in response
+    widget.config = config;
+    
+    res.json(widget);
+  } catch (error: any) {
+    console.error('❌ [Widget API] Error fetching widget:', error);
+    res.status(500).json({ error: 'Failed to fetch widget' });
+  }
+});
+
 // Widget visibility endpoint - missing but needed for canvas clear functionality
 router.put("/api/canvas/widgets/:id/visibility", async (req, res) => {
   // Development bypass - skip authentication in dev mode

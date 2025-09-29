@@ -558,12 +558,18 @@ export default function IntegratedAIAssistant() {
 
   const sendMessageMutation = useMutation({
     mutationFn: async (message: string) => {
-      const response = await apiRequest("POST", "/api/ai-agent/command", {
-        command: message,
+      console.log('🚀 [AI Assistant] Sending message to Max AI:', message);
+      const response = await apiRequest("POST", "/api/max-ai/chat", {
+        message: message,
         attachments: attachments.map(a => ({ name: a.name, type: a.type, size: a.size, content: a.content, url: a.url })),
-        context: contextData,
+        context: {
+          ...contextData,
+          currentPage: window.location.pathname,
+          userRole: 'Administrator'
+        },
         conversationHistory: messages.slice(-5) // Send last 5 messages for context
       });
+      console.log('📨 [AI Assistant] Response received from Max AI');
       return await response.json();
     },
     onSuccess: (data) => {
@@ -663,15 +669,25 @@ export default function IntegratedAIAssistant() {
 
   const startListening = async () => {
     try {
+      console.log('🎤 Requesting microphone access...');
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log('✅ Microphone access granted');
+      
       const recorder = new MediaRecorder(stream);
       const chunks: Blob[] = [];
 
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      recorder.ondataavailable = (e) => {
+        console.log('📊 Audio data available, size:', e.data.size);
+        chunks.push(e.data);
+      };
+      
       recorder.onstop = async () => {
+        console.log('🛑 Recording stopped, processing audio...');
         const blob = new Blob(chunks, { type: 'audio/wav' });
+        console.log('📄 Audio blob created, size:', blob.size);
         await handleAudioRecording(blob);
         stream.getTracks().forEach(track => track.stop());
+        console.log('🔇 Microphone stream closed');
       };
 
       recorder.start();
@@ -679,6 +695,7 @@ export default function IntegratedAIAssistant() {
       setIsRecording(true);
       setIsListening(true);
       setRecordingTimeLeft(10);
+      console.log('🔴 Recording started');
 
       // Start countdown timer
       const interval = setInterval(() => {
@@ -699,10 +716,21 @@ export default function IntegratedAIAssistant() {
       }, 10000);
 
       setRecordingTimeout(timeout);
-    } catch (error) {
+    } catch (error: any) {
+      console.error('❌ Microphone access error:', error);
+      let errorMessage = "Unable to access microphone. Please check permissions.";
+      
+      if (error.name === 'NotAllowedError') {
+        errorMessage = "Microphone access denied. Please allow microphone permissions in your browser settings.";
+      } else if (error.name === 'NotFoundError') {
+        errorMessage = "No microphone found. Please connect a microphone and try again.";
+      } else if (error.name === 'NotReadableError') {
+        errorMessage = "Microphone is being used by another application. Please close other apps using the microphone.";
+      }
+      
       toast({
         title: "Recording Error",
-        description: "Unable to access microphone. Please check permissions.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
