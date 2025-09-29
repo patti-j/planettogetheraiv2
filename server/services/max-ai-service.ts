@@ -1191,6 +1191,12 @@ Rules:
         // Analyze user intent using AI
         const intent = await this.analyzeUserIntentWithAI(query);
         
+        // Handle create chart intent FIRST (before other processing)
+        if (intent.type === 'create_chart' && intent.confidence > 0.7) {
+          console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
+          return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
+        }
+        
         // If streaming is enabled, handle differently
         if (options?.streaming && options.onChunk) {
           // Stream the response chunks
@@ -1212,12 +1218,6 @@ Rules:
           await this.trackAIAction(context, query, flexibleResponse.content, playbooks);
           
           return flexibleResponse;
-        }
-
-        // Handle create chart intent FIRST (before other processing)
-        if (intent.type === 'create_chart' && intent.confidence > 0.7) {
-          console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
-          return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
         }
 
         // Handle navigation intent
