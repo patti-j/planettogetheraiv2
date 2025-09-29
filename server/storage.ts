@@ -3,6 +3,7 @@ import {
   companyOnboarding, userPreferences, recentPages,
   ptPlants, ptResources, ptJobOperations, ptManufacturingOrders,
   schedulingConversations, schedulingMessages, savedSchedules,
+  widgets,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -10,7 +11,8 @@ import {
   type PtPlant, type PtResource, type PtJobOperation, type PtManufacturingOrder,
   type SchedulingConversation, type InsertSchedulingConversation,
   type SchedulingMessage, type InsertSchedulingMessage,
-  type SavedSchedule, type InsertSavedSchedule
+  type SavedSchedule, type InsertSavedSchedule,
+  type Widget, type InsertWidget
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -86,6 +88,9 @@ export interface IStorage {
   updateSavedSchedule(id: number, userId: number, data: Partial<InsertSavedSchedule>): Promise<SavedSchedule | undefined>;
   deleteSavedSchedule(id: number, userId: number): Promise<boolean>;
 
+  // Canvas Widgets  
+  createCanvasWidget(data: Partial<InsertWidget>): Promise<Widget>;
+  
   // Error logging
   logError(error: any): Promise<void>;
 }
@@ -866,6 +871,28 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting saved schedule:', error);
       return false;
+    }
+  }
+
+  // Canvas Widgets
+  async createCanvasWidget(data: Partial<InsertWidget>): Promise<Widget> {
+    try {
+      // Set default values for required fields
+      const widgetData = {
+        dashboardId: data.dashboardId || 1, // Default dashboard
+        type: data.type || 'chart',
+        title: data.title || 'Untitled Widget',
+        position: data.position || { x: 0, y: 0, w: 6, h: 4 },
+        config: data.config || {},
+        isActive: data.isActive !== undefined ? data.isActive : true
+      };
+      
+      const [widget] = await db.insert(widgets).values(widgetData).returning();
+      console.log(`[Storage] Canvas widget created with ID: ${widget.id}`);
+      return widget;
+    } catch (error) {
+      console.error('Error creating canvas widget:', error);
+      throw error;
     }
   }
 
