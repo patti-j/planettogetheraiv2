@@ -673,7 +673,24 @@ export default function IntegratedAIAssistant() {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       console.log('✅ Microphone access granted');
       
-      const recorder = new MediaRecorder(stream);
+      // Check supported MIME types and use the best one for Whisper API
+      const mimeTypes = [
+        'audio/webm',
+        'audio/webm;codecs=opus',
+        'audio/ogg;codecs=opus',
+        'audio/mp4',
+      ];
+      
+      let selectedMimeType = 'audio/webm'; // Default fallback
+      for (const mimeType of mimeTypes) {
+        if (MediaRecorder.isTypeSupported(mimeType)) {
+          selectedMimeType = mimeType;
+          console.log('✅ Using MIME type:', mimeType);
+          break;
+        }
+      }
+      
+      const recorder = new MediaRecorder(stream, { mimeType: selectedMimeType });
       const chunks: Blob[] = [];
 
       recorder.ondataavailable = (e) => {
@@ -683,8 +700,9 @@ export default function IntegratedAIAssistant() {
       
       recorder.onstop = async () => {
         console.log('🛑 Recording stopped, processing audio...');
-        const blob = new Blob(chunks, { type: 'audio/wav' });
-        console.log('📄 Audio blob created, size:', blob.size);
+        // Use the actual MIME type from the MediaRecorder
+        const blob = new Blob(chunks, { type: selectedMimeType });
+        console.log('📄 Audio blob created, size:', blob.size, 'type:', blob.type);
         await handleAudioRecording(blob);
         stream.getTracks().forEach(track => track.stop());
         console.log('🔇 Microphone stream closed');
@@ -752,8 +770,24 @@ export default function IntegratedAIAssistant() {
   const handleAudioRecording = async (audioBlob: Blob) => {
     try {
       setIsTranscribing(true);
+      console.log('📤 Uploading audio for transcription, type:', audioBlob.type, 'size:', audioBlob.size);
+      
+      // Determine file extension based on MIME type
+      const mimeToExt: Record<string, string> = {
+        'audio/webm': 'webm',
+        'audio/webm;codecs=opus': 'webm',
+        'audio/ogg;codecs=opus': 'ogg',
+        'audio/ogg': 'ogg',
+        'audio/mp4': 'mp4',
+        'audio/wav': 'wav',
+      };
+      
+      const extension = mimeToExt[audioBlob.type] || 'webm';
+      const filename = `recording.${extension}`;
+      console.log('📝 Using filename:', filename);
+      
       const formData = new FormData();
-      formData.append('audio', audioBlob, 'recording.wav');
+      formData.append('audio', audioBlob, filename);
       
       const response = await fetch('/api/ai-agent/voice', {
         method: 'POST',

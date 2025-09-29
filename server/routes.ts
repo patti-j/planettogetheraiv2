@@ -3456,6 +3456,15 @@ router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
   try {
     console.log("Voice transcription request received");
 
+    // Validate OpenAI API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.error("OpenAI API key not configured");
+      return res.status(500).json({
+        success: false,
+        message: "Voice transcription service is not properly configured"
+      });
+    }
+
     // Check if file was uploaded
     if (!req.file) {
       return res.status(400).json({
@@ -3464,7 +3473,25 @@ router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
       });
     }
 
-    console.log("Processing audio file:", req.file.originalname, "Size:", req.file.buffer.length, "bytes");
+    // Validate file size (double-check multer limit)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (req.file.buffer.length > maxSize) {
+      return res.status(400).json({
+        success: false,
+        message: `Audio file too large. Maximum size is ${maxSize / 1024 / 1024}MB`
+      });
+    }
+
+    // Validate audio MIME type (allowlist for Whisper API)
+    const allowedMimeTypes = ['audio/webm', 'audio/ogg', 'audio/mp3', 'audio/mp4', 'audio/mpeg', 'audio/wav', 'audio/flac', 'audio/m4a'];
+    if (!allowedMimeTypes.some(type => req.file!.mimetype.includes(type))) {
+      return res.status(400).json({
+        success: false,
+        message: `Unsupported audio format: ${req.file.mimetype}. Supported: ${allowedMimeTypes.join(', ')}`
+      });
+    }
+
+    console.log("Processing audio file:", req.file.originalname, "Size:", req.file.buffer.length, "bytes", "Type:", req.file.mimetype);
 
     // Import OpenAI for voice transcription
     const { default: OpenAI } = await import("openai");
@@ -3492,9 +3519,25 @@ router.post("/api/ai-agent/voice", upload.single('audio'), async (req, res) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Voice transcription error:", errorMessage);
-    res.status(500).json({
+    
+    // Handle specific error types
+    let statusCode = 500;
+    let message = "Failed to transcribe voice recording";
+    
+    if (errorMessage.includes('file too large') || errorMessage.includes('File too large')) {
+      statusCode = 400;
+      message = "Audio file is too large. Maximum size is 10MB";
+    } else if (errorMessage.includes('audio files are allowed')) {
+      statusCode = 400;
+      message = "Invalid file type. Only audio files are allowed";
+    } else if (errorMessage.includes('400') && errorMessage.includes('file format')) {
+      statusCode = 400;
+      message = "Unsupported audio format. Please use WebM, OGG, MP3, or WAV";
+    }
+    
+    res.status(statusCode).json({
       success: false,
-      message: "Failed to transcribe voice recording",
+      message,
       error: errorMessage
     });
   }
