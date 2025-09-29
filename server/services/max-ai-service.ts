@@ -590,6 +590,87 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     }
   }
 
+  // Intelligently get relevant chart data based on user query
+  async getRelevantChartData(query: string, chartType: string = 'bar') {
+    const queryLower = query.toLowerCase();
+    
+    try {
+      // Resource-related queries
+      if (queryLower.includes('resource') && (queryLower.includes('plant') || queryLower.includes('by plant'))) {
+        console.log('[Max AI] Detected resource by plant query');
+        const resourcesResult = await db.execute(sql`
+          SELECT 
+            plant_name,
+            COUNT(*) as count
+          FROM ptresources 
+          WHERE plant_name IS NOT NULL
+          GROUP BY plant_name 
+          ORDER BY COUNT(*) DESC
+        `);
+        
+        return resourcesResult.rows.map((row: any) => ({
+          name: row.plant_name || 'Unknown Plant',
+          value: Number(row.count || 0),
+          label: row.plant_name || 'Unknown Plant'
+        }));
+      }
+      
+      // Resource by department 
+      else if (queryLower.includes('resource') && (queryLower.includes('department') || queryLower.includes('by department'))) {
+        console.log('[Max AI] Detected resource by department query');
+        const resourcesResult = await db.execute(sql`
+          SELECT 
+            department_name,
+            COUNT(*) as count
+          FROM ptresources 
+          WHERE department_name IS NOT NULL
+          GROUP BY department_name 
+          ORDER BY COUNT(*) DESC
+        `);
+        
+        return resourcesResult.rows.map((row: any) => ({
+          name: row.department_name || 'Unknown Department',
+          value: Number(row.count || 0),
+          label: row.department_name || 'Unknown Department'
+        }));
+      }
+      
+      // Job-related queries (original behavior)
+      else if (queryLower.includes('job') || queryLower.includes('priority') || queryLower.includes('production')) {
+        console.log('[Max AI] Detected job-related query');
+        return await this.getJobsData();
+      }
+      
+      // Default to jobs for backwards compatibility
+      else {
+        console.log('[Max AI] Using default jobs data');
+        return await this.getJobsData();
+      }
+      
+    } catch (error) {
+      console.error('Error getting relevant chart data:', error);
+      // Fallback to jobs data on error
+      return await this.getJobsData();
+    }
+  }
+
+  // Generate appropriate chart title based on user query
+  private generateTitleFromQuery(query: string): string {
+    const queryLower = query.toLowerCase();
+    
+    if (queryLower.includes('resource') && queryLower.includes('plant')) {
+      return 'Resource Count by Plant';
+    } else if (queryLower.includes('resource') && queryLower.includes('department')) {
+      return 'Resource Count by Department';
+    } else if (queryLower.includes('job') && queryLower.includes('priority')) {
+      return 'Job Distribution by Priority';
+    } else if (queryLower.includes('production')) {
+      return 'Production Overview';
+    } else {
+      return 'Data Overview';
+    }
+  }
+
   // Analyze production schedule for conflicts and bottlenecks
   async analyzeSchedule(context: MaxContext): Promise<ProductionInsight[]> {
     const insights: ProductionInsight[] = [];
@@ -1939,17 +2020,17 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
           console.error(`[Max AI] Error saving widget to database:`, error);
         }
         
-        // Get actual jobs data for the chart
-        const jobsData = await this.getJobsData();
+        // Intelligently determine what data to use based on user query
+        const chartData = await this.getRelevantChartData(query, chartConfig.chartType);
         
         return {
-          content: `Here's your ${chartConfig.chartType || 'pie'} chart showing ${chartConfig.description || 'jobs data'}:`,
+          content: `Here's your ${chartConfig.chartType || 'bar'} chart showing ${chartConfig.description || 'the requested data'}:`,
           action: {
             type: 'create_chart',
             chartConfig: {
-              type: chartConfig.chartType || 'pie',
-              title: chartConfig.title || 'Jobs Overview',
-              data: jobsData,
+              type: chartConfig.chartType || 'bar',
+              title: chartConfig.title || this.generateTitleFromQuery(query),
+              data: chartData,
               configuration: {
                 showLegend: true,
                 colorScheme: 'multi'
