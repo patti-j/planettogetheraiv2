@@ -291,14 +291,14 @@ export default function CanvasPage() {
 
   const handleShare = async () => {
     try {
-      const shareText = `Max Canvas Content (${allItems.length} items)\n\n${allItems
+      const shareText = `Agent Canvas Content (${allItems.length} items)\n\n${allItems
         .map(item => `${item.title}: ${JSON.stringify(item.content)}`)
         .join('\n\n---\n\n')}`;
 
       if (navigator.share) {
         try {
           await navigator.share({
-            title: 'Max Canvas Content',
+            title: 'Agent Canvas Content',
             text: shareText
           });
           
@@ -339,7 +339,7 @@ export default function CanvasPage() {
               <BarChart3 className="w-4 h-4" />
             </div>
             <div>
-              <h1 className="text-xl md:text-2xl font-bold">Max Canvas</h1>
+              <h1 className="text-xl md:text-2xl font-bold">Agent Canvas</h1>
               <p className="text-white/80 text-sm md:text-base">Dynamic content space for AI-generated visualizations</p>
             </div>
           </div>
