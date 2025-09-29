@@ -2983,15 +2983,7 @@
                         leftMargin: 50,   // Margin in pixels between first event start and first visible date
                         rightMargin: 50   // Margin in pixels between last event end and last visible date
                     });
-                    console.log('Initial zoom to fit applied');
-                    
-                    // Center on current date after zoom
-                    setTimeout(() => {
-                        const events = scheduler.eventStore.records;
-                        if (events.length > 0) {
-                            scheduler.scrollToDate(new Date(2025, 8, 3), { block: 'center' });
-                        }
-                    }, 100);
+                    console.log('Initial zoom to fit applied - scheduler always loads in fit-to-view mode');
                 }, 750);
                 
                 // Hide loading overlay
