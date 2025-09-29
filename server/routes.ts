@@ -661,7 +661,7 @@ router.post("/user-preferences/:userId", async (req, res) => {
 });
 
 // Recent pages routes
-router.post("/recent-pages", async (req, res) => {
+router.post("/api/recent-pages", async (req, res) => {
   try {
     // Check for token authentication
     const authHeader = req.headers.authorization;
@@ -717,7 +717,7 @@ router.post("/recent-pages", async (req, res) => {
   }
 });
 
-router.get("/recent-pages", async (req, res) => {
+router.get("/api/recent-pages", async (req, res) => {
   try {
     // Check for token authentication
     const authHeader = req.headers.authorization;
