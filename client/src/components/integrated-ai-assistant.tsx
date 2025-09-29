@@ -567,6 +567,11 @@ export default function IntegratedAIAssistant() {
       return await response.json();
     },
     onSuccess: (data) => {
+      // Debug: Log the full response to see structure
+      console.log('🔍 [AI Assistant] Full response data:', data);
+      console.log('🔍 [AI Assistant] Action present:', !!data.action);
+      console.log('🔍 [AI Assistant] Action type:', data.action?.type);
+      
       // Handle both 'response' and 'message' fields from backend
       const responseText = data.response || data.message || data.reply || 'No response received';
       
