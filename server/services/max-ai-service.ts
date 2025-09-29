@@ -1909,6 +1909,14 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
 
         console.log(`[Max AI] Generating chart data for jobs:`, widgetData);
         
+        // Save widget to database so it appears in canvas
+        try {
+          const savedWidget = await storage.createWidget(widgetData);
+          console.log(`[Max AI] Chart widget saved to database with ID:`, savedWidget.id);
+        } catch (error) {
+          console.error(`[Max AI] Error saving widget to database:`, error);
+        }
+        
         // Get actual jobs data for the chart
         const jobsData = await this.getJobsData();
         
