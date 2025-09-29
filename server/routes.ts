@@ -1958,7 +1958,7 @@ router.post("/recommendations/refer", requireAuth, async (req, res) => {
       referralId: `ref-${Date.now()}`,
       userIds,
       recommendationId,
-      message: message || null,
+      userMessage: message || null,
       createdAt: new Date().toISOString()
     });
   } catch (error: any) {
@@ -5576,7 +5576,7 @@ router.post("/api/max-ai/chat", async (req, res) => {
     res.status(500).json({ 
       error: "Failed to process message",
       content: "I'm experiencing technical difficulties. Please try again.",
-      error: true
+      success: false
     });
   }
 });
