@@ -403,9 +403,9 @@ export default function HomePage() {
               <TabsTrigger value="inbox" className="flex items-center gap-2" data-testid="tab-inbox">
                 <Inbox className="w-4 h-4" />
                 Inbox
-                {!isLoadingInbox && inboxMessages.filter(m => !m.isRead).length > 0 && (
+                {!isLoadingInbox && inboxMessages && inboxMessages.filter(m => !m.isRead).length > 0 && (
                   <Badge variant="destructive" className="ml-1 text-xs" data-testid="inbox-unread-count">
-                    {inboxMessages.filter(m => !m.isRead).length}
+                    {inboxMessages?.filter(m => !m.isRead).length}
                   </Badge>
                 )}
               </TabsTrigger>
@@ -989,7 +989,7 @@ export default function HomePage() {
               {/* Content */}
               {!isLoadingInbox && !inboxError && (
                 <div className="space-y-3" data-testid="inbox-content">
-                  {inboxMessages.map((message) => (
+                  {inboxMessages?.map((message) => (
                     <Card 
                       key={message.id} 
                       className={cn(
