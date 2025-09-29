@@ -738,11 +738,41 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         console.log('[Max AI] ✅ Data catalog summary ready');
       } catch (catalogError) {
         console.warn('[Max AI] ⚠️ Data catalog unavailable, using default schema:', catalogError.message);
-        // Fallback to basic manufacturing schema summary
-        catalogSummary = `Available tables:
-- ptjobs: Manufacturing jobs (columns: job_name, priority, status, quantity)
-- ptresources: Production resources (columns: resource_name, plant_name, department_name)  
-- ptjoboperations: Job operations (columns: operation_name, duration, status)`;
+        // Fallback to comprehensive manufacturing schema summary with ACTUAL column names
+        catalogSummary = `Available tables and columns (use EXACT column names):
+
+**ptjobs** - Manufacturing job orders
+  - id (integer, primary key)
+  - name (varchar) - Job name/identifier
+  - priority (integer) - Priority level (numeric)
+  - scheduled_status (varchar) - Current scheduling status
+  - external_id (varchar) - External system identifier
+
+**ptresources** - Production resources and equipment
+  - id (integer, primary key)
+  - resource_id (varchar) - Resource identifier
+  - name (varchar) - Resource name
+  - plant_name (varchar) - Manufacturing plant location
+  - department_name (varchar) - Department within plant
+  - active (boolean) - Whether resource is active
+
+**ptjoboperations** - Individual operations within jobs
+  - id (integer, primary key)
+  - job_id (integer, foreign key to ptjobs)
+  - name (varchar) - Operation name
+  - operation_id (varchar) - Operation identifier
+  - scheduled_start (timestamp) - Scheduled start time
+  - scheduled_end (timestamp) - Scheduled end time
+  - percent_finished (numeric) - Completion percentage
+
+Example queries and EXACT column names to use:
+- "show jobs" → Count ptjobs grouped by scheduled_status column
+- "jobs chart" or "count jobs" → Count(*) from ptjobs grouped by ANY column like scheduled_status or external_id
+- "resources by plant" → Count ptresources grouped by plant_name column
+- "resources by department" → Count ptresources grouped by department_name column
+- "operations" → Count ptjoboperations grouped by name column
+
+CRITICAL: Use EXACT column names shown above. Do NOT use made-up names like "job_name", "resource_name", "operation_name", "status", "duration" - these columns do NOT exist!`;
       }
       
       // Extract intent using OpenAI
@@ -799,9 +829,11 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       
     } catch (error) {
       console.error('[Max AI] 💥 Error in dynamic chart generation:', error);
-      console.error('[Max AI] 🔥 Error stack:', error.stack);
+      console.error('[Max AI] 🔥 Error stack:', error?.stack);
+      console.error('[Max AI] 🔥 Error message:', error?.message);
+      console.error('[Max AI] 🔥 Error details:', JSON.stringify(error, Object.getOwnPropertyNames(error)));
       return {
-        content: 'I encountered an error while creating your chart. Please try rephrasing your request.',
+        content: `I encountered an error while creating your chart: ${error?.message || 'Unknown error'}. Please try rephrasing your request.`,
         error: true
       };
     }
@@ -895,13 +927,25 @@ Return only the JSON object, no other text.`;
   
   // Generate safe SQL from structured intent
   private generateSQLFromIntent(intent: ChartIntent): string {
-    const primaryDimension = intent.dimensions[0];
-    if (!primaryDimension) {
-      throw new Error('No valid dimension found in intent');
-    }
-    
     console.log('[Max AI] Intent dimensions:', intent.dimensions);
     console.log('[Max AI] Intent rationale:', intent.rationale);
+    console.log('[Max AI] Intent chart type:', intent.chartType);
+    console.log('[Max AI] Intent confidence:', intent.confidence);
+    
+    const primaryDimension = intent.dimensions[0];
+    if (!primaryDimension) {
+      console.warn('[Max AI] ⚠️ No dimensions found in intent, using fallback query for jobs by status');
+      // Fallback to a sensible default query using ACTUAL column name
+      return `
+        SELECT 
+          COALESCE(scheduled_status, 'Unknown') as name,
+          COUNT(*) as value
+        FROM ptjobs
+        GROUP BY scheduled_status
+        ORDER BY COUNT(*) DESC
+        LIMIT 50
+      `;
+    }
     
     // Handle cross-table relationships for jobs by plant
     if (intent.rationale && intent.rationale.toLowerCase().includes('jobs') && 
