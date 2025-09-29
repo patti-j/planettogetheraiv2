@@ -238,10 +238,20 @@ Only store information that would be helpful for future conversations. Don't sto
   // Search for relevant playbooks based on the user's query
   private async searchRelevantPlaybooks(query: string, context: MaxContext): Promise<PlaybookReference[]> {
     try {
-      // Get all active playbooks
-      const allPlaybooks = await db.select()
-        .from(playbooks)
-        .where(eq(playbooks.isActive, true));
+      // Get all active playbooks - gracefully handle missing table
+      let allPlaybooks;
+      try {
+        allPlaybooks = await db.select()
+          .from(playbooks)
+          .where(eq(playbooks.isActive, true));
+      } catch (tableError: any) {
+        // If playbooks table doesn't exist, return empty array instead of failing
+        if (tableError.message && tableError.message.includes('does not exist')) {
+          console.log('[Max AI] Playbooks table not found, skipping playbook search');
+          return [];
+        }
+        throw tableError;
+      }
       
       if (allPlaybooks.length === 0) {
         return [];
@@ -799,7 +809,23 @@ Return only the JSON object, no other text.`;
       const content = response.choices[0]?.message?.content?.trim();
       if (!content) throw new Error('No response from OpenAI');
 
-      const intent = JSON.parse(content) as ChartIntent;
+      // Sanitize JSON response - remove markdown code fences if present
+      let jsonContent = content;
+      if (content.startsWith('```json')) {
+        // Remove opening ```json and closing ```
+        jsonContent = content
+          .replace(/^```json\s*/, '')
+          .replace(/\s*```$/, '')
+          .trim();
+      } else if (content.startsWith('```')) {
+        // Remove generic code fences
+        jsonContent = content
+          .replace(/^```\s*/, '')
+          .replace(/\s*```$/, '')
+          .trim();
+      }
+
+      const intent = JSON.parse(jsonContent) as ChartIntent;
       console.log('[Max AI] Extracted intent:', intent);
       
       return intent;
@@ -2179,124 +2205,9 @@ Provide analysis and recommendations.`
       console.log(`[Max AI] Is chart request: ${isChartRequest}`);
 
       if (isChartRequest) {
-        // Import storage to create canvas widget
-        const { storage } = await import('../storage');
-        
-        // Use AI to determine chart type and data source
-        const chartResponse = await openai.chat.completions.create({
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'system',
-              content: `You are a chart creation assistant. Based on the user's request, determine what type of chart to create and what data it should show.
-
-Respond in JSON format with:
-{
-  "chartType": "pie" | "bar" | "line" | "gauge",
-  "title": "Chart title",
-  "description": "Brief description of what the chart shows",
-  "dataSource": "jobs" | "operations" | "resources" | "production" | "quality"
-}
-
-For job-related requests, use "jobs" as dataSource and provide appropriate titles.`
-            },
-            {
-              role: 'user',
-              content: query
-            }
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.3,
-          max_tokens: 200
-        });
-
-        const chartConfig = JSON.parse(chartResponse.choices[0].message.content || '{}');
-        console.log(`[Max AI] Chart config generated:`, chartConfig);
-        
-        // Create the canvas widget
-        const widgetData = {
-          title: chartConfig.title || 'AI Generated Chart',
-          targetPlatform: 'both',
-          widgetType: 'chart',
-          widgetSubtype: chartConfig.chartType || 'pie',
-          data: {
-            template: chartConfig.dataSource || 'jobs',
-            description: chartConfig.description || 'AI generated chart visualization'
-          },
-          configuration: {
-            size: 'medium',
-            chartType: chartConfig.chartType || 'pie',
-            showLegend: true,
-            colorScheme: 'multi',
-            visualization: chartConfig.chartType || 'pie'
-          },
-          position: null,
-          isVisible: true,
-          createdByMax: true,
-          isSystemWidget: false,
-          sessionId: `max-ai-${Date.now()}`,
-          userId: context.userId || null,
-          plantId: null,
-          metadata: { createdByMaxAI: true, userQuery: query }
-        };
-
-        console.log(`[Max AI] Generating chart data for jobs:`, widgetData);
-        
-        // Save widget to database so it appears in canvas
-        try {
-          // Import database and schema
-          const { db } = await import('../db');
-          const { widgets } = await import('../../shared/schema');
-          
-          // Create widget entry for database
-          const widgetRecord = {
-            dashboardId: 1, // Default dashboard ID 
-            type: chartConfig.chartType || 'bar',
-            title: chartConfig.title || 'AI Generated Chart',
-            position: { x: 0, y: 0, w: 6, h: 4 }, // Default grid position
-            config: {
-              chartType: chartConfig.chartType || 'bar',
-              dataSource: chartConfig.dataSource || 'jobs',
-              showLegend: true,
-              colorScheme: 'multi',
-              description: chartConfig.description,
-              createdByMaxAI: true,
-              userQuery: query
-            },
-            isActive: true
-          };
-          
-          const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
-          console.log(`[Max AI] Chart widget saved to database with ID:`, savedWidget.id);
-        } catch (error) {
-          console.error(`[Max AI] Error saving widget to database:`, error);
-        }
-        
-        // Use new AI-powered dynamic chart generation
-        const dynamicResult = await this.getDynamicChart(query, context);
-        
-        // If dynamic generation failed, fall back to legacy method
-        if (dynamicResult.error || dynamicResult.action?.type === 'clarify') {
-          return dynamicResult;
-        }
-        
-        const chartData = dynamicResult.action?.chartConfig?.data || await this.getRelevantChartData(query, chartConfig.chartType);
-        
-        return {
-          content: `Here's your ${chartConfig.chartType || 'bar'} chart showing ${chartConfig.description || 'the requested data'}:`,
-          action: {
-            type: 'create_chart',
-            chartConfig: {
-              type: chartConfig.chartType || 'bar',
-              title: chartConfig.title || this.generateTitleFromQuery(query),
-              data: chartData,
-              configuration: {
-                showLegend: true,
-                colorScheme: 'multi'
-              }
-            }
-          }
-        };
+        // Use new AI-powered dynamic chart generation system
+        console.log(`[Max AI] Using dynamic chart generation for query: "${query}"`);
+        return await this.getDynamicChart(query, context);
       }
       
       return {

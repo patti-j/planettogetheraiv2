@@ -2534,12 +2534,61 @@ router.get("/api/canvas/widgets", async (req, res) => {
     const savedWidgets = await db.execute(sql.raw(`SELECT * FROM widgets WHERE is_active = true`));
     console.log("🔧 [Canvas Widgets] Retrieved visible widgets:", savedWidgets.rows.length);
     
-    // Generate actual chart data for widgets
-    async function generateChartData(dataSource: string) {
+    // Generate actual chart data for widgets (using AI-powered dynamic generation)
+    async function generateChartData(dataSource: string, userQuery?: string, title?: string) {
       switch (dataSource) {
+        case 'dynamic':
+          // Use AI-powered dynamic chart generation
+          if (userQuery) {
+            try {
+              const { MaxAIService } = await import('./services/max-ai-service');
+              const maxAI = new MaxAIService();
+              const chartData = await maxAI.getRelevantChartData(userQuery);
+              console.log('[Canvas Widgets] Dynamic chart data generated:', chartData.length, 'items');
+              return chartData;
+            } catch (error) {
+              console.error('[Canvas Widgets] Error generating dynamic chart data:', error);
+            }
+          }
+          // If no userQuery, try to infer from title
+          if (title && title.toLowerCase().includes('resource')) {
+            if (title.toLowerCase().includes('plant')) {
+              const resourceQuery = `
+                SELECT 
+                  plant_name,
+                  COUNT(*) as count
+                FROM ptresources 
+                WHERE plant_name IS NOT NULL
+                GROUP BY plant_name 
+                ORDER BY COUNT(*) DESC
+              `;
+              const result = await db.execute(sql.raw(resourceQuery));
+              return result.rows.map((row: any) => ({
+                name: row.plant_name || 'Unknown Plant',
+                value: parseInt(row.count),
+                label: row.plant_name || 'Unknown Plant'
+              }));
+            } else if (title.toLowerCase().includes('department')) {
+              const resourceQuery = `
+                SELECT 
+                  department_name,
+                  COUNT(*) as count
+                FROM ptresources 
+                WHERE department_name IS NOT NULL
+                GROUP BY department_name 
+                ORDER BY COUNT(*) DESC
+              `;
+              const result = await db.execute(sql.raw(resourceQuery));
+              return result.rows.map((row: any) => ({
+                name: row.department_name || 'Unknown Department',
+                value: parseInt(row.count),
+                label: row.department_name || 'Unknown Department'
+              }));
+            }
+          }
+          // Fall through to jobs if can't determine
         case 'jobs':
-        case 'resources':
-          // Get actual production data
+          // Get actual production job data
           const jobsQuery = `
             SELECT 
               priority,
@@ -2553,6 +2602,23 @@ router.get("/api/canvas/widgets", async (req, res) => {
             name: `Priority ${row.priority}`,
             value: parseInt(row.count),
             priority: row.priority
+          }));
+        case 'resources':
+          // Get actual resource data by plant
+          const resourcesQuery = `
+            SELECT 
+              plant_name,
+              COUNT(*) as count
+            FROM ptresources 
+            WHERE plant_name IS NOT NULL
+            GROUP BY plant_name 
+            ORDER BY COUNT(*) DESC
+          `;
+          const resourcesResult = await db.execute(sql.raw(resourcesQuery));
+          return resourcesResult.rows.map((row: any) => ({
+            name: row.plant_name || 'Unknown Plant',
+            value: parseInt(row.count),
+            label: row.plant_name || 'Unknown Plant'
           }));
         default:
           // Default sample data
@@ -2569,7 +2635,7 @@ router.get("/api/canvas/widgets", async (req, res) => {
     const canvasWidgets = await Promise.all(savedWidgets.rows.map(async (widget) => {
       const config = typeof widget.config === 'string' ? JSON.parse(widget.config) : widget.config;
       const position = typeof widget.position === 'string' ? JSON.parse(widget.position) : widget.position;
-      const chartData = await generateChartData(config.dataSource || 'jobs');
+      const chartData = await generateChartData(config.dataSource || 'jobs', config.userQuery, widget.title);
       
       return {
         id: widget.id,
