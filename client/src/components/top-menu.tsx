@@ -771,9 +771,13 @@ export default function TopMenu({ onToggleAiPanel, onToggleNavPanel, isAiPanelOp
                       size="sm"
                       onClick={onToggleNavPanel}
                       className="p-2 h-8 w-8 hover:bg-muted hidden sm:flex"
-                      title="Open navigation menu"
+                      title={isNavPanelOpen ? "Close navigation menu" : "Open navigation menu"}
                     >
-                      <Menu className="h-4 w-4" />
+                      {isNavPanelOpen ? (
+                        <X className="h-4 w-4" />
+                      ) : (
+                        <Menu className="h-4 w-4" />
+                      )}
                     </Button>
                   )}
                   

@@ -569,10 +569,50 @@ export default function IntegratedAIAssistant() {
     onSuccess: (data) => {
       // Handle both 'response' and 'message' fields from backend
       const responseText = data.response || data.message || data.reply || 'No response received';
+      
+      // Check if there's an action (like chart creation)
+      let finalContent = responseText;
+      
+      if (data.action && data.action.type === 'create_chart' && data.action.chartConfig) {
+        // Create a visual chart representation
+        const chartConfig = data.action.chartConfig;
+        const chartData = chartConfig.data || [];
+        
+        // Create a simple ASCII-style chart representation for now
+        let chartVisual = '\n\n📊 **' + chartConfig.title + '**\n\n';
+        
+        if (chartConfig.type === 'bar' || chartConfig.type === 'pie') {
+          chartData.forEach((item: any, index: number) => {
+            const value = item.value || item.count || 0;
+            const label = item.label || item.name || `Item ${index + 1}`;
+            const barLength = Math.max(1, Math.floor((value / Math.max(...chartData.map((d: any) => d.value || d.count || 0))) * 20));
+            const bar = '█'.repeat(barLength);
+            chartVisual += `${label}: ${bar} ${value}\n`;
+          });
+        } else {
+          // For other chart types, show data in a table format
+          chartData.forEach((item: any, index: number) => {
+            const value = item.value || item.count || 0;
+            const label = item.label || item.name || `Item ${index + 1}`;
+            chartVisual += `• ${label}: ${value}\n`;
+          });
+        }
+        
+        chartVisual += '\n💡 *This chart shows real manufacturing data from your system*';
+        finalContent = responseText + chartVisual;
+        
+        // Also try to navigate to canvas if the user is not already there
+        if (window.location.pathname !== '/canvas') {
+          setTimeout(() => {
+            window.location.href = '/canvas';
+          }, 2000);
+        }
+      }
+      
       const assistantMessage: Message = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
-        content: responseText,
+        content: finalContent,
         timestamp: new Date(),
         context: contextData
       };
