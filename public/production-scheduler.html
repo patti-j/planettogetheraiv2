@@ -1922,6 +1922,9 @@
                     
                     // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
+                    
+                    // CRITICAL: Prevent overlapping events on same resource
+                    allowOverlap: false,
 
                     // Project configuration with strict no-overlap constraints
                     project: {
@@ -2672,14 +2675,14 @@
                 // Scheduling Algorithm Implementations
                 async function asapScheduling() {
                     // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
-                    const events = [...scheduler.eventStore.records].sort((a, b) => 
-                        a.startDate.getTime() - b.startDate.getTime()
-                    );
+                    // CRITICAL: This ensures NO overlapping operations on the same resource
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
                     // Use September 3, 2025 as the base scheduling date
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
                     
+                    // Group events by resource
                     const resourceEvents = {};
                     events.forEach(event => {
                         if (!resourceEvents[event.resourceId]) {
@@ -2688,8 +2691,23 @@
                         resourceEvents[event.resourceId].push(event);
                     });
                     
+                    // Schedule each resource's operations sequentially (no overlaps)
                     Object.keys(resourceEvents).forEach(resourceId => {
                         const resEvents = resourceEvents[resourceId];
+                        
+                        // Sort events by priority/order if needed
+                        resEvents.sort((a, b) => {
+                            // Prioritize by constraint date if exists
+                            if (a.constraintDate && !b.constraintDate) return -1;
+                            if (!a.constraintDate && b.constraintDate) return 1;
+                            if (a.constraintDate && b.constraintDate) {
+                                return a.constraintDate.getTime() - b.constraintDate.getTime();
+                            }
+                            // Otherwise maintain current order
+                            return 0;
+                        });
+                        
+                        // Track the next available time for this resource
                         let nextAvailableTime = new Date(baseDate);
                         
                         resEvents.forEach(event => {
@@ -2697,17 +2715,25 @@
                             const earliestStart = event.constraintDate || nextAvailableTime;
                             const actualStart = new Date(Math.max(earliestStart.getTime(), nextAvailableTime.getTime()));
                             
+                            // Set the event dates
                             event.startDate = actualStart;
                             event.constraintType = 'startnoearlierthan';
                             event.constraintDate = actualStart;
                             event.manuallyScheduled = false;
+                            
                             const durationMs = event.duration * 60 * 60 * 1000;
                             event.endDate = new Date(event.startDate.getTime() + durationMs);
+                            
+                            // Update next available time with buffer to prevent overlaps
                             nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
+                            
+                            console.log(`📅 Scheduled "${event.name}" on ${resourceId} from ${event.startDate.toLocaleTimeString()} to ${event.endDate.toLocaleTimeString()}`);
                         });
                     });
                     
+                    // Commit all changes
                     scheduler.eventStore.commit();
+                    console.log('✅ ASAP scheduling completed - NO overlaps on any resource');
                 }
                 
                 async function alapScheduling() {
