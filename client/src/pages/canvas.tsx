@@ -102,9 +102,31 @@ export default function CanvasPage() {
 
   // Convert API widgets to canvas items format
   const convertWidgetToCanvasItem = (widget: CanvasWidget): CanvasItem => {
+    // Map database widget types to canvas component types
+    const getCanvasType = (widgetType: string): CanvasItem['type'] => {
+      switch (widgetType.toLowerCase()) {
+        case 'bar':
+        case 'gauge':
+        case 'pie':
+        case 'line':
+        case 'histogram':
+          return 'chart';
+        case 'table':
+        case 'grid':
+          return 'table';
+        case 'dashboard':
+        case 'kpi':
+          return 'dashboard';
+        case 'interactive':
+          return 'interactive';
+        default:
+          return 'chart'; // Default to chart for most manufacturing widgets
+      }
+    };
+
     return {
       id: widget.id.toString(),
-      type: widget.widgetType as any,
+      type: getCanvasType(widget.widgetType),
       title: widget.title,
       content: { 
         ...widget.data, 
@@ -118,11 +140,29 @@ export default function CanvasPage() {
     };
   };
 
-  // Combine localStorage items with API widgets
+  // Debug API data loading
+  console.log('🔍 Canvas Debug - API Loading:', isLoading);
+  console.log('🔍 Canvas Debug - Raw canvasWidgets:', canvasWidgets);
+  console.log('🔍 Canvas Debug - localStorage items:', items);
+  
+  // Filter and convert API widgets
+  const apiWidgets = canvasWidgets?.filter((w: CanvasWidget) => w.isVisible) || [];
+  console.log('🔍 Canvas Debug - Visible API widgets:', apiWidgets);
+  
+  const convertedApiWidgets = apiWidgets.map(widget => {
+    const canvasItem = convertWidgetToCanvasItem(widget);
+    return { ...canvasItem, id: `api-${canvasItem.id}` }; // Prefix API widgets
+  });
+  console.log('🔍 Canvas Debug - Converted API widgets:', convertedApiWidgets);
+
+  // Combine localStorage items with API widgets (with unique IDs to prevent React key conflicts)
   const allItems = [
-    ...items,
-    ...(canvasWidgets?.filter((w: CanvasWidget) => w.isVisible).map(convertWidgetToCanvasItem) || [])
+    ...items.map(item => ({ ...item, id: `local-${item.id}` })), // Prefix localStorage items
+    ...convertedApiWidgets
   ];
+  
+  console.log('🔍 Canvas Debug - Final allItems array:', allItems);
+  console.log('🔍 Canvas Debug - allItems.length:', allItems.length);
 
   const renderCanvasItem = (item: CanvasItem) => {
     switch (item.type) {

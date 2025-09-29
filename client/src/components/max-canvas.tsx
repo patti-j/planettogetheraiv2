@@ -85,21 +85,37 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
   // Transform database widgets to canvas items
   useEffect(() => {
+    console.log('🔍 Canvas Effect triggered with dbWidgets:', dbWidgets);
+    console.log('🔍 dbWidgets type:', typeof dbWidgets, 'isArray:', Array.isArray(dbWidgets));
+    
     if (dbWidgets && Array.isArray(dbWidgets)) {
-      const transformedItems: CanvasItem[] = dbWidgets.map((widget: any) => ({
-        id: widget.id.toString(),
-        type: widget.widgetType || 'chart',
-        title: widget.title || widget.name || 'Untitled Widget',
-        content: {
-          ...widget.data,
-          chartType: widget.configuration?.chartType || widget.widgetSubtype || 'bar',
-          configuration: widget.configuration
-        },
-        timestamp: widget.createdAt
-      }));
+      console.log('🔍 Processing', dbWidgets.length, 'widgets from API');
       
-      console.log('Transformed database widgets to canvas items:', transformedItems);
+      const transformedItems: CanvasItem[] = dbWidgets.map((widget: any, index) => {
+        console.log(`🔍 Widget ${index + 1}:`, widget);
+        console.log(`🔍 Widget data:`, widget.data);
+        console.log(`🔍 Widget configuration:`, widget.configuration);
+        
+        const transformedItem = {
+          id: widget.id.toString(),
+          type: widget.widgetType || 'chart',
+          title: widget.title || widget.name || 'Untitled Widget',
+          content: {
+            data: widget.data || [],
+            chartType: widget.configuration?.chartType || widget.widgetSubtype || 'bar',
+            configuration: widget.configuration || {}
+          },
+          timestamp: widget.createdAt
+        };
+        
+        console.log(`🔍 Transformed widget ${index + 1}:`, transformedItem);
+        return transformedItem;
+      });
+      
+      console.log('✅ Transformed database widgets to canvas items:', transformedItems);
       setCanvasItems(transformedItems);
+    } else {
+      console.log('❌ No valid dbWidgets data:', { dbWidgets, isArray: Array.isArray(dbWidgets) });
     }
   }, [dbWidgets, setCanvasItems]);
 

@@ -2534,17 +2534,59 @@ router.get("/api/canvas/widgets", async (req, res) => {
     const savedWidgets = await db.execute(sql.raw(`SELECT * FROM widgets`));
     console.log("🔧 [Canvas Widgets] Retrieved saved widgets:", savedWidgets.rows.length);
     
-    // Transform database widgets to canvas format
-    const canvasWidgets = savedWidgets.rows.map(widget => ({
-      id: widget.id,
-      widgetType: widget.type,
-      widgetSubtype: widget.type,
-      title: widget.title,
-      name: widget.title,
-      data: widget.config,
-      configuration: widget.config,
-      createdAt: widget.created_at,
-      isActive: widget.is_active
+    // Generate actual chart data for widgets
+    async function generateChartData(dataSource: string) {
+      switch (dataSource) {
+        case 'jobs':
+        case 'resources':
+          // Get actual production data
+          const jobsQuery = `
+            SELECT 
+              priority,
+              COUNT(*) as count
+            FROM ptjobs 
+            GROUP BY priority 
+            ORDER BY COUNT(*) DESC
+          `;
+          const jobsResult = await db.execute(sql.raw(jobsQuery));
+          return jobsResult.rows.map((row: any) => ({
+            name: `Priority ${row.priority}`,
+            value: parseInt(row.count),
+            priority: row.priority
+          }));
+        default:
+          // Default sample data
+          return [
+            { name: 'Active', value: 65 },
+            { name: 'Pending', value: 28 },
+            { name: 'Completed', value: 45 },
+            { name: 'Failed', value: 12 }
+          ];
+      }
+    }
+    
+    // Transform database widgets to canvas format with actual data
+    const canvasWidgets = await Promise.all(savedWidgets.rows.map(async (widget) => {
+      const config = typeof widget.config === 'string' ? JSON.parse(widget.config) : widget.config;
+      const position = typeof widget.position === 'string' ? JSON.parse(widget.position) : widget.position;
+      const chartData = await generateChartData(config.dataSource || 'jobs');
+      
+      return {
+        id: widget.id,
+        widgetType: widget.type,
+        widgetSubtype: widget.type,
+        title: widget.title,
+        name: widget.title,
+        data: chartData, // Actual chart data arrays
+        configuration: {
+          ...config,
+          chartType: config.chartType || widget.type
+        },
+        position: position ? { x: position.x || 0, y: position.y || 0 } : null,
+        isVisible: widget.is_active, // ✅ FIXED: Map is_active to isVisible
+        createdByMax: config.createdByMaxAI || false, // ✅ FIXED: Add createdByMax field
+        createdAt: widget.created_at
+      };
     }));
     
     res.json(canvasWidgets);
