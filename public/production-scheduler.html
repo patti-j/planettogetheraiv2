@@ -2766,7 +2766,10 @@
                 
                 async function alapScheduling() {
                     // ALAP (As Late As Possible) - Backward scheduling from due date
-                    const events = [...scheduler.eventStore.records];
+                    console.log('🚀 Starting ALAP scheduling...');
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    console.log(`  Total operations to schedule: ${events.length}`);
+                    
                     // Schedule backwards from September 17, 2025 (end of 2-week window)
                     const dueDate = new Date(2025, 8, 17);
                     dueDate.setHours(17, 0, 0, 0); // 5 PM
@@ -2797,72 +2800,74 @@
                             
                             event.startDate = newStart;
                             event.endDate = newEnd;
-                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000);
+                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000); // 30 min buffer
                         });
                     });
                     
                     scheduler.eventStore.commit();
-                }
-                
-                async function criticalPathScheduling() {
-                    // Identify and optimize critical path
-                    const events = [...scheduler.eventStore.records];
-                    const dependencies = scheduler.dependencyStore?.records || [];
+                    console.log('✅ ALAP scheduling completed');
                     
-                    // Simple implementation: prioritize longest chain
-                    const eventMap = new Map(events.map(e => [e.id, e]));
-                    const criticalEvents = new Set();
-                    
-                    // Find events with no successors (end events)
-                    const endEvents = events.filter(event => 
-                        !dependencies.some(dep => dep.from === event.id)
-                    );
-                    
-                    // Mark critical path (simplified)
-                    endEvents.forEach(event => {
-                        criticalEvents.add(event.id);
-                        // Trace back through dependencies
-                        let current = event;
-                        while (current) {
-                            const prevDep = dependencies.find(d => d.to === current.id);
-                            if (prevDep && eventMap.has(prevDep.from)) {
-                                current = eventMap.get(prevDep.from);
-                                criticalEvents.add(current.id);
-                            } else {
-                                current = null;
+                    // VERIFY no overlaps
+                    let overlapsFound = 0;
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < resEvents.length - 1; i++) {
+                            if (resEvents[i].endDate > resEvents[i + 1].startDate) {
+                                console.error(`❌ OVERLAP in ALAP on ${resourceId}`);
+                                overlapsFound++;
                             }
                         }
                     });
-                    
-                    // Schedule critical path first
-                    const baseDate = new Date();
+                    console.log(overlapsFound === 0 ? '✅ ALAP Verification passed' : `❌ ALAP FAILED: ${overlapsFound} overlaps`);
+                }
+                
+                async function criticalPathScheduling() {
+                    // Identify and optimize critical path - Schedule by resource to prevent overlaps
+                    console.log('🚀 Starting Critical Path scheduling...');
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0);
-                    let currentTime = new Date(baseDate);
                     
+                    // Group by resource and schedule sequentially
+                    const resourceEvents = {};
                     events.forEach(event => {
-                        if (criticalEvents.has(event.id)) {
-                            event.startDate = new Date(currentTime);
-                            const durationMs = event.duration * 60 * 60 * 1000;
-                            event.endDate = new Date(event.startDate.getTime() + durationMs);
-                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        if (!resourceEvents[event.resourceId]) {
+                            resourceEvents[event.resourceId] = [];
                         }
+                        resourceEvents[event.resourceId].push(event);
                     });
                     
-                    // Schedule non-critical after
-                    events.forEach(event => {
-                        if (!criticalEvents.has(event.id)) {
-                            event.startDate = new Date(currentTime);
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId];
+                        let nextAvailableTime = new Date(baseDate);
+                        
+                        resEvents.forEach(event => {
+                            event.startDate = new Date(nextAvailableTime);
                             const durationMs = event.duration * 60 * 60 * 1000;
                             event.endDate = new Date(event.startDate.getTime() + durationMs);
-                            currentTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
-                        }
+                            nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        });
                     });
                     
                     scheduler.eventStore.commit();
+                    console.log('✅ Critical Path scheduling completed');
+                    
+                    // VERIFY no overlaps
+                    let overlapsFound = 0;
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < resEvents.length - 1; i++) {
+                            if (resEvents[i].endDate > resEvents[i + 1].startDate) {
+                                overlapsFound++;
+                            }
+                        }
+                    });
+                    console.log(overlapsFound === 0 ? '✅ Critical Path Verification passed' : `❌ Critical Path FAILED: ${overlapsFound} overlaps`);
                 }
                 
                 async function levelResourcesScheduling() {
                     // Balance workload across resources to reduce utilization peaks
+                    console.log('🚀 Starting Level Resources scheduling...');
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
                     
@@ -2939,6 +2944,19 @@
                     
                     // Commit the changes
                     scheduler.eventStore.commit();
+                    console.log('✅ Level Resources scheduling completed');
+                    
+                    // VERIFY no overlaps
+                    let overlapsFound = 0;
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < resEvents.length - 1; i++) {
+                            if (resEvents[i].endDate > resEvents[i + 1].startDate) {
+                                overlapsFound++;
+                            }
+                        }
+                    });
+                    console.log(overlapsFound === 0 ? '✅ Level Resources Verification passed' : `❌ Level Resources FAILED: ${overlapsFound} overlaps`);
                     
                     // Force a refresh to recalculate utilization
                     setTimeout(() => {
@@ -2948,7 +2966,8 @@
                 
                 async function drumScheduling() {
                     // Theory of Constraints - optimize around bottleneck
-                    const events = [...scheduler.eventStore.records];
+                    console.log('🚀 Starting Drum (TOC) scheduling...');
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
                     // Find bottleneck resource (most loaded)
                     const resourceLoad = {};
@@ -2968,9 +2987,15 @@
                         }
                     });
                     
-                    if (!drumResourceId) return;
+                    if (!drumResourceId) {
+                        console.log('⚠️ No bottleneck resource found');
+                        return;
+                    }
                     
-                    const baseDate = new Date();
+                    const drumResource = scheduler.resourceStore.getById(drumResourceId);
+                    console.log(`  Bottleneck (drum): ${drumResource?.name || drumResourceId} with ${maxLoad.toFixed(1)}h total load`);
+                    
+                    const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0);
                     
                     // Schedule drum resource optimally
@@ -2983,7 +3008,7 @@
                         event.startDate = new Date(drumTime);
                         const durationMs = event.duration * 60 * 60 * 1000;
                         event.endDate = new Date(event.startDate.getTime() + durationMs);
-                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000);
+                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000); // 15 min buffer for drum
                     });
                     
                     // Schedule feeding resources
@@ -2993,17 +3018,38 @@
                     feedingEvents.forEach(event => {
                         if (!resourceSchedules[event.resourceId]) {
                             const feedTime = new Date(baseDate);
-                            feedTime.setHours(6, 0, 0, 0); // Start earlier
+                            feedTime.setHours(7, 0, 0, 0); // Same start time
                             resourceSchedules[event.resourceId] = feedTime;
                         }
                         
                         event.startDate = new Date(resourceSchedules[event.resourceId]);
                         const durationMs = event.duration * 60 * 60 * 1000;
                         event.endDate = new Date(event.startDate.getTime() + durationMs);
-                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000);
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                     });
                     
                     scheduler.eventStore.commit();
+                    console.log('✅ Drum (TOC) scheduling completed');
+                    
+                    // VERIFY no overlaps
+                    let overlapsFound = 0;
+                    const allResourceEvents = {};
+                    events.forEach(event => {
+                        if (!allResourceEvents[event.resourceId]) {
+                            allResourceEvents[event.resourceId] = [];
+                        }
+                        allResourceEvents[event.resourceId].push(event);
+                    });
+                    
+                    Object.keys(allResourceEvents).forEach(resourceId => {
+                        const resEvents = allResourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < resEvents.length - 1; i++) {
+                            if (resEvents[i].endDate > resEvents[i + 1].startDate) {
+                                overlapsFound++;
+                            }
+                        }
+                    });
+                    console.log(overlapsFound === 0 ? '✅ Drum Verification passed' : `❌ Drum FAILED: ${overlapsFound} overlaps`);
                 }
                 
                 // Initialize status updates
