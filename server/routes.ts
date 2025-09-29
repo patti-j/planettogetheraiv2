@@ -2530,9 +2530,9 @@ router.get("/api/canvas/widgets", async (req, res) => {
       });
     }
     
-    // Get saved widgets from database
-    const savedWidgets = await db.execute(sql.raw(`SELECT * FROM widgets`));
-    console.log("🔧 [Canvas Widgets] Retrieved saved widgets:", savedWidgets.rows.length);
+    // Get saved widgets from database - only visible ones
+    const savedWidgets = await db.execute(sql.raw(`SELECT * FROM widgets WHERE is_active = true`));
+    console.log("🔧 [Canvas Widgets] Retrieved visible widgets:", savedWidgets.rows.length);
     
     // Generate actual chart data for widgets
     async function generateChartData(dataSource: string) {
