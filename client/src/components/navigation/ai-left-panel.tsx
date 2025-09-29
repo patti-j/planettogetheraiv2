@@ -583,6 +583,40 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           // Add chart item to canvas
           setCanvasItems(prev => [...prev, chartItem]);
           
+          // Save widget to database so it persists across sessions
+          try {
+            const widgetData = {
+              type: 'chart',
+              title: chartItem.title,
+              position: { x: 0, y: 0, w: 6, h: 4 },
+              config: {
+                chartType: chartItem.content.chartType,
+                data: chartItem.content.data,
+                configuration: chartItem.content.configuration,
+                createdByMaxAI: true
+              },
+              dashboardId: 1
+            };
+
+            const response = await apiRequest('/api/canvas/widgets', {
+              method: 'POST',
+              body: JSON.stringify(widgetData),
+              headers: {
+                'Content-Type': 'application/json'
+              }
+            });
+
+            if (response.ok) {
+              console.log('✅ Widget saved to database successfully');
+              // Invalidate canvas widgets cache to refresh the canvas
+              queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+            } else {
+              console.error('❌ Failed to save widget to database:', response.statusText);
+            }
+          } catch (error) {
+            console.error('❌ Error saving widget to database:', error);
+          }
+          
           // Show canvas if not visible
           if (!isCanvasVisible) {
             setCanvasVisible(true);
