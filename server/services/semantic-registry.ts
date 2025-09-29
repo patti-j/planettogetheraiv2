@@ -77,7 +77,12 @@ export class SemanticRegistry {
       // Common aggregation measures
       { term: 'count', tableName: '*', columnName: 'COUNT(*)', confidence: 0.95, context: ['number', 'total'], description: 'Count of records' },
       { term: 'total', tableName: '*', columnName: 'COUNT(*)', confidence: 0.9, context: ['count', 'number'], description: 'Total count' },
-      { term: 'number', tableName: '*', columnName: 'COUNT(*)', confidence: 0.85, context: ['count', 'total'], description: 'Number of items' }
+      { term: 'number', tableName: '*', columnName: 'COUNT(*)', confidence: 0.85, context: ['count', 'total'], description: 'Number of items' },
+      
+      // Compound mappings for common queries
+      { term: 'jobs by plant', tableName: 'ptresources', columnName: 'plant_name', confidence: 0.95, context: ['job distribution', 'plant analysis'], description: 'Jobs grouped by plant - use cross-table JOIN to count jobs by plant' },
+      { term: 'jobs by priority', tableName: 'ptjobs', columnName: 'priority', confidence: 0.95, context: ['priority analysis'], description: 'Jobs grouped by priority level' },
+      { term: 'jobs by status', tableName: 'ptjobs', columnName: 'scheduled_status', confidence: 0.95, context: ['status analysis'], description: 'Jobs grouped by status' }
     ];
 
     // Group mappings by term

@@ -669,9 +669,23 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         }));
       }
       
-      // Job-related queries (original behavior)
+      // Job-related queries - route to dynamic chart generation
       else if (queryLower.includes('job') || queryLower.includes('priority') || queryLower.includes('production')) {
-        console.log('[Max AI] Detected job-related query');
+        console.log('[Max AI] Detected job-related query - routing to dynamic generation');
+        
+        // Use the new AI-powered dynamic chart generation for job queries
+        const dynamicResult = await this.getDynamicChart(query, {
+          userId: 1,
+          currentPage: '/canvas',
+          userRole: 'admin'
+        });
+        
+        if (dynamicResult && dynamicResult.action && dynamicResult.action.type === 'create_chart') {
+          return dynamicResult.action.chartConfig.data;
+        }
+        
+        // Fallback to original behavior if dynamic generation fails
+        console.log('[Max AI] Dynamic generation failed, using fallback');
         return await this.getJobsData();
       }
       
@@ -847,14 +861,40 @@ Return only the JSON object, no other text.`;
   
   // Generate safe SQL from structured intent
   private generateSQLFromIntent(intent: ChartIntent): string {
-    // For now, implement basic COUNT by dimension pattern
-    // TODO: Expand to handle more complex intents
-    
     const primaryDimension = intent.dimensions[0];
     if (!primaryDimension) {
       throw new Error('No valid dimension found in intent');
     }
     
+    console.log('[Max AI] Intent dimensions:', intent.dimensions);
+    console.log('[Max AI] Intent rationale:', intent.rationale);
+    
+    // Handle cross-table relationships for jobs by plant
+    if (intent.rationale && intent.rationale.toLowerCase().includes('jobs') && 
+        primaryDimension.columnName === 'plant_name') {
+      
+      console.log('[Max AI] Detected jobs by plant request - using relationship path');
+      
+      // Use the relationship path: ptjobs → ptjoboperations → ptjobresources → ptresources
+      const query = `
+        SELECT 
+          r.plant_name as name,
+          COUNT(DISTINCT j.id) as value
+        FROM ptjobs j
+        INNER JOIN ptjoboperations jo ON j.id = jo.job_id
+        INNER JOIN ptjobresources jr ON jo.operation_id = jr.operation_id  
+        INNER JOIN ptresources r ON jr.default_resource_id = r.resource_id
+        WHERE r.plant_name IS NOT NULL
+        GROUP BY r.plant_name
+        ORDER BY COUNT(DISTINCT j.id) DESC
+        LIMIT 50
+      `;
+      
+      console.log('[Max AI] Generated cross-table SQL:', query);
+      return query;
+    }
+    
+    // Handle direct single-table queries
     const tableName = primaryDimension.tableName;
     const columnName = primaryDimension.columnName;
     
@@ -2197,6 +2237,7 @@ Provide analysis and recommendations.`
                            query.toLowerCase().includes('bar') || 
                            query.toLowerCase().includes('line') ||
                            query.toLowerCase().includes('graph') ||
+                           query.toLowerCase().includes('plot') ||
                            query.toLowerCase().includes('create') ||
                            query.toLowerCase().includes('make') ||
                            query.toLowerCase().includes('show') ||
