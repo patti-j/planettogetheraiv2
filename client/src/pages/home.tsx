@@ -381,7 +381,7 @@ export default function HomePage() {
               <TabsTrigger value="actions" className="flex items-center gap-2" data-testid="tab-actions">
                 <Sparkles className="w-4 h-4" />
                 Actions
-                {!isLoadingRecommendations && aiRecommendations.length > 0 && (
+                {!isLoadingRecommendations && aiRecommendations && aiRecommendations.length > 0 && (
                   <Badge variant="secondary" className="ml-1 text-xs" data-testid="actions-count">
                     {aiRecommendations.length}
                   </Badge>

@@ -85,7 +85,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
             try {
               const response = await fetch(`/api/users/${user.id}/current-role`, {
                 headers: {
-                  'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+                  'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
                 }
               });
               if (!response.ok) {
@@ -155,7 +155,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({ roleId: originalRoleId })
       }).then(() => {
@@ -196,7 +196,7 @@ export function TourProvider({ children }: { children: ReactNode }) {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+          'Authorization': `Bearer ${localStorage.getItem('auth_token')}`
         },
         body: JSON.stringify({ roleId: originalRoleId })
       }).then(() => {
