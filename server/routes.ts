@@ -2771,20 +2771,16 @@ router.post("/api/canvas/widgets", async (req, res) => {
       return res.status(400).json({ error: "Invalid dashboard ID" });
     }
     
-    // For now, return the created widget data
-    // In production, this would save to database using storage.createWidget()
-    const newWidget = {
-      id: `widget-${Date.now()}`,
+    // Save widget to database using storage
+    const newWidget = await storage.createCanvasWidget({
       type,
       title,
       position,
       config,
-      dashboardId,
-      isActive: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+      dashboardId: dashboardId || 1
+    });
     
+    console.log(`[Canvas Widgets POST] Widget created with ID: ${newWidget.id}`);
     res.status(201).json(newWidget);
   } catch (error: any) {
     console.error('Error creating widget:', error);
