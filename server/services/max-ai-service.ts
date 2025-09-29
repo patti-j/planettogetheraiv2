@@ -1911,7 +1911,29 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
         
         // Save widget to database so it appears in canvas
         try {
-          const savedWidget = await storage.createWidget(widgetData);
+          // Import database and schema
+          const { db } = await import('../db');
+          const { widgets } = await import('../../shared/schema');
+          
+          // Create widget entry for database
+          const widgetRecord = {
+            dashboardId: 1, // Default dashboard ID 
+            type: chartConfig.chartType || 'bar',
+            title: chartConfig.title || 'AI Generated Chart',
+            position: { x: 0, y: 0, w: 6, h: 4 }, // Default grid position
+            config: {
+              chartType: chartConfig.chartType || 'bar',
+              dataSource: chartConfig.dataSource || 'jobs',
+              showLegend: true,
+              colorScheme: 'multi',
+              description: chartConfig.description,
+              createdByMaxAI: true,
+              userQuery: query
+            },
+            isActive: true
+          };
+          
+          const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
           console.log(`[Max AI] Chart widget saved to database with ID:`, savedWidget.id);
         } catch (error) {
           console.error(`[Max AI] Error saving widget to database:`, error);
