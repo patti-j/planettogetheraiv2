@@ -2676,7 +2676,10 @@
                 async function asapScheduling() {
                     // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
                     // CRITICAL: This ensures NO overlapping operations on the same resource
+                    console.log('🚀 Starting ASAP scheduling...');
+                    
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    console.log(`  Total operations to schedule: ${events.length}`);
                     
                     // Use September 3, 2025 as the base scheduling date
                     const baseDate = new Date(2025, 8, 3);
@@ -2691,9 +2694,14 @@
                         resourceEvents[event.resourceId].push(event);
                     });
                     
-                    // Schedule each resource's operations sequentially (no overlaps)
+                    console.log(`  Resources involved: ${Object.keys(resourceEvents).length}`);
+                    
+                    // Schedule each resource's operations sequentially (NO OVERLAPS!)
                     Object.keys(resourceEvents).forEach(resourceId => {
                         const resEvents = resourceEvents[resourceId];
+                        const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
+                        
+                        console.log(`\n  Scheduling ${resEvents.length} operations for ${resourceName}:`);
                         
                         // Sort events by priority/order if needed
                         resEvents.sort((a, b) => {
@@ -2703,15 +2711,15 @@
                             if (a.constraintDate && b.constraintDate) {
                                 return a.constraintDate.getTime() - b.constraintDate.getTime();
                             }
-                            // Otherwise maintain current order
-                            return 0;
+                            // Otherwise maintain current order by start date
+                            return (a.startDate?.getTime() || 0) - (b.startDate?.getTime() || 0);
                         });
                         
-                        // Track the next available time for this resource
+                        // Track the next available time for this resource (CRITICAL for no overlaps)
                         let nextAvailableTime = new Date(baseDate);
                         
-                        resEvents.forEach(event => {
-                            // Respect constraint dates if set
+                        resEvents.forEach((event, idx) => {
+                            // Calculate start time (must be after resource becomes free)
                             const earliestStart = event.constraintDate || nextAvailableTime;
                             const actualStart = new Date(Math.max(earliestStart.getTime(), nextAvailableTime.getTime()));
                             
@@ -2724,16 +2732,36 @@
                             const durationMs = event.duration * 60 * 60 * 1000;
                             event.endDate = new Date(event.startDate.getTime() + durationMs);
                             
-                            // Update next available time with buffer to prevent overlaps
+                            // CRITICAL: Update next available time with buffer to PREVENT overlaps
                             nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                             
-                            console.log(`📅 Scheduled "${event.name}" on ${resourceId} from ${event.startDate.toLocaleTimeString()} to ${event.endDate.toLocaleTimeString()}`);
+                            console.log(`    ${idx + 1}. "${event.name}" -> ${event.startDate.toLocaleString()} to ${event.endDate.toLocaleString()}`);
                         });
                     });
                     
                     // Commit all changes
                     scheduler.eventStore.commit();
-                    console.log('✅ ASAP scheduling completed - NO overlaps on any resource');
+                    console.log('\n✅ ASAP scheduling completed - NO overlaps on any resource');
+                    
+                    // VERIFY no overlaps by checking each resource
+                    let overlapsFound = 0;
+                    Object.keys(resourceEvents).forEach(resourceId => {
+                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < resEvents.length - 1; i++) {
+                            const current = resEvents[i];
+                            const next = resEvents[i + 1];
+                            if (current.endDate > next.startDate) {
+                                console.error(`❌ OVERLAP DETECTED on ${resourceId}: "${current.name}" (ends ${current.endDate.toLocaleTimeString()}) overlaps "${next.name}" (starts ${next.startDate.toLocaleTimeString()})`);
+                                overlapsFound++;
+                            }
+                        }
+                    });
+                    
+                    if (overlapsFound === 0) {
+                        console.log('✅ Verification passed: NO overlaps detected!');
+                    } else {
+                        console.error(`❌ VERIFICATION FAILED: ${overlapsFound} overlaps detected!`);
+                    }
                 }
                 
                 async function alapScheduling() {
