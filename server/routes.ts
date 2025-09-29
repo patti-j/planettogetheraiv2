@@ -1282,7 +1282,7 @@ router.get("/pt-operations", async (req, res) => {
     
   } catch (error) {
     console.error("Error fetching PT operations:", error);
-    res.status(500).json({ message: "Failed to fetch PT operations", error: (error as Error).message });
+    res.status(500).json({ message: "Failed to fetch PT operations", errorMessage: (error as Error).message });
   }
 });
 
@@ -1347,7 +1347,7 @@ router.get("/pt-dependencies", async (req, res) => {
     
   } catch (error) {
     console.error("Error fetching PT dependencies:", error);
-    res.status(500).json({ message: "Failed to fetch PT dependencies", error: (error as Error).message });
+    res.status(500).json({ message: "Failed to fetch PT dependencies", errorMessage: (error as Error).message });
   }
 });
 
@@ -1399,7 +1399,7 @@ router.get("/pt-resources", async (req, res) => {
     
   } catch (error) {
     console.error("Error fetching PT resources:", error);
-    res.status(500).json({ message: "Failed to fetch PT resources", error: (error as Error).message });
+    res.status(500).json({ message: "Failed to fetch PT resources", errorMessage: (error as Error).message });
   }
 });
 
