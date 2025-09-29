@@ -102,7 +102,7 @@ export class ErrorBoundary extends Component<Props, State> {
   private getCurrentUserId(): number | null {
     // Try to get user ID from localStorage token or session
     try {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('auth_token');
       if (token && token.startsWith('user_')) {
         const parts = token.split('_');
         if (parts.length >= 2) {

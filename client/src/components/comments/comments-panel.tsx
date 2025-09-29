@@ -130,7 +130,7 @@ export function CommentsPanel({
   const { data: users = [] } = useQuery({
     queryKey: ["/api/users", mentionSearch],
     queryFn: async () => {
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('auth_token');
       const headers: HeadersInit = {};
       
       if (token) {

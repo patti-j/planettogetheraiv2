@@ -28,7 +28,7 @@ export function GlobalSearchDialog({ open, onOpenChange }: GlobalSearchDialogPro
     queryFn: async () => {
       if (!user?.id) return null;
       
-      const token = localStorage.getItem('authToken');
+      const token = localStorage.getItem('auth_token');
       const response = await fetch(`/api/user-preferences/${user.id}`, {
         headers: {
           'Authorization': `Bearer ${token}`,

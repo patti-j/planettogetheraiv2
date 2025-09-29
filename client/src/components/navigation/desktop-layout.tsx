@@ -137,7 +137,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     if (!aiSettings.soundEnabled || !text) return;
     
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       const response = await fetch('/api/ai/text-to-speech', {
         method: 'POST',
         headers: {
@@ -172,7 +172,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   // Floating Max AI message mutation
   const sendFloatingMessage = useMutation({
     mutationFn: async (message: string) => {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       
       // Determine endpoint based on selected agent
       let endpoint = '/api/max-ai/chat';

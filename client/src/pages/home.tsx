@@ -481,7 +481,7 @@ export default function HomePage() {
               {/* Content */}
               {!isLoadingRecommendations && !recommendationsError && (
                 <div className="space-y-4" data-testid="actions-content">
-                  {aiRecommendations.map((recommendation) => (
+                  {aiRecommendations && aiRecommendations.map((recommendation) => (
                     <Card 
                       key={recommendation.id} 
                       className="hover:shadow-md transition-shadow"

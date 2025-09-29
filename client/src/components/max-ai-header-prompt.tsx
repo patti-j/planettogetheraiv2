@@ -80,7 +80,7 @@ export function MaxAIHeaderPrompt({ showText = true }: MaxAIHeaderPromptProps) {
   // Mutation for sending AI prompt
   const sendPromptMutation = useMutation({
     mutationFn: async (message: string) => {
-      const token = localStorage.getItem('authToken'); // Fixed: correct token key
+      const token = localStorage.getItem('auth_token'); // Fixed: correct token key
       const headers: any = {
         'Content-Type': 'application/json'
       };

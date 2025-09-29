@@ -70,9 +70,9 @@ const getCurrentUser = async () => {
   
   try {
     // Try different token sources
-    const authToken = localStorage.getItem('authToken') || 
+    const authToken = localStorage.getItem('auth_token') || 
                      localStorage.getItem('auth_token') || 
-                     sessionStorage.getItem('authToken') ||
+                     sessionStorage.getItem('auth_token') ||
                      sessionStorage.getItem('auth_token');
     
     const headers: any = {

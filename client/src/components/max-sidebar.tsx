@@ -801,7 +801,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
           const response = await fetch('/api/ai-agent/transcribe', {
             method: 'POST',
             headers: {
-              'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
             },
             body: formData
           });
@@ -857,7 +857,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 const response = await fetch('/api/ai-agent/transcribe', {
                   method: 'POST',
                   headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('authToken') || ''}`
+                    'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
                   },
                   body: formData
                 });
@@ -979,7 +979,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   // Function to save canvas content to database
   const saveCanvasContentToDatabase = async (canvasItem: CanvasItem, sessionId: string) => {
     try {
-      const authToken = localStorage.getItem('authToken');
+      const authToken = localStorage.getItem('auth_token');
       if (!authToken) {
         console.log('No auth token available for canvas persistence');
         return;
