@@ -540,12 +540,6 @@ export default function ApplicationApp() {
                 </ProtectedRoute>
               </Route>
 
-              {/* Home route - shows main dashboard */}
-              <Route path="/home">
-                <ProtectedRoute feature="dashboard" action="view">
-                  <Dashboard />
-                </ProtectedRoute>
-              </Route>
               
               {/* Default Route - Home page */}
               <Route path="/">
