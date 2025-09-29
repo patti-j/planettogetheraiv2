@@ -5581,4 +5581,5 @@ router.post("/api/max-ai/chat", async (req, res) => {
   }
 });
 
+// Cache refresh for publishing
 export default router;
