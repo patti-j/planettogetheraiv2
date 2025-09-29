@@ -8,10 +8,34 @@ import {
   type Playbook
 } from '@shared/schema';
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
+import { dataCatalog } from './data-catalog';
+import { semanticRegistry } from './semantic-registry';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+interface SemanticMapping {
+  term: string;
+  tableName: string;
+  columnName: string;
+  confidence: number;
+  context: string[];
+  description?: string;
+}
+
+interface ChartIntent {
+  measures: SemanticMapping[];
+  dimensions: SemanticMapping[];
+  aggregations: string[];
+  filters: any[];
+  timeGrain?: string;
+  sort?: string;
+  limit?: number;
+  chartType?: string;
+  confidence: number;
+  rationale: string;
+}
 
 interface MaxContext {
   userId: number;
@@ -668,6 +692,234 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
       return 'Production Overview';
     } else {
       return 'Data Overview';
+    }
+  }
+
+  // AI-powered dynamic chart generation
+  async getDynamicChart(query: string, context: MaxContext): Promise<any> {
+    try {
+      console.log('[Max AI] Starting dynamic chart generation for query:', query);
+      
+      // Get data catalog summary for AI context
+      const catalogSummary = await dataCatalog.summarizeForAI();
+      
+      // Extract intent using OpenAI
+      const intent = await this.extractIntent(query, catalogSummary);
+      
+      if (intent.confidence < 0.6) {
+        // Low confidence - provide clarification
+        const clarification = await semanticRegistry.getSummaryForClarification();
+        return {
+          content: `I'm not sure exactly what you're looking for. Here's what data I have available:\n\n${clarification}\n\nCould you be more specific about what you'd like to see?`,
+          action: { type: 'clarify' }
+        };
+      }
+      
+      // Generate and execute SQL from intent
+      const sqlQuery = this.generateSQLFromIntent(intent);
+      const chartData = await this.executeSafeSQL(sqlQuery);
+      
+      if (!chartData || chartData.length === 0) {
+        return {
+          content: `I found the data you're looking for, but there are no records that match your criteria. Try adjusting your request or check if the data exists.`,
+          action: { type: 'no_data' }
+        };
+      }
+      
+      // Build chart configuration
+      const chartConfig = this.buildChartConfig(intent, chartData);
+      
+      // Save to database
+      await this.saveChartWidget(chartConfig, query);
+      
+      return {
+        content: `Here's your ${chartConfig.type} chart showing ${intent.rationale}:`,
+        action: {
+          type: 'create_chart',
+          chartConfig
+        }
+      };
+      
+    } catch (error) {
+      console.error('[Max AI] Error in dynamic chart generation:', error);
+      return {
+        content: 'I encountered an error while creating your chart. Please try rephrasing your request.',
+        error: true
+      };
+    }
+  }
+  
+  // Extract structured intent from natural language using OpenAI
+  private async extractIntent(query: string, catalogSummary: string): Promise<ChartIntent> {
+    const prompt = `You are an AI assistant that converts natural language queries into structured chart intents for manufacturing data analysis.
+
+Available Data:
+${catalogSummary}
+
+User Query: "${query}"
+
+Analyze the query and return a JSON object with this exact structure:
+{
+  "measures": [{
+    "term": "string",
+    "tableName": "string", 
+    "columnName": "string",
+    "confidence": 0.0-1.0
+  }],
+  "dimensions": [{
+    "term": "string",
+    "tableName": "string",
+    "columnName": "string", 
+    "confidence": 0.0-1.0
+  }],
+  "aggregations": ["COUNT", "SUM", "AVG", "MAX", "MIN"],
+  "filters": [],
+  "chartType": "bar|pie|line|histogram",
+  "confidence": 0.0-1.0,
+  "rationale": "explanation of what this chart will show"
+}
+
+Rules:
+- Use only tables/columns from the available data
+- For counting items, use COUNT(*) as measure
+- Pick appropriate chart type based on data
+- Higher confidence for exact matches, lower for guesses
+- Rationale should explain what insight the chart provides
+
+Return only the JSON object, no other text.`;
+
+    try {
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.1,
+        max_tokens: 1000
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      if (!content) throw new Error('No response from OpenAI');
+
+      const intent = JSON.parse(content) as ChartIntent;
+      console.log('[Max AI] Extracted intent:', intent);
+      
+      return intent;
+    } catch (error) {
+      console.error('[Max AI] Error extracting intent:', error);
+      
+      // Fallback to low-confidence generic intent
+      return {
+        measures: [],
+        dimensions: [], 
+        aggregations: ['COUNT'],
+        filters: [],
+        chartType: 'bar',
+        confidence: 0.2,
+        rationale: 'Unable to parse request clearly'
+      };
+    }
+  }
+  
+  // Generate safe SQL from structured intent
+  private generateSQLFromIntent(intent: ChartIntent): string {
+    // For now, implement basic COUNT by dimension pattern
+    // TODO: Expand to handle more complex intents
+    
+    const primaryDimension = intent.dimensions[0];
+    if (!primaryDimension) {
+      throw new Error('No valid dimension found in intent');
+    }
+    
+    const tableName = primaryDimension.tableName;
+    const columnName = primaryDimension.columnName;
+    
+    // Build safe SELECT statement
+    const query = `
+      SELECT 
+        ${columnName} as name,
+        COUNT(*) as value
+      FROM ${tableName}
+      WHERE ${columnName} IS NOT NULL
+      GROUP BY ${columnName}
+      ORDER BY COUNT(*) DESC
+      LIMIT 50
+    `;
+    
+    console.log('[Max AI] Generated SQL:', query);
+    return query;
+  }
+  
+  // Execute SQL with safety checks
+  private async executeSafeSQL(sqlQuery: string): Promise<any[]> {
+    // Basic safety validation
+    if (!sqlQuery.trim().toUpperCase().startsWith('SELECT')) {
+      throw new Error('Only SELECT queries are allowed');
+    }
+    
+    if (sqlQuery.toLowerCase().includes('drop') || sqlQuery.toLowerCase().includes('delete') || sqlQuery.toLowerCase().includes('update')) {
+      throw new Error('Potentially dangerous SQL detected');
+    }
+    
+    try {
+      const result = await db.execute(sql.raw(sqlQuery));
+      return result.rows.map((row: any) => ({
+        name: row.name || 'Unknown',
+        value: Number(row.value) || 0,
+        label: row.name || 'Unknown'
+      }));
+    } catch (error) {
+      console.error('[Max AI] SQL execution error:', error);
+      throw error;
+    }
+  }
+  
+  // Build chart configuration from intent and data
+  private buildChartConfig(intent: ChartIntent, data: any[]): any {
+    return {
+      type: intent.chartType || 'bar',
+      title: this.generateTitleFromIntent(intent),
+      data,
+      configuration: {
+        showLegend: true,
+        colorScheme: 'multi'
+      }
+    };
+  }
+  
+  // Generate chart title from intent
+  private generateTitleFromIntent(intent: ChartIntent): string {
+    const dimension = intent.dimensions[0]?.term || 'items';
+    const measure = intent.measures[0]?.term || 'count';
+    
+    return `${measure.charAt(0).toUpperCase() + measure.slice(1)} by ${dimension.charAt(0).toUpperCase() + dimension.slice(1)}`;
+  }
+  
+  // Save chart widget to database
+  private async saveChartWidget(chartConfig: any, query: string) {
+    try {
+      const { db } = await import('../db');
+      const { widgets } = await import('../../shared/schema');
+      
+      const widgetRecord = {
+        dashboardId: 1,
+        type: chartConfig.type || 'bar',
+        title: chartConfig.title || 'AI Generated Chart',
+        position: { x: 0, y: 0, w: 6, h: 4 },
+        config: {
+          chartType: chartConfig.type || 'bar',
+          dataSource: 'dynamic',
+          showLegend: true,
+          colorScheme: 'multi',
+          description: chartConfig.title,
+          createdByMaxAI: true,
+          userQuery: query
+        },
+        isActive: true
+      };
+      
+      const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
+      console.log('[Max AI] Chart widget saved with ID:', savedWidget.id);
+    } catch (error) {
+      console.error('[Max AI] Error saving widget:', error);
     }
   }
 
@@ -2020,8 +2272,15 @@ For job-related requests, use "jobs" as dataSource and provide appropriate title
           console.error(`[Max AI] Error saving widget to database:`, error);
         }
         
-        // Intelligently determine what data to use based on user query
-        const chartData = await this.getRelevantChartData(query, chartConfig.chartType);
+        // Use new AI-powered dynamic chart generation
+        const dynamicResult = await this.getDynamicChart(query, context);
+        
+        // If dynamic generation failed, fall back to legacy method
+        if (dynamicResult.error || dynamicResult.action?.type === 'clarify') {
+          return dynamicResult;
+        }
+        
+        const chartData = dynamicResult.action?.chartConfig?.data || await this.getRelevantChartData(query, chartConfig.chartType);
         
         return {
           content: `Here's your ${chartConfig.chartType || 'bar'} chart showing ${chartConfig.description || 'the requested data'}:`,
