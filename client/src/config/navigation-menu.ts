@@ -29,7 +29,6 @@ export const navigationGroups: NavigationGroup[] = [
     features: [
       { icon: Globe, label: "Global Control Tower", href: "/control-tower", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Building, label: "Plants Management", href: "/plants-management", feature: "plant-manager", action: "view", color: "bg-slate-500" },
-      { icon: TrendingUp, label: "Business Intelligence", href: "/business-intelligence", feature: "analytics", action: "view", color: "bg-indigo-600" },
       { icon: DollarSign, label: "Financial Management", href: "/financial-management", feature: "analytics", action: "view", color: "bg-green-600" },
       { icon: TrendingUp, label: "Business Goals", href: "/business-goals", feature: "business-goals", action: "view", color: "bg-cyan-500" },
       { icon: Target, label: "SMART KPI Tracking", href: "/smart-kpi-tracking", feature: "business-goals", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
