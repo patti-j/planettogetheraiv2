@@ -128,12 +128,8 @@ export default function CanvasPage() {
       id: widget.id.toString(),
       type: getCanvasType(widget.widgetType),
       title: widget.title,
-      content: { 
-        ...widget.data, 
-        ...widget.configuration,
-        chartType: widget.widgetSubtype,
-        template: widget.data?.template
-      },
+      content: widget.data, // ✅ FIXED: Pass array data directly, not spread into object
+      configuration: widget.configuration, // Keep configuration separate
       width: widget.configuration?.size === 'large' ? '600px' : widget.configuration?.size === 'small' ? '300px' : '400px',
       height: '300px',
       position: widget.position
@@ -169,7 +165,7 @@ export default function CanvasPage() {
       case 'dashboard':
         return <DashboardWidget data={item.content} />;
       case 'chart':
-        return <ChartWidget data={item.content} />;
+        return <ChartWidget data={item.content} configuration={item.configuration} title={item.title} />;
       case 'table':
         return <TableWidget data={item.content} />;
       case 'interactive':
@@ -553,80 +549,28 @@ const DashboardWidget: React.FC<{ data: any }> = ({ data }) => {
   );
 };
 
-const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
-  // Generate sample data based on chart type and template
-  const generateChartData = () => {
-    if (data?.template === 'jobs') {
-      if (data?.chartType === 'pie') {
-        return [
-          { name: 'Manufacturing', value: 35, color: '#8884d8' },
-          { name: 'Quality Control', value: 25, color: '#82ca9d' },
-          { name: 'Packaging', value: 20, color: '#ffc658' },
-          { name: 'Maintenance', value: 15, color: '#ff7300' },
-          { name: 'R&D', value: 5, color: '#d084d0' }
-        ];
-      } else if (data?.chartType === 'line') {
-        return [
-          { name: 'Week 1', value: 28 },
-          { name: 'Week 2', value: 35 },
-          { name: 'Week 3', value: 32 },
-          { name: 'Week 4', value: 42 },
-          { name: 'Week 5', value: 38 },
-          { name: 'Week 6', value: 45 }
-        ];
-      } else {
-        return [
-          { name: 'Manufacturing', value: 35 },
-          { name: 'Quality Control', value: 25 },
-          { name: 'Packaging', value: 20 },
-          { name: 'Maintenance', value: 15 },
-          { name: 'R&D', value: 5 }
-        ];
-      }
-    } else if (data?.template === 'operations') {
-      if (data?.chartType === 'pie') {
-        return [
-          { name: 'Brewing', value: 42, color: '#8884d8' },
-          { name: 'Fermentation', value: 28, color: '#82ca9d' },
-          { name: 'Packaging', value: 18, color: '#ffc658' },
-          { name: 'Quality Testing', value: 8, color: '#ff7300' },
-          { name: 'Cleaning', value: 4, color: '#d084d0' }
-        ];
-      } else if (data?.chartType === 'line') {
-        return [
-          { name: 'Mon', value: 42 },
-          { name: 'Tue', value: 38 },
-          { name: 'Wed', value: 45 },
-          { name: 'Thu', value: 40 },
-          { name: 'Fri', value: 48 },
-          { name: 'Sat', value: 35 }
-        ];
-      } else {
-        return [
-          { name: 'Brewing', value: 42 },
-          { name: 'Fermentation', value: 28 },
-          { name: 'Packaging', value: 18 },
-          { name: 'Quality Testing', value: 8 },
-          { name: 'Cleaning', value: 4 }
-        ];
-      }
-    } else {
-      // Default sample data for any chart
-      if (data?.chartType === 'pie') {
+const ChartWidget: React.FC<{ data: any; configuration?: any; title?: string }> = ({ data, configuration, title }) => {
+  // Use actual data from API if available, otherwise fallback to sample data
+  const getChartData = () => {
+    // Check if data is directly an array (real manufacturing data)
+    if (Array.isArray(data) && data.length > 0) {
+      const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d084d0', '#a4de6c', '#8dd1e1', '#d084d0', '#ffb347'];
+      return data.map((item, index) => ({
+        name: item.name || `Item ${index + 1}`,
+        value: Number(item.value) || 0,
+        color: item.color || colors[index % colors.length],
+        priority: item.priority
+      }));
+    }
+
+    // Fallback to sample data only if no real data available
+    const generateSampleData = () => {
+      if (configuration?.chartType === 'pie') {
         return [
           { name: 'Production', value: 40, color: '#8884d8' },
           { name: 'Quality', value: 30, color: '#82ca9d' },
           { name: 'Maintenance', value: 20, color: '#ffc658' },
           { name: 'Other', value: 10, color: '#ff7300' }
-        ];
-      } else if (data?.chartType === 'line') {
-        return [
-          { name: 'Jan', value: 40 },
-          { name: 'Feb', value: 35 },
-          { name: 'Mar', value: 42 },
-          { name: 'Apr', value: 38 },
-          { name: 'May', value: 45 },
-          { name: 'Jun', value: 50 }
         ];
       } else {
         return [
@@ -636,16 +580,18 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
           { name: 'Other', value: 10 }
         ];
       }
-    }
+    };
+
+    return generateSampleData();
   };
 
-  const chartData = generateChartData();
+  const chartData = getChartData();
   const isEmptyData = !chartData || chartData.length === 0;
 
-  if (data?.chartType === 'pie') {
+  if (configuration?.chartType === 'pie') {
     return (
       <div className="h-64 bg-white rounded-lg border p-4">
-        <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
+        <h4 className="font-medium mb-4">{title || 'Production Chart'}</h4>
         {isEmptyData ? (
           <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
             <div className="text-center">
@@ -700,10 +646,10 @@ const ChartWidget: React.FC<{ data: any }> = ({ data }) => {
   }
 
   // Line chart
-  if (data?.chartType === 'line') {
+  if (configuration?.chartType === 'line') {
     return (
       <div className="h-64 bg-white rounded-lg border p-4">
-        <h4 className="font-medium mb-4">{data?.title || 'Production Chart'}</h4>
+        <h4 className="font-medium mb-4">{title || 'Production Chart'}</h4>
         {isEmptyData ? (
           <div className="h-48 bg-gray-50 dark:bg-gray-800 rounded flex items-center justify-center">
             <div className="text-center">
