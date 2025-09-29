@@ -5581,5 +5581,5 @@ router.post("/api/max-ai/chat", async (req, res) => {
   }
 });
 
-// Cache refresh for publishing
+// Forced rebuild - all duplicate keys fixed
 export default router;
