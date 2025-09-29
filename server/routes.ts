@@ -3339,7 +3339,49 @@ router.get("/api/pt-operations", async (req, res) => {
   }
 });
 
-// Step 3: Save scheduler changes endpoint
+// Save operation schedule updates
+router.patch("/api/pt-operations/schedule", async (req, res) => {
+  try {
+    const updates = req.body.operations;
+    
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid request: operations array required' });
+    }
+    
+    console.log(`📝 Saving schedule updates for ${updates.length} operations...`);
+    
+    // Update each operation's scheduled_start and scheduled_end
+    let updated = 0;
+    for (const op of updates) {
+      try {
+        await directSql`
+          UPDATE ptjoboperations 
+          SET 
+            scheduled_start = ${op.start},
+            scheduled_end = ${op.end},
+            updated_at = NOW()
+          WHERE id = ${op.id}
+        `;
+        updated++;
+      } catch (err) {
+        console.error(`Failed to update operation ${op.id}:`, err);
+      }
+    }
+    
+    console.log(`✅ Successfully updated ${updated}/${updates.length} operations`);
+    
+    res.json({ 
+      success: true, 
+      updated,
+      total: updates.length
+    });
+  } catch (error) {
+    console.error("Error saving operation schedules:", error);
+    res.status(500).json({ success: false, error: 'Failed to save schedule' });
+  }
+});
+
+// Step 3: Save scheduler changes endpoint (Legacy - keeping for compatibility)
 router.post("/scheduler/sync", async (req, res) => {
   try {
     const { resources, events, assignments, dependencies } = req.body;

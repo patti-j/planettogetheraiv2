@@ -2672,6 +2672,39 @@
                     });
                 });
                 
+                // Save schedule to database
+                async function saveSchedule() {
+                    try {
+                        const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                        const operations = events.map(event => ({
+                            id: event.id,
+                            start: event.startDate.toISOString(),
+                            end: event.endDate.toISOString()
+                        }));
+                        
+                        console.log(`💾 Saving schedule to database (${operations.length} operations)...`);
+                        
+                        const response = await fetch('/api/pt-operations/schedule', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ operations })
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`Save failed: ${response.statusText}`);
+                        }
+                        
+                        const result = await response.json();
+                        console.log(`✅ Schedule saved: ${result.updated}/${result.total} operations updated`);
+                        return true;
+                    } catch (error) {
+                        console.error('❌ Failed to save schedule:', error);
+                        return false;
+                    }
+                }
+                
                 // Scheduling Algorithm Implementations
                 async function asapScheduling() {
                     // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
@@ -2759,6 +2792,7 @@
                     
                     if (overlapsFound === 0) {
                         console.log('✅ Verification passed: NO overlaps detected!');
+                        await saveSchedule();
                     } else {
                         console.error(`❌ VERIFICATION FAILED: ${overlapsFound} overlaps detected!`);
                     }
@@ -2818,7 +2852,12 @@
                             }
                         }
                     });
-                    console.log(overlapsFound === 0 ? '✅ ALAP Verification passed' : `❌ ALAP FAILED: ${overlapsFound} overlaps`);
+                    if (overlapsFound === 0) {
+                        console.log('✅ ALAP Verification passed');
+                        await saveSchedule();
+                    } else {
+                        console.log(`❌ ALAP FAILED: ${overlapsFound} overlaps`);
+                    }
                 }
                 
                 async function criticalPathScheduling() {
@@ -2862,7 +2901,12 @@
                             }
                         }
                     });
-                    console.log(overlapsFound === 0 ? '✅ Critical Path Verification passed' : `❌ Critical Path FAILED: ${overlapsFound} overlaps`);
+                    if (overlapsFound === 0) {
+                        console.log('✅ Critical Path Verification passed');
+                        await saveSchedule();
+                    } else {
+                        console.log(`❌ Critical Path FAILED: ${overlapsFound} overlaps`);
+                    }
                 }
                 
                 async function levelResourcesScheduling() {
@@ -2956,7 +3000,12 @@
                             }
                         }
                     });
-                    console.log(overlapsFound === 0 ? '✅ Level Resources Verification passed' : `❌ Level Resources FAILED: ${overlapsFound} overlaps`);
+                    if (overlapsFound === 0) {
+                        console.log('✅ Level Resources Verification passed');
+                        await saveSchedule();
+                    } else {
+                        console.log(`❌ Level Resources FAILED: ${overlapsFound} overlaps`);
+                    }
                     
                     // Force a refresh to recalculate utilization
                     setTimeout(() => {
@@ -3049,7 +3098,12 @@
                             }
                         }
                     });
-                    console.log(overlapsFound === 0 ? '✅ Drum Verification passed' : `❌ Drum FAILED: ${overlapsFound} overlaps`);
+                    if (overlapsFound === 0) {
+                        console.log('✅ Drum Verification passed');
+                        await saveSchedule();
+                    } else {
+                        console.log(`❌ Drum FAILED: ${overlapsFound} overlaps`);
+                    }
                 }
                 
                 // Initialize status updates
