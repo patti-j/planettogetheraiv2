@@ -2920,6 +2920,42 @@ router.delete("/api/canvas/widgets/:widgetId", async (req, res) => {
   }
 });
 
+// Widget visibility endpoint - missing but needed for canvas clear functionality
+router.put("/api/canvas/widgets/:id/visibility", async (req, res) => {
+  // Development bypass - skip authentication in dev mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔧 [Canvas Widgets] Early dev bypass middleware triggered for:", req.path);
+    console.log("🔧 [Canvas Widgets] Development mode: Skipping authentication");
+  } else {
+    // In production, require authentication
+    await new Promise((resolve, reject) => {
+      requireAuth(req, res, (error: any) => {
+        if (error) reject(error);
+        else resolve(undefined);
+      });
+    });
+  }
+
+  try {
+    const id = parseInt(req.params.id);
+    if (isNaN(id)) {
+      return res.status(400).json({ error: "Invalid widget ID" });
+    }
+
+    const { visible } = req.body;
+    
+    // Update the widget's is_active field in the database
+    await db.update(widgets)
+      .set({ isActive: visible === true })
+      .where(eq(widgets.id, id));
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error updating widget visibility:", error);
+    res.status(500).json({ error: "Failed to update widget visibility" });
+  }
+});
+
 // Widget data endpoints for specific widget types
 router.get("/api/widget-data/production-efficiency-heatmap", requireAuth, async (req, res) => {
   try {
