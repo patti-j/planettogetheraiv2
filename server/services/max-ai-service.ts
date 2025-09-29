@@ -882,7 +882,7 @@ Return only the JSON object, no other text.`;
           COUNT(DISTINCT j.id) as value
         FROM ptjobs j
         INNER JOIN ptjoboperations jo ON j.id = jo.job_id
-        INNER JOIN ptjobresources jr ON jo.operation_id = jr.operation_id  
+        INNER JOIN ptjobresources jr ON jo.id = jr.operation_id  
         INNER JOIN ptresources r ON jr.default_resource_id = r.resource_id
         WHERE r.plant_name IS NOT NULL
         GROUP BY r.plant_name
