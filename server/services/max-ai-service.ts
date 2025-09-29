@@ -724,10 +724,26 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
     try {
       console.log('[Max AI] 🎨 Starting dynamic chart generation for query:', query);
       
-      // Get data catalog summary for AI context
+      // Get data catalog summary for AI context (with timeout fallback)
       console.log('[Max AI] 📚 Fetching data catalog summary...');
-      const catalogSummary = await dataCatalog.summarizeForAI();
-      console.log('[Max AI] ✅ Data catalog summary ready');
+      let catalogSummary = '';
+      try {
+        // Add a timeout to prevent hanging
+        catalogSummary = await Promise.race([
+          dataCatalog.summarizeForAI(),
+          new Promise<string>((_, reject) => 
+            setTimeout(() => reject(new Error('Catalog timeout')), 5000)
+          )
+        ]);
+        console.log('[Max AI] ✅ Data catalog summary ready');
+      } catch (catalogError) {
+        console.warn('[Max AI] ⚠️ Data catalog unavailable, using default schema:', catalogError.message);
+        // Fallback to basic manufacturing schema summary
+        catalogSummary = `Available tables:
+- ptjobs: Manufacturing jobs (columns: job_name, priority, status, quantity)
+- ptresources: Production resources (columns: resource_name, plant_name, department_name)  
+- ptjoboperations: Job operations (columns: operation_name, duration, status)`;
+      }
       
       // Extract intent using OpenAI
       console.log('[Max AI] 🧠 Extracting intent using OpenAI...');
