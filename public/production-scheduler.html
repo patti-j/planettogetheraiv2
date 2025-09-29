@@ -2565,40 +2565,13 @@
                 });
                 
                 document.getElementById('zoomToFit').addEventListener('click', () => {
-                    // Zoom to fit all events with proper options
+                    // Zoom to fit all events according to Bryntum official documentation
+                    // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
                     scheduler.zoomToFit({
-                        leftMargin: 50,
-                        rightMargin: 50,
-                        topMargin: 50,
-                        bottomMargin: 50
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
                     });
-                    
-                    // Alternative: If zoomToFit doesn't work, try setting a wider date range
-                    if (!scheduler.timeAxis) {
-                        // Fallback to setting view preset to show more data
-                        const resources = scheduler.resourceStore.records;
-                        const events = scheduler.eventStore.records;
-                        
-                        if (events.length > 0) {
-                            // Find the earliest and latest dates
-                            let minDate = new Date(events[0].startDate);
-                            let maxDate = new Date(events[0].endDate);
-                            
-                            events.forEach(event => {
-                                const start = new Date(event.startDate);
-                                const end = new Date(event.endDate);
-                                if (start < minDate) minDate = start;
-                                if (end > maxDate) maxDate = end;
-                            });
-                            
-                            // Add some padding
-                            minDate.setDate(minDate.getDate() - 1);
-                            maxDate.setDate(maxDate.getDate() + 1);
-                            
-                            // Set the time axis range
-                            scheduler.setTimeSpan(minDate, maxDate);
-                        }
-                    }
+                    console.log('Zoom to fit applied with 50px margins');
                 });
                 
                 // Apply Scheduling Algorithm button
@@ -2999,46 +2972,17 @@
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
                 
-                // Initial zoom to fit with better timing and proper options
+                // Initial zoom to fit using Bryntum official documentation
+                // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
                 setTimeout(() => {
-                    // Use the same comprehensive fit-to-view logic as the manual button
                     scheduler.zoomToFit({
-                        leftMargin: 50,
-                        rightMargin: 50,
-                        topMargin: 50,
-                        bottomMargin: 50
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
                     });
+                    console.log('Initial zoom to fit applied');
                     
-                    // Alternative: If zoomToFit doesn't work, try setting a wider date range
-                    if (!scheduler.timeAxis) {
-                        // Fallback to setting view preset to show more data
-                        const events = scheduler.eventStore.records;
-                        
-                        if (events.length > 0) {
-                            // Find the earliest and latest dates
-                            let minDate = new Date(events[0].startDate);
-                            let maxDate = new Date(events[0].endDate);
-                            
-                            events.forEach(event => {
-                                const start = new Date(event.startDate);
-                                const end = new Date(event.endDate);
-                                if (start < minDate) minDate = start;
-                                if (end > maxDate) maxDate = end;
-                            });
-                            
-                            // Add some padding
-                            minDate.setDate(minDate.getDate() - 1);
-                            maxDate.setDate(maxDate.getDate() + 1);
-                            
-                            // Set the time axis range
-                            scheduler.setTimeSpan(minDate, maxDate);
-                        }
-                    }
-                    
-                    // Only scroll to center if fit-to-view worked properly
-                    // Give it a moment to apply zoom first
+                    // Center on current date after zoom
                     setTimeout(() => {
-                        // Center on today's date only if we have visible content
                         const events = scheduler.eventStore.records;
                         if (events.length > 0) {
                             scheduler.scrollToDate(new Date(2025, 8, 3), { block: 'center' });
