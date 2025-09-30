@@ -910,8 +910,8 @@ export default function IntegratedAIAssistant() {
               <Sparkles className="h-6 w-6 text-white" />
             </Button>
           ) : (
-            // Expanded oval prompt
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-full px-6 py-3 flex items-center gap-3 cursor-pointer"
+            // Expanded oval prompt - flexible layout with text wrapping
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl px-4 py-2.5 flex items-center gap-2 cursor-pointer max-w-xs"
                  onClick={() => setIsOpen(true)}
                  data-testid="button-ask-anything"
             >
@@ -922,13 +922,13 @@ export default function IntegratedAIAssistant() {
                 }}
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0 rounded-full hover:bg-white/20 text-white"
+                className="h-6 w-6 p-0 rounded-full hover:bg-white/20 text-white flex-shrink-0"
                 data-testid="button-minimize-ai-bubble"
               >
-                <Sparkles className="h-4 w-4" />
+                <Sparkles className="h-3.5 w-3.5" />
               </Button>
-              <span className="text-white font-medium text-sm whitespace-nowrap">
-                Ask anything...
+              <span className="text-white font-medium text-sm leading-snug">
+                {inputMessage || "Ask anything..."}
               </span>
             </div>
           )}
@@ -1283,9 +1283,9 @@ export default function IntegratedAIAssistant() {
                     onChange={(e) => setInputMessage(e.target.value)}
                     placeholder="Ask me anything about your operations..."
                     onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 resize-none"
-                    rows={window.innerWidth < 768 ? 2 : 2}
-                    style={{ minHeight: '40px' }}
+                    className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 resize-none overflow-y-auto"
+                    rows={window.innerWidth < 768 ? 3 : 4}
+                    style={{ minHeight: '60px', maxHeight: '120px' }}
                   />
                   {attachments.length > 0 && (
                     <div className="px-3 py-2 space-y-1 border-t border-gray-200" data-testid="list-attachments">
@@ -1318,21 +1318,21 @@ export default function IntegratedAIAssistant() {
                     variant="outline" 
                     size="sm" 
                     onClick={handlePickFiles} 
-                    className="px-2 h-10" 
+                    className="px-1.5 h-9" 
                     title="Attach files" 
                     data-testid="button-attach-files"
                   >
-                    <Paperclip className="h-4 w-4" />
+                    <Paperclip className="h-3 w-3" />
                   </Button>
                   <div className="flex items-center gap-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={isListening ? stopListening : startListening}
-                      className={`px-2 h-10 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
+                      className={`px-1.5 h-9 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
                       data-testid="button-voice-recording"
                     >
-                      {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+                      {isListening ? <MicOff className="h-3 w-3 text-red-500" /> : <Mic className="h-3 w-3" />}
                     </Button>
                     {isListening && recordingTimeLeft > 0 && (
                       <span className="text-xs font-mono text-red-500 min-w-[2ch]" data-testid="text-recording-countdown">
