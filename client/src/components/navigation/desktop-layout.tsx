@@ -828,9 +828,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             <Sparkles className="h-6 w-6 text-white" />
           </Button>
         ) : (
-          // Expanded oval prompt
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-full shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-full p-2 flex items-center gap-2 min-w-[340px] max-w-[480px]">
+          // Expanded oval prompt - flexible layout with text wrapping
+          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-2xl shadow-lg backdrop-blur-sm">
+            <div className="bg-background rounded-2xl p-2 flex flex-wrap items-center gap-1.5 min-w-[340px] max-w-[520px]">
               {/* Agent Selection Button */}
               <TooltipProvider>
                 <Tooltip>
@@ -839,10 +839,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       onClick={() => setIsFloatingBubbleMinimized(true)}
                       size="sm"
                       variant="ghost"
-                      className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0 relative group"
+                      className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 relative group"
                       data-testid="button-minimize-floating-ai"
                     >
-                      <Sparkles className="w-4 h-4" />
+                      <Sparkles className="w-3.5 h-3.5" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top">
@@ -853,7 +853,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               {/* Agent Selector Dropdown */}
               <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                <SelectTrigger className="w-8 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
+                <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
                 </SelectTrigger>
                 <SelectContent align="start">
                   <SelectItem value="unified" className="text-xs">
@@ -894,13 +894,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       onClick={handleFloatingFileUpload}
                       size="sm"
                       variant="ghost"
-                      className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                      className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0"
                       disabled={isFloatingProcessingFiles || isFloatingSending}
                     >
                       {isFloatingProcessingFiles ? (
-                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Paperclip className="w-3 h-3" />
+                        <Paperclip className="w-2.5 h-2.5" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -919,23 +919,23 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       size="sm"
                       variant="ghost"
                       className={cn(
-                        "rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0",
+                        "rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0",
                         isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
                         isFloatingTranscribing && "opacity-50"
                       )}
                       disabled={isFloatingTranscribing || isFloatingSending}
                     >
                       {isFloatingTranscribing ? (
-                        <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : isFloatingRecording ? (
                         <div className="flex items-center">
-                          <StopCircle className="w-3 h-3" />
+                          <StopCircle className="w-2.5 h-2.5" />
                           {floatingRecordingTimeLeft > 0 && (
                             <span className="ml-1 text-xs">{floatingRecordingTimeLeft}s</span>
                           )}
                         </div>
                       ) : (
-                        <Mic className="w-3 h-3" />
+                        <Mic className="w-2.5 h-2.5" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -945,16 +945,18 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 </Tooltip>
               </TooltipProvider>
 
-              {/* Input Field */}
-              <Input
-                ref={floatingInputRef}
-                placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
-                value={floatingPrompt}
-                onChange={(e) => setFloatingPrompt(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
-                className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground flex-1"
-                disabled={isFloatingSending}
-              />
+              {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
+              <div className="flex-1 min-w-[180px]">
+                <Input
+                  ref={floatingInputRef}
+                  placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
+                  value={floatingPrompt}
+                  onChange={(e) => setFloatingPrompt(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground w-full"
+                  disabled={isFloatingSending}
+                />
+              </div>
 
               {/* Attachment Pills */}
               {floatingAttachments.length > 0 && (
