@@ -835,13 +835,13 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                     }
                   </div>
                   
-                  <div className={`rounded-lg p-3 ${
+                  <div className={`p-3 ${
                     message.type === "user" 
-                      ? "bg-blue-500 text-white" 
-                      : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white"
+                      ? "bg-blue-500 text-white rounded-lg" 
+                      : "bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white rounded-3xl"
                   }`}>
                     <div 
-                      className="text-sm"
+                      className="text-sm whitespace-normal break-words"
                       dangerouslySetInnerHTML={{ 
                         __html: highlightSearchTerm(message.content, searchQuery) 
                       }}
@@ -1231,7 +1231,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                   onClick={() => fileInputRef.current?.click()}
                   disabled={isProcessingFiles || textCommandMutation.isPending}
                 >
-                  <Paperclip className="w-4 h-4" />
+                  <Paperclip className="w-3.5 h-3.5" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -1248,7 +1248,7 @@ export default function AIAgent({ searchQuery = "", onSearchChange }: AIAgentPro
                   onClick={toggleRecording}
                   disabled={voiceCommandMutation.isPending}
                 >
-                  {isRecording ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  {isRecording ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
