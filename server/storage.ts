@@ -657,120 +657,20 @@ export class DatabaseStorage implements IStorage {
           j.name as job_name,
           j.priority,
           j.need_date_time as due_date,
-          -- Use PT Resource Capabilities to match operations to appropriate resources
-          -- CRITICAL: Order CASE statements from most specific to least specific
+          -- Determine the capability needed for each operation
+          -- This will be used for smart resource allocation in TypeScript
           CASE 
-            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 8 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%mill%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 1 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%mash%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 2 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 3 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%boil%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 5 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 5 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%condition%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 6 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN (
-              SELECT r.id FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 7 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            ELSE (
-              SELECT r.id FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
-            )
-          END as matched_resource_id,
-          -- Get the resource name using capabilities  
-          -- CRITICAL: Order CASE statements from most specific to least specific
-          CASE 
-            WHEN LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 8 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%mill%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 1 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%mash%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 2 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%lauter%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 3 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%boil%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 4 AND r.active = true LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%ferment%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 5 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 5 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%condition%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 6 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN (
-              SELECT r.name FROM ptresources r 
-              JOIN ptresourcecapabilities rc ON r.id = rc.resource_id 
-              WHERE rc.capability_id = 7 AND r.active = true 
-              ORDER BY r.id LIMIT 1
-            )
-            ELSE (
-              SELECT r.name FROM ptresources r WHERE r.active = true ORDER BY r.id LIMIT 1
-            )
-          END as matched_resource_name
+            WHEN LOWER(jo.name) LIKE '%packag%' THEN 8  -- Packaging
+            WHEN LOWER(jo.name) LIKE '%mill%' THEN 1     -- Milling
+            WHEN LOWER(jo.name) LIKE '%mash%' THEN 2     -- Mashing
+            WHEN LOWER(jo.name) LIKE '%lauter%' THEN 3   -- Lautering
+            WHEN LOWER(jo.name) LIKE '%boil%' THEN 4     -- Boiling
+            WHEN LOWER(jo.name) LIKE '%ferment%' THEN 5  -- Fermentation
+            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN 5  -- Lagering (also fermentation)
+            WHEN LOWER(jo.name) LIKE '%condition%' THEN 6  -- Conditioning
+            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN 7    -- Dry Hopping
+            ELSE 0  -- Unknown capability
+          END as capability_id
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
         WHERE jo.scheduled_start IS NOT NULL
@@ -780,15 +680,91 @@ export class DatabaseStorage implements IStorage {
       
       const result = await db.execute(query);
       
+      // Fetch all resources with their capabilities for smart allocation
+      const resourcesQuery = await db.execute(sql`
+        SELECT 
+          r.id,
+          r.name,
+          rc.capability_id
+        FROM ptresources r
+        JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
+        WHERE r.active = true
+        ORDER BY rc.capability_id, r.id
+      `);
+      
+      // Group resources by capability
+      const resourcesByCapability: Record<number, Array<{id: number, name: string, allocations: Array<{start: Date, end: Date}>}>> = {};
+      for (const res of resourcesQuery.rows as any[]) {
+        if (!resourcesByCapability[res.capability_id]) {
+          resourcesByCapability[res.capability_id] = [];
+        }
+        resourcesByCapability[res.capability_id].push({
+          id: res.id,
+          name: res.name,
+          allocations: [] // Track allocated time slots
+        });
+      }
+      
+      // Smart resource allocation - distribute operations across available resources
+      const allocatedOps = result.rows.map((op: any) => {
+        const capabilityId = op.capability_id;
+        let assignedResource = null;
+        
+        if (capabilityId && resourcesByCapability[capabilityId]) {
+          const availableResources = resourcesByCapability[capabilityId];
+          
+          // If operation has a scheduled time, find a resource that's available
+          if (op.scheduled_start && op.scheduled_end) {
+            const opStart = new Date(op.scheduled_start);
+            const opEnd = new Date(op.scheduled_end);
+            
+            // Try to find a resource with no conflicts
+            for (const resource of availableResources) {
+              const hasConflict = resource.allocations.some(allocation => {
+                // Check if time periods overlap
+                return (opStart < allocation.end && opEnd > allocation.start);
+              });
+              
+              if (!hasConflict) {
+                // Found an available resource, assign it
+                assignedResource = resource;
+                resource.allocations.push({ start: opStart, end: opEnd });
+                break;
+              }
+            }
+            
+            // If no available resource found, assign to the least busy one
+            if (!assignedResource && availableResources.length > 0) {
+              assignedResource = availableResources.reduce((least, current) => 
+                current.allocations.length < least.allocations.length ? current : least
+              );
+              // Still track the allocation even if it overlaps
+              assignedResource.allocations.push({ start: opStart, end: opEnd });
+            }
+          } else {
+            // No scheduled time, just assign round-robin based on operation ID
+            const index = op.id % availableResources.length;
+            assignedResource = availableResources[index];
+          }
+        }
+        
+        return {
+          ...op,
+          matched_resource_id: assignedResource?.id || null,
+          matched_resource_name: assignedResource?.name || 'Unassigned'
+        };
+      });
+      
       // Transform the operations for the scheduler with proper resource assignments
-      return result.rows.map((op: any) => ({
+      return allocatedOps.map((op: any) => ({
         id: op.id,
         operationId: op.operation_id,
         jobId: op.job_id,
         name: op.operation_name || 'Operation',
         jobName: op.job_name,
-        resourceId: op.matched_resource_id, // Use the intelligently matched resource
+        resourceId: op.matched_resource_id, // Use the smart allocated resource
         resourceName: op.matched_resource_name, // Include resource name for display
+        capabilityId: op.capability_id, // Track the required capability
         scheduledStart: op.scheduled_start,
         scheduledEnd: op.scheduled_end,
         priority: op.priority || 5,
