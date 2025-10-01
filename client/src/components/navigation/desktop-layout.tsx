@@ -900,7 +900,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       {isFloatingProcessingFiles ? (
                         <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Paperclip className="w-2.5 h-2.5" />
+                        <Paperclip className="w-2 h-2" />
                       )}
                     </Button>
                   </TooltipTrigger>
@@ -935,7 +935,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                           )}
                         </div>
                       ) : (
-                        <Mic className="w-2.5 h-2.5" />
+                        <Mic className="w-2 h-2" />
                       )}
                     </Button>
                   </TooltipTrigger>

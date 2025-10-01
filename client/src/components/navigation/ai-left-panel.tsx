@@ -1338,10 +1338,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                           )}>
                             <div
                               className={cn(
-                                "rounded-lg px-3 py-2 text-sm",
+                                "px-3 py-2 text-sm whitespace-normal break-words",
                                 message.role === 'user'
-                                  ? "bg-primary text-primary-foreground"
-                                  : "bg-muted"
+                                  ? "rounded-lg bg-primary text-primary-foreground"
+                                  : "rounded-3xl bg-muted"
                               )}
                             >
                               {message.role === 'assistant' 
