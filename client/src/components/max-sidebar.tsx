@@ -1939,7 +1939,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 className={`max-w-[80%] p-2 text-sm relative group whitespace-normal break-words ${
                   message.type === 'user'
                     ? 'bg-blue-500 text-white rounded-lg'
-                    : 'bg-gray-100 text-gray-900 rounded-3xl'
+                    : 'bg-gray-100 text-gray-900 dark:bg-gray-700 dark:text-white rounded-3xl'
                 }`}
               >
                 {message.content}
