@@ -832,7 +832,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
             <div className="bg-background rounded-3xl p-2 flex flex-col gap-1 min-w-[340px] max-w-[520px]">
               {/* Top row: Agent selector, input field, and send button */}
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-1">
                 {/* Agent Selection Button */}
                 <TooltipProvider>
                   <Tooltip>
@@ -841,10 +841,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         onClick={() => setIsFloatingBubbleMinimized(true)}
                         size="sm"
                         variant="ghost"
-                        className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 self-center"
+                        className="rounded-full w-6 h-6 p-0 hover:bg-muted flex-shrink-0"
                         data-testid="button-minimize-floating-ai"
                       >
-                        <Sparkles className="w-3.5 h-3.5" />
+                        <Sparkles className="w-3 h-3" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
@@ -855,7 +855,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
                 {/* Agent Selector Dropdown */}
                 <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                  <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1 self-center">
+                  <SelectTrigger className="w-6 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-0.5">
                   </SelectTrigger>
                   <SelectContent align="start">
                     <SelectItem value="unified" className="text-xs">
@@ -891,7 +891,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         handleFloatingSend();
                       }
                     }}
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden pl-1"
                     disabled={isFloatingSending}
                     rows={1}
                     style={{ minHeight: '24px', maxHeight: '120px' }}
@@ -930,7 +930,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   onClick={handleFloatingSend}
                   size="sm"
                   variant="ghost"
-                  className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0 self-center"
+                  className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0"
                   disabled={!floatingPrompt.trim() || isFloatingSending}
                 >
                   {isFloatingSending ? (
@@ -942,7 +942,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
 
               {/* Bottom row: Smaller icons for file attachment and voice recording */}
-              <div className="flex items-center gap-2 pl-8">
+              <div className="flex items-center gap-2 pl-7">
                 {/* File attachment input (hidden) */}
                 <input
                   ref={floatingFileInputRef}
