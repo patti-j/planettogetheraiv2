@@ -6,7 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <!-- Force refresh timestamp: 2025-10-01 21:36 -->
+    <!-- Force refresh timestamp: 2025-10-01 21:40 v2 -->
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
@@ -1579,7 +1579,7 @@
                         isUnscheduled: isUnscheduled,
                         ptData: operation // Keep original PT data for algorithms
                     };
-                }).filter(event => event.resourceId); // Only include operations with valid resources
+                }); // Include all operations - unscheduled ones go to 'unscheduled' resource
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
@@ -2140,9 +2140,8 @@
 
                     project: {
                         // Use correct property names (not deprecated)
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
+                        autoLoad: false, // We'll load data manually
+                        autoSync: false,
                         
                         // Enable automatic scheduling
                         autoCalculateStartDate: true,
@@ -2168,6 +2167,31 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
+                
+                // Manually load the data into the scheduler
+                scheduler.project.loadInlineData({
+                    resources: resources,
+                    events: events,
+                    dependencies: dependencies
+                }).then(() => {
+                    console.log('✅ Scheduler data loaded, events count:', scheduler.eventStore.count);
+                    updateStatus();
+                    
+                    // Debug: Check what's in the stores
+                    const eventCount = scheduler.eventStore.count;
+                    const resourceCount = scheduler.resourceStore.count;
+                    console.log('📊 Scheduler stats: Events =', eventCount, 'Resources =', resourceCount);
+                    
+                    if (eventCount > 0) {
+                        const firstEvent = scheduler.eventStore.first;
+                        console.log('📅 First event:', firstEvent?.name, 'on', firstEvent?.startDate);
+                        
+                        // Try to scroll to the first event
+                        if (firstEvent?.startDate) {
+                            scheduler.scrollToDate(firstEvent.startDate, { block: 'center' });
+                        }
+                    }
+                });
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
