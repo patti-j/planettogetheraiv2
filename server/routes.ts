@@ -1511,6 +1511,9 @@ router.get("/api/production-scheduler", (req, res) => {
     const htmlContent = fs.readFileSync(htmlPath, 'utf8');
     console.log('Successfully read HTML file, size:', htmlContent.length, 'bytes');
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.send(htmlContent);
   } catch (error) {
     console.error('Error serving demo HTML:', error);

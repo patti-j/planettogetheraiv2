@@ -6,6 +6,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    <!-- Force refresh timestamp: 2025-10-01 21:36 -->
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
@@ -1434,19 +1435,20 @@
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
                         console.log('✅ Resources fetched successfully:', resources.length);
+                        console.log('First 3 resources:', resources.slice(0, 3));
                     } else {
                         console.error('❌ Failed to fetch resources:', resourcesResponse.status);
                         // No fallback - let resources stay empty rather than showing wrong equipment
                         resources = [];
                     }
                     
-                    // REMOVED: Unscheduled resource line
-                    // resources.unshift({
-                    //     id: 'unscheduled',
-                    //     name: '🔄 Unscheduled Operations',
-                    //     category: 'Unscheduled',
-                    //     eventColor: '#808080' // Gray color for unscheduled items
-                    // });
+                    // Add Unscheduled resource line for operations without resource assignment
+                    resources.unshift({
+                        id: 'unscheduled',
+                        name: '🔄 Unscheduled Operations',
+                        category: 'Unscheduled',
+                        eventColor: '#808080' // Gray color for unscheduled items
+                    });
                     
                     if (operationsResponse.ok) {
                         ptOperations = await operationsResponse.json();
@@ -1521,8 +1523,8 @@
                     // First try to find a matching resource
                     let resourceId = findResourceId(operation, resourceMap, resourceByName, resources);
                     
-                    // Check if operation is truly unscheduled (no scheduled start time OR no valid resource)
-                    const isUnscheduled = false; // DISABLED: Force all operations to be scheduled
+                    // Check if operation is truly unscheduled (no valid resource assignment)
+                    const isUnscheduled = !resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId && r.id !== 'unscheduled');
                     
                     let startDate;
                     
@@ -1540,9 +1542,9 @@
                         startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset); // Sept 3+, starting at 8 AM
                     }
                     
-                    // If no valid resource found, assign to first available resource
-                    if (!resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId)) {
-                        resourceId = resources[index % resources.length]?.id || resources[0]?.id;
+                    // If no valid resource found, assign to unscheduled resource
+                    if (isUnscheduled) {
+                        resourceId = 'unscheduled';
                     }
                     
                     // Calculate duration from scheduled times if available
@@ -1581,6 +1583,11 @@
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
+                console.log('First 3 events:', events.slice(0, 3));
+                console.log('Event dates range:', events.length > 0 ? {
+                    first: events[0]?.startDate,
+                    last: events[events.length - 1]?.startDate
+                } : 'no events');
                 
                 // Helper function to find the correct resource ID
                 function findResourceId(operation, resourceMap, resourceByName, resources) {
