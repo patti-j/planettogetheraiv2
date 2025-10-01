@@ -832,7 +832,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
             <div className="bg-background rounded-3xl p-2 flex flex-col gap-1 min-w-[340px] max-w-[520px]">
               {/* Top row: Agent selector, input field, and send button */}
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-0.5">
                 {/* Agent Selection Button */}
                 <TooltipProvider>
                   <Tooltip>
@@ -841,7 +841,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         onClick={() => setIsFloatingBubbleMinimized(true)}
                         size="sm"
                         variant="ghost"
-                        className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 relative group"
+                        className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 self-center"
                         data-testid="button-minimize-floating-ai"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
@@ -855,7 +855,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
                 {/* Agent Selector Dropdown */}
                 <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                  <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
+                  <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1 self-center">
                   </SelectTrigger>
                   <SelectContent align="start">
                     <SelectItem value="unified" className="text-xs">
@@ -942,7 +942,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
 
               {/* Bottom row: Smaller icons for file attachment and voice recording */}
-              <div className="flex items-center gap-2 pl-14">
+              <div className="flex items-center gap-2 pl-8">
                 {/* File attachment input (hidden) */}
                 <input
                   ref={floatingFileInputRef}
