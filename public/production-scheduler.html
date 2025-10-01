@@ -1492,9 +1492,6 @@
                     resourceByName.set(resource.name?.toLowerCase(), resource);
                 });
                 
-                console.log('🔍 Resource Map created with keys:', Array.from(resourceMap.keys()));
-                console.log('🔍 Sample PT Operation:', ptOperations[0]);
-                console.log('🔍 Resource IDs in map:', resources.map(r => r.id));
                 
                 // Define capability mappings for brewing operations
                 // Based on PT Resource Capabilities: 1=MILLING, 2=MASHING, 3=LAUTERING, 
@@ -1595,15 +1592,6 @@
                 
                 // Helper function to find the correct resource ID
                 function findResourceId(operation, resourceMap, resourceByName, resources) {
-                    // Debug logging for first few operations
-                    if (operation.id <= 3) {
-                        console.log(`🔍 Finding resource for operation ${operation.id}:`, {
-                            resourceId: operation.resourceId,
-                            resourceName: operation.resourceName,
-                            hasInMap: resourceMap.has(operation.resourceId)
-                        });
-                    }
-                    
                     // Try various ways to match the resource
                     if (operation.resourceId && resourceMap.has(operation.resourceId)) {
                         return operation.resourceId;
