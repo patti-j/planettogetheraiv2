@@ -1442,13 +1442,13 @@
                         resources = [];
                     }
                     
-                    // Add Unscheduled resource line for operations without resource assignment
-                    resources.unshift({
-                        id: 'unscheduled',
-                        name: '🔄 Unscheduled Operations',
-                        category: 'Unscheduled',
-                        eventColor: '#808080' // Gray color for unscheduled items
-                    });
+                    // REMOVED: Unscheduled resource line
+                    // resources.unshift({
+                    //     id: 'unscheduled',
+                    //     name: '🔄 Unscheduled Operations',
+                    //     category: 'Unscheduled',
+                    //     eventColor: '#808080' // Gray color for unscheduled items
+                    // });
                     
                     if (operationsResponse.ok) {
                         ptOperations = await operationsResponse.json();
@@ -1579,7 +1579,7 @@
                         isUnscheduled: isUnscheduled,
                         ptData: operation // Keep original PT data for algorithms
                     };
-                }); // Include all operations - unscheduled ones go to 'unscheduled' resource
+                }).filter(event => event.resourceId); // Only include operations with valid resources
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
@@ -2140,8 +2140,9 @@
 
                     project: {
                         // Use correct property names (not deprecated)
-                        autoLoad: false, // We'll load data manually
-                        autoSync: false,
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
                         
                         // Enable automatic scheduling
                         autoCalculateStartDate: true,
@@ -2167,31 +2168,6 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
-                
-                // Manually load the data into the scheduler
-                scheduler.project.loadInlineData({
-                    resources: resources,
-                    events: events,
-                    dependencies: dependencies
-                }).then(() => {
-                    console.log('✅ Scheduler data loaded, events count:', scheduler.eventStore.count);
-                    updateStatus();
-                    
-                    // Debug: Check what's in the stores
-                    const eventCount = scheduler.eventStore.count;
-                    const resourceCount = scheduler.resourceStore.count;
-                    console.log('📊 Scheduler stats: Events =', eventCount, 'Resources =', resourceCount);
-                    
-                    if (eventCount > 0) {
-                        const firstEvent = scheduler.eventStore.first;
-                        console.log('📅 First event:', firstEvent?.name, 'on', firstEvent?.startDate);
-                        
-                        // Try to scroll to the first event
-                        if (firstEvent?.startDate) {
-                            scheduler.scrollToDate(firstEvent.startDate, { block: 'center' });
-                        }
-                    }
-                });
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
