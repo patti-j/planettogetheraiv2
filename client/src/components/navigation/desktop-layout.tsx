@@ -958,7 +958,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       handleFloatingSend();
                     }
                   }}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
                   disabled={isFloatingSending}
                   rows={1}
                   style={{ minHeight: '24px', maxHeight: '120px' }}
