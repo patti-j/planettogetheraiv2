@@ -830,7 +830,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         ) : (
           // Expanded oval prompt - flexible layout with text wrapping
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-3xl p-2 flex flex-col gap-1 min-w-[340px] max-w-[520px]">
+            <div className="bg-background rounded-3xl p-1.5 flex flex-col gap-0.5 min-w-[340px] max-w-[520px]">
               {/* Top row: Agent selector, input field, and send button */}
               <div className="flex items-center gap-1">
                 {/* Agent Selection Button */}
@@ -942,7 +942,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
 
               {/* Bottom row: Smaller icons for file attachment and voice recording */}
-              <div className="flex items-center gap-2 pl-7">
+              <div className="flex items-center gap-1.5 pl-7">
                 {/* File attachment input (hidden) */}
                 <input
                   ref={floatingFileInputRef}
@@ -961,13 +961,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         onClick={handleFloatingFileUpload}
                         size="sm"
                         variant="ghost"
-                        className="rounded-full w-5 h-5 p-0 hover:bg-muted flex-shrink-0"
+                        className="rounded-full w-4 h-4 p-0 hover:bg-muted flex-shrink-0"
                         disabled={isFloatingProcessingFiles || isFloatingSending}
                       >
                         {isFloatingProcessingFiles ? (
                           <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : (
-                          <Paperclip className="w-3 h-3" />
+                          <Paperclip className="w-2.5 h-2.5" />
                         )}
                       </Button>
                     </TooltipTrigger>
@@ -986,7 +986,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         size="sm"
                         variant="ghost"
                         className={cn(
-                          "rounded-full w-5 h-5 p-0 hover:bg-muted flex-shrink-0",
+                          "rounded-full w-4 h-4 p-0 hover:bg-muted flex-shrink-0",
                           isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
                           isFloatingTranscribing && "opacity-50"
                         )}
@@ -1002,7 +1002,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                             )}
                           </div>
                         ) : (
-                          <Mic className="w-3 h-3" />
+                          <Mic className="w-2.5 h-2.5" />
                         )}
                       </Button>
                     </TooltipTrigger>
