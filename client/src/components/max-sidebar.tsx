@@ -1788,9 +1788,9 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 title={isListening ? 'Stop listening' : 'Start voice input'}
               >
                 {isListening ? (
-                  <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+                  <Mic className="h-3.5 w-3.5 text-green-600 animate-pulse" />
                 ) : (
-                  <Mic className="h-4 w-4 text-gray-500" />
+                  <Mic className="h-3.5 w-3.5 text-gray-500" />
                 )}
               </Button>
             </div>
@@ -1936,10 +1936,10 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
               className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
             >
               <div
-                className={`max-w-[80%] p-2 rounded-lg text-sm relative group ${
+                className={`max-w-[80%] p-2 text-sm relative group whitespace-normal break-words ${
                   message.type === 'user'
-                    ? 'bg-blue-500 text-white'
-                    : 'bg-gray-100 text-gray-900'
+                    ? 'bg-blue-500 text-white rounded-lg'
+                    : 'bg-gray-100 text-gray-900 rounded-3xl'
                 }`}
               >
                 {message.content}
@@ -2035,9 +2035,9 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 title={isListening ? 'Stop listening' : 'Start voice input'}
               >
                 {isListening ? (
-                  <Mic className="h-4 w-4 text-green-600 animate-pulse" />
+                  <Mic className="h-3.5 w-3.5 text-green-600 animate-pulse" />
                 ) : (
-                  <Mic className="h-4 w-4 text-gray-500" />
+                  <Mic className="h-3.5 w-3.5 text-gray-500" />
                 )}
               </Button>
             </div>
