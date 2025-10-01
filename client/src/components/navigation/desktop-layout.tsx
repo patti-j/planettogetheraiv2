@@ -830,182 +830,188 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         ) : (
           // Expanded oval prompt - flexible layout with text wrapping
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-3xl p-2 flex flex-wrap items-center gap-1.5 min-w-[340px] max-w-[520px]">
-              {/* Agent Selection Button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={() => setIsFloatingBubbleMinimized(true)}
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 relative group"
-                      data-testid="button-minimize-floating-ai"
-                    >
-                      <Sparkles className="w-3.5 h-3.5" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>{selectedFloatingAgent === 'unified' ? 'All Agents' : activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Current Agent'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Agent Selector Dropdown */}
-              <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
-                </SelectTrigger>
-                <SelectContent align="start">
-                  <SelectItem value="unified" className="text-xs">
-                    <div className="flex items-center gap-2">
-                      <Users className="w-3 h-3" />
-                      <span>All Agents</span>
-                    </div>
-                  </SelectItem>
-                  {activeAgents.map((agent) => {
-                    const IconComponent = getAgentIcon(agent.id);
-                    return (
-                      <SelectItem key={agent.id} value={agent.id} className="text-xs">
-                        <div className="flex items-center gap-2">
-                          <IconComponent className="w-3 h-3" />
-                          <span>{agent.displayName}</span>
-                        </div>
-                      </SelectItem>
-                    );
-                  })}
-                </SelectContent>
-              </Select>
-
-              {/* File attachment input (hidden) */}
-              <input
-                ref={floatingFileInputRef}
-                type="file"
-                multiple
-                className="hidden"
-                onChange={handleFloatingFilesSelected}
-                accept=".txt,.md,.json,.csv,.xml,.html,.css,.js,.ts,.tsx,.jsx,.py,.sql,.log,image/*"
-              />
-
-              {/* Clipboard/File Attachment Button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={handleFloatingFileUpload}
-                      size="sm"
-                      variant="ghost"
-                      className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0"
-                      disabled={isFloatingProcessingFiles || isFloatingSending}
-                    >
-                      {isFloatingProcessingFiles ? (
-                        <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <Paperclip className="w-2 h-2" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>Attach files</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Voice Recording Button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      onClick={isFloatingRecording ? stopFloatingListening : startFloatingListening}
-                      size="sm"
-                      variant="ghost"
-                      className={cn(
-                        "rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0",
-                        isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
-                        isFloatingTranscribing && "opacity-50"
-                      )}
-                      disabled={isFloatingTranscribing || isFloatingSending}
-                    >
-                      {isFloatingTranscribing ? (
-                        <div className="w-2.5 h-2.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                      ) : isFloatingRecording ? (
-                        <div className="flex items-center">
-                          <StopCircle className="w-2.5 h-2.5" />
-                          {floatingRecordingTimeLeft > 0 && (
-                            <span className="ml-1 text-xs">{floatingRecordingTimeLeft}s</span>
-                          )}
-                        </div>
-                      ) : (
-                        <Mic className="w-2 h-2" />
-                      )}
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent side="top">
-                    <p>{isFloatingRecording ? `Recording... ${floatingRecordingTimeLeft}s left` : isFloatingTranscribing ? 'Transcribing...' : 'Voice message'}</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-
-              {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
-              <div className="flex-1 min-w-[180px]">
-                <textarea
-                  ref={floatingInputRef as any}
-                  placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
-                  value={floatingPrompt}
-                  onChange={(e) => setFloatingPrompt(e.target.value)}
-                  onKeyPress={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleFloatingSend();
-                    }
-                  }}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
-                  disabled={isFloatingSending}
-                  rows={1}
-                  style={{ minHeight: '24px', maxHeight: '120px' }}
-                  onInput={(e) => {
-                    const target = e.target as HTMLTextAreaElement;
-                    target.style.height = 'auto';
-                    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
-                  }}
-                />
-              </div>
-
-              {/* Attachment Pills */}
-              {floatingAttachments.length > 0 && (
-                <div className="flex gap-1 flex-wrap max-w-[200px]">
-                  {floatingAttachments.map((attachment) => (
-                    <div
-                      key={attachment.id}
-                      className="flex items-center gap-1 bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs max-w-[100px]"
-                    >
-                      <span className="truncate">{attachment.name}</span>
+            <div className="bg-background rounded-3xl p-2 flex flex-col gap-1 min-w-[340px] max-w-[520px]">
+              {/* Top row: Agent selector, input field, and send button */}
+              <div className="flex items-center gap-1.5">
+                {/* Agent Selection Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
                       <Button
-                        onClick={() => removeFloatingAttachment(attachment.id)}
+                        onClick={() => setIsFloatingBubbleMinimized(true)}
                         size="sm"
                         variant="ghost"
-                        className="h-4 w-4 p-0 hover:bg-muted-foreground/20"
+                        className="rounded-full w-7 h-7 p-0 hover:bg-muted flex-shrink-0 relative group"
+                        data-testid="button-minimize-floating-ai"
                       >
-                        ×
+                        <Sparkles className="w-3.5 h-3.5" />
                       </Button>
-                    </div>
-                  ))}
-                </div>
-              )}
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      <p>{selectedFloatingAgent === 'unified' ? 'All Agents' : activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Current Agent'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
 
-              {/* Send Button */}
-              <Button
-                onClick={handleFloatingSend}
-                size="sm"
-                variant="ghost"
-                className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
-                disabled={!floatingPrompt.trim() || isFloatingSending}
-              >
-                {isFloatingSending ? (
-                  <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <Send className="w-3 h-3" />
+                {/* Agent Selector Dropdown */}
+                <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
+                  <SelectTrigger className="w-7 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1">
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="unified" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-3 h-3" />
+                        <span>All Agents</span>
+                      </div>
+                    </SelectItem>
+                    {activeAgents.map((agent) => {
+                      const IconComponent = getAgentIcon(agent.id);
+                      return (
+                        <SelectItem key={agent.id} value={agent.id} className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-3 h-3" />
+                            <span>{agent.displayName}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+
+                {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
+                <div className="flex-1 min-w-[180px]">
+                  <textarea
+                    ref={floatingInputRef as any}
+                    placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
+                    value={floatingPrompt}
+                    onChange={(e) => setFloatingPrompt(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        handleFloatingSend();
+                      }
+                    }}
+                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
+                    disabled={isFloatingSending}
+                    rows={1}
+                    style={{ minHeight: '24px', maxHeight: '120px' }}
+                    onInput={(e) => {
+                      const target = e.target as HTMLTextAreaElement;
+                      target.style.height = 'auto';
+                      target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                    }}
+                  />
+                </div>
+
+                {/* Attachment Pills */}
+                {floatingAttachments.length > 0 && (
+                  <div className="flex gap-1 flex-wrap max-w-[200px]">
+                    {floatingAttachments.map((attachment) => (
+                      <div
+                        key={attachment.id}
+                        className="flex items-center gap-1 bg-muted text-muted-foreground px-2 py-1 rounded-full text-xs max-w-[100px]"
+                      >
+                        <span className="truncate">{attachment.name}</span>
+                        <Button
+                          onClick={() => removeFloatingAttachment(attachment.id)}
+                          size="sm"
+                          variant="ghost"
+                          className="h-4 w-4 p-0 hover:bg-muted-foreground/20"
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </Button>
+
+                {/* Send Button */}
+                <Button
+                  onClick={handleFloatingSend}
+                  size="sm"
+                  variant="ghost"
+                  className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                  disabled={!floatingPrompt.trim() || isFloatingSending}
+                >
+                  {isFloatingSending ? (
+                    <div className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <Send className="w-3 h-3" />
+                  )}
+                </Button>
+              </div>
+
+              {/* Bottom row: Smaller icons for file attachment and voice recording */}
+              <div className="flex items-center gap-2 pl-14">
+                {/* File attachment input (hidden) */}
+                <input
+                  ref={floatingFileInputRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={handleFloatingFilesSelected}
+                  accept=".txt,.md,.json,.csv,.xml,.html,.css,.js,.ts,.tsx,.jsx,.py,.sql,.log,image/*"
+                />
+
+                {/* Clipboard/File Attachment Button - smaller */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={handleFloatingFileUpload}
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full w-5 h-5 p-0 hover:bg-muted flex-shrink-0"
+                        disabled={isFloatingProcessingFiles || isFloatingSending}
+                      >
+                        {isFloatingProcessingFiles ? (
+                          <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Paperclip className="w-3 h-3" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>Attach files</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* Voice Recording Button - smaller */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        onClick={isFloatingRecording ? stopFloatingListening : startFloatingListening}
+                        size="sm"
+                        variant="ghost"
+                        className={cn(
+                          "rounded-full w-5 h-5 p-0 hover:bg-muted flex-shrink-0",
+                          isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
+                          isFloatingTranscribing && "opacity-50"
+                        )}
+                        disabled={isFloatingTranscribing || isFloatingSending}
+                      >
+                        {isFloatingTranscribing ? (
+                          <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                        ) : isFloatingRecording ? (
+                          <div className="flex items-center">
+                            <StopCircle className="w-2 h-2" />
+                            {floatingRecordingTimeLeft > 0 && (
+                              <span className="ml-1 text-xs">{floatingRecordingTimeLeft}s</span>
+                            )}
+                          </div>
+                        ) : (
+                          <Mic className="w-3 h-3" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom">
+                      <p>{isFloatingRecording ? `Recording... ${floatingRecordingTimeLeft}s left` : isFloatingTranscribing ? 'Transcribing...' : 'Voice message'}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
           </div>
         )}
