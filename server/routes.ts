@@ -1493,24 +1493,7 @@ router.post("/monitoring-agent/stop", async (req, res) => {
   }
 });
 
-// Serve Bryntum assets
-router.get("/schedulerpro.umd.js", (req, res) => {
-  try {
-    const jsPath = path.join(process.cwd(), 'attached_assets', 'build', 'thin', 'schedulerpro.module.thin.js');
-    
-    if (!fs.existsSync(jsPath)) {
-      console.error('Bryntum JS file not found at:', jsPath);
-      return res.status(404).send('Bryntum JS file not found');
-    }
-    
-    const jsContent = fs.readFileSync(jsPath, 'utf8');
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.send(jsContent);
-  } catch (error) {
-    console.error('Error serving Bryntum JS:', error);
-    res.status(500).send('Error loading Bryntum JS');
-  }
-});
+// Serve Bryntum assets - Route already defined above, removing duplicate
 
 // Serve Bryntum Production Scheduler HTML  
 router.get("/api/production-scheduler", (req, res) => {
