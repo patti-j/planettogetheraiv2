@@ -947,14 +947,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
               <div className="flex-1 min-w-[180px]">
-                <Input
-                  ref={floatingInputRef}
+                <textarea
+                  ref={floatingInputRef as any}
                   placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
                   value={floatingPrompt}
                   onChange={(e) => setFloatingPrompt(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && handleFloatingSend()}
-                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground w-full"
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleFloatingSend();
+                    }
+                  }}
+                  className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden"
                   disabled={isFloatingSending}
+                  rows={1}
+                  style={{ minHeight: '24px', maxHeight: '120px' }}
+                  onInput={(e) => {
+                    const target = e.target as HTMLTextAreaElement;
+                    target.style.height = 'auto';
+                    target.style.height = Math.min(target.scrollHeight, 120) + 'px';
+                  }}
                 />
               </div>
 
