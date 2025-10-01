@@ -829,8 +829,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           </Button>
         ) : (
           // Expanded oval prompt - flexible layout with text wrapping
-          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-2xl shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-2xl p-2 flex flex-wrap items-center gap-1.5 min-w-[340px] max-w-[520px]">
+          <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
+            <div className="bg-background rounded-3xl p-2 flex flex-wrap items-center gap-1.5 min-w-[340px] max-w-[520px]">
               {/* Agent Selection Button */}
               <TooltipProvider>
                 <Tooltip>
