@@ -1944,7 +1944,11 @@
                             allowOverlap: false, // Strictly prevent overlapping on same resource
                             // Additional constraints
                             scheduleOverlapEvents: false, // Don't allow overlapping during scheduling
-                            constraintResolution: 'honor' // Honor all constraints strictly
+                            constraintResolution: 'honor', // Honor all constraints strictly
+                            // Enable automatic constraint checking
+                            strictDependencies: true,
+                            // Ensure operations don't overlap on same resource
+                            manuallyScheduled: false // Allow engine to auto-adjust for constraints
                         }
                     },
 
@@ -2715,9 +2719,9 @@
                 
                 // Scheduling Algorithm Implementations
                 async function asapScheduling() {
-                    // ASAP (As Soon As Possible) - Forward scheduling with resource constraints
+                    // ASAP (As Soon As Possible) - Forward scheduling with STRICT resource constraints
                     // CRITICAL: This ensures NO overlapping operations on the same resource
-                    console.log('🚀 Starting ASAP scheduling...');
+                    console.log('🚀 Starting ASAP scheduling with strict NO-OVERLAP enforcement...');
                     
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
@@ -2726,7 +2730,7 @@
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
                     
-                    // Group events by resource
+                    // Group events by resource to ensure NO OVERLAPS per resource
                     const resourceEvents = {};
                     events.forEach(event => {
                         if (!resourceEvents[event.resourceId]) {
@@ -2737,43 +2741,79 @@
                     
                     console.log(`  Resources involved: ${Object.keys(resourceEvents).length}`);
                     
-                    // Schedule each resource's operations sequentially (NO OVERLAPS!)
+                    // Schedule each resource's operations STRICTLY SEQUENTIALLY (NO OVERLAPS!)
                     Object.keys(resourceEvents).forEach(resourceId => {
                         const resEvents = resourceEvents[resourceId];
                         const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
                         
                         console.log(`\n  Scheduling ${resEvents.length} operations for ${resourceName}:`);
                         
-                        // Sort events by priority/order if needed
+                        // Sort events by priority/dependencies
                         resEvents.sort((a, b) => {
-                            // Prioritize by constraint date if exists
-                            if (a.constraintDate && !b.constraintDate) return -1;
-                            if (!a.constraintDate && b.constraintDate) return 1;
-                            if (a.constraintDate && b.constraintDate) {
-                                return a.constraintDate.getTime() - b.constraintDate.getTime();
-                            }
-                            // Otherwise maintain current order by start date
-                            return (a.startDate?.getTime() || 0) - (b.startDate?.getTime() || 0);
+                            // Check for dependencies first
+                            const aDeps = scheduler.dependencyStore?.getOutgoingDependenciesForEvent(a) || [];
+                            const bDeps = scheduler.dependencyStore?.getOutgoingDependenciesForEvent(b) || [];
+                            
+                            // If a depends on b, b should come first
+                            if (aDeps.some(dep => dep.to === b)) return 1;
+                            // If b depends on a, a should come first  
+                            if (bDeps.some(dep => dep.to === a)) return -1;
+                            
+                            // Otherwise maintain order by existing start date or ID
+                            return (a.startDate?.getTime() || a.id) - (b.startDate?.getTime() || b.id);
                         });
                         
                         // Track the next available time for this resource (CRITICAL for no overlaps)
                         let nextAvailableTime = new Date(baseDate);
                         
+                        // CRITICAL FIX: Get ALL existing operations on this resource to avoid overlaps
+                        const getAllResourceEvents = () => {
+                            return scheduler.eventStore.query(e => 
+                                e.resourceId === resourceId && 
+                                e.startDate && e.endDate
+                            ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
+                        };
+                        
                         resEvents.forEach((event, idx) => {
-                            // Calculate start time (must be after resource becomes free)
-                            const earliestStart = event.constraintDate || nextAvailableTime;
-                            const actualStart = new Date(Math.max(earliestStart.getTime(), nextAvailableTime.getTime()));
+                            const durationMs = event.duration * 60 * 60 * 1000;
                             
-                            // Set the event dates
-                            event.startDate = actualStart;
+                            // Find next available slot that doesn't overlap with ANY existing operation
+                            let foundSlot = false;
+                            let proposedStart = new Date(Math.max(
+                                (event.constraintDate || nextAvailableTime).getTime(), 
+                                nextAvailableTime.getTime()
+                            ));
+                            let proposedEnd = new Date(proposedStart.getTime() + durationMs);
+                            let attempts = 0;
+                            
+                            while (!foundSlot && attempts < 100) {
+                                attempts++;
+                                foundSlot = true;
+                                
+                                // Check all existing events on this resource for conflicts
+                                const existingEvents = getAllResourceEvents();
+                                for (const existing of existingEvents) {
+                                    if (existing.id === event.id) continue; // Skip self
+                                    
+                                    // Check for overlap: proposedStart < existingEnd AND proposedEnd > existingStart
+                                    if (proposedStart < existing.endDate && proposedEnd > existing.startDate) {
+                                        // Conflict! Move to after this existing event with buffer
+                                        proposedStart = new Date(existing.endDate.getTime() + 30 * 60 * 1000);
+                                        proposedEnd = new Date(proposedStart.getTime() + durationMs);
+                                        foundSlot = false;
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // Set the event dates with guaranteed no overlap
+                            event.startDate = proposedStart;
+                            event.endDate = proposedEnd;
                             event.constraintType = 'startnoearlierthan';
-                            event.constraintDate = actualStart;
+                            event.constraintDate = proposedStart;
                             event.manuallyScheduled = false;
                             
-                            const durationMs = event.duration * 60 * 60 * 1000;
-                            event.endDate = new Date(event.startDate.getTime() + durationMs);
-                            
-                            // CRITICAL: Update next available time with buffer to PREVENT overlaps
+                            // Update next available time with buffer to PREVENT overlaps
                             nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                             
                             console.log(`    ${idx + 1}. "${event.name}" -> ${event.startDate.toLocaleString()} to ${event.endDate.toLocaleString()}`);
@@ -2807,8 +2847,8 @@
                 }
                 
                 async function alapScheduling() {
-                    // ALAP (As Late As Possible) - Backward scheduling from due date
-                    console.log('🚀 Starting ALAP scheduling...');
+                    // ALAP (As Late As Possible) - Backward scheduling with STRICT NO-OVERLAP enforcement
+                    console.log('🚀 Starting ALAP scheduling with strict NO-OVERLAP enforcement...');
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
@@ -2826,23 +2866,87 @@
                     
                     Object.keys(resourceEvents).forEach(resourceId => {
                         const resEvents = resourceEvents[resourceId];
-                        let currentEndTime = new Date(dueDate);
+                        const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
                         
-                        resEvents.reverse().forEach(event => {
-                            const durationMs = event.duration * 60 * 60 * 1000;
-                            const newEnd = new Date(currentEndTime);
-                            const newStart = new Date(newEnd.getTime() - durationMs);
+                        console.log(`\n  Scheduling ${resEvents.length} operations for ${resourceName} (backward):`);
+                        
+                        // Sort in reverse order for backward scheduling
+                        resEvents.sort((a, b) => {
+                            // Check dependencies for proper ordering
+                            const aDeps = scheduler.dependencyStore?.getIncomingDependenciesForEvent(a) || [];
+                            const bDeps = scheduler.dependencyStore?.getIncomingDependenciesForEvent(b) || [];
                             
-                            // Ensure within working hours
-                            if (newStart.getHours() < 7) {
-                                newEnd.setDate(newEnd.getDate() - 1);
-                                newEnd.setHours(17, 0, 0, 0);
-                                newStart.setTime(newEnd.getTime() - durationMs);
+                            // If a has b as predecessor, a should come after (scheduled earlier in backward)
+                            if (aDeps.some(dep => dep.from === b)) return -1;
+                            // If b has a as predecessor, b should come after
+                            if (bDeps.some(dep => dep.from === a)) return 1;
+                            
+                            // Otherwise maintain reverse order
+                            return (b.startDate?.getTime() || b.id) - (a.startDate?.getTime() || a.id);
+                        });
+                        
+                        let latestFinishTime = new Date(dueDate);
+                        
+                        // Get ALL existing operations on this resource to avoid overlaps
+                        const getAllResourceEvents = () => {
+                            return scheduler.eventStore.query(e => 
+                                e.resourceId === resourceId && 
+                                e.startDate && e.endDate
+                            ).sort((a, b) => b.startDate.getTime() - a.startDate.getTime()); // Sort descending for backward
+                        };
+                        
+                        resEvents.forEach((event, idx) => {
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            
+                            // Find latest available slot that doesn't overlap with ANY existing operation
+                            let foundSlot = false;
+                            let proposedEnd = new Date(latestFinishTime);
+                            let proposedStart = new Date(proposedEnd.getTime() - durationMs);
+                            let attempts = 0;
+                            
+                            while (!foundSlot && attempts < 100) {
+                                attempts++;
+                                foundSlot = true;
+                                
+                                // Ensure within working hours
+                                if (proposedEnd.getHours() > 17 || (proposedEnd.getHours() === 17 && proposedEnd.getMinutes() > 0)) {
+                                    proposedEnd.setHours(17, 0, 0, 0);
+                                    proposedStart = new Date(proposedEnd.getTime() - durationMs);
+                                }
+                                
+                                if (proposedStart.getHours() < 7) {
+                                    proposedEnd.setDate(proposedEnd.getDate() - 1);
+                                    proposedEnd.setHours(17, 0, 0, 0);
+                                    proposedStart = new Date(proposedEnd.getTime() - durationMs);
+                                }
+                                
+                                // Check all existing events on this resource for conflicts
+                                const existingEvents = getAllResourceEvents();
+                                for (const existing of existingEvents) {
+                                    if (existing.id === event.id) continue; // Skip self
+                                    
+                                    // Check for overlap: proposedStart < existingEnd AND proposedEnd > existingStart
+                                    if (proposedStart < existing.endDate && proposedEnd > existing.startDate) {
+                                        // Conflict! Move to before this existing event with buffer
+                                        proposedEnd = new Date(existing.startDate.getTime() - 30 * 60 * 1000);
+                                        proposedStart = new Date(proposedEnd.getTime() - durationMs);
+                                        foundSlot = false;
+                                        break;
+                                    }
+                                }
                             }
                             
-                            event.startDate = newStart;
-                            event.endDate = newEnd;
-                            currentEndTime = new Date(newStart.getTime() - 30 * 60 * 1000); // 30 min buffer
+                            // Set the event dates with guaranteed no overlap
+                            event.startDate = proposedStart;
+                            event.endDate = proposedEnd;
+                            event.constraintType = 'finishnolaterthan';
+                            event.constraintDate = proposedEnd;
+                            event.manuallyScheduled = false;
+                            
+                            // Update latest finish time with buffer for next operation
+                            latestFinishTime = new Date(event.startDate.getTime() - 30 * 60 * 1000); // 30 min buffer
+                            
+                            console.log(`    ${idx + 1}. "${event.name}" -> ${event.startDate.toLocaleString()} to ${event.endDate.toLocaleString()}`);
                         });
                     });
                     

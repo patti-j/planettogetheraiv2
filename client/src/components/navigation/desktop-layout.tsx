@@ -832,7 +832,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
             <div className="bg-background rounded-3xl p-1.5 flex flex-col gap-0.5 min-w-[340px] max-w-[520px]">
               {/* Top row: Agent selector, input field, and send button */}
-              <div className="flex items-center gap-0.5">
+              <div className="flex items-center gap-0">
                 {/* Agent Selection Button */}
                 <TooltipProvider>
                   <Tooltip>
