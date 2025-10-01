@@ -930,7 +930,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   onClick={handleFloatingSend}
                   size="sm"
                   variant="ghost"
-                  className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0"
+                  className="rounded-full w-8 h-8 p-0 hover:bg-muted flex-shrink-0 self-center"
                   disabled={!floatingPrompt.trim() || isFloatingSending}
                 >
                   {isFloatingSending ? (
