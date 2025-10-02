@@ -3004,10 +3004,13 @@
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
-                    // Configure project for backward scheduling
-                    project.schedulingDirection = 'Backward';
-                    project.constraintType = 'finishnolaterthan';
-                    project.constraintDate = dueDate;
+                    // Configure project for backward scheduling using proper API
+                    await project.setDirection('Backward');
+                    project.setConstraint({ 
+                        type: 'finishnolaterthan', 
+                        date: dueDate 
+                    });
+                    await project.propagate();
                     
                     // First ensure dependencies exist between sequential operations on same resource
                     const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
