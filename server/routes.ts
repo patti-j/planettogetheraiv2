@@ -723,42 +723,63 @@ router.get("/api/recent-pages", async (req, res) => {
     const authHeader = req.headers.authorization;
     let userId: number | null = null;
     
+    // In development mode, provide automatic authentication
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       
-      // Check token store
-      global.tokenStore = global.tokenStore || new Map();
-      let tokenData = global.tokenStore.get(token);
-      
-      // If not in memory store, try to reconstruct from token (for server restart resilience)
-      if (!tokenData) {
+      // For JWT tokens, decode and verify
+      if (token.includes('.')) {
         try {
-          const decoded = Buffer.from(token, 'base64').toString();
-          const [tokenUserId, timestamp] = decoded.split(':');
-          
-          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-            const tokenAge = Date.now() - Number(timestamp);
-            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key-change-in-production') as any;
+          userId = decoded.userId;
+        } catch (err) {
+          // JWT verification failed, try other methods
+        }
+      }
+      
+      // Check token store
+      if (!userId) {
+        global.tokenStore = global.tokenStore || new Map();
+        let tokenData = global.tokenStore.get(token);
+        
+        // If not in memory store, try to reconstruct from token (for server restart resilience)
+        if (!tokenData) {
+          try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [tokenUserId, timestamp] = decoded.split(':');
             
-            if (tokenAge < maxAge) {
-              // Verify user exists in database
-              const user = await storage.getUser(Number(tokenUserId));
-              if (user && user.isActive) {
-                userId = Number(tokenUserId);
+            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+              const tokenAge = Date.now() - Number(timestamp);
+              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+              
+              if (tokenAge < maxAge) {
+                // Verify user exists in database
+                const user = await storage.getUser(Number(tokenUserId));
+                if (user && user.isActive) {
+                  userId = Number(tokenUserId);
+                }
               }
             }
+          } catch (err) {
+            // Invalid token format
           }
-        } catch (err) {
-          // Invalid token format
+        } else if (tokenData.expiresAt > Date.now()) {
+          userId = tokenData.userId;
         }
-      } else if (tokenData.expiresAt > Date.now()) {
-        userId = tokenData.userId;
       }
     }
     
     // Fallback to session
     if (!userId) {
       userId = (req.session as any)?.userId;
+    }
+    
+    // In development mode, default to admin user if no authentication
+    if (!userId && isDevelopment) {
+      console.log('🔧 Development mode: Providing automatic admin access for recent pages');
+      userId = 1; // Admin user ID
     }
     
     if (!userId) {
