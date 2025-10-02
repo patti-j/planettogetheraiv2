@@ -2103,6 +2103,13 @@
                     project: {
                         autoLoad: false,
                         autoSync: false,
+                        // Load the data
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        // Enable automatic scheduling
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true,
                         // Use ASAP scheduling with strict resource constraints
                         schedulingEngine: {
                             multiplePerResource: false, // Only one task at a time per resource
@@ -2149,8 +2156,8 @@
                         
                         // 5. EventBuffer - Buffer zones before/after events
                         eventBuffer: {
-                            tooltipTemplate: ({ duration, startDate, endDate }) => 
-                                `Buffer: ${duration} hours`
+                            // Enable buffer zones
+                            disabled: false
                         },
                         
                         // 6. EventDrag - Enable drag and drop with tooltip
@@ -2318,10 +2325,7 @@
                         
                         // 13. ResourceNonWorkingTime - Show non-working time for resources
                         resourceNonWorkingTime: {
-                            maxTimeAxisUnit: 'year', // Maximum unit to show non-working time
-                            // Define resource-specific non-working time
-                            tooltipTemplate: ({ startDate, endDate, resource }) => 
-                                `${resource.name} is not available`
+                            maxTimeAxisUnit: 'year' // Maximum unit to show non-working time
                         },
                         
                         // 14. TaskEdit - Advanced task editing dialog
@@ -2366,8 +2370,7 @@
                         // 15. TimeSpanHighlight - Highlight specific time spans
                         timeSpanHighlight: {
                             // Highlight weekends
-                            tooltipTemplate: ({ startDate, endDate }) => 
-                                `Special period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+                            disabled: false
                         },
                         
                         // 16. Versions - Support for version control/undo-redo
@@ -2439,8 +2442,8 @@
                                     text: 'Mark as Complete',
                                     icon: 'b-fa b-fa-check',
                                     weight: 300,
-                                    onItem({ eventRecord }) {
-                                        eventRecord.percentDone = 100;
+                                    onItem: function(context) {
+                                        context.eventRecord.percentDone = 100;
                                     }
                                 },
                                 addDependency: {
@@ -2483,10 +2486,11 @@
                         // 23. Summary - Show summary row
                         summary: {
                             showTooltip: true,
-                            renderer: ({ events }) => {
-                                const totalHours = events.reduce((sum, event) => 
-                                    sum + (event.duration || 0), 0);
-                                return `Total: ${totalHours}h`;
+                            renderer: function(context) {
+                                const totalHours = context.events.reduce(function(sum, event) {
+                                    return sum + (event.duration || 0);
+                                }, 0);
+                                return 'Total: ' + totalHours + 'h';
                             }
                         },
                         
@@ -2543,17 +2547,6 @@
                                 </div>
                             `
                         };
-                    },
-
-                    project: {
-                        // Use correct property names (not deprecated)
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
-                        
-                        // Enable automatic scheduling
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true
                     },
 
                     startDate: (() => {

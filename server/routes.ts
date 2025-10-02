@@ -1308,7 +1308,7 @@ router.get("/pt-operations", async (req, res) => {
 });
 
 // PT Dependencies endpoint - reads from ptjobsuccessormanufacturingorders table
-router.get("/pt-dependencies", async (req, res) => {
+router.get("/api/pt-dependencies", async (req, res) => {
   try {
     console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
     
@@ -1427,7 +1427,7 @@ router.get("/pt-resources", async (req, res) => {
 // NOTE: PT Dependencies endpoint is defined earlier in the file using direct SQL query
 
 // PT Resource Capabilities endpoint - returns resources with their capabilities
-router.get("/resources-with-capabilities", async (req, res) => {
+router.get("/api/resources-with-capabilities", async (req, res) => {
   try {
     // Fetch all resources with their capabilities
     const rawData = await db.execute(sql`
@@ -1435,7 +1435,6 @@ router.get("/resources-with-capabilities", async (req, res) => {
         r.id as resource_id,
         r.name as resource_name,
         r.external_id,
-        r.resource_type,
         r.active,
         COALESCE(
           STRING_AGG(rc.capability_id::text, ',' ORDER BY rc.capability_id),
@@ -1444,7 +1443,7 @@ router.get("/resources-with-capabilities", async (req, res) => {
       FROM ptresources r
       LEFT JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
       WHERE r.active = true
-      GROUP BY r.id, r.name, r.external_id, r.resource_type, r.active
+      GROUP BY r.id, r.name, r.external_id, r.active
       ORDER BY r.id
     `);
 
@@ -1452,7 +1451,7 @@ router.get("/resources-with-capabilities", async (req, res) => {
       id: row.resource_id,
       name: row.resource_name,
       external_id: row.external_id,
-      category: row.resource_type || 'Manufacturing',
+      category: 'Manufacturing',
       active: row.active,
       capabilities: row.capabilities ? row.capabilities.split(',').map(Number) : []
     }));
