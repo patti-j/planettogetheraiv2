@@ -3054,6 +3054,37 @@ router.get("/api/widgets/:id", async (req, res) => {
   }
 });
 
+// Bulk clear all widgets endpoint - deactivates all widgets at once
+router.post("/api/canvas/widgets/clear-all", async (req, res) => {
+  // Development bypass - skip authentication in dev mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔧 [Clear All Widgets] Development mode: Skipping authentication");
+  } else {
+    // In production, require authentication
+    await new Promise((resolve, reject) => {
+      requireAuth(req, res, (error: any) => {
+        if (error) reject(error);
+        else resolve(undefined);
+      });
+    });
+  }
+
+  try {
+    console.log("🧹 [Clear All Widgets] Deactivating ALL active widgets...");
+    
+    // Bulk update - set all active widgets to inactive
+    const result = await db.update(widgets)
+      .set({ isActive: false })
+      .where(eq(widgets.isActive, true));
+
+    console.log("✅ [Clear All Widgets] Successfully deactivated all widgets");
+    res.json({ success: true, message: "All widgets cleared" });
+  } catch (error) {
+    console.error("❌ [Clear All Widgets] Error clearing widgets:", error);
+    res.status(500).json({ error: "Failed to clear all widgets" });
+  }
+});
+
 // Widget visibility endpoint - missing but needed for canvas clear functionality
 router.put("/api/canvas/widgets/:id/visibility", async (req, res) => {
   // Development bypass - skip authentication in dev mode

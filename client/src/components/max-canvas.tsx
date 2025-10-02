@@ -122,36 +122,27 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
   console.log('MaxCanvas rendered with items:', canvasItems, 'isVisible:', isVisible);
 
-  // Clear all widgets mutation
+  // Clear all widgets mutation - uses bulk clear endpoint
   const clearAllWidgets = useMutation({
     mutationFn: async () => {
-      // Get all current widgets
-      const widgets = dbWidgets as any[];
-      if (!widgets || widgets.length === 0) return;
-
-      // Hide all widgets by setting their visibility to false  
-      const hidePromises = widgets.map(async (widget) => {
-        const response = await fetch(`/api/canvas/widgets/${widget.id}/visibility`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ visible: false })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Failed to hide widget ${widget.id}`);
-        }
-        
-        return response.json();
+      // Use the bulk clear endpoint to deactivate ALL widgets at once
+      const response = await fetch('/api/canvas/widgets/clear-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
       });
-
-      await Promise.all(hidePromises);
+      
+      if (!response.ok) {
+        throw new Error('Failed to clear all widgets');
+      }
+      
+      return response.json();
     },
     onSuccess: () => {
       // Invalidate the widgets query to refresh the canvas
       queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
       setCanvasItems([]);
       setShowClearConfirmation(false);
-      toast({ title: "Canvas cleared successfully" });
+      toast({ title: "Canvas cleared successfully - all widgets hidden" });
     },
     onError: (error) => {
       console.error('Error clearing canvas:', error);
