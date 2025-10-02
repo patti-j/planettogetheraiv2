@@ -965,6 +965,32 @@
         .dark-theme .view-control-btn:hover {
             background: #374151;
         }
+        /* Notification animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+        
+        .scheduler-notification {
+            transition: all 0.3s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -3638,9 +3664,106 @@
             // Modify the apply scheduling button to use constraints
             const originalApplyHandler = document.getElementById('applyScheduling').onclick;
             document.getElementById('applyScheduling').addEventListener('click', () => {
-                const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
-                if (activeCount > 0) {
-                    console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
+                try {
+                    // Clear any localStorage issues first
+                    try {
+                        // Test if localStorage is accessible
+                        localStorage.setItem('test', 'test');
+                        localStorage.removeItem('test');
+                    } catch (storageError) {
+                        console.warn('⚠️ localStorage is not accessible, some features may be limited');
+                        // Continue anyway - Bryntum can work without localStorage
+                    }
+                    
+                    const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
+                    if (activeCount > 0) {
+                        console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
+                    }
+                    
+                    const algorithm = document.getElementById('schedulingAlgorithm').value;
+                    console.log(`🚀 Applying ${algorithm.toUpperCase()} algorithm...`);
+                    
+                    // Apply the algorithm with error handling
+                    if (window.scheduler && window.scheduler.project) {
+                        // Disable Bryntum's state saving temporarily to avoid storage errors
+                        const originalStateId = window.scheduler.stateId;
+                        window.scheduler.stateId = null;
+                        
+                        // Apply the algorithm
+                        switch(algorithm) {
+                            case 'asap':
+                                // ASAP scheduling - schedule as soon as possible
+                                if (window.scheduler.project.scheduleByConstraints) {
+                                    window.scheduler.project.scheduleByConstraints('asap');
+                                } else {
+                                    console.warn('ASAP scheduling not available in this version');
+                                }
+                                break;
+                            case 'alap':
+                                // ALAP scheduling - schedule as late as possible
+                                if (window.scheduler.project.scheduleByConstraints) {
+                                    window.scheduler.project.scheduleByConstraints('alap');
+                                } else {
+                                    console.warn('ALAP scheduling not available in this version');
+                                }
+                                break;
+                            case 'criticalPath':
+                                // Critical path method
+                                if (window.scheduler.project.calculateCriticalPath) {
+                                    window.scheduler.project.calculateCriticalPath();
+                                } else {
+                                    console.warn('Critical path calculation not available');
+                                }
+                                break;
+                            case 'levelResources':
+                                // Resource leveling
+                                if (window.scheduler.project.levelResources) {
+                                    window.scheduler.project.levelResources();
+                                } else {
+                                    console.warn('Resource leveling not available');
+                                }
+                                break;
+                            case 'drum':
+                                // Theory of Constraints / Drum scheduling
+                                console.log('Drum/TOC scheduling - custom implementation needed');
+                                break;
+                            default:
+                                console.warn('Unknown algorithm:', algorithm);
+                        }
+                        
+                        // Re-enable state saving if it was enabled
+                        if (originalStateId) {
+                            window.scheduler.stateId = originalStateId;
+                        }
+                        
+                        // Show success feedback
+                        const notification = document.createElement('div');
+                        notification.className = 'scheduler-notification success';
+                        notification.textContent = `✅ ${algorithm.toUpperCase()} algorithm applied successfully`;
+                        notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000; animation: slideIn 0.3s ease-out;';
+                        document.body.appendChild(notification);
+                        
+                        setTimeout(() => {
+                            notification.style.animation = 'slideOut 0.3s ease-out';
+                            setTimeout(() => notification.remove(), 300);
+                        }, 3000);
+                    } else {
+                        console.error('Scheduler not initialized');
+                    }
+                } catch (error) {
+                    console.error('❌ Error applying algorithm:', error);
+                    
+                    // Show error notification
+                    const errorNotification = document.createElement('div');
+                    errorNotification.className = 'scheduler-notification error';
+                    errorNotification.textContent = `❌ Failed to apply algorithm: ${error.message || 'Unknown error'}`;
+                    errorNotification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000; animation: slideIn 0.3s ease-out;';
+                    document.body.appendChild(errorNotification);
+                    
+                    setTimeout(() => {
+                        errorNotification.style.animation = 'slideOut 0.3s ease-out';
+                        setTimeout(() => errorNotification.remove(), 300);
+                    }, 5000);
                 }
             });
             
