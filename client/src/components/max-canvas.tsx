@@ -43,7 +43,8 @@ import {
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
 import { useMaxDock, CanvasItem } from '@/contexts/MaxDockContext';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -121,15 +122,55 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
   console.log('MaxCanvas rendered with items:', canvasItems, 'isVisible:', isVisible);
 
+  // Clear all widgets mutation
+  const clearAllWidgets = useMutation({
+    mutationFn: async () => {
+      // Get all current widgets
+      const widgets = dbWidgets as any[];
+      if (!widgets || widgets.length === 0) return;
+
+      // Hide all widgets by setting their visibility to false  
+      const hidePromises = widgets.map(async (widget) => {
+        const response = await fetch(`/api/canvas/widgets/${widget.id}/visibility`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ visible: false })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to hide widget ${widget.id}`);
+        }
+        
+        return response.json();
+      });
+
+      await Promise.all(hidePromises);
+    },
+    onSuccess: () => {
+      // Invalidate the widgets query to refresh the canvas
+      queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+      setCanvasItems([]);
+      setShowClearConfirmation(false);
+      toast({ title: "Canvas cleared successfully" });
+    },
+    onError: (error) => {
+      console.error('Error clearing canvas:', error);
+      toast({ 
+        title: "Error clearing canvas", 
+        description: "Failed to clear all widgets. Please try again.",
+        variant: "destructive"
+      });
+      setShowClearConfirmation(false);
+    }
+  });
+
   // Clear items function with confirmation
   const handleClearCanvas = () => {
     setShowClearConfirmation(true);
   };
 
   const confirmClearCanvas = () => {
-    setCanvasItems([]);
-    setShowClearConfirmation(false);
-    toast({ title: "Canvas cleared" });
+    clearAllWidgets.mutate();
   };
 
   const cancelClearCanvas = () => {
