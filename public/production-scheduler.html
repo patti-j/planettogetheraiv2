@@ -2366,11 +2366,12 @@
                 });
                 
                 // ============================================
-                // NATIVE HTML5 DRAG AND DROP IMPLEMENTATION
-                // Simpler approach using native browser APIs + Bryntum scheduler methods
+                // BRYNTUM DRAGHELPER IMPLEMENTATION
+                // Using Bryntum's DragHelper class for proper integration
+                // Based on Bryntum documentation: https://bryntum.com/products/schedulerpro/examples/drag-unplanned-tasks/
                 // ============================================
                 
-                console.log('🎯 Initializing native drag and drop for operations palette...');
+                console.log('🎯 Initializing Bryntum DragHelper for operations palette...');
                 
                 // Define operation templates for the palette
                 const operationTemplates = [
@@ -2385,13 +2386,13 @@
                     { id: 'pasteurization', name: 'Pasteurization', duration: 1, durationUnit: 'hour', color: '#FF9800' }
                 ];
                 
-                // Populate the operations palette with draggable elements
+                // Populate the operations palette (without native drag attributes)
                 const paletteContent = document.getElementById('paletteContent');
                 if (paletteContent) {
                     operationTemplates.forEach(template => {
                         const templateEl = document.createElement('div');
                         templateEl.className = 'operation-template';
-                        templateEl.draggable = true; // Enable native HTML5 drag
+                        // NO draggable=true - Bryntum DragHelper will handle this
                         templateEl.dataset.templateId = template.id;
                         templateEl.dataset.operationName = template.name;
                         templateEl.dataset.duration = template.duration;
@@ -2404,100 +2405,137 @@
                             <div class="drag-icon">⋮⋮</div>
                         `;
                         
-                        // Native HTML5 dragstart handler
-                        templateEl.addEventListener('dragstart', (e) => {
-                            console.log('🎯 Drag started:', template.name);
-                            e.dataTransfer.effectAllowed = 'copy';
-                            e.dataTransfer.setData('application/json', JSON.stringify({
-                                name: template.name,
-                                duration: template.duration,
-                                durationUnit: template.durationUnit,
-                                eventColor: template.color,
-                                percentDone: 0
-                            }));
-                            templateEl.style.opacity = '0.5';
-                        });
-                        
-                        templateEl.addEventListener('dragend', () => {
-                            templateEl.style.opacity = '1';
-                            console.log('🏁 Drag ended');
-                        });
-                        
                         paletteContent.appendChild(templateEl);
                     });
-                    console.log('✅ Operations palette populated with', operationTemplates.length, 'draggable templates');
+                    console.log('✅ Operations palette populated with', operationTemplates.length, 'templates');
                 } else {
                     console.error('❌ Palette content element not found');
                 }
                 
-                // Set up drop zones on scheduler using native HTML5 drop events
-                const schedulerContainer = document.getElementById('scheduler');
-                if (schedulerContainer) {
-                    schedulerContainer.addEventListener('dragover', (e) => {
-                        e.preventDefault(); // Allow drop
-                        e.dataTransfer.dropEffect = 'copy';
-                    });
+                // Initialize Bryntum DragHelper following documentation pattern
+                // Check if DragHelper is available in the Bryntum namespace
+                let dragHelper = null;
+                
+                try {
+                    // Try to access DragHelper from bryntum namespace
+                    const DragHelper = bryntum.schedulerpro?.DragHelper || bryntum.core?.DragHelper;
                     
-                    schedulerContainer.addEventListener('drop', (e) => {
-                        e.preventDefault();
-                        console.log('🎯 Drop event on scheduler');
+                    if (DragHelper) {
+                        console.log('✅ Found Bryntum DragHelper class');
                         
-                        try {
-                            // Get the operation data from drag transfer
-                            const operationData = JSON.parse(e.dataTransfer.getData('application/json'));
-                            console.log('📦 Operation data:', operationData);
+                        // Create DragHelper instance following Bryntum pattern
+                        dragHelper = new DragHelper({
+                            // Clone the dragged element instead of moving it
+                            cloneTarget: true,
                             
-                            // Get the drop coordinates
-                            const schedulerRect = scheduler.element.getBoundingClientRect();
-                            const x = e.clientX - schedulerRect.left;
-                            const y = e.clientY - schedulerRect.top;
+                            // Don't auto-size the cloned element
+                            autoSizeClonedTarget: false,
                             
-                            console.log('📍 Drop coordinates:', { x, y });
+                            // Allow drops on scheduler timeline area
+                            dropTargetSelector: '.b-sch-timeaxis-cell, .b-timeline-subgrid, .b-grid-row',
                             
-                            // Convert coordinates to scheduler date/resource using Bryntum methods
-                            const date = scheduler.getDateFromCoordinate(x, 'horizontal', true);
-                            const resourceRecord = scheduler.resolveResourceRecord({ y });
+                            // Only allow dragging operation templates
+                            targetSelector: '.operation-template',
                             
-                            console.log('📅 Resolved drop location:', { 
-                                date: date ? date.toISOString() : 'null', 
-                                resource: resourceRecord ? resourceRecord.name : 'null' 
-                            });
+                            // Create custom drag proxy
+                            createProxy(element) {
+                                const proxy = document.createElement('div');
+                                proxy.className = 'operation-drag-proxy';
+                                proxy.style.cssText = 'padding: 8px; background: #fff; border: 2px solid #2196F3; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);';
+                                proxy.textContent = element.querySelector('.name')?.textContent || 'Operation';
+                                return proxy;
+                            },
                             
-                            if (!date || !resourceRecord) {
-                                console.warn('❌ Could not resolve drop location - may have dropped outside grid');
-                                return;
+                            // Lifecycle callbacks
+                            listeners: {
+                                // When drag starts
+                                dragstart({ source, context }) {
+                                    const template = context.grabbed.dataset;
+                                    
+                                    // Store operation data in context
+                                    context.operationData = {
+                                        name: template.operationName,
+                                        duration: parseFloat(template.duration),
+                                        durationUnit: template.durationUnit,
+                                        eventColor: template.eventColor,
+                                        percentDone: 0
+                                    };
+                                    
+                                    console.log('🎯 Started dragging:', context.operationData.name);
+                                    
+                                    // Add visual feedback
+                                    scheduler.element.classList.add('b-dragging-event');
+                                },
+                                
+                                // When dropped
+                                drop({ source, context, event }) {
+                                    console.log('📍 Drop event triggered');
+                                    
+                                    if (!context.valid || !context.operationData) {
+                                        console.log('❌ Invalid drop');
+                                        scheduler.element.classList.remove('b-dragging-event');
+                                        return;
+                                    }
+                                    
+                                    try {
+                                        // Get drop coordinates relative to scheduler
+                                        const schedulerRect = scheduler.element.getBoundingClientRect();
+                                        const x = event.clientX - schedulerRect.left;
+                                        const y = event.clientY - schedulerRect.top;
+                                        
+                                        // Use Bryntum methods to resolve date and resource
+                                        const date = scheduler.getDateFromCoordinate(x, 'round');
+                                        const resourceRecord = scheduler.resolveResourceRecord(event.target) || 
+                                                                scheduler.resolveResourceRecord({ y });
+                                        
+                                        console.log('📅 Resolved location:', { 
+                                            date: date ? date.toISOString() : null, 
+                                            resource: resourceRecord ? resourceRecord.name : null 
+                                        });
+                                        
+                                        if (date && resourceRecord) {
+                                            // Create new event in scheduler
+                                            const newEvent = {
+                                                id: `template-${Date.now()}`,
+                                                name: context.operationData.name,
+                                                startDate: date,
+                                                duration: context.operationData.duration,
+                                                durationUnit: context.operationData.durationUnit,
+                                                resourceId: resourceRecord.id,
+                                                eventColor: context.operationData.eventColor,
+                                                percentDone: context.operationData.percentDone || 0,
+                                                draggable: true,
+                                                resizable: true
+                                            };
+                                            
+                                            console.log('✨ Creating event:', newEvent);
+                                            scheduler.eventStore.add(newEvent);
+                                            console.log('✅ Event created successfully');
+                                            
+                                            updateStatus(); // Update metrics
+                                        }
+                                    } catch (error) {
+                                        console.error('❌ Error creating event:', error);
+                                    }
+                                    
+                                    scheduler.element.classList.remove('b-dragging-event');
+                                },
+                                
+                                // When drag is cancelled
+                                abort({ source, context }) {
+                                    console.log('🚫 Drag cancelled');
+                                    scheduler.element.classList.remove('b-dragging-event');
+                                }
                             }
-                            
-                            // Create new event
-                            const newEvent = {
-                                id: `template-${Date.now()}`,
-                                name: operationData.name,
-                                startDate: date,
-                                duration: operationData.duration,
-                                durationUnit: operationData.durationUnit,
-                                resourceId: resourceRecord.id,
-                                eventColor: operationData.eventColor,
-                                percentDone: operationData.percentDone,
-                                draggable: true,
-                                resizable: true
-                            };
-                            
-                            console.log('✨ Creating new event:', newEvent);
-                            
-                            // Add event to scheduler
-                            scheduler.eventStore.add(newEvent);
-                            
-                            console.log('✅ Successfully created event from template');
-                            updateStatus(); // Update metrics
-                            
-                        } catch (error) {
-                            console.error('❌ Error creating event from template:', error);
-                        }
-                    });
-                    
-                    console.log('✅ Native HTML5 drag and drop initialized on scheduler');
-                } else {
-                    console.error('❌ Scheduler container not found');
+                        });
+                        
+                        console.log('✅ Bryntum DragHelper initialized successfully');
+                    } else {
+                        console.warn('⚠️ DragHelper not available in Bryntum namespace');
+                        console.log('💡 Operations palette visible but drag functionality requires Bryntum DragHelper');
+                    }
+                } catch (error) {
+                    console.error('❌ Error initializing DragHelper:', error);
                 }
                 
                 // Palette toggle functionality (works even without DragHelper)
