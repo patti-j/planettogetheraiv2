@@ -464,32 +464,32 @@ export class DatabaseStorage implements IStorage {
         FROM ptresources 
         WHERE active = true
         ORDER BY CASE 
-          -- Order resources by brewery operational sequence
+          -- Order resources by brewery operational sequence with grouping
           -- 1. MILLING (top)
           WHEN LOWER(name) LIKE '%mill%' THEN 1
           -- 2. MASHING
           WHEN LOWER(name) LIKE '%mash%' THEN 2  
           -- 3. LAUTERING
           WHEN LOWER(name) LIKE '%lauter%' THEN 3
-          -- 4. BOILING
+          -- 4. BOILING/KETTLE
           WHEN LOWER(name) LIKE '%boil%' OR LOWER(name) LIKE '%kettle%' THEN 4
           -- 5. WHIRLPOOL
           WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
           -- 6. COOLING
           WHEN LOWER(name) LIKE '%cool%' THEN 6
-          -- 7. FERMENTATION
+          -- 7. ALL FERMENTATION TANKS (grouped together)
           WHEN LOWER(name) LIKE '%ferment%' THEN 7
-          -- 8. CONDITIONING/BRIGHT TANKS
+          -- 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
           WHEN LOWER(name) LIKE '%bright%' OR LOWER(name) LIKE '%condition%' THEN 8
           -- 9. PASTEURIZATION
           WHEN LOWER(name) LIKE '%pasteur%' THEN 9
-          -- 10. PACKAGING - Bottle Filler
-          WHEN LOWER(name) LIKE '%bottle%' THEN 10
-          -- 11. PACKAGING - Can Filler (bottom)
-          WHEN LOWER(name) LIKE '%can%' OR LOWER(name) LIKE '%filler%' THEN 11
-          -- 12. Any other resources
-          ELSE 12
-        END, name
+          -- 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
+          WHEN LOWER(name) LIKE '%bottle%' OR LOWER(name) LIKE '%can%' OR LOWER(name) LIKE '%filler%' OR LOWER(name) LIKE '%packag%' THEN 10
+          -- 11. Any other resources
+          ELSE 11
+        END, 
+        -- Secondary sort by name to ensure consistent ordering within each group
+        name
         LIMIT 12
       `);
       return result.rows as any[];
