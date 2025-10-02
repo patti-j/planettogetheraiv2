@@ -320,6 +320,156 @@
             background: #2a2a2a;
         }
         
+        /* Operations Palette Sidebar */
+        .operations-palette {
+            position: fixed;
+            left: -300px;
+            top: 100px;
+            width: 280px;
+            bottom: 60px;
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            border-radius: 0 8px 8px 0;
+            transition: left 0.3s ease;
+            z-index: 900;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        
+        .operations-palette.open {
+            left: 0;
+        }
+        
+        .palette-toggle {
+            position: fixed;
+            left: 0;
+            top: 120px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            padding: 12px 8px;
+            cursor: pointer;
+            z-index: 901;
+            font-size: 12px;
+            writing-mode: vertical-rl;
+            text-orientation: mixed;
+            font-weight: 600;
+            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .palette-toggle:hover {
+            background: #45a049;
+            transform: translateX(2px);
+        }
+        
+        .palette-toggle.open {
+            left: 280px;
+        }
+        
+        .palette-header {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            padding: 16px;
+            font-weight: 600;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+        }
+        
+        .palette-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+        
+        .operation-template {
+            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 10px;
+            cursor: grab;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .operation-template:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            border-color: #4CAF50;
+        }
+        
+        .operation-template:active {
+            cursor: grabbing;
+        }
+        
+        .operation-template .name {
+            font-weight: 600;
+            font-size: 13px;
+            color: #333;
+            margin-bottom: 4px;
+        }
+        
+        .operation-template .duration {
+            font-size: 11px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .operation-template .drag-icon {
+            position: absolute;
+            right: 8px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 18px;
+            color: #999;
+        }
+        
+        /* Drag proxy styling */
+        .operation-drag-proxy {
+            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
+            color: white;
+            border-radius: 6px;
+            padding: 10px 14px;
+            font-size: 13px;
+            font-weight: 600;
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+            pointer-events: none;
+            opacity: 0.95;
+            z-index: 10000;
+        }
+        
+        /* Dark theme for palette */
+        .dark-theme .operations-palette {
+            background: #2a2a2a;
+        }
+        
+        .dark-theme .palette-header {
+            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
+        }
+        
+        .dark-theme .operation-template {
+            background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
+            border-color: #444;
+        }
+        
+        .dark-theme .operation-template .name {
+            color: #e0e0e0;
+        }
+        
+        .dark-theme .operation-template .duration {
+            color: #aaa;
+        }
+        
+        .dark-theme .operation-template:hover {
+            border-color: #4CAF50;
+        }
+
         /* Dark theme for scheduler using filter */
         .dark-theme #scheduler {
             filter: invert(0.9) hue-rotate(180deg);
@@ -968,6 +1118,21 @@
     </style>
 </head>
 <body>
+    <!-- Operations Palette Toggle Button -->
+    <button class="palette-toggle" id="paletteToggle" title="Operations Library">
+        OPERATIONS
+    </button>
+
+    <!-- Operations Palette Sidebar -->
+    <div class="operations-palette" id="operationsPalette">
+        <div class="palette-header">
+            📦 Operation Templates
+        </div>
+        <div class="palette-content" id="paletteContent">
+            <!-- Operation templates will be populated dynamically -->
+        </div>
+    </div>
+
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
@@ -2199,6 +2364,218 @@
                         }
                     });
                 });
+                
+                // ============================================
+                // DRAG HELPER IMPLEMENTATION
+                // Allows dragging operation templates from palette into scheduler
+                // ============================================
+                
+                // Access DragHelper from bryntum core
+                const { DragHelper } = bryntum.schedulerpro;
+                
+                // Define operation templates for the palette
+                const operationTemplates = [
+                    { id: 'milling', name: 'Milling', duration: 2, durationUnit: 'hour', color: '#8B4513' },
+                    { id: 'mashing', name: 'Mashing', duration: 4, durationUnit: 'hour', color: '#D2691E' },
+                    { id: 'lautering', name: 'Lautering', duration: 3, durationUnit: 'hour', color: '#CD853F' },
+                    { id: 'boiling', name: 'Boiling', duration: 2, durationUnit: 'hour', color: '#FF6347' },
+                    { id: 'fermentation', name: 'Fermentation', duration: 168, durationUnit: 'hour', color: '#4CAF50' },
+                    { id: 'conditioning', name: 'Conditioning', duration: 72, durationUnit: 'hour', color: '#2196F3' },
+                    { id: 'dry_hopping', name: 'Dry Hopping', duration: 48, durationUnit: 'hour', color: '#00BCD4' },
+                    { id: 'packaging', name: 'Packaging', duration: 4, durationUnit: 'hour', color: '#9C27B0' },
+                    { id: 'pasteurization', name: 'Pasteurization', duration: 1, durationUnit: 'hour', color: '#FF9800' }
+                ];
+                
+                // Populate the operations palette
+                const paletteContent = document.getElementById('paletteContent');
+                operationTemplates.forEach(template => {
+                    const templateEl = document.createElement('div');
+                    templateEl.className = 'operation-template';
+                    templateEl.dataset.templateId = template.id;
+                    templateEl.dataset.operationName = template.name;
+                    templateEl.dataset.duration = template.duration;
+                    templateEl.dataset.durationUnit = template.durationUnit;
+                    templateEl.dataset.eventColor = template.color;
+                    
+                    templateEl.innerHTML = `
+                        <div class="name">${template.name}</div>
+                        <div class="duration">⏱ ${template.duration} ${template.durationUnit}${template.duration > 1 ? 's' : ''}</div>
+                        <div class="drag-icon">⋮⋮</div>
+                    `;
+                    
+                    paletteContent.appendChild(templateEl);
+                });
+                
+                // Initialize DragHelper for operation templates
+                const operationDragHelper = new DragHelper({
+                    // Mode: translateXY for freely positioning the drag proxy
+                    mode: 'translateXY',
+                    
+                    // Clone the dragged element to create a drag proxy
+                    cloneTarget: true,
+                    
+                    // Don't auto-size the cloned element (we'll use CSS)
+                    autoSizeClonedTarget: false,
+                    
+                    // Only allow dragging operation templates
+                    targetSelector: '.operation-template',
+                    
+                    // Define where drops are allowed (scheduler event area)
+                    dropTargetSelector: '.b-sch-timeaxis-cell, .b-grid-row',
+                    
+                    // Constrain dragging to not move outside viewport
+                    constrain: false,
+                    
+                    // Create custom drag proxy
+                    createProxy(element) {
+                        const proxy = document.createElement('div');
+                        proxy.className = 'operation-drag-proxy';
+                        proxy.textContent = element.querySelector('.name').textContent;
+                        return proxy;
+                    },
+                    
+                    // Event handlers as functions (following Bryntum pattern)
+                    listeners: {
+                        // Before drag starts - prepare context
+                        beforedragstart({ source, context, event }) {
+                            console.log('🎯 DragHelper: beforedragstart', context.grabbed.dataset);
+                        },
+                        
+                        // Drag started - store template data in context
+                        dragstart({ source, context, event }) {
+                            const template = context.grabbed.dataset;
+                            context.operationData = {
+                                name: template.operationName,
+                                duration: parseFloat(template.duration),
+                                durationUnit: template.durationUnit,
+                                eventColor: template.eventColor,
+                                percentDone: 0
+                            };
+                            
+                            console.log('📦 DragHelper: Started dragging operation template:', context.operationData.name);
+                        },
+                        
+                        // During drag - update validation
+                        drag({ source, context, event }) {
+                            // Find what we're hovering over
+                            const schedulerEl = document.getElementById('scheduler');
+                            const isOverScheduler = schedulerEl && schedulerEl.contains(context.target);
+                            
+                            // Update context validity
+                            context.valid = isOverScheduler;
+                            
+                            // Visual feedback
+                            if (context.element) {
+                                context.element.style.opacity = context.valid ? '0.95' : '0.5';
+                            }
+                        },
+                        
+                        // Drop - create new event in scheduler
+                        async drop({ source, context, event }) {
+                            console.log('🎯 DragHelper: Drop event triggered', { valid: context.valid });
+                            
+                            if (!context.valid || !context.operationData) {
+                                console.log('❌ Invalid drop - not over scheduler');
+                                return;
+                            }
+                            
+                            try {
+                                // Get the drop coordinates
+                                const schedulerRect = scheduler.element.getBoundingClientRect();
+                                const x = event.clientX - schedulerRect.left;
+                                const y = event.clientY - schedulerRect.top;
+                                
+                                console.log('📍 Drop coordinates:', { x, y });
+                                
+                                // Convert coordinates to scheduler date/resource
+                                const date = scheduler.getDateFromCoordinate(x, 'horizontal', true);
+                                const resourceRecord = scheduler.resolveResourceRecord({ y });
+                                
+                                console.log('📅 Resolved drop location:', { 
+                                    date: date ? date.toISOString() : 'null', 
+                                    resource: resourceRecord ? resourceRecord.name : 'null' 
+                                });
+                                
+                                if (!date || !resourceRecord) {
+                                    console.log('❌ Could not resolve drop location');
+                                    return;
+                                }
+                                
+                                // Validate resource capability
+                                const requiredCapability = getRequiredCapability(context.operationData.name);
+                                if (requiredCapability !== null) {
+                                    const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
+                                    if (!targetCapabilities.includes(requiredCapability)) {
+                                        const capabilityNames = {
+                                            1: 'Milling', 2: 'Mashing', 3: 'Lautering',
+                                            4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
+                                            7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
+                                        };
+                                        alert(`❌ ${resourceRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`);
+                                        return;
+                                    }
+                                }
+                                
+                                // Create new event
+                                const newEvent = {
+                                    id: `template-${Date.now()}`,
+                                    name: context.operationData.name,
+                                    startDate: date,
+                                    duration: context.operationData.duration,
+                                    durationUnit: context.operationData.durationUnit,
+                                    resourceId: resourceRecord.id,
+                                    eventColor: context.operationData.eventColor,
+                                    percentDone: context.operationData.percentDone,
+                                    draggable: true,
+                                    resizable: true
+                                };
+                                
+                                console.log('✨ Creating new event:', newEvent);
+                                
+                                // Add event to scheduler
+                                scheduler.eventStore.add(newEvent);
+                                
+                                console.log('✅ Successfully created event from template');
+                                updateStatus(); // Update metrics
+                                
+                                // Animate the proxy to the newly created event
+                                const eventElement = scheduler.getElementFromEventRecord(scheduler.eventStore.getById(newEvent.id));
+                                if (eventElement && source.animateProxyTo) {
+                                    await source.animateProxyTo(eventElement, {
+                                        align: 'c-c',
+                                        duration: 300
+                                    });
+                                }
+                                
+                            } catch (error) {
+                                console.error('❌ Error creating event from template:', error);
+                            }
+                        },
+                        
+                        // Abort - drag cancelled
+                        abort({ source, context }) {
+                            console.log('🚫 DragHelper: Drag aborted');
+                        }
+                    }
+                });
+                
+                // Palette toggle functionality
+                const paletteToggle = document.getElementById('paletteToggle');
+                const operationsPalette = document.getElementById('operationsPalette');
+                let isPaletteOpen = false;
+                
+                paletteToggle.addEventListener('click', () => {
+                    isPaletteOpen = !isPaletteOpen;
+                    if (isPaletteOpen) {
+                        operationsPalette.classList.add('open');
+                        paletteToggle.classList.add('open');
+                    } else {
+                        operationsPalette.classList.remove('open');
+                        paletteToggle.classList.remove('open');
+                    }
+                });
+                
+                console.log('✅ DragHelper initialized successfully');
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
