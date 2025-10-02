@@ -2865,6 +2865,25 @@ router.post("/api/canvas/widgets", async (req, res) => {
       return res.status(400).json({ error: "Invalid dashboard ID" });
     }
     
+    // Deduplication: Check if a widget with the same title already exists and deactivate it
+    // This prevents duplicate charts from accumulating when AI regenerates the same chart
+    const existingWidgets = await db.select()
+      .from(widgets)
+      .where(and(
+        eq(widgets.title, title),
+        eq(widgets.isActive, true)
+      ));
+    
+    if (existingWidgets.length > 0) {
+      console.log(`[Canvas Widgets POST] Deactivating ${existingWidgets.length} existing widget(s) with title "${title}"`);
+      await db.update(widgets)
+        .set({ isActive: false })
+        .where(and(
+          eq(widgets.title, title),
+          eq(widgets.isActive, true)
+        ));
+    }
+    
     // Save widget to database using storage
     const newWidget = await storage.createCanvasWidget({
       type,
