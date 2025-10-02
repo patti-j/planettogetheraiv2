@@ -2007,7 +2007,7 @@
                     schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
                 }
                 
-                // Create scheduler instance with proper Bryntum project engine configuration
+                // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
@@ -2054,40 +2054,33 @@
                     // Disable sync storage to prevent errors
                     syncDataOnLoad: false,
 
-                    // Proper Bryntum Project configuration using the scheduling engine
+                    // Project configuration with strict no-overlap constraints
                     project: {
                         autoLoad: false,
                         autoSync: false,
                         silenceInitialCommit: true, // Prevent initial save attempts
                         
-                        // Enable the scheduling engine's automatic calculations
-                        autoCalculatePercentDone: true,
+                        // Load inline data
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
                         
-                        // Define project calendar with working hours
-                        calendar: {
-                            intervals: [
-                                {
-                                    recurrentStartDate: 'on Mon-Fri at 07:00',
-                                    recurrentEndDate: 'on Mon-Fri at 17:00',
-                                    isWorking: true
-                                }
-                            ]
-                        },
-                        
-                        // Load inline data - properly structured
-                        resourceStore: {
-                            data: resources
-                        },
-                        eventStore: {
-                            data: events
-                        },
-                        dependencyStore: {
-                            data: dependencies
-                        },
-                        
-                        // Enable automatic date calculations by the engine
+                        // Enable automatic scheduling dates
                         autoCalculateStartDate: true,
-                        autoCalculateEndDate: true
+                        autoCalculateEndDate: true,
+                        
+                        // Use ASAP scheduling with strict resource constraints
+                        schedulingEngine: {
+                            multiplePerResource: false, // Only one task at a time per resource
+                            allowOverlap: false, // Strictly prevent overlapping on same resource
+                            // Additional constraints
+                            scheduleOverlapEvents: false, // Don't allow overlapping during scheduling
+                            constraintResolution: 'honor', // Honor all constraints strictly
+                            // Enable automatic constraint checking
+                            strictDependencies: true,
+                            // Ensure operations don't overlap on same resource
+                            manuallyScheduled: false // Allow engine to auto-adjust for constraints
+                        }
                     },
 
                     features: {
