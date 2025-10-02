@@ -12,6 +12,8 @@ Multiple users working on project:
 
 **AI Branding Standard**: Always use Sparkles icon for AI-related features and branding. Never use Brain or other icons for AI functionality.
 
+**Bryntum Library Usage**: Always use Bryntum features and code samples for all scheduler-related functionality. Do not use "simpler" native solutions without asking. The Bryntum Scheduler Pro library provides comprehensive features that should be leveraged fully.
+
 Note on concurrent work:
 - Jim and Patti work on different issues concurrently
 - Each conversation/thread is independent - I don't retain context between different sessions
