@@ -2,11 +2,6 @@
 
 import { drizzle } from 'drizzle-orm/neon-http';
 import { neon } from '@neondatabase/serverless';
-import * as dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables
-dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const sql = neon(process.env.DATABASE_URL!);
 const db = drizzle(sql);
