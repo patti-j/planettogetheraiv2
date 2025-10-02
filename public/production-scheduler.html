@@ -2366,12 +2366,11 @@
                 });
                 
                 // ============================================
-                // DRAG HELPER IMPLEMENTATION
-                // Allows dragging operation templates from palette into scheduler
+                // NATIVE HTML5 DRAG AND DROP IMPLEMENTATION
+                // Simpler approach using native browser APIs + Bryntum scheduler methods
                 // ============================================
                 
-                // Access DragHelper from bryntum core
-                const { DragHelper } = bryntum.schedulerpro;
+                console.log('🎯 Initializing native drag and drop for operations palette...');
                 
                 // Define operation templates for the palette
                 const operationTemplates = [
@@ -2386,196 +2385,139 @@
                     { id: 'pasteurization', name: 'Pasteurization', duration: 1, durationUnit: 'hour', color: '#FF9800' }
                 ];
                 
-                // Populate the operations palette
+                // Populate the operations palette with draggable elements
                 const paletteContent = document.getElementById('paletteContent');
-                operationTemplates.forEach(template => {
-                    const templateEl = document.createElement('div');
-                    templateEl.className = 'operation-template';
-                    templateEl.dataset.templateId = template.id;
-                    templateEl.dataset.operationName = template.name;
-                    templateEl.dataset.duration = template.duration;
-                    templateEl.dataset.durationUnit = template.durationUnit;
-                    templateEl.dataset.eventColor = template.color;
-                    
-                    templateEl.innerHTML = `
-                        <div class="name">${template.name}</div>
-                        <div class="duration">⏱ ${template.duration} ${template.durationUnit}${template.duration > 1 ? 's' : ''}</div>
-                        <div class="drag-icon">⋮⋮</div>
-                    `;
-                    
-                    paletteContent.appendChild(templateEl);
-                });
-                
-                // Initialize DragHelper for operation templates
-                const operationDragHelper = new DragHelper({
-                    // Mode: translateXY for freely positioning the drag proxy
-                    mode: 'translateXY',
-                    
-                    // Clone the dragged element to create a drag proxy
-                    cloneTarget: true,
-                    
-                    // Don't auto-size the cloned element (we'll use CSS)
-                    autoSizeClonedTarget: false,
-                    
-                    // Only allow dragging operation templates
-                    targetSelector: '.operation-template',
-                    
-                    // Define where drops are allowed (scheduler event area)
-                    dropTargetSelector: '.b-sch-timeaxis-cell, .b-grid-row',
-                    
-                    // Constrain dragging to not move outside viewport
-                    constrain: false,
-                    
-                    // Create custom drag proxy
-                    createProxy(element) {
-                        const proxy = document.createElement('div');
-                        proxy.className = 'operation-drag-proxy';
-                        proxy.textContent = element.querySelector('.name').textContent;
-                        return proxy;
-                    },
-                    
-                    // Event handlers as functions (following Bryntum pattern)
-                    listeners: {
-                        // Before drag starts - prepare context
-                        beforedragstart({ source, context, event }) {
-                            console.log('🎯 DragHelper: beforedragstart', context.grabbed.dataset);
-                        },
+                if (paletteContent) {
+                    operationTemplates.forEach(template => {
+                        const templateEl = document.createElement('div');
+                        templateEl.className = 'operation-template';
+                        templateEl.draggable = true; // Enable native HTML5 drag
+                        templateEl.dataset.templateId = template.id;
+                        templateEl.dataset.operationName = template.name;
+                        templateEl.dataset.duration = template.duration;
+                        templateEl.dataset.durationUnit = template.durationUnit;
+                        templateEl.dataset.eventColor = template.color;
                         
-                        // Drag started - store template data in context
-                        dragstart({ source, context, event }) {
-                            const template = context.grabbed.dataset;
-                            context.operationData = {
-                                name: template.operationName,
-                                duration: parseFloat(template.duration),
+                        templateEl.innerHTML = `
+                            <div class="name">${template.name}</div>
+                            <div class="duration">⏱ ${template.duration} ${template.durationUnit}${template.duration > 1 ? 's' : ''}</div>
+                            <div class="drag-icon">⋮⋮</div>
+                        `;
+                        
+                        // Native HTML5 dragstart handler
+                        templateEl.addEventListener('dragstart', (e) => {
+                            console.log('🎯 Drag started:', template.name);
+                            e.dataTransfer.effectAllowed = 'copy';
+                            e.dataTransfer.setData('application/json', JSON.stringify({
+                                name: template.name,
+                                duration: template.duration,
                                 durationUnit: template.durationUnit,
-                                eventColor: template.eventColor,
+                                eventColor: template.color,
                                 percentDone: 0
-                            };
-                            
-                            console.log('📦 DragHelper: Started dragging operation template:', context.operationData.name);
-                        },
+                            }));
+                            templateEl.style.opacity = '0.5';
+                        });
                         
-                        // During drag - update validation
-                        drag({ source, context, event }) {
-                            // Find what we're hovering over
-                            const schedulerEl = document.getElementById('scheduler');
-                            const isOverScheduler = schedulerEl && schedulerEl.contains(context.target);
-                            
-                            // Update context validity
-                            context.valid = isOverScheduler;
-                            
-                            // Visual feedback
-                            if (context.element) {
-                                context.element.style.opacity = context.valid ? '0.95' : '0.5';
-                            }
-                        },
+                        templateEl.addEventListener('dragend', () => {
+                            templateEl.style.opacity = '1';
+                            console.log('🏁 Drag ended');
+                        });
                         
-                        // Drop - create new event in scheduler
-                        async drop({ source, context, event }) {
-                            console.log('🎯 DragHelper: Drop event triggered', { valid: context.valid });
+                        paletteContent.appendChild(templateEl);
+                    });
+                    console.log('✅ Operations palette populated with', operationTemplates.length, 'draggable templates');
+                } else {
+                    console.error('❌ Palette content element not found');
+                }
+                
+                // Set up drop zones on scheduler using native HTML5 drop events
+                const schedulerContainer = document.getElementById('scheduler');
+                if (schedulerContainer) {
+                    schedulerContainer.addEventListener('dragover', (e) => {
+                        e.preventDefault(); // Allow drop
+                        e.dataTransfer.dropEffect = 'copy';
+                    });
+                    
+                    schedulerContainer.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        console.log('🎯 Drop event on scheduler');
+                        
+                        try {
+                            // Get the operation data from drag transfer
+                            const operationData = JSON.parse(e.dataTransfer.getData('application/json'));
+                            console.log('📦 Operation data:', operationData);
                             
-                            if (!context.valid || !context.operationData) {
-                                console.log('❌ Invalid drop - not over scheduler');
+                            // Get the drop coordinates
+                            const schedulerRect = scheduler.element.getBoundingClientRect();
+                            const x = e.clientX - schedulerRect.left;
+                            const y = e.clientY - schedulerRect.top;
+                            
+                            console.log('📍 Drop coordinates:', { x, y });
+                            
+                            // Convert coordinates to scheduler date/resource using Bryntum methods
+                            const date = scheduler.getDateFromCoordinate(x, 'horizontal', true);
+                            const resourceRecord = scheduler.resolveResourceRecord({ y });
+                            
+                            console.log('📅 Resolved drop location:', { 
+                                date: date ? date.toISOString() : 'null', 
+                                resource: resourceRecord ? resourceRecord.name : 'null' 
+                            });
+                            
+                            if (!date || !resourceRecord) {
+                                console.warn('❌ Could not resolve drop location - may have dropped outside grid');
                                 return;
                             }
                             
-                            try {
-                                // Get the drop coordinates
-                                const schedulerRect = scheduler.element.getBoundingClientRect();
-                                const x = event.clientX - schedulerRect.left;
-                                const y = event.clientY - schedulerRect.top;
-                                
-                                console.log('📍 Drop coordinates:', { x, y });
-                                
-                                // Convert coordinates to scheduler date/resource
-                                const date = scheduler.getDateFromCoordinate(x, 'horizontal', true);
-                                const resourceRecord = scheduler.resolveResourceRecord({ y });
-                                
-                                console.log('📅 Resolved drop location:', { 
-                                    date: date ? date.toISOString() : 'null', 
-                                    resource: resourceRecord ? resourceRecord.name : 'null' 
-                                });
-                                
-                                if (!date || !resourceRecord) {
-                                    console.log('❌ Could not resolve drop location');
-                                    return;
-                                }
-                                
-                                // Validate resource capability
-                                const requiredCapability = getRequiredCapability(context.operationData.name);
-                                if (requiredCapability !== null) {
-                                    const targetCapabilities = resourceCapabilities[resourceRecord.id] || [];
-                                    if (!targetCapabilities.includes(requiredCapability)) {
-                                        const capabilityNames = {
-                                            1: 'Milling', 2: 'Mashing', 3: 'Lautering',
-                                            4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
-                                            7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
-                                        };
-                                        alert(`❌ ${resourceRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`);
-                                        return;
-                                    }
-                                }
-                                
-                                // Create new event
-                                const newEvent = {
-                                    id: `template-${Date.now()}`,
-                                    name: context.operationData.name,
-                                    startDate: date,
-                                    duration: context.operationData.duration,
-                                    durationUnit: context.operationData.durationUnit,
-                                    resourceId: resourceRecord.id,
-                                    eventColor: context.operationData.eventColor,
-                                    percentDone: context.operationData.percentDone,
-                                    draggable: true,
-                                    resizable: true
-                                };
-                                
-                                console.log('✨ Creating new event:', newEvent);
-                                
-                                // Add event to scheduler
-                                scheduler.eventStore.add(newEvent);
-                                
-                                console.log('✅ Successfully created event from template');
-                                updateStatus(); // Update metrics
-                                
-                                // Animate the proxy to the newly created event
-                                const eventElement = scheduler.getElementFromEventRecord(scheduler.eventStore.getById(newEvent.id));
-                                if (eventElement && source.animateProxyTo) {
-                                    await source.animateProxyTo(eventElement, {
-                                        align: 'c-c',
-                                        duration: 300
-                                    });
-                                }
-                                
-                            } catch (error) {
-                                console.error('❌ Error creating event from template:', error);
-                            }
-                        },
-                        
-                        // Abort - drag cancelled
-                        abort({ source, context }) {
-                            console.log('🚫 DragHelper: Drag aborted');
+                            // Create new event
+                            const newEvent = {
+                                id: `template-${Date.now()}`,
+                                name: operationData.name,
+                                startDate: date,
+                                duration: operationData.duration,
+                                durationUnit: operationData.durationUnit,
+                                resourceId: resourceRecord.id,
+                                eventColor: operationData.eventColor,
+                                percentDone: operationData.percentDone,
+                                draggable: true,
+                                resizable: true
+                            };
+                            
+                            console.log('✨ Creating new event:', newEvent);
+                            
+                            // Add event to scheduler
+                            scheduler.eventStore.add(newEvent);
+                            
+                            console.log('✅ Successfully created event from template');
+                            updateStatus(); // Update metrics
+                            
+                        } catch (error) {
+                            console.error('❌ Error creating event from template:', error);
                         }
-                    }
-                });
+                    });
+                    
+                    console.log('✅ Native HTML5 drag and drop initialized on scheduler');
+                } else {
+                    console.error('❌ Scheduler container not found');
+                }
                 
-                // Palette toggle functionality
+                // Palette toggle functionality (works even without DragHelper)
                 const paletteToggle = document.getElementById('paletteToggle');
                 const operationsPalette = document.getElementById('operationsPalette');
                 let isPaletteOpen = false;
                 
-                paletteToggle.addEventListener('click', () => {
-                    isPaletteOpen = !isPaletteOpen;
-                    if (isPaletteOpen) {
-                        operationsPalette.classList.add('open');
-                        paletteToggle.classList.add('open');
-                    } else {
-                        operationsPalette.classList.remove('open');
-                        paletteToggle.classList.remove('open');
-                    }
-                });
-                
-                console.log('✅ DragHelper initialized successfully');
+                if (paletteToggle && operationsPalette) {
+                    paletteToggle.addEventListener('click', () => {
+                        isPaletteOpen = !isPaletteOpen;
+                        if (isPaletteOpen) {
+                            operationsPalette.classList.add('open');
+                            paletteToggle.classList.add('open');
+                        } else {
+                            operationsPalette.classList.remove('open');
+                            paletteToggle.classList.remove('open');
+                        }
+                    });
+                    console.log('✅ Palette toggle functionality initialized');
+                }
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
