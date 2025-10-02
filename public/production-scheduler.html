@@ -1884,19 +1884,15 @@
                 let resources = [];
                 let ptOperations = [];
                 let resourceCapabilities = {};
-                let dependenciesResponse = null;  // Declare at outer scope
                 
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
-                    const responses = await Promise.all([
+                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
                         fetch('/api/pt-dependencies'),
                         fetch('/api/resources-with-capabilities')
                     ]);
-                    
-                    const [resourcesResponse, operationsResponse, depResponse, capabilitiesResponse] = responses;
-                    dependenciesResponse = depResponse;  // Store in outer scope
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
@@ -2955,38 +2951,28 @@
                 const scheduler = window.scheduler;
                 
                 // ============================================
-                // LOAD DATA INTO SCHEDULER (CRITICAL!)
+                // DATA LOADED VIA PROJECT CONFIGURATION
                 // ============================================
-                // Manually load the data using loadInlineData method
-                // This is required even though data is provided in project config
-                // NOTE: Bryntum expects *Data suffix for keys
-                scheduler.project.loadInlineData({
-                    resourcesData: resources,
-                    eventsData: events,
-                    dependenciesData: dependencies
-                }).then(() => {
-                    console.log('✅ Scheduler data loaded successfully');
-                    console.log('📊 Events loaded:', scheduler.eventStore.count);
-                    console.log('📊 Resources loaded:', scheduler.resourceStore.count);
-                    console.log('📊 Dependencies loaded:', scheduler.dependencyStore.count);
-                    
-                    // Update the status bar
-                    updateStatus();
-                    
-                    // Debug: Check what's in the stores
-                    if (scheduler.eventStore.count > 0) {
-                        const firstEvent = scheduler.eventStore.first;
-                        console.log('📅 First event:', firstEvent?.name, 'on', firstEvent?.startDate);
-                    } else {
-                        console.warn('⚠️ No events loaded into scheduler');
-                    }
-                    
-                    // Hide loading overlay
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                }).catch(error => {
-                    console.error('❌ Error loading scheduler data:', error);
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                });
+                // Data is already provided in the project configuration above
+                // No need to call loadInlineData() separately
+                console.log('✅ Scheduler initialized with data');
+                console.log('📊 Events loaded:', scheduler.eventStore.count);
+                console.log('📊 Resources loaded:', scheduler.resourceStore.count);
+                console.log('📊 Dependencies loaded:', scheduler.dependencyStore.count);
+                
+                // Update the status bar
+                updateStatus();
+                
+                // Debug: Check what's in the stores
+                if (scheduler.eventStore.count > 0) {
+                    const firstEvent = scheduler.eventStore.first;
+                    console.log('📅 First event:', firstEvent?.name, 'on', firstEvent?.startDate);
+                } else {
+                    console.warn('⚠️ No events loaded into scheduler');
+                }
+                
+                // Hide loading overlay
+                document.getElementById('loadingOverlay').style.display = 'none';
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
