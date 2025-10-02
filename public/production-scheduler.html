@@ -3004,6 +3004,11 @@
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
+                    // Configure project for backward scheduling
+                    project.schedulingDirection = 'Backward';
+                    project.constraintType = 'finishnolaterthan';
+                    project.constraintDate = dueDate;
+                    
                     // First ensure dependencies exist between sequential operations on same resource
                     const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
                     
@@ -3012,11 +3017,24 @@
                         
                         if (resourceEvents.length < 2) continue;
                         
-                        // Sort by current start date
+                        // Sort by job and operation sequence for logical order
                         resourceEvents.sort((a, b) => {
-                            if (a.startDate && b.startDate) {
-                                return a.startDate.getTime() - b.startDate.getTime();
+                            // Parse job number and operation sequence from names
+                            const aMatch = a.name.match(/Job (\d+).*Op (\d+)/);
+                            const bMatch = b.name.match(/Job (\d+).*Op (\d+)/);
+                            
+                            if (aMatch && bMatch) {
+                                const aJob = parseInt(aMatch[1]);
+                                const bJob = parseInt(bMatch[1]);
+                                const aOp = parseInt(aMatch[2]);
+                                const bOp = parseInt(bMatch[2]);
+                                
+                                // Sort by job first, then by operation
+                                if (aJob !== bJob) return aJob - bJob;
+                                return aOp - bOp;
                             }
+                            
+                            // Fallback to ID if name parsing fails
                             return a.id - b.id;
                         });
                         
@@ -3042,29 +3060,32 @@
                         }
                     }
                     
-                    // Find leaf events (events with no successors)
-                    const leafEvents = events.filter(event => {
-                        const hasSuccessors = scheduler.dependencyStore.query(d => d.from === event.id).length > 0;
-                        return !hasSuccessors;
-                    });
-                    
-                    console.log(`  Found ${leafEvents.length} leaf operations (no successors)`);
-                    
-                    // Apply Finish No Later Than constraints to leaf events
-                    leafEvents.forEach(event => {
+                    // Apply Finish No Later Than constraints to ALL events for ALAP
+                    events.forEach(event => {
                         event.constraintType = 'finishnolaterthan';
                         event.constraintDate = dueDate;
                         event.manuallyScheduled = false;
                     });
                     
+                    // Let the Bryntum engine recalculate with backward scheduling
+                    await project.commitAsync();
+                    
+                    // After initial scheduling, adjust constraints to maintain relationships
+                    // Only keep FNLT constraints on events that truly need them
+                    const leafEvents = events.filter(event => {
+                        const hasSuccessors = scheduler.dependencyStore.query(d => d.from === event.id).length > 0;
+                        return !hasSuccessors;
+                    });
+                    
+                    console.log(`  Found ${leafEvents.length} leaf operations (final operations)`);
+                    
                     // Clear constraints on non-leaf events to let dependencies drive their dates
                     events.filter(e => !leafEvents.includes(e)).forEach(event => {
                         event.constraintType = null;
                         event.constraintDate = null;
-                        event.manuallyScheduled = false;
                     });
                     
-                    // Let the Bryntum engine recalculate with backward scheduling
+                    // Commit again to let dependencies drive the schedule
                     await project.commitAsync();
                     
                     console.log('✅ ALAP scheduling completed by Bryntum engine');
