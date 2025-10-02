@@ -638,9 +638,10 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  // Get discrete operations (from PT job operations) using PT Resource Capabilities table
+  // Get discrete operations (from PT job operations) using actual resource assignments from ptjobresources
   async getDiscreteOperations(limit?: number | null): Promise<any[]> {
     try {
+      // Fetch operations with their actual resource assignments from ptjobresources table
       const query = sql`
         SELECT 
           jo.id,
@@ -657,22 +658,13 @@ export class DatabaseStorage implements IStorage {
           j.name as job_name,
           j.priority,
           j.need_date_time as due_date,
-          -- Determine the capability needed for each operation
-          -- This will be used for smart resource allocation in TypeScript
-          CASE 
-            WHEN LOWER(jo.name) LIKE '%packag%' THEN 8  -- Packaging
-            WHEN LOWER(jo.name) LIKE '%mill%' THEN 1     -- Milling
-            WHEN LOWER(jo.name) LIKE '%mash%' THEN 2     -- Mashing
-            WHEN LOWER(jo.name) LIKE '%lauter%' THEN 3   -- Lautering
-            WHEN LOWER(jo.name) LIKE '%boil%' THEN 4     -- Boiling
-            WHEN LOWER(jo.name) LIKE '%ferment%' THEN 5  -- Fermentation
-            WHEN LOWER(jo.name) LIKE '%lager%' AND NOT LOWER(jo.name) LIKE '%packag%' THEN 5  -- Lagering (also fermentation)
-            WHEN LOWER(jo.name) LIKE '%condition%' THEN 6  -- Conditioning
-            WHEN LOWER(jo.name) LIKE '%dry hop%' THEN 7    -- Dry Hopping
-            ELSE 0  -- Unknown capability
-          END as capability_id
+          jr.default_resource_id as resource_external_id,
+          r.id as resource_id,
+          r.name as resource_name
         FROM ptjoboperations jo
         LEFT JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
         WHERE jo.scheduled_start IS NOT NULL
         ORDER BY jo.scheduled_start, jo.id
         ${limit ? sql`LIMIT ${limit}` : sql``}
@@ -680,91 +672,16 @@ export class DatabaseStorage implements IStorage {
       
       const result = await db.execute(query);
       
-      // Fetch all resources with their capabilities for smart allocation
-      const resourcesQuery = await db.execute(sql`
-        SELECT 
-          r.id,
-          r.name,
-          rc.capability_id
-        FROM ptresources r
-        JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
-        WHERE r.active = true
-        ORDER BY rc.capability_id, r.id
-      `);
-      
-      // Group resources by capability
-      const resourcesByCapability: Record<number, Array<{id: number, name: string, allocations: Array<{start: Date, end: Date}>}>> = {};
-      for (const res of resourcesQuery.rows as any[]) {
-        if (!resourcesByCapability[res.capability_id]) {
-          resourcesByCapability[res.capability_id] = [];
-        }
-        resourcesByCapability[res.capability_id].push({
-          id: res.id,
-          name: res.name,
-          allocations: [] // Track allocated time slots
-        });
-      }
-      
-      // Smart resource allocation - distribute operations across available resources
-      const allocatedOps = result.rows.map((op: any) => {
-        const capabilityId = op.capability_id;
-        let assignedResource = null;
-        
-        if (capabilityId && resourcesByCapability[capabilityId]) {
-          const availableResources = resourcesByCapability[capabilityId];
-          
-          // If operation has a scheduled time, find a resource that's available
-          if (op.scheduled_start && op.scheduled_end) {
-            const opStart = new Date(op.scheduled_start);
-            const opEnd = new Date(op.scheduled_end);
-            
-            // Try to find a resource with no conflicts
-            for (const resource of availableResources) {
-              const hasConflict = resource.allocations.some(allocation => {
-                // Check if time periods overlap
-                return (opStart < allocation.end && opEnd > allocation.start);
-              });
-              
-              if (!hasConflict) {
-                // Found an available resource, assign it
-                assignedResource = resource;
-                resource.allocations.push({ start: opStart, end: opEnd });
-                break;
-              }
-            }
-            
-            // If no available resource found, assign to the least busy one
-            if (!assignedResource && availableResources.length > 0) {
-              assignedResource = availableResources.reduce((least, current) => 
-                current.allocations.length < least.allocations.length ? current : least
-              );
-              // Still track the allocation even if it overlaps
-              assignedResource.allocations.push({ start: opStart, end: opEnd });
-            }
-          } else {
-            // No scheduled time, just assign round-robin based on operation ID
-            const index = op.id % availableResources.length;
-            assignedResource = availableResources[index];
-          }
-        }
-        
-        return {
-          ...op,
-          matched_resource_id: assignedResource?.id || null,
-          matched_resource_name: assignedResource?.name || 'Unassigned'
-        };
-      });
-      
-      // Transform the operations for the scheduler with proper resource assignments
-      return allocatedOps.map((op: any) => ({
+      // Transform the operations for the scheduler using actual resource assignments
+      return result.rows.map((op: any) => ({
         id: op.id,
         operationId: op.operation_id,
         jobId: op.job_id,
         name: op.operation_name || 'Operation',
         jobName: op.job_name,
-        resourceId: op.matched_resource_id, // Use the smart allocated resource
-        resourceName: op.matched_resource_name, // Include resource name for display
-        capabilityId: op.capability_id, // Track the required capability
+        resourceId: op.resource_id || null, // Use the actual assigned resource from ptjobresources
+        resourceName: op.resource_name || 'Unassigned', // Include resource name for display
+        resourceExternalId: op.resource_external_id, // Keep external ID for reference
         scheduledStart: op.scheduled_start,
         scheduledEnd: op.scheduled_end,
         priority: op.priority || 5,
