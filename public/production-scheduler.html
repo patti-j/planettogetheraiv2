@@ -2059,6 +2059,16 @@
                         autoLoad: false,
                         autoSync: false,
                         silenceInitialCommit: true, // Prevent initial save attempts
+                        
+                        // Load inline data
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling dates
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true,
+                        
                         // Use ASAP scheduling with strict resource constraints
                         schedulingEngine: {
                             multiplePerResource: false, // Only one task at a time per resource
@@ -2070,22 +2080,6 @@
                             strictDependencies: true,
                             // Ensure operations don't overlap on same resource
                             manuallyScheduled: false // Allow engine to auto-adjust for constraints
-                        },
-                        
-                        // Configure stores to not use state persistence
-                        eventStore: {
-                            stateId: null,
-                            syncDataOnLoad: false
-                        },
-                        resourceStore: {
-                            stateId: null,
-                            syncDataOnLoad: false
-                        },
-                        dependencyStore: {
-                            stateId: null,
-                            syncDataOnLoad: false,
-                            autoLoad: false,
-                            autoSync: false
                         }
                     },
 
@@ -2297,17 +2291,6 @@
                                 </div>
                             `
                         };
-                    },
-
-                    project: {
-                        // Use correct property names (not deprecated)
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
-                        
-                        // Enable automatic scheduling
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true
                     },
 
                     startDate: (() => {
