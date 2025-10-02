@@ -1514,14 +1514,15 @@
                     return null; // No specific capability required
                 }
                 
-                // Transform PT operations into Bryntum events format with ASAP constraints
+                // Transform PT operations into Bryntum events format
+                // CRITICAL: Load operations but DON'T use overlapping scheduled times
                 let events = ptOperations.map((operation, index) => {
                     // Log job names for debugging
                     if (index < 5 || operation.jobName) {
                         console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
                     }
                     
-                    // First try to find a matching resource
+                    // First try to find a matching resource based on capability
                     let resourceId = findResourceId(operation, resourceMap, resourceByName, resources);
                     
                     // Check if operation is truly unscheduled (no valid resource assignment)
@@ -1529,18 +1530,17 @@
                     
                     let startDate;
                     
-                    // Always use the operation's actual scheduled time or a default
-                    if (operation.scheduledStart) {
-                        // Use the actual scheduled start time directly
+                    // CRITICAL FIX: Don't use the overlapping scheduled times from DB
+                    // Instead, use a base date and let ASAP scheduling fix the overlaps
+                    if (operation.scheduledStart && false) { // Disabled to prevent loading overlapping times
+                        // DON'T USE THIS - it has overlaps
                         startDate = new Date(operation.scheduledStart);
-                    } else if (operation.startTime || operation.start_date) {
-                        startDate = new Date(operation.startTime || operation.start_date);
                     } else {
-                        // Fallback to a default if no date - spread across resources
-                        const resourceIndex = resources.findIndex(r => r.id === resourceId) || 0;
-                        const hoursOffset = (index % 10) * 3; // Spread operations every 3 hours
-                        const daysOffset = Math.floor(index / 10); // New row every 10 operations
-                        startDate = new Date(2025, 8, 3 + daysOffset, 8 + hoursOffset); // Sept 3+, starting at 8 AM
+                        // Use a base date and let ASAP scheduling arrange them properly
+                        const baseDate = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 7 AM
+                        // Stagger initial placement slightly to help ASAP algorithm
+                        const minutesOffset = index * 30; // 30 minutes apart initially
+                        startDate = new Date(baseDate.getTime() + minutesOffset * 60 * 1000);
                     }
                     
                     // If no valid resource found, assign to unscheduled resource
@@ -3257,12 +3257,25 @@
                 // Initialize status updates
                 updateStatus();
                 
-                // Apply ASAP scheduling on initial load
+                // CRITICAL FIX: Run ASAP immediately after inline data load
+                // The 'load' event doesn't fire for inline data, so we MUST run ASAP here directly
+                console.log('🚨 CRITICAL: Running ASAP to fix overlaps after inline data load...');
+                console.log('📊 Event store has', scheduler.eventStore.count, 'events before ASAP');
+                
+                // Run ASAP immediately - NOT in an event handler
+                await asapScheduling();
+                updateStatus();
+                console.log('✅ ASAP scheduling complete - overlaps should be eliminated');
+                console.log('📊 Event store has', scheduler.eventStore.count, 'events after ASAP');
+                
+                // Also run after a delay as backup
                 setTimeout(async () => {
-                    console.log('🚀 Applying initial ASAP scheduling...');
+                    console.log('🚀 Running backup ASAP scheduling...');
+                    console.log('📊 Event store count before backup:', scheduler.eventStore.count);
                     await asapScheduling();
                     updateStatus();
-                    console.log('✅ ASAP scheduling applied successfully');
+                    console.log('✅ Backup ASAP scheduling applied');
+                    console.log('📊 Event store count after backup:', scheduler.eventStore.count);
                     
                     // Add welcome message to Max AI
                     const maxMessages = document.getElementById('maxMessages');
