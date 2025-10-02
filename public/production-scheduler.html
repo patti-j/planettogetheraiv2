@@ -3262,10 +3262,12 @@
                 console.log('📊 Loading data into scheduler - resources:', resources.length, 'events:', events.length, 'dependencies:', dependencies.length);
                 
                 // Load the inline data into the scheduler project
+                // CRITICAL: Bryntum requires specific property names ending with 'Data'
                 await scheduler.project.loadInlineData({
-                    resources: resources,
-                    events: events,
-                    dependencies: dependencies
+                    resourcesData: resources,
+                    eventsData: events,
+                    assignmentsData: [],
+                    dependenciesData: dependencies
                 });
                 
                 // Commit the data to finalize the loading
