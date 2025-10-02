@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     
     <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
     
     <style>
         * {
@@ -2077,6 +2077,22 @@
                 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
+                // Access SchedulerPro from the bryntum namespace (UMD build)
+                // Check if bryntum is available
+                if (typeof bryntum === 'undefined') {
+                    console.error('❌ Bryntum library not loaded!');
+                    return;
+                }
+                
+                // Try to access SchedulerPro - it might be directly on bryntum or in a sub-namespace
+                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro || bryntum.SchedulerPro;
+                
+                if (!SchedulerPro) {
+                    console.error('❌ SchedulerPro class not found in bryntum namespace!');
+                    console.log('Available in bryntum:', Object.keys(bryntum));
+                    return;
+                }
+                
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
