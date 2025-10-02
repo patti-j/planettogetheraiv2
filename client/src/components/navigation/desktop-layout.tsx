@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -32,6 +33,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { addMessage } = useChatSync();
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
+  const { setCanvasVisible } = useMaxDock();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -233,6 +235,18 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         addMessage({
           role: 'assistant',
           content: data.content || `Taking you to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
+          source: 'floating',
+          agentId: respondingAgent
+        });
+      } else if (data?.action?.type === 'create_chart') {
+        // Handle chart creation actions - open canvas
+        console.log('Floating AI - Chart creation detected, opening canvas');
+        setCanvasVisible(true);
+        
+        // Add chart creation confirmation message
+        addMessage({
+          role: 'assistant',
+          content: data.content || 'I\'ve created a chart for you and added it to the canvas.',
           source: 'floating',
           agentId: respondingAgent
         });
