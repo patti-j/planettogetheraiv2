@@ -791,7 +791,7 @@ CRITICAL: Use EXACT column names shown above. Do NOT use made-up names like "job
       
       // Generate and execute SQL from intent
       console.log('[Max AI] 🔍 Generating SQL from intent...');
-      const sqlQuery = this.generateSQLFromIntent(intent);
+      const sqlQuery = this.generateSQLFromIntent(intent, query);
       console.log('[Max AI] 📝 SQL Query:', sqlQuery);
       
       console.log('[Max AI] ⚡ Executing SQL query...');
@@ -875,6 +875,16 @@ Rules:
 - Pick appropriate chart type based on data
 - Higher confidence for exact matches, lower for guesses
 - Rationale should explain what insight the chart provides
+- IMPORTANT: Pay attention to the main subject of the query:
+  * "chart of resources" → use ptresources table
+  * "chart of jobs" → use ptjobs table  
+  * "chart of operations" → use ptjoboperations table
+- The query's main noun determines the table to use
+
+Examples:
+- "show me resources by plant" → dimensions: [{"term": "plant", "tableName": "ptresources", "columnName": "plant_name"}]
+- "chart of jobs by status" → dimensions: [{"term": "status", "tableName": "ptjobs", "columnName": "scheduled_status"}]
+- "operations by name" → dimensions: [{"term": "name", "tableName": "ptjoboperations", "columnName": "name"}]
 
 Return only the JSON object, no other text.`;
 
@@ -926,16 +936,51 @@ Return only the JSON object, no other text.`;
   }
   
   // Generate safe SQL from structured intent
-  private generateSQLFromIntent(intent: ChartIntent): string {
+  private generateSQLFromIntent(intent: ChartIntent, userQuery: string = ''): string {
     console.log('[Max AI] Intent dimensions:', intent.dimensions);
     console.log('[Max AI] Intent rationale:', intent.rationale);
     console.log('[Max AI] Intent chart type:', intent.chartType);
     console.log('[Max AI] Intent confidence:', intent.confidence);
+    console.log('[Max AI] Original user query:', userQuery);
     
     const primaryDimension = intent.dimensions[0];
     if (!primaryDimension) {
-      console.warn('[Max AI] ⚠️ No dimensions found in intent, using fallback query for jobs by status');
-      // Fallback to a sensible default query using ACTUAL column name
+      console.warn('[Max AI] ⚠️ No dimensions found in intent, using intelligent fallback based on query');
+      
+      // Intelligent fallback - detect what the user is asking about
+      const queryLower = userQuery.toLowerCase();
+      
+      // Check for resource-related queries
+      if (queryLower.includes('resource')) {
+        console.log('[Max AI] Detected resource query - falling back to resources by plant');
+        return `
+          SELECT 
+            COALESCE(plant_name, 'Unknown') as name,
+            COUNT(*) as value
+          FROM ptresources
+          WHERE active = true
+          GROUP BY plant_name
+          ORDER BY COUNT(*) DESC
+          LIMIT 50
+        `;
+      }
+      
+      // Check for operation-related queries
+      if (queryLower.includes('operation')) {
+        console.log('[Max AI] Detected operation query - falling back to operations by name');
+        return `
+          SELECT 
+            COALESCE(name, 'Unknown') as name,
+            COUNT(*) as value
+          FROM ptjoboperations
+          GROUP BY name
+          ORDER BY COUNT(*) DESC
+          LIMIT 50
+        `;
+      }
+      
+      // Default fallback to jobs
+      console.log('[Max AI] Using default fallback to jobs by status');
       return `
         SELECT 
           COALESCE(scheduled_status, 'Unknown') as name,
@@ -1042,11 +1087,36 @@ Return only the JSON object, no other text.`;
     try {
       const { db } = await import('../db');
       const { widgets } = await import('../../shared/schema');
+      const { eq, and } = await import('drizzle-orm');
+      
+      const widgetTitle = chartConfig.title || 'AI Generated Chart';
+      
+      // DEDUPLICATION: Check for existing active widgets with same title
+      console.log('[Max AI] 🔍 Checking for duplicate widgets with title:', widgetTitle);
+      const existingWidgets = await db.select()
+        .from(widgets)
+        .where(and(
+          eq(widgets.title, widgetTitle),
+          eq(widgets.isActive, true)
+        ));
+      
+      if (existingWidgets.length > 0) {
+        console.log(`[Max AI] ⚠️ Found ${existingWidgets.length} existing widgets with same title - deactivating them`);
+        
+        // Deactivate all existing widgets with the same title
+        for (const existingWidget of existingWidgets) {
+          await db.update(widgets)
+            .set({ isActive: false })
+            .where(eq(widgets.id, existingWidget.id));
+        }
+        
+        console.log('[Max AI] ✅ Deactivated duplicate widgets');
+      }
       
       const widgetRecord = {
         dashboardId: 1,
         type: chartConfig.type || 'bar',
-        title: chartConfig.title || 'AI Generated Chart',
+        title: widgetTitle,
         position: { x: 0, y: 0, w: 6, h: 4 },
         config: {
           chartType: chartConfig.type || 'bar',
