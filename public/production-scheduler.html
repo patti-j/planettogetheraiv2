@@ -2889,14 +2889,23 @@
                         
                         // Sort events by priority/dependencies
                         resEvents.sort((a, b) => {
-                            // Check for dependencies first
-                            const aDeps = scheduler.dependencyStore?.getOutgoingDependenciesForEvent(a) || [];
-                            const bDeps = scheduler.dependencyStore?.getOutgoingDependenciesForEvent(b) || [];
+                            // Check for dependencies first - use project dependency store
+                            const depStore = scheduler.project.dependencyStore;
+                            let aDeps = [];
+                            let bDeps = [];
+                            
+                            // Safely get dependencies if the store exists
+                            if (depStore) {
+                                // Get all dependencies and filter manually
+                                const allDeps = depStore.records || [];
+                                aDeps = allDeps.filter(dep => dep.from === a.id);
+                                bDeps = allDeps.filter(dep => dep.from === b.id);
+                            }
                             
                             // If a depends on b, b should come first
-                            if (aDeps.some(dep => dep.to === b)) return 1;
+                            if (aDeps.some(dep => dep.to === b.id)) return 1;
                             // If b depends on a, a should come first  
-                            if (bDeps.some(dep => dep.to === a)) return -1;
+                            if (bDeps.some(dep => dep.to === a.id)) return -1;
                             
                             // Otherwise maintain order by existing start date or ID
                             return (a.startDate?.getTime() || a.id) - (b.startDate?.getTime() || b.id);
@@ -3011,14 +3020,24 @@
                         
                         // Sort in reverse order for backward scheduling
                         resEvents.sort((a, b) => {
-                            // Check dependencies for proper ordering
-                            const aDeps = scheduler.dependencyStore?.getIncomingDependenciesForEvent(a) || [];
-                            const bDeps = scheduler.dependencyStore?.getIncomingDependenciesForEvent(b) || [];
+                            // Check dependencies for proper ordering - use project dependency store
+                            const depStore = scheduler.project.dependencyStore;
+                            let aDeps = [];
+                            let bDeps = [];
+                            
+                            // Safely get dependencies if the store exists
+                            if (depStore) {
+                                // Get all dependencies and filter manually
+                                const allDeps = depStore.records || [];
+                                // For incoming dependencies, filter by 'to' field
+                                aDeps = allDeps.filter(dep => dep.to === a.id);
+                                bDeps = allDeps.filter(dep => dep.to === b.id);
+                            }
                             
                             // If a has b as predecessor, a should come after (scheduled earlier in backward)
-                            if (aDeps.some(dep => dep.from === b)) return -1;
+                            if (aDeps.some(dep => dep.from === b.id)) return -1;
                             // If b has a as predecessor, b should come after
-                            if (bDeps.some(dep => dep.from === a)) return 1;
+                            if (bDeps.some(dep => dep.from === a.id)) return 1;
                             
                             // Otherwise maintain reverse order
                             return (b.startDate?.getTime() || b.id) - (a.startDate?.getTime() || a.id);
