@@ -2351,17 +2351,39 @@
                 const scheduler = window.scheduler;
                 
                 // Add event listeners to handle dragging from unscheduled resource
-                scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
-                    eventRecords.forEach(eventRecord => {
+                // Track current scheduling mode
+                let currentSchedulingMode = 'ASAP'; // Default mode
+                
+                scheduler.on('eventdrop', async ({ eventRecords, targetResourceRecord, context }) => {
+                    for (const eventRecord of eventRecords) {
                         // Check if the event was dragged from unscheduled to a real resource
                         if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
                             // Mark as scheduled now
                             eventRecord.isUnscheduled = false;
                             // Update color to match the operation type
                             eventRecord.eventColor = getOperationColor(eventRecord.name);
-                            // Apply ASAP constraint now that it's scheduled
-                            eventRecord.constraintType = 'startnoearlierthan';
-                            eventRecord.constraintDate = eventRecord.startDate;
+                            
+                            // Apply appropriate constraints based on scheduling mode
+                            if (currentSchedulingMode === 'ASAP') {
+                                eventRecord.constraintType = 'startnoearlierthan';
+                                eventRecord.constraintDate = eventRecord.startDate;
+                            } else if (currentSchedulingMode === 'ALAP') {
+                                // For ALAP, only apply constraint if it's a leaf event
+                                const hasSuccessors = scheduler.dependencyStore.query(d => d.from === eventRecord.id).length > 0;
+                                if (!hasSuccessors) {
+                                    eventRecord.constraintType = 'finishnolaterthan';
+                                    eventRecord.constraintDate = eventRecord.endDate;
+                                } else {
+                                    // Clear constraints for non-leaf events to let dependencies drive
+                                    eventRecord.constraintType = null;
+                                    eventRecord.constraintDate = null;
+                                }
+                            } else {
+                                // For other modes, let the algorithm handle constraints
+                                eventRecord.constraintType = null;
+                                eventRecord.constraintDate = null;
+                            }
+                            
                             console.log(`✅ Operation "${eventRecord.name}" scheduled to resource: ${targetResourceRecord.name}`);
                             updateStatus(); // Update metrics
                         } else if (!eventRecord.isUnscheduled && targetResourceRecord.id === 'unscheduled') {
@@ -2372,8 +2394,39 @@
                             eventRecord.constraintDate = null;
                             console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
                             updateStatus(); // Update metrics
+                        } else if (!eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
+                            // Regular drag between scheduled resources - handle based on mode
+                            if (currentSchedulingMode === 'ALAP') {
+                                // For ALAP mode, handle constraints more intelligently
+                                const hasSuccessors = scheduler.dependencyStore.query(d => d.from === eventRecord.id).length > 0;
+                                
+                                if (hasSuccessors) {
+                                    // This event has successors - clear constraints to let dependencies drive
+                                    eventRecord.constraintType = null;
+                                    eventRecord.constraintDate = null;
+                                    console.log(`🔄 Clearing constraints for "${eventRecord.name}" to let dependencies drive in ALAP mode`);
+                                } else {
+                                    // Leaf event - can have FNLT constraint
+                                    eventRecord.constraintType = 'finishnolaterthan';
+                                    eventRecord.constraintDate = eventRecord.endDate;
+                                }
+                            } else if (currentSchedulingMode === 'ASAP') {
+                                // For ASAP, apply SNET constraint as usual
+                                eventRecord.constraintType = 'startnoearlierthan';
+                                eventRecord.constraintDate = eventRecord.startDate;
+                            } else {
+                                // For other modes, clear constraints
+                                eventRecord.constraintType = null;
+                                eventRecord.constraintDate = null;
+                            }
                         }
-                    });
+                    }
+                    
+                    // Recalculate dependencies after drag in ALAP or Critical Path mode
+                    if (currentSchedulingMode === 'ALAP' || currentSchedulingMode === 'Critical Path') {
+                        await scheduler.project.propagate();
+                        console.log('🔄 Dependencies recalculated after drag operation');
+                    }
                 });
                 
                 // Enhanced status update function using real PT data
@@ -2897,6 +2950,7 @@
                 async function asapScheduling() {
                     // ASAP - Use Bryntum's constraint system for forward scheduling
                     console.log('🚀 Applying ASAP scheduling using Bryntum engine...');
+                    currentSchedulingMode = 'ASAP'; // Set mode for drag handler
                     
                     const project = scheduler.project;
                     const baseDate = new Date(2025, 8, 3, 7, 0, 0); // September 3, 2025 at 7 AM
@@ -2996,6 +3050,7 @@
                 async function alapScheduling() {
                     // ALAP - Use Bryntum's constraint system for backward scheduling
                     console.log('⏰ Applying ALAP scheduling using Bryntum constraints...');
+                    currentSchedulingMode = 'ALAP'; // Set mode for drag handler
                     
                     const project = scheduler.project;
                     const dueDate = new Date(2025, 8, 17, 17, 0, 0); // September 17, 2025 at 5 PM
@@ -3121,6 +3176,7 @@
                 async function criticalPathScheduling() {
                     // Use Bryntum's built-in critical path calculation
                     console.log('🎯 Calculating Critical Path using Bryntum engine...');
+                    currentSchedulingMode = 'Critical Path'; // Set mode for drag handler
                     
                     const project = scheduler.project;
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
@@ -3234,6 +3290,7 @@
                 async function levelResourcesScheduling() {
                     // Balance workload using dependencies to manage resource conflicts
                     console.log('⚖️ Resource Leveling with dependency management...');
+                    currentSchedulingMode = 'Level Resources'; // Set mode for drag handler
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
                     
@@ -3338,6 +3395,7 @@
                 async function drumScheduling() {
                     // Theory of Constraints - optimize around bottleneck
                     console.log('🚀 Starting Drum (TOC) scheduling...');
+                    currentSchedulingMode = 'Drum/TOC'; // Set mode for drag handler
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
                     // Find bottleneck resource (most loaded)
