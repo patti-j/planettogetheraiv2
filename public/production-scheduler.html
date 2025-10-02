@@ -1884,15 +1884,19 @@
                 let resources = [];
                 let ptOperations = [];
                 let resourceCapabilities = {};
+                let dependenciesResponse = null;  // Declare at outer scope
                 
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
-                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
+                    const responses = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
                         fetch('/api/pt-dependencies'),
                         fetch('/api/resources-with-capabilities')
                     ]);
+                    
+                    const [resourcesResponse, operationsResponse, depResponse, capabilitiesResponse] = responses;
+                    dependenciesResponse = depResponse;  // Store in outer scope
                     
                     if (resourcesResponse.ok) {
                         resources = await resourcesResponse.json();
