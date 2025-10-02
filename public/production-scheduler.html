@@ -742,6 +742,36 @@
             animation: spin 1s linear infinite;
         }
         
+        /* Critical Path Visualization Styles */
+        .critical-path-task {
+            border: 2px solid #dc2626 !important;
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.3) !important;
+            animation: pulse-critical 2s ease-in-out infinite;
+        }
+        
+        .critical-path-task .b-sch-event-content {
+            font-weight: bold !important;
+        }
+        
+        @keyframes pulse-critical {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            }
+        }
+        
+        /* Critical path dependency lines */
+        .b-sch-dependency.critical-path {
+            stroke: #dc2626 !important;
+            stroke-width: 2px !important;
+        }
+        
+        .b-sch-dependency-arrow.critical-path {
+            fill: #dc2626 !important;
+        }
+        
         /* Constraint Settings Styles */
         .constraint-modal {
             display: none;
