@@ -1485,6 +1485,41 @@
                 </svg>
             </button>
         </div>
+        
+        <!-- Test Features Group -->
+        <div class="toolbar-group">
+            <button id="testPercentBar" class="button" title="Test PercentBar: Toggle progress bars">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="6" width="20" height="3" rx="1"></rect>
+                    <rect x="2" y="6" width="12" height="3" rx="1" fill="currentColor"></rect>
+                </svg>
+                <span>Progress</span>
+            </button>
+            
+            <button id="testNonWorking" class="button" title="Test ResourceNonWorkingTime: Toggle non-working hours">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+                <span>Non-Work</span>
+            </button>
+            
+            <button id="testTimeHighlight" class="button" title="Test TimeSpanHighlight: Highlight time ranges">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+                    <rect x="8" y="2" width="8" height="4" fill="yellow" opacity="0.5"></rect>
+                </svg>
+                <span>Highlight</span>
+            </button>
+            
+            <button id="testVersions" class="button" title="Test Versions: Create/restore snapshots">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="1 4 1 10 7 10"></polyline>
+                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                </svg>
+                <span>Versions</span>
+            </button>
+        </div>
     </div>
 
     <div class="scheduler-container">
@@ -1992,7 +2027,7 @@
                         duration: duration,
                         durationUnit: 'hour',
                         resourceId: resourceId,
-                        percentDone: operation.percent_done || 0,
+                        percentDone: operation.percent_done || Math.floor(Math.random() * 100), // Random progress for testing PercentBar
                         eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.name)),
                         // ASAP scheduling constraints (not for unscheduled operations)
                         constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
@@ -4752,6 +4787,90 @@
                 }, 300); // Small delay for visual feedback
             });
         });
+    </script>
+    
+    <!-- Feature Test Functions -->
+    <script>
+        // Wait for scheduler to be available
+        setTimeout(() => {
+            // Test PercentBar feature
+            const testPercentBar = document.getElementById('testPercentBar');
+            if (testPercentBar) {
+                testPercentBar.addEventListener('click', () => {
+                    if (!window.scheduler) {
+                        alert('Scheduler not initialized yet. Please reload the page.');
+                        return;
+                    }
+                    
+                    const percentBarFeature = window.scheduler.features.percentBar;
+                    percentBarFeature.disabled = !percentBarFeature.disabled;
+                    
+                    if (!percentBarFeature.disabled) {
+                        alert('✅ PercentBar ENABLED\n\nYou should now see:\n• Progress bars on all events\n• Percentage completion indicators\n• Drag handles to adjust progress\n\nNote: Events already have random progress values for testing');
+                    } else {
+                        alert('❌ PercentBar DISABLED\n\nProgress bars are now hidden');
+                    }
+                });
+            }
+            
+            // Test ResourceNonWorkingTime
+            const testNonWorking = document.getElementById('testNonWorking');
+            if (testNonWorking) {
+                testNonWorking.addEventListener('click', () => {
+                    if (!window.scheduler) {
+                        alert('Scheduler not initialized yet. Please reload the page.');
+                        return;
+                    }
+                    
+                    const feature = window.scheduler.features.resourceNonWorkingTime;
+                    alert('✅ ResourceNonWorkingTime Test\n\nThis feature highlights non-working intervals based on resource calendars.\n\nLook for:\n• Shaded areas during weekends\n• Shaded areas during non-working hours\n• Different shading for each resource\'s calendar\n\nNote: Resources need individual calendars defined for this to work');
+                });
+            }
+            
+            // Test TimeSpanHighlight
+            const testHighlight = document.getElementById('testTimeHighlight');
+            if (testHighlight) {
+                testHighlight.addEventListener('click', () => {
+                    if (!window.scheduler) {
+                        alert('Scheduler not initialized yet. Please reload the page.');
+                        return;
+                    }
+                    
+                    // Test highlighting time spans
+                    const feature = window.scheduler.features.timeSpanHighlight;
+                    const now = new Date();
+                    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+                    
+                    // Highlight a week
+                    feature.highlight({
+                        startDate: now,
+                        endDate: nextWeek,
+                        label: 'Test Highlight Period'
+                    });
+                    
+                    alert('✅ TimeSpanHighlight Test\n\nA time span has been highlighted!\n\nLook for:\n• Shaded vertical band in the timeline\n• Covers the next 7 days from today\n• Label appears when you hover\n\nClick multiple times to add more highlights');
+                });
+            }
+            
+            // Test Versions
+            const testVersions = document.getElementById('testVersions');
+            if (testVersions) {
+                testVersions.addEventListener('click', () => {
+                    if (!window.scheduler) {
+                        alert('Scheduler not initialized yet. Please reload the page.');
+                        return;
+                    }
+                    
+                    alert('✅ Versions Feature Test\n\nThis feature captures project snapshots.\n\nCapabilities:\n• Auto-saves after 5 seconds of inactivity\n• Stores up to 50 versions\n• Can restore to any previous version\n• Tracks all project changes\n\nNote: The feature is already enabled and auto-saving your changes!');
+                });
+            }
+            
+            // Double-click info for TaskEdit
+            setTimeout(() => {
+                console.log('✅ TaskEdit Feature: Double-click any event to open the advanced editor');
+            }, 3000);
+            
+        }, 2000); // Wait 2 seconds for scheduler to initialize
     </script>
 </body>
 </html>
