@@ -3208,8 +3208,8 @@
                 }
                 
                 async function levelResourcesScheduling() {
-                    // Balance workload across resources to reduce utilization peaks
-                    console.log('🚀 Starting Level Resources scheduling...');
+                    // Balance workload using dependencies to manage resource conflicts
+                    console.log('⚖️ Resource Leveling with dependency management...');
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
                     
