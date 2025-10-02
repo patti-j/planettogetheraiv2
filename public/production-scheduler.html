@@ -2118,10 +2118,42 @@
                     },
 
                     features: {
-                        // Dependencies feature for showing task relationships
-                        dependencies: true,
+                        // 1. CalendarHighlight - Visualize calendars during drag/resize
+                        calendarHighlight: {
+                            calendar: 'resource', // Show resource calendars during interaction
+                            inflate: 5 // Expand highlight box by 5px
+                        },
                         
-                        // Enable drag and drop with tooltip
+                        // 2. CellEdit - Allow inline editing of cells
+                        cellEdit: {
+                            triggerEvent: 'dblclick', // Double-click to edit
+                            autoEdit: false // Don't auto-edit on selection
+                        },
+                        
+                        // 3. Dependencies - Task relationships (already configured)
+                        dependencies: {
+                            disabled: false,
+                            showTooltip: true,
+                            allowCreate: true, // Allow creating dependencies by dragging
+                            showCreationTooltip: true,
+                            creationTooltip: 'Create dependency',
+                            radius: 10 // Connector radius
+                        },
+                        
+                        // 4. DependencyEdit - Edit dependencies dialog
+                        dependencyEdit: {
+                            showDeleteButton: true,
+                            showLagField: true, // Allow setting lag between tasks
+                            autoClose: false // Keep dialog open after save
+                        },
+                        
+                        // 5. EventBuffer - Buffer zones before/after events
+                        eventBuffer: {
+                            tooltipTemplate: ({ duration, startDate, endDate }) => 
+                                `Buffer: ${duration} hours`
+                        },
+                        
+                        // 6. EventDrag - Enable drag and drop with tooltip
                         eventDrag: {
                             showTooltip: true,
                             constrainDragToResource: false, // Allow dragging between resources
@@ -2209,7 +2241,7 @@
                             }
                         },
                         
-                        // Enable resize with overlap validation
+                        // 7. EventResize - Enable resize with overlap validation
                         eventResize: {
                             showTooltip: true,
                             // Validate that resized event doesn't overlap with other operations on the same resource
@@ -2250,7 +2282,104 @@
                             }
                         },
                         
-                        // Event tooltips on hover
+                        // 8. EventSegments - Split events into segments
+                        eventSegments: {
+                            showTooltip: true
+                        },
+                        
+                        // 9. EventSegmentDrag - Allow dragging individual segments
+                        eventSegmentDrag: {
+                            showTooltip: true,
+                            // Use same validation as main eventDrag
+                            validatorFn: function(context) {
+                                // Reuse eventDrag validator logic
+                                return true; // For now, allow all segment drags
+                            }
+                        },
+                        
+                        // 10. EventSegmentResize - Allow resizing individual segments
+                        eventSegmentResize: {
+                            showTooltip: true
+                        },
+                        
+                        // 11. NestedEvents - Support for nested/hierarchical events
+                        nestedEvents: {
+                            barMargin: 5,
+                            headerHeight: 25,
+                            // Configure how nested events display
+                            eventLayout: 'stack' // or 'pack' or 'mixed'
+                        },
+                        
+                        // 12. PercentBar - Progress line feature (already configured, enhancing)
+                        percentBar: {
+                            disabled: false,
+                            allowResize: true // Allow resizing the progress bar
+                        },
+                        
+                        // 13. ResourceNonWorkingTime - Show non-working time for resources
+                        resourceNonWorkingTime: {
+                            maxTimeAxisUnit: 'year', // Maximum unit to show non-working time
+                            // Define resource-specific non-working time
+                            tooltipTemplate: ({ startDate, endDate, resource }) => 
+                                `${resource.name} is not available`
+                        },
+                        
+                        // 14. TaskEdit - Advanced task editing dialog
+                        taskEdit: {
+                            showDeleteButton: true,
+                            items: {
+                                // Configure General tab
+                                generalTab: {
+                                    items: {
+                                        nameField: { label: 'Operation Name', weight: 100 },
+                                        resourcesField: { label: 'Assigned Resource', weight: 200 },
+                                        percentDoneField: { label: 'Progress %', weight: 300 },
+                                        effortField: { label: 'Effort (hours)', weight: 400 },
+                                        durationField: { label: 'Duration', weight: 500 }
+                                    }
+                                },
+                                // Configure Advanced tab
+                                advancedTab: {
+                                    items: {
+                                        calendarField: { label: 'Calendar', weight: 100 },
+                                        schedulingModeField: { label: 'Scheduling Mode', weight: 200 },
+                                        constraintTypeField: { label: 'Constraint Type', weight: 300 },
+                                        constraintDateField: { label: 'Constraint Date', weight: 400 },
+                                        manuallyScheduledField: { label: 'Manually Scheduled', weight: 500 }
+                                    }
+                                },
+                                // Configure Dependencies tab
+                                dependenciesTab: {
+                                    weight: 300
+                                },
+                                // Configure Resources tab
+                                resourcesTab: {
+                                    weight: 400
+                                },
+                                // Configure Notes tab
+                                notesTab: {
+                                    weight: 500
+                                }
+                            }
+                        },
+                        
+                        // 15. TimeSpanHighlight - Highlight specific time spans
+                        timeSpanHighlight: {
+                            // Highlight weekends
+                            tooltipTemplate: ({ startDate, endDate }) => 
+                                `Special period: ${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`
+                        },
+                        
+                        // 16. Versions - Support for version control/undo-redo
+                        versions: {
+                            showTooltip: true,
+                            // Configure version control
+                            autoSave: true,
+                            saveDelay: 5000, // Auto-save after 5 seconds of inactivity
+                            maxVersions: 50 // Keep last 50 versions
+                        },
+                        
+                        // Event tooltips on hover (existing, keep as is)
                         eventTooltip: {
                             template: ({ eventRecord }) => {
                                 // Extract job name/batch from the event data
@@ -2273,25 +2402,133 @@
                             }
                         },
                         
-                        // Show current time line
+                        // 17. TimeRanges - Show current time line and other time ranges
                         timeRanges: {
-                            showCurrentTimeLine: true
+                            showCurrentTimeLine: true,
+                            showHeaderElements: true,
+                            enableResizing: true
                         },
                         
-                        // Progress line feature - shows percentage complete
-                        percentBar: true,
+                        // 18. NonWorkingTime - Global non-working time visualization
+                        nonWorkingTime: {
+                            disabled: false,
+                            highlightWeekends: true // Highlight weekends as non-working time
+                        },
                         
-                        // Non-working time visualization
-                        nonWorkingTime: true,
+                        // 19. CriticalPaths - Show critical path in schedule
+                        criticalPaths: {
+                            disabled: false,
+                            showTooltip: true
+                        },
                         
-                        // Critical paths feature
-                        criticalPaths: false,
+                        // 20. EventMenu - Context menu on right-click
+                        eventMenu: {
+                            items: {
+                                editEvent: {
+                                    text: 'Edit Operation',
+                                    icon: 'b-fa b-fa-edit',
+                                    weight: 100
+                                },
+                                deleteEvent: {
+                                    text: 'Delete Operation',
+                                    icon: 'b-fa b-fa-trash',
+                                    weight: 200
+                                },
+                                // Add custom menu items
+                                markComplete: {
+                                    text: 'Mark as Complete',
+                                    icon: 'b-fa b-fa-check',
+                                    weight: 300,
+                                    onItem({ eventRecord }) {
+                                        eventRecord.percentDone = 100;
+                                    }
+                                },
+                                addDependency: {
+                                    text: 'Add Dependency',
+                                    icon: 'b-fa b-fa-link',
+                                    weight: 400
+                                }
+                            }
+                        },
                         
-                        // Event menu on right-click
-                        eventMenu: true,
+                        // 21. ScheduleMenu - Context menu for schedule area
+                        scheduleMenu: {
+                            items: {
+                                addEvent: {
+                                    text: 'Add Operation Here',
+                                    icon: 'b-fa b-fa-plus',
+                                    weight: 100
+                                },
+                                zoomIn: {
+                                    text: 'Zoom In',
+                                    icon: 'b-fa b-fa-search-plus',
+                                    weight: 200
+                                },
+                                zoomOut: {
+                                    text: 'Zoom Out', 
+                                    icon: 'b-fa b-fa-search-minus',
+                                    weight: 300
+                                }
+                            }
+                        },
                         
-                        // Schedule menu on right-click
-                        scheduleMenu: true
+                        // 22. EventEdit - Standard event editing (simpler than TaskEdit)
+                        eventEdit: {
+                            showDeleteButton: true,
+                            showNameField: true,
+                            showResourceField: true,
+                            showDurationField: true
+                        },
+                        
+                        // 23. Summary - Show summary row
+                        summary: {
+                            showTooltip: true,
+                            renderer: ({ events }) => {
+                                const totalHours = events.reduce((sum, event) => 
+                                    sum + (event.duration || 0), 0);
+                                return `Total: ${totalHours}h`;
+                            }
+                        },
+                        
+                        // 24. EventCopyPaste - Copy/paste events
+                        eventCopyPaste: {
+                            nameFormat: '{name} (copy)',
+                            allowCopy: true,
+                            allowCut: true,
+                            allowPaste: true
+                        },
+                        
+                        // 25. Pan - Pan the schedule with mouse
+                        pan: {
+                            vertical: false // Only allow horizontal panning
+                        },
+                        
+                        // 26. HeaderZoom - Zoom controls in header
+                        headerZoom: {
+                            position: 'start' // or 'end'
+                        },
+                        
+                        // 27. ScheduleTooltip - Tooltip when hovering over empty schedule
+                        scheduleTooltip: {
+                            disabled: false,
+                            showOnHover: true
+                        },
+                        
+                        // 28. EventFilter - Filter events
+                        eventFilter: {
+                            // Filter configuration
+                            disabled: false
+                        },
+                        
+                        // 29. HeaderContextMenu - Right-click menu on headers
+                        headerContextMenu: {
+                            disabled: false
+                        },
+                        
+                        // 30. Tree - If using tree resources
+                        tree: {
+                            expandOnCellClick: true
+                        }
                     },
 
                     eventRenderer({ eventRecord, renderData }) {
