@@ -166,6 +166,13 @@ router.get('/schedulerpro.classic-light.css', (req, res) => {
   res.sendFile(cssPath);
 });
 
+// Serve dark theme CSS (using light theme as base since we don't have a separate dark CSS file)
+// The dark theme styling will be handled through CSS overrides in the HTML
+router.get('/schedulerpro.classic-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
+  res.sendFile(cssPath);
+});
+
 router.get('/schedulerpro.umd.js', (req, res) => {
   const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
   res.sendFile(jsPath);

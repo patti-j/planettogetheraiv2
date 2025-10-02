@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink } from 'lucide-react';
 import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
+import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -14,6 +15,7 @@ export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const { resolvedTheme } = useTheme();
 
   useEffect(() => {
     // Set page title
@@ -78,10 +80,10 @@ export default function ProductionScheduler() {
           </div>
         )}
 
-        {/* Scheduler iframe with cache busting - optimized for mobile */}
+        {/* Scheduler iframe with cache busting and theme - optimized for mobile */}
         <iframe
           ref={iframeRef}
-          src={`/api/production-scheduler?v=${Date.now()}`}
+          src={`/api/production-scheduler?theme=${resolvedTheme}&v=${Date.now()}`}
           className="w-full h-full border-0"
           title="Production Scheduler"
           data-testid="production-scheduler-iframe"
