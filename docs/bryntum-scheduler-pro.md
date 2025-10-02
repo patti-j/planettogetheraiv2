@@ -37,6 +37,65 @@ The Production Scheduler uses a **hybrid iframe/React architecture**:
 - Backend: `/api/production-scheduler` → Raw HTML for iframe
 - Assets: `/schedulerpro.umd.js`, `/schedulerpro.classic-light.css`, `/schedulerpro.classic-dark.css`
 
+## Responsive Design Implementation
+
+### Responsive Levels Configuration
+
+The scheduler uses Bryntum's `responsiveLevels` API to adapt to different screen sizes:
+
+```javascript
+responsiveLevels: {
+    small: {
+        levelWidth: 480,      // < 480px (phones)
+        rowHeight: 45,
+        barMargin: 4,
+        viewPreset: 'weekAndDay',
+        eventStyle: 'plain',
+        zoomLevel: 0
+    },
+    medium: {
+        levelWidth: 768,      // 481-768px (tablets)
+        rowHeight: 50,
+        barMargin: 5,
+        viewPreset: 'weekAndDay',
+        zoomLevel: 2
+    },
+    normal: {
+        levelWidth: 1024,     // 769-1024px (small desktops)
+        rowHeight: 55,
+        barMargin: 7,
+        viewPreset: 'dayAndWeek',
+        zoomLevel: 4
+    },
+    large: {
+        levelWidth: '*',      // > 1024px (desktops)
+        rowHeight: 60,
+        barMargin: 8,
+        viewPreset: 'weekAndDayLetter',
+        zoomLevel: 5
+    }
+}
+```
+
+### Responsive Column Configuration
+
+Columns adapt based on screen size with per-level settings:
+
+- **Resource Column**: Always visible (locked), width adjusts from 100px (small) to 200px (large)
+- **Category Column**: Hidden on small screens, visible from medium up
+- **Type Column**: Hidden on small/medium, visible on normal/large screens
+- **Capacity Column**: Only visible on large screens
+
+### CSS Classes Applied
+
+Bryntum automatically applies these classes based on active responsive level:
+- `.b-responsive-small` - Phones
+- `.b-responsive-medium` - Tablets  
+- `.b-responsive-normal` - Small desktops
+- `.b-responsive-large` - Large desktops
+
+These classes allow for additional CSS customization per breakpoint.
+
 ## Theme Implementation
 
 ### How Theme Switching Works
@@ -45,6 +104,7 @@ The Production Scheduler uses a **hybrid iframe/React architecture**:
 2. **Theme Parameter Passing**: React component passes theme via URL: `?theme=light` or `?theme=dark`
 3. **Dynamic CSS Loading**: JavaScript in HTML head reads theme parameter and loads appropriate CSS
 4. **Custom Dark Mode Overrides**: Comprehensive CSS overrides for Bryntum components in dark mode
+5. **Responsive Dark Theme**: Special handling for dark theme at different responsive levels
 
 ### Theme Files
 

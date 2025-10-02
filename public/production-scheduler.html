@@ -183,71 +183,151 @@
             height: 16px;
         }
         
-        /* Mobile responsive styles */
-        @media (max-width: 768px) {
-            .header {
-                padding: 0.75rem 1rem;
-            }
-            
-            .header h1 {
-                font-size: 1.2rem;
-            }
-            
-            .toolbar {
-                padding: 0.5rem 1rem;
-                gap: 0.5rem;
-                overflow-x: auto;
-                -webkit-overflow-scrolling: touch;
-            }
-            
-            .toolbar-group {
-                padding-right: 0.75rem;
-                flex-shrink: 0;
-            }
-            
-            .toolbar label {
-                display: none; /* Hide labels on mobile to save space */
-            }
-            
-            .toolbar button span:not(.icon-text) {
-                display: none; /* Hide button text on mobile, keep icons */
-            }
-            
-            .toolbar button {
-                padding: 0.5rem;
-                min-width: 40px;
-                min-height: 40px;
-            }
-            
-            .toolbar select {
-                max-width: 120px;
-            }
-            
-            /* Make scheduler touch-friendly */
-            .b-sch-event {
-                min-height: 30px !important;
-            }
-            
-            .b-grid-cell {
-                padding: 4px !important;
-            }
+        /* Bryntum Responsive Level Classes - Applied automatically by SchedulerPro */
+        
+        /* Small screens (phones < 480px) */
+        .b-responsive-small {
+            font-size: 0.875rem;
         }
         
-        @media (max-width: 480px) {
-            .header h1 {
-                font-size: 1rem;
-            }
-            
-            .toolbar {
-                padding: 0.5rem;
-            }
-            
-            /* Stack toolbar items vertically on very small screens */
-            .toolbar-group {
-                border-right: none;
-                width: 100%;
-                justify-content: space-between;
-            }
+        .b-responsive-small .b-grid-header {
+            font-size: 0.75rem;
+            height: 35px;
+        }
+        
+        .b-responsive-small .b-sch-event {
+            font-size: 0.75rem;
+            padding: 2px 4px;
+            min-height: 25px !important;
+        }
+        
+        .b-responsive-small .b-grid-cell {
+            padding: 3px !important;
+            font-size: 0.8rem;
+        }
+        
+        .b-responsive-small .b-timeline-subgrid {
+            font-size: 0.75rem;
+        }
+        
+        /* Simplify event appearance on small screens */
+        .b-responsive-small .b-sch-event-content {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        /* Medium screens (tablets 481-768px) */
+        .b-responsive-medium {
+            font-size: 0.9rem;
+        }
+        
+        .b-responsive-medium .b-grid-header {
+            font-size: 0.85rem;
+            height: 38px;
+        }
+        
+        .b-responsive-medium .b-sch-event {
+            font-size: 0.8rem;
+            padding: 3px 5px;
+        }
+        
+        .b-responsive-medium .b-grid-cell {
+            padding: 4px !important;
+            font-size: 0.85rem;
+        }
+        
+        /* Normal screens (small desktops 769-1024px) */
+        .b-responsive-normal {
+            font-size: 0.95rem;
+        }
+        
+        .b-responsive-normal .b-grid-header {
+            font-size: 0.9rem;
+        }
+        
+        .b-responsive-normal .b-sch-event {
+            font-size: 0.85rem;
+        }
+        
+        /* Large screens (desktops > 1024px) */
+        .b-responsive-large {
+            font-size: 1rem;
+        }
+        
+        /* Toolbar responsive adjustments */
+        .b-responsive-small .toolbar,
+        .b-responsive-medium .toolbar {
+            padding: 0.5rem;
+            gap: 0.5rem;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .b-responsive-small .toolbar-group {
+            padding-right: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        .b-responsive-small .toolbar label,
+        .b-responsive-medium .toolbar label {
+            display: none; /* Hide labels on smaller screens */
+        }
+        
+        .b-responsive-small .toolbar button span:not(.icon-text) {
+            display: none; /* Hide button text, keep icons only */
+        }
+        
+        .b-responsive-small .toolbar button,
+        .b-responsive-medium .toolbar button {
+            padding: 0.5rem;
+            min-width: 36px;
+            min-height: 36px;
+        }
+        
+        .b-responsive-small .toolbar select {
+            max-width: 100px;
+            font-size: 0.75rem;
+        }
+        
+        .b-responsive-medium .toolbar select {
+            max-width: 120px;
+            font-size: 0.8rem;
+        }
+        
+        /* Header responsive adjustments */
+        .b-responsive-small .header h1 {
+            font-size: 1rem;
+        }
+        
+        .b-responsive-medium .header h1 {
+            font-size: 1.2rem;
+        }
+        
+        /* Touch-friendly adjustments for mobile */
+        .b-responsive-small .b-grid-row,
+        .b-responsive-medium .b-grid-row {
+            min-height: 40px; /* Larger touch targets */
+        }
+        
+        /* Optimize dependency lines for small screens */
+        .b-responsive-small .b-sch-dependency {
+            stroke-width: 1px !important;
+        }
+        
+        .b-responsive-medium .b-sch-dependency {
+            stroke-width: 1.5px !important;
+        }
+        
+        /* Adjust tooltip size for responsive levels */
+        .b-responsive-small .b-tooltip {
+            font-size: 0.75rem;
+            max-width: 200px;
+        }
+        
+        .b-responsive-medium .b-tooltip {
+            font-size: 0.85rem;
+            max-width: 250px;
         }
 
         .scheduler-container {
@@ -319,6 +399,23 @@
         /* Dark theme overrides */
         .dark-theme {
             background: #1a1a1a;
+        }
+        
+        /* Dark theme responsive adjustments */
+        .dark-theme.b-responsive-small .b-sch-event,
+        .dark-theme .b-responsive-small .b-sch-event {
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .dark-theme.b-responsive-small .b-grid-header,
+        .dark-theme .b-responsive-small .b-grid-header {
+            background: #2a2a2a;
+            border-color: #444;
+        }
+        
+        .dark-theme.b-responsive-medium .b-sch-event,
+        .dark-theme .b-responsive-medium .b-sch-event {
+            border: 1px solid rgba(255, 255, 255, 0.25);
         }
         
         .dark-theme .header {
@@ -2212,33 +2309,59 @@
                     }
                 }
 
-                // Detect mobile device
+                // Detect mobile device for specific features
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
-                const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
                 
-                // Choose appropriate view preset based on device
-                let viewPreset = 'dayAndWeek';
-                let resourceColumnWidth = 200;
-                let categoryColumnWidth = 150;
-                
-                if (isMobile) {
-                    viewPreset = 'weekAndDay';  // Wider view for mobile
-                    resourceColumnWidth = 120;
-                    categoryColumnWidth = 0; // Hide category on mobile
-                } else if (isTablet) {
-                    viewPreset = 'weekAndDay';
-                    resourceColumnWidth = 150;
-                    categoryColumnWidth = 100;
-                }
-                
-                // Configure columns based on device
+                // Configure columns with responsive settings following Bryntum guide
                 const schedulerColumns = [
-                    { text: 'Resource', field: 'name', width: resourceColumnWidth, locked: isMobile }
+                    { 
+                        text: 'Resource', 
+                        field: 'name', 
+                        width: 200,
+                        minWidth: 100,
+                        locked: true, // Always keep resource column visible
+                        responsiveLevels: {
+                            small: { width: 100, text: 'Res' }, // Shorter text on small screens
+                            medium: { width: 120, text: 'Resource' },
+                            normal: { width: 150, text: 'Resource' },
+                            large: { width: 200, text: 'Resource Name' }
+                        }
+                    },
+                    { 
+                        text: 'Category', 
+                        field: 'category', 
+                        width: 150,
+                        responsiveLevels: {
+                            small: { hidden: true }, // Hide on small screens
+                            medium: { hidden: false, width: 100 },
+                            normal: { hidden: false, width: 120 },
+                            large: { hidden: false, width: 150 }
+                        }
+                    },
+                    {
+                        text: 'Type',
+                        field: 'resource_type',
+                        width: 120,
+                        responsiveLevels: {
+                            small: { hidden: true }, // Hide on small screens
+                            medium: { hidden: true }, // Hide on medium screens
+                            normal: { hidden: false, width: 100 },
+                            large: { hidden: false, width: 120 }
+                        }
+                    },
+                    {
+                        text: 'Capacity',
+                        field: 'capacity',
+                        width: 80,
+                        align: 'center',
+                        responsiveLevels: {
+                            small: { hidden: true },
+                            medium: { hidden: true },
+                            normal: { hidden: true },
+                            large: { hidden: false, width: 80 }
+                        }
+                    }
                 ];
-                
-                if (!isMobile) {
-                    schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
-                }
                 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
@@ -2270,19 +2393,53 @@
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
-
-                    viewPreset: viewPreset,
-                    rowHeight: isMobile ? 50 : 60,
-                    barMargin: isMobile ? 5 : 8,
                     
-                    // Enable horizontal scrolling on mobile
-                    scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
+                    // Responsive levels configuration following Bryntum guide
+                    responsiveLevels: {
+                        small: {
+                            levelWidth: 480,
+                            rowHeight: 45,
+                            barMargin: 4,
+                            viewPreset: 'weekAndDay',
+                            eventStyle: 'plain', // Simpler styling for small screens
+                            zoomLevel: 0
+                        },
+                        medium: {
+                            levelWidth: 768,
+                            rowHeight: 50,
+                            barMargin: 5,
+                            viewPreset: 'weekAndDay',
+                            zoomLevel: 2
+                        },
+                        normal: {
+                            levelWidth: 1024,
+                            rowHeight: 55,
+                            barMargin: 7,
+                            viewPreset: 'dayAndWeek',
+                            zoomLevel: 4
+                        },
+                        large: {
+                            levelWidth: '*', // Default for all larger sizes
+                            rowHeight: 60,
+                            barMargin: 8,
+                            viewPreset: 'weekAndDayLetter',
+                            zoomLevel: 5
+                        }
+                    },
                     
-                    // Zoom level for better mobile view
-                    zoomLevel: isMobile ? 0 : 5,
-                    zoomOnMouseWheel: !isMobile,
+                    // Default values (will be overridden by responsive levels)
+                    viewPreset: 'weekAndDayLetter',
+                    rowHeight: 60,
+                    barMargin: 8,
                     
-                    // Enable pinch zoom on mobile
+                    // Enable horizontal scrolling
+                    scrollable: true,
+                    
+                    // Zoom settings
+                    zoomLevel: 5,
+                    zoomOnMouseWheel: true,
+                    
+                    // Enable pinch zoom on touch devices
                     pinchZoom: isMobile,
                     
                     // CRITICAL: Prevent overlapping events on same resource
