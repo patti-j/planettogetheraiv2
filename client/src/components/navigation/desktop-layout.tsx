@@ -239,9 +239,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           agentId: respondingAgent
         });
       } else if (data?.action?.type === 'create_chart') {
-        // Handle chart creation actions - open canvas
-        console.log('Floating AI - Chart creation detected, opening canvas');
-        setCanvasVisible(true);
+        // Handle chart creation actions - navigate to canvas
+        console.log('Floating AI - Chart creation detected, navigating to canvas');
+        setLocation('/canvas');
         
         // Add chart creation confirmation message
         addMessage({
