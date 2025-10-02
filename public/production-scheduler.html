@@ -2865,6 +2865,12 @@
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
+                    // Clear any existing constraint dates to ensure clean scheduling
+                    events.forEach(event => {
+                        event.constraintDate = null;
+                        event.constraintType = null;
+                    });
+                    
                     // Use September 3, 2025 as the base scheduling date
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
@@ -2927,10 +2933,8 @@
                             
                             // Find next available slot that doesn't overlap with ANY existing operation
                             let foundSlot = false;
-                            let proposedStart = new Date(Math.max(
-                                (event.constraintDate || nextAvailableTime).getTime(), 
-                                nextAvailableTime.getTime()
-                            ));
+                            // CRITICAL FIX: Ignore old constraintDate and use nextAvailableTime to pack operations tightly
+                            let proposedStart = new Date(nextAvailableTime.getTime());
                             let proposedEnd = new Date(proposedStart.getTime() + durationMs);
                             let attempts = 0;
                             
