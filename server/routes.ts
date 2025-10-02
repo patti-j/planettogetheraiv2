@@ -166,13 +166,6 @@ router.get('/schedulerpro.classic-light.css', (req, res) => {
   res.sendFile(cssPath);
 });
 
-// Serve dark theme CSS (using light theme as base since we don't have a separate dark CSS file)
-// The dark theme styling will be handled through CSS overrides in the HTML
-router.get('/schedulerpro.classic-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
-  res.sendFile(cssPath);
-});
-
 router.get('/schedulerpro.umd.js', (req, res) => {
   const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
   res.sendFile(jsPath);
@@ -730,63 +723,42 @@ router.get("/api/recent-pages", async (req, res) => {
     const authHeader = req.headers.authorization;
     let userId: number | null = null;
     
-    // In development mode, provide automatic authentication
-    const isDevelopment = process.env.NODE_ENV !== 'production';
-    
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       
-      // For JWT tokens, decode and verify
-      if (token.includes('.')) {
-        try {
-          const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret-key-change-in-production') as any;
-          userId = decoded.userId;
-        } catch (err) {
-          // JWT verification failed, try other methods
-        }
-      }
-      
       // Check token store
-      if (!userId) {
-        global.tokenStore = global.tokenStore || new Map();
-        let tokenData = global.tokenStore.get(token);
-        
-        // If not in memory store, try to reconstruct from token (for server restart resilience)
-        if (!tokenData) {
-          try {
-            const decoded = Buffer.from(token, 'base64').toString();
-            const [tokenUserId, timestamp] = decoded.split(':');
+      global.tokenStore = global.tokenStore || new Map();
+      let tokenData = global.tokenStore.get(token);
+      
+      // If not in memory store, try to reconstruct from token (for server restart resilience)
+      if (!tokenData) {
+        try {
+          const decoded = Buffer.from(token, 'base64').toString();
+          const [tokenUserId, timestamp] = decoded.split(':');
+          
+          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+            const tokenAge = Date.now() - Number(timestamp);
+            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
             
-            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-              const tokenAge = Date.now() - Number(timestamp);
-              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
-              
-              if (tokenAge < maxAge) {
-                // Verify user exists in database
-                const user = await storage.getUser(Number(tokenUserId));
-                if (user && user.isActive) {
-                  userId = Number(tokenUserId);
-                }
+            if (tokenAge < maxAge) {
+              // Verify user exists in database
+              const user = await storage.getUser(Number(tokenUserId));
+              if (user && user.isActive) {
+                userId = Number(tokenUserId);
               }
             }
-          } catch (err) {
-            // Invalid token format
           }
-        } else if (tokenData.expiresAt > Date.now()) {
-          userId = tokenData.userId;
+        } catch (err) {
+          // Invalid token format
         }
+      } else if (tokenData.expiresAt > Date.now()) {
+        userId = tokenData.userId;
       }
     }
     
     // Fallback to session
     if (!userId) {
       userId = (req.session as any)?.userId;
-    }
-    
-    // In development mode, default to admin user if no authentication
-    if (!userId && isDevelopment) {
-      console.log('🔧 Development mode: Providing automatic admin access for recent pages');
-      userId = 1; // Admin user ID
     }
     
     if (!userId) {
@@ -1315,7 +1287,7 @@ router.get("/pt-operations", async (req, res) => {
 });
 
 // PT Dependencies endpoint - reads from ptjobsuccessormanufacturingorders table
-router.get("/api/pt-dependencies", async (req, res) => {
+router.get("/pt-dependencies", async (req, res) => {
   try {
     console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
     
@@ -1434,7 +1406,7 @@ router.get("/pt-resources", async (req, res) => {
 // NOTE: PT Dependencies endpoint is defined earlier in the file using direct SQL query
 
 // PT Resource Capabilities endpoint - returns resources with their capabilities
-router.get("/api/resources-with-capabilities", async (req, res) => {
+router.get("/resources-with-capabilities", async (req, res) => {
   try {
     // Fetch all resources with their capabilities
     const rawData = await db.execute(sql`
@@ -1442,6 +1414,7 @@ router.get("/api/resources-with-capabilities", async (req, res) => {
         r.id as resource_id,
         r.name as resource_name,
         r.external_id,
+        r.resource_type,
         r.active,
         COALESCE(
           STRING_AGG(rc.capability_id::text, ',' ORDER BY rc.capability_id),
@@ -1450,7 +1423,7 @@ router.get("/api/resources-with-capabilities", async (req, res) => {
       FROM ptresources r
       LEFT JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
       WHERE r.active = true
-      GROUP BY r.id, r.name, r.external_id, r.active
+      GROUP BY r.id, r.name, r.external_id, r.resource_type, r.active
       ORDER BY r.id
     `);
 
@@ -1458,7 +1431,7 @@ router.get("/api/resources-with-capabilities", async (req, res) => {
       id: row.resource_id,
       name: row.resource_name,
       external_id: row.external_id,
-      category: 'Manufacturing',
+      category: row.resource_type || 'Manufacturing',
       active: row.active,
       capabilities: row.capabilities ? row.capabilities.split(',').map(Number) : []
     }));
@@ -2892,25 +2865,6 @@ router.post("/api/canvas/widgets", async (req, res) => {
       return res.status(400).json({ error: "Invalid dashboard ID" });
     }
     
-    // Deduplication: Check if a widget with the same title already exists and deactivate it
-    // This prevents duplicate charts from accumulating when AI regenerates the same chart
-    const existingWidgets = await db.select()
-      .from(widgets)
-      .where(and(
-        eq(widgets.title, title),
-        eq(widgets.isActive, true)
-      ));
-    
-    if (existingWidgets.length > 0) {
-      console.log(`[Canvas Widgets POST] Deactivating ${existingWidgets.length} existing widget(s) with title "${title}"`);
-      await db.update(widgets)
-        .set({ isActive: false })
-        .where(and(
-          eq(widgets.title, title),
-          eq(widgets.isActive, true)
-        ));
-    }
-    
     // Save widget to database using storage
     const newWidget = await storage.createCanvasWidget({
       type,
@@ -3078,37 +3032,6 @@ router.get("/api/widgets/:id", async (req, res) => {
   } catch (error: any) {
     console.error('❌ [Widget API] Error fetching widget:', error);
     res.status(500).json({ error: 'Failed to fetch widget' });
-  }
-});
-
-// Bulk clear all widgets endpoint - deactivates all widgets at once
-router.post("/api/canvas/widgets/clear-all", async (req, res) => {
-  // Development bypass - skip authentication in dev mode
-  if (process.env.NODE_ENV === 'development') {
-    console.log("🔧 [Clear All Widgets] Development mode: Skipping authentication");
-  } else {
-    // In production, require authentication
-    await new Promise((resolve, reject) => {
-      requireAuth(req, res, (error: any) => {
-        if (error) reject(error);
-        else resolve(undefined);
-      });
-    });
-  }
-
-  try {
-    console.log("🧹 [Clear All Widgets] Deactivating ALL active widgets...");
-    
-    // Bulk update - set all active widgets to inactive
-    const result = await db.update(widgets)
-      .set({ isActive: false })
-      .where(eq(widgets.isActive, true));
-
-    console.log("✅ [Clear All Widgets] Successfully deactivated all widgets");
-    res.json({ success: true, message: "All widgets cleared" });
-  } catch (error) {
-    console.error("❌ [Clear All Widgets] Error clearing widgets:", error);
-    res.status(500).json({ error: "Failed to clear all widgets" });
   }
 });
 

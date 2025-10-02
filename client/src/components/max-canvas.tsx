@@ -43,8 +43,7 @@ import {
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
 import { useMaxDock, CanvasItem } from '@/contexts/MaxDockContext';
-import { useQuery, useMutation } from '@tanstack/react-query';
-import { queryClient } from '@/lib/queryClient';
+import { useQuery } from '@tanstack/react-query';
 import {
   PieChart as RechartsPieChart,
   Pie,
@@ -122,46 +121,15 @@ export const MaxCanvas: React.FC<MaxCanvasProps> = ({
 
   console.log('MaxCanvas rendered with items:', canvasItems, 'isVisible:', isVisible);
 
-  // Clear all widgets mutation - uses bulk clear endpoint
-  const clearAllWidgets = useMutation({
-    mutationFn: async () => {
-      // Use the bulk clear endpoint to deactivate ALL widgets at once
-      const response = await fetch('/api/canvas/widgets/clear-all', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to clear all widgets');
-      }
-      
-      return response.json();
-    },
-    onSuccess: () => {
-      // Invalidate the widgets query to refresh the canvas
-      queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
-      setCanvasItems([]);
-      setShowClearConfirmation(false);
-      toast({ title: "Canvas cleared successfully - all widgets hidden" });
-    },
-    onError: (error) => {
-      console.error('Error clearing canvas:', error);
-      toast({ 
-        title: "Error clearing canvas", 
-        description: "Failed to clear all widgets. Please try again.",
-        variant: "destructive"
-      });
-      setShowClearConfirmation(false);
-    }
-  });
-
   // Clear items function with confirmation
   const handleClearCanvas = () => {
     setShowClearConfirmation(true);
   };
 
   const confirmClearCanvas = () => {
-    clearAllWidgets.mutate();
+    setCanvasItems([]);
+    setShowClearConfirmation(false);
+    toast({ title: "Canvas cleared" });
   };
 
   const cancelClearCanvas = () => {

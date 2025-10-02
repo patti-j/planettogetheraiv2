@@ -18,7 +18,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
-import { useMaxDock } from '@/contexts/MaxDockContext';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -33,7 +32,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { addMessage } = useChatSync();
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
-  const { setCanvasVisible } = useMaxDock();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -235,18 +233,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         addMessage({
           role: 'assistant',
           content: data.content || `Taking you to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
-          source: 'floating',
-          agentId: respondingAgent
-        });
-      } else if (data?.action?.type === 'create_chart') {
-        // Handle chart creation actions - navigate to canvas
-        console.log('Floating AI - Chart creation detected, navigating to canvas');
-        setLocation('/canvas');
-        
-        // Add chart creation confirmation message
-        addMessage({
-          role: 'assistant',
-          content: data.content || 'I\'ve created a chart for you and added it to the canvas.',
           source: 'floating',
           agentId: respondingAgent
         });
@@ -844,10 +830,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         ) : (
           // Expanded oval prompt - flexible layout with text wrapping
           <div className="bg-gradient-to-r from-purple-500 to-pink-600 p-0.5 rounded-3xl shadow-lg backdrop-blur-sm">
-            <div className="bg-background rounded-3xl p-1 flex flex-col gap-0 min-w-[340px] max-w-[520px]">
-              {/* Top row: Minimize button, input field, and send button */}
+            <div className="bg-background rounded-3xl p-1.5 flex flex-col gap-0.5 min-w-[340px] max-w-[520px]">
+              {/* Top row: Agent selector, input field, and send button */}
               <div className="flex items-center gap-0">
-                {/* Minimize Button */}
+                {/* Agent Selection Button */}
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -862,10 +848,35 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p>Minimize</p>
+                      <p>{selectedFloatingAgent === 'unified' ? 'All Agents' : activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Current Agent'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+
+                {/* Agent Selector Dropdown */}
+                <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
+                  <SelectTrigger className="w-6 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-0.5">
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="unified" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-3 h-3" />
+                        <span>All Agents</span>
+                      </div>
+                    </SelectItem>
+                    {activeAgents.map((agent) => {
+                      const IconComponent = getAgentIcon(agent.id);
+                      return (
+                        <SelectItem key={agent.id} value={agent.id} className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-3 h-3" />
+                            <span>{agent.displayName}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
 
                 {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
                 <div className="flex-1 min-w-[180px]">
@@ -930,49 +941,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 </Button>
               </div>
 
-              {/* Bottom row: Agent selector, file attachment, and voice recording */}
-              <div className="flex items-center gap-1 pl-3">
-                {/* Agent Selector Dropdown */}
-                <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                  <SelectTrigger className="w-auto h-5 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1 gap-0.5">
-                    <SelectValue>
-                      {selectedFloatingAgent === 'unified' ? (
-                        <div className="flex items-center gap-1">
-                          <Users className="w-2.5 h-2.5" />
-                          <span className="text-xs">All Agents</span>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1">
-                          {(() => {
-                            const IconComponent = getAgentIcon(selectedFloatingAgent);
-                            return <IconComponent className="w-2.5 h-2.5" />;
-                          })()}
-                          <span className="text-xs">{activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Agent'}</span>
-                        </div>
-                      )}
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent align="start">
-                    <SelectItem value="unified" className="text-xs">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-3 h-3" />
-                        <span>All Agents</span>
-                      </div>
-                    </SelectItem>
-                    {activeAgents.map((agent) => {
-                      const IconComponent = getAgentIcon(agent.id);
-                      return (
-                        <SelectItem key={agent.id} value={agent.id} className="text-xs">
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-3 h-3" />
-                            <span>{agent.displayName}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-
+              {/* Bottom row: Smaller icons for file attachment and voice recording */}
+              <div className="flex items-center gap-1.5 pl-7">
                 {/* File attachment input (hidden) */}
                 <input
                   ref={floatingFileInputRef}

@@ -10,27 +10,8 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS - Dynamically loaded based on theme -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
-    
-    <script>
-        // Apply theme based on URL parameter
-        (function() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const theme = urlParams.get('theme') || 'light';
-            const themeLink = document.getElementById('scheduler-theme');
-            
-            if (theme === 'dark') {
-                // Switch to dark theme
-                themeLink.href = '/schedulerpro.classic-dark.css';
-                document.documentElement.classList.add('dark');
-            } else {
-                // Use light theme (default)
-                themeLink.href = '/schedulerpro.classic-light.css';
-                document.documentElement.classList.add('light');
-            }
-        })();
-    </script>
+    <!-- Bryntum Scheduler Pro CSS -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
     <style>
         * {
@@ -53,11 +34,6 @@
             font-size: 14px;
         }
 
-        /* Dark theme overrides */
-        .dark body {
-            background: #1a1a1a;
-        }
-
         .header {
             background: rgba(255, 255, 255, 0.95);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -68,19 +44,10 @@
             flex-shrink: 0;
         }
 
-        .dark .header {
-            background: rgba(30, 30, 30, 0.95);
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-        }
-
         .header h1 {
             color: #000000;
             font-size: 1.5rem;
             font-weight: bold;
-        }
-
-        .dark .header h1 {
-            color: #ffffff;
         }
 
         .toolbar {
@@ -96,11 +63,6 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .dark .toolbar {
-            background: rgba(30, 30, 30, 0.9);
-            border-bottom: 1px solid #404040;
-        }
-
         .toolbar-group {
             display: flex;
             align-items: center;
@@ -108,10 +70,6 @@
             padding-right: 0.75rem;
             border-right: 1px solid #e0e0e0;
             flex-shrink: 0;
-        }
-
-        .dark .toolbar-group {
-            border-right: 1px solid #404040;
         }
 
         .toolbar-group:last-child {
@@ -125,10 +83,6 @@
             white-space: nowrap;
         }
 
-        .dark .toolbar label {
-            color: #aaa;
-        }
-
         .toolbar select,
         .toolbar button {
             padding: 0.375rem 0.625rem;
@@ -138,13 +92,6 @@
             font-size: 0.875rem;
             cursor: pointer;
             transition: all 0.2s;
-        }
-
-        .dark .toolbar select,
-        .dark .toolbar button {
-            border: 1px solid #555;
-            background: #2a2a2a;
-            color: #e0e0e0;
         }
 
         .toolbar select:hover,
@@ -183,151 +130,71 @@
             height: 16px;
         }
         
-        /* Bryntum Responsive Level Classes - Applied automatically by SchedulerPro */
-        
-        /* Small screens (phones < 480px) */
-        .b-responsive-small {
-            font-size: 0.875rem;
+        /* Mobile responsive styles */
+        @media (max-width: 768px) {
+            .header {
+                padding: 0.75rem 1rem;
+            }
+            
+            .header h1 {
+                font-size: 1.2rem;
+            }
+            
+            .toolbar {
+                padding: 0.5rem 1rem;
+                gap: 0.5rem;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            .toolbar-group {
+                padding-right: 0.75rem;
+                flex-shrink: 0;
+            }
+            
+            .toolbar label {
+                display: none; /* Hide labels on mobile to save space */
+            }
+            
+            .toolbar button span:not(.icon-text) {
+                display: none; /* Hide button text on mobile, keep icons */
+            }
+            
+            .toolbar button {
+                padding: 0.5rem;
+                min-width: 40px;
+                min-height: 40px;
+            }
+            
+            .toolbar select {
+                max-width: 120px;
+            }
+            
+            /* Make scheduler touch-friendly */
+            .b-sch-event {
+                min-height: 30px !important;
+            }
+            
+            .b-grid-cell {
+                padding: 4px !important;
+            }
         }
         
-        .b-responsive-small .b-grid-header {
-            font-size: 0.75rem;
-            height: 35px;
-        }
-        
-        .b-responsive-small .b-sch-event {
-            font-size: 0.75rem;
-            padding: 2px 4px;
-            min-height: 25px !important;
-        }
-        
-        .b-responsive-small .b-grid-cell {
-            padding: 3px !important;
-            font-size: 0.8rem;
-        }
-        
-        .b-responsive-small .b-timeline-subgrid {
-            font-size: 0.75rem;
-        }
-        
-        /* Simplify event appearance on small screens */
-        .b-responsive-small .b-sch-event-content {
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        /* Medium screens (tablets 481-768px) */
-        .b-responsive-medium {
-            font-size: 0.9rem;
-        }
-        
-        .b-responsive-medium .b-grid-header {
-            font-size: 0.85rem;
-            height: 38px;
-        }
-        
-        .b-responsive-medium .b-sch-event {
-            font-size: 0.8rem;
-            padding: 3px 5px;
-        }
-        
-        .b-responsive-medium .b-grid-cell {
-            padding: 4px !important;
-            font-size: 0.85rem;
-        }
-        
-        /* Normal screens (small desktops 769-1024px) */
-        .b-responsive-normal {
-            font-size: 0.95rem;
-        }
-        
-        .b-responsive-normal .b-grid-header {
-            font-size: 0.9rem;
-        }
-        
-        .b-responsive-normal .b-sch-event {
-            font-size: 0.85rem;
-        }
-        
-        /* Large screens (desktops > 1024px) */
-        .b-responsive-large {
-            font-size: 1rem;
-        }
-        
-        /* Toolbar responsive adjustments */
-        .b-responsive-small .toolbar,
-        .b-responsive-medium .toolbar {
-            padding: 0.5rem;
-            gap: 0.5rem;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-        
-        .b-responsive-small .toolbar-group {
-            padding-right: 0.5rem;
-            flex-shrink: 0;
-        }
-        
-        .b-responsive-small .toolbar label,
-        .b-responsive-medium .toolbar label {
-            display: none; /* Hide labels on smaller screens */
-        }
-        
-        .b-responsive-small .toolbar button span:not(.icon-text) {
-            display: none; /* Hide button text, keep icons only */
-        }
-        
-        .b-responsive-small .toolbar button,
-        .b-responsive-medium .toolbar button {
-            padding: 0.5rem;
-            min-width: 36px;
-            min-height: 36px;
-        }
-        
-        .b-responsive-small .toolbar select {
-            max-width: 100px;
-            font-size: 0.75rem;
-        }
-        
-        .b-responsive-medium .toolbar select {
-            max-width: 120px;
-            font-size: 0.8rem;
-        }
-        
-        /* Header responsive adjustments */
-        .b-responsive-small .header h1 {
-            font-size: 1rem;
-        }
-        
-        .b-responsive-medium .header h1 {
-            font-size: 1.2rem;
-        }
-        
-        /* Touch-friendly adjustments for mobile */
-        .b-responsive-small .b-grid-row,
-        .b-responsive-medium .b-grid-row {
-            min-height: 40px; /* Larger touch targets */
-        }
-        
-        /* Optimize dependency lines for small screens */
-        .b-responsive-small .b-sch-dependency {
-            stroke-width: 1px !important;
-        }
-        
-        .b-responsive-medium .b-sch-dependency {
-            stroke-width: 1.5px !important;
-        }
-        
-        /* Adjust tooltip size for responsive levels */
-        .b-responsive-small .b-tooltip {
-            font-size: 0.75rem;
-            max-width: 200px;
-        }
-        
-        .b-responsive-medium .b-tooltip {
-            font-size: 0.85rem;
-            max-width: 250px;
+        @media (max-width: 480px) {
+            .header h1 {
+                font-size: 1rem;
+            }
+            
+            .toolbar {
+                padding: 0.5rem;
+            }
+            
+            /* Stack toolbar items vertically on very small screens */
+            .toolbar-group {
+                border-right: none;
+                width: 100%;
+                justify-content: space-between;
+            }
         }
 
         .scheduler-container {
@@ -401,23 +268,6 @@
             background: #1a1a1a;
         }
         
-        /* Dark theme responsive adjustments */
-        .dark-theme.b-responsive-small .b-sch-event,
-        .dark-theme .b-responsive-small .b-sch-event {
-            border: 1px solid rgba(255, 255, 255, 0.2);
-        }
-        
-        .dark-theme.b-responsive-small .b-grid-header,
-        .dark-theme .b-responsive-small .b-grid-header {
-            background: #2a2a2a;
-            border-color: #444;
-        }
-        
-        .dark-theme.b-responsive-medium .b-sch-event,
-        .dark-theme .b-responsive-medium .b-sch-event {
-            border: 1px solid rgba(255, 255, 255, 0.25);
-        }
-        
         .dark-theme .header {
             background: rgba(30, 30, 30, 0.95);
             color: white;
@@ -470,275 +320,13 @@
             background: #2a2a2a;
         }
         
-        /* Operations Palette Sidebar */
-        .operations-palette {
-            position: fixed;
-            left: -300px;
-            top: 100px;
-            width: 280px;
-            bottom: 60px;
-            background: white;
-            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
-            border-radius: 0 8px 8px 0;
-            transition: left 0.3s ease;
-            z-index: 900;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
+        /* Dark theme for scheduler using filter */
+        .dark-theme #scheduler {
+            filter: invert(0.9) hue-rotate(180deg);
         }
         
-        .operations-palette.open {
-            left: 0;
-        }
-        
-        .palette-toggle {
-            position: fixed;
-            left: 0;
-            top: 120px;
-            background: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 0 8px 8px 0;
-            padding: 12px 8px;
-            cursor: pointer;
-            z-index: 901;
-            font-size: 12px;
-            writing-mode: vertical-rl;
-            text-orientation: mixed;
-            font-weight: 600;
-            box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
-        }
-        
-        .palette-toggle:hover {
-            background: #45a049;
-            transform: translateX(2px);
-        }
-        
-        .palette-toggle.open {
-            left: 280px;
-        }
-        
-        .palette-header {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            padding: 16px;
-            font-weight: 600;
-            font-size: 14px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-            flex-shrink: 0;
-        }
-        
-        .palette-content {
-            flex: 1;
-            overflow-y: auto;
-            padding: 12px;
-        }
-        
-        .operation-template {
-            background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
-            border: 2px solid #ddd;
-            border-radius: 6px;
-            padding: 12px;
-            margin-bottom: 10px;
-            cursor: grab;
-            transition: all 0.2s;
-            position: relative;
-        }
-        
-        .operation-template:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            border-color: #4CAF50;
-        }
-        
-        .operation-template:active {
-            cursor: grabbing;
-        }
-        
-        .operation-template .name {
-            font-weight: 600;
-            font-size: 13px;
-            color: #333;
-            margin-bottom: 4px;
-        }
-        
-        .operation-template .duration {
-            font-size: 11px;
-            color: #666;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        
-        .operation-template .drag-icon {
-            position: absolute;
-            right: 8px;
-            top: 50%;
-            transform: translateY(-50%);
-            font-size: 18px;
-            color: #999;
-        }
-        
-        /* Drag proxy styling */
-        .operation-drag-proxy {
-            background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-            color: white;
-            border-radius: 6px;
-            padding: 10px 14px;
-            font-size: 13px;
-            font-weight: 600;
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
-            pointer-events: none;
-            opacity: 0.95;
-            z-index: 10000;
-        }
-        
-        /* Dark theme for palette */
-        .dark-theme .operations-palette {
-            background: #2a2a2a;
-        }
-        
-        .dark-theme .palette-header {
-            background: linear-gradient(135deg, #1b5e20 0%, #2e7d32 100%);
-        }
-        
-        .dark-theme .operation-template {
-            background: linear-gradient(135deg, #3a3a3a 0%, #2d2d2d 100%);
-            border-color: #444;
-        }
-        
-        .dark-theme .operation-template .name {
-            color: #e0e0e0;
-        }
-        
-        .dark-theme .operation-template .duration {
-            color: #aaa;
-        }
-        
-        .dark-theme .operation-template:hover {
-            border-color: #4CAF50;
-        }
-
-        /* Dark theme for scheduler - comprehensive Bryntum dark mode overrides */
-        .dark .b-schedulerpro,
-        .dark .b-grid-panel,
-        .dark .b-grid-subgrid,
-        .dark .b-grid-body-container,
-        .dark .b-timeline-subgrid {
-            background: #1f1f1f !important;
-            color: #e0e0e0 !important;
-        }
-
-        /* Headers */
-        .dark .b-grid-headers,
-        .dark .b-grid-header,
-        .dark .b-sch-header-row,
-        .dark .b-sch-header-timeaxis-cell {
-            background: #2a2a2a !important;
-            color: #e0e0e0 !important;
-            border-color: #404040 !important;
-        }
-
-        /* Grid cells */
-        .dark .b-grid-cell,
-        .dark .b-sch-timeaxis-cell,
-        .dark .b-grid-row {
-            background: #1f1f1f !important;
-            color: #e0e0e0 !important;
-            border-color: #333 !important;
-        }
-
-        /* Grid row hover */
-        .dark .b-grid-row:hover .b-grid-cell {
-            background: #2a2a2a !important;
-        }
-
-        /* Events/Tasks */
-        .dark .b-sch-event,
-        .dark .b-sch-event-wrap {
-            background: #4A90E2 !important;
-            border-color: #357ABD !important;
-            color: white !important;
-        }
-
-        /* Dependencies */
-        .dark .b-sch-dependency {
-            stroke: #7B68EE !important;
-        }
-
-        /* Scrollbars */
-        .dark .b-grid-vertical-scroller,
-        .dark .b-grid-horizontal-scroller {
-            background: #1a1a1a !important;
-        }
-
-        .dark .b-scrollbar-thumb {
-            background: #555 !important;
-        }
-
-        /* Tooltips */
-        .dark .b-tooltip,
-        .dark .b-sch-event-tooltip {
-            background: #2a2a2a !important;
-            color: #e0e0e0 !important;
-            border-color: #404040 !important;
-        }
-
-        /* Context menus */
-        .dark .b-menu,
-        .dark .b-menuitem {
-            background: #2a2a2a !important;
-            color: #e0e0e0 !important;
-        }
-
-        .dark .b-menuitem:hover {
-            background: #3a3a3a !important;
-        }
-
-        /* Splitter */
-        .dark .b-grid-splitter {
-            background: #404040 !important;
-        }
-
-        /* Resource non-working time */
-        .dark .b-sch-nonworkingtime {
-            background: rgba(100, 100, 100, 0.1) !important;
-        }
-
-        /* Critical path */
-        .dark .b-critical .b-sch-event {
-            box-shadow: 0 0 0 2px #ff6b6b !important;
-        }
-
-        /* Selected items */
-        .dark .b-grid-row.b-selected .b-grid-cell,
-        .dark .b-sch-event.b-selected {
-            background: #3a3a3a !important;
-        }
-
-        /* Input fields in editors */
-        .dark .b-field input,
-        .dark .b-field textarea,
-        .dark .b-field select {
-            background: #2a2a2a !important;
-            color: #e0e0e0 !important;
-            border-color: #404040 !important;
-        }
-
-        /* Buttons */
-        .dark .b-button {
-            background: #3a3a3a !important;
-            color: #e0e0e0 !important;
-            border-color: #555 !important;
-        }
-
-        .dark .b-button:hover {
-            background: #4a4a4a !important;
-        }
-        
-        /* Re-invert images and icons in dark mode (if using filter approach) */
-        .dark #scheduler img,
+        /* Re-invert images and icons in dark mode */
+        .dark-theme #scheduler img,
         .dark-theme #scheduler .b-icon {
             filter: invert(1) hue-rotate(-180deg);
         }
@@ -1380,21 +968,6 @@
     </style>
 </head>
 <body>
-    <!-- Operations Palette Toggle Button -->
-    <button class="palette-toggle" id="paletteToggle" title="Operations Library">
-        OPERATIONS
-    </button>
-
-    <!-- Operations Palette Sidebar -->
-    <div class="operations-palette" id="operationsPalette">
-        <div class="palette-header">
-            📦 Operation Templates
-        </div>
-        <div class="palette-content" id="paletteContent">
-            <!-- Operation templates will be populated dynamically -->
-        </div>
-    </div>
-
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
@@ -1483,41 +1056,6 @@
                     <polyline points="1 20 1 14 7 14"></polyline>
                     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
                 </svg>
-            </button>
-        </div>
-        
-        <!-- Test Features Group -->
-        <div class="toolbar-group">
-            <button id="testPercentBar" class="button" title="Test PercentBar: Toggle progress bars">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="2" y="6" width="20" height="3" rx="1"></rect>
-                    <rect x="2" y="6" width="12" height="3" rx="1" fill="currentColor"></rect>
-                </svg>
-                <span>Progress</span>
-            </button>
-            
-            <button id="testNonWorking" class="button" title="Test ResourceNonWorkingTime: Toggle non-working hours">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <path d="M12 6v6l4 2"></path>
-                </svg>
-                <span>Non-Work</span>
-            </button>
-            
-            <button id="testTimeHighlight" class="button" title="Test TimeSpanHighlight: Highlight time ranges">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <rect x="3" y="4" width="18" height="16" rx="2"></rect>
-                    <rect x="8" y="2" width="8" height="4" fill="yellow" opacity="0.5"></rect>
-                </svg>
-                <span>Highlight</span>
-            </button>
-            
-            <button id="testVersions" class="button" title="Test Versions: Create/restore snapshots">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="1 4 1 10 7 10"></polyline>
-                    <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                </svg>
-                <span>Versions</span>
             </button>
         </div>
     </div>
@@ -2027,7 +1565,7 @@
                         duration: duration,
                         durationUnit: 'hour',
                         resourceId: resourceId,
-                        percentDone: operation.percent_done || Math.floor(Math.random() * 100), // Random progress for testing PercentBar
+                        percentDone: operation.percent_done || 0,
                         eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.name)),
                         // ASAP scheduling constraints (not for unscheduled operations)
                         constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
@@ -2344,137 +1882,53 @@
                     }
                 }
 
-                // Detect mobile device for specific features
+                // Detect mobile device
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+                const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
                 
-                // Configure columns with responsive settings following Bryntum guide
+                // Choose appropriate view preset based on device
+                let viewPreset = 'dayAndWeek';
+                let resourceColumnWidth = 200;
+                let categoryColumnWidth = 150;
+                
+                if (isMobile) {
+                    viewPreset = 'weekAndDay';  // Wider view for mobile
+                    resourceColumnWidth = 120;
+                    categoryColumnWidth = 0; // Hide category on mobile
+                } else if (isTablet) {
+                    viewPreset = 'weekAndDay';
+                    resourceColumnWidth = 150;
+                    categoryColumnWidth = 100;
+                }
+                
+                // Configure columns based on device
                 const schedulerColumns = [
-                    { 
-                        text: 'Resource', 
-                        field: 'name', 
-                        width: 200,
-                        minWidth: 100,
-                        locked: true, // Always keep resource column visible
-                        responsiveLevels: {
-                            small: { width: 100, text: 'Res' }, // Shorter text on small screens
-                            medium: { width: 120, text: 'Resource' },
-                            normal: { width: 150, text: 'Resource' },
-                            large: { width: 200, text: 'Resource Name' }
-                        }
-                    },
-                    { 
-                        text: 'Category', 
-                        field: 'category', 
-                        width: 150,
-                        responsiveLevels: {
-                            small: { hidden: true }, // Hide on small screens
-                            medium: { hidden: false, width: 100 },
-                            normal: { hidden: false, width: 120 },
-                            large: { hidden: false, width: 150 }
-                        }
-                    },
-                    {
-                        text: 'Type',
-                        field: 'resource_type',
-                        width: 120,
-                        responsiveLevels: {
-                            small: { hidden: true }, // Hide on small screens
-                            medium: { hidden: true }, // Hide on medium screens
-                            normal: { hidden: false, width: 100 },
-                            large: { hidden: false, width: 120 }
-                        }
-                    },
-                    {
-                        text: 'Capacity',
-                        field: 'capacity',
-                        width: 80,
-                        align: 'center',
-                        responsiveLevels: {
-                            small: { hidden: true },
-                            medium: { hidden: true },
-                            normal: { hidden: true },
-                            large: { hidden: false, width: 80 }
-                        }
-                    }
+                    { text: 'Resource', field: 'name', width: resourceColumnWidth, locked: isMobile }
                 ];
+                
+                if (!isMobile) {
+                    schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
+                }
                 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
-                // Access SchedulerPro from the bryntum namespace (UMD build)
-                // Check if bryntum is available
-                if (typeof bryntum === 'undefined') {
-                    console.error('❌ Bryntum library not loaded!');
-                    document.getElementById('status-message').textContent = 'Error: Bryntum library not loaded';
-                    return;
-                }
-                
-                console.log('✅ Bryntum library loaded, checking for SchedulerPro...');
-                console.log('Bryntum object keys:', Object.keys(bryntum));
-                
-                // Try to access SchedulerPro - it might be directly on bryntum or in a sub-namespace
-                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro || bryntum.SchedulerPro || bryntum.scheduler?.SchedulerPro;
-                
-                if (!SchedulerPro) {
-                    console.error('❌ SchedulerPro class not found in bryntum namespace!');
-                    console.log('Available in bryntum:', bryntum);
-                    console.log('Available in bryntum.schedulerpro:', bryntum.schedulerpro);
-                    document.getElementById('status-message').textContent = 'Error: SchedulerPro class not found';
-                    return;
-                }
-                
-                console.log('✅ SchedulerPro class found, initializing scheduler...');
-                
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
+
+                    viewPreset: viewPreset,
+                    rowHeight: isMobile ? 50 : 60,
+                    barMargin: isMobile ? 5 : 8,
                     
-                    // Responsive levels configuration following Bryntum guide
-                    responsiveLevels: {
-                        small: {
-                            levelWidth: 480,
-                            rowHeight: 45,
-                            barMargin: 4,
-                            viewPreset: 'weekAndDay',
-                            eventStyle: 'plain', // Simpler styling for small screens
-                            zoomLevel: 0
-                        },
-                        medium: {
-                            levelWidth: 768,
-                            rowHeight: 50,
-                            barMargin: 5,
-                            viewPreset: 'weekAndDay',
-                            zoomLevel: 2
-                        },
-                        normal: {
-                            levelWidth: 1024,
-                            rowHeight: 55,
-                            barMargin: 7,
-                            viewPreset: 'dayAndWeek',
-                            zoomLevel: 4
-                        },
-                        large: {
-                            levelWidth: '*', // Default for all larger sizes
-                            rowHeight: 60,
-                            barMargin: 8,
-                            viewPreset: 'weekAndDayLetter',
-                            zoomLevel: 5
-                        }
-                    },
+                    // Enable horizontal scrolling on mobile
+                    scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
                     
-                    // Default values (will be overridden by responsive levels)
-                    viewPreset: 'weekAndDayLetter',
-                    rowHeight: 60,
-                    barMargin: 8,
+                    // Zoom level for better mobile view
+                    zoomLevel: isMobile ? 0 : 5,
+                    zoomOnMouseWheel: !isMobile,
                     
-                    // Enable horizontal scrolling
-                    scrollable: true,
-                    
-                    // Zoom settings
-                    zoomLevel: 5,
-                    zoomOnMouseWheel: true,
-                    
-                    // Enable pinch zoom on touch devices
+                    // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
                     
                     // CRITICAL: Prevent overlapping events on same resource
@@ -2484,13 +1938,6 @@
                     project: {
                         autoLoad: false,
                         autoSync: false,
-                        // Load the data
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
-                        // Enable automatic scheduling
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true,
                         // Use ASAP scheduling with strict resource constraints
                         schedulingEngine: {
                             multiplePerResource: false, // Only one task at a time per resource
@@ -2506,42 +1953,10 @@
                     },
 
                     features: {
-                        // 1. CalendarHighlight - Visualize calendars during drag/resize
-                        calendarHighlight: {
-                            calendar: 'resource', // Show resource calendars during interaction
-                            inflate: 5 // Expand highlight box by 5px
-                        },
+                        // Dependencies feature for showing task relationships
+                        dependencies: true,
                         
-                        // 2. CellEdit - Allow inline editing of cells
-                        cellEdit: {
-                            triggerEvent: 'dblclick', // Double-click to edit
-                            autoEdit: false // Don't auto-edit on selection
-                        },
-                        
-                        // 3. Dependencies - Task relationships (already configured)
-                        dependencies: {
-                            disabled: false,
-                            showTooltip: true,
-                            allowCreate: true, // Allow creating dependencies by dragging
-                            showCreationTooltip: true,
-                            creationTooltip: 'Create dependency',
-                            radius: 10 // Connector radius
-                        },
-                        
-                        // 4. DependencyEdit - Edit dependencies dialog
-                        dependencyEdit: {
-                            showDeleteButton: true,
-                            showLagField: true, // Allow setting lag between tasks
-                            autoClose: false // Keep dialog open after save
-                        },
-                        
-                        // 5. EventBuffer - Buffer zones before/after events
-                        eventBuffer: {
-                            // Enable buffer zones
-                            disabled: false
-                        },
-                        
-                        // 6. EventDrag - Enable drag and drop with tooltip
+                        // Enable drag and drop with tooltip
                         eventDrag: {
                             showTooltip: true,
                             constrainDragToResource: false, // Allow dragging between resources
@@ -2629,7 +2044,7 @@
                             }
                         },
                         
-                        // 7. EventResize - Enable resize with overlap validation
+                        // Enable resize with overlap validation
                         eventResize: {
                             showTooltip: true,
                             // Validate that resized event doesn't overlap with other operations on the same resource
@@ -2670,100 +2085,7 @@
                             }
                         },
                         
-                        // 8. EventSegments - Split events into segments
-                        eventSegments: {
-                            showTooltip: true
-                        },
-                        
-                        // 9. EventSegmentDrag - Allow dragging individual segments
-                        eventSegmentDrag: {
-                            showTooltip: true,
-                            // Use same validation as main eventDrag
-                            validatorFn: function(context) {
-                                // Reuse eventDrag validator logic
-                                return true; // For now, allow all segment drags
-                            }
-                        },
-                        
-                        // 10. EventSegmentResize - Allow resizing individual segments
-                        eventSegmentResize: {
-                            showTooltip: true
-                        },
-                        
-                        // 11. NestedEvents - Support for nested/hierarchical events
-                        nestedEvents: {
-                            barMargin: 5,
-                            headerHeight: 25,
-                            // Configure how nested events display
-                            eventLayout: 'stack' // or 'pack' or 'mixed'
-                        },
-                        
-                        // 12. PercentBar - Progress line feature (already configured, enhancing)
-                        percentBar: {
-                            disabled: false,
-                            allowResize: true // Allow resizing the progress bar
-                        },
-                        
-                        // 13. ResourceNonWorkingTime - Show non-working time for resources
-                        resourceNonWorkingTime: {
-                            maxTimeAxisUnit: 'year' // Maximum unit to show non-working time
-                        },
-                        
-                        // 14. TaskEdit - Advanced task editing dialog
-                        taskEdit: {
-                            showDeleteButton: true,
-                            items: {
-                                // Configure General tab
-                                generalTab: {
-                                    items: {
-                                        nameField: { label: 'Operation Name', weight: 100 },
-                                        resourcesField: { label: 'Assigned Resource', weight: 200 },
-                                        percentDoneField: { label: 'Progress %', weight: 300 },
-                                        effortField: { label: 'Effort (hours)', weight: 400 },
-                                        durationField: { label: 'Duration', weight: 500 }
-                                    }
-                                },
-                                // Configure Advanced tab
-                                advancedTab: {
-                                    items: {
-                                        calendarField: { label: 'Calendar', weight: 100 },
-                                        schedulingModeField: { label: 'Scheduling Mode', weight: 200 },
-                                        constraintTypeField: { label: 'Constraint Type', weight: 300 },
-                                        constraintDateField: { label: 'Constraint Date', weight: 400 },
-                                        manuallyScheduledField: { label: 'Manually Scheduled', weight: 500 }
-                                    }
-                                },
-                                // Configure Dependencies tab
-                                dependenciesTab: {
-                                    weight: 300
-                                },
-                                // Configure Resources tab
-                                resourcesTab: {
-                                    weight: 400
-                                },
-                                // Configure Notes tab
-                                notesTab: {
-                                    weight: 500
-                                }
-                            }
-                        },
-                        
-                        // 15. TimeSpanHighlight - Highlight specific time spans
-                        timeSpanHighlight: {
-                            // Highlight weekends
-                            disabled: false
-                        },
-                        
-                        // 16. Versions - Support for version control/undo-redo
-                        versions: {
-                            showTooltip: true,
-                            // Configure version control
-                            autoSave: true,
-                            saveDelay: 5000, // Auto-save after 5 seconds of inactivity
-                            maxVersions: 50 // Keep last 50 versions
-                        },
-                        
-                        // Event tooltips on hover (existing, keep as is)
+                        // Event tooltips on hover
                         eventTooltip: {
                             template: ({ eventRecord }) => {
                                 // Extract job name/batch from the event data
@@ -2786,134 +2108,25 @@
                             }
                         },
                         
-                        // 17. TimeRanges - Show current time line and other time ranges
+                        // Show current time line
                         timeRanges: {
-                            showCurrentTimeLine: true,
-                            showHeaderElements: true,
-                            enableResizing: true
+                            showCurrentTimeLine: true
                         },
                         
-                        // 18. NonWorkingTime - Global non-working time visualization
-                        nonWorkingTime: {
-                            disabled: false,
-                            highlightWeekends: true // Highlight weekends as non-working time
-                        },
+                        // Progress line feature - shows percentage complete
+                        percentBar: true,
                         
-                        // 19. CriticalPaths - Show critical path in schedule
-                        criticalPaths: {
-                            disabled: false,
-                            showTooltip: true
-                        },
+                        // Non-working time visualization
+                        nonWorkingTime: true,
                         
-                        // 20. EventMenu - Context menu on right-click
-                        eventMenu: {
-                            items: {
-                                editEvent: {
-                                    text: 'Edit Operation',
-                                    icon: 'b-fa b-fa-edit',
-                                    weight: 100
-                                },
-                                deleteEvent: {
-                                    text: 'Delete Operation',
-                                    icon: 'b-fa b-fa-trash',
-                                    weight: 200
-                                },
-                                // Add custom menu items
-                                markComplete: {
-                                    text: 'Mark as Complete',
-                                    icon: 'b-fa b-fa-check',
-                                    weight: 300,
-                                    onItem: function(context) {
-                                        context.eventRecord.percentDone = 100;
-                                    }
-                                },
-                                addDependency: {
-                                    text: 'Add Dependency',
-                                    icon: 'b-fa b-fa-link',
-                                    weight: 400
-                                }
-                            }
-                        },
+                        // Critical paths feature
+                        criticalPaths: false,
                         
-                        // 21. ScheduleMenu - Context menu for schedule area
-                        scheduleMenu: {
-                            items: {
-                                addEvent: {
-                                    text: 'Add Operation Here',
-                                    icon: 'b-fa b-fa-plus',
-                                    weight: 100
-                                },
-                                zoomIn: {
-                                    text: 'Zoom In',
-                                    icon: 'b-fa b-fa-search-plus',
-                                    weight: 200
-                                },
-                                zoomOut: {
-                                    text: 'Zoom Out', 
-                                    icon: 'b-fa b-fa-search-minus',
-                                    weight: 300
-                                }
-                            }
-                        },
+                        // Event menu on right-click
+                        eventMenu: true,
                         
-                        // 22. EventEdit - Standard event editing (simpler than TaskEdit)
-                        eventEdit: {
-                            showDeleteButton: true,
-                            showNameField: true,
-                            showResourceField: true,
-                            showDurationField: true
-                        },
-                        
-                        // 23. Summary - Show summary row
-                        summary: {
-                            showTooltip: true,
-                            renderer: function(context) {
-                                const totalHours = context.events.reduce(function(sum, event) {
-                                    return sum + (event.duration || 0);
-                                }, 0);
-                                return 'Total: ' + totalHours + 'h';
-                            }
-                        },
-                        
-                        // 24. EventCopyPaste - Copy/paste events
-                        eventCopyPaste: {
-                            nameFormat: '{name} (copy)',
-                            allowCopy: true,
-                            allowCut: true,
-                            allowPaste: true
-                        },
-                        
-                        // 25. Pan - Pan the schedule with mouse
-                        pan: {
-                            vertical: false // Only allow horizontal panning
-                        },
-                        
-                        // 26. HeaderZoom - Zoom controls in header
-                        headerZoom: {
-                            position: 'start' // or 'end'
-                        },
-                        
-                        // 27. ScheduleTooltip - Tooltip when hovering over empty schedule
-                        scheduleTooltip: {
-                            disabled: false,
-                            showOnHover: true
-                        },
-                        
-                        // 28. EventFilter - Filter events
-                        eventFilter: {
-                            // Filter configuration
-                            disabled: false
-                        },
-                        
-                        // 29. HeaderContextMenu - Right-click menu on headers
-                        headerContextMenu: {
-                            disabled: false
-                        },
-                        
-                        // 30. Tree - If using tree resources
-                        tree: {
-                            expandOnCellClick: true
-                        }
+                        // Schedule menu on right-click
+                        scheduleMenu: true
                     },
 
                     eventRenderer({ eventRecord, renderData }) {
@@ -2928,6 +2141,17 @@
                                 </div>
                             `
                         };
+                    },
+
+                    project: {
+                        // Use correct property names (not deprecated)
+                        resources: resources,
+                        events: events,
+                        dependencies: dependencies,
+                        
+                        // Enable automatic scheduling
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true
                     },
 
                     startDate: (() => {
@@ -2949,30 +2173,6 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
-                
-                // ============================================
-                // DATA LOADED VIA PROJECT CONFIGURATION
-                // ============================================
-                // Data is already provided in the project configuration above
-                // No need to call loadInlineData() separately
-                console.log('✅ Scheduler initialized with data');
-                console.log('📊 Events loaded:', scheduler.eventStore.count);
-                console.log('📊 Resources loaded:', scheduler.resourceStore.count);
-                console.log('📊 Dependencies loaded:', scheduler.dependencyStore.count);
-                
-                // Update the status bar
-                updateStatus();
-                
-                // Debug: Check what's in the stores
-                if (scheduler.eventStore.count > 0) {
-                    const firstEvent = scheduler.eventStore.first;
-                    console.log('📅 First event:', firstEvent?.name, 'on', firstEvent?.startDate);
-                } else {
-                    console.warn('⚠️ No events loaded into scheduler');
-                }
-                
-                // Hide loading overlay
-                document.getElementById('loadingOverlay').style.display = 'none';
                 
                 // Add event listeners to handle dragging from unscheduled resource
                 scheduler.on('eventdrop', ({ eventRecords, targetResourceRecord, context }) => {
@@ -2999,198 +2199,6 @@
                         }
                     });
                 });
-                
-                // ============================================
-                // BRYNTUM DRAGHELPER IMPLEMENTATION
-                // Using Bryntum's DragHelper class for proper integration
-                // Based on Bryntum documentation: https://bryntum.com/products/schedulerpro/examples/drag-unplanned-tasks/
-                // ============================================
-                
-                console.log('🎯 Initializing Bryntum DragHelper for operations palette...');
-                
-                // Define operation templates for the palette
-                const operationTemplates = [
-                    { id: 'milling', name: 'Milling', duration: 2, durationUnit: 'hour', color: '#8B4513' },
-                    { id: 'mashing', name: 'Mashing', duration: 4, durationUnit: 'hour', color: '#D2691E' },
-                    { id: 'lautering', name: 'Lautering', duration: 3, durationUnit: 'hour', color: '#CD853F' },
-                    { id: 'boiling', name: 'Boiling', duration: 2, durationUnit: 'hour', color: '#FF6347' },
-                    { id: 'fermentation', name: 'Fermentation', duration: 168, durationUnit: 'hour', color: '#4CAF50' },
-                    { id: 'conditioning', name: 'Conditioning', duration: 72, durationUnit: 'hour', color: '#2196F3' },
-                    { id: 'dry_hopping', name: 'Dry Hopping', duration: 48, durationUnit: 'hour', color: '#00BCD4' },
-                    { id: 'packaging', name: 'Packaging', duration: 4, durationUnit: 'hour', color: '#9C27B0' },
-                    { id: 'pasteurization', name: 'Pasteurization', duration: 1, durationUnit: 'hour', color: '#FF9800' }
-                ];
-                
-                // Populate the operations palette (without native drag attributes)
-                const paletteContent = document.getElementById('paletteContent');
-                if (paletteContent) {
-                    operationTemplates.forEach(template => {
-                        const templateEl = document.createElement('div');
-                        templateEl.className = 'operation-template';
-                        // NO draggable=true - Bryntum DragHelper will handle this
-                        templateEl.dataset.templateId = template.id;
-                        templateEl.dataset.operationName = template.name;
-                        templateEl.dataset.duration = template.duration;
-                        templateEl.dataset.durationUnit = template.durationUnit;
-                        templateEl.dataset.eventColor = template.color;
-                        
-                        templateEl.innerHTML = `
-                            <div class="name">${template.name}</div>
-                            <div class="duration">⏱ ${template.duration} ${template.durationUnit}${template.duration > 1 ? 's' : ''}</div>
-                            <div class="drag-icon">⋮⋮</div>
-                        `;
-                        
-                        paletteContent.appendChild(templateEl);
-                    });
-                    console.log('✅ Operations palette populated with', operationTemplates.length, 'templates');
-                } else {
-                    console.error('❌ Palette content element not found');
-                }
-                
-                // Initialize Bryntum DragHelper following documentation pattern
-                // Check if DragHelper is available in the Bryntum namespace
-                let dragHelper = null;
-                
-                try {
-                    // Try to access DragHelper from bryntum namespace
-                    const DragHelper = bryntum.schedulerpro?.DragHelper || bryntum.core?.DragHelper;
-                    
-                    if (DragHelper) {
-                        console.log('✅ Found Bryntum DragHelper class');
-                        
-                        // Create DragHelper instance following Bryntum pattern
-                        dragHelper = new DragHelper({
-                            // Clone the dragged element instead of moving it
-                            cloneTarget: true,
-                            
-                            // Don't auto-size the cloned element
-                            autoSizeClonedTarget: false,
-                            
-                            // Allow drops on scheduler timeline area
-                            dropTargetSelector: '.b-sch-timeaxis-cell, .b-timeline-subgrid, .b-grid-row',
-                            
-                            // Only allow dragging operation templates
-                            targetSelector: '.operation-template',
-                            
-                            // Create custom drag proxy
-                            createProxy(element) {
-                                const proxy = document.createElement('div');
-                                proxy.className = 'operation-drag-proxy';
-                                proxy.style.cssText = 'padding: 8px; background: #fff; border: 2px solid #2196F3; border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);';
-                                proxy.textContent = element.querySelector('.name')?.textContent || 'Operation';
-                                return proxy;
-                            },
-                            
-                            // Lifecycle callbacks
-                            listeners: {
-                                // When drag starts
-                                dragstart({ source, context }) {
-                                    const template = context.grabbed.dataset;
-                                    
-                                    // Store operation data in context
-                                    context.operationData = {
-                                        name: template.operationName,
-                                        duration: parseFloat(template.duration),
-                                        durationUnit: template.durationUnit,
-                                        eventColor: template.eventColor,
-                                        percentDone: 0
-                                    };
-                                    
-                                    console.log('🎯 Started dragging:', context.operationData.name);
-                                    
-                                    // Add visual feedback
-                                    scheduler.element.classList.add('b-dragging-event');
-                                },
-                                
-                                // When dropped
-                                drop({ source, context, event }) {
-                                    console.log('📍 Drop event triggered');
-                                    
-                                    if (!context.valid || !context.operationData) {
-                                        console.log('❌ Invalid drop');
-                                        scheduler.element.classList.remove('b-dragging-event');
-                                        return;
-                                    }
-                                    
-                                    try {
-                                        // Get drop coordinates relative to scheduler
-                                        const schedulerRect = scheduler.element.getBoundingClientRect();
-                                        const x = event.clientX - schedulerRect.left;
-                                        const y = event.clientY - schedulerRect.top;
-                                        
-                                        // Use Bryntum methods to resolve date and resource
-                                        const date = scheduler.getDateFromCoordinate(x, 'round');
-                                        const resourceRecord = scheduler.resolveResourceRecord(event.target) || 
-                                                                scheduler.resolveResourceRecord({ y });
-                                        
-                                        console.log('📅 Resolved location:', { 
-                                            date: date ? date.toISOString() : null, 
-                                            resource: resourceRecord ? resourceRecord.name : null 
-                                        });
-                                        
-                                        if (date && resourceRecord) {
-                                            // Create new event in scheduler
-                                            const newEvent = {
-                                                id: `template-${Date.now()}`,
-                                                name: context.operationData.name,
-                                                startDate: date,
-                                                duration: context.operationData.duration,
-                                                durationUnit: context.operationData.durationUnit,
-                                                resourceId: resourceRecord.id,
-                                                eventColor: context.operationData.eventColor,
-                                                percentDone: context.operationData.percentDone || 0,
-                                                draggable: true,
-                                                resizable: true
-                                            };
-                                            
-                                            console.log('✨ Creating event:', newEvent);
-                                            scheduler.eventStore.add(newEvent);
-                                            console.log('✅ Event created successfully');
-                                            
-                                            updateStatus(); // Update metrics
-                                        }
-                                    } catch (error) {
-                                        console.error('❌ Error creating event:', error);
-                                    }
-                                    
-                                    scheduler.element.classList.remove('b-dragging-event');
-                                },
-                                
-                                // When drag is cancelled
-                                abort({ source, context }) {
-                                    console.log('🚫 Drag cancelled');
-                                    scheduler.element.classList.remove('b-dragging-event');
-                                }
-                            }
-                        });
-                        
-                        console.log('✅ Bryntum DragHelper initialized successfully');
-                    } else {
-                        console.warn('⚠️ DragHelper not available in Bryntum namespace');
-                        console.log('💡 Operations palette visible but drag functionality requires Bryntum DragHelper');
-                    }
-                } catch (error) {
-                    console.error('❌ Error initializing DragHelper:', error);
-                }
-                
-                // Palette toggle functionality (works even without DragHelper)
-                const paletteToggle = document.getElementById('paletteToggle');
-                const operationsPalette = document.getElementById('operationsPalette');
-                let isPaletteOpen = false;
-                
-                if (paletteToggle && operationsPalette) {
-                    paletteToggle.addEventListener('click', () => {
-                        isPaletteOpen = !isPaletteOpen;
-                        if (isPaletteOpen) {
-                            operationsPalette.classList.add('open');
-                            paletteToggle.classList.add('open');
-                        } else {
-                            operationsPalette.classList.remove('open');
-                            paletteToggle.classList.remove('open');
-                        }
-                    });
-                    console.log('✅ Palette toggle functionality initialized');
-                }
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
@@ -4811,90 +3819,6 @@
                 }, 300); // Small delay for visual feedback
             });
         });
-    </script>
-    
-    <!-- Feature Test Functions -->
-    <script>
-        // Wait for scheduler to be available
-        setTimeout(() => {
-            // Test PercentBar feature
-            const testPercentBar = document.getElementById('testPercentBar');
-            if (testPercentBar) {
-                testPercentBar.addEventListener('click', () => {
-                    if (!window.scheduler) {
-                        alert('Scheduler not initialized yet. Please reload the page.');
-                        return;
-                    }
-                    
-                    const percentBarFeature = window.scheduler.features.percentBar;
-                    percentBarFeature.disabled = !percentBarFeature.disabled;
-                    
-                    if (!percentBarFeature.disabled) {
-                        alert('✅ PercentBar ENABLED\n\nYou should now see:\n• Progress bars on all events\n• Percentage completion indicators\n• Drag handles to adjust progress\n\nNote: Events already have random progress values for testing');
-                    } else {
-                        alert('❌ PercentBar DISABLED\n\nProgress bars are now hidden');
-                    }
-                });
-            }
-            
-            // Test ResourceNonWorkingTime
-            const testNonWorking = document.getElementById('testNonWorking');
-            if (testNonWorking) {
-                testNonWorking.addEventListener('click', () => {
-                    if (!window.scheduler) {
-                        alert('Scheduler not initialized yet. Please reload the page.');
-                        return;
-                    }
-                    
-                    const feature = window.scheduler.features.resourceNonWorkingTime;
-                    alert('✅ ResourceNonWorkingTime Test\n\nThis feature highlights non-working intervals based on resource calendars.\n\nLook for:\n• Shaded areas during weekends\n• Shaded areas during non-working hours\n• Different shading for each resource\'s calendar\n\nNote: Resources need individual calendars defined for this to work');
-                });
-            }
-            
-            // Test TimeSpanHighlight
-            const testHighlight = document.getElementById('testTimeHighlight');
-            if (testHighlight) {
-                testHighlight.addEventListener('click', () => {
-                    if (!window.scheduler) {
-                        alert('Scheduler not initialized yet. Please reload the page.');
-                        return;
-                    }
-                    
-                    // Test highlighting time spans
-                    const feature = window.scheduler.features.timeSpanHighlight;
-                    const now = new Date();
-                    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-                    
-                    // Highlight a week
-                    feature.highlight({
-                        startDate: now,
-                        endDate: nextWeek,
-                        label: 'Test Highlight Period'
-                    });
-                    
-                    alert('✅ TimeSpanHighlight Test\n\nA time span has been highlighted!\n\nLook for:\n• Shaded vertical band in the timeline\n• Covers the next 7 days from today\n• Label appears when you hover\n\nClick multiple times to add more highlights');
-                });
-            }
-            
-            // Test Versions
-            const testVersions = document.getElementById('testVersions');
-            if (testVersions) {
-                testVersions.addEventListener('click', () => {
-                    if (!window.scheduler) {
-                        alert('Scheduler not initialized yet. Please reload the page.');
-                        return;
-                    }
-                    
-                    alert('✅ Versions Feature Test\n\nThis feature captures project snapshots.\n\nCapabilities:\n• Auto-saves after 5 seconds of inactivity\n• Stores up to 50 versions\n• Can restore to any previous version\n• Tracks all project changes\n\nNote: The feature is already enabled and auto-saving your changes!');
-                });
-            }
-            
-            // Double-click info for TaskEdit
-            setTimeout(() => {
-                console.log('✅ TaskEdit Feature: Double-click any event to open the advanced editor');
-            }, 3000);
-            
-        }, 2000); // Wait 2 seconds for scheduler to initialize
     </script>
 </body>
 </html>

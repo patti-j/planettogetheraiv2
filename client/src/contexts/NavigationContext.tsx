@@ -233,11 +233,6 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
           const response = await apiRequest('GET', '/api/recent-pages');
           
           if (response.ok) {
-            // Check if response is JSON before parsing
-            const contentType = response.headers.get('content-type');
-            if (!contentType || !contentType.includes('application/json')) {
-              throw new Error('Response is not JSON');
-            }
             const dbPages = await response.json();
             
             // Transform database format to local format
