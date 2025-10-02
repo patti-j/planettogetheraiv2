@@ -1439,35 +1439,37 @@
                         
                         // CRITICAL: Sort resources to ensure proper grouping 
                         // (fermentation tanks together, bright tanks together, packaging together)
+                        // Define order for resource types
+                        const getOrder = (name) => {
+                            const lowerName = name.toLowerCase();
+                            // 1. MILLING (top)
+                            if (lowerName.includes('mill')) return 1;
+                            // 2. MASHING
+                            if (lowerName.includes('mash')) return 2;
+                            // 3. LAUTERING
+                            if (lowerName.includes('lauter')) return 3;
+                            // 4. BOILING/KETTLE
+                            if (lowerName.includes('boil') || lowerName.includes('kettle')) return 4;
+                            // 5. WHIRLPOOL
+                            if (lowerName.includes('whirlpool')) return 5;
+                            // 6. COOLING
+                            if (lowerName.includes('cool')) return 6;
+                            // 7. ALL FERMENTATION TANKS (grouped together)
+                            if (lowerName.includes('ferment')) return 7;
+                            // 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
+                            if (lowerName.includes('bright') || lowerName.includes('condition')) return 8;
+                            // 9. PASTEURIZATION
+                            if (lowerName.includes('pasteur')) return 9;
+                            // 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
+                            if (lowerName.includes('bottle') || lowerName.includes('can') || lowerName.includes('filler') || lowerName.includes('packag')) return 10;
+                            // 11. Any other resources
+                            return 11;
+                        };
+                        
+                        // Sort resources and add explicit sortOrder field
                         resources.sort((a, b) => {
                             const aName = (a.name || '').toLowerCase();
                             const bName = (b.name || '').toLowerCase();
-                            
-                            // Define order for resource types
-                            const getOrder = (name) => {
-                                // 1. MILLING (top)
-                                if (name.includes('mill')) return 1;
-                                // 2. MASHING
-                                if (name.includes('mash')) return 2;
-                                // 3. LAUTERING
-                                if (name.includes('lauter')) return 3;
-                                // 4. BOILING/KETTLE
-                                if (name.includes('boil') || name.includes('kettle')) return 4;
-                                // 5. WHIRLPOOL
-                                if (name.includes('whirlpool')) return 5;
-                                // 6. COOLING
-                                if (name.includes('cool')) return 6;
-                                // 7. ALL FERMENTATION TANKS (grouped together)
-                                if (name.includes('ferment')) return 7;
-                                // 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
-                                if (name.includes('bright') || name.includes('condition')) return 8;
-                                // 9. PASTEURIZATION
-                                if (name.includes('pasteur')) return 9;
-                                // 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
-                                if (name.includes('bottle') || name.includes('can') || name.includes('filler') || name.includes('packag')) return 10;
-                                // 11. Any other resources
-                                return 11;
-                            };
                             
                             const aOrder = getOrder(aName);
                             const bOrder = getOrder(bName);
@@ -1481,9 +1483,18 @@
                             return aName.localeCompare(bName);
                         });
                         
+                        // Add explicit sortOrder field to each resource to prevent Bryntum from re-sorting
+                        resources = resources.map((resource, index) => ({
+                            ...resource,
+                            sortOrder: index + 1,  // Add explicit sort order
+                            // Override the numeric ID with a string to prevent numeric sorting
+                            originalId: resource.id,
+                            id: `resource_${index + 1}_${resource.id}`
+                        }));
+                        
                         console.log('✅ Resources sorted by operational sequence:');
                         resources.forEach((r, idx) => {
-                            console.log(`  ${idx + 1}. ${r.name}`);
+                            console.log(`  ${idx + 1}. ${r.name} (sortOrder: ${r.sortOrder}, id: ${r.id})`);
                         });
                     } else {
                         console.error('❌ Failed to fetch resources:', resourcesResponse.status);
@@ -1534,11 +1545,16 @@
                 // Map resources to create resource lookup by both ID and name
                 const resourceMap = new Map();
                 const resourceByName = new Map();
+                const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
                 resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
                     // Also create a name-based lookup for better matching
                     resourceByName.set(resource.name?.toLowerCase(), resource);
+                    // Map original numeric ID to new string ID
+                    if (resource.originalId) {
+                        originalIdMap.set(resource.originalId, resource.id);
+                    }
                 });
                 
                 
@@ -1572,7 +1588,7 @@
                     }
                     
                     // First try to find a matching resource based on capability
-                    let resourceId = findResourceId(operation, resourceMap, resourceByName, resources);
+                    let resourceId = findResourceId(operation, resourceMap, resourceByName, resources, originalIdMap);
                     
                     // Check if operation is truly unscheduled (no valid resource assignment)
                     const isUnscheduled = !resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId && r.id !== 'unscheduled');
@@ -1638,7 +1654,15 @@
                 } : 'no events');
                 
                 // Helper function to find the correct resource ID
-                function findResourceId(operation, resourceMap, resourceByName, resources) {
+                function findResourceId(operation, resourceMap, resourceByName, resources, originalIdMap) {
+                    // First try to match by the operation's resource_id which is the original numeric ID
+                    if (operation.resourceId && originalIdMap.has(operation.resourceId)) {
+                        return originalIdMap.get(operation.resourceId);
+                    }
+                    if (operation.resource_id && originalIdMap.has(operation.resource_id)) {
+                        return originalIdMap.get(operation.resource_id);
+                    }
+                    
                     // Try various ways to match the resource
                     if (operation.resourceId && resourceMap.has(operation.resourceId)) {
                         return operation.resourceId;
