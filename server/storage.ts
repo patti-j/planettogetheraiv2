@@ -465,18 +465,29 @@ export class DatabaseStorage implements IStorage {
         WHERE active = true
         ORDER BY CASE 
           -- Order resources by brewery operational sequence
+          -- 1. MILLING (top)
           WHEN LOWER(name) LIKE '%mill%' THEN 1
+          -- 2. MASHING
           WHEN LOWER(name) LIKE '%mash%' THEN 2  
+          -- 3. LAUTERING
           WHEN LOWER(name) LIKE '%lauter%' THEN 3
+          -- 4. BOILING
           WHEN LOWER(name) LIKE '%boil%' OR LOWER(name) LIKE '%kettle%' THEN 4
+          -- 5. WHIRLPOOL
           WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
+          -- 6. COOLING
           WHEN LOWER(name) LIKE '%cool%' THEN 6
+          -- 7. FERMENTATION
           WHEN LOWER(name) LIKE '%ferment%' THEN 7
+          -- 8. CONDITIONING/BRIGHT TANKS
           WHEN LOWER(name) LIKE '%bright%' OR LOWER(name) LIKE '%condition%' THEN 8
+          -- 9. PASTEURIZATION
           WHEN LOWER(name) LIKE '%pasteur%' THEN 9
-          WHEN LOWER(name) LIKE '%filler%' OR LOWER(name) LIKE '%packag%' THEN 10
-          WHEN LOWER(name) LIKE '%can%' THEN 11
-          -- Any other resources go after the main process
+          -- 10. PACKAGING - Bottle Filler
+          WHEN LOWER(name) LIKE '%bottle%' THEN 10
+          -- 11. PACKAGING - Can Filler (bottom)
+          WHEN LOWER(name) LIKE '%can%' OR LOWER(name) LIKE '%filler%' THEN 11
+          -- 12. Any other resources
           ELSE 12
         END, name
         LIMIT 12
