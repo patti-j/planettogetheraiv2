@@ -1933,6 +1933,23 @@
                     
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
+                    
+                    // Event layout to handle overlaps - 'stack' prevents visual overlaps
+                    eventLayout: 'stack',  // 'stack' | 'pack' | 'none' - stack shows overlaps clearly
+                    
+                    // Sort overlapping events by startDate first (REQUIRED for predictable results)
+                    overlappingEventSorter: (a, b) => {
+                        // CRITICAL: Must sort by startDate first per Bryntum docs
+                        if (a.startDate - b.startDate !== 0) {
+                            return a.startDate - b.startDate;
+                        }
+                        // Then by duration (shorter events on top)
+                        if (a.duration - b.duration !== 0) {
+                            return a.duration - b.duration;
+                        }
+                        // Finally by name for consistency
+                        return a.name.localeCompare(b.name);
+                    },
 
                     // Project configuration with strict no-overlap constraints
                     project: {
@@ -2003,30 +2020,36 @@
                                         }
                                     }
                                     
-                                    // 2. Check for time overlaps with existing operations on the target resource
+                                    // 2. CRITICAL: Use Bryntum's isDateRangeAvailable to check overlaps
                                     if (targetRecord && startDate && endDate) {
-                                        // Get all events on the target resource
-                                        const resourceEvents = window.scheduler.eventStore.query(event => 
-                                            event.resourceId === targetRecord.id && 
-                                            event.id !== draggedRecord.id // Exclude the dragged event itself
+                                        // Use Bryntum's built-in overlap detection
+                                        const isAvailable = window.scheduler.eventStore.isDateRangeAvailable(
+                                            startDate,
+                                            endDate,
+                                            draggedRecord, // Exclude the dragged event itself
+                                            targetRecord   // Check for this specific resource
                                         );
                                         
-                                        // Check for overlaps
-                                        for (const existingEvent of resourceEvents) {
-                                            const existingStart = existingEvent.startDate;
-                                            const existingEnd = existingEvent.endDate;
+                                        if (!isAvailable) {
+                                            console.warn(`⚠️ Cannot drop ${operationName}: Time slot occupied on ${targetRecord.name}`);
                                             
-                                            // Check if the dragged operation would overlap with this existing operation
-                                            // Overlap occurs if: draggedStart < existingEnd AND draggedEnd > existingStart
-                                            if (startDate < existingEnd && endDate > existingStart) {
-                                                console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord.name}: Time conflict with ${existingEvent.name}`);
-                                                const conflictStart = existingStart.toLocaleString('en-US', { 
+                                            // Find the conflicting event for better error message
+                                            const resourceEvents = window.scheduler.eventStore.query(event => 
+                                                event.resourceId === targetRecord.id && 
+                                                event.id !== draggedRecord.id &&
+                                                event.startDate < endDate && 
+                                                event.endDate > startDate
+                                            );
+                                            
+                                            const conflictingEvent = resourceEvents[0];
+                                            if (conflictingEvent) {
+                                                const conflictStart = conflictingEvent.startDate.toLocaleString('en-US', { 
                                                     month: 'short', 
                                                     day: 'numeric', 
                                                     hour: 'numeric', 
                                                     minute: '2-digit' 
                                                 });
-                                                const conflictEnd = existingEnd.toLocaleString('en-US', { 
+                                                const conflictEnd = conflictingEvent.endDate.toLocaleString('en-US', { 
                                                     month: 'short', 
                                                     day: 'numeric', 
                                                     hour: 'numeric', 
@@ -2034,7 +2057,7 @@
                                                 });
                                                 return {
                                                     valid: false,
-                                                    message: `Resource busy: ${existingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
+                                                    message: `Resource busy: ${conflictingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
                                                 };
                                             }
                                         }
@@ -2047,29 +2070,38 @@
                         // Enable resize with overlap validation
                         eventResize: {
                             showTooltip: true,
-                            // Validate that resized event doesn't overlap with other operations on the same resource
+                            // CRITICAL: Use Bryntum's isDateRangeAvailable to prevent overlaps
                             validatorFn({ eventRecord, startDate, endDate }) {
-                                // Get all events on the same resource
-                                const resourceEvents = window.scheduler.eventStore.query(event => 
-                                    event.resourceId === eventRecord.resourceId && 
-                                    event.id !== eventRecord.id // Exclude the resized event itself
+                                const resource = eventRecord.resource;
+                                
+                                // Use Bryntum's built-in overlap detection
+                                const isAvailable = window.scheduler.eventStore.isDateRangeAvailable(
+                                    startDate,
+                                    endDate,
+                                    eventRecord,  // Exclude the resized event itself
+                                    resource      // Check for this specific resource
                                 );
                                 
-                                // Check for overlaps
-                                for (const existingEvent of resourceEvents) {
-                                    const existingStart = existingEvent.startDate;
-                                    const existingEnd = existingEvent.endDate;
+                                if (!isAvailable) {
+                                    console.warn(`⚠️ Cannot resize ${eventRecord.name}: Time slot occupied`);
                                     
-                                    // Check if the resized operation would overlap with this existing operation
-                                    if (startDate < existingEnd && endDate > existingStart) {
-                                        console.warn(`⚠️ Cannot resize ${eventRecord.name}: Time conflict with ${existingEvent.name}`);
-                                        const conflictStart = existingStart.toLocaleString('en-US', { 
+                                    // Find the conflicting event for better error message
+                                    const resourceEvents = window.scheduler.eventStore.query(event => 
+                                        event.resourceId === eventRecord.resourceId && 
+                                        event.id !== eventRecord.id &&
+                                        event.startDate < endDate && 
+                                        event.endDate > startDate
+                                    );
+                                    
+                                    const conflictingEvent = resourceEvents[0];
+                                    if (conflictingEvent) {
+                                        const conflictStart = conflictingEvent.startDate.toLocaleString('en-US', { 
                                             month: 'short', 
                                             day: 'numeric', 
                                             hour: 'numeric', 
                                             minute: '2-digit' 
                                         });
-                                        const conflictEnd = existingEnd.toLocaleString('en-US', { 
+                                        const conflictEnd = conflictingEvent.endDate.toLocaleString('en-US', { 
                                             month: 'short', 
                                             day: 'numeric', 
                                             hour: 'numeric', 
@@ -2077,11 +2109,15 @@
                                         });
                                         return {
                                             valid: false,
-                                            message: `Cannot resize: ${existingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
+                                            message: `Cannot resize: ${conflictingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
                                         };
                                     }
+                                    return {
+                                        valid: false,
+                                        message: `Time slot is already occupied on this resource`
+                                    };
                                 }
-                                return true; // Valid resize
+                                return { valid: true }; // Valid resize
                             }
                         },
                         
