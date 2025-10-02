@@ -2081,17 +2081,25 @@
                 // Check if bryntum is available
                 if (typeof bryntum === 'undefined') {
                     console.error('❌ Bryntum library not loaded!');
+                    document.getElementById('status-message').textContent = 'Error: Bryntum library not loaded';
                     return;
                 }
                 
+                console.log('✅ Bryntum library loaded, checking for SchedulerPro...');
+                console.log('Bryntum object keys:', Object.keys(bryntum));
+                
                 // Try to access SchedulerPro - it might be directly on bryntum or in a sub-namespace
-                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro || bryntum.SchedulerPro;
+                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro || bryntum.SchedulerPro || bryntum.scheduler?.SchedulerPro;
                 
                 if (!SchedulerPro) {
                     console.error('❌ SchedulerPro class not found in bryntum namespace!');
-                    console.log('Available in bryntum:', Object.keys(bryntum));
+                    console.log('Available in bryntum:', bryntum);
+                    console.log('Available in bryntum.schedulerpro:', bryntum.schedulerpro);
+                    document.getElementById('status-message').textContent = 'Error: SchedulerPro class not found';
                     return;
                 }
+                
+                console.log('✅ SchedulerPro class found, initializing scheduler...');
                 
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
