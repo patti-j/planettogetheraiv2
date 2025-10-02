@@ -855,7 +855,22 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
                 {/* Agent Selector Dropdown */}
                 <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                  <SelectTrigger className="w-6 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-0.5">
+                  <SelectTrigger className="w-auto h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-1.5 gap-1">
+                    {selectedFloatingAgent === 'unified' ? (
+                      <>
+                        <Users className="w-3 h-3" />
+                        <span className="text-xs">All Agents</span>
+                      </>
+                    ) : (
+                      <>
+                        {(() => {
+                          const IconComponent = getAgentIcon(selectedFloatingAgent);
+                          return <IconComponent className="w-3 h-3" />;
+                        })()}
+                        <span className="text-xs">{activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'Agent'}</span>
+                      </>
+                    )}
+                    <ChevronDown className="w-3 h-3 opacity-50" />
                   </SelectTrigger>
                   <SelectContent align="start">
                     <SelectItem value="unified" className="text-xs">
