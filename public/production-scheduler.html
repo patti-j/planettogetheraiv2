@@ -1684,7 +1684,7 @@
                         duration: duration,
                         durationUnit: 'hour',
                         resourceId: resourceId,
-                        percentDone: operation.percent_done || 0,
+                        percentDone: operation.percent_finished || 0,
                         eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.name)),
                         // ASAP scheduling constraints (not for unscheduled operations)
                         constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
@@ -2123,6 +2123,13 @@
                     features: {
                         // Dependencies feature for showing task relationships
                         dependencies: true,
+                        
+                        // PercentBar feature - visualize progress on operations
+                        percentBar: {
+                            disabled: false, // Enable the feature
+                            showPercentage: true, // Show percentage text
+                            allowResize: true // Allow dragging to change percentage
+                        },
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
