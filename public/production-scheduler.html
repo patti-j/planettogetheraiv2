@@ -3257,6 +3257,22 @@
                 // Initialize status updates
                 updateStatus();
                 
+                // CRITICAL DATA LOADING FIX: Load the events into the scheduler's event store
+                // The events array was created but never actually loaded into the scheduler
+                console.log('📊 Loading data into scheduler - resources:', resources.length, 'events:', events.length, 'dependencies:', dependencies.length);
+                
+                // Load the inline data into the scheduler project
+                await scheduler.project.loadInlineData({
+                    resources: resources,
+                    events: events,
+                    dependencies: dependencies
+                });
+                
+                // Commit the data to finalize the loading
+                await scheduler.project.commitAsync();
+                
+                console.log('✅ Data loaded into scheduler event store:', scheduler.eventStore.count, 'events');
+                
                 // CRITICAL FIX: Run ASAP immediately after inline data load
                 // The 'load' event doesn't fire for inline data, so we MUST run ASAP here directly
                 console.log('🚨 CRITICAL: Running ASAP to fix overlaps after inline data load...');
