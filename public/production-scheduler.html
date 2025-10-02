@@ -1530,27 +1530,16 @@
                     
                     let startDate;
                     
-                    // CRITICAL: Create staggered initial placement to help ASAP algorithm
-                    // Don't load overlapping times from DB, let ASAP fix the schedule
-                    // Stagger operations by resource to avoid initial overlaps
-                    const baseDate = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 7 AM
-                    
-                    // Create a map to track last scheduled time per resource
-                    if (!window.resourceLastTime) {
-                        window.resourceLastTime = {};
+                    // Use the actual scheduled times from database (now that overlaps are fixed)
+                    if (operation.scheduledStart) {
+                        startDate = new Date(operation.scheduledStart);
+                        console.log(`📅 Using DB scheduled time for ${operation.name}: ${startDate.toISOString()}`);
+                    } else {
+                        // Fallback: Use base date if no scheduled time exists
+                        const baseDate = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 7 AM
+                        startDate = new Date(baseDate.getTime() + index * 30 * 60 * 1000);
+                        console.log(`⚠️ No scheduled time for ${operation.name}, using fallback: ${startDate.toISOString()}`);
                     }
-                    
-                    // If this resource hasn't been used yet, start at base time
-                    if (!window.resourceLastTime[resourceId]) {
-                        window.resourceLastTime[resourceId] = baseDate.getTime();
-                    }
-                    
-                    // Start this operation after the last one on this resource (with small buffer)
-                    startDate = new Date(window.resourceLastTime[resourceId]);
-                    
-                    // Update the last time for this resource (add duration + 30 min buffer)
-                    const durationMs = (operation.duration || 120) * 60 * 1000; // Convert minutes to ms
-                    window.resourceLastTime[resourceId] = startDate.getTime() + durationMs + (30 * 60 * 1000);
                     
                     // If no valid resource found, assign to unscheduled resource
                     if (isUnscheduled) {
@@ -3284,53 +3273,21 @@
                 
                 console.log('✅ Data loaded into scheduler event store:', scheduler.eventStore.count, 'events');
                 
-                // CRITICAL FIX: Wait for scheduler to fully initialize before running ASAP
-                console.log('⏳ Waiting for scheduler to fully initialize data...');
+                // Database times are now fixed with no overlaps, so we don't need to run ASAP automatically
+                console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
+                console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
-                // Wait for next animation frame to ensure DOM and scheduler are ready
-                await new Promise(resolve => requestAnimationFrame(resolve));
-                
-                // Additional wait to ensure Bryntum has fully processed the data
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-                console.log('🚨 CRITICAL: Running ASAP to fix overlaps after data is fully loaded...');
-                console.log('📊 Event store has', scheduler.eventStore.count, 'events before ASAP');
-                
-                // Verify data is loaded before running ASAP
-                if (scheduler.eventStore.count > 0) {
-                    await asapScheduling();
-                    updateStatus();
-                    console.log('✅ ASAP scheduling complete - overlaps should be eliminated');
-                    console.log('📊 Event store has', scheduler.eventStore.count, 'events after ASAP');
-                    
-                    // Refresh the scheduler view to show the updated positions
-                    scheduler.refresh();
-                    
-                    // Also run after a longer delay as backup to catch any late-loading data
-                    setTimeout(async () => {
-                        console.log('🚀 Running backup ASAP scheduling...');
-                        console.log('📊 Event store count before backup:', scheduler.eventStore.count);
-                        if (scheduler.eventStore.count > 0) {
-                            await asapScheduling();
-                            updateStatus();
-                            scheduler.refresh();
-                            console.log('✅ Backup ASAP scheduling applied');
-                            console.log('📊 Event store count after backup:', scheduler.eventStore.count);
-                        }
-                        
-                        // Add welcome message to Max AI
-                        const maxMessages = document.getElementById('maxMessages');
-                        if (maxMessages) {
-                            const welcomeMsg = document.createElement('div');
-                            welcomeMsg.className = 'max-ai-message assistant';
-                            welcomeMsg.innerHTML = '✅ <strong>ASAP scheduling applied!</strong> The schedule has been optimized for earliest completion times with resource constraints.';
-                            maxMessages.appendChild(welcomeMsg);
-                            maxMessages.scrollTop = maxMessages.scrollHeight;
-                        }
-                    }, 1000);
-                } else {
-                    console.error('❌ Cannot run ASAP - event store is empty!');
-                }
+                // Add welcome message to Max AI indicating schedule is ready
+                setTimeout(() => {
+                    const maxMessages = document.getElementById('maxMessages');
+                    if (maxMessages) {
+                        const welcomeMsg = document.createElement('div');
+                        welcomeMsg.className = 'max-ai-message assistant';
+                        welcomeMsg.innerHTML = '✅ <strong>Schedule loaded from database!</strong> All operations are scheduled with no overlaps. You can use the Apply button to run optimization algorithms if needed.';
+                        maxMessages.appendChild(welcomeMsg);
+                        maxMessages.scrollTop = maxMessages.scrollHeight;
+                    }
+                }, 500);
                 
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
