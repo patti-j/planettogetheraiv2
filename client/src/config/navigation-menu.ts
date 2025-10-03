@@ -90,7 +90,8 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: GitBranch, label: "AI Scenario Creator", href: "/ai-scenario-creator", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: BookOpen, label: "Playbooks", href: "/playbooks", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-green-500 to-blue-600" },
-      { icon: History, label: "Agent History", href: "/agent-history", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-gray-500 to-blue-600" }
+      { icon: History, label: "Agent History", href: "/agent-history", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-gray-500 to-blue-600" },
+      { icon: Monitor, label: "Agent Monitoring", href: "/agent-monitoring", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" }
     ]
   },
   {

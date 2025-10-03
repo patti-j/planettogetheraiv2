@@ -87,6 +87,7 @@ import VisualFactory from "@/pages/visual-factory";
 import AIScenarioCreator from "@/pages/ai-scenario-creator";
 import MemoryBookPage from "@/pages/memory-book";
 import AgentHistory from "@/pages/agent-history";
+import { AgentMonitoring } from "@/pages/agent-monitoring";
 import OrderOptimization from "@/pages/order-optimization";
 import CanvasPage from "@/pages/canvas";
 import SMSPage from "@/pages/sms";
@@ -368,6 +369,7 @@ export default function ApplicationApp() {
               <Route path="/playbooks" component={MemoryBookPage} />
               <Route path="/memory-books" component={MemoryBooks} />
               <Route path="/agent-history" component={AgentHistory} />
+              <Route path="/agent-monitoring" component={AgentMonitoring} />
               <Route path="/functional-map" component={FunctionalMap} />
               <Route path="/analytics-new" component={AnalyticsNew} />
               
