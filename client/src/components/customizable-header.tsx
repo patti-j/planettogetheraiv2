@@ -133,7 +133,7 @@ const defaultHeaderItemsByRole = {
 const generateAvailableItems = (): HeaderItem[] => {
   // Base navigation items
   const baseItems: HeaderItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/', type: 'page' },
+    { id: 'dashboard', label: 'Dashboard', icon: 'Home', href: '/home', type: 'page' },
     { id: 'schedule', label: 'Schedule', icon: 'Calendar', href: '/production-scheduler', type: 'page' },
     { id: 'shop-floor', label: 'Shop Floor', icon: 'Factory', href: '/shop-floor', type: 'page' },
     { id: 'analytics', label: 'Analytics', icon: 'BarChart3', href: '/analytics', type: 'page' },
