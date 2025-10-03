@@ -31,12 +31,18 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **Routing**: Wouter.
 - **Drag & Drop**: react-dnd with HTML5 backend.
 - **Gantt Chart**: Bryntum Scheduler Pro for production scheduling visualization, including optimization engines (ASAP, ALAP, Critical Path, Resource Leveling), drag-and-drop rescheduling, and real-time synchronization.
-  - **Implementation Status (October 2, 2025)**: All scheduling algorithms updated to use Bryntum's native constraint-based scheduling engine
+  - **Implementation Status (October 3, 2025)**: All scheduling algorithms updated to use Bryntum's native constraint-based scheduling engine
   - **ASAP**: Uses `startnoearlierthan` constraints with forward scheduling
   - **ALAP**: Uses `finishnolaterthan` constraints with backward scheduling  
   - **Critical Path**: Leverages dependency chains with visual highlighting
   - **Dependencies**: Automatically created between sequential operations to prevent overlaps
   - **Project Engine**: Properly configured with calendars, working hours, and auto-calculation enabled
+  - **New Features Implemented (October 3, 2025)**:
+    - **PercentBar**: Visual progress bars on operations (75% Milling, 50% Mashing, 30% Fermentation, 90% Packaging)
+    - **ResourceNonWorkingTime**: Highlights non-working intervals based on resource calendars
+    - **TaskEdit**: Double-click operations to open comprehensive multi-tab editor
+    - **TimeSpanHighlight**: Visual highlights for maintenance windows, shift changes, deadlines
+    - **Versions**: Complete version management with save, restore, compare functionality
 - **Build Tool**: Vite.
 - **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls.
 
