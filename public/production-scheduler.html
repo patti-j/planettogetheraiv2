@@ -2244,6 +2244,8 @@
                         
                         // Event drag feature with validation to prevent incompatible resource assignments
                         eventDrag: {
+                            showTooltip: true,
+                            constrainDragToResource: false, // Allow dragging between resources
                             // Validation function to check if an operation can be dropped on a resource
                             validatorFn: (context) => {
                                 const { eventRecord, newResource } = context;
@@ -2375,100 +2377,6 @@
                                     timestamp: v.timestamp,
                                     description: v.description
                                 })));
-                            }
-                        },
-                        
-                        // Enable drag and drop with tooltip
-                        eventDrag: {
-                            showTooltip: true,
-                            constrainDragToResource: false, // Allow dragging between resources
-                            // Validate that target resource has required capability AND no time overlap
-                            validatorFn({ draggedRecords, targetRecord, startDate, endDate }) {
-                                // Check each dragged operation
-                                for (const draggedRecord of draggedRecords) {
-                                    const operationName = draggedRecord.name || draggedRecord.operationName || '';
-                                    const requiredCapability = getRequiredCapability(operationName);
-                                    
-                                    // 1. Check capability requirements
-                                    if (requiredCapability !== null && targetRecord) {
-                                        const targetResourceId = targetRecord.id;
-                                        const targetCapabilities = resourceCapabilities[targetResourceId] || [];
-                                        
-                                        // Log for debugging
-                                        console.log(`🔍 Validating drag: Operation "${operationName}" requires capability ${requiredCapability}`);
-                                        console.log(`🔍 Target resource "${targetRecord.name}" (ID: ${targetResourceId}) has capabilities:`, targetCapabilities);
-                                        
-                                        // Check if target resource has the required capability
-                                        if (!targetCapabilities.includes(requiredCapability)) {
-                                            // Show a tooltip explaining why the drop is invalid
-                                            const capabilityNames = {
-                                                1: 'Milling', 2: 'Mashing', 3: 'Lautering',
-                                                4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
-                                                7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
-                                            };
-                                            
-                                            // Special case: Be very explicit about fermentation restrictions
-                                            if (requiredCapability === 5) {
-                                                console.error(`❌ BLOCKED: Fermentation operations can ONLY be placed on Fermenter Tanks!`);
-                                                console.error(`❌ ${targetRecord.name} does not have fermentation capability`);
-                                                return {
-                                                    valid: false,
-                                                    message: `❌ Fermentation can ONLY be done on Fermenter Tanks!\n${targetRecord.name} is not a fermenter.`
-                                                };
-                                            }
-                                            
-                                            console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord.name}: Missing ${capabilityNames[requiredCapability]} capability`);
-                                            return {
-                                                valid: false,
-                                                message: `${targetRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`
-                                            };
-                                        }
-                                    }
-                                    
-                                    // 2. CRITICAL: Use Bryntum's isDateRangeAvailable to check overlaps
-                                    if (targetRecord && startDate && endDate) {
-                                        // Use Bryntum's built-in overlap detection
-                                        const isAvailable = window.scheduler.eventStore.isDateRangeAvailable(
-                                            startDate,
-                                            endDate,
-                                            draggedRecord, // Exclude the dragged event itself
-                                            targetRecord   // Check for this specific resource
-                                        );
-                                        
-                                        if (!isAvailable) {
-                                            console.warn(`⚠️ Cannot drop ${operationName}: Time slot occupied on ${targetRecord.name}`);
-                                            
-                                            // Find the conflicting event for better error message
-                                            const resourceEvents = window.scheduler.eventStore.query(event => 
-                                                event.resourceId === targetRecord.id && 
-                                                event.id !== draggedRecord.id &&
-                                                event.startDate < endDate && 
-                                                event.endDate > startDate
-                                            );
-                                            
-                                            const conflictingEvent = resourceEvents[0];
-                                            if (conflictingEvent) {
-                                                const conflictStart = conflictingEvent.startDate.toLocaleString('en-US', { 
-                                                    month: 'short', 
-                                                    day: 'numeric', 
-                                                    hour: 'numeric', 
-                                                    minute: '2-digit' 
-                                                });
-                                                const conflictEnd = conflictingEvent.endDate.toLocaleString('en-US', { 
-                                                    month: 'short', 
-                                                    day: 'numeric', 
-                                                    hour: 'numeric', 
-                                                    minute: '2-digit' 
-                                                });
-                                                return {
-                                                    valid: false,
-                                                    message: `Resource busy: ${conflictingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
-                                                };
-                                            }
-                                        }
-                                    }
-                                }
-                                return true; // Valid drop
                             }
                         },
                         
