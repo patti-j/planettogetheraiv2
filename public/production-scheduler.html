@@ -1154,6 +1154,33 @@
                 </svg>
             </button>
         </div>
+
+        <div class="toolbar-group">
+            <button id="saveVersion" title="Save current state as version">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>Save Version</span>
+            </button>
+            <button id="viewVersions" title="View saved versions">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                    <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Versions</span>
+            </button>
+            <button id="compareVersions" title="Compare versions">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="18" cy="18" r="3"></circle>
+                    <circle cx="6" cy="6" r="3"></circle>
+                    <path d="M13 6h3a2 2 0 0 1 2 2v7"></path>
+                    <path d="M11 18H8a2 2 0 0 1-2-2V9"></path>
+                </svg>
+                <span>Compare</span>
+            </button>
+        </div>
     </div>
 
     <div class="scheduler-container">
@@ -2227,6 +2254,49 @@
                             disabled: false // Enable the feature to show non-working time for resources
                         },
                         
+                        // Versions feature - capture and manage project snapshots
+                        versions: {
+                            disabled: false, // Enable the versions feature
+                            showTooltip: true, // Show tooltips for version actions
+                            autoCreate: false, // We'll manually control when versions are created
+                            saveVersion: (version) => {
+                                // Store version data (in production, this would go to backend)
+                                const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                                versions.push({
+                                    ...version,
+                                    id: version.id || `v${Date.now()}`,
+                                    name: version.name || `Version ${versions.length + 1}`,
+                                    timestamp: new Date().toISOString(),
+                                    description: version.description || 'Manual snapshot',
+                                    data: version.data
+                                });
+                                localStorage.setItem('schedulerVersions', JSON.stringify(versions));
+                                console.log('✅ Version saved:', version.name);
+                                showNotification(`Version "${version.name}" saved successfully`, 'success');
+                                return Promise.resolve(version);
+                            },
+                            loadVersion: (versionId) => {
+                                // Load version data
+                                const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                                const version = versions.find(v => v.id === versionId);
+                                if (version) {
+                                    console.log('✅ Loading version:', version.name);
+                                    return Promise.resolve(version.data);
+                                }
+                                return Promise.reject('Version not found');
+                            },
+                            getVersions: () => {
+                                // Get all saved versions
+                                const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                                return Promise.resolve(versions.map(v => ({
+                                    id: v.id,
+                                    name: v.name,
+                                    timestamp: v.timestamp,
+                                    description: v.description
+                                })));
+                            }
+                        },
+                        
                         // Enable drag and drop with tooltip
                         eventDrag: {
                             showTooltip: true,
@@ -2817,11 +2887,273 @@
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
                 
+                // Version Management Functions
+                function createVersion(description = 'Manual snapshot') {
+                    if (!scheduler || !scheduler.project) {
+                        console.error('Scheduler not initialized');
+                        return;
+                    }
+                    
+                    try {
+                        // Get the current project state
+                        const projectData = scheduler.project.toJSON();
+                        
+                        // Create version object
+                        const version = {
+                            id: `v${Date.now()}`,
+                            name: `Version ${new Date().toLocaleTimeString()}`,
+                            timestamp: new Date().toISOString(),
+                            description: description,
+                            data: {
+                                events: scheduler.eventStore.toJSON(),
+                                resources: scheduler.resourceStore.toJSON(),
+                                dependencies: scheduler.dependencyStore.toJSON(),
+                                project: projectData
+                            }
+                        };
+                        
+                        // Store in localStorage 
+                        const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                        versions.push(version);
+                        
+                        // Keep only last 20 versions
+                        if (versions.length > 20) {
+                            versions.shift();
+                        }
+                        
+                        localStorage.setItem('schedulerVersions', JSON.stringify(versions));
+                        
+                        console.log('✅ Version created:', version.name, description);
+                        showNotification(`Version saved: ${description}`, 'success');
+                        
+                        return version;
+                    } catch (error) {
+                        console.error('Error creating version:', error);
+                        showNotification('Failed to create version', 'error');
+                    }
+                }
+                
+                function loadVersion(versionId) {
+                    const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                    const version = versions.find(v => v.id === versionId);
+                    
+                    if (!version) {
+                        showNotification('Version not found', 'error');
+                        return;
+                    }
+                    
+                    try {
+                        // Create backup of current state before restoring
+                        createVersion('Before restore');
+                        
+                        // Restore the version data
+                        scheduler.eventStore.loadData(version.data.events);
+                        scheduler.resourceStore.loadData(version.data.resources);
+                        scheduler.dependencyStore.loadData(version.data.dependencies);
+                        
+                        showNotification(`Version restored: ${version.name}`, 'success');
+                        updateStatus();
+                    } catch (error) {
+                        console.error('Error restoring version:', error);
+                        showNotification('Failed to restore version', 'error');
+                    }
+                }
+                
+                function showVersionsDialog() {
+                    const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                    
+                    // Create modal dialog
+                    const modal = document.createElement('div');
+                    modal.className = 'constraint-modal active';
+                    modal.innerHTML = `
+                        <div class="constraint-modal-content" style="max-width: 900px;">
+                            <div class="constraint-modal-header">
+                                <h2>Version History</h2>
+                                <button class="constraint-modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+                            </div>
+                            <div class="constraint-modal-body">
+                                <div style="max-height: 500px; overflow-y: auto;">
+                                    <table style="width: 100%; border-collapse: collapse;">
+                                        <thead>
+                                            <tr style="border-bottom: 2px solid #ddd;">
+                                                <th style="padding: 10px; text-align: left;">Version</th>
+                                                <th style="padding: 10px; text-align: left;">Time</th>
+                                                <th style="padding: 10px; text-align: left;">Description</th>
+                                                <th style="padding: 10px; text-align: center;">Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${versions.reverse().map(v => `
+                                                <tr style="border-bottom: 1px solid #eee;">
+                                                    <td style="padding: 10px;">${v.name}</td>
+                                                    <td style="padding: 10px;">${new Date(v.timestamp).toLocaleString()}</td>
+                                                    <td style="padding: 10px;">${v.description}</td>
+                                                    <td style="padding: 10px; text-align: center;">
+                                                        <button onclick="loadVersion('${v.id}')" style="margin-right: 5px;">Restore</button>
+                                                        <button onclick="deleteVersion('${v.id}')">Delete</button>
+                                                    </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                    </table>
+                                    ${versions.length === 0 ? '<p style="text-align: center; padding: 20px;">No versions saved yet</p>' : ''}
+                                </div>
+                            </div>
+                            <div class="constraint-modal-footer">
+                                <button onclick="clearAllVersions()" style="background: #ff4444; color: white;">Clear All</button>
+                                <button onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+                
+                function compareVersions() {
+                    const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                    
+                    if (versions.length < 2) {
+                        showNotification('Need at least 2 versions to compare', 'warning');
+                        return;
+                    }
+                    
+                    // Create comparison modal
+                    const modal = document.createElement('div');
+                    modal.className = 'constraint-modal active';
+                    modal.innerHTML = `
+                        <div class="constraint-modal-content" style="max-width: 1000px;">
+                            <div class="constraint-modal-header">
+                                <h2>Compare Versions</h2>
+                                <button class="constraint-modal-close" onclick="this.parentElement.parentElement.parentElement.remove()">×</button>
+                            </div>
+                            <div class="constraint-modal-body">
+                                <div style="display: flex; gap: 20px; margin-bottom: 20px;">
+                                    <div style="flex: 1;">
+                                        <label>Version 1:</label>
+                                        <select id="version1Select" style="width: 100%; padding: 5px;">
+                                            ${versions.map((v, i) => `<option value="${v.id}">${v.name} - ${v.description}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <label>Version 2:</label>
+                                        <select id="version2Select" style="width: 100%; padding: 5px;">
+                                            ${versions.map((v, i) => `<option value="${v.id}" ${i === versions.length - 1 ? 'selected' : ''}>${v.name} - ${v.description}</option>`).join('')}
+                                        </select>
+                                    </div>
+                                    <button onclick="performVersionComparison()" style="padding: 5px 15px;">Compare</button>
+                                </div>
+                                <div id="comparisonResults" style="max-height: 400px; overflow-y: auto; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                                    <p style="text-align: center; color: #999;">Select versions and click Compare</p>
+                                </div>
+                            </div>
+                            <div class="constraint-modal-footer">
+                                <button onclick="this.parentElement.parentElement.parentElement.remove()">Close</button>
+                            </div>
+                        </div>
+                    `;
+                    document.body.appendChild(modal);
+                }
+                
+                window.performVersionComparison = function() {
+                    const v1Id = document.getElementById('version1Select').value;
+                    const v2Id = document.getElementById('version2Select').value;
+                    
+                    const versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                    const v1 = versions.find(v => v.id === v1Id);
+                    const v2 = versions.find(v => v.id === v2Id);
+                    
+                    if (!v1 || !v2) {
+                        showNotification('Version not found', 'error');
+                        return;
+                    }
+                    
+                    // Compare the versions
+                    const differences = [];
+                    
+                    // Compare event counts
+                    const v1Events = v1.data.events.length;
+                    const v2Events = v2.data.events.length;
+                    if (v1Events !== v2Events) {
+                        differences.push(`Event count: ${v1Events} → ${v2Events} (${v2Events - v1Events > 0 ? '+' : ''}${v2Events - v1Events})`);
+                    }
+                    
+                    // Compare resource counts
+                    const v1Resources = v1.data.resources.length;
+                    const v2Resources = v2.data.resources.length;
+                    if (v1Resources !== v2Resources) {
+                        differences.push(`Resource count: ${v1Resources} → ${v2Resources} (${v2Resources - v1Resources > 0 ? '+' : ''}${v2Resources - v1Resources})`);
+                    }
+                    
+                    // Compare dependency counts
+                    const v1Deps = v1.data.dependencies.length;
+                    const v2Deps = v2.data.dependencies.length;
+                    if (v1Deps !== v2Deps) {
+                        differences.push(`Dependency count: ${v1Deps} → ${v2Deps} (${v2Deps - v1Deps > 0 ? '+' : ''}${v2Deps - v1Deps})`);
+                    }
+                    
+                    // Find modified events
+                    const modifiedEvents = [];
+                    v1.data.events.forEach(e1 => {
+                        const e2 = v2.data.events.find(e => e.id === e1.id);
+                        if (e2) {
+                            if (JSON.stringify(e1) !== JSON.stringify(e2)) {
+                                modifiedEvents.push(e1.name || e1.id);
+                            }
+                        }
+                    });
+                    
+                    if (modifiedEvents.length > 0) {
+                        differences.push(`Modified events: ${modifiedEvents.slice(0, 5).join(', ')}${modifiedEvents.length > 5 ? ` and ${modifiedEvents.length - 5} more` : ''}`);
+                    }
+                    
+                    // Display results
+                    const resultsDiv = document.getElementById('comparisonResults');
+                    if (differences.length === 0) {
+                        resultsDiv.innerHTML = '<p style="color: green;">✅ No differences found between versions</p>';
+                    } else {
+                        resultsDiv.innerHTML = `
+                            <h4>Differences Found:</h4>
+                            <ul style="margin: 10px 0;">
+                                ${differences.map(d => `<li>${d}</li>`).join('')}
+                            </ul>
+                            <div style="margin-top: 20px;">
+                                <p><strong>Version 1:</strong> ${v1.name} - ${v1.description}</p>
+                                <p><strong>Version 2:</strong> ${v2.name} - ${v2.description}</p>
+                            </div>
+                        `;
+                    }
+                };
+                
+                window.deleteVersion = function(versionId) {
+                    if (confirm('Delete this version?')) {
+                        let versions = JSON.parse(localStorage.getItem('schedulerVersions') || '[]');
+                        versions = versions.filter(v => v.id !== versionId);
+                        localStorage.setItem('schedulerVersions', JSON.stringify(versions));
+                        showNotification('Version deleted', 'success');
+                        // Refresh the dialog
+                        document.querySelector('.constraint-modal').remove();
+                        showVersionsDialog();
+                    }
+                };
+                
+                window.clearAllVersions = function() {
+                    if (confirm('Clear all saved versions? This cannot be undone.')) {
+                        localStorage.setItem('schedulerVersions', '[]');
+                        showNotification('All versions cleared', 'success');
+                        document.querySelector('.constraint-modal').remove();
+                    }
+                };
+                
+                window.loadVersion = loadVersion;  // Make it globally accessible
+                
                 // Add event listeners to handle dragging from unscheduled resource
                 // Track current scheduling mode
                 let currentSchedulingMode = 'ASAP'; // Default mode
                 
                 scheduler.on('eventdrop', async ({ eventRecords, targetResourceRecord, context }) => {
+                    // Create a version before the drag operation is finalized
+                    const draggedNames = eventRecords.map(e => e.name).join(', ');
+                    createVersion(`After drag: ${draggedNames.substring(0, 50)}${draggedNames.length > 50 ? '...' : ''}`);
+                    
                     for (const eventRecord of eventRecords) {
                         // Check if the event was dragged from unscheduled to a real resource
                         if (eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
@@ -3289,6 +3621,22 @@
                     console.log('Zoom to fit applied with 50px margins');
                 });
                 
+                // Version Management Button Handlers
+                document.getElementById('saveVersion').addEventListener('click', () => {
+                    const description = prompt('Enter version description:', 'Manual snapshot');
+                    if (description !== null) {
+                        createVersion(description);
+                    }
+                });
+                
+                document.getElementById('viewVersions').addEventListener('click', () => {
+                    showVersionsDialog();
+                });
+                
+                document.getElementById('compareVersions').addEventListener('click', () => {
+                    compareVersions();
+                });
+                
                 // Apply Scheduling Algorithm button
                 document.getElementById('applyScheduling').addEventListener('click', () => {
                     const algorithm = document.getElementById('schedulingAlgorithm').value;
@@ -3298,6 +3646,17 @@
                     const currentZoomLevel = scheduler.zoomLevel;
                     const currentStartDate = scheduler.startDate;
                     const currentEndDate = scheduler.endDate;
+                    
+                    // Save a version before applying algorithm
+                    const algorithmNames = {
+                        'asap': 'ASAP Forward',
+                        'alap': 'ALAP Backward',
+                        'criticalPath': 'Critical Path',
+                        'levelResources': 'Resource Leveling',
+                        'drum': 'Drum TOC'
+                    };
+                    
+                    createVersion(`Before ${algorithmNames[algorithm]} Algorithm`);
                     
                     requestAnimationFrame(() => {
                         setTimeout(async () => {
