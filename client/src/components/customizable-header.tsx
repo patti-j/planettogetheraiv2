@@ -512,7 +512,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
         <div className="flex items-center gap-2 flex-shrink-0">
           <Button
             variant="ghost"
-            onClick={() => setLocation('/')}
+            onClick={() => setLocation('/home')}
             className="flex items-center gap-2 px-3 py-2 h-9"
           >
             <img src={companyLogo} alt="PlanetTogether" className="h-6 w-6 object-contain" />
