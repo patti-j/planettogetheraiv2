@@ -97,11 +97,11 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     }
   };
 
-  // Show loading state while checking authentication and onboarding status
+  // Show subtle loading state in content area only
   // Don't show loading state if user is on the onboarding page itself
   if (authLoading || (user && onboardingLoading && location !== '/onboarding' && !location.startsWith('/onboarding?'))) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="flex items-center justify-center h-full">
         <div className="text-center space-y-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto"></div>
           <p className="text-gray-600">Loading...</p>
@@ -110,10 +110,10 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
     );
   }
 
-  // If onboarding is required and we're not in a tour, show onboarding message
+  // If onboarding is required and we're not in a tour, show onboarding message in content area
   if (shouldEnforceOnboarding && !isTourActive) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex items-center justify-center h-full">
         <div className="max-w-md mx-auto text-center space-y-6 p-8">
           <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto">
             <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

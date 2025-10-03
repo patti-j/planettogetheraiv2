@@ -183,8 +183,8 @@ export default function ApplicationApp() {
             <NavigationAdapterProvider>
           <Layout>
             <HintSystem />
-            <OnboardingGate>
-              <SplitScreenLayout>
+            <SplitScreenLayout>
+              <OnboardingGate>
               <Switch>
               {/* Demo and Test Pages */}
               {/* <Route path="/demo" component={DemoPage} /> */}
@@ -568,8 +568,8 @@ export default function ApplicationApp() {
               </Route>
               */}
               </Switch>
-              </SplitScreenLayout>
-            </OnboardingGate>
+              </OnboardingGate>
+            </SplitScreenLayout>
           </Layout>
             </NavigationAdapterProvider>
           </AgentAdapterProvider>
