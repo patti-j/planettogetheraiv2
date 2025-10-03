@@ -2242,6 +2242,87 @@
                         // Dependencies feature for showing task relationships
                         dependencies: true,
                         
+                        // Event drag feature with validation to prevent incompatible resource assignments
+                        eventDrag: {
+                            // Validation function to check if an operation can be dropped on a resource
+                            validatorFn: (context) => {
+                                const { eventRecord, newResource } = context;
+                                
+                                // Helper function to extract operation type from operation name
+                                function getOperationType(operationName) {
+                                    if (!operationName) return null;
+                                    const name = operationName.toLowerCase();
+                                    
+                                    // Map operation keywords to types
+                                    if (name.includes('milling')) return 'milling';
+                                    if (name.includes('mashing')) return 'mashing';
+                                    if (name.includes('lautering')) return 'lautering';
+                                    if (name.includes('boiling')) return 'boiling';
+                                    if (name.includes('fermentation')) return 'fermentation';
+                                    if (name.includes('conditioning')) return 'conditioning';
+                                    if (name.includes('dry hopping') || name.includes('dry-hopping')) return 'dry_hopping';
+                                    if (name.includes('packaging')) return 'packaging';
+                                    if (name.includes('pasteurization')) return 'pasteurization';
+                                    
+                                    return null;
+                                }
+
+                                // Helper function to check if a resource can handle an operation type
+                                function canResourceHandleOperation(resourceName, operationType) {
+                                    if (!resourceName || !operationType) return false;
+                                    
+                                    const resourceNameLower = resourceName.toLowerCase();
+                                    
+                                    // Define operation-to-resource compatibility mapping
+                                    const compatibility = {
+                                        'milling': ['grain mill'],
+                                        'mashing': ['mash tun'],
+                                        'lautering': ['lauter tun'],
+                                        'boiling': ['brew kettle'],
+                                        'fermentation': ['fermenter tank'],
+                                        'conditioning': ['bright tank'],
+                                        'dry_hopping': ['bright tank'],
+                                        'packaging': ['filler line', 'bottle filler', 'can filler'],
+                                        'pasteurization': ['pasteurizer']
+                                    };
+                                    
+                                    const allowedResources = compatibility[operationType];
+                                    if (!allowedResources) return true; // If no specific mapping, allow
+                                    
+                                    // Check if the resource name matches any of the allowed resources
+                                    return allowedResources.some(allowed => 
+                                        resourceNameLower.includes(allowed.toLowerCase())
+                                    );
+                                }
+                                
+                                const operationName = eventRecord.name || '';
+                                const operationType = getOperationType(operationName);
+                                const resourceName = newResource ? newResource.name : '';
+                                
+                                // Check if the operation can be assigned to the new resource
+                                const isValid = canResourceHandleOperation(resourceName, operationType);
+                                
+                                if (!isValid) {
+                                    console.warn(`⚠️ Cannot assign ${operationName} to ${resourceName} - incompatible resource type`);
+                                    // Show toast notification if available
+                                    if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
+                                        bryntum.schedulerpro.Toast.show({
+                                            html: `Cannot assign ${operationName} to ${resourceName} - incompatible resource type`,
+                                            color: 'b-red',
+                                            style: 'border',
+                                            timeout: 3000
+                                        });
+                                    }
+                                    return {
+                                        valid: false,
+                                        message: `${operationName} cannot be assigned to ${resourceName}`
+                                    };
+                                }
+                                
+                                return { valid: true };
+                            }
+                        },
+                        
                         // PercentBar feature - visualize progress on operations
                         percentBar: {
                             disabled: false, // Enable the feature
