@@ -4,6 +4,7 @@ import {
   ptPlants, ptResources, ptJobOperations, ptManufacturingOrders,
   schedulingConversations, schedulingMessages, savedSchedules,
   widgets,
+  agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -93,6 +94,33 @@ export interface IStorage {
   
   // Error logging
   logError(error: any): Promise<void>;
+  
+  // Agent Monitoring Methods
+  getAgentConnections(filters?: { status?: string; connectionType?: string }): Promise<any[]>;
+  getAgentConnectionById(id: number): Promise<any | null>;
+  createAgentConnection(data: any): Promise<any>;
+  updateAgentConnection(id: number, data: any): Promise<any>;
+  deleteAgentConnection(id: number): Promise<void>;
+  
+  // Agent Actions
+  getAgentActions(agentConnectionId?: number, limit?: number, offset?: number): Promise<any[]>;
+  createAgentAction(data: any): Promise<any>;
+  getAgentActionsBySessionId(sessionId: string): Promise<any[]>;
+  
+  // Agent Metrics
+  getAgentMetrics(agentConnectionId: number, startTime?: Date, endTime?: Date): Promise<any[]>;
+  createAgentMetrics(data: any): Promise<any>;
+  
+  // Agent Policies
+  getAgentPolicies(agentConnectionId: number): Promise<any[]>;
+  createAgentPolicy(data: any): Promise<any>;
+  updateAgentPolicy(id: number, data: any): Promise<any>;
+  deleteAgentPolicy(id: number): Promise<void>;
+  
+  // Agent Alerts
+  getAgentAlerts(agentConnectionId?: number, acknowledged?: boolean): Promise<any[]>;
+  createAgentAlert(data: any): Promise<any>;
+  acknowledgeAgentAlert(id: number, userId: number): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -803,6 +831,238 @@ export class DatabaseStorage implements IStorage {
   // Error logging
   async logError(error: any): Promise<void> {
     console.error('System error:', error);
+  }
+
+  // Agent Monitoring Methods Implementation
+  async getAgentConnections(filters?: { status?: string; connectionType?: string }): Promise<any[]> {
+    try {
+      let query = db.select().from(agentConnections);
+      
+      if (filters) {
+        const conditions = [];
+        if (filters.status) {
+          conditions.push(eq(agentConnections.status, filters.status as any));
+        }
+        if (filters.connectionType) {
+          conditions.push(eq(agentConnections.connectionType, filters.connectionType as any));
+        }
+        if (conditions.length > 0) {
+          query = query.where(and(...conditions)) as any;
+        }
+      }
+      
+      return await query;
+    } catch (error) {
+      console.error('Error fetching agent connections:', error);
+      return [];
+    }
+  }
+
+  async getAgentConnectionById(id: number): Promise<any | null> {
+    try {
+      const [connection] = await db.select().from(agentConnections).where(eq(agentConnections.id, id));
+      return connection || null;
+    } catch (error) {
+      console.error('Error fetching agent connection by id:', error);
+      return null;
+    }
+  }
+
+  async createAgentConnection(data: any): Promise<any> {
+    try {
+      const [connection] = await db.insert(agentConnections).values(data).returning();
+      return connection;
+    } catch (error) {
+      console.error('Error creating agent connection:', error);
+      throw error;
+    }
+  }
+
+  async updateAgentConnection(id: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db.update(agentConnections)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(agentConnections.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating agent connection:', error);
+      throw error;
+    }
+  }
+
+  async deleteAgentConnection(id: number): Promise<void> {
+    try {
+      await db.delete(agentConnections).where(eq(agentConnections.id, id));
+    } catch (error) {
+      console.error('Error deleting agent connection:', error);
+      throw error;
+    }
+  }
+
+  // Agent Actions
+  async getAgentActions(agentConnectionId?: number, limit = 100, offset = 0): Promise<any[]> {
+    try {
+      let query = db.select().from(agentActions);
+      
+      if (agentConnectionId) {
+        query = query.where(eq(agentActions.agentConnectionId, agentConnectionId)) as any;
+      }
+      
+      query = query.orderBy(desc(agentActions.timestamp)).limit(limit).offset(offset) as any;
+      return await query;
+    } catch (error) {
+      console.error('Error fetching agent actions:', error);
+      return [];
+    }
+  }
+
+  async createAgentAction(data: any): Promise<any> {
+    try {
+      const [action] = await db.insert(agentActions).values(data).returning();
+      return action;
+    } catch (error) {
+      console.error('Error creating agent action:', error);
+      throw error;
+    }
+  }
+
+  async getAgentActionsBySessionId(sessionId: string): Promise<any[]> {
+    try {
+      return await db.select().from(agentActions)
+        .where(eq(agentActions.sessionId, sessionId))
+        .orderBy(agentActions.timestamp);
+    } catch (error) {
+      console.error('Error fetching agent actions by session:', error);
+      return [];
+    }
+  }
+
+  // Agent Metrics
+  async getAgentMetrics(agentConnectionId: number, startTime?: Date, endTime?: Date): Promise<any[]> {
+    try {
+      let query = db.select().from(agentMetricsHourly)
+        .where(eq(agentMetricsHourly.agentConnectionId, agentConnectionId));
+      
+      if (startTime && endTime) {
+        query = query.where(
+          and(
+            sql`${agentMetricsHourly.hourTimestamp} >= ${startTime}`,
+            sql`${agentMetricsHourly.hourTimestamp} <= ${endTime}`
+          )
+        ) as any;
+      }
+      
+      return await query.orderBy(desc(agentMetricsHourly.hourTimestamp));
+    } catch (error) {
+      console.error('Error fetching agent metrics:', error);
+      return [];
+    }
+  }
+
+  async createAgentMetrics(data: any): Promise<any> {
+    try {
+      const [metrics] = await db.insert(agentMetricsHourly).values(data).returning();
+      return metrics;
+    } catch (error) {
+      console.error('Error creating agent metrics:', error);
+      throw error;
+    }
+  }
+
+  // Agent Policies
+  async getAgentPolicies(agentConnectionId: number): Promise<any[]> {
+    try {
+      return await db.select().from(agentPolicies)
+        .where(eq(agentPolicies.agentConnectionId, agentConnectionId))
+        .orderBy(desc(agentPolicies.createdAt));
+    } catch (error) {
+      console.error('Error fetching agent policies:', error);
+      return [];
+    }
+  }
+
+  async createAgentPolicy(data: any): Promise<any> {
+    try {
+      const [policy] = await db.insert(agentPolicies).values(data).returning();
+      return policy;
+    } catch (error) {
+      console.error('Error creating agent policy:', error);
+      throw error;
+    }
+  }
+
+  async updateAgentPolicy(id: number, data: any): Promise<any> {
+    try {
+      const [updated] = await db.update(agentPolicies)
+        .set(data)
+        .where(eq(agentPolicies.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating agent policy:', error);
+      throw error;
+    }
+  }
+
+  async deleteAgentPolicy(id: number): Promise<void> {
+    try {
+      await db.delete(agentPolicies).where(eq(agentPolicies.id, id));
+    } catch (error) {
+      console.error('Error deleting agent policy:', error);
+      throw error;
+    }
+  }
+
+  // Agent Alerts
+  async getAgentAlerts(agentConnectionId?: number, acknowledged?: boolean): Promise<any[]> {
+    try {
+      let query = db.select().from(agentAlerts);
+      const conditions = [];
+      
+      if (agentConnectionId) {
+        conditions.push(eq(agentAlerts.agentConnectionId, agentConnectionId));
+      }
+      if (acknowledged !== undefined) {
+        conditions.push(eq(agentAlerts.isAcknowledged, acknowledged));
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      return await query.orderBy(desc(agentAlerts.createdAt));
+    } catch (error) {
+      console.error('Error fetching agent alerts:', error);
+      return [];
+    }
+  }
+
+  async createAgentAlert(data: any): Promise<any> {
+    try {
+      const [alert] = await db.insert(agentAlerts).values(data).returning();
+      return alert;
+    } catch (error) {
+      console.error('Error creating agent alert:', error);
+      throw error;
+    }
+  }
+
+  async acknowledgeAgentAlert(id: number, userId: number): Promise<any> {
+    try {
+      const [updated] = await db.update(agentAlerts)
+        .set({
+          isAcknowledged: true,
+          acknowledgedBy: userId,
+          acknowledgedAt: new Date()
+        })
+        .where(eq(agentAlerts.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error acknowledging agent alert:', error);
+      throw error;
+    }
   }
 }
 

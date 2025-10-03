@@ -5715,5 +5715,276 @@ router.post("/api/max-ai/chat", async (req, res) => {
   }
 });
 
+// ============================================
+// Agent Monitoring & Control API Routes
+// ============================================
+
+// Get all agent connections
+router.get("/api/agent-control/connections", async (req, res) => {
+  try {
+    const { status, connectionType } = req.query;
+    const filters: any = {};
+    
+    if (status) filters.status = status as string;
+    if (connectionType) filters.connectionType = connectionType as string;
+    
+    const connections = await storage.getAgentConnections(filters);
+    res.json({ success: true, connections });
+  } catch (error) {
+    console.error("Error fetching agent connections:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch connections" });
+  }
+});
+
+// Get specific agent connection
+router.get("/api/agent-control/connections/:id", async (req, res) => {
+  try {
+    const connection = await storage.getAgentConnectionById(Number(req.params.id));
+    if (!connection) {
+      return res.status(404).json({ success: false, error: "Connection not found" });
+    }
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error fetching agent connection:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch connection" });
+  }
+});
+
+// Create new agent connection
+router.post("/api/agent-control/connections", async (req, res) => {
+  try {
+    const connection = await storage.createAgentConnection(req.body);
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error creating agent connection:", error);
+    res.status(500).json({ success: false, error: "Failed to create connection" });
+  }
+});
+
+// Update agent connection
+router.patch("/api/agent-control/connections/:id", async (req, res) => {
+  try {
+    const connection = await storage.updateAgentConnection(Number(req.params.id), req.body);
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error updating agent connection:", error);
+    res.status(500).json({ success: false, error: "Failed to update connection" });
+  }
+});
+
+// Delete agent connection
+router.delete("/api/agent-control/connections/:id", async (req, res) => {
+  try {
+    await storage.deleteAgentConnection(Number(req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting agent connection:", error);
+    res.status(500).json({ success: false, error: "Failed to delete connection" });
+  }
+});
+
+// Get agent actions
+router.get("/api/agent-control/actions", async (req, res) => {
+  try {
+    const { agentConnectionId, limit = "100", offset = "0" } = req.query;
+    const actions = await storage.getAgentActions(
+      agentConnectionId ? Number(agentConnectionId) : undefined,
+      Number(limit),
+      Number(offset)
+    );
+    res.json({ success: true, actions });
+  } catch (error) {
+    console.error("Error fetching agent actions:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch actions" });
+  }
+});
+
+// Create agent action (for logging)
+router.post("/api/agent-control/actions", async (req, res) => {
+  try {
+    const action = await storage.createAgentAction(req.body);
+    res.json({ success: true, action });
+  } catch (error) {
+    console.error("Error creating agent action:", error);
+    res.status(500).json({ success: false, error: "Failed to create action" });
+  }
+});
+
+// Get agent actions by session
+router.get("/api/agent-control/actions/session/:sessionId", async (req, res) => {
+  try {
+    const actions = await storage.getAgentActionsBySessionId(req.params.sessionId);
+    res.json({ success: true, actions });
+  } catch (error) {
+    console.error("Error fetching session actions:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch session actions" });
+  }
+});
+
+// Get agent metrics
+router.get("/api/agent-control/metrics/:agentConnectionId", async (req, res) => {
+  try {
+    const { startTime, endTime } = req.query;
+    const metrics = await storage.getAgentMetrics(
+      Number(req.params.agentConnectionId),
+      startTime ? new Date(startTime as string) : undefined,
+      endTime ? new Date(endTime as string) : undefined
+    );
+    res.json({ success: true, metrics });
+  } catch (error) {
+    console.error("Error fetching agent metrics:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch metrics" });
+  }
+});
+
+// Create agent metrics
+router.post("/api/agent-control/metrics", async (req, res) => {
+  try {
+    const metrics = await storage.createAgentMetrics(req.body);
+    res.json({ success: true, metrics });
+  } catch (error) {
+    console.error("Error creating agent metrics:", error);
+    res.status(500).json({ success: false, error: "Failed to create metrics" });
+  }
+});
+
+// Get agent policies
+router.get("/api/agent-control/policies/:agentConnectionId", async (req, res) => {
+  try {
+    const policies = await storage.getAgentPolicies(Number(req.params.agentConnectionId));
+    res.json({ success: true, policies });
+  } catch (error) {
+    console.error("Error fetching agent policies:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch policies" });
+  }
+});
+
+// Create agent policy
+router.post("/api/agent-control/policies", async (req, res) => {
+  try {
+    const policy = await storage.createAgentPolicy(req.body);
+    res.json({ success: true, policy });
+  } catch (error) {
+    console.error("Error creating agent policy:", error);
+    res.status(500).json({ success: false, error: "Failed to create policy" });
+  }
+});
+
+// Update agent policy
+router.patch("/api/agent-control/policies/:id", async (req, res) => {
+  try {
+    const policy = await storage.updateAgentPolicy(Number(req.params.id), req.body);
+    res.json({ success: true, policy });
+  } catch (error) {
+    console.error("Error updating agent policy:", error);
+    res.status(500).json({ success: false, error: "Failed to update policy" });
+  }
+});
+
+// Delete agent policy
+router.delete("/api/agent-control/policies/:id", async (req, res) => {
+  try {
+    await storage.deleteAgentPolicy(Number(req.params.id));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting agent policy:", error);
+    res.status(500).json({ success: false, error: "Failed to delete policy" });
+  }
+});
+
+// Get agent alerts
+router.get("/api/agent-control/alerts", async (req, res) => {
+  try {
+    const { agentConnectionId, acknowledged } = req.query;
+    const alerts = await storage.getAgentAlerts(
+      agentConnectionId ? Number(agentConnectionId) : undefined,
+      acknowledged !== undefined ? acknowledged === 'true' : undefined
+    );
+    res.json({ success: true, alerts });
+  } catch (error) {
+    console.error("Error fetching agent alerts:", error);
+    res.status(500).json({ success: false, error: "Failed to fetch alerts" });
+  }
+});
+
+// Create agent alert
+router.post("/api/agent-control/alerts", async (req, res) => {
+  try {
+    const alert = await storage.createAgentAlert(req.body);
+    res.json({ success: true, alert });
+  } catch (error) {
+    console.error("Error creating agent alert:", error);
+    res.status(500).json({ success: false, error: "Failed to create alert" });
+  }
+});
+
+// Acknowledge agent alert
+router.patch("/api/agent-control/alerts/:id/acknowledge", async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const alert = await storage.acknowledgeAgentAlert(Number(req.params.id), userId);
+    res.json({ success: true, alert });
+  } catch (error) {
+    console.error("Error acknowledging agent alert:", error);
+    res.status(500).json({ success: false, error: "Failed to acknowledge alert" });
+  }
+});
+
+// Agent control actions
+router.post("/api/agent-control/connections/:id/disable", async (req, res) => {
+  try {
+    const connection = await storage.updateAgentConnection(Number(req.params.id), {
+      isEnabled: false,
+      status: 'suspended'
+    });
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error disabling agent:", error);
+    res.status(500).json({ success: false, error: "Failed to disable agent" });
+  }
+});
+
+router.post("/api/agent-control/connections/:id/enable", async (req, res) => {
+  try {
+    const connection = await storage.updateAgentConnection(Number(req.params.id), {
+      isEnabled: true,
+      status: 'active'
+    });
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error enabling agent:", error);
+    res.status(500).json({ success: false, error: "Failed to enable agent" });
+  }
+});
+
+router.post("/api/agent-control/connections/:id/revoke", async (req, res) => {
+  try {
+    const connection = await storage.updateAgentConnection(Number(req.params.id), {
+      isEnabled: false,
+      status: 'revoked',
+      disconnectedAt: new Date()
+    });
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error revoking agent access:", error);
+    res.status(500).json({ success: false, error: "Failed to revoke access" });
+  }
+});
+
+// Update rate limits
+router.patch("/api/agent-control/connections/:id/rate-limits", async (req, res) => {
+  try {
+    const { rateLimitPerMinute, rateLimitPerHour } = req.body;
+    const connection = await storage.updateAgentConnection(Number(req.params.id), {
+      rateLimitPerMinute,
+      rateLimitPerHour
+    });
+    res.json({ success: true, connection });
+  } catch (error) {
+    console.error("Error updating rate limits:", error);
+    res.status(500).json({ success: false, error: "Failed to update rate limits" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
