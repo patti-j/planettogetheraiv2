@@ -1366,8 +1366,6 @@ router.get("/pt-resources", async (req, res) => {
         r.bottleneck,
         r.capacity_type,
         r.hourly_cost,
-        r.load_percent,
-        r.online_hrs,
         r.active,
         p.name as plant_name,
         p.external_id as plant_external_id
@@ -1386,9 +1384,9 @@ router.get("/pt-resources", async (req, res) => {
       external_id: resource.external_id,
       name: resource.name || `Resource ${resource.id}`,
       description: resource.description,
-      category: resource.resource_type || 'Manufacturing',
-      capacity: resource.capacity,
-      efficiency: resource.efficiency || 100,
+      category: resource.capacity_type || 'Manufacturing',
+      capacity: 100, // Default capacity since column doesn't exist
+      efficiency: 100, // Default efficiency since column doesn't exist
       isBottleneck: resource.bottleneck || false,
       plantName: resource.plant_name,
       active: resource.active

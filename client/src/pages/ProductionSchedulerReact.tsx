@@ -10,18 +10,18 @@ export default function ProductionSchedulerReact() {
 
   // Fetch operations data
   const { data: operationsData = [], isLoading: isLoadingOps, refetch: refetchOps } = useQuery({
-    queryKey: ['/api/pt-operations'],
+    queryKey: ['/pt-operations'],
     refetchInterval: 60000,
   });
 
   // Fetch resources data  
   const { data: resourcesData = [], isLoading: isLoadingRes, refetch: refetchRes } = useQuery({
-    queryKey: ['/api/pt-resources'],
+    queryKey: ['/pt-resources'],
   });
 
   // Fetch dependencies data
   const { data: dependenciesData = [], refetch: refetchDeps } = useQuery({
-    queryKey: ['/api/pt-dependencies'],
+    queryKey: ['/pt-dependencies'],
   });
 
   // Helper function to assign colors based on operation type (matching standalone HTML version)
@@ -47,6 +47,66 @@ export default function ProductionSchedulerReact() {
     if (name.includes('carbonation')) return '#eab308'; // Yellow
     
     return '#2563eb'; // Default blue
+  };
+
+  // Helper function to determine operation type from name
+  const getOperationType = (operationName: string): string => {
+    if (!operationName) return 'unknown';
+    const name = operationName.toLowerCase();
+    
+    // Brewing operations - order matters for specificity
+    if (name.includes('decoction')) return 'mashing'; // Decoction is a type of mashing
+    if (name.includes('milling') || name.includes('mill')) return 'milling';
+    if (name.includes('mash')) return 'mashing';
+    if (name.includes('lauter')) return 'lautering';
+    if (name.includes('boil')) return 'boiling';
+    if (name.includes('ferment')) return 'fermentation';
+    if (name.includes('lager')) return 'fermentation'; // Lagering is a type of fermentation
+    if (name.includes('condition')) return 'conditioning';
+    if (name.includes('dry hop')) return 'conditioning';
+    if (name.includes('bright')) return 'conditioning'; // Bright tank operations
+    if (name.includes('packag')) return 'packaging';
+    if (name.includes('bottle') || name.includes('can')) return 'packaging';
+    if (name.includes('pasteur')) return 'pasteurization';
+    
+    // Generic manufacturing operations
+    if (name.includes('machining')) return 'machining';
+    if (name.includes('assembly')) return 'assembly';
+    if (name.includes('quality') || name.includes('testing')) return 'quality';
+    if (name.includes('filtration')) return 'filtration';
+    if (name.includes('carbonation')) return 'carbonation';
+    
+    return 'general';
+  };
+
+  // Helper function to determine if a resource can handle an operation type
+  const isResourceCompatible = (resourceName: string, operationType: string): boolean => {
+    if (!resourceName || !operationType) return false;
+    const resource = resourceName.toLowerCase();
+    
+    // Define compatibility mappings
+    const compatibilityMap: Record<string, string[]> = {
+      'milling': ['grain mill', 'mill', 'crusher'],
+      'mashing': ['mash tun', 'mash vessel', 'mash kettle', 'lauter tun'], // Lauter tun can do mashing too
+      'lautering': ['lauter tun', 'lauter vessel'],
+      'boiling': ['brew kettle', 'boil kettle', 'kettle', 'copper'],
+      'fermentation': ['fermenter', 'fermentation tank', 'fermenting vessel', 'unitank'],
+      'conditioning': ['bright tank', 'conditioning tank', 'brite tank', 'maturation tank'],
+      'packaging': ['bottling line', 'canning line', 'keg line', 'packaging line', 'bottle filler', 'can filler', 'filler line'],
+      'pasteurization': ['pasteurizer', 'flash pasteurizer', 'tunnel pasteurizer'],
+      // Generic operations
+      'machining': ['cnc machine', 'lathe', 'mill', 'drill press'],
+      'assembly': ['assembly line', 'assembly station', 'workstation'],
+      'quality': ['inspection station', 'quality control', 'testing lab'],
+      'general': [] // General operations can go anywhere (for now)
+    };
+    
+    const allowedResources = compatibilityMap[operationType];
+    if (!allowedResources) return true; // If operation type not mapped, allow for now
+    if (allowedResources.length === 0) return true; // General operations allowed everywhere
+    
+    // Check if resource name contains any of the allowed resource types
+    return allowedResources.some(allowed => resource.includes(allowed));
   };
 
   // Transform data using useMemo to avoid re-renders
@@ -323,7 +383,38 @@ export default function ProductionSchedulerReact() {
           // Features configuration per Bryntum best practices 
           eventDragFeature={{
             constrainDragToResource: false,
-            showExactDropPosition: true
+            showExactDropPosition: true,
+            // Validation function to prevent dragging operations to incompatible resources
+            validatorFn: ({ context }: any) => {
+              const targetResource = context.newResource;
+              const eventRecords = context.eventRecords;
+              
+              // If no target resource or no events being dragged, allow
+              if (!targetResource || !eventRecords || eventRecords.length === 0) {
+                return true;
+              }
+              
+              // Get the first event being dragged
+              const draggedEvent = eventRecords[0];
+              if (!draggedEvent || !draggedEvent.name) {
+                return true;
+              }
+              
+              // Determine operation type from the event name
+              const operationType = getOperationType(draggedEvent.name);
+              
+              // Check if the target resource can handle this operation type
+              const isCompatible = isResourceCompatible(targetResource.name, operationType);
+              
+              // Log validation for debugging
+              if (!isCompatible) {
+                console.warn(
+                  `❌ Cannot assign "${draggedEvent.name}" (${operationType}) to "${targetResource.name}" - incompatible resource type`
+                );
+              }
+              
+              return isCompatible;
+            }
           }}
           eventResizeFeature={{
             showExactResizePosition: true
