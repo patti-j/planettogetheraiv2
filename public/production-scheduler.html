@@ -1457,6 +1457,57 @@
             }
             schedulerInitialized = true;
             
+            // Helper function to show notifications
+            function showNotification(message, type = 'info') {
+                // Create notification element
+                const notification = document.createElement('div');
+                notification.className = 'scheduler-notification';
+                notification.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    right: 20px;
+                    padding: 12px 20px;
+                    border-radius: 4px;
+                    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+                    z-index: 10000;
+                    animation: slideIn 0.3s ease-out;
+                    max-width: 400px;
+                `;
+                
+                // Set color based on type
+                switch(type) {
+                    case 'success':
+                        notification.style.background = '#4CAF50';
+                        notification.style.color = 'white';
+                        break;
+                    case 'error':
+                        notification.style.background = '#f44336';
+                        notification.style.color = 'white';
+                        break;
+                    case 'warning':
+                        notification.style.background = '#ff9800';
+                        notification.style.color = 'white';
+                        break;
+                    default:
+                        notification.style.background = '#2196F3';
+                        notification.style.color = 'white';
+                }
+                
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                // Auto-remove after 3 seconds
+                setTimeout(() => {
+                    notification.style.animation = 'slideOut 0.3s ease-in';
+                    setTimeout(() => {
+                        document.body.removeChild(notification);
+                    }, 300);
+                }, 3000);
+            }
+            
+            // Make notification function globally available
+            window.showNotification = showNotification;
+            
             try {
                 // Mark first task as in progress
                 
@@ -2325,7 +2376,205 @@
                         eventMenu: true,
                         
                         // Schedule menu on right-click
-                        scheduleMenu: true
+                        scheduleMenu: true,
+                        
+                        // TaskEdit feature - Double-click to edit operations
+                        taskEdit: {
+                            // Enable the feature (it's enabled by default, but let's be explicit)
+                            disabled: false,
+                            
+                            // Trigger on double-click (default behavior)
+                            triggerEvent: 'eventdblclick',
+                            
+                            // Configure the editor fields
+                            items: {
+                                // General tab configuration
+                                generalTab: {
+                                    items: {
+                                        // Operation name field
+                                        nameField: {
+                                            type: 'text',
+                                            name: 'name',
+                                            label: 'Operation Name',
+                                            required: true,
+                                            weight: 100
+                                        },
+                                        
+                                        // Resource assignment field
+                                        resourceField: {
+                                            type: 'resourcecombo',
+                                            name: 'resource',
+                                            label: 'Assigned Resource',
+                                            required: true,
+                                            weight: 200
+                                        },
+                                        
+                                        // Start date field
+                                        startDateField: {
+                                            type: 'startdatefield',
+                                            name: 'startDate',
+                                            label: 'Start Date',
+                                            required: true,
+                                            weight: 300
+                                        },
+                                        
+                                        // End date field
+                                        endDateField: {
+                                            type: 'enddatefield',
+                                            name: 'endDate',
+                                            label: 'End Date',
+                                            required: true,
+                                            weight: 400
+                                        },
+                                        
+                                        // Duration field
+                                        durationField: {
+                                            type: 'duration',
+                                            name: 'duration',
+                                            label: 'Duration',
+                                            weight: 500
+                                        },
+                                        
+                                        // Progress percentage field
+                                        percentDoneField: {
+                                            type: 'number',
+                                            name: 'percentDone',
+                                            label: 'Progress %',
+                                            min: 0,
+                                            max: 100,
+                                            step: 5,
+                                            weight: 600
+                                        },
+                                        
+                                        // Effort field (if needed)
+                                        effortField: {
+                                            type: 'effort',
+                                            name: 'effort',
+                                            label: 'Effort (hours)',
+                                            weight: 700
+                                        },
+                                        
+                                        // Constraint type field
+                                        constraintTypeField: {
+                                            type: 'constrainttypefield',
+                                            name: 'constraintType',
+                                            label: 'Constraint Type',
+                                            weight: 800
+                                        },
+                                        
+                                        // Constraint date field
+                                        constraintDateField: {
+                                            type: 'constraintdatefield',
+                                            name: 'constraintDate',
+                                            label: 'Constraint Date',
+                                            weight: 900
+                                        }
+                                    }
+                                },
+                                
+                                // Notes tab for additional information
+                                notesTab: {
+                                    items: {
+                                        notesField: {
+                                            type: 'textarea',
+                                            name: 'note',
+                                            label: 'Notes',
+                                            height: 200,
+                                            weight: 100
+                                        }
+                                    }
+                                },
+                                
+                                // Predecessors tab to manage dependencies
+                                predecessorsTab: {
+                                    // Show the predecessors grid for managing dependencies
+                                    disabled: false
+                                },
+                                
+                                // Successors tab to see dependent tasks
+                                successorsTab: {
+                                    // Show the successors grid for viewing dependent tasks
+                                    disabled: false
+                                },
+                                
+                                // Advanced tab for additional settings
+                                advancedTab: {
+                                    items: {
+                                        // Event color field
+                                        eventColorField: {
+                                            type: 'combo',
+                                            name: 'eventColor',
+                                            label: 'Color',
+                                            items: [
+                                                { value: 'green', text: 'Green' },
+                                                { value: 'blue', text: 'Blue' },
+                                                { value: 'red', text: 'Red' },
+                                                { value: 'orange', text: 'Orange' },
+                                                { value: 'purple', text: 'Purple' },
+                                                { value: 'yellow', text: 'Yellow' },
+                                                { value: 'cyan', text: 'Cyan' },
+                                                { value: 'gray', text: 'Gray' }
+                                            ],
+                                            weight: 100
+                                        },
+                                        
+                                        // Manual scheduling mode field
+                                        manuallyScheduledField: {
+                                            type: 'checkbox',
+                                            name: 'manuallyScheduled',
+                                            label: 'Manually scheduled',
+                                            weight: 200
+                                        },
+                                        
+                                        // Inactive field
+                                        inactiveField: {
+                                            type: 'checkbox',
+                                            name: 'inactive',
+                                            label: 'Inactive',
+                                            weight: 300
+                                        }
+                                    }
+                                }
+                            },
+                            
+                            // Customize the editor title
+                            editorConfig: {
+                                title: 'Edit Operation',
+                                // Make the editor wider for better visibility
+                                width: '600px',
+                                // Center the editor on screen
+                                centered: true,
+                                // Show close button
+                                closable: true,
+                                // Allow the editor to be dragged
+                                draggable: true
+                            },
+                            
+                            // Before showing the editor
+                            beforeShow: ({ taskRecord, editor }) => {
+                                // Customize the title based on the operation
+                                editor.title = `Edit Operation: ${taskRecord.name}`;
+                                console.log('Opening task editor for:', taskRecord.name);
+                                return true; // Allow showing the editor
+                            },
+                            
+                            // After save
+                            afterSave: ({ taskRecord, editor }) => {
+                                console.log('Task saved:', taskRecord.name);
+                                // Could add notification here
+                                showNotification('Operation updated successfully', 'success');
+                            },
+                            
+                            // Validate before saving
+                            beforeSave: ({ taskRecord, editor }) => {
+                                // Validation logic if needed
+                                if (!taskRecord.name || taskRecord.name.trim() === '') {
+                                    showNotification('Operation name is required', 'error');
+                                    return false;
+                                }
+                                return true; // Allow saving
+                            }
+                        }
                     },
 
                     eventRenderer({ eventRecord, renderData }) {
