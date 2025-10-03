@@ -120,6 +120,122 @@ export const oauthTokens = pgTable("oauth_tokens", {
 });
 
 // ============================================
+// Agent Monitoring & Control System
+// ============================================
+
+// Enum for agent connection types
+export const agentConnectionTypeEnum = pgEnum("agent_connection_type", [
+  "api_key",
+  "oauth",
+  "webhook",
+  "websocket"
+]);
+
+// Enum for agent connection status
+export const agentConnectionStatusEnum = pgEnum("agent_connection_status", [
+  "active",
+  "inactive",
+  "suspended",
+  "revoked",
+  "rate_limited"
+]);
+
+// Track active agent connections
+export const agentConnections = pgTable("agent_connections", {
+  id: serial("id").primaryKey(),
+  agentId: varchar("agent_id", { length: 64 }).unique().notNull(), // Unique identifier for the agent
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  connectionType: agentConnectionTypeEnum("connection_type").notNull(),
+  status: agentConnectionStatusEnum("status").default("active").notNull(),
+  apiKeyId: integer("api_key_id").references(() => apiKeys.id), // For API key auth
+  oauthClientId: integer("oauth_client_id").references(() => oauthClients.id), // For OAuth auth
+  ipAddress: varchar("ip_address", { length: 45 }), // Last known IP
+  userAgent: text("user_agent"),
+  permissions: jsonb("permissions").default(sql`'[]'::jsonb`), // Specific permissions granted
+  metadata: jsonb("metadata").default(sql`'{}'::jsonb`), // Additional agent info (version, capabilities, etc.)
+  rateLimitPerMinute: integer("rate_limit_per_minute").default(60),
+  rateLimitPerHour: integer("rate_limit_per_hour").default(1000),
+  isEnabled: boolean("is_enabled").default(true),
+  lastSeenAt: timestamp("last_seen_at"),
+  connectedAt: timestamp("connected_at"),
+  disconnectedAt: timestamp("disconnected_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Log all actions taken by agents
+export const agentActions = pgTable("agent_actions", {
+  id: serial("id").primaryKey(),
+  agentConnectionId: integer("agent_connection_id").references(() => agentConnections.id).notNull(),
+  actionType: varchar("action_type", { length: 100 }).notNull(), // e.g., 'api_call', 'data_query', 'schedule_update'
+  endpoint: varchar("endpoint", { length: 255 }), // API endpoint if applicable
+  method: varchar("method", { length: 10 }), // HTTP method
+  requestPayload: jsonb("request_payload"), // Sanitized request data
+  responseStatus: integer("response_status"),
+  responsePayload: jsonb("response_payload"), // Sanitized response data
+  errorMessage: text("error_message"),
+  executionTimeMs: integer("execution_time_ms"),
+  affectedEntities: jsonb("affected_entities"), // IDs and types of affected records
+  ipAddress: varchar("ip_address", { length: 45 }),
+  sessionId: varchar("session_id", { length: 64 }), // For tracking related actions
+  timestamp: timestamp("timestamp").defaultNow(),
+});
+
+// Track agent performance metrics (aggregated hourly)
+export const agentMetricsHourly = pgTable("agent_metrics_hourly", {
+  id: serial("id").primaryKey(),
+  agentConnectionId: integer("agent_connection_id").references(() => agentConnections.id).notNull(),
+  hourTimestamp: timestamp("hour_timestamp").notNull(), // Start of the hour
+  totalRequests: integer("total_requests").default(0),
+  successfulRequests: integer("successful_requests").default(0),
+  failedRequests: integer("failed_requests").default(0),
+  avgResponseTimeMs: numeric("avg_response_time_ms", { precision: 10, scale: 2 }),
+  maxResponseTimeMs: integer("max_response_time_ms"),
+  minResponseTimeMs: integer("min_response_time_ms"),
+  totalDataTransferredKb: numeric("total_data_transferred_kb", { precision: 15, scale: 2 }),
+  uniqueEndpoints: integer("unique_endpoints"),
+  errorRate: numeric("error_rate", { precision: 5, scale: 4 }), // Percentage as decimal
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Agent control policies
+export const agentPolicies = pgTable("agent_policies", {
+  id: serial("id").primaryKey(),
+  agentConnectionId: integer("agent_connection_id").references(() => agentConnections.id).notNull(),
+  policyType: varchar("policy_type", { length: 50 }).notNull(), // 'rate_limit', 'access_control', 'data_filter'
+  policyConfig: jsonb("policy_config").notNull(), // Policy-specific configuration
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  approvedBy: integer("approved_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  activatedAt: timestamp("activated_at"),
+  deactivatedAt: timestamp("deactivated_at"),
+});
+
+// Agent alerts and notifications
+export const agentAlerts = pgTable("agent_alerts", {
+  id: serial("id").primaryKey(),
+  agentConnectionId: integer("agent_connection_id").references(() => agentConnections.id).notNull(),
+  alertType: varchar("alert_type", { length: 50 }).notNull(), // 'anomaly', 'rate_limit', 'error_threshold'
+  severity: varchar("severity", { length: 20 }).notNull(), // 'low', 'medium', 'high', 'critical'
+  message: text("message").notNull(),
+  details: jsonb("details"), // Additional context
+  isAcknowledged: boolean("is_acknowledged").default(false),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Note: Indexes are created inline with table definitions where needed
+// The following would be created as separate database indexes if needed:
+// - idx_agent_connections_status on agentConnections.status
+// - idx_agent_connections_agent_id on agentConnections.agentId  
+// - idx_agent_actions_connection_timestamp on (agentConnectionId, timestamp)
+// - idx_agent_actions_session on agentActions.sessionId
+// - idx_agent_metrics_connection_hour on (agentConnectionId, hourTimestamp)
+
+// ============================================
 // Dashboard and Widget System
 // ============================================
 
