@@ -995,6 +995,46 @@
         .dark-theme .view-control-btn:hover {
             background: #374151;
         }
+        /* TimeSpanHighlight Styles */
+        .b-sch-timespan-highlight {
+            pointer-events: auto !important;
+            opacity: 0.8 !important;
+        }
+        
+        .b-sch-timespan-highlight:hover {
+            opacity: 1 !important;
+        }
+        
+        .maintenance-window {
+            background-color: rgba(255, 152, 0, 0.2) !important;
+            border-left: 3px solid #ff9800 !important;
+        }
+        
+        .shift-change {
+            background-color: rgba(33, 150, 243, 0.15) !important;
+            border-left: 3px solid #2196f3 !important;
+        }
+        
+        .deadline-window {
+            background-color: rgba(244, 67, 54, 0.15) !important;
+            border-left: 4px solid #f44336 !important;
+        }
+        
+        .peak-period {
+            background-color: rgba(76, 175, 80, 0.1) !important;
+            border-left: 3px solid #4caf50 !important;
+        }
+        
+        .qc-window {
+            background-color: rgba(156, 39, 176, 0.1) !important;
+            border-left: 3px solid #9c27b0 !important;
+        }
+        
+        .training-window {
+            background-color: rgba(0, 188, 212, 0.1) !important;
+            border-left: 3px solid #00bcd4 !important;
+        }
+        
         /* Notification animations */
         @keyframes slideIn {
             from {
@@ -2361,6 +2401,172 @@
                         // Show current time line
                         timeRanges: {
                             showCurrentTimeLine: true
+                        },
+                        
+                        // TimeSpanHighlight feature - Highlight important time periods
+                        timeSpanHighlight: {
+                            disabled: false,  // Enable the feature
+                            store: {
+                                // Configure multiple time span highlights for different purposes
+                                data: [
+                                    // Maintenance Windows - Weekly maintenance periods
+                                    {
+                                        id: 'maintenance1',
+                                        startDate: new Date(2025, 8, 6, 6, 0), // Sept 6, 6:00 AM
+                                        endDate: new Date(2025, 8, 6, 10, 0),   // Sept 6, 10:00 AM
+                                        name: 'Equipment Maintenance',
+                                        cls: 'maintenance-window',
+                                        style: 'background-color: rgba(255, 152, 0, 0.2); border-left: 3px solid #ff9800;'
+                                    },
+                                    {
+                                        id: 'maintenance2',
+                                        startDate: new Date(2025, 8, 13, 6, 0), // Sept 13, 6:00 AM
+                                        endDate: new Date(2025, 8, 13, 10, 0),  // Sept 13, 10:00 AM
+                                        name: 'Scheduled Maintenance',
+                                        cls: 'maintenance-window',
+                                        style: 'background-color: rgba(255, 152, 0, 0.2); border-left: 3px solid #ff9800;'
+                                    },
+                                    {
+                                        id: 'maintenance3',
+                                        startDate: new Date(2025, 8, 20, 6, 0), // Sept 20, 6:00 AM
+                                        endDate: new Date(2025, 8, 20, 10, 0),  // Sept 20, 10:00 AM
+                                        name: 'Preventive Maintenance',
+                                        cls: 'maintenance-window',
+                                        style: 'background-color: rgba(255, 152, 0, 0.2); border-left: 3px solid #ff9800;'
+                                    },
+                                    
+                                    // Shift Changes - Daily shift transitions
+                                    {
+                                        id: 'shift1',
+                                        startDate: new Date(2025, 8, 3, 7, 0),  // Sept 3, 7:00 AM
+                                        endDate: new Date(2025, 8, 3, 7, 30),   // Sept 3, 7:30 AM
+                                        name: 'Morning Shift Start',
+                                        cls: 'shift-change',
+                                        style: 'background-color: rgba(33, 150, 243, 0.15); border-left: 3px solid #2196f3;'
+                                    },
+                                    {
+                                        id: 'shift2',
+                                        startDate: new Date(2025, 8, 3, 15, 0), // Sept 3, 3:00 PM
+                                        endDate: new Date(2025, 8, 3, 15, 30),  // Sept 3, 3:30 PM
+                                        name: 'Afternoon Shift Start',
+                                        cls: 'shift-change',
+                                        style: 'background-color: rgba(33, 150, 243, 0.15); border-left: 3px solid #2196f3;'
+                                    },
+                                    {
+                                        id: 'shift3',
+                                        startDate: new Date(2025, 8, 3, 23, 0), // Sept 3, 11:00 PM
+                                        endDate: new Date(2025, 8, 3, 23, 30),  // Sept 3, 11:30 PM
+                                        name: 'Night Shift Start',
+                                        cls: 'shift-change',
+                                        style: 'background-color: rgba(33, 150, 243, 0.15); border-left: 3px solid #2196f3;'
+                                    },
+                                    
+                                    // Important Deadlines
+                                    {
+                                        id: 'deadline1',
+                                        startDate: new Date(2025, 8, 10, 17, 0), // Sept 10, 5:00 PM
+                                        endDate: new Date(2025, 8, 10, 23, 59),   // Sept 10, 11:59 PM
+                                        name: 'Priority Order Deadline',
+                                        cls: 'deadline-window',
+                                        style: 'background-color: rgba(244, 67, 54, 0.15); border-left: 4px solid #f44336;'
+                                    },
+                                    {
+                                        id: 'deadline2',
+                                        startDate: new Date(2025, 8, 15, 17, 0), // Sept 15, 5:00 PM
+                                        endDate: new Date(2025, 8, 15, 23, 59),   // Sept 15, 11:59 PM
+                                        name: 'Customer Delivery Deadline',
+                                        cls: 'deadline-window',
+                                        style: 'background-color: rgba(244, 67, 54, 0.15); border-left: 4px solid #f44336;'
+                                    },
+                                    {
+                                        id: 'deadline3',
+                                        startDate: new Date(2025, 8, 25, 17, 0), // Sept 25, 5:00 PM
+                                        endDate: new Date(2025, 8, 25, 23, 59),   // Sept 25, 11:59 PM
+                                        name: 'Month-End Production Target',
+                                        cls: 'deadline-window',
+                                        style: 'background-color: rgba(244, 67, 54, 0.15); border-left: 4px solid #f44336;'
+                                    },
+                                    
+                                    // Peak Production Periods
+                                    {
+                                        id: 'peak1',
+                                        startDate: new Date(2025, 8, 8, 8, 0),   // Sept 8, 8:00 AM
+                                        endDate: new Date(2025, 8, 8, 17, 0),    // Sept 8, 5:00 PM
+                                        name: 'Peak Production Period',
+                                        cls: 'peak-period',
+                                        style: 'background-color: rgba(76, 175, 80, 0.1); border-left: 3px solid #4caf50;'
+                                    },
+                                    {
+                                        id: 'peak2',
+                                        startDate: new Date(2025, 8, 16, 8, 0),  // Sept 16, 8:00 AM
+                                        endDate: new Date(2025, 8, 16, 17, 0),   // Sept 16, 5:00 PM
+                                        name: 'High Demand Period',
+                                        cls: 'peak-period',
+                                        style: 'background-color: rgba(76, 175, 80, 0.1); border-left: 3px solid #4caf50;'
+                                    },
+                                    
+                                    // Quality Control Windows
+                                    {
+                                        id: 'qc1',
+                                        startDate: new Date(2025, 8, 5, 14, 0),  // Sept 5, 2:00 PM
+                                        endDate: new Date(2025, 8, 5, 16, 0),    // Sept 5, 4:00 PM
+                                        name: 'Quality Inspection',
+                                        cls: 'qc-window',
+                                        style: 'background-color: rgba(156, 39, 176, 0.1); border-left: 3px solid #9c27b0;'
+                                    },
+                                    {
+                                        id: 'qc2',
+                                        startDate: new Date(2025, 8, 12, 14, 0), // Sept 12, 2:00 PM
+                                        endDate: new Date(2025, 8, 12, 16, 0),   // Sept 12, 4:00 PM
+                                        name: 'Quality Audit',
+                                        cls: 'qc-window',
+                                        style: 'background-color: rgba(156, 39, 176, 0.1); border-left: 3px solid #9c27b0;'
+                                    },
+                                    
+                                    // Training Sessions
+                                    {
+                                        id: 'training1',
+                                        startDate: new Date(2025, 8, 9, 9, 0),   // Sept 9, 9:00 AM
+                                        endDate: new Date(2025, 8, 9, 12, 0),    // Sept 9, 12:00 PM
+                                        name: 'Staff Training Session',
+                                        cls: 'training-window',
+                                        style: 'background-color: rgba(0, 188, 212, 0.1); border-left: 3px solid #00bcd4;'
+                                    },
+                                    {
+                                        id: 'training2',
+                                        startDate: new Date(2025, 8, 23, 9, 0),  // Sept 23, 9:00 AM
+                                        endDate: new Date(2025, 8, 23, 12, 0),   // Sept 23, 12:00 PM
+                                        name: 'Safety Training',
+                                        cls: 'training-window',
+                                        style: 'background-color: rgba(0, 188, 212, 0.1); border-left: 3px solid #00bcd4;'
+                                    }
+                                ]
+                            },
+                            // Tooltip configuration for time span highlights
+                            tooltipTemplate: ({ timeSpanRecord }) => {
+                                let tooltip = `<b>${timeSpanRecord.name}</b><br/>`;
+                                const start = new Date(timeSpanRecord.startDate);
+                                const end = new Date(timeSpanRecord.endDate);
+                                tooltip += `${start.toLocaleDateString()} ${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                                tooltip += ` - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}`;
+                                
+                                // Add description based on type
+                                if (timeSpanRecord.cls === 'maintenance-window') {
+                                    tooltip += '<br/><em>Equipment unavailable during this period</em>';
+                                } else if (timeSpanRecord.cls === 'shift-change') {
+                                    tooltip += '<br/><em>Shift transition period</em>';
+                                } else if (timeSpanRecord.cls === 'deadline-window') {
+                                    tooltip += '<br/><em>Critical deadline - must complete by this time</em>';
+                                } else if (timeSpanRecord.cls === 'peak-period') {
+                                    tooltip += '<br/><em>High production volume expected</em>';
+                                } else if (timeSpanRecord.cls === 'qc-window') {
+                                    tooltip += '<br/><em>Quality control inspection required</em>';
+                                } else if (timeSpanRecord.cls === 'training-window') {
+                                    tooltip += '<br/><em>Limited staff availability</em>';
+                                }
+                                
+                                return tooltip;
+                            }
                         },
                         
                         // Progress line feature - shows percentage complete
