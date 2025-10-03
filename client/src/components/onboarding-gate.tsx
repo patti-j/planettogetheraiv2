@@ -52,8 +52,9 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
 
     // Never enforce onboarding - users can always navigate freely
     // Only redirect new users to onboarding on first login if they're on the dashboard
-    if (!onboardingData && (location === '/' || location === '/dashboard')) {
-      // No onboarding data exists and user is on main page - redirect to onboarding once
+    // Skip enforcement for home navigation 
+    if (!onboardingData && (location === '/dashboard')) {
+      // No onboarding data exists and user is on dashboard page - redirect to onboarding once
       setShouldEnforceOnboarding(true);
       return;
     }
