@@ -195,10 +195,10 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
         {/* Home Button */}
         <div className="mb-3">
           <Button
-            variant={location === '/' ? 'default' : 'ghost'}
+            variant={location === '/home' ? 'default' : 'ghost'}
             className="w-full justify-start"
             onClick={() => {
-              handleNavigation('/', 'Home');
+              handleNavigation('/home', 'Home');
               if (!isPinned && onClose) onClose();
             }}
           >
