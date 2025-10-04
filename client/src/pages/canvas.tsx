@@ -79,7 +79,9 @@ export default function CanvasPage() {
       }
       return response.json();
     },
-    refetchInterval: 3000, // Refresh every 3 seconds to catch new Max AI charts
+    staleTime: 1000, // Consider data fresh for 1 second
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchInterval: false, // Disable automatic polling - use manual refetch instead
     refetchIntervalInBackground: false
   });
 

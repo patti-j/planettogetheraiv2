@@ -669,23 +669,32 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
         }));
       }
       
-      // Job-related queries - route to dynamic chart generation
-      else if (queryLower.includes('job') || queryLower.includes('priority') || queryLower.includes('production')) {
-        console.log('[Max AI] Detected job-related query - routing to dynamic generation');
+      // Job-related queries - fetch data directly WITHOUT creating new widgets
+      // CRITICAL FIX: This prevents exponential widget duplication
+      else if (queryLower.includes('job') || queryLower.includes('priority') || queryLower.includes('production') || queryLower.includes('customer')) {
+        console.log('[Max AI] Detected job-related query - fetching data directly (no widget creation)');
         
-        // Use the new AI-powered dynamic chart generation for job queries
-        const dynamicResult = await this.getDynamicChart(query, {
-          userId: 1,
-          currentPage: '/canvas',
-          userRole: 'admin'
-        });
-        
-        if (dynamicResult && dynamicResult.action && dynamicResult.action.type === 'create_chart') {
-          return dynamicResult.action.chartConfig.data;
+        // For "jobs by customer" or similar queries, use external_id grouping
+        if (queryLower.includes('customer') || queryLower.includes('external')) {
+          const jobsResult = await db.execute(sql`
+            SELECT 
+              external_id as name,
+              COUNT(*) as value
+            FROM ptjobs
+            WHERE external_id IS NOT NULL
+            GROUP BY external_id
+            ORDER BY COUNT(*) DESC
+            LIMIT 50
+          `);
+          
+          return jobsResult.rows.map((row: any) => ({
+            name: row.name || 'Unknown',
+            value: Number(row.value || 0),
+            label: row.name || 'Unknown'
+          }));
         }
         
-        // Fallback to original behavior if dynamic generation fails
-        console.log('[Max AI] Dynamic generation failed, using fallback');
+        // Default to jobs by priority
         return await this.getJobsData();
       }
       
