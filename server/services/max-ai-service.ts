@@ -822,18 +822,19 @@ CRITICAL: Use EXACT column names shown above. Do NOT use made-up names like "job
       
       // Save to database
       console.log('[Max AI] 💾 Saving chart widget to database...');
-      await this.saveChartWidget(chartConfig, query);
+      const widgetId = await this.saveChartWidget(chartConfig, query);
       console.log('[Max AI] ✅ Chart widget saved successfully');
       
       const response = {
         content: `Here's your ${chartConfig.type} chart showing ${intent.rationale}:`,
         action: {
           type: 'create_chart',
-          chartConfig
+          chartConfig,
+          widgetId
         }
       };
       
-      console.log('[Max AI] 🎯 Chart generation complete! Returning response with action type:', response.action.type);
+      console.log('[Max AI] 🎯 Chart generation complete! Returning response with widgetId:', widgetId);
       return response;
       
     } catch (error) {
@@ -1047,7 +1048,7 @@ Return only the JSON object, no other text.`;
   }
   
   // Save chart widget to database
-  private async saveChartWidget(chartConfig: any, query: string) {
+  private async saveChartWidget(chartConfig: any, query: string): Promise<number | null> {
     try {
       const { db } = await import('../db');
       const { widgets } = await import('../../shared/schema');
@@ -1071,8 +1072,10 @@ Return only the JSON object, no other text.`;
       
       const [savedWidget] = await db.insert(widgets).values(widgetRecord).returning();
       console.log('[Max AI] Chart widget saved with ID:', savedWidget.id);
+      return savedWidget.id;
     } catch (error) {
       console.error('[Max AI] Error saving widget:', error);
+      return null;
     }
   }
 
