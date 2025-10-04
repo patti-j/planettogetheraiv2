@@ -612,11 +612,31 @@ export default function IntegratedAIAssistant() {
         chartVisual += '\n💡 *This chart shows real manufacturing data from your system*';
         finalContent = responseText + chartVisual;
         
-        // Also try to navigate to canvas if the user is not already there
+        // Navigate to canvas and scroll to the chart
         if (window.location.pathname !== '/canvas') {
+          // Store the widget ID to scroll to after navigation
+          const widgetId = data.action.widgetId || data.action.chartConfig?.id;
+          if (widgetId) {
+            sessionStorage.setItem('scrollToWidget', widgetId.toString());
+          }
+          
           setTimeout(() => {
             window.location.href = '/canvas';
-          }, 2000);
+          }, 1500);
+        } else {
+          // Already on canvas - scroll to the chart immediately
+          setTimeout(() => {
+            const chartElement = document.querySelector('[data-widget-id="api-' + (data.action.widgetId || data.action.chartConfig?.id) + '"]');
+            if (chartElement) {
+              chartElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            } else {
+              // Fallback: scroll to the last canvas item
+              const canvasItems = document.querySelectorAll('.canvas-item, [class*="canvas"]');
+              if (canvasItems.length > 0) {
+                canvasItems[canvasItems.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }
+          }, 500);
         }
       }
       

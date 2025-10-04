@@ -100,6 +100,36 @@ export default function CanvasPage() {
     localStorage.setItem('max-canvas-items', JSON.stringify(items));
   }, [items]);
 
+  // Auto-scroll to newly created widget from Max AI
+  useEffect(() => {
+    const scrollToWidgetId = sessionStorage.getItem('scrollToWidget');
+    
+    if (scrollToWidgetId && !isLoading && canvasWidgets) {
+      // Wait for widgets to render
+      setTimeout(() => {
+        const targetElement = document.querySelector(`[data-widget-id="api-${scrollToWidgetId}"]`);
+        
+        if (targetElement) {
+          console.log('📍 Scrolling to widget:', scrollToWidgetId);
+          targetElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Highlight the widget briefly
+          targetElement.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50');
+          setTimeout(() => {
+            targetElement.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
+          }, 2000);
+        } else {
+          console.log('⚠️ Widget element not found, scrolling to bottom');
+          // Fallback: scroll to bottom where new widgets appear
+          window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+        
+        // Clear the flag
+        sessionStorage.removeItem('scrollToWidget');
+      }, 500);
+    }
+  }, [canvasWidgets, isLoading]);
+
   // Convert API widgets to canvas items format
   const convertWidgetToCanvasItem = (widget: CanvasWidget): CanvasItem => {
     // Map database widget types to canvas component types
@@ -419,7 +449,7 @@ export default function CanvasPage() {
         ) : (
           <div className="grid gap-6 auto-fit-minmax-400">
             {allItems.map((item) => (
-              <Card key={item.id} className="shadow-sm">
+              <Card key={item.id} className="shadow-sm" data-widget-id={item.id}>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base">{item.title}</CardTitle>
                 </CardHeader>
