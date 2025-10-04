@@ -386,42 +386,62 @@ export default function CanvasPage() {
             >
               <RefreshCw className="w-4 h-4" />
             </Button>
-            {allItems.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-white hover:bg-white/20 p-2"
-                    title="Canvas Actions"
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <DropdownMenuItem onClick={handleCopyToClipboard}>
-                    <Copy className="w-4 h-4 mr-2" />
-                    Copy to Clipboard
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportJSON}>
-                    <Download className="w-4 h-4 mr-2" />
-                    Export as JSON
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleExportImage}>
-                    <FileImage className="w-4 h-4 mr-2" />
-                    Export as Image
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleShare}>
-                    <Share2 className="w-4 h-4 mr-2" />
-                    Share Canvas
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleClearCanvas} className="text-red-600">
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Clear Canvas
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-white hover:bg-white/20 p-2"
+                  title="Canvas Actions"
+                  data-testid="button-canvas-menu"
+                >
+                  <MoreVertical className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuItem 
+                  onClick={handleCopyToClipboard}
+                  disabled={allItems.length === 0}
+                  data-testid="menu-copy-clipboard"
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy to Clipboard
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExportJSON}
+                  disabled={allItems.length === 0}
+                  data-testid="menu-export-json"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleExportImage}
+                  disabled={allItems.length === 0}
+                  data-testid="menu-export-image"
+                >
+                  <FileImage className="w-4 h-4 mr-2" />
+                  Export as Image
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleShare}
+                  disabled={allItems.length === 0}
+                  data-testid="menu-share"
+                >
+                  <Share2 className="w-4 h-4 mr-2" />
+                  Share Canvas
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleClearCanvas} 
+                  disabled={allItems.length === 0}
+                  className="text-red-600 disabled:text-gray-400"
+                  data-testid="menu-clear-canvas"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Clear Canvas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </div>
