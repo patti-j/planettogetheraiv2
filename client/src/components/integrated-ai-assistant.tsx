@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   Bot, 
@@ -611,6 +611,9 @@ export default function IntegratedAIAssistant() {
         
         chartVisual += '\n💡 *This chart shows real manufacturing data from your system*';
         finalContent = responseText + chartVisual;
+        
+        // Refresh the canvas to show the new widget
+        queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
         
         // Navigate to canvas and scroll to the chart
         if (window.location.pathname !== '/canvas') {
