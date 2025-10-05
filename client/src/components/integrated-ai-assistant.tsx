@@ -1011,31 +1011,6 @@ export default function IntegratedAIAssistant() {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                title="Voice Settings"
-              >
-                <Settings className="h-3 w-3" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setShowMemorySettings(!showMemorySettings);
-                  if (!showMemorySettings) {
-                    fetchMemoryData();
-                  }
-                }}
-                className="h-6 w-6 p-0 text-white hover:bg-white/20"
-                title="Memory & Training"
-              >
-                <Database className="h-3 w-3" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="sm"
                 onClick={isDocked ? undockWindow : () => setShowDockZones(!showDockZones)}
                 className="h-6 w-6 p-0 text-white hover:bg-white/20"
                 title={isDocked ? "Undock Window" : "Dock Window"}
@@ -1348,6 +1323,31 @@ export default function IntegratedAIAssistant() {
                     onChange={handleFileInput} 
                     data-testid="input-attach-files" 
                   />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                    className="px-1.5 h-9"
+                    title="Voice Settings"
+                    data-testid="button-voice-settings"
+                  >
+                    <Settings className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setShowMemorySettings(!showMemorySettings);
+                      if (!showMemorySettings) {
+                        fetchMemoryData();
+                      }
+                    }}
+                    className="px-1.5 h-9"
+                    title="Memory & Training"
+                    data-testid="button-memory-settings"
+                  >
+                    <Database className="h-3 w-3" />
+                  </Button>
                   <Button 
                     variant="outline" 
                     size="sm" 
