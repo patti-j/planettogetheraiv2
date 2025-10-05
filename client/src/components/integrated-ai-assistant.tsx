@@ -1285,80 +1285,85 @@ export default function IntegratedAIAssistant() {
 
             {/* Input */}
             <div className="p-3 border-t bg-gray-50 flex-shrink-0">
-              <div className="flex flex-col sm:flex-row gap-2">
-                <div className="flex-1 flex gap-1">
-                  <textarea
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Ask me anything about your operations..."
-                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                    className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 resize-none overflow-y-auto"
-                    rows={window.innerWidth < 768 ? 3 : 4}
-                    style={{ minHeight: '60px', maxHeight: '120px' }}
-                  />
-                  {attachments.length > 0 && (
-                    <div className="px-3 py-2 space-y-1 border-t border-gray-200" data-testid="list-attachments">
-                      {attachments.map(a => (
-                        <div key={a.id} className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1">
-                          <FileText className="h-3 w-3 text-gray-500" />
-                          <span className="truncate flex-1">{a.name}</span>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => handleRemoveAttachment(a.id)} 
-                            className="h-5 w-5 p-0"
-                            data-testid={`button-remove-attachment-${a.id}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  <input 
-                    hidden 
-                    multiple 
-                    ref={fileInputRef} 
-                    type="file" 
-                    onChange={handleFileInput} 
-                    data-testid="input-attach-files" 
-                  />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setShowVoiceSettings(!showVoiceSettings)}
-                    className="px-1.5 h-9"
-                    title="Voice Settings"
-                    data-testid="button-voice-settings"
-                  >
-                    <Settings className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setShowMemorySettings(!showMemorySettings);
-                      if (!showMemorySettings) {
-                        fetchMemoryData();
-                      }
-                    }}
-                    className="px-1.5 h-9"
-                    title="Memory & Training"
-                    data-testid="button-memory-settings"
-                  >
-                    <Database className="h-3 w-3" />
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handlePickFiles} 
-                    className="px-1.5 h-9" 
-                    title="Attach files" 
-                    data-testid="button-attach-files"
-                  >
-                    <Paperclip className="h-3 w-3" />
-                  </Button>
+              <div className="flex flex-col gap-2">
+                {/* Attachments list */}
+                {attachments.length > 0 && (
+                  <div className="space-y-1" data-testid="list-attachments">
+                    {attachments.map(a => (
+                      <div key={a.id} className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1 border border-gray-200">
+                        <FileText className="h-3 w-3 text-gray-500" />
+                        <span className="truncate flex-1">{a.name}</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => handleRemoveAttachment(a.id)} 
+                          className="h-5 w-5 p-0"
+                          data-testid={`button-remove-attachment-${a.id}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Textarea */}
+                <textarea
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  placeholder="Ask me anything about your operations..."
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                  className="w-full text-sm border border-gray-300 rounded px-3 py-2 resize-none overflow-y-auto"
+                  rows={window.innerWidth < 768 ? 3 : 4}
+                  style={{ minHeight: '60px', maxHeight: '120px' }}
+                />
+                
+                {/* Bottom controls row */}
+                <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
+                    <input 
+                      hidden 
+                      multiple 
+                      ref={fileInputRef} 
+                      type="file" 
+                      onChange={handleFileInput} 
+                      data-testid="input-attach-files" 
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                      className="px-1.5 h-9"
+                      title="Voice Settings"
+                      data-testid="button-voice-settings"
+                    >
+                      <Settings className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setShowMemorySettings(!showMemorySettings);
+                        if (!showMemorySettings) {
+                          fetchMemoryData();
+                        }
+                      }}
+                      className="px-1.5 h-9"
+                      title="Memory & Training"
+                      data-testid="button-memory-settings"
+                    >
+                      <Database className="h-3 w-3" />
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handlePickFiles} 
+                      className="px-1.5 h-9" 
+                      title="Attach files" 
+                      data-testid="button-attach-files"
+                    >
+                      <Paperclip className="h-3 w-3" />
+                    </Button>
                     <Button
                       variant="outline"
                       size="sm"
@@ -1379,19 +1384,20 @@ export default function IntegratedAIAssistant() {
                       </span>
                     )}
                   </div>
+                  
+                  <Button
+                    onClick={handleSendMessage}
+                    disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+                    size="sm"
+                    className="px-3 h-9"
+                  >
+                    {sendMessageMutation.isPending ? (
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
+                  </Button>
                 </div>
-                <Button
-                  onClick={handleSendMessage}
-                  disabled={!inputMessage.trim() || sendMessageMutation.isPending}
-                  size="sm"
-                  className="px-3 h-10 w-full sm:w-auto"
-                >
-                  {sendMessageMutation.isPending ? (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
               </div>
             </div>
           </CardContent>
