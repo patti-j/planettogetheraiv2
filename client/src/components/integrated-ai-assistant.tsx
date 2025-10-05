@@ -947,7 +947,7 @@ export default function IntegratedAIAssistant() {
               <Sparkles className="h-6 w-6 text-white" />
             </Button>
           ) : (
-            // Expanded oval prompt with agent selector
+            // Expanded oval prompt with agent selector 
             <div className="bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl overflow-hidden"
                  style={{ minWidth: '280px', maxWidth: '320px' }}
             >
