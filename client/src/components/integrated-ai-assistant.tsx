@@ -619,13 +619,24 @@ export default function IntegratedAIAssistant() {
         if (window.location.pathname !== '/canvas') {
           // Store the widget ID to scroll to after navigation
           const widgetId = data.action.widgetId || data.action.chartConfig?.id;
+          console.log('📍 [AI Assistant] Widget ID for navigation:', widgetId);
+          console.log('📍 [AI Assistant] Navigating to canvas from:', window.location.pathname);
+          
           if (widgetId) {
             sessionStorage.setItem('scrollToWidget', widgetId.toString());
+            console.log('📍 [AI Assistant] Saved widgetId to sessionStorage:', widgetId);
           }
           
+          // Show a toast notification
+          toast({
+            title: "Chart created!",
+            description: "Taking you to the canvas to view your chart...",
+          });
+          
           setTimeout(() => {
+            console.log('📍 [AI Assistant] Executing navigation to /canvas');
             window.location.href = '/canvas';
-          }, 1500);
+          }, 800);
         } else {
           // Already on canvas - scroll to the chart immediately
           setTimeout(() => {
