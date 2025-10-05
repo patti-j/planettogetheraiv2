@@ -44,6 +44,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { useAgent } from "@/contexts/AgentContext";
 
 interface Message {
   id: string;
@@ -90,6 +91,8 @@ export default function IntegratedAIAssistant() {
   const [showMemorySettings, setShowMemorySettings] = useState(false);
   const [memoryData, setMemoryData] = useState<any[]>([]);
   const [trainingData, setTrainingData] = useState<any[]>([]);
+  
+  const { currentAgent, availableAgents, switchToAgent } = useAgent();
   
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{
@@ -993,7 +996,21 @@ export default function IntegratedAIAssistant() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-white" />
-              <CardTitle className="text-white text-sm">Max</CardTitle>
+              <Select
+                value={currentAgent.id}
+                onValueChange={switchToAgent}
+              >
+                <SelectTrigger className="h-7 w-auto min-w-[120px] bg-white/10 border-white/30 text-white text-sm hover:bg-white/20 focus:ring-0 focus:ring-offset-0">
+                  <SelectValue>{currentAgent.displayName}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {availableAgents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id}>
+                      {agent.displayName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Badge variant="secondary" className="text-xs bg-white/20 text-white border-white/30">
                 {user?.roles?.[0]?.name || 'Online'}
               </Badge>
@@ -1040,15 +1057,46 @@ export default function IntegratedAIAssistant() {
 
         {isMinimized && (
           <CardContent className="p-3 bg-white dark:bg-gray-800">
-            <div className="flex items-center gap-2">
-              <input
-                type="text"
-                value={inputMessage}
-                onChange={(e) => setInputMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
-                placeholder="Ask anything..."
-                className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="flex flex-col gap-2">
+              {/* Agent selector row */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-500 dark:text-gray-400">Chat with:</span>
+                <Select
+                  value={currentAgent.id}
+                  onValueChange={switchToAgent}
+                >
+                  <SelectTrigger className="h-8 w-auto min-w-[140px] text-sm">
+                    <SelectValue>{currentAgent.displayName}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableAgents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{agent.displayName}</span>
+                          <Badge 
+                            variant="outline" 
+                            className="text-xs"
+                            style={{ borderColor: agent.color, color: agent.color }}
+                          >
+                            {agent.status}
+                          </Badge>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              {/* Input and controls row */}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={inputMessage}
+                  onChange={(e) => setInputMessage(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                  placeholder="Ask anything..."
+                  className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               <input 
                 hidden 
                 multiple 
@@ -1114,6 +1162,7 @@ export default function IntegratedAIAssistant() {
                   <Send className="h-4 w-4" />
                 )}
               </Button>
+              </div>
             </div>
           </CardContent>
         )}
