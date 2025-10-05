@@ -947,26 +947,52 @@ export default function IntegratedAIAssistant() {
               <Sparkles className="h-6 w-6 text-white" />
             </Button>
           ) : (
-            // Expanded oval prompt - flexible layout with text wrapping
-            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl px-4 py-2.5 flex items-center gap-2 cursor-pointer max-w-xs"
-                 onClick={() => setIsOpen(true)}
-                 data-testid="button-ask-anything"
+            // Expanded oval prompt with agent selector
+            <div className="bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg hover:shadow-xl transition-all duration-200 rounded-2xl overflow-hidden"
+                 style={{ minWidth: '280px', maxWidth: '320px' }}
             >
-              <Button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsBubbleMinimized(true);
-                }}
-                size="sm"
-                variant="ghost"
-                className="h-6 w-6 p-0 rounded-full hover:bg-white/20 text-white flex-shrink-0"
-                data-testid="button-minimize-ai-bubble"
+              {/* Agent selector row */}
+              <div className="bg-white/10 px-3 py-1.5 flex items-center justify-between gap-2">
+                <span className="text-xs text-white/80">Chat with:</span>
+                <Select
+                  value={currentAgent.id}
+                  onValueChange={switchToAgent}
+                >
+                  <SelectTrigger className="h-6 w-auto min-w-[100px] bg-white/10 border-white/30 text-white text-xs hover:bg-white/20 focus:ring-0 focus:ring-offset-0">
+                    <SelectValue>{currentAgent.displayName}</SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {availableAgents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.displayName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setIsBubbleMinimized(true);
+                  }}
+                  size="sm"
+                  variant="ghost"
+                  className="h-5 w-5 p-0 rounded-full hover:bg-white/20 text-white flex-shrink-0"
+                  data-testid="button-minimize-ai-bubble"
+                >
+                  <Sparkles className="h-3 w-3" />
+                </Button>
+              </div>
+              
+              {/* Input area */}
+              <div 
+                className="px-4 py-2.5 flex items-center gap-2 cursor-pointer hover:bg-white/5"
+                onClick={() => setIsOpen(true)}
+                data-testid="button-ask-anything"
               >
-                <Sparkles className="h-3.5 w-3.5" />
-              </Button>
-              <span className="text-white font-medium text-sm leading-snug">
-                {inputMessage || "Ask anything..."}
-              </span>
+                <span className="text-white font-medium text-sm leading-snug flex-1">
+                  {inputMessage || "Ask anything..."}
+                </span>
+              </div>
             </div>
           )}
         </div>
