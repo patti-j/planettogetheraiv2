@@ -1038,6 +1038,86 @@ export default function IntegratedAIAssistant() {
           </div>
         </CardHeader>
 
+        {isMinimized && (
+          <CardContent className="p-3 bg-white dark:bg-gray-800">
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={inputMessage}
+                onChange={(e) => setInputMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && (e.preventDefault(), handleSendMessage())}
+                placeholder="Ask anything..."
+                className="flex-1 text-sm border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input 
+                hidden 
+                multiple 
+                ref={fileInputRef} 
+                type="file" 
+                onChange={handleFileInput} 
+                data-testid="input-attach-files-minimized" 
+              />
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowVoiceSettings(!showVoiceSettings)}
+                className="px-2 h-9"
+                title="Voice Settings"
+                data-testid="button-voice-settings-minimized"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowMemorySettings(!showMemorySettings);
+                  if (!showMemorySettings) {
+                    fetchMemoryData();
+                  }
+                }}
+                className="px-2 h-9"
+                title="Memory & Training"
+                data-testid="button-memory-settings-minimized"
+              >
+                <Database className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handlePickFiles}
+                className="px-2 h-9"
+                title="Attach files"
+                data-testid="button-attach-files-minimized"
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={isListening ? stopListening : startListening}
+                className={`px-2 h-9 ${isListening ? 'bg-red-50 border-red-200' : ''}`}
+                data-testid="button-voice-recording-minimized"
+              >
+                {isListening ? <MicOff className="h-4 w-4 text-red-500" /> : <Mic className="h-4 w-4" />}
+              </Button>
+              <Button
+                onClick={handleSendMessage}
+                disabled={!inputMessage.trim() || sendMessageMutation.isPending}
+                size="sm"
+                className="px-3 h-9"
+                data-testid="button-send-minimized"
+              >
+                {sendMessageMutation.isPending ? (
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                ) : (
+                  <Send className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        )}
+
         {!isMinimized && (
           <CardContent className="p-0 flex flex-col relative" style={{ height: `${size.height - 80}px`, overflow: 'hidden' }}>
             {/* Voice Settings Panel */}
