@@ -5,6 +5,7 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
+import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
   insertDashboardSchema, 
@@ -1555,125 +1556,32 @@ function checkRateLimit(userId: number): boolean {
   return true;
 }
 
-// JWT-based authentication middleware - secure and stateless
+// JWT-based authentication middleware - secure and stateless (optimized)
+// This is a wrapper around enhancedAuth for backwards compatibility
 async function requireAuth(req: any, res: any, next: any) {
-  console.log('[JWT Auth] Authenticating request...');
-  
   // Development bypass for canvas widgets
   if (process.env.NODE_ENV === 'development' && req.path.startsWith('/api/canvas/widgets')) {
     console.log('🔧 [Canvas Widgets] Development auth bypass for:', req.path);
     return next();
   }
   
-  const authHeader = req.headers.authorization;
-  
-  // Check for Bearer token in authorization header
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    console.log('[JWT Auth] Missing or invalid authorization header');
-    return res.status(401).json({ message: 'Authentication required' });
-  }
-  
-  const token = authHeader.substring(7);
-  console.log('[JWT Auth] Token received, length:', token.length);
-  
-  // Verify JWT token
-  const decoded = verifyJWT(token);
-  if (!decoded) {
-    console.log('[JWT Auth] Invalid or expired token');
-    return res.status(401).json({ message: 'Invalid or expired token' });
-  }
-  
-  console.log('[JWT Auth] JWT verified for user:', decoded.userId);
-  
-  // Fetch user from database to get current roles and permissions
-  try {
-    const user = await storage.getUser(decoded.userId);
-    
-    if (!user) {
-      console.log('[JWT Auth] User not found in database');
-      return res.status(401).json({ message: 'User not found' });
-    }
-    
-    if (!user.isActive) {
-      console.log('[JWT Auth] User account is inactive');
-      return res.status(401).json({ message: 'User account inactive' });
-    }
-    
-    // Get current user roles and permissions from database
-    console.log('[JWT Auth] Fetching user roles and permissions...');
-    try {
-      const userRoles = await storage.getUserRoles(user.id);
-      const roles = [];
-      const allPermissions: string[] = [];
-      
-      for (const userRole of userRoles) {
-        const role = await storage.getRole(userRole.roleId);
-        if (role) {
-          const rolePermissions = await storage.getRolePermissions(role.id);
-          const permissions = [];
-          
-          for (const rp of rolePermissions) {
-            const permission = await storage.getPermission(rp.permissionId);
-            if (permission) {
-              allPermissions.push(permission.name);
-              permissions.push({
-                id: permission.id,
-                name: permission.name,
-                feature: permission.feature,
-                action: permission.action,
-                description: permission.description || `${permission.action} access to ${permission.feature}`
-              });
-            }
-          }
-          
-          roles.push({
-            id: role.id,
-            name: role.name,
-            description: role.description || `${role.name} role with assigned permissions`,
-            permissions: permissions
-          });
-        }
-      }
-      
-      // Set authentication data on request
-      req.userId = user.id;
-      req.user = user;
+  // Use the optimized enhancedAuth middleware
+  await enhancedAuth(req, res, () => {
+    // Backwards compatibility: set req.userId and req.userData from req.user
+    if (req.user) {
+      req.userId = req.user.id;
       req.userData = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: roles,
-        permissions: allPermissions
+        id: req.user.id,
+        username: req.user.username,
+        email: req.user.email,
+        firstName: req.user.firstName || '',
+        lastName: req.user.lastName || '',
+        roles: [], // Enhanced auth doesn't populate this
+        permissions: req.user.permissions || []
       };
-      
-      console.log('[JWT Auth] Authentication successful for user:', user.id);
-      next();
-      
-    } catch (roleError) {
-      // If role fetching fails, still allow access with basic user info for development
-      console.warn('[JWT Auth] Role fetching failed, allowing basic access:', roleError instanceof Error ? roleError.message : 'Unknown error');
-      
-      req.userId = user.id;
-      req.user = user;
-      req.userData = {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        roles: [],
-        permissions: []
-      };
-      
-      next();
     }
-    
-  } catch (dbError) {
-    console.error('[JWT Auth] Database error while fetching user:', dbError);
-    return res.status(500).json({ message: 'Authentication service error' });
-  }
+    next();
+  });
 }
 
 // Main AI query endpoint
@@ -5036,9 +4944,8 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
 import { apiKeys, apiKeyUsage, oauthClients, oauthTokens, users, roles, maxChatMessages } from '@shared/schema';
-import { enhancedAuth, requirePermission, AuthenticatedRequest } from './enhanced-auth-middleware';
+import { requirePermission, AuthenticatedRequest } from './enhanced-auth-middleware';
 import { insertApiKeySchema, insertOauthClientSchema, ApiKey, OauthClient } from '@shared/schema';
-import { desc, eq, and } from 'drizzle-orm';
 
 // POST /api/v1/auth/api-keys - Create new API key
 router.post("/api/v1/auth/api-keys", enhancedAuth, requirePermission('auth', 'manage'), async (req: AuthenticatedRequest, res) => {

@@ -49,7 +49,7 @@ const DEFAULT_MAX_RECENT_PAGES = 5;
 const pageMapping: Record<string, { label: string; icon: string }> = {
   '/': { label: 'Dashboard', icon: 'BarChart3' },
   '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
-  '/production-scheduler': { label: 'Production Schedule', icon: 'Calendar' },
+  '/production-scheduler': { label: 'Production Scheduler (Gantt)', icon: 'Calendar' },
   '/schedule-sequences': { label: 'Schedule Sequences', icon: 'ArrowUpDown' },
   '/planning-overview': { label: 'Planning Process Guide', icon: 'Workflow' },
 
