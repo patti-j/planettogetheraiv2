@@ -143,17 +143,17 @@ export function AgentMonitoring() {
   });
 
   const { data: actionsData = { actions: [] } } = useQuery({
-    queryKey: ['/api/agent-control/actions', selectedAgent?.id],
+    queryKey: [`/api/agent-control/actions/${selectedAgent?.id}`],
     enabled: !!selectedAgent
   });
 
   const { data: metricsData = { metrics: [] } } = useQuery({
-    queryKey: ['/api/agent-control/metrics', selectedAgent?.id],
+    queryKey: [`/api/agent-control/metrics/${selectedAgent?.id}`],
     enabled: !!selectedAgent
   });
 
   const { data: policiesData = { policies: [] } } = useQuery({
-    queryKey: ['/api/agent-control/policies', selectedAgent?.id],
+    queryKey: [`/api/agent-control/policies/${selectedAgent?.id}`],
     enabled: !!selectedAgent
   });
 

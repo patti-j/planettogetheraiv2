@@ -5689,6 +5689,129 @@ router.post("/api/ai-agent/chat", async (req, res) => {
 // Agent Monitoring & Control API Routes
 // ============================================
 
+// Helper function to generate sample agent connections
+function generateSampleAgentConnections() {
+  const now = new Date();
+  
+  return [
+    {
+      id: 1,
+      agentName: 'Max AI Assistant',
+      agentType: 'production_scheduling',
+      connectionType: 'websocket' as const,
+      status: 'active' as const,
+      isEnabled: true,
+      connectedAt: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
+      lastActivityAt: new Date(now.getTime() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
+      configuration: {
+        endpoint: 'wss://api.planettogether.ai/agents/max',
+        authMethod: 'jwt',
+        version: 'v2.1.0'
+      },
+      metadata: {
+        capabilities: ['scheduling', 'optimization', 'analytics'],
+        region: 'us-east-1',
+        deployedVersion: '2.1.0'
+      },
+      rateLimitPerMinute: 60,
+      rateLimitPerHour: 1000,
+      errorCount: 2
+    },
+    {
+      id: 2,
+      agentName: 'System Monitor',
+      agentType: 'system_monitoring',
+      connectionType: 'polling' as const,
+      status: 'active' as const,
+      isEnabled: true,
+      connectedAt: new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000).toISOString(), // 14 days ago
+      lastActivityAt: new Date(now.getTime() - 2 * 60 * 1000).toISOString(), // 2 minutes ago
+      configuration: {
+        endpoint: 'https://api.planettogether.ai/agents/monitor',
+        authMethod: 'api_key',
+        pollInterval: 30
+      },
+      metadata: {
+        capabilities: ['health_checks', 'performance_monitoring', 'alerting'],
+        region: 'us-west-2',
+        deployedVersion: '1.5.3'
+      },
+      rateLimitPerMinute: 120,
+      rateLimitPerHour: 5000,
+      errorCount: 0
+    },
+    {
+      id: 3,
+      agentName: 'Quality Analyzer',
+      agentType: 'quality_analysis',
+      connectionType: 'api' as const,
+      status: 'active' as const,
+      isEnabled: true,
+      connectedAt: new Date(now.getTime() - 3 * 24 * 60 * 60 * 1000).toISOString(), // 3 days ago
+      lastActivityAt: new Date(now.getTime() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
+      configuration: {
+        endpoint: 'https://api.planettogether.ai/agents/quality',
+        authMethod: 'oauth'
+      },
+      metadata: {
+        capabilities: ['defect_detection', 'trend_analysis', 'root_cause_analysis'],
+        region: 'eu-west-1',
+        deployedVersion: '1.8.2'
+      },
+      rateLimitPerMinute: 30,
+      rateLimitPerHour: 500,
+      errorCount: 5
+    },
+    {
+      id: 4,
+      agentName: 'Predictive Maintenance Bot',
+      agentType: 'predictive_maintenance',
+      connectionType: 'webhook' as const,
+      status: 'suspended' as const,
+      isEnabled: false,
+      connectedAt: new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000).toISOString(), // 21 days ago
+      disconnectedAt: new Date(now.getTime() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
+      lastActivityAt: new Date(now.getTime() - 25 * 60 * 60 * 1000).toISOString(), // 25 hours ago
+      configuration: {
+        endpoint: 'https://api.planettogether.ai/agents/maintenance',
+        authMethod: 'jwt'
+      },
+      metadata: {
+        capabilities: ['failure_prediction', 'maintenance_scheduling', 'parts_optimization'],
+        region: 'us-east-1',
+        deployedVersion: '2.0.1'
+      },
+      rateLimitPerMinute: 45,
+      rateLimitPerHour: 800,
+      errorCount: 15,
+      lastError: 'Connection timeout after 30s - suspended for review'
+    },
+    {
+      id: 5,
+      agentName: 'Inventory Optimizer',
+      agentType: 'inventory_optimization',
+      connectionType: 'api' as const,
+      status: 'error' as const,
+      isEnabled: true,
+      connectedAt: new Date(now.getTime() - 5 * 24 * 60 * 60 * 1000).toISOString(), // 5 days ago
+      lastActivityAt: new Date(now.getTime() - 10 * 60 * 1000).toISOString(), // 10 minutes ago
+      configuration: {
+        endpoint: 'https://api.planettogether.ai/agents/inventory',
+        authMethod: 'api_key'
+      },
+      metadata: {
+        capabilities: ['demand_forecasting', 'reorder_optimization', 'safety_stock_calculation'],
+        region: 'ap-southeast-1',
+        deployedVersion: '1.4.7'
+      },
+      rateLimitPerMinute: 50,
+      rateLimitPerHour: 1200,
+      errorCount: 8,
+      lastError: 'API key validation failed - please update credentials'
+    }
+  ];
+}
+
 // Get all agent connections
 router.get("/api/agent-control/connections", async (req, res) => {
   try {
@@ -5698,7 +5821,21 @@ router.get("/api/agent-control/connections", async (req, res) => {
     if (status) filters.status = status as string;
     if (connectionType) filters.connectionType = connectionType as string;
     
-    const connections = await storage.getAgentConnections(filters);
+    let connections = await storage.getAgentConnections(filters);
+    
+    // If no connections exist, return sample data
+    if (connections.length === 0) {
+      connections = generateSampleAgentConnections();
+      
+      // Apply filters to sample data if provided
+      if (status) {
+        connections = connections.filter(c => c.status === status);
+      }
+      if (connectionType) {
+        connections = connections.filter(c => c.connectionType === connectionType);
+      }
+    }
+    
     res.json({ success: true, connections });
   } catch (error) {
     console.error("Error fetching agent connections:", error);
