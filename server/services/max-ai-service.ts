@@ -1604,18 +1604,28 @@ ${playbooks.map(p => `- ${p.title} (${Math.round(p.relevance_score * 100)}% rele
 Use these playbooks to inform your decision-making while remaining flexible to the specific user request.
 ` : ''}
 
+CRITICAL MANUFACTURING CONTEXT:
+This is a MANUFACTURING SYSTEM, not a job board or HR system.
+- "jobs" = production jobs (manufacturing orders), NOT job openings
+- "operations" = manufacturing operations, NOT business operations
+- "resources" = manufacturing resources/equipment, NOT human resources
+- "orders" = manufacturing/production orders
+- Always interpret queries in manufacturing/production context
+
 Available actions you can take:
-1. FETCH_DATA - if they want specific information from the system
+1. FETCH_DATA - if they want specific information from the system (e.g., "how many jobs", "list operations")
 2. NAVIGATE - if they want to go to a specific page/feature  
 3. ANALYZE - if they want analysis of current data
-4. CREATE - if they want to create charts, widgets, or content (keywords: create, make, show, generate, chart, pie, bar, graph, visualization)
+4. CREATE - if they want to create charts, widgets, or content (keywords: create, make, show, generate, chart, pie, bar, graph, visualization, plot)
 5. HELP - if they need guidance or have questions
 6. CHAT - for general conversation
 
-IMPORTANT: Any request containing words like "chart", "pie chart", "bar chart", "graph", "create chart", "show chart", "make chart", "generate chart" should ALWAYS be classified as CREATE intent.
+IMPORTANT: 
+- Any request containing words like "chart", "plot", "pie chart", "bar chart", "graph", "create chart", "show chart", "make chart", "generate chart" should ALWAYS be classified as CREATE intent.
+- Queries like "how many jobs", "show jobs", "list jobs" are about PRODUCTION JOBS (ptjobs), use FETCH_DATA or CREATE intent
 
 Manufacturing system capabilities:
-- Production data: jobs, operations, schedules, resources
+- Production data: jobs (ptjobs), operations (ptjoboperations), schedules, resources (ptresources)
 - Sales data: orders, customers, delivery tracking
 - Quality data: metrics, inspections, compliance
 - Analytics: KPIs, trends, optimization insights
@@ -2111,10 +2121,23 @@ Respond with JSON:
         messages: [
           {
             role: 'system',
-            content: `You are a data fetching assistant. Based on the user's query, determine what API endpoint to call.
+            content: `You are a data fetching assistant for a MANUFACTURING SYSTEM. Based on the user's query, determine what API endpoint to call.
 
 Available endpoints:
 ${availableEndpoints}
+
+MANUFACTURING TERMINOLOGY CONTEXT:
+- "jobs" = production jobs (ptjobs) - manufacturing orders, NOT job openings
+- "operations" = manufacturing operations (ptjoboperations)
+- "resources" = manufacturing resources/equipment (ptresources)
+- "orders" = manufacturing orders (ptmanufacturingorders)
+- "stock" = inventory/stock items (stock_items)
+
+When user mentions:
+- "jobs" or "production jobs" → use ptjobs-related endpoints
+- "operations" → use ptjoboperations
+- "resources" or "equipment" → use ptresources
+- Always interpret queries in manufacturing/production context
 
 Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.
 Focus on the most relevant data type that would answer the user's question.`
