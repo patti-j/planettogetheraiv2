@@ -81,8 +81,9 @@ interface MaxContext {
 interface MaxResponse {
   content: string;
   action?: {
-    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify';
+    type: 'navigate' | 'show_data' | 'execute_function' | 'create_chart' | 'multi_step' | 'clarify' | 'switch_agent';
     target?: string;
+    agentId?: string;
     data?: any;
     chartConfig?: ChartConfig;
     steps?: TaskStep[];
@@ -1127,7 +1128,7 @@ Return only the JSON object, no other text.`;
   }
 
   // Use AI to intelligently determine user intent and target route
-  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart'; target?: string; confidence: number; chartType?: string }> {
+  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart' | 'switch_agent'; target?: string; agentId?: string; confidence: number; chartType?: string }> {
     const navigationMapping = await this.getNavigationMapping();
     const routes = Object.values(navigationMapping).map(page => ({
       route: page.path,
@@ -1135,12 +1136,38 @@ Return only the JSON object, no other text.`;
       description: page.description
     }));
     
+    // Check for agent switching requests FIRST
+    const agentSwitchKeywords = ['speak to', 'talk to', 'switch to', 'chat with', 'connect to', 'i want to speak', 'i want to talk', 'let me talk', 'can i speak'];
+    const agentNames = {
+      'production scheduling': 'production_scheduling',
+      'production': 'production_scheduling',
+      'scheduler': 'production_scheduling',
+      'scheduling': 'production_scheduling',
+      'shop floor': 'shop_floor',
+      'quality': 'quality_analysis',
+      'quality analysis': 'quality_analysis',
+      'predictive maintenance': 'predictive_maintenance',
+      'maintenance': 'predictive_maintenance'
+    };
+    
+    const queryLower = query.toLowerCase();
+    const hasAgentSwitchIntent = agentSwitchKeywords.some(keyword => queryLower.includes(keyword));
+    
+    if (hasAgentSwitchIntent) {
+      // Try to identify which agent
+      for (const [agentName, agentId] of Object.entries(agentNames)) {
+        if (queryLower.includes(agentName)) {
+          console.log(`[Max AI Intent] 🤖 AGENT SWITCH DETECTED! Agent: ${agentName} -> ${agentId}`);
+          return { type: 'switch_agent', agentId, confidence: 0.95 };
+        }
+      }
+    }
+    
     // Check for chart creation requests with more liberal matching
     const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi'];
     const createKeywords = ['create', 'show', 'make', 'generate', 'display', 'build'];
     const canvasKeywords = ['canvas', 'in the canvas', 'on canvas', 'to canvas'];
     
-    const queryLower = query.toLowerCase();
     const hasChartKeyword = chartKeywords.some(keyword => queryLower.includes(keyword));
     const hasCreateKeyword = createKeywords.some(keyword => queryLower.includes(keyword));
     const hasCanvasKeyword = canvasKeywords.some(keyword => queryLower.includes(keyword));
@@ -1263,6 +1290,26 @@ Rules:
         if (intent.type === 'create_chart' && intent.confidence > 0.7) {
           console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
           return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
+        }
+        
+        // Handle agent switching intent
+        if (intent.type === 'switch_agent' && intent.agentId && intent.confidence > 0.7) {
+          const agentNames = {
+            'production_scheduling': 'Production Scheduling Agent',
+            'shop_floor': 'Shop Floor Agent',
+            'quality_analysis': 'Quality Analysis Agent',
+            'predictive_maintenance': 'Predictive Maintenance Agent'
+          };
+          const agentName = agentNames[intent.agentId as keyof typeof agentNames] || intent.agentId;
+          
+          console.log(`[Max AI] Detected agent switch intent: ${agentName}`);
+          return {
+            content: `Switching to ${agentName}...`,
+            action: {
+              type: 'switch_agent',
+              agentId: intent.agentId
+            }
+          };
         }
         
         // If streaming is enabled, handle differently

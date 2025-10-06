@@ -35,7 +35,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
   const { setCanvasVisible, setCanvasItems } = useMaxDock();
-  const { currentAgent } = useAgent();
+  const { currentAgent, switchToAgent } = useAgent();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -259,8 +259,20 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         }, 800);
       }
       
+      // Handle agent switching actions from Max AI
+      if (data?.action?.type === 'switch_agent' && data?.action?.agentId) {
+        switchToAgent(data.action.agentId);
+        
+        // Add agent switch confirmation message
+        addMessage({
+          role: 'assistant',
+          content: data.content || `Switched to ${data.action.agentId}...`,
+          source: 'floating',
+          agentId: data.action.agentId
+        });
+      }
       // Handle navigation actions from Max AI
-      if (data?.action?.type === 'navigate' && data?.action?.target) {
+      else if (data?.action?.type === 'navigate' && data?.action?.target) {
         handleNavigation(data.action.target, data.action.target.replace('/', '').replace('-', ' '));
         
         // Add navigation confirmation message

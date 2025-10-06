@@ -415,9 +415,9 @@ export const userPreferences = pgTable("user_preferences", {
 
 export const ptPlants = pgTable("ptplants", {
   id: serial("id").primaryKey(),
-  publishDate: timestamp("publish_date").notNull(),
-  instanceId: varchar("instance_id", { length: 38 }).notNull(),
-  plantId: integer("plant_id").notNull(),
+  publishDate: timestamp("publish_date"),
+  instanceId: varchar("instance_id", { length: 38 }),
+  plantId: integer("plant_id"),
   name: text("name"),
   description: text("description"),
   notes: text("notes"),

@@ -252,7 +252,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
           
           <ScrollArea className="h-32 w-full navigation-menu-scroll" style={{ touchAction: 'pan-y', WebkitOverflowScrolling: 'touch' }}>
             <div className="space-y-0.5 pr-2">
-              {recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page) => {
+              {recentPages.slice(0, userPreferences?.dashboardLayout?.maxRecentPages || 5).map((page, pageIndex) => {
                 const IconComponent = getIconComponent(page.icon || 'FileText');
                 // Find the color from navigation config
                 const getColorForPage = () => {
@@ -270,7 +270,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                 };
 
                 return (
-                  <Tooltip key={page.path}>
+                  <Tooltip key={`${page.path}-${pageIndex}`}>
                     <TooltipTrigger asChild>
                       <Button
                         variant={location === page.path ? 'secondary' : 'ghost'}
@@ -465,7 +465,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
                         
                         return (
                           <Button
-                            key={page.path}
+                            key={`${page.path}-${pageIndex}`}
                             variant="ghost"
                             className={cn(
                               "w-full justify-start text-left h-8 px-2 font-normal transition-all duration-150 ml-3 group",
