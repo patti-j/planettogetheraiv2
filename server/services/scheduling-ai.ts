@@ -75,7 +75,7 @@ interface SchedulingAIOptions {
 export class SchedulingAI {
   private readonly defaultOptions: SchedulingAIOptions = {
     maxTokens: 1500,
-    temperature: 0.7,
+    temperature: 0.3,
     model: 'gpt-4o-2024-08-06'
   };
 

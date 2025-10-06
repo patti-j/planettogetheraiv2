@@ -6811,7 +6811,7 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.7,
+      temperature: 0.3,
       max_tokens: 2000,
       response_format: { type: "json_object" }
     });
