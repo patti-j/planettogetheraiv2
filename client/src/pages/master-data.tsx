@@ -1061,9 +1061,12 @@ export default function MasterDataPage() {
 
   // Update record counts when dataset size changes
   const handleDatasetSizeChange = (size: string) => {
+    console.log('📻 Radio button clicked! Size:', size);
     const validSize = size as 'small' | 'medium' | 'large';
+    console.log('📻 Setting dataset size to:', validSize);
     setDatasetSize(validSize);
     setRecordCounts(datasetSizePresets[validSize]);
+    console.log('📻 Record counts updated:', datasetSizePresets[validSize]);
   };
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
