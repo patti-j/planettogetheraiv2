@@ -96,7 +96,7 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/billing': { label: 'Billing & Usage', icon: 'CreditCard' },
   '/account': { label: 'Account Settings', icon: 'Settings' },
   '/tenant-admin': { label: 'Tenant Administration', icon: 'Settings' },
-  '/master-data': { label: 'Master Data Editor', icon: 'Database' },
+  '/master-data': { label: 'Master Data Editor', icon: 'FileText' },
   '/master-data-management': { label: 'Master Data Management', icon: 'Database' },
   '/optimize-orders': { label: 'Order Optimization', icon: 'Sparkles' },
   '/control-tower': { label: 'Global Control Tower', icon: 'Globe' },
