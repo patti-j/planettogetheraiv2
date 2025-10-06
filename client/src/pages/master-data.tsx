@@ -1577,41 +1577,43 @@ export default function MasterDataPage() {
               
               {/* Dataset Size Selection */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Dataset Size (Current: {datasetSize})</label>
-                <div className="flex flex-row space-x-6">
-                  <div 
-                    className="flex items-center space-x-2 cursor-pointer" 
+                <label className="text-sm font-medium">
+                  Dataset Size: <strong className="text-blue-600">{datasetSize.toUpperCase()}</strong>
+                </label>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
                     onClick={() => handleDatasetSizeChange('small')}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      datasetSize === 'small' 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}
                   >
-                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'small' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
-                      {datasetSize === 'small' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-sm ${datasetSize === 'small' ? 'font-semibold text-blue-600' : ''}`}>
-                      Small (3-5 records each)
-                    </span>
-                  </div>
-                  <div 
-                    className="flex items-center space-x-2 cursor-pointer" 
+                    Small (3-5)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleDatasetSizeChange('medium')}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      datasetSize === 'medium' 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}
                   >
-                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'medium' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
-                      {datasetSize === 'medium' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-sm ${datasetSize === 'medium' ? 'font-semibold text-blue-600' : ''}`}>
-                      Medium (8-15 records each)
-                    </span>
-                  </div>
-                  <div 
-                    className="flex items-center space-x-2 cursor-pointer" 
+                    Medium (8-15)
+                  </button>
+                  <button
+                    type="button"
                     onClick={() => handleDatasetSizeChange('large')}
+                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
+                      datasetSize === 'large' 
+                        ? 'bg-blue-500 text-white border-blue-500' 
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
+                    }`}
                   >
-                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'large' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
-                      {datasetSize === 'large' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
-                    </div>
-                    <span className={`text-sm ${datasetSize === 'large' ? 'font-semibold text-blue-600' : ''}`}>
-                      Large (20-50 records each)
-                    </span>
-                  </div>
+                    Large (20-50)
+                  </button>
                 </div>
               </div>
 
