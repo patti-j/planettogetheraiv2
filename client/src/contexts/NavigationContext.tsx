@@ -105,6 +105,8 @@ const pageMapping: Record<string, { label: string; icon: string }> = {
   '/alerts': { label: 'Alerts & Notifications', icon: 'AlertTriangle' },
   '/scheduling-optimizer': { label: 'Scheduling Optimizer', icon: 'Sparkles' },
   '/ai-analysis-config': { label: 'AI Analysis Configuration', icon: 'Sparkles' },
+  '/agent-history': { label: 'Agent History', icon: 'History' },
+  '/agent-monitoring': { label: 'Agent Monitoring', icon: 'Monitor' },
   '#max': { label: 'Max AI Assistant', icon: 'Sparkles' }
 };
 
