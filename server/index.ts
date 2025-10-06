@@ -10,6 +10,7 @@ import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage as dbStorage, DatabaseStorage } from "./storage-new";
 import { seedDatabase } from "./seed";
+import { RealtimeVoiceService } from "./realtime-voice-service";
 
 // Extend session interface
 declare module "express-session" {
@@ -232,6 +233,40 @@ app.use((req, res, next) => {
       activeConnections.delete(connectionId);
     });
   });
+  
+  // Set up Realtime Voice WebSocket server
+  const realtimeVoiceWss = new WebSocketServer({
+    server,
+    path: '/api/v1/realtime-voice',
+    maxPayload: 1 * 1024 * 1024, // 1MB for audio data
+    verifyClient: (info) => {
+      // Verify origin for security
+      const origin = info.origin;
+      const allowedOrigins = [
+        'http://localhost:5000',
+        'https://localhost:5000',
+        process.env.ALLOWED_ORIGIN,
+        process.env.PROD_ORIGIN
+      ].filter(Boolean);
+
+      if (origin && !allowedOrigins.includes(origin)) {
+        log(`❌ Realtime Voice WebSocket rejected: invalid origin ${origin}`);
+        return false;
+      }
+      return true;
+    }
+  });
+  
+  // Initialize Realtime Voice Service
+  const jwtSecret = process.env.SESSION_SECRET || 'dev-secret-key-change-in-production';
+  const realtimeVoiceService = new RealtimeVoiceService(jwtSecret);
+  
+  // Handle Realtime Voice connections
+  realtimeVoiceWss.on('connection', (ws, req) => {
+    realtimeVoiceService.handleConnection(ws, req);
+  });
+  
+  log(`🎙️ Realtime Voice WebSocket server initialized on /api/v1/realtime-voice`);
   
   // Initialize database and seed data
   (async () => {
