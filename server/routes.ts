@@ -301,18 +301,32 @@ router.post("/api/auth/logout", (req, res) => {
   });
 });
 
-// Development-only endpoint for auto-authentication
+// Development-only endpoint for JWT token generation
+// Requires valid session (auto-created in dev) before issuing JWT
 router.get("/api/auth/dev-token", async (req, res) => {
   // Only allow in development mode
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({ message: "Forbidden in production" });
   }
   
-  console.log("🔧 Development auto-authentication requested - bypassing database");
+  // In development, automatically set up session if not present
+  // This mimics the /api/auth/me development bypass but creates a proper session
+  if (!req.session.userId) {
+    req.session.userId = 1; // Auto-assign admin user in development
+    req.session.isDemo = false;
+    console.log("🔧 Development mode: Auto-creating session for user 1");
+  }
   
-  // Skip database operations in development if tables don't exist
+  // Now that session exists, verify we have a user
+  if (!req.session.userId) {
+    return res.status(401).json({ message: "Not authenticated" });
+  }
+  
+  console.log("🔧 Development JWT token requested for session user:", req.session.userId);
+  
+  // Use actual session user ID
   const defaultAdminUser = {
-    id: 1,
+    id: req.session.userId,
     username: "admin",
     email: "admin@planettogether.com",
     firstName: "Admin",
@@ -326,19 +340,19 @@ router.get("/api/auth/dev-token", async (req, res) => {
     permissions: ["*"]
   };
 
-  // Generate JWT token for consistency
+  // Generate JWT token with session user
   const token = generateJWT(defaultAdminUser);
   
   // Store in memory
   global.tokenStore = global.tokenStore || new Map();
   global.tokenStore.set(token, {
-    userId: 1,
+    userId: req.session.userId,
     userData: defaultAdminUser,
     createdAt: Date.now(),
     expiresAt: Date.now() + (7 * 24 * 60 * 60 * 1000)
   });
   
-  console.log("🔧 Development bypass successful - using default admin user");
+  console.log("🔧 Development JWT token issued for session user:", req.session.userId);
   
   return res.json({
     user: defaultAdminUser,

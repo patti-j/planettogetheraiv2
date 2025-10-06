@@ -86,11 +86,15 @@ export class RealtimeVoiceService {
   }
 
   /**
-   * Authenticate WebSocket client
+   * Authenticate WebSocket client using JWT token
+   * 
+   * Requires valid JWT token from query parameter or Authorization header.
+   * Frontend obtains JWT token via /api/auth/dev-token (development) or
+   * regular login flow (production).
    */
   private async authenticateClient(req: IncomingMessage): Promise<{ id: number; username: string } | null> {
     try {
-      // Extract token from URL query params or authorization header
+      // Extract JWT token from query parameter or Authorization header
       const url = new URL(req.url || '', `http://${req.headers.host}`);
       const token = url.searchParams.get('token') || 
                    req.headers.authorization?.replace('Bearer ', '');
@@ -102,6 +106,7 @@ export class RealtimeVoiceService {
 
       // Verify JWT token
       const decoded = jwt.verify(token, this.jwtSecret) as { userId: number; username: string };
+      console.log(`[Realtime Voice] ✅ Authenticated user ${decoded.username} (ID: ${decoded.userId})`);
       return { id: decoded.userId, username: decoded.username };
     } catch (error) {
       console.error('[Realtime Voice] Authentication failed:', error);
