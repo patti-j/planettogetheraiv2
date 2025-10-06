@@ -347,13 +347,73 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initialize MediaRecorder for Whisper transcription
-  const mediaRecorder = useRef<MediaRecorder | null>(null);
-  const audioChunks = useRef<Blob[]>([]);
+  // Initialize Web Speech API for live transcription
+  const recognition = useRef<any>(null);
 
   useEffect(() => {
-    console.log('Initializing Whisper-based speech recognition...');
-    // Whisper transcription is server-based, no browser initialization needed
+    // Check if browser supports Web Speech API
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    
+    if (SpeechRecognition) {
+      console.log('Initializing Web Speech API for live transcription...');
+      recognition.current = new SpeechRecognition();
+      recognition.current.continuous = true;
+      recognition.current.interimResults = true;
+      recognition.current.lang = 'en-US';
+      
+      recognition.current.onresult = (event: any) => {
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript + ' ';
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        // Update input with transcription in real-time
+        if (finalTranscript) {
+          const currentText = inputMessage.trim();
+          setInputMessage(currentText ? `${currentText} ${finalTranscript.trim()}` : finalTranscript.trim());
+        } else if (interimTranscript) {
+          // Show interim results with visual indicator
+          const currentText = inputMessage.replace(/\s*\[listening\.\.\.\]$/, '').trim();
+          setInputMessage(currentText ? `${currentText} ${interimTranscript} [listening...]` : `${interimTranscript} [listening...]`);
+        }
+      };
+      
+      recognition.current.onerror = (event: any) => {
+        console.error('Speech recognition error:', event.error);
+        if (event.error === 'no-speech') {
+          showVoiceError('No speech detected. Please try again.');
+        } else if (event.error === 'not-allowed') {
+          showVoiceError('Microphone access denied. Please enable microphone permissions.');
+        } else {
+          showVoiceError(`Speech recognition error: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+      
+      recognition.current.onend = () => {
+        console.log('Speech recognition ended');
+        if (isListening) {
+          // Clean up interim results marker
+          setInputMessage(prev => prev.replace(/\s*\[listening\.\.\.\]$/, '').trim());
+        }
+        setIsListening(false);
+      };
+    } else {
+      console.warn('Web Speech API not supported in this browser. Voice input unavailable.');
+    }
+    
+    return () => {
+      if (recognition.current) {
+        recognition.current.stop();
+      }
+    };
   }, []);
 
   // Add global keyboard shortcut (Cmd/Ctrl+K) to open Max
@@ -720,184 +780,34 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   };
 
   const startListening = async () => {
+    if (!recognition.current) {
+      showVoiceError("Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.");
+      return;
+    }
+
     try {
-      console.log('Starting Whisper-based recording...');
-      
-      // Request microphone access
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      
-      // Clear previous audio chunks
-      audioChunks.current = [];
-      
-      // Create new MediaRecorder with fallback format support
-      let mimeType = 'audio/webm';
-      if (!MediaRecorder.isTypeSupported('audio/webm')) {
-        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
-          mimeType = 'audio/webm;codecs=opus';
-        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
-          mimeType = 'audio/mp4';
-        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
-          mimeType = 'audio/wav';
-        }
-      }
-      
-      console.log('Using MediaRecorder MIME type:', mimeType);
-      mediaRecorder.current = new MediaRecorder(stream, {
-        mimeType: mimeType
-      });
-      
-      // Set up periodic audio processing for streaming transcription
-      let intervalId: NodeJS.Timeout | null = null;
-      
-      mediaRecorder.current.ondataavailable = (event) => {
-        if (event.data.size > 0) {
-          audioChunks.current.push(event.data);
-        }
-      };
-      
-      mediaRecorder.current.onstop = async () => {
-        console.log('Recording stopped, transcribing with Whisper...');
-        setIsListening(false);
-        
-        // Clean up interval
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-        
-        // Re-enable input for typing (remove readonly)
-        if (inputRef.current) {
-          inputRef.current.removeAttribute('readonly');
-        }
-        
-        // Check if we have valid audio data
-        if (audioChunks.current.length === 0) {
-          console.error('No audio data recorded');
-          showVoiceError("No audio was recorded. Please try speaking again.");
-          return;
-        }
-        
-        // Create blob from recorded chunks (use the same mimeType as MediaRecorder)
-        const mimeType = mediaRecorder.current?.mimeType || 'audio/webm';
-        const audioBlob = new Blob(audioChunks.current, { type: mimeType });
-        console.log('Audio blob created:', audioBlob.size, 'bytes, type:', mimeType);
-        
-        // Check if audio blob is empty or too small
-        if (audioBlob.size < 1000) {
-          console.error('Audio blob too small:', audioBlob.size, 'bytes');
-          showVoiceError("Recording too short. Please speak for at least 1-2 seconds.");
-          return;
-        }
-        
-        // Send to Whisper API for transcription
-        const formData = new FormData();
-        formData.append('audio', audioBlob, 'recording.webm');
-        
-        try {
-          console.log('Sending audio to Whisper API...');
-          const response = await fetch('/api/ai-agent/voice', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
-            },
-            body: formData
-          });
-          
-          console.log('Whisper API response status:', response.status);
-          const result = await response.json();
-          console.log('Whisper API result:', result);
-          
-          if (result.success && result.text) {
-            console.log('Transcription successful:', result.text);
-            // Add transcribed text to input, removing any interim "..." markers
-            const baseMessage = inputMessage.replace(/\.\.\.$/, '').trim();
-            setInputMessage(baseMessage ? `${baseMessage} ${result.text}` : result.text);
-            
-            // Focus input and position cursor at end after transcription
-            if (inputRef.current) {
-              inputRef.current.focus();
-              const newMessage = baseMessage ? `${baseMessage} ${result.text}` : result.text;
-              inputRef.current.setSelectionRange(newMessage.length, newMessage.length);
-            }
-          } else {
-            console.error('Transcription failed:', result);
-            showVoiceError(`Transcription failed: ${result.error || "Couldn't understand what you said"}. Please try again.`);
-          }
-        } catch (error) {
-          console.error('Transcription error:', error);
-          showVoiceError("Network error during transcription. Please check your connection and try again.");
-        }
-        
-        // Stop all tracks to release microphone
-        stream.getTracks().forEach(track => track.stop());
-      };
-      
-      // Start recording with timeslice for periodic data
-      mediaRecorder.current.start(3000); // Get data every 3 seconds for streaming
+      console.log('Starting live speech recognition...');
       setIsListening(true);
-      console.log('Recording started with Whisper transcription');
       
-      // Set up periodic transcription for streaming feedback
-      intervalId = setInterval(async () => {
-        if (mediaRecorder.current && mediaRecorder.current.state === 'recording' && audioChunks.current.length > 0) {
-          // Create interim transcription from current chunks
-          const tempChunks = [...audioChunks.current];
-          if (tempChunks.length > 0) {
-            try {
-              const mimeType = mediaRecorder.current.mimeType || 'audio/webm';
-              const tempBlob = new Blob(tempChunks, { type: mimeType });
-              
-              if (tempBlob.size >= 5000) { // Only process if we have enough data
-                const formData = new FormData();
-                formData.append('audio', tempBlob, 'interim.webm');
-                
-                const response = await fetch('/api/ai-agent/voice', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
-                  },
-                  body: formData
-                });
-                
-                const result = await response.json();
-                if (result.success && result.text) {
-                  // Update input with interim transcription
-                  const baseMessage = inputMessage.split('...')[0].trim(); // Remove previous interim text
-                  setInputMessage(baseMessage ? `${baseMessage} ${result.text}...` : `${result.text}...`);
-                  
-                  // Update cursor position
-                  if (inputRef.current) {
-                    const newMessage = baseMessage ? `${baseMessage} ${result.text}...` : `${result.text}...`;
-                    inputRef.current.setSelectionRange(newMessage.length, newMessage.length);
-                  }
-                }
-              }
-            } catch (error) {
-              console.log('Interim transcription failed, continuing...', error);
-            }
-          }
-        }
-      }, 3000);
+      // Start speech recognition
+      recognition.current.start();
       
-      // Focus input without triggering keyboard on mobile
+      // Focus input for better UX
       if (inputRef.current) {
-        inputRef.current.setAttribute('readonly', 'true');
         inputRef.current.focus();
-        inputRef.current.setSelectionRange(inputMessage.length, inputMessage.length);
       }
-      
     } catch (error) {
-      console.error('Microphone access error:', error);
+      console.error('Speech recognition error:', error);
       setIsListening(false);
       
-      if ((error as any).name === 'NotAllowedError') {
+      if ((error as any).message?.includes('not-allowed')) {
         toast({
           title: "Microphone Permission Needed",
           description: "Please allow microphone access to use voice input",
           variant: "destructive"
         });
       } else {
-        showVoiceError("Unable to access microphone. Please check your device settings.");
+        showVoiceError("Unable to start voice recognition. Please try again.");
       }
     }
   };
