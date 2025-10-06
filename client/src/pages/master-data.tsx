@@ -1060,9 +1060,10 @@ export default function MasterDataPage() {
   };
 
   // Update record counts when dataset size changes
-  const handleDatasetSizeChange = (size: 'small' | 'medium' | 'large') => {
-    setDatasetSize(size);
-    setRecordCounts(datasetSizePresets[size]);
+  const handleDatasetSizeChange = (size: string) => {
+    const validSize = size as 'small' | 'medium' | 'large';
+    setDatasetSize(validSize);
+    setRecordCounts(datasetSizePresets[validSize]);
   };
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
