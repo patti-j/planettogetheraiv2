@@ -156,7 +156,7 @@ app.use((req, res, next) => {
     server,
     path: '/api/v1/stream/production-events',
     maxPayload: 64 * 1024, // 64KB max message size
-    verifyClient: (info) => {
+    verifyClient: (info: any) => {
       // Verify origin for security (must match HTTP CORS exactly)
       const origin = info.origin;
       const allowedOrigins = [
@@ -239,7 +239,7 @@ app.use((req, res, next) => {
     server,
     path: '/api/v1/realtime-voice',
     maxPayload: 1 * 1024 * 1024, // 1MB for audio data
-    verifyClient: (info) => {
+    verifyClient: (info: any) => {
       // Verify origin for security
       const origin = info.origin;
       

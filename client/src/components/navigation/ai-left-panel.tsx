@@ -157,19 +157,32 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         const response = await fetch('/api/ai/models');
         if (response.ok) {
           const data = await response.json();
-          setAvailableModels(data.models || []);
+          if (data.models && data.models.length > 0) {
+            setAvailableModels(data.models);
+          } else {
+            // Use fallback if API returns empty list
+            useFallbackModels();
+          }
+        } else {
+          // Use fallback if API returns non-OK response
+          console.error('Failed to fetch models: API returned status', response.status);
+          useFallbackModels();
         }
       } catch (error) {
         console.error('Failed to fetch models:', error);
-        // Fallback to default models if API fails
-        setAvailableModels([
-          { id: 'gpt-4o', created: Date.now() / 1000, owned_by: 'openai' },
-          { id: 'gpt-4-turbo', created: Date.now() / 1000, owned_by: 'openai' },
-          { id: 'gpt-3.5-turbo', created: Date.now() / 1000, owned_by: 'openai' }
-        ]);
+        // Fallback to default models if API fails with network error
+        useFallbackModels();
       } finally {
         setIsLoadingModels(false);
       }
+    };
+    
+    const useFallbackModels = () => {
+      setAvailableModels([
+        { id: 'gpt-4o', created: Date.now() / 1000, owned_by: 'openai' },
+        { id: 'gpt-4-turbo', created: Date.now() / 1000, owned_by: 'openai' },
+        { id: 'gpt-3.5-turbo', created: Date.now() / 1000, owned_by: 'openai' }
+      ]);
     };
     
     fetchModels();
