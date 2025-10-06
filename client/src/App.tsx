@@ -10,6 +10,7 @@ import { FullScreenProvider } from "@/contexts/FullScreenContext";
 import { LayoutDensityProvider } from "@/contexts/LayoutDensityContext";
 import { ViewModeProvider } from "@/hooks/use-view-mode";
 import { SplitScreenProvider } from "@/contexts/SplitScreenContext";
+import { AgentProvider } from "@/contexts/AgentContext";
 import { Switch, Route, useLocation } from "wouter";
 import { runTestsInDevelopment } from "./lib/federation-test-harness";
 // FederationTestStatus removed - not needed
@@ -237,13 +238,14 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <DndProvider backend={HTML5Backend}>
-        <TourProvider>
-          <MaxDockProvider>
-            <NavigationProvider>
-              <FullScreenProvider>
-                <LayoutDensityProvider>
-                  <SplitScreenProvider>
-                    <ViewModeProvider>
+        <AgentProvider>
+          <TourProvider>
+            <MaxDockProvider>
+              <NavigationProvider>
+                <FullScreenProvider>
+                  <LayoutDensityProvider>
+                    <SplitScreenProvider>
+                      <ViewModeProvider>
                     {/* Federation test status removed - not needed */}
                     
                     {/* Portal Routes - Always accessible, independent of main app auth */}
@@ -279,13 +281,14 @@ export default function App() {
                         })()}
                       </>
                     )}
-                    </ViewModeProvider>
-                  </SplitScreenProvider>
-                </LayoutDensityProvider>
-              </FullScreenProvider>
-            </NavigationProvider>
-          </MaxDockProvider>
-        </TourProvider>
+                      </ViewModeProvider>
+                    </SplitScreenProvider>
+                  </LayoutDensityProvider>
+                </FullScreenProvider>
+              </NavigationProvider>
+            </MaxDockProvider>
+          </TourProvider>
+        </AgentProvider>
       </DndProvider>
     </QueryClientProvider>
   );
