@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -1315,6 +1315,67 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden"
             >
               <div className="relative flex-1 overflow-hidden border rounded-md bg-background/50">
+                {/* Voice Session Status Banner */}
+                {realtimeVoice.isSessionActive && (
+                  <div className="sticky top-0 z-10 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-b border-green-500/30 px-3 py-2">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        {realtimeVoice.isListening ? (
+                          <>
+                            <div className="relative">
+                              <Mic className="w-4 h-4 text-green-600 dark:text-green-400 animate-pulse" />
+                              <div className="absolute inset-0 bg-green-600 dark:bg-green-400 rounded-full animate-ping opacity-75"></div>
+                            </div>
+                            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                              Listening...
+                            </span>
+                          </>
+                        ) : realtimeVoice.isSpeaking ? (
+                          <>
+                            <Volume2 className="w-4 h-4 text-blue-600 dark:text-blue-400 animate-pulse" />
+                            <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                              Max is speaking...
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                              Voice Session Active
+                            </span>
+                          </>
+                        )}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => realtimeVoice.stopSession()}
+                        className="h-7 text-red-600 hover:text-red-700 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-900/20"
+                      >
+                        <StopCircle className="w-3 h-3 mr-1" />
+                        End
+                      </Button>
+                    </div>
+                    {/* Live Transcripts */}
+                    {(realtimeVoice.userTranscript || realtimeVoice.aiTranscript) && (
+                      <div className="mt-2 space-y-1">
+                        {realtimeVoice.userTranscript && (
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">You: </span>
+                            <span className="italic">{realtimeVoice.userTranscript}</span>
+                          </div>
+                        )}
+                        {realtimeVoice.aiTranscript && (
+                          <div className="text-xs text-muted-foreground">
+                            <span className="font-medium">Max: </span>
+                            <span className="italic">{realtimeVoice.aiTranscript}</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+                
                 <div 
                   className="absolute inset-0 p-3 overflow-y-auto" 
                   ref={scrollAreaRef}
