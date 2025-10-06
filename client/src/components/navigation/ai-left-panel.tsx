@@ -1657,39 +1657,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             <TabsContent value="settings" className="flex-1 overflow-hidden mt-2 data-[state=inactive]:hidden">
               <ScrollArea className="h-full px-4">
                 <div className="space-y-6 pt-2 pb-4">
-                  {/* Model Settings */}
+                  {/* Model Settings - Using standardized GPT-4o model */}
                   <div className="space-y-4">
-                    <div>
-                      <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                        <Sparkles className="w-4 h-4" />
-                        AI Model
-                      </h3>
-                      <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))} disabled={isLoadingModels}>
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select a model"} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {availableModels.length > 0 ? (
-                            availableModels.map((model) => (
-                              <SelectItem key={model.id} value={model.id}>
-                                {model.id.includes('gpt-5') && '⭐ '}
-                                {model.id}
-                                {model.id.includes('gpt-5') && ' (Latest)'}
-                                {model.id.includes('gpt-4o') && ' (Recommended)'}
-                                {model.id.includes('3.5') && ' (Fast)'}
-                              </SelectItem>
-                            ))
-                          ) : (
-                            <>
-                              <SelectItem value="gpt-4o">GPT-4o (Recommended)</SelectItem>
-                              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
-                              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast)</SelectItem>
-                            </>
-                          )}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
                     <div>
                       <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
                         <Sparkles className="w-4 h-4" />
