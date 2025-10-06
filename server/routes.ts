@@ -774,13 +774,23 @@ router.get("/api/recent-pages", async (req, res) => {
 });
 
 // Basic manufacturing data routes
-router.get("/plants", async (req, res) => {
+router.get("/api/plants", async (req, res) => {
   try {
     const plants = await storage.getPlants();
     res.json(plants);
   } catch (error) {
     console.error("Error fetching plants:", error);
     res.status(500).json({ message: "Failed to fetch plants" });
+  }
+});
+
+router.get("/api/jobs", async (req, res) => {
+  try {
+    const jobs = await storage.getJobs();
+    res.json(jobs);
+  } catch (error) {
+    console.error("Error fetching jobs:", error);
+    res.status(500).json({ message: "Failed to fetch jobs" });
   }
 });
 
@@ -6026,9 +6036,13 @@ router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
     const entityTypes = Object.keys(finalRecordCounts);
     const results: Record<string, any> = {};
     
+    console.log(`[AI Bulk Generate] Entity types to process:`, entityTypes);
+    console.log(`[AI Bulk Generate] Available table schemas:`, Object.keys(masterDataTables));
+    
     // Process entities with OpenAI
     const processEntity = async (entityType: string) => {
       try {
+        console.log(`[AI Bulk Generate] Processing entity: ${entityType}`);
         const recordCount = finalRecordCounts[entityType] || 10;
         const companyContext = companyInfo ? `\n\nCOMPANY CONTEXT: ${companyInfo}\nGenerate data relevant to this specific company/industry.` : '';
         
@@ -6100,10 +6114,17 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
 
         if (openaiResponse.ok) {
           const aiResult = await openaiResponse.json();
+          console.log(`[AI Bulk Generate] OpenAI response for ${entityType}:`, JSON.stringify(aiResult).substring(0, 500));
           const suggestions = JSON.parse(aiResult.choices[0].message.content);
+          console.log(`[AI Bulk Generate] Parsed ${suggestions.suggestions?.length || 0} suggestions for ${entityType}`);
           
           let savedCount = 0;
           const tableSchema = masterDataTables[entityType as keyof typeof masterDataTables];
+          
+          if (!tableSchema) {
+            console.error(`[AI Bulk Generate] No table schema found for ${entityType}`);
+            return { success: false, error: `No table schema for ${entityType}` };
+          }
           
           if (tableSchema) {
             const createPromises = suggestions.suggestions?.map(async (suggestion: any) => {

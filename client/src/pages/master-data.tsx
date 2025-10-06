@@ -1150,13 +1150,13 @@ export default function MasterDataPage() {
       { key: 'promisedDate', label: 'Promised Date', editable: true, type: 'date' }
     ],
     jobs: [
-      { key: 'externalId', label: 'Job ID', editable: false, required: true },
+      { key: 'id', label: 'ID', editable: false, required: true },
+      { key: 'external_id', label: 'External ID', editable: false },
+      { key: 'name', label: 'Name', editable: true, required: true },
       { key: 'description', label: 'Description', editable: true },
       { key: 'priority', label: 'Priority', editable: true, type: 'number' },
-      { key: 'scheduled', label: 'Scheduled', editable: false, type: 'boolean' },
-      { key: 'needDateTime', label: 'Need Date', editable: true, type: 'date' },
-      { key: 'product', label: 'Product', editable: true },
-      { key: 'qty', label: 'Quantity', editable: true, type: 'number' }
+      { key: 'scheduled_status', label: 'Scheduled', editable: false },
+      { key: 'need_date_time', label: 'Need Date', editable: true, type: 'date' }
     ],
     'job-templates': [
       { key: 'templateNumber', label: 'Template Number', editable: true, required: true },
