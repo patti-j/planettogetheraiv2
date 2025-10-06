@@ -1610,12 +1610,25 @@ Would you like me to analyze any specific area in detail?`;
     - PT Resource Capabilities (ptresourcecapabilities) for resource-operation matching
     - PT Manufacturing Orders for production planning
     - Drag-and-drop rescheduling with real-time validation
-    - Resource capability matching for operations
+    
+    Resource Allocation System (HOW IT WORKS):
+    - Each resource in ptresources represents a piece of equipment/machine (e.g., "Milling Machine #1", "Fermentation Tank A")
+    - Resources have capabilities stored in ptresourcecapabilities table linking resource_id to capability_id
+    - Capability IDs map to specific manufacturing capabilities:
+      * 1 = MILLING (cutting/shaping materials)
+      * 2 = MASHING (mixing/crushing operations)
+      * 5 = FERMENTATION (brewing/biological processes)
+      * Plus other manufacturing capabilities
+    - Operations are scheduled on resources that have the matching capabilities
+    - Example: A "Milling" operation can only run on resources with capability_id=1 (MILLING)
+    - The system validates drag-and-drop moves to ensure operations stay on capable resources
+    - throughput_modifier in ptresourcecapabilities adjusts processing speed for each resource-capability pair
     
     ALWAYS PRIORITIZE PT APPLICATION CONTEXT:
     - When asked about algorithms or features, reference THE ACTUAL PT algorithms above
     - When asked about scheduling, reference PT scheduling capabilities (ASAP, ALAP, etc.)
-    - When asked about resources, reference PT resource management
+    - When asked about resource allocation, explain the PT capability-based matching system above
+    - When asked about resources, reference ptresources table and capability system
     - Only provide general manufacturing information if specifically asked OR if PT context doesn't apply
     
     ${relevantMemories ? `\n    PERSONAL CONTEXT:\n    ${relevantMemories}\n` : ''}
