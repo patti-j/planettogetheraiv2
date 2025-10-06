@@ -9,6 +9,7 @@ import routes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage as dbStorage, DatabaseStorage } from "./storage-new";
+import { seedDatabase } from "./seed";
 
 // Extend session interface
 declare module "express-session" {
@@ -231,6 +232,16 @@ app.use((req, res, next) => {
       activeConnections.delete(connectionId);
     });
   });
+  
+  // Initialize database and seed data
+  (async () => {
+    try {
+      await seedDatabase();
+      log(`✅ Database initialized successfully`);
+    } catch (error) {
+      log(`ℹ️ Database seeding skipped (already seeded or error): ${error}`);
+    }
+  })();
   
   // Start HTTP server
   server.listen(port, "0.0.0.0", () => {
