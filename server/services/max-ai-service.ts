@@ -2222,8 +2222,10 @@ Guidelines:
               role: 'user',
               content: `Original question: "${query}"
 
-Retrieved data: ${JSON.stringify(data.slice(0, 15), null, 2)}
+Retrieved data (showing ${Math.min(data.length, 50)} of ${data.length} records): ${JSON.stringify(data.slice(0, 50), null, 2)}
 Total records: ${data.length}
+
+IMPORTANT: The data above may be a sample. Analyze the FULL dataset shown (all ${data.length} records) to answer accurately, especially for filtering/counting queries.
 
 Please answer their question using this data.`
             }
