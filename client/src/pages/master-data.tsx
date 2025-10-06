@@ -1083,12 +1083,9 @@ export default function MasterDataPage() {
 
   // Update record counts when dataset size changes
   const handleDatasetSizeChange = (size: string) => {
-    console.log('📻 Radio button clicked! Size:', size);
     const validSize = size as 'small' | 'medium' | 'large';
-    console.log('📻 Setting dataset size to:', validSize);
     setDatasetSize(validSize);
     setRecordCounts(datasetSizePresets[validSize]);
-    console.log('📻 Record counts updated:', datasetSizePresets[validSize]);
   };
 
   // Define columns for each entity type
@@ -1581,33 +1578,35 @@ export default function MasterDataPage() {
               {/* Dataset Size Selection */}
               <div className="space-y-3">
                 <label className="text-sm font-medium">Dataset Size</label>
-                <RadioGroup 
-                  value={datasetSize} 
-                  onValueChange={handleDatasetSizeChange}
-                  className="flex flex-row space-x-6"
-                >
-                  <div className="flex items-center space-x-2" onClick={() => {
-                    console.log('🔴 Small wrapper clicked');
-                    handleDatasetSizeChange('small');
-                  }}>
-                    <RadioGroupItem value="small" id="small" data-testid="radio-small" />
-                    <Label htmlFor="small" className="text-sm cursor-pointer">Small (3-5 records each)</Label>
+                <div className="flex flex-row space-x-6">
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer" 
+                    onClick={() => handleDatasetSizeChange('small')}
+                  >
+                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'small' ? 'border-primary bg-primary' : 'border-input'}`}>
+                      {datasetSize === 'small' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    </div>
+                    <span className="text-sm">Small (3-5 records each)</span>
                   </div>
-                  <div className="flex items-center space-x-2" onClick={() => {
-                    console.log('🟡 Medium wrapper clicked');
-                    handleDatasetSizeChange('medium');
-                  }}>
-                    <RadioGroupItem value="medium" id="medium" data-testid="radio-medium" />
-                    <Label htmlFor="medium" className="text-sm cursor-pointer">Medium (8-15 records each)</Label>
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer" 
+                    onClick={() => handleDatasetSizeChange('medium')}
+                  >
+                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'medium' ? 'border-primary bg-primary' : 'border-input'}`}>
+                      {datasetSize === 'medium' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    </div>
+                    <span className="text-sm">Medium (8-15 records each)</span>
                   </div>
-                  <div className="flex items-center space-x-2" onClick={() => {
-                    console.log('🟢 Large wrapper clicked');
-                    handleDatasetSizeChange('large');
-                  }}>
-                    <RadioGroupItem value="large" id="large" data-testid="radio-large" />
-                    <Label htmlFor="large" className="text-sm cursor-pointer">Large (20-50 records each)</Label>
+                  <div 
+                    className="flex items-center space-x-2 cursor-pointer" 
+                    onClick={() => handleDatasetSizeChange('large')}
+                  >
+                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'large' ? 'border-primary bg-primary' : 'border-input'}`}>
+                      {datasetSize === 'large' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    </div>
+                    <span className="text-sm">Large (20-50 records each)</span>
                   </div>
-                </RadioGroup>
+                </div>
               </div>
 
               {/* Advanced Options */}
@@ -1658,19 +1657,20 @@ export default function MasterDataPage() {
                   rows={3}
                 />
               </div>
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="replace-existing"
-                  checked={replaceExisting}
-                  onCheckedChange={(checked) => setReplaceExisting(checked === true)}
-                  data-testid="checkbox-replace-existing"
-                />
-                <label 
-                  htmlFor="replace-existing" 
-                  className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                >
+              <div 
+                className="flex items-center space-x-2 cursor-pointer"
+                onClick={() => setReplaceExisting(!replaceExisting)}
+              >
+                <div className={`h-4 w-4 rounded border-2 flex items-center justify-center ${replaceExisting ? 'bg-primary border-primary' : 'border-input'}`}>
+                  {replaceExisting && (
+                    <svg className="h-3 w-3 text-white" viewBox="0 0 12 12" fill="none">
+                      <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  )}
+                </div>
+                <span className="text-sm font-medium leading-none">
                   Replace existing data (delete all current master data first)
-                </label>
+                </span>
               </div>
               <Button 
                 onClick={handleBulkGenerate}
