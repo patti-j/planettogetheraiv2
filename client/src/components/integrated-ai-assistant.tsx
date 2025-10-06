@@ -93,7 +93,6 @@ export default function IntegratedAIAssistant() {
   const [trainingData, setTrainingData] = useState<any[]>([]);
   
   const { currentAgent, availableAgents, switchToAgent } = useAgent();
-  console.log('🤖 Max AI - Agent Context:', { currentAgent, availableAgents });
   
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{

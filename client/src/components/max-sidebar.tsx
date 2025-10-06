@@ -1386,11 +1386,11 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
               <Button 
                 variant="secondary" 
                 size="default" 
-                className="flex-1 bg-white text-purple-700 hover:bg-purple-50"
+                className="flex-1 bg-white text-purple-700 hover:bg-purple-50 font-semibold"
               >
-                <Sparkles className="h-4 w-4 mr-2" />
-                <span className="font-semibold">{currentAgent.displayName}</span>
-                <ChevronDown className="h-4 w-4 ml-auto" />
+                <Sparkles className="h-4 w-4 mr-2 text-purple-700" />
+                <span className="font-semibold text-purple-700">{currentAgent.displayName}</span>
+                <ChevronDown className="h-4 w-4 ml-auto text-purple-700" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-64">
