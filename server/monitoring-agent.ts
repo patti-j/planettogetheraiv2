@@ -3,8 +3,8 @@ import { db } from "./db";
 import { ptJobOperations, ptResources } from "../shared/schema";
 // import { alerts } from "../shared/schema";
 import { eq, sql, gte, lte, and, desc } from "drizzle-orm";
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 
-// the newest OpenAI model is "gpt-5" which was released August 7, 2025. do not change this unless explicitly requested by the user
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface SystemMetrics {
@@ -224,7 +224,7 @@ export class SystemMonitoringAgent {
       `;
 
       const response = await openai.chat.completions.create({
-        model: "gpt-5",
+        model: DEFAULT_MODEL,
         messages: [{ role: "user", content: prompt }],
         response_format: { type: "json_object" },
         max_completion_tokens: 500

@@ -6,6 +6,9 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 ## Recent Changes
 
 **October 6, 2025**
+- **AI Model Standardization**: Removed references to unavailable models (GPT-5, o1-mini, o1-preview). System now exclusively uses GPT-4o (the current most capable available model via API) with temperature 0.3 for all AI operations. Created centralized configuration at server/config/ai-model.ts. Removed model selection dropdown from UI since we're using a single standardized model for consistency and maintainability.
+
+**October 6, 2025 (Earlier)**
 - **JWT Authentication Performance Optimization**: Replaced old requireAuth middleware (N+1 query problem with 10+ database queries per request) with optimized enhancedAuth middleware that uses JOIN queries. This reduces authentication overhead from 13+ queries to 1-2 queries per request, significantly improving page load performance. The new implementation maintains backwards compatibility with existing endpoints while supporting both JWT and API key authentication.
 - **LSP Errors Fixed**: Removed duplicate drizzle-orm imports that were causing 112+ TypeScript LSP errors in server/routes.ts. Consolidated all imports and added enhanced-auth-middleware import.
 - **PT Plants Database Schema Fix**: Fixed critical database error where ptplants table was missing columns defined in Drizzle schema. Made publishDate, instanceId, and plantId columns nullable in schema, then added all missing columns (publish_date, instance_id, plant_id, notes, bottleneck_threshold, heavy_load_threshold, department_count, stable_days, financial fields, location fields, capacity, and operational_metrics) via SQL ALTER TABLE. Verified fix resolves "column does not exist" errors in shop floor and plants management pages.
