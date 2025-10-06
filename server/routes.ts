@@ -5935,36 +5935,199 @@ router.delete("/api/max-chat-messages/:userId", async (req, res) => {
 });
 
 // Helper function to generate sample actions
-function generateSampleActions(agentConnectionId: number, count: number = 10) {
-  const actionTypes = [
-    'schedule_optimization', 
-    'resource_allocation', 
-    'data_analysis', 
-    'quality_check',
-    'inventory_update',
-    'production_forecast',
-    'bottleneck_detection',
-    'performance_analysis'
+function generateSampleActions(agentConnectionId: number, count: number = 15) {
+  const actions = [
+    {
+      actionType: 'schedule_optimization',
+      actionDetails: {
+        algorithm: 'Critical Path Method',
+        affectedJobs: 24,
+        optimizationTime: 1250,
+        improvementPercent: 15.5,
+        beforeDuration: 480,
+        afterDuration: 406
+      },
+      result: 'Optimized schedule - reduced makespan by 15.5%',
+      errorMessage: null
+    },
+    {
+      actionType: 'resource_allocation',
+      actionDetails: {
+        resourceType: 'CNC Machine',
+        resourceCount: 5,
+        utilizationBefore: 65,
+        utilizationAfter: 87,
+        conflictsResolved: 3
+      },
+      result: 'Resources reallocated - utilization improved to 87%',
+      errorMessage: null
+    },
+    {
+      actionType: 'bottleneck_detection',
+      actionDetails: {
+        analyzedWorkCenters: 12,
+        bottlenecksFound: 2,
+        bottlenecks: ['Assembly Line 3', 'Quality Control Station'],
+        recommendedAction: 'Add parallel resources or split operations'
+      },
+      result: 'Detected 2 bottlenecks affecting throughput',
+      errorMessage: null
+    },
+    {
+      actionType: 'quality_check',
+      actionDetails: {
+        samplesAnalyzed: 500,
+        defectRate: 2.3,
+        qualityScore: 97.7,
+        trendsIdentified: ['Material variance in Batch B-2345']
+      },
+      result: 'Quality analysis completed - 97.7% pass rate',
+      errorMessage: null
+    },
+    {
+      actionType: 'inventory_update',
+      actionDetails: {
+        itemsUpdated: 156,
+        reorderPointsAdjusted: 23,
+        safetyStockOptimized: true,
+        projectedSavings: 12500
+      },
+      result: 'Inventory levels optimized - $12,500 projected savings',
+      errorMessage: null
+    },
+    {
+      actionType: 'production_forecast',
+      actionDetails: {
+        forecastPeriod: '30 days',
+        productsAnalyzed: 45,
+        accuracyScore: 94.2,
+        demandVariance: 8.5,
+        recommendations: ['Increase production for SKU-789', 'Reduce inventory for SKU-123']
+      },
+      result: 'Forecast generated with 94.2% confidence',
+      errorMessage: null
+    },
+    {
+      actionType: 'performance_analysis',
+      actionDetails: {
+        kpisMeasured: 8,
+        oee: 78.5,
+        availability: 92.0,
+        performance: 88.5,
+        quality: 96.3
+      },
+      result: 'OEE calculated at 78.5% - room for improvement',
+      errorMessage: null
+    },
+    {
+      actionType: 'data_analysis',
+      actionDetails: {
+        dataPointsProcessed: 50000,
+        patternsIdentified: 5,
+        anomaliesDetected: 2,
+        correlationStrength: 0.87
+      },
+      result: 'Analysis complete - 5 patterns identified',
+      errorMessage: null
+    },
+    {
+      actionType: 'capacity_planning',
+      actionDetails: {
+        planningHorizon: '3 months',
+        capacityUtilization: 82,
+        peakDemandCoverage: 95,
+        recommendedExpansion: '2 additional work centers'
+      },
+      result: 'Capacity plan updated - 95% demand coverage',
+      errorMessage: null
+    },
+    {
+      actionType: 'maintenance_scheduling',
+      actionDetails: {
+        equipmentChecked: 15,
+        maintenanceScheduled: 3,
+        predictedFailures: 1,
+        downtimeReduction: '4 hours/month'
+      },
+      result: 'Predictive maintenance scheduled - preventing 1 failure',
+      errorMessage: null
+    },
+    {
+      actionType: 'supply_chain_optimization',
+      actionDetails: {
+        suppliersAnalyzed: 8,
+        leadTimeReduction: 2.5,
+        costSavings: 8750,
+        riskScore: 'Low'
+      },
+      result: 'Supply chain optimized - 2.5 days lead time reduction',
+      errorMessage: null
+    },
+    {
+      actionType: 'workflow_automation',
+      actionDetails: {
+        processesAutomated: 3,
+        timeSaved: '12 hours/week',
+        errorReduction: 95,
+        roiEstimate: '250%'
+      },
+      result: 'Workflow automated - saving 12 hours weekly',
+      errorMessage: null
+    },
+    {
+      actionType: 'demand_planning',
+      actionDetails: {
+        forecastAccuracy: 91.3,
+        seasonalityDetected: true,
+        trendsIdentified: 3,
+        bufferStockOptimized: true
+      },
+      result: 'Demand plan updated with 91.3% accuracy',
+      errorMessage: null
+    },
+    {
+      actionType: 'energy_optimization',
+      actionDetails: {
+        energyConsumption: '2,450 kWh',
+        reductionAchieved: 18,
+        costSavings: 3200,
+        carbonReduction: '0.8 tons'
+      },
+      result: 'Energy usage optimized - 18% reduction achieved',
+      errorMessage: null
+    },
+    {
+      actionType: 'compliance_check',
+      actionDetails: {
+        regulationsChecked: 12,
+        complianceScore: 98,
+        issuesFound: 1,
+        remediationRequired: 'Update SOP documentation'
+      },
+      result: 'Compliance verified - 98% compliant, 1 issue to address',
+      errorMessage: null
+    }
   ];
   
-  const results = ['success', 'completed', 'optimized', 'analyzed'];
   const now = new Date();
   
-  return Array.from({ length: count }, (_, i) => ({
-    id: i + 1,
-    agentConnectionId,
-    actionType: actionTypes[Math.floor(Math.random() * actionTypes.length)],
-    actionDetails: {
-      affectedResources: Math.floor(Math.random() * 10) + 1,
-      processingTime: Math.floor(Math.random() * 500) + 100,
-      dataPoints: Math.floor(Math.random() * 1000) + 100
-    },
-    performedAt: new Date(now.getTime() - (i * 15 * 60 * 1000)).toISOString(), // 15 min intervals
-    sessionId: `session-${Math.floor(Math.random() * 1000)}`,
-    userId: 1,
-    result: results[Math.floor(Math.random() * results.length)],
-    errorMessage: null
-  }));
+  // Select random actions and assign timestamps
+  return Array.from({ length: Math.min(count, actions.length) }, (_, i) => {
+    const action = actions[i % actions.length];
+    const hasError = Math.random() < 0.1; // 10% chance of error
+    
+    return {
+      id: i + 1,
+      agentConnectionId,
+      actionType: action.actionType,
+      actionDetails: action.actionDetails,
+      performedAt: new Date(now.getTime() - (i * 30 * 60 * 1000)).toISOString(), // 30 min intervals going back
+      sessionId: `session-${1000 + Math.floor(i / 3)}`, // Group actions in sessions
+      userId: 1,
+      result: hasError ? 'failed' : action.result,
+      errorMessage: hasError ? `Failed to complete ${action.actionType}: Resource temporarily unavailable` : null
+    };
+  });
 }
 
 // Get agent actions by connection ID
@@ -6088,10 +6251,75 @@ router.post("/api/agent-control/metrics", async (req, res) => {
   }
 });
 
+// Helper function to generate sample policies
+function generateSamplePolicies(agentConnectionId: number) {
+  return [
+    {
+      id: 1,
+      agentConnectionId,
+      policyType: 'rate_limit',
+      policyName: 'API Rate Limiting',
+      policyDetails: {
+        requestsPerMinute: 60,
+        requestsPerHour: 1000,
+        burstLimit: 100
+      },
+      isActive: true,
+      createdAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days ago
+    },
+    {
+      id: 2,
+      agentConnectionId,
+      policyType: 'access_control',
+      policyName: 'Resource Access Control',
+      policyDetails: {
+        allowedEndpoints: ['/api/production/*', '/api/resources/*', '/api/analytics/*'],
+        deniedEndpoints: ['/api/admin/*', '/api/users/*'],
+        requiresApproval: ['DELETE', 'UPDATE']
+      },
+      isActive: true,
+      createdAt: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: 3,
+      agentConnectionId,
+      policyType: 'data_retention',
+      policyName: 'Data Retention Policy',
+      policyDetails: {
+        retentionDays: 90,
+        archiveAfterDays: 30,
+        autoDeleteSensitiveData: true
+      },
+      isActive: true,
+      createdAt: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString()
+    },
+    {
+      id: 4,
+      agentConnectionId,
+      policyType: 'performance',
+      policyName: 'Performance Thresholds',
+      policyDetails: {
+        maxResponseTimeMs: 5000,
+        maxCpuUsagePercent: 80,
+        maxMemoryUsageMb: 512,
+        alertThreshold: 'warning'
+      },
+      isActive: false,
+      createdAt: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
+    }
+  ];
+}
+
 // Get agent policies
 router.get("/api/agent-control/policies/:agentConnectionId", async (req, res) => {
   try {
-    const policies = await storage.getAgentPolicies(Number(req.params.agentConnectionId));
+    let policies = await storage.getAgentPolicies(Number(req.params.agentConnectionId));
+    
+    // If no policies exist, return sample data
+    if (policies.length === 0) {
+      policies = generateSamplePolicies(Number(req.params.agentConnectionId));
+    }
+    
     res.json({ success: true, policies });
   } catch (error) {
     console.error("Error fetching agent policies:", error);
