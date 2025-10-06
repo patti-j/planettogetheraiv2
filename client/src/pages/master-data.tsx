@@ -1575,7 +1575,7 @@ export default function MasterDataPage() {
                 Generate comprehensive sample data for all entity types based on your industry and company details.
               </p>
               
-              {/* Dataset Size Selection */}
+              {/* Dataset Size Selection - v2 INLINE STYLES */}
               <div className="space-y-3">
                 <label className="text-sm font-medium">
                   Dataset Size: <strong className="text-blue-600">{datasetSize.toUpperCase()}</strong>
