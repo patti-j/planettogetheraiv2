@@ -1577,34 +1577,40 @@ export default function MasterDataPage() {
               
               {/* Dataset Size Selection */}
               <div className="space-y-3">
-                <label className="text-sm font-medium">Dataset Size</label>
+                <label className="text-sm font-medium">Dataset Size (Current: {datasetSize})</label>
                 <div className="flex flex-row space-x-6">
                   <div 
                     className="flex items-center space-x-2 cursor-pointer" 
                     onClick={() => handleDatasetSizeChange('small')}
                   >
-                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'small' ? 'border-primary bg-primary' : 'border-input'}`}>
-                      {datasetSize === 'small' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'small' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+                      {datasetSize === 'small' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
                     </div>
-                    <span className="text-sm">Small (3-5 records each)</span>
+                    <span className={`text-sm ${datasetSize === 'small' ? 'font-semibold text-blue-600' : ''}`}>
+                      Small (3-5 records each)
+                    </span>
                   </div>
                   <div 
                     className="flex items-center space-x-2 cursor-pointer" 
                     onClick={() => handleDatasetSizeChange('medium')}
                   >
-                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'medium' ? 'border-primary bg-primary' : 'border-input'}`}>
-                      {datasetSize === 'medium' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'medium' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+                      {datasetSize === 'medium' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
                     </div>
-                    <span className="text-sm">Medium (8-15 records each)</span>
+                    <span className={`text-sm ${datasetSize === 'medium' ? 'font-semibold text-blue-600' : ''}`}>
+                      Medium (8-15 records each)
+                    </span>
                   </div>
                   <div 
                     className="flex items-center space-x-2 cursor-pointer" 
                     onClick={() => handleDatasetSizeChange('large')}
                   >
-                    <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center ${datasetSize === 'large' ? 'border-primary bg-primary' : 'border-input'}`}>
-                      {datasetSize === 'large' && <div className="h-2 w-2 rounded-full bg-white" />}
+                    <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all ${datasetSize === 'large' ? 'border-blue-500 bg-blue-500' : 'border-gray-300'}`}>
+                      {datasetSize === 'large' && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
                     </div>
-                    <span className="text-sm">Large (20-50 records each)</span>
+                    <span className={`text-sm ${datasetSize === 'large' ? 'font-semibold text-blue-600' : ''}`}>
+                      Large (20-50 records each)
+                    </span>
                   </div>
                 </div>
               </div>
