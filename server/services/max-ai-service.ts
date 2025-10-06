@@ -684,7 +684,6 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
             WHERE external_id IS NOT NULL
             GROUP BY external_id
             ORDER BY COUNT(*) DESC
-            LIMIT 50
           `);
           
           return jobsResult.rows.map((row: any) => ({
@@ -953,7 +952,6 @@ Return only the JSON object, no other text.`;
         FROM ptjobs
         GROUP BY scheduled_status
         ORDER BY COUNT(*) DESC
-        LIMIT 50
       `;
     }
     
@@ -975,7 +973,6 @@ Return only the JSON object, no other text.`;
         WHERE r.plant_name IS NOT NULL
         GROUP BY r.plant_name
         ORDER BY COUNT(DISTINCT j.id) DESC
-        LIMIT 50
       `;
       
       console.log('[Max AI] Generated cross-table SQL:', query);
@@ -995,7 +992,6 @@ Return only the JSON object, no other text.`;
       WHERE ${columnName} IS NOT NULL
       GROUP BY ${columnName}
       ORDER BY COUNT(*) DESC
-      LIMIT 50
     `;
     
     console.log('[Max AI] Generated SQL:', query);
@@ -2238,7 +2234,7 @@ Please answer their question using this data.`
           content: analysisResponse.choices[0].message.content || 'Data retrieved successfully.',
           action: {
             type: 'show_data',
-            data: { results: data.slice(0, 10), total: data.length, endpoint }
+            data: { results: data, total: data.length, endpoint }
           }
         };
       }
