@@ -161,7 +161,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       console.log('[Realtime Voice] Action received:', action);
       // Handle agent actions like navigation, switching agents, etc.
       if (action.type === 'navigate') {
-        handleNavigation(action.path);
+        handleNavigation(action.path, action.title || 'Navigate');
       }
     },
     onError: (error: string) => {
@@ -419,20 +419,30 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [aiSettings.soundEnabled, aiSettings.voice, aiSettings.voiceSpeed, stopAudio]);
 
+  // Track last spoken message to prevent re-speaking
+  const lastSpokenMessageIdRef = useRef<number | null>(null);
+
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     if (scrollAreaRef.current && activeTab === 'chat') {
       const scrollElement = scrollAreaRef.current;
       scrollElement.scrollTop = scrollElement.scrollHeight;
       
-      // Disabled automatic voice playback to fix looping issue
-      // const lastMessage = chatMessages[chatMessages.length - 1];
-      // if (lastMessage?.role === 'assistant' && aiSettings.soundEnabled) {
-      //   // Add small delay to ensure message is rendered
-      //   setTimeout(() => {
-      //     speakResponse(lastMessage.content);
-      //   }, 300);
-      // }
+      // Auto-play voice for new assistant messages
+      const lastMessage = chatMessages[chatMessages.length - 1];
+      if (
+        lastMessage?.role === 'assistant' && 
+        aiSettings.soundEnabled && 
+        lastMessage.id !== lastSpokenMessageIdRef.current
+      ) {
+        // Mark this message as spoken to prevent re-playing
+        lastSpokenMessageIdRef.current = lastMessage.id;
+        
+        // Add small delay to ensure message is rendered
+        setTimeout(() => {
+          speakResponse(lastMessage.content);
+        }, 300);
+      }
     }
   }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
 
@@ -619,13 +629,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               dashboardId: 1
             };
 
-            const response = await apiRequest('/api/canvas/widgets', {
-              method: 'POST',
-              body: JSON.stringify(widgetData),
-              headers: {
-                'Content-Type': 'application/json'
-              }
-            });
+            const response = await apiRequest('POST', '/api/canvas/widgets', widgetData);
 
             if (response.ok) {
               console.log('✅ Widget saved to database successfully');
