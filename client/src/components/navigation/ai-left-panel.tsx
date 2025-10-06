@@ -147,6 +147,34 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   }, [userPreferences]);
 
+  // Fetch available models from OpenAI API
+  const [availableModels, setAvailableModels] = useState<Array<{id: string; created: number; owned_by: string}>>([]);
+  const [isLoadingModels, setIsLoadingModels] = useState(true);
+  
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch('/api/ai/models');
+        if (response.ok) {
+          const data = await response.json();
+          setAvailableModels(data.models || []);
+        }
+      } catch (error) {
+        console.error('Failed to fetch models:', error);
+        // Fallback to default models if API fails
+        setAvailableModels([
+          { id: 'gpt-4o', created: Date.now() / 1000, owned_by: 'openai' },
+          { id: 'gpt-4-turbo', created: Date.now() / 1000, owned_by: 'openai' },
+          { id: 'gpt-3.5-turbo', created: Date.now() / 1000, owned_by: 'openai' }
+        ]);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+    
+    fetchModels();
+  }, []);
+
   const { chatMessages, addMessage } = useChatSync();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { canvasItems, setCanvasItems, isCanvasVisible, setCanvasVisible } = useMaxDock();
@@ -1623,15 +1651,28 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         <Sparkles className="w-4 h-4" />
                         AI Model
                       </h3>
-                      <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))}>
+                      <Select value={aiSettings.model} onValueChange={(value) => setAiSettings(prev => ({ ...prev, model: value }))} disabled={isLoadingModels}>
                         <SelectTrigger className="w-full">
-                          <SelectValue />
+                          <SelectValue placeholder={isLoadingModels ? "Loading models..." : "Select a model"} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="gpt-4">GPT-4 (Most Capable)</SelectItem>
-                          <SelectItem value="gpt-4-turbo">GPT-4 Turbo (Faster)</SelectItem>
-                          <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Economy)</SelectItem>
-                          <SelectItem value="claude-3">Claude 3 (Alternative)</SelectItem>
+                          {availableModels.length > 0 ? (
+                            availableModels.map((model) => (
+                              <SelectItem key={model.id} value={model.id}>
+                                {model.id.includes('gpt-5') && '⭐ '}
+                                {model.id}
+                                {model.id.includes('gpt-5') && ' (Latest)'}
+                                {model.id.includes('gpt-4o') && ' (Recommended)'}
+                                {model.id.includes('3.5') && ' (Fast)'}
+                              </SelectItem>
+                            ))
+                          ) : (
+                            <>
+                              <SelectItem value="gpt-4o">GPT-4o (Recommended)</SelectItem>
+                              <SelectItem value="gpt-4-turbo">GPT-4 Turbo</SelectItem>
+                              <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fast)</SelectItem>
+                            </>
+                          )}
                         </SelectContent>
                       </Select>
                     </div>
