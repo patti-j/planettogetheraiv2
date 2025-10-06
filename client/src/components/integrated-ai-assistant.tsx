@@ -93,6 +93,7 @@ export default function IntegratedAIAssistant() {
   const [trainingData, setTrainingData] = useState<any[]>([]);
   
   const { currentAgent, availableAgents, switchToAgent } = useAgent();
+  console.log('🤖 Max AI - Agent Context:', { currentAgent, availableAgents });
   
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{
@@ -953,13 +954,13 @@ export default function IntegratedAIAssistant() {
             >
               {/* Agent selector row */}
               <div className="bg-white/10 px-3 py-1.5 flex items-center justify-between gap-2">
-                <span className="text-xs text-white/80">Chat with:</span>
+                <span className="text-xs text-white font-medium">Chat with:</span>
                 <Select
                   value={currentAgent.id}
                   onValueChange={switchToAgent}
                 >
-                  <SelectTrigger className="h-6 w-auto min-w-[100px] bg-white/10 border-white/30 text-white text-xs hover:bg-white/20 focus:ring-0 focus:ring-offset-0">
-                    <SelectValue>{currentAgent.displayName}</SelectValue>
+                  <SelectTrigger className="h-6 w-auto min-w-[100px] bg-white/10 border-white/30 text-white text-xs font-medium hover:bg-white/20 focus:ring-0 focus:ring-offset-0 [&>span]:text-white [&>span]:font-medium">
+                    <SelectValue placeholder="Select agent" />
                   </SelectTrigger>
                   <SelectContent>
                     {availableAgents.map((agent) => (
