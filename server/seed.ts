@@ -5,7 +5,7 @@ import {
   disruptions, disruptionActions,
   businessGoals, goalProgress, goalRisks, goalIssues, dashboardConfigs, reportConfigs,
   visualFactoryDisplays, industryTemplates, vendors, customers,
-  optimizationScopeConfigs
+  optimizationScopeConfigs, agentConnections
 } from "@shared/schema";
 import { sql, eq } from "drizzle-orm";
 import bcrypt from "bcryptjs";
@@ -3698,6 +3698,275 @@ async function seedMarketingData() {
 
     await db.insert(optimizationAlgorithms).values(ctpAlgorithmsData);
     console.log("CTP optimization algorithms seeded successfully");
+  }
+
+  // Seed agent connections
+  const existingAgentConnections = await db.select().from(agentConnections).limit(1);
+  if (existingAgentConnections.length === 0) {
+    console.log("Seeding agent connections...");
+    
+    const agentConnectionsData = [
+      // ERP Systems
+      {
+        agentId: "sap-erp-prod-01",
+        name: "SAP ERP Production System",
+        description: "Primary SAP ERP system managing production orders, inventory, and procurement. Syncs manufacturing orders, BOMs, and material requirements to PlanetTogether for advanced scheduling.",
+        connectionType: "api_key" as const,
+        status: "active" as const,
+        ipAddress: "10.50.1.15",
+        userAgent: "SAP-Integration-Agent/2.1.0",
+        permissions: JSON.stringify(["read:production_orders", "write:production_status", "read:inventory", "read:bom"]),
+        metadata: JSON.stringify({
+          system: "ERP",
+          vendor: "SAP",
+          version: "S/4HANA 2023",
+          plant: "Plant 1000",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 500,
+        rateLimitPerHour: 20000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
+        connectedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+      },
+      {
+        agentId: "oracle-erp-finance-01",
+        name: "Oracle ERP Financial System",
+        description: "Oracle Cloud ERP managing financial transactions, cost accounting, and inventory valuations. Provides cost data and constraints for production optimization.",
+        connectionType: "oauth" as const,
+        status: "active" as const,
+        ipAddress: "10.50.1.22",
+        userAgent: "Oracle-Cloud-Connector/1.8.3",
+        permissions: JSON.stringify(["read:cost_data", "read:inventory_valuation", "read:purchase_orders"]),
+        metadata: JSON.stringify({
+          system: "ERP",
+          vendor: "Oracle",
+          version: "Oracle Fusion Cloud",
+          division: "Manufacturing Division",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 300,
+        rateLimitPerHour: 15000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
+        connectedAt: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) // 45 days ago
+      },
+      {
+        agentId: "dynamics-365-supply-01",
+        name: "Microsoft Dynamics 365 Supply Chain",
+        description: "Dynamics 365 Supply Chain Management system handling procurement, warehouse management, and demand planning. Feeds demand forecasts and material availability to production scheduling.",
+        connectionType: "api_key" as const,
+        status: "active" as const,
+        ipAddress: "10.50.2.18",
+        userAgent: "Dynamics365-SCM-Agent/3.0.1",
+        permissions: JSON.stringify(["read:demand_forecast", "read:warehouse_stock", "read:purchase_orders", "write:material_requirements"]),
+        metadata: JSON.stringify({
+          system: "ERP/SCM",
+          vendor: "Microsoft",
+          version: "Dynamics 365",
+          warehouse: "Central DC",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 400,
+        rateLimitPerHour: 18000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
+        connectedAt: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) // 60 days ago
+      },
+      
+      // MES Systems
+      {
+        agentId: "siemens-mes-line-a",
+        name: "Siemens Opcenter MES - Line A",
+        description: "Siemens Opcenter MES managing production line A with real-time equipment monitoring, work-in-progress tracking, and quality data collection. Provides actual production metrics to adjust schedules dynamically.",
+        connectionType: "websocket" as const,
+        status: "active" as const,
+        ipAddress: "192.168.10.50",
+        userAgent: "Opcenter-MES-Agent/4.2.0",
+        permissions: JSON.stringify(["read:equipment_status", "write:work_orders", "read:quality_data", "read:production_metrics"]),
+        metadata: JSON.stringify({
+          system: "MES",
+          vendor: "Siemens",
+          version: "Opcenter Execution 2024",
+          productionLine: "Line A - Assembly",
+          shift: "24/7",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 1000,
+        rateLimitPerHour: 50000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 30 * 1000), // 30 seconds ago
+        connectedAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000) // 90 days ago
+      },
+      {
+        agentId: "rockwell-mes-pharma",
+        name: "Rockwell FactoryTalk MES - Pharma",
+        description: "Rockwell FactoryTalk Batch MES for pharmaceutical batch production with GMP compliance, electronic batch records, and material genealogy tracking. Ensures regulatory compliance while optimizing batch scheduling.",
+        connectionType: "api_key" as const,
+        status: "active" as const,
+        ipAddress: "192.168.10.85",
+        userAgent: "FactoryTalk-MES/8.1.0",
+        permissions: JSON.stringify(["read:batch_status", "write:batch_instructions", "read:material_tracking", "read:compliance_data"]),
+        metadata: JSON.stringify({
+          system: "MES",
+          vendor: "Rockwell Automation",
+          version: "FactoryTalk Batch 14.0",
+          area: "Pharmaceutical Production",
+          compliance: "21 CFR Part 11",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 200,
+        rateLimitPerHour: 10000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
+        connectedAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000) // 120 days ago
+      },
+      {
+        agentId: "delmia-mes-automotive",
+        name: "DELMIA MES - Automotive Assembly",
+        description: "Dassault Systèmes DELMIA MES for automotive final assembly operations. Tracks vehicle build sequences, option configurations, and just-in-time component delivery for mixed-model assembly lines.",
+        connectionType: "api_key" as const,
+        status: "active" as const,
+        ipAddress: "192.168.11.42",
+        userAgent: "DELMIA-MES-Connector/5.0.2",
+        permissions: JSON.stringify(["read:vehicle_build_sequence", "write:assembly_instructions", "read:component_arrival", "read:station_status"]),
+        metadata: JSON.stringify({
+          system: "MES",
+          vendor: "Dassault Systèmes",
+          version: "DELMIA Apriso 2024",
+          plant: "Automotive Assembly Plant",
+          productionType: "Mixed-model assembly",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 600,
+        rateLimitPerHour: 30000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 45 * 1000), // 45 seconds ago
+        connectedAt: new Date(Date.now() - 75 * 24 * 60 * 60 * 1000) // 75 days ago
+      },
+      
+      // SCM Systems
+      {
+        agentId: "kinaxis-rapidresponse",
+        name: "Kinaxis RapidResponse Supply Chain",
+        description: "Kinaxis RapidResponse concurrent planning platform managing end-to-end supply chain planning, demand-supply balancing, and scenario analysis. Provides multi-echelon inventory optimization and supply risk alerts.",
+        connectionType: "oauth" as const,
+        status: "active" as const,
+        ipAddress: "10.50.3.10",
+        userAgent: "Kinaxis-RapidResponse/12.8.0",
+        permissions: JSON.stringify(["read:demand_plan", "read:supply_constraints", "write:capacity_feedback", "read:inventory_policy"]),
+        metadata: JSON.stringify({
+          system: "SCM",
+          vendor: "Kinaxis",
+          version: "RapidResponse 2024",
+          scope: "Global Supply Chain",
+          planningHorizon: "18 months",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 250,
+        rateLimitPerHour: 12000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 8 * 60 * 1000), // 8 minutes ago
+        connectedAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000) // 180 days ago
+      },
+      {
+        agentId: "blue-yonder-fulfillment",
+        name: "Blue Yonder Warehouse Management",
+        description: "Blue Yonder (formerly JDA) WMS managing warehouse operations, inventory allocation, and order fulfillment. Provides real-time material availability and inbound shipment visibility for production planning.",
+        connectionType: "api_key" as const,
+        status: "active" as const,
+        ipAddress: "10.50.3.25",
+        userAgent: "BlueYonder-WMS/2024.1",
+        permissions: JSON.stringify(["read:warehouse_inventory", "read:inbound_shipments", "write:pick_orders", "read:storage_locations"]),
+        metadata: JSON.stringify({
+          system: "SCM/WMS",
+          vendor: "Blue Yonder",
+          version: "Luminate Logistics 2024",
+          facility: "Regional Distribution Center",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 350,
+        rateLimitPerHour: 16000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 4 * 60 * 1000), // 4 minutes ago
+        connectedAt: new Date(Date.now() - 150 * 24 * 60 * 60 * 1000) // 150 days ago
+      },
+      {
+        agentId: "e2open-logistics",
+        name: "e2open Multi-Enterprise Network",
+        description: "e2open supply chain orchestration platform managing supplier collaboration, transportation management, and global trade compliance. Coordinates multi-tier supplier schedules and tracks in-transit inventory.",
+        connectionType: "webhook" as const,
+        status: "active" as const,
+        ipAddress: "10.50.3.40",
+        userAgent: "e2open-Platform/9.0.1",
+        permissions: JSON.stringify(["read:supplier_schedules", "read:shipment_tracking", "write:delivery_requirements", "read:trade_compliance"]),
+        metadata: JSON.stringify({
+          system: "SCM/Network",
+          vendor: "e2open",
+          version: "e2open Platform 2024",
+          networkScope: "Multi-enterprise supply network",
+          suppliers: 250,
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 200,
+        rateLimitPerHour: 9000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 10 * 60 * 1000), // 10 minutes ago
+        connectedAt: new Date(Date.now() - 200 * 24 * 60 * 60 * 1000) // 200 days ago
+      },
+      
+      // Additional specialized systems
+      {
+        agentId: "qad-adaptive-erp",
+        name: "QAD Adaptive ERP - Manufacturing",
+        description: "QAD Adaptive ERP specialized for manufacturing with Kanban/JIT support, mixed-mode manufacturing, and lot/serial traceability. Optimized for automotive and industrial manufacturing environments.",
+        connectionType: "api_key" as const,
+        status: "inactive" as const,
+        ipAddress: "10.50.1.88",
+        userAgent: "QAD-ERP-Agent/2023.2",
+        permissions: JSON.stringify(["read:kanban_signals", "read:work_orders", "read:lot_tracking"]),
+        metadata: JSON.stringify({
+          system: "ERP",
+          vendor: "QAD",
+          version: "QAD Adaptive ERP 2023",
+          mode: "Mixed-mode manufacturing",
+          lastSync: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+        }),
+        rateLimitPerMinute: 300,
+        rateLimitPerHour: 12000,
+        isEnabled: false,
+        lastSeenAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        connectedAt: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) // 30 days ago
+      },
+      {
+        agentId: "aveva-pi-system",
+        name: "AVEVA PI System - Historian",
+        description: "AVEVA PI System process historian collecting real-time sensor data, equipment performance metrics, and energy consumption from plant floor systems. Provides time-series data for production analytics and predictive maintenance.",
+        connectionType: "websocket" as const,
+        status: "active" as const,
+        ipAddress: "192.168.12.100",
+        userAgent: "PI-Web-API/2023.3",
+        permissions: JSON.stringify(["read:timeseries_data", "read:equipment_health", "read:energy_metrics"]),
+        metadata: JSON.stringify({
+          system: "Historian/IoT",
+          vendor: "AVEVA",
+          version: "PI System 2023",
+          dataPoints: 15000,
+          retention: "7 years",
+          lastSync: new Date().toISOString()
+        }),
+        rateLimitPerMinute: 2000,
+        rateLimitPerHour: 100000,
+        isEnabled: true,
+        lastSeenAt: new Date(Date.now() - 15 * 1000), // 15 seconds ago
+        connectedAt: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000) // 365 days ago
+      }
+    ];
+    
+    await db.insert(agentConnections).values(agentConnectionsData);
+    console.log(`Seeded ${agentConnectionsData.length} agent connections successfully`);
+  } else {
+    console.log("Agent connections already exist, skipping...");
   }
 
   // Seed workspace dashboards
