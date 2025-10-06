@@ -795,7 +795,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         
         try {
           console.log('Sending audio to Whisper API...');
-          const response = await fetch('/api/ai-agent/transcribe', {
+          const response = await fetch('/api/ai-agent/voice', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
@@ -851,7 +851,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 const formData = new FormData();
                 formData.append('audio', tempBlob, 'interim.webm');
                 
-                const response = await fetch('/api/ai-agent/transcribe', {
+                const response = await fetch('/api/ai-agent/voice', {
                   method: 'POST',
                   headers: {
                     'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`

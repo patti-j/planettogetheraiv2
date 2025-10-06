@@ -5723,6 +5723,61 @@ router.post("/api/max-ai/chat", async (req, res) => {
   }
 });
 
+// AI Agent Chat endpoint - routes to different specialized agents
+router.post("/api/ai-agent/chat", async (req, res) => {
+  try {
+    // Development bypass - skip authentication in dev mode
+    if (process.env.NODE_ENV === 'development') {
+      console.log("🔧 [AI Agent Chat] Development mode: Skipping authentication");
+    } else {
+      // In production, require authentication
+      await new Promise((resolve, reject) => {
+        requireAuth(req, res, (error: any) => {
+          if (error) reject(error);
+          else resolve(undefined);
+        });
+      });
+    }
+
+    const { message, agentId, context } = req.body;
+    const userId = (req as any).userId || 1; // Default to user 1 in development
+    
+    if (!message) {
+      return res.status(400).json({ error: "Message is required" });
+    }
+
+    console.log(`[AI Agent Chat] Processing request for agent: ${agentId || 'max'}`);
+    console.log(`[AI Agent Chat] Message: "${message}"`);
+
+    // For now, all agents route through Max AI
+    // In the future, we can add specialized agent handling here
+    const response = await maxAI.generateResponse(message, {
+      userId,
+      userRole: 'Administrator',
+      currentPage: context?.currentPage || '/home',
+      selectedData: context?.selectedData,
+      recentActions: context?.recentActions,
+      conversationHistory: context?.conversationHistory,
+      agentId: agentId || 'max' // Pass agent context to Max AI
+    });
+    
+    console.log(`[AI Agent Chat] Response generated for agent: ${agentId || 'max'}`);
+
+    // Return response with agent ID for proper attribution
+    res.json({
+      ...response,
+      agentId: agentId || 'max'
+    });
+  } catch (error) {
+    console.error('AI Agent chat error:', error);
+    res.status(500).json({ 
+      error: "Failed to process message",
+      message: "I'm experiencing technical difficulties. Please try again.",
+      success: false
+    });
+  }
+});
+
 // ============================================
 // Agent Monitoring & Control API Routes
 // ============================================
