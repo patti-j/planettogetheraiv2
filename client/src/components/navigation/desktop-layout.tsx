@@ -853,31 +853,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   </Tooltip>
                 </TooltipProvider>
 
-                {/* Agent Selector Dropdown */}
-                <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
-                  <SelectTrigger className="w-6 h-6 border-0 bg-transparent text-xs hover:bg-muted/50 focus:ring-0 focus:ring-offset-0 px-0.5">
-                  </SelectTrigger>
-                  <SelectContent align="start">
-                    <SelectItem value="unified" className="text-xs">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-3 h-3" />
-                        <span>All Agents</span>
-                      </div>
-                    </SelectItem>
-                    {activeAgents.map((agent) => {
-                      const IconComponent = getAgentIcon(agent.id);
-                      return (
-                        <SelectItem key={agent.id} value={agent.id} className="text-xs">
-                          <div className="flex items-center gap-2">
-                            <IconComponent className="w-3 h-3" />
-                            <span>{agent.displayName}</span>
-                          </div>
-                        </SelectItem>
-                      );
-                    })}
-                  </SelectContent>
-                </Select>
-
                 {/* Input Field - wrapped in flex-1 div to allow proper text wrapping */}
                 <div className="flex-1 min-w-[180px]">
                   <textarea
@@ -943,6 +918,52 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               {/* Bottom row: Smaller icons for file attachment and voice recording */}
               <div className="flex items-center gap-1.5 pl-7">
+                {/* Agent Selector Dropdown - Visible */}
+                <Select value={selectedFloatingAgent} onValueChange={setSelectedFloatingAgent}>
+                  <SelectTrigger className="h-5 w-auto min-w-[80px] border border-purple-300 bg-purple-50 text-xs hover:bg-purple-100 focus:ring-1 focus:ring-purple-400 px-2 rounded-full">
+                    <SelectValue>
+                      {selectedFloatingAgent === 'unified' ? (
+                        <div className="flex items-center gap-1">
+                          <Users className="w-3 h-3 text-purple-600" />
+                          <span className="text-purple-700 font-medium">All Agents</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-1">
+                          {(() => {
+                            const agent = activeAgents.find(a => a.id === selectedFloatingAgent);
+                            const IconComponent = agent ? getAgentIcon(agent.id) : Sparkles;
+                            return (
+                              <>
+                                <IconComponent className="w-3 h-3 text-purple-600" />
+                                <span className="text-purple-700 font-medium">{agent?.displayName || 'Agent'}</span>
+                              </>
+                            );
+                          })()}
+                        </div>
+                      )}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent align="start">
+                    <SelectItem value="unified" className="text-xs">
+                      <div className="flex items-center gap-2">
+                        <Users className="w-3 h-3" />
+                        <span>All Agents</span>
+                      </div>
+                    </SelectItem>
+                    {activeAgents.map((agent) => {
+                      const IconComponent = getAgentIcon(agent.id);
+                      return (
+                        <SelectItem key={agent.id} value={agent.id} className="text-xs">
+                          <div className="flex items-center gap-2">
+                            <IconComponent className="w-3 h-3" />
+                            <span>{agent.displayName}</span>
+                          </div>
+                        </SelectItem>
+                      );
+                    })}
+                  </SelectContent>
+                </Select>
+
                 {/* File attachment input (hidden) */}
                 <input
                   ref={floatingFileInputRef}
