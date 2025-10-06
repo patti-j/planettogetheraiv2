@@ -5984,5 +5984,39 @@ router.patch("/api/agent-control/connections/:id/rate-limits", async (req, res) 
   }
 });
 
+// Master Data Bulk Generation endpoint
+router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
+  try {
+    const { recordCounts = {}, companyInfo, replaceExisting = false } = req.body;
+    
+    // Validate OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'OpenAI API key not configured. AI features are unavailable.',
+      });
+    }
+    
+    console.log(`[AI Bulk Generate] Starting bulk generation with record counts:`, recordCounts);
+    
+    // For now, return a simple success response
+    // TODO: Implement actual OpenAI-based bulk data generation
+    res.json({
+      success: true,
+      message: `Bulk generation feature is being implemented. Please check back soon.`,
+      results: {},
+      totalRecords: 0
+    });
+
+  } catch (error) {
+    console.error('[AI Bulk Generate] Error:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: 'Failed to perform bulk generation',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
