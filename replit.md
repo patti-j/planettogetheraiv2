@@ -6,6 +6,9 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 ## Recent Changes
 
 **October 6, 2025**
+- **JWT Authentication Performance Optimization**: Replaced old requireAuth middleware (N+1 query problem with 10+ database queries per request) with optimized enhancedAuth middleware that uses JOIN queries. This reduces authentication overhead from 13+ queries to 1-2 queries per request, significantly improving page load performance. The new implementation maintains backwards compatibility with existing endpoints while supporting both JWT and API key authentication.
+- **LSP Errors Fixed**: Removed duplicate drizzle-orm imports that were causing 112+ TypeScript LSP errors in server/routes.ts. Consolidated all imports and added enhanced-auth-middleware import.
+- **Navigation Duplicate Key Warning Fixed**: Changed label for `/production-scheduler` from "Production Schedule" to "Production Scheduler (Gantt)" to eliminate React duplicate key warning. This distinguishes the Bryntum Gantt scheduler from other schedule views.
 - **Agent Consolidation**: Merged AI Scheduling Agent functionality into Production Scheduling Agent. The Production Scheduling Agent now handles both production optimization (schedule optimization, bottleneck analysis, resource allocation) and APS expertise (PlanetTogether concepts, Bryntum scheduler features, APS best practices, finite capacity planning). This consolidation provides users with a single, comprehensive agent for all scheduling-related tasks.
 - **Plants Management Icon**: Fixed icon mapping for Plants Management page in recent pages navigation.
 
