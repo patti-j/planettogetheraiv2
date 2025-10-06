@@ -1782,7 +1782,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
+                placeholder={isListening ? "🎙️ Speak now - text appears instantly" : "Ask me anything about your operations..."}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -1804,7 +1804,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                     ? 'bg-green-50 border-green-300 hover:bg-green-100' 
                     : 'hover:bg-gray-100'
                 }`}
-                title={isListening ? 'Stop listening' : 'Start voice input'}
+                title={isListening ? 'Stop voice input' : 'Start voice input (instant transcription)'}
               >
                 {isListening ? (
                   <Mic className="h-3.5 w-3.5 text-green-600 animate-pulse" />
@@ -2030,7 +2030,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 ref={inputRef}
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                placeholder={isListening ? "Listening... speak now" : "Ask me anything about your operations..."}
+                placeholder={isListening ? "🎙️ Speak now - text appears instantly" : "Ask me anything about your operations..."}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
                 onFocus={handleInputFocus}
                 onBlur={handleInputBlur}
@@ -2051,7 +2051,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                     ? 'bg-green-50 border-green-300 hover:bg-green-100' 
                     : 'hover:bg-gray-100'
                 }`}
-                title={isListening ? 'Stop listening' : 'Start voice input'}
+                title={isListening ? 'Stop voice input' : 'Start voice input (instant transcription)'}
               >
                 {isListening ? (
                   <Mic className="h-3.5 w-3.5 text-green-600 animate-pulse" />
