@@ -347,8 +347,11 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initialize Web Speech API for live transcription
+  // Hybrid transcription: Web Speech API + Whisper
   const recognition = useRef<any>(null);
+  const mediaRecorder = useRef<MediaRecorder | null>(null);
+  const audioChunks = useRef<Blob[]>([]);
+  const webSpeechTranscript = useRef<string>('');
 
   useEffect(() => {
     // Check if browser supports Web Speech API
@@ -377,7 +380,9 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
         // Update input with transcription in real-time
         if (finalTranscript) {
           const currentText = inputMessage.trim();
-          setInputMessage(currentText ? `${currentText} ${finalTranscript.trim()}` : finalTranscript.trim());
+          const newText = currentText ? `${currentText} ${finalTranscript.trim()}` : finalTranscript.trim();
+          setInputMessage(newText);
+          webSpeechTranscript.current = newText; // Store for Whisper comparison
         } else if (interimTranscript) {
           // Show interim results with visual indicator
           const currentText = inputMessage.replace(/\s*\[listening\.\.\.\]$/, '').trim();
@@ -388,30 +393,33 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       recognition.current.onerror = (event: any) => {
         console.error('Speech recognition error:', event.error);
         if (event.error === 'no-speech') {
-          showVoiceError('No speech detected. Please try again.');
+          // Don't show error for no-speech, Whisper will handle it
+          console.log('No speech detected by Web Speech API, waiting for Whisper...');
         } else if (event.error === 'not-allowed') {
           showVoiceError('Microphone access denied. Please enable microphone permissions.');
         } else {
-          showVoiceError(`Speech recognition error: ${event.error}`);
+          console.log(`Web Speech API error: ${event.error}, fallback to Whisper`);
         }
-        setIsListening(false);
       };
       
       recognition.current.onend = () => {
-        console.log('Speech recognition ended');
+        console.log('Web Speech recognition ended');
         if (isListening) {
           // Clean up interim results marker
           setInputMessage(prev => prev.replace(/\s*\[listening\.\.\.\]$/, '').trim());
         }
-        setIsListening(false);
       };
     } else {
-      console.warn('Web Speech API not supported in this browser. Voice input unavailable.');
+      console.log('Web Speech API not supported, using Whisper only');
     }
     
     return () => {
       if (recognition.current) {
-        recognition.current.stop();
+        try {
+          recognition.current.stop();
+        } catch (e) {
+          // Ignore errors on cleanup
+        }
       }
     };
   }, []);
@@ -780,34 +788,132 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   };
 
   const startListening = async () => {
-    if (!recognition.current) {
-      showVoiceError("Voice input is not supported in your browser. Please use Chrome, Edge, or Safari.");
-      return;
-    }
-
     try {
-      console.log('Starting live speech recognition...');
-      setIsListening(true);
+      console.log('🎙️ Starting hybrid transcription (Web Speech + Whisper)...');
       
-      // Start speech recognition
-      recognition.current.start();
+      // Request microphone access
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Clear previous data
+      audioChunks.current = [];
+      webSpeechTranscript.current = '';
+      
+      // Start Web Speech API if available (instant feedback)
+      if (recognition.current) {
+        try {
+          recognition.current.start();
+          console.log('✅ Web Speech API started for instant transcription');
+        } catch (error) {
+          console.log('⚠️ Web Speech API unavailable, using Whisper only');
+        }
+      }
+      
+      // Start MediaRecorder for Whisper (high accuracy backup)
+      let mimeType = 'audio/webm';
+      if (!MediaRecorder.isTypeSupported('audio/webm')) {
+        if (MediaRecorder.isTypeSupported('audio/webm;codecs=opus')) {
+          mimeType = 'audio/webm;codecs=opus';
+        } else if (MediaRecorder.isTypeSupported('audio/mp4')) {
+          mimeType = 'audio/mp4';
+        } else if (MediaRecorder.isTypeSupported('audio/wav')) {
+          mimeType = 'audio/wav';
+        }
+      }
+      
+      mediaRecorder.current = new MediaRecorder(stream, { mimeType });
+      
+      mediaRecorder.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunks.current.push(event.data);
+        }
+      };
+      
+      mediaRecorder.current.onstop = async () => {
+        console.log('🎙️ Recording stopped, processing with Whisper for accuracy...');
+        
+        // Stop Web Speech API
+        if (recognition.current) {
+          try {
+            recognition.current.stop();
+          } catch (e) {
+            // Already stopped
+          }
+        }
+        
+        // Process with Whisper if we have audio
+        if (audioChunks.current.length > 0) {
+          const mimeType = mediaRecorder.current?.mimeType || 'audio/webm';
+          const audioBlob = new Blob(audioChunks.current, { type: mimeType });
+          
+          if (audioBlob.size >= 1000) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            
+            try {
+              console.log('📤 Sending to Whisper for high-accuracy transcription...');
+              const response = await fetch('/api/ai-agent/voice', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${localStorage.getItem('auth_token') || ''}`
+                },
+                body: formData
+              });
+              
+              const result = await response.json();
+              
+              if (result.success && result.text) {
+                console.log('✅ Whisper transcription:', result.text);
+                console.log('🔍 Web Speech transcription:', webSpeechTranscript.current);
+                
+                // If Whisper result is significantly different, show a subtle indicator
+                const whisperText = result.text.trim();
+                const webSpeechText = webSpeechTranscript.current.trim();
+                
+                if (whisperText && whisperText !== webSpeechText) {
+                  // Replace with Whisper's more accurate result
+                  const baseMessage = inputMessage.replace(/\s*\[listening\.\.\.\]$/, '').trim();
+                  
+                  // Only replace if Whisper has meaningful content
+                  if (whisperText.length > 3) {
+                    setInputMessage(whisperText);
+                    console.log('✨ Updated with Whisper\'s high-accuracy transcription');
+                  }
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Whisper transcription failed, keeping Web Speech result:', error);
+              // Keep the Web Speech API result, no need to show error
+            }
+          }
+        }
+        
+        // Clean up
+        stream.getTracks().forEach(track => track.stop());
+        setIsListening(false);
+      };
+      
+      // Start recording
+      mediaRecorder.current.start();
+      setIsListening(true);
+      console.log('✅ Hybrid transcription started');
       
       // Focus input for better UX
       if (inputRef.current) {
         inputRef.current.focus();
       }
+      
     } catch (error) {
-      console.error('Speech recognition error:', error);
+      console.error('Microphone access error:', error);
       setIsListening(false);
       
-      if ((error as any).message?.includes('not-allowed')) {
+      if ((error as any).name === 'NotAllowedError') {
         toast({
           title: "Microphone Permission Needed",
           description: "Please allow microphone access to use voice input",
           variant: "destructive"
         });
       } else {
-        showVoiceError("Unable to start voice recognition. Please try again.");
+        showVoiceError("Unable to access microphone. Please check your device settings.");
       }
     }
   };
@@ -830,14 +936,20 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
 
 
   const stopListening = () => {
+    console.log('🛑 Stopping hybrid transcription...');
+    
+    // Stop MediaRecorder (will trigger Whisper processing)
     if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
-      console.log('Stopping Whisper recording...');
       mediaRecorder.current.stop();
     }
     
-    // Ensure input is always re-enabled when stopping
-    if (inputRef.current) {
-      inputRef.current.removeAttribute('readonly');
+    // Stop Web Speech API
+    if (recognition.current) {
+      try {
+        recognition.current.stop();
+      } catch (e) {
+        // Already stopped
+      }
     }
   };
 
