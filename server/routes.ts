@@ -62,6 +62,7 @@ import { schedulingAI } from "./services/scheduling-ai";
 import { log } from "./vite";
 import path from "path";
 import fs from "fs";
+import agentTrainingRoutes from "./routes/agent-training-routes";
 import multer from "multer";
 
 // Extend the global namespace to include tokenStore
@@ -6838,6 +6839,9 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
     });
   }
 });
+
+// Agent training routes
+router.use('/api', agentTrainingRoutes);
 
 // Forced rebuild - all duplicate keys fixed
 export default router;
