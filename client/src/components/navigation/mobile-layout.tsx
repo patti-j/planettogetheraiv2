@@ -465,7 +465,7 @@ export function MobileLayout({ children }: MobileLayoutProps) {
       
       
       {/* Main content area - with padding for fixed header and bottom Max interface */}
-      <div className="pt-16 pb-24 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0">
+      <div className="pt-16 pb-64 min-h-screen bg-gray-50 dark:bg-gray-900 relative z-0">
         {children}
       </div>
 

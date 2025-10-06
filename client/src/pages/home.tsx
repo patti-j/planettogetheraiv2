@@ -414,7 +414,7 @@ export default function HomePage() {
 
           <div className="flex-1 overflow-auto">
             {/* Actions Tab */}
-            <TabsContent value="actions" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-24' : 'p-6'}`} data-testid="actions-tab-content">
+            <TabsContent value="actions" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-12' : 'p-6'}`} data-testid="actions-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">AI Recommendations</h3>
@@ -671,7 +671,7 @@ export default function HomePage() {
             </TabsContent>
 
             {/* Events Tab */}
-            <TabsContent value="events" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-24' : 'p-6'}`} data-testid="events-tab-content">
+            <TabsContent value="events" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-12' : 'p-6'}`} data-testid="events-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">System Events</h3>
@@ -798,7 +798,7 @@ export default function HomePage() {
             </TabsContent>
 
             {/* Alerts Tab */}
-            <TabsContent value="alerts" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-24' : 'p-6'}`} data-testid="alerts-tab-content">
+            <TabsContent value="alerts" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-12' : 'p-6'}`} data-testid="alerts-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">System Alerts</h3>
@@ -925,7 +925,7 @@ export default function HomePage() {
             </TabsContent>
 
             {/* Inbox Tab */}
-            <TabsContent value="inbox" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-24' : 'p-6'}`} data-testid="inbox-tab-content">
+            <TabsContent value="inbox" className={`h-full space-y-4 ${isMobile ? 'p-4 pb-12' : 'p-6'}`} data-testid="inbox-tab-content">
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold">Inbox</h3>
