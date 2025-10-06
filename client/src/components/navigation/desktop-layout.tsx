@@ -227,24 +227,27 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         agentId: respondingAgent
       });
       
-      // Handle canvas actions from Max AI (charts, widgets)
-      if (data?.canvasAction) {
-        console.log('Canvas action detected from floating AI:', data.canvasAction);
+      // Handle chart creation from Max AI
+      if (data?.action?.type === 'create_chart' && data?.action?.chartConfig) {
+        console.log('🎨 Chart creation detected from floating AI:', data.action);
         
-        if (data.canvasAction.action === 'add') {
-          const newItem = {
-            id: data.canvasAction.item.id || `canvas-${Date.now()}`,
-            type: data.canvasAction.item.type || 'chart',
-            data: data.canvasAction.item.data || data.canvasAction.item,
-            title: data.canvasAction.item.title || 'AI Generated Chart',
-            position: data.canvasAction.item.position || { x: 0, y: 0 }
-          };
-          
-          setCanvasItems((prev: any[]) => [...prev, newItem]);
-          setCanvasVisible(true);
-          
-          console.log('Canvas item added and canvas shown:', newItem);
-        }
+        const chartItem = {
+          id: data.action.widgetId || `canvas-${Date.now()}`,
+          type: 'chart',
+          data: data.action.chartConfig,
+          title: data.action.chartConfig.title || 'AI Generated Chart',
+          position: { x: 0, y: 0 }
+        };
+        
+        setCanvasItems((prev: any[]) => [...prev, chartItem]);
+        setCanvasVisible(true);
+        
+        console.log('✅ Canvas item added and canvas shown:', chartItem);
+        
+        // Show toast to navigate to canvas
+        setTimeout(() => {
+          handleNavigation('/canvas', 'Canvas');
+        }, 800);
       }
       
       // Handle navigation actions from Max AI
