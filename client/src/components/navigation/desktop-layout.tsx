@@ -350,6 +350,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           setFloatingLiveTranscript('');
         };
         
+        let silenceTimer: NodeJS.Timeout | null = null;
+        let lastTranscriptTime = Date.now();
+        
         floatingRecognitionRef.current.onresult = (event: any) => {
           let interimTranscript = '';
           let finalTranscript = '';
@@ -366,6 +369,33 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           const newText = (floatingPrompt + ' ' + finalTranscript + interimTranscript).trim();
           setFloatingPrompt(newText);
           setFloatingLiveTranscript(newText);
+          
+          // Update last transcript time
+          lastTranscriptTime = Date.now();
+          
+          // Clear existing silence timer
+          if (silenceTimer) {
+            clearTimeout(silenceTimer);
+          }
+          
+          // Set new silence timer - auto-send after 2 seconds of silence
+          if (newText.length > 3) {
+            silenceTimer = setTimeout(() => {
+              console.log('🔇 Detected 2 seconds of silence, auto-sending message...');
+              stopFloatingListening();
+            }, 2000);
+          }
+        };
+        
+        // Add speech end detection
+        floatingRecognitionRef.current.onspeechend = () => {
+          console.log('📝 Speech ended, preparing to send...');
+          setTimeout(() => {
+            const currentText = floatingPrompt.trim();
+            if (currentText.length > 3) {
+              stopFloatingListening();
+            }
+          }, 500);
         };
         
         floatingRecognitionRef.current.onerror = (event: any) => {
@@ -403,7 +433,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       };
       
       recorder.onstop = async () => {
-        console.log('🎙️ Recording stopped, processing with Whisper for accuracy...');
+        console.log('🎙️ Recording stopped, auto-sending message...');
         
         // Stop Web Speech API
         if (floatingRecognitionRef.current) {
@@ -414,7 +444,14 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           }
         }
         
-        // Process with Whisper if we have audio
+        // Immediately send the Web Speech result if we have it
+        const currentText = floatingPrompt.trim();
+        if (currentText.length > 3) {
+          console.log('📤 Sending message:', currentText);
+          sendFloatingMessage.mutate(currentText);
+        }
+        
+        // Process with Whisper in background for future improvements (don't wait)
         if (floatingAudioChunksRef.current.length > 0) {
           const audioBlob = new Blob(floatingAudioChunksRef.current, { type: 'audio/webm' });
           
@@ -422,48 +459,24 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.webm');
             
-            try {
-              const authToken = localStorage.getItem('auth_token');
-              const response = await fetch('/api/ai-agent/voice', {
-                method: 'POST',
-                headers: {
-                  ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-                },
-                body: formData
-              });
-              
+            // Fire and forget - don't wait for Whisper
+            const authToken = localStorage.getItem('auth_token');
+            fetch('/api/ai-agent/voice', {
+              method: 'POST',
+              headers: {
+                ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+              },
+              body: formData
+            }).then(response => {
               if (response.ok) {
-                const data = await response.json();
-                const whisperText = data.transcript?.trim();
-                console.log('🎯 Whisper transcription:', whisperText);
-                
-                // Use Whisper result if it's more complete than Web Speech
-                const currentText = floatingPrompt.trim();
-                if (whisperText && whisperText.length > currentText.length) {
-                  setFloatingPrompt(whisperText);
-                  // Auto-send if we got a good transcription
-                  if (whisperText.length > 3) {
-                    setTimeout(() => {
-                      sendFloatingMessage.mutate(whisperText);
-                    }, 100);
-                  }
-                } else if (currentText.length > 3) {
-                  // Use Web Speech result and auto-send
-                  setTimeout(() => {
-                    sendFloatingMessage.mutate(currentText);
-                  }, 100);
-                }
+                response.json().then(data => {
+                  const whisperText = data.transcript?.trim();
+                  console.log('🎯 Whisper transcription (for reference):', whisperText);
+                });
               }
-            } catch (error) {
-              console.log('⚠️ Whisper transcription failed, keeping Web Speech result:', error);
-              // Auto-send Web Speech result if we have it
-              const currentText = floatingPrompt.trim();
-              if (currentText.length > 3) {
-                setTimeout(() => {
-                  sendFloatingMessage.mutate(currentText);
-                }, 100);
-              }
-            }
+            }).catch(error => {
+              console.log('⚠️ Whisper transcription failed:', error);
+            });
           }
         }
         
@@ -474,12 +487,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       recorder.start();
       setFloatingMediaRecorder(recorder);
       setIsFloatingRecording(true);
-      setFloatingRecordingTimeLeft(10);
+      setFloatingRecordingTimeLeft(30); // Increase to 30 seconds max
       
-      // Auto-stop after 10 seconds
+      // Auto-stop after 30 seconds (safety limit)
       const timeout = setTimeout(() => {
+        console.log('⏰ Maximum recording time reached (30s)');
         stopFloatingListening();
-      }, 10000);
+      }, 30000);
       
       setFloatingRecordingTimeout(timeout);
     } catch (error) {
