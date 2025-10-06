@@ -463,6 +463,20 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   // Track last spoken message to prevent re-speaking
   const lastSpokenMessageIdRef = useRef<number | null>(null);
 
+  // Add keyboard shortcut for stopping audio (Escape key)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && isPlaying) {
+        stopAudio();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isPlaying, stopAudio]);
+
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
     if (scrollAreaRef.current && activeTab === 'chat') {
@@ -1310,16 +1324,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             </>
           )}
           
-          {/* Audio Control Button - only show when audio is playing */}
-          {!isCollapsed && isPlaying && (
+          {/* Audio Control Button - show when audio is playing */}
+          {isPlaying && (
             <Button
-              variant="ghost"
+              variant="destructive"
               size="icon"
               onClick={stopAudio}
-              className="text-white hover:text-white/80 animate-pulse bg-transparent"
-              title="Stop audio playback"
+              className="bg-red-500 hover:bg-red-600 text-white animate-pulse"
+              title="Stop audio playback (Esc key)"
             >
-              <Square className="w-4 h-4" />
+              <Square className="w-4 h-4 fill-white" />
             </Button>
           )}
           <Button
@@ -1356,6 +1370,22 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               className="flex-1 flex flex-col px-4 mt-2 overflow-hidden data-[state=inactive]:hidden"
             >
               <div className="relative flex-1 overflow-hidden border rounded-md bg-background/50">
+                {/* Floating Stop Audio Button - appears when TTS is playing */}
+                {isPlaying && (
+                  <div className="absolute top-4 right-4 z-50 animate-in fade-in slide-in-from-right">
+                    <Button
+                      variant="destructive"
+                      size="default"
+                      onClick={stopAudio}
+                      className="bg-red-500 hover:bg-red-600 text-white shadow-lg animate-pulse"
+                      title="Stop audio playback (Press Esc)"
+                    >
+                      <Square className="w-4 h-4 mr-2 fill-white" />
+                      Stop Audio
+                    </Button>
+                  </div>
+                )}
+                
                 {/* Voice Session Status Banner */}
                 {realtimeVoice.isSessionActive && (
                   <div className="sticky top-0 z-10 bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-b border-green-500/30 px-3 py-2">
