@@ -47,6 +47,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [floatingRecordingTimeout, setFloatingRecordingTimeout] = useState<ReturnType<typeof setTimeout> | null>(null);
   const [floatingRecordingTimeLeft, setFloatingRecordingTimeLeft] = useState<number>(0);
   const [isFloatingTranscribing, setIsFloatingTranscribing] = useState(false);
+  const [floatingLiveTranscript, setFloatingLiveTranscript] = useState<string>('');
+  const floatingRecognitionRef = useRef<any>(null);
+  const floatingAudioChunksRef = useRef<Blob[]>([]);
   
   // File attachment state for floating bubble
   const [floatingAttachments, setFloatingAttachments] = useState<Array<{
@@ -306,59 +309,194 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     sendFloatingMessage.mutate(floatingPrompt);
   };
 
-  // Voice recording handlers for floating bubble
+  // Voice recording handlers for floating bubble with real-time transcription
   const startFloatingListening = async () => {
     try {
+      console.log('🎙️ Starting real-time transcription for floating bubble...');
+      
+      // Initialize Web Speech API for instant feedback
+      const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      
+      if (SpeechRecognition) {
+        console.log('Initializing Web Speech API for live transcription...');
+        floatingRecognitionRef.current = new SpeechRecognition();
+        floatingRecognitionRef.current.continuous = true;
+        floatingRecognitionRef.current.interimResults = true;
+        floatingRecognitionRef.current.lang = 'en-US';
+        
+        floatingRecognitionRef.current.onstart = () => {
+          console.log('Web Speech API started');
+          setFloatingLiveTranscript('');
+        };
+        
+        floatingRecognitionRef.current.onresult = (event: any) => {
+          let interimTranscript = '';
+          let finalTranscript = '';
+          
+          for (let i = event.resultIndex; i < event.results.length; i++) {
+            const transcript = event.results[i][0].transcript;
+            if (event.results[i].isFinal) {
+              finalTranscript += transcript + ' ';
+            } else {
+              interimTranscript += transcript;
+            }
+          }
+          
+          const newText = (floatingPrompt + ' ' + finalTranscript + interimTranscript).trim();
+          setFloatingPrompt(newText);
+          setFloatingLiveTranscript(newText);
+        };
+        
+        floatingRecognitionRef.current.onerror = (event: any) => {
+          console.error('Speech recognition error:', event.error);
+          if (event.error === 'no-speech') {
+            console.log('No speech detected, waiting...');
+          }
+        };
+      }
+      
+      // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      
+      // Reset state
+      floatingAudioChunksRef.current = [];
+      setFloatingLiveTranscript('');
+      
+      // Start Web Speech API if available
+      if (floatingRecognitionRef.current) {
+        try {
+          floatingRecognitionRef.current.start();
+          console.log('✅ Web Speech API started for instant transcription');
+        } catch (err) {
+          console.log('⚠️ Web Speech API unavailable, using Whisper only');
+        }
+      }
+      
+      // Setup MediaRecorder for Whisper backup
       const recorder = new MediaRecorder(stream);
-      const chunks: Blob[] = [];
-
-      recorder.ondataavailable = (e) => chunks.push(e.data);
+      
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) {
+          floatingAudioChunksRef.current.push(e.data);
+        }
+      };
+      
       recorder.onstop = async () => {
-        const blob = new Blob(chunks, { type: 'audio/wav' });
-        await handleFloatingAudioRecording(blob);
+        console.log('🎙️ Recording stopped, processing with Whisper for accuracy...');
+        
+        // Stop Web Speech API
+        if (floatingRecognitionRef.current) {
+          try {
+            floatingRecognitionRef.current.stop();
+          } catch (err) {
+            console.log('Web Speech API already stopped');
+          }
+        }
+        
+        // Process with Whisper if we have audio
+        if (floatingAudioChunksRef.current.length > 0) {
+          const audioBlob = new Blob(floatingAudioChunksRef.current, { type: 'audio/webm' });
+          
+          if (audioBlob.size >= 1000) {
+            const formData = new FormData();
+            formData.append('audio', audioBlob, 'recording.webm');
+            
+            try {
+              const authToken = localStorage.getItem('auth_token');
+              const response = await fetch('/api/ai-agent/voice', {
+                method: 'POST',
+                headers: {
+                  ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: formData
+              });
+              
+              if (response.ok) {
+                const data = await response.json();
+                const whisperText = data.transcript?.trim();
+                console.log('🎯 Whisper transcription:', whisperText);
+                
+                // Use Whisper result if it's more complete than Web Speech
+                const currentText = floatingPrompt.trim();
+                if (whisperText && whisperText.length > currentText.length) {
+                  setFloatingPrompt(whisperText);
+                  // Auto-send if we got a good transcription
+                  if (whisperText.length > 3) {
+                    setTimeout(() => {
+                      sendFloatingMessage.mutate(whisperText);
+                    }, 100);
+                  }
+                } else if (currentText.length > 3) {
+                  // Use Web Speech result and auto-send
+                  setTimeout(() => {
+                    sendFloatingMessage.mutate(currentText);
+                  }, 100);
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Whisper transcription failed, keeping Web Speech result:', error);
+              // Auto-send Web Speech result if we have it
+              const currentText = floatingPrompt.trim();
+              if (currentText.length > 3) {
+                setTimeout(() => {
+                  sendFloatingMessage.mutate(currentText);
+                }, 100);
+              }
+            }
+          }
+        }
+        
+        // Clean up
         stream.getTracks().forEach(track => track.stop());
       };
-
+      
       recorder.start();
       setFloatingMediaRecorder(recorder);
       setIsFloatingRecording(true);
       setFloatingRecordingTimeLeft(10);
-
-      // Start countdown timer
-      const interval = setInterval(() => {
-        setFloatingRecordingTimeLeft(prev => {
-          if (prev <= 1) {
-            clearInterval(interval);
-            stopFloatingListening();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
+      
       // Auto-stop after 10 seconds
       const timeout = setTimeout(() => {
-        clearInterval(interval);
         stopFloatingListening();
       }, 10000);
-
+      
       setFloatingRecordingTimeout(timeout);
     } catch (error) {
-      console.error('Floating recording error:', error);
+      console.error('Microphone access error:', error);
+      toast({
+        title: "Microphone Permission Needed",
+        description: "Please allow microphone access to use voice input",
+        variant: "destructive"
+      });
     }
   };
 
   const stopFloatingListening = () => {
+    console.log('Stopping floating bubble voice recording...');
+    
+    // Stop Web Speech API
+    if (floatingRecognitionRef.current) {
+      try {
+        floatingRecognitionRef.current.stop();
+      } catch (err) {
+        console.log('Web Speech API already stopped');
+      }
+    }
+    
+    // Stop MediaRecorder
     if (floatingMediaRecorder && floatingMediaRecorder.state === 'recording') {
       floatingMediaRecorder.stop();
     }
+    
+    // Clear timeout
     if (floatingRecordingTimeout) {
       clearTimeout(floatingRecordingTimeout);
       setFloatingRecordingTimeout(null);
     }
+    
     setIsFloatingRecording(false);
     setFloatingRecordingTimeLeft(0);
+    setFloatingLiveTranscript('');
   };
 
   const handleFloatingAudioRecording = async (audioBlob: Blob) => {
@@ -878,7 +1016,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 <div className="flex-1 min-w-[180px]">
                   <textarea
                     ref={floatingInputRef as any}
-                    placeholder={selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
+                    placeholder={isFloatingRecording ? "🎙️ Speak now - text appears instantly..." : selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
                     value={floatingPrompt}
                     onChange={(e) => setFloatingPrompt(e.target.value)}
                     onKeyPress={(e) => {
@@ -887,7 +1025,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         handleFloatingSend();
                       }
                     }}
-                    className="border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden pl-1"
+                    className={`border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 outline-none focus:outline-none text-sm placeholder:text-muted-foreground w-full resize-none overflow-hidden pl-1 ${isFloatingRecording ? 'text-green-600' : ''}`}
                     disabled={isFloatingSending}
                     rows={1}
                     style={{ minHeight: '24px', maxHeight: '120px' }}
@@ -1038,10 +1176,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                           <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : isFloatingRecording ? (
                           <div className="flex items-center">
-                            <StopCircle className="w-2 h-2" />
-                            {floatingRecordingTimeLeft > 0 && (
-                              <span className="ml-1 text-xs">{floatingRecordingTimeLeft}s</span>
-                            )}
+                            <Mic className="w-2 h-2 animate-pulse" />
                           </div>
                         ) : (
                           <Mic className="w-2.5 h-2.5" />
@@ -1049,7 +1184,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      <p>{isFloatingRecording ? `Recording... ${floatingRecordingTimeLeft}s left` : isFloatingTranscribing ? 'Transcribing...' : 'Voice message'}</p>
+                      <p>{isFloatingRecording ? 'Speak now - text appears instantly' : isFloatingTranscribing ? 'Processing...' : 'Voice message (real-time transcription)'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
