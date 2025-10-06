@@ -250,9 +250,21 @@ export function AgentMonitoring() {
     revoked: connections?.connections?.filter((c: AgentConnection) => c.status === 'revoked').length || 0
   };
 
+  // Safe date formatter helper
+  const safeFormatDate = (date: string | Date | null | undefined, formatStr: string, fallback: string = 'N/A'): string => {
+    if (!date) return fallback;
+    try {
+      const parsedDate = new Date(date);
+      if (isNaN(parsedDate.getTime())) return fallback;
+      return format(parsedDate, formatStr);
+    } catch {
+      return fallback;
+    }
+  };
+
   // Process metrics for charts
   const metricsForChart = metricsData?.metrics?.slice(-24).map((m: AgentMetrics) => ({
-    time: format(new Date(m.timestamp), 'HH:mm'),
+    time: safeFormatDate(m.timestamp, 'HH:mm', '--:--'),
     actions: m.actionsPerformed,
     errors: m.errorsOccurred,
     responseTime: m.averageResponseTime,
@@ -499,7 +511,7 @@ export function AgentMonitoring() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          <span>{format(new Date(agent.connectedAt), 'HH:mm')}</span>
+                          <span>{safeFormatDate(agent.connectedAt, 'HH:mm')}</span>
                         </div>
                       </div>
                       
@@ -610,15 +622,13 @@ export function AgentMonitoring() {
                   <div>
                     <Label>Connected At</Label>
                     <p className="font-medium">
-                      {format(new Date(selectedAgent.connectedAt), 'PPp')}
+                      {safeFormatDate(selectedAgent.connectedAt, 'PPp')}
                     </p>
                   </div>
                   <div>
                     <Label>Last Activity</Label>
                     <p className="font-medium">
-                      {selectedAgent.lastActivityAt
-                        ? format(new Date(selectedAgent.lastActivityAt), 'PPp')
-                        : 'No activity'}
+                      {safeFormatDate(selectedAgent.lastActivityAt, 'PPp', 'No activity')}
                     </p>
                   </div>
                   <div>
@@ -691,7 +701,7 @@ export function AgentMonitoring() {
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground whitespace-nowrap">
-                              {format(new Date(action.performedAt), 'HH:mm:ss')}
+                              {safeFormatDate(action.performedAt, 'HH:mm:ss')}
                             </div>
                           </div>
                         </Card>
@@ -779,7 +789,7 @@ export function AgentMonitoring() {
                               )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(new Date(policy.createdAt), 'PP')}
+                              {safeFormatDate(policy.createdAt, 'PP')}
                             </div>
                           </div>
                         </Card>
