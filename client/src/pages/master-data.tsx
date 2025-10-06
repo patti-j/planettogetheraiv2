@@ -676,6 +676,7 @@ interface HierarchicalDataTableProps {
   onDelete: (id: number) => void;
   isLoading?: boolean;
   onShowAiAssistant?: () => void;
+  setSelectedJobForPath?: (job: { id: number; description: string }) => void;
 }
 
 // Enhanced hierarchical data types
@@ -889,7 +890,7 @@ function HierarchicalDataTable({
                       <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => setSelectedJobForPath({ id: row.id, description: row.description || row.externalId || `Job ${row.id}` })}
+                        onClick={() => setSelectedJobForPath?.({ id: row.id, description: row.description || row.external_id || row.name || `Job ${row.id}` })}
                         title="View Manufacturing Path"
                       >
                         <Route className="h-3 w-3" />
@@ -1050,7 +1051,11 @@ function HierarchicalDataTable({
 
 export default function MasterDataPage() {
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('items');
+  
+  // Get tab from URL parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabFromUrl = urlParams.get('tab') || 'items';
+  const [activeTab, setActiveTab] = useState(tabFromUrl);
 
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -1248,8 +1253,12 @@ export default function MasterDataPage() {
   const { data, isLoading, refetch } = useQuery({
     queryKey: [endpoints[activeTab]],
     queryFn: async () => {
+      console.log('[Master Data] Fetching data for tab:', activeTab, 'endpoint:', endpoints[activeTab]);
       const response = await apiRequest('GET', endpoints[activeTab]);
-      return await response.json();
+      const jsonData = await response.json();
+      console.log('[Master Data] Received data for', activeTab, ':', jsonData);
+      console.log('[Master Data] Data length:', jsonData?.length || 0);
+      return jsonData;
     }
   });
 
