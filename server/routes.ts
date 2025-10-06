@@ -63,6 +63,7 @@ import { log } from "./vite";
 import path from "path";
 import fs from "fs";
 import agentTrainingRoutes from "./routes/agent-training-routes";
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 import multer from "multer";
 
 // Extend the global namespace to include tokenStore
@@ -3559,29 +3560,17 @@ router.get("/api/ai/models", async (req, res) => {
     // Fetch models from OpenAI API
     const response = await openai.models.list();
     
-    // Filter to only include GPT models relevant for chat
-    const chatModels = response.data
-      .filter((model: any) => {
-        const id = model.id.toLowerCase();
-        return (
-          id.includes('gpt-4') || 
-          id.includes('gpt-3.5') || 
-          id.includes('gpt-5') ||
-          id.includes('o1') ||
-          id.includes('o3')
-        );
-      })
-      .map((model: any) => ({
-        id: model.id,
-        created: model.created,
-        owned_by: model.owned_by
-      }))
-      .sort((a: any, b: any) => b.created - a.created); // Sort by newest first
+    // Return only our single configured model instead of fetching from API
+    const chatModels = [{
+      id: DEFAULT_MODEL,
+      created: Date.now(),
+      owned_by: 'openai'
+    }];
 
     res.json({
       success: true,
       models: chatModels,
-      count: chatModels.length
+      count: 1
     });
 
   } catch (error) {
@@ -5387,7 +5376,7 @@ router.post("/api/v1/query/semantic", requireAuth, async (req, res) => {
 
     // Step 1: Analyze query intent and generate SQL
     const intentAnalysis = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         {
           role: "system",
@@ -6807,12 +6796,12 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
     
     // Call OpenAI
     const completion = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: DEFAULT_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
-      temperature: 0.3,
+      temperature: DEFAULT_TEMPERATURE,
       max_tokens: 2000,
       response_format: { type: "json_object" }
     });

@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '../config/ai-model';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -75,8 +76,8 @@ interface SchedulingAIOptions {
 export class SchedulingAI {
   private readonly defaultOptions: SchedulingAIOptions = {
     maxTokens: 1500,
-    temperature: 0.3,
-    model: 'gpt-4o-2024-08-06'
+    temperature: DEFAULT_TEMPERATURE,
+    model: DEFAULT_MODEL
   };
 
   async generateResponse(
@@ -175,7 +176,7 @@ export class SchedulingAI {
       console.log('[SchedulingAI] Generating conversation title...');
       
       const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
+        model: DEFAULT_MODEL,
         messages: [
           { 
             role: 'system', 

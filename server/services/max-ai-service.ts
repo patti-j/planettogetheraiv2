@@ -11,6 +11,7 @@ import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm
 import { dataCatalog } from './data-catalog';
 import { semanticRegistry } from './semantic-registry';
 import { agentTrainingLoader } from './agent-training-loader';
+import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '../config/ai-model';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -172,7 +173,7 @@ export class MaxAIService {
       
       // Use AI to detect if this should be stored as memory
       const memoryAnalysis = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -261,7 +262,7 @@ Only store information that would be helpful for future conversations. Don't sto
 
       // Use AI to find relevant playbooks
       const relevanceCheck = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -413,7 +414,7 @@ Only include playbooks with relevance_score > 0.5. Return empty array if none ar
 
       // Use AI to find the most relevant memories
       const relevanceCheck = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: "system",
@@ -429,7 +430,7 @@ Return the 3 most relevant memories as a concise summary that would help provide
 Format as: "Based on what I remember about you: [relevant info]" or return empty string if no memories are relevant.`
           }
         ],
-        temperature: 0.3,
+        temperature: DEFAULT_TEMPERATURE,
         max_tokens: 300
       });
 
@@ -891,7 +892,7 @@ Return only the JSON object, no other text.`;
 
     try {
       const response = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
         max_tokens: 1000
@@ -1223,7 +1224,7 @@ Return only the JSON object, no other text.`;
       
       try {
         const response = await openai.chat.completions.create({
-          model: 'gpt-4o',
+          model: DEFAULT_MODEL,
           messages: [
             {
               role: 'system', 
@@ -1416,9 +1417,9 @@ Rules:
         messages.push({ role: 'user', content: enrichedQuery });
         
         const requestOptions: any = {
-          model: 'gpt-4o',
+          model: DEFAULT_MODEL,
           messages,
-          temperature: 0.3,
+          temperature: DEFAULT_TEMPERATURE,
           max_tokens: 1000
         };
         
@@ -1507,12 +1508,12 @@ Rules:
       
       // Create streaming completion
       const stream = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: query }
         ],
-        temperature: 0.3,
+        temperature: DEFAULT_TEMPERATURE,
         max_tokens: 1000,
         stream: true
       });
@@ -1678,7 +1679,7 @@ Would you like me to analyze any specific area in detail?`;
     try {
       // Let AI understand the user's intent and decide what to do
       const intentResponse = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: 'system',
@@ -2205,7 +2206,7 @@ Respond with JSON:
 
       // Use AI to determine the most relevant data endpoint
       const dataResponse = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: 'system',
@@ -2272,7 +2273,7 @@ Focus on the most relevant data type that would answer the user's question.`
         
         // Let AI analyze and format the response naturally
         const analysisResponse = await openai.chat.completions.create({
-          model: 'gpt-4o',
+          model: DEFAULT_MODEL,
           messages: [
             {
               role: 'system',
@@ -2308,7 +2309,7 @@ IMPORTANT: The data above may be a sample. Analyze the FULL dataset shown (all $
 Please answer their question using this data.`
             }
           ],
-          temperature: 0.3,
+          temperature: DEFAULT_TEMPERATURE,
           max_tokens: 400
         });
         
@@ -2339,7 +2340,7 @@ Please answer their question using this data.`
       ).join('\n');
 
       const navResponse = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: 'system',
@@ -2398,7 +2399,7 @@ IMPORTANT RULES:
     
     try {
       const analysisResponse = await openai.chat.completions.create({
-        model: 'gpt-4o',
+        model: DEFAULT_MODEL,
         messages: [
           {
             role: 'system',
@@ -3176,7 +3177,7 @@ class ProactiveRecommendationEngine {
       const systemPrompt = this.buildSystemPrompt(context, undefined, relevantMemories, playbooks);
       
       const completion = await openai.chat.completions.create({
-        model: "gpt-4o",
+        model: DEFAULT_MODEL,
         messages: [
           { role: "system", content: systemPrompt },
           ...conversationHistory.slice(-5).map(msg => ({
@@ -3185,7 +3186,7 @@ class ProactiveRecommendationEngine {
           })),
           { role: "user", content: message }
         ],
-        temperature: 0.3,
+        temperature: DEFAULT_TEMPERATURE,
         max_tokens: 800
       });
 
