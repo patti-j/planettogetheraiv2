@@ -253,7 +253,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
   const [showVoiceSettings, setShowVoiceSettings] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(true);
   const [unifiedMode, setUnifiedMode] = useState(false);
-  const [agentMessages, setAgentMessages] = useState<Record<string, AgentMessage[]>>({ max: [], scheduling_assistant: [] });
+  const [agentMessages, setAgentMessages] = useState<Record<string, AgentMessage[]>>({ max: [] });
 
   // Using new agent analysis system instead of old recommendation generation
 
@@ -572,11 +572,8 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
       const enhancedContext = captureEnhancedContext();
       const { message, agentId = currentAgent.id } = params;
       
-      // Determine endpoint based on agent
-      let endpoint = '/api/ai-agent/chat'; // Default for Max
-      if (agentId === 'scheduling_assistant') {
-        endpoint = '/api/ai/schedule/chat';
-      }
+      // All agents use the unified chat endpoint
+      const endpoint = '/api/ai-agent/chat';
       
       const response = await apiRequest('POST', endpoint, {
         message,
@@ -703,7 +700,7 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
     if (unifiedMode) {
       // In unified mode, send to multiple agents
       const customerFacingAgents = availableAgents.filter(a => 
-        a.id === 'max' || a.id === 'scheduling_assistant'
+        a.id === 'max' || a.id === 'production_scheduling'
       );
       
       // Send to each customer-facing agent
@@ -1409,14 +1406,14 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 </div>
               </DropdownMenuItem>
               <DropdownMenuItem 
-                onClick={() => switchToAgent('scheduling_assistant')}
-                className={currentAgent.id === 'scheduling_assistant' ? 'bg-cyan-100' : ''}
+                onClick={() => switchToAgent('production_scheduling')}
+                className={currentAgent.id === 'production_scheduling' ? 'bg-emerald-100' : ''}
               >
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-5 w-5" style={{ color: '#06B6D4' }} />
+                  <Calendar className="h-5 w-5" style={{ color: '#10B981' }} />
                   <div>
-                    <div className="font-semibold">AI Scheduling Agent</div>
-                    <div className="text-xs text-gray-500">APS & scheduling expert</div>
+                    <div className="font-semibold">Production Scheduling Agent</div>
+                    <div className="text-xs text-gray-500">APS & scheduling optimization expert</div>
                   </div>
                 </div>
               </DropdownMenuItem>
@@ -1843,17 +1840,17 @@ export function MaxSidebar({ onClose }: MaxSidebarProps = {}) {
                 </div>
               </button>
               <button
-                onClick={() => switchToAgent('scheduling_assistant')}
+                onClick={() => switchToAgent('production_scheduling')}
                 className={`text-left p-2 rounded flex items-center gap-2 transition-colors ${
-                  currentAgent.id === 'scheduling_assistant' 
-                    ? 'bg-cyan-600 text-white' 
-                    : 'bg-white hover:bg-cyan-100 text-gray-700'
+                  currentAgent.id === 'production_scheduling' 
+                    ? 'bg-emerald-600 text-white' 
+                    : 'bg-white hover:bg-emerald-100 text-gray-700'
                 }`}
               >
                 <Calendar className="h-4 w-4" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">AI Scheduling Agent</div>
-                  <div className="text-xs opacity-75">APS & scheduling expert</div>
+                  <div className="text-sm font-medium">Production Scheduling Agent</div>
+                  <div className="text-xs opacity-75">APS & scheduling optimization expert</div>
                 </div>
               </button>
             </div>

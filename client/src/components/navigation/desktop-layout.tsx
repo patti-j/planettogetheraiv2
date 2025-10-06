@@ -187,10 +187,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         }
       };
 
-      if (selectedFloatingAgent === 'scheduling_assistant') {
-        endpoint = '/api/ai/schedule/chat';
-        requestBody = { message: { role: 'user', content: message, source: 'floating' } };
-      } else if (selectedFloatingAgent === 'unified') {
+      if (selectedFloatingAgent === 'unified') {
         // Use Max AI with unified routing indicator
         requestBody.context.agentMode = 'unified';
       } else if (selectedFloatingAgent !== 'max') {
@@ -454,7 +451,6 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const getAgentIcon = (agentId: string) => {
     switch (agentId) {
       case 'max': return Sparkles;
-      case 'scheduling_assistant': return Calendar;
       case 'production_scheduling': return Calendar;
       case 'shop_floor': return Factory;
       case 'quality_management': return Shield;

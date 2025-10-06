@@ -38,13 +38,18 @@ export const CORE_AGENTS: Agent[] = [
     department: 'orchestration'
   },
   {
-    id: 'scheduling_assistant',
-    name: 'scheduling_assistant',
-    displayName: 'AI Scheduling Agent',
-    description: 'Expert in PlanetTogether APS concepts, Bryntum scheduler features, and production scheduling best practices',
+    id: 'production_scheduling',
+    name: 'production_scheduling',
+    displayName: 'Production Scheduling Agent',
+    description: 'Expert in production scheduling optimization, PlanetTogether APS concepts, Bryntum scheduler features, bottleneck management, and resource allocation',
     icon: 'Calendar',
-    color: '#06B6D4', // cyan
+    color: '#10B981', // emerald
     specialties: [
+      'Schedule optimization',
+      'Bottleneck analysis',
+      'Resource allocation',
+      'Constraint management',
+      'ASAP/ALAP algorithms',
       'PlanetTogether concepts',
       'Bryntum scheduler',
       'APS best practices',
@@ -52,6 +57,22 @@ export const CORE_AGENTS: Agent[] = [
       'Pegging and constraints'
     ],
     capabilities: [
+      {
+        id: 'optimize_schedule',
+        name: 'Schedule Optimization',
+        description: 'Generate optimized production schedules using advanced algorithms',
+        inputTypes: ['jobs', 'resources', 'constraints'],
+        outputTypes: ['optimized_schedule', 'gantt_chart'],
+        requiresData: ['ptjobs', 'ptjoboperations', 'ptresources', 'ptjobresources']
+      },
+      {
+        id: 'analyze_bottlenecks',
+        name: 'Bottleneck Analysis',
+        description: 'Identify and analyze production bottlenecks with solutions',
+        inputTypes: ['current_schedule', 'resource_utilization'],
+        outputTypes: ['bottleneck_report', 'improvement_recommendations'],
+        requiresData: ['ptjobs', 'ptresources', 'ptjoboperations']
+      },
       {
         id: 'pt_expertise',
         name: 'PlanetTogether Expertise',
@@ -71,42 +92,6 @@ export const CORE_AGENTS: Agent[] = [
     ],
     status: 'active',
     priority: 2,
-    department: 'support'
-  },
-  {
-    id: 'production_scheduling',
-    name: 'production_scheduling',
-    displayName: 'Production Scheduling Agent',
-    description: 'Optimize production schedules, manage bottlenecks, and coordinate resource allocation',
-    icon: 'Calendar',
-    color: '#10B981', // emerald
-    specialties: [
-      'Schedule optimization',
-      'Bottleneck analysis',
-      'Resource allocation',
-      'Constraint management',
-      'ASAP/ALAP algorithms'
-    ],
-    capabilities: [
-      {
-        id: 'optimize_schedule',
-        name: 'Schedule Optimization',
-        description: 'Generate optimized production schedules using advanced algorithms',
-        inputTypes: ['jobs', 'resources', 'constraints'],
-        outputTypes: ['optimized_schedule', 'gantt_chart'],
-        requiresData: ['ptjobs', 'ptjoboperations', 'ptresources', 'ptjobresources']
-      },
-      {
-        id: 'analyze_bottlenecks',
-        name: 'Bottleneck Analysis',
-        description: 'Identify and analyze production bottlenecks with solutions',
-        inputTypes: ['current_schedule', 'resource_utilization'],
-        outputTypes: ['bottleneck_report', 'improvement_recommendations'],
-        requiresData: ['ptjobs', 'ptresources', 'ptjoboperations']
-      }
-    ],
-    status: 'active',
-    priority: 3,
     department: 'operations'
   },
   {

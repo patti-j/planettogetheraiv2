@@ -3,6 +3,12 @@
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system focused on production scheduling with a visual Gantt chart interface. Its purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility. The system emphasizes data integrity, real-time optimization, and comprehensive reporting for pharmaceutical, chemical, and industrial manufacturing, with an ambition for enterprise-grade production deployment and unlimited horizontal scaling. Key capabilities include multi-agent support, modular federation, and advanced AI integration for scheduling and system intelligence.
 
+## Recent Changes
+
+**October 6, 2025**
+- **Agent Consolidation**: Merged AI Scheduling Agent functionality into Production Scheduling Agent. The Production Scheduling Agent now handles both production optimization (schedule optimization, bottleneck analysis, resource allocation) and APS expertise (PlanetTogether concepts, Bryntum scheduler features, APS best practices, finite capacity planning). This consolidation provides users with a single, comprehensive agent for all scheduling-related tasks.
+- **Plants Management Icon**: Fixed icon mapping for Plants Management page in recent pages navigation.
+
 ## User Preferences
 Preferred communication style: Simple, everyday language.
 
