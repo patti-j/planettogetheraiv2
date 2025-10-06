@@ -1052,22 +1052,6 @@ export default function MasterDataPage() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('items');
 
-  // Dataset size presets
-  const datasetSizePresets = {
-    small: { items: 5, customers: 3, vendors: 3, capabilities: 5, workCenters: 3, jobs: 5, recipes: 3, routings: 3, billsOfMaterial: 5, warehouses: 3 },
-    medium: { items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10, warehouses: 6 },
-    large: { items: 50, customers: 25, vendors: 20, capabilities: 30, workCenters: 15, jobs: 40, recipes: 25, routings: 20, billsOfMaterial: 35, warehouses: 12 }
-  };
-
-  // Update record counts when dataset size changes
-  const handleDatasetSizeChange = (size: string) => {
-    console.log('📻 Radio button clicked! Size:', size);
-    const validSize = size as 'small' | 'medium' | 'large';
-    console.log('📻 Setting dataset size to:', validSize);
-    setDatasetSize(validSize);
-    setRecordCounts(datasetSizePresets[validSize]);
-    console.log('📻 Record counts updated:', datasetSizePresets[validSize]);
-  };
   const [showAiAssistant, setShowAiAssistant] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [aiProcessing, setAiProcessing] = useState(false);
@@ -1089,6 +1073,23 @@ export default function MasterDataPage() {
     billsOfMaterial: 15,
     warehouses: 15
   });
+
+  // Dataset size presets
+  const datasetSizePresets = {
+    small: { items: 5, customers: 3, vendors: 3, capabilities: 5, workCenters: 3, jobs: 5, recipes: 3, routings: 3, billsOfMaterial: 5, warehouses: 3 },
+    medium: { items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10, warehouses: 6 },
+    large: { items: 50, customers: 25, vendors: 20, capabilities: 30, workCenters: 15, jobs: 40, recipes: 25, routings: 20, billsOfMaterial: 35, warehouses: 12 }
+  };
+
+  // Update record counts when dataset size changes
+  const handleDatasetSizeChange = (size: string) => {
+    console.log('📻 Radio button clicked! Size:', size);
+    const validSize = size as 'small' | 'medium' | 'large';
+    console.log('📻 Setting dataset size to:', validSize);
+    setDatasetSize(validSize);
+    setRecordCounts(datasetSizePresets[validSize]);
+    console.log('📻 Record counts updated:', datasetSizePresets[validSize]);
+  };
 
   // Define columns for each entity type
   const columns: Record<string, Column[]> = {
@@ -1585,15 +1586,24 @@ export default function MasterDataPage() {
                   onValueChange={handleDatasetSizeChange}
                   className="flex flex-row space-x-6"
                 >
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2" onClick={() => {
+                    console.log('🔴 Small wrapper clicked');
+                    handleDatasetSizeChange('small');
+                  }}>
                     <RadioGroupItem value="small" id="small" data-testid="radio-small" />
                     <Label htmlFor="small" className="text-sm cursor-pointer">Small (3-5 records each)</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2" onClick={() => {
+                    console.log('🟡 Medium wrapper clicked');
+                    handleDatasetSizeChange('medium');
+                  }}>
                     <RadioGroupItem value="medium" id="medium" data-testid="radio-medium" />
                     <Label htmlFor="medium" className="text-sm cursor-pointer">Medium (8-15 records each)</Label>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-2" onClick={() => {
+                    console.log('🟢 Large wrapper clicked');
+                    handleDatasetSizeChange('large');
+                  }}>
                     <RadioGroupItem value="large" id="large" data-testid="radio-large" />
                     <Label htmlFor="large" className="text-sm cursor-pointer">Large (20-50 records each)</Label>
                   </div>
