@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Agent, AgentMessage, AgentAnalysis, AgentCoordination } from '@/types/agents';
 // Temporarily revert to original agent management while federation is in development
 import { getAgentById, getActiveAgents, ALL_AGENTS } from '@/config/agents';
+import { useLocation } from 'wouter';
 
 interface AgentContextType {
   // Current agent state
@@ -32,6 +33,7 @@ interface AgentContextType {
 const AgentContext = createContext<AgentContextType | undefined>(undefined);
 
 export function AgentProvider({ children }: { children: React.ReactNode }) {
+  const [location] = useLocation();
   const [currentAgent, setCurrentAgent] = useState<Agent>(() => {
     // Default to Max agent
     return getAgentById('max') || ALL_AGENTS[0];
@@ -42,6 +44,43 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [messages, setMessages] = useState<AgentMessage[]>([]);
   const [activeCoordination, setActiveCoordination] = useState<AgentCoordination>();
   const [currentAnalysis, setCurrentAnalysis] = useState<AgentAnalysis>();
+  
+  // Auto-select agent based on current page
+  useEffect(() => {
+    const pageToAgentMap: Record<string, string> = {
+      '/production-schedule': 'production_scheduling',
+      '/production-scheduler': 'production_scheduling',
+      '/shop-floor-control': 'shop_floor',
+      '/quality-control': 'quality_analysis',
+      '/quality-management': 'quality_analysis',
+      '/predictive-maintenance': 'predictive_maintenance',
+      '/maintenance': 'predictive_maintenance'
+    };
+    
+    const agentId = pageToAgentMap[location];
+    console.log('🤖 Agent Auto-Select:', { location, agentId, currentAgent: currentAgent.id });
+    
+    if (agentId && currentAgent.id !== agentId) {
+      const agent = getAgentById(agentId);
+      if (agent && agent.status === 'active') {
+        console.log('✅ Switching to agent:', agent.displayName);
+        setCurrentAgent(agent);
+        
+        // Add welcome message when auto-switching
+        const welcomeMessage: AgentMessage = {
+          id: `autoswitch_${Date.now()}`,
+          agentId: agent.id,
+          type: 'agent',
+          content: getAgentWelcomeMessage(agent),
+          timestamp: new Date(),
+          context: {
+            page: location
+          }
+        };
+        setMessages([welcomeMessage]);
+      }
+    }
+  }, [location, currentAgent.id]);
   
   // Initialize with welcome message from current agent
   useEffect(() => {

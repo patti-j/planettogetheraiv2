@@ -19,6 +19,7 @@ import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { useAgent } from '@/contexts/AgentContext';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -34,12 +35,20 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
   const { setCanvasVisible, setCanvasItems } = useMaxDock();
+  const { currentAgent } = useAgent();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
   const [isFloatingBubbleMinimized, setIsFloatingBubbleMinimized] = useState(false);
   const [selectedFloatingAgent, setSelectedFloatingAgent] = useState<string>('unified');
   const floatingInputRef = useRef<HTMLInputElement>(null);
+  
+  // Sync floating bubble agent selection with AgentContext
+  useEffect(() => {
+    if (currentAgent && currentAgent.id !== 'max') {
+      setSelectedFloatingAgent(currentAgent.id);
+    }
+  }, [currentAgent]);
   
   // Voice recording state for floating bubble
   const [isFloatingRecording, setIsFloatingRecording] = useState(false);
