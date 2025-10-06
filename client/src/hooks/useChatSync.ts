@@ -7,6 +7,8 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
   source?: 'header' | 'panel' | 'floating'; // Track where the message came from
+  agentId?: string; // Which agent sent this message (e.g., 'max', 'production_scheduling', 'quality_analysis')
+  agentName?: string; // Display name of the agent (e.g., 'Max', 'Production Scheduling Agent')
 }
 
 // Current user ID - will be loaded from auth
@@ -39,7 +41,9 @@ const loadChatHistory = async () => {
         role: 'assistant',
         content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
         createdAt: new Date().toISOString(),
-        source: 'panel'
+        source: 'panel',
+        agentId: 'max',
+        agentName: 'Max'
       }
     ];
     
@@ -56,7 +60,9 @@ const loadChatHistory = async () => {
         role: 'assistant',
         content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
         createdAt: new Date().toISOString(),
-        source: 'panel'
+        source: 'panel',
+        agentId: 'max',
+        agentName: 'Max'
       }
     ];
     messagesLoaded = true;
@@ -104,7 +110,9 @@ const getCurrentUser = async () => {
         role: 'assistant',
         content: 'Hello! I\'m Max, your AI assistant. I can help you optimize production schedules, analyze performance metrics, and provide insights about your manufacturing operations. How can I assist you today?',
         createdAt: new Date().toISOString(),
-        source: 'panel'
+        source: 'panel',
+        agentId: 'max',
+        agentName: 'Max'
       }
     ];
     messagesLoaded = true;
@@ -155,6 +163,8 @@ export const useChatSync = () => {
         userId: currentUserId,
         role: message.role,
         content: message.content,
+        agentId: message.agentId || null,
+        agentName: message.agentName || null,
         source: message.source || 'panel'
       });
 

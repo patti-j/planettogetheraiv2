@@ -477,7 +477,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       addMessage({
         role: 'assistant',
         content: 'Request cancelled.',
-        source: 'panel'
+        source: 'panel',
+        agentId: 'max',
+        agentName: 'Max'
       });
     }
   };
@@ -493,11 +495,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       // Let Max AI backend handle all navigation logic for better intent understanding
       // Removed frontend navigation pattern matching that was interfering with Max AI
       
-      // Route to appropriate agent based on selection
+      // Route to Max AI (primary agent)
       const authToken = localStorage.getItem('auth_token');
-      const endpoint = selectedAgent === 'scheduling_assistant' 
-        ? '/api/ai/schedule/chat' 
-        : '/api/max-ai/chat';
+      const endpoint = '/api/max-ai/chat';
       
       const response = await fetch(endpoint, {
         method: 'POST',
@@ -557,7 +557,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         await addMessage({
           role: 'assistant',
           content: data.content || `Navigating to ${data.action.target.replace('/', '').replace('-', ' ')}...`,
-          source: 'panel'
+          source: 'panel',
+          agentId: 'max',
+          agentName: 'Max'
         });
         return;
       }
@@ -627,7 +629,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         await addMessage({
           role: 'assistant',
           content: data.content || 'I\'ve created a chart for you and added it to the canvas.',
-          source: 'panel'
+          source: 'panel',
+          agentId: 'max',
+          agentName: 'Max'
         });
         return;
       }
@@ -639,7 +643,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         await addMessage({
           role: 'assistant',
           content: responseContent,
-          source: 'panel'
+          source: 'panel',
+          agentId: 'max',
+          agentName: 'Max'
         });
 
         // Play voice response if enabled
@@ -1332,6 +1338,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                             message.role === 'user' && "items-end"
                           )}
                         >
+                          {/* Agent identifier for assistant messages */}
+                          {message.role === 'assistant' && message.agentName && (
+                            <div className="flex items-center gap-1 px-1">
+                              <Sparkles className="h-3 w-3 text-purple-500" />
+                              <span className="text-xs font-medium text-muted-foreground">
+                                {message.agentName}
+                              </span>
+                            </div>
+                          )}
+                          
                           <div className={cn(
                             "relative group",
                             message.role === 'assistant' && "pr-8"

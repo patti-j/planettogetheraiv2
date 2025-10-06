@@ -5035,7 +5035,7 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
 
 import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import { apiKeys, apiKeyUsage, oauthClients, oauthTokens, users, roles } from '@shared/schema';
+import { apiKeys, apiKeyUsage, oauthClients, oauthTokens, users, roles, maxChatMessages } from '@shared/schema';
 import { enhancedAuth, requirePermission, AuthenticatedRequest } from './enhanced-auth-middleware';
 import { insertApiKeySchema, insertOauthClientSchema, ApiKey, OauthClient } from '@shared/schema';
 import { desc, eq, and } from 'drizzle-orm';
@@ -5788,6 +5788,50 @@ router.delete("/api/agent-control/connections/:id", async (req, res) => {
   } catch (error) {
     console.error("Error deleting agent connection:", error);
     res.status(500).json({ success: false, error: "Failed to delete connection" });
+  }
+});
+
+// Max Chat Messages endpoints
+router.get("/api/max-chat-messages/:userId", async (req, res) => {
+  try {
+    const result = await db.select().from(maxChatMessages)
+      .where(eq(maxChatMessages.userId, Number(req.params.userId)))
+      .orderBy(maxChatMessages.createdAt);
+    res.json(result);
+  } catch (error) {
+    console.error("Error fetching chat messages:", error);
+    res.status(500).json({ error: "Failed to fetch chat messages" });
+  }
+});
+
+router.post("/api/max-chat-messages", async (req, res) => {
+  try {
+    const { userId, role, content, agentId, agentName, source } = req.body;
+    const [message] = await db.insert(maxChatMessages)
+      .values({
+        userId,
+        role,
+        content,
+        agentId: agentId || null,
+        agentName: agentName || null,
+        source: source || 'panel'
+      })
+      .returning();
+    res.json(message);
+  } catch (error) {
+    console.error("Error saving chat message:", error);
+    res.status(500).json({ error: "Failed to save chat message" });
+  }
+});
+
+router.delete("/api/max-chat-messages/:userId", async (req, res) => {
+  try {
+    await db.delete(maxChatMessages)
+      .where(eq(maxChatMessages.userId, Number(req.params.userId)));
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting chat messages:", error);
+    res.status(500).json({ error: "Failed to delete chat messages" });
   }
 });
 

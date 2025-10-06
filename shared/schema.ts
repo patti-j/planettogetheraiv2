@@ -747,6 +747,17 @@ export const schedulingMessages = pgTable("scheduling_messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+export const maxChatMessages = pgTable("max_chat_messages", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  role: varchar("role", { length: 20 }).notNull(), // 'user' or 'assistant'
+  content: text("content").notNull(),
+  agentId: varchar("agent_id", { length: 100 }), // Which agent sent this message (e.g., 'max', 'production_scheduling', 'quality_analysis')
+  agentName: varchar("agent_name", { length: 255 }), // Display name of the agent
+  source: varchar("source", { length: 20 }), // 'header', 'panel', or 'floating'
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // ============================================
 // Application Tables
 // ============================================
@@ -806,6 +817,7 @@ export const insertRecentPageSchema = createInsertSchema(recentPages);
 export const insertProductionOrderSchema = createInsertSchema(productionOrders);
 export const insertSchedulingConversationSchema = createInsertSchema(schedulingConversations);
 export const insertSchedulingMessageSchema = createInsertSchema(schedulingMessages);
+export const insertMaxChatMessageSchema = createInsertSchema(maxChatMessages).omit({ id: true, createdAt: true });
 export const insertSavedScheduleSchema = createInsertSchema(savedSchedules);
 
 // AI Agent Team System schemas
@@ -950,6 +962,8 @@ export type SchedulingConversation = typeof schedulingConversations.$inferSelect
 export type InsertSchedulingConversation = z.infer<typeof insertSchedulingConversationSchema>;
 export type SchedulingMessage = typeof schedulingMessages.$inferSelect;
 export type InsertSchedulingMessage = z.infer<typeof insertSchedulingMessageSchema>;
+export type MaxChatMessage = typeof maxChatMessages.$inferSelect;
+export type InsertMaxChatMessage = z.infer<typeof insertMaxChatMessageSchema>;
 export type SavedSchedule = typeof savedSchedules.$inferSelect;
 export type InsertSavedSchedule = z.infer<typeof insertSavedScheduleSchema>;
 
