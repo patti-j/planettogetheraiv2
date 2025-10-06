@@ -296,7 +296,7 @@ export default function HomePage() {
 
       {/* Dashboard Preview - Collapsible */}
       {!isDashboardCollapsed && (
-        <div className={`flex-shrink-0 ${isMobile ? 'p-4' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20`} style={{ maxHeight: isMobile ? '300px' : '350px' }}>
+        <div className={`flex-shrink-0 ${isMobile ? 'p-4 mb-16' : 'p-6'} border-b bg-gray-50 dark:bg-gray-900/20`} style={{ maxHeight: isMobile ? '300px' : '350px' }}>
         <Card className="h-full flex flex-col">
           <CardHeader className="pb-3 flex-shrink-0">
             <CardTitle className="flex items-center gap-2 text-lg">
