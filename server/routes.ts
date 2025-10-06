@@ -5984,7 +5984,7 @@ router.patch("/api/agent-control/connections/:id/rate-limits", async (req, res) 
   }
 });
 
-// Master Data Bulk Generation endpoint
+// Master Data Bulk Generation endpoint with full OpenAI integration
 router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
   try {
     const { recordCounts = {}, companyInfo, replaceExisting = false } = req.body;
@@ -5997,15 +5997,180 @@ router.post("/api/master-data/bulk-generate", requireAuth, async (req, res) => {
       });
     }
     
-    console.log(`[AI Bulk Generate] Starting bulk generation with record counts:`, recordCounts);
+    // Default record counts
+    const defaultCounts = {
+      items: 15, customers: 8, vendors: 8, capabilities: 12, workCenters: 6, 
+      jobs: 12, recipes: 8, routings: 8, billsOfMaterial: 10, warehouses: 6
+    };
+    const finalRecordCounts = { ...defaultCounts, ...recordCounts };
     
-    // For now, return a simple success response
-    // TODO: Implement actual OpenAI-based bulk data generation
+    const totalRecords = Object.values(finalRecordCounts).reduce((a: number, b: number) => a + b, 0);
+    console.log(`[AI Bulk Generate] Creating ${totalRecords} total records across all tables`);
+    
+    // Master data table mapping (dynamically import schema)
+    const schema = await import('@shared/schema');
+    const masterDataTables = {
+      items: schema.items,
+      customers: schema.customers,
+      vendors: schema.vendors,
+      capabilities: schema.ptCapabilities,
+      resources: schema.ptResources,
+      workCenters: schema.workCenters,
+      jobs: schema.ptJobs,
+      recipes: schema.recipes,
+      billsOfMaterial: schema.billsOfMaterial,
+      routings: schema.routings,
+      warehouses: schema.ptWarehouses
+    };
+    
+    const entityTypes = Object.keys(finalRecordCounts);
+    const results: Record<string, any> = {};
+    
+    // Process entities with OpenAI
+    const processEntity = async (entityType: string) => {
+      try {
+        const recordCount = finalRecordCounts[entityType] || 10;
+        const companyContext = companyInfo ? `\n\nCOMPANY CONTEXT: ${companyInfo}\nGenerate data relevant to this specific company/industry.` : '';
+        
+        const contextDescriptions: Record<string, string> = {
+          items: "diverse manufacturing inventory items including raw materials, components, finished products",
+          customers: "comprehensive customer database with company names, contact persons, addresses",
+          vendors: "complete vendor/supplier records including company details, contact information",
+          capabilities: "manufacturing capabilities and processes including machining, assembly, packaging",
+          resources: "manufacturing resources like CNC machines, packaging lines, reactors",
+          workCenters: "production work centers including machining stations, assembly lines",
+          jobs: "production jobs with unique job numbers, specifications, quantities",
+          recipes: "formulation recipes for products with ingredients and process parameters",
+          billsOfMaterial: "detailed BOMs showing parent-child relationships",
+          routings: "manufacturing routings with operation sequences",
+          warehouses: "warehouse locations with capacity and inventory management details"
+        };
+        
+        const requiredFields: Record<string, string> = {
+          items: "REQUIRED: name (string), description (string), price (number)",
+          customers: "REQUIRED: name (string), email (string), phone (string)",
+          vendors: "REQUIRED: name (string), contactEmail (string), contactPhone (string)",
+          capabilities: "REQUIRED: name (string), description (string)",
+          resources: "REQUIRED: name (string), type (string), status (string - use 'active')",
+          workCenters: "REQUIRED: name (string), description (string)",
+          jobs: "REQUIRED: name (string), description (string), priority (number - use 2), status (string - use 'planned')",
+          recipes: "REQUIRED: recipeName (string), recipeNumber (string), status (string - use 'Active')",
+          billsOfMaterial: "REQUIRED: bomNumber (string), parentItemId (number - use 1), description (string)",
+          routings: "REQUIRED: routingNumber (string), name (string), description (string)",
+          warehouses: "REQUIRED: name (string), location (string), capacity (number)"
+        };
+        
+        const systemPrompt = `You are a manufacturing data expert. Generate ${recordCount} diverse, realistic ${contextDescriptions[entityType] || 'data records'} for a comprehensive manufacturing system.${companyContext} Return a JSON object with a "suggestions" array containing objects with: operation: "create", data: {complete record data}, explanation: "brief description", confidence: 0.9.`;
+        
+        const userPrompt = `Generate ${recordCount} comprehensive ${entityType} records for a manufacturing company. 
+
+${requiredFields[entityType] || "Include all required fields"}
+
+Include diverse examples:
+- Different categories, types, and classifications
+- Realistic names, codes, and descriptions  
+- Proper manufacturing industry values
+- Varied priorities, statuses, and attributes
+
+CRITICAL: Always include all required fields with valid non-null values. Use current date for date fields. Use realistic manufacturing names.`;
+
+        const apiPromise = fetch('https://api.openai.com/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'gpt-4o',
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: userPrompt }
+            ],
+            response_format: { type: "json_object" },
+            temperature: 0.9,
+            max_tokens: 4000
+          }),
+        });
+
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        );
+
+        const openaiResponse = await Promise.race([apiPromise, timeoutPromise]) as Response;
+
+        if (openaiResponse.ok) {
+          const aiResult = await openaiResponse.json();
+          const suggestions = JSON.parse(aiResult.choices[0].message.content);
+          
+          let savedCount = 0;
+          const tableSchema = masterDataTables[entityType as keyof typeof masterDataTables];
+          
+          if (tableSchema) {
+            const createPromises = suggestions.suggestions?.map(async (suggestion: any) => {
+              if (suggestion.operation === 'create' && suggestion.data) {
+                try {
+                  const validatedData = { ...suggestion.data };
+                  
+                  // Entity-specific validation
+                  if (entityType === 'jobs' && typeof validatedData.priority === 'string') {
+                    const priorityMap: Record<string, number> = {
+                      'high': 1, 'urgent': 1, 'critical': 1,
+                      'medium': 2, 'normal': 2,
+                      'low': 3, 'minor': 3
+                    };
+                    validatedData.priority = priorityMap[validatedData.priority?.toLowerCase()] || 2;
+                  }
+                  
+                  await db.insert(tableSchema).values(validatedData);
+                  savedCount++;
+                  console.log(`[AI Bulk Generate] Saved ${entityType}: ${validatedData.name || validatedData.bomNumber || validatedData.routingNumber || 'record'}`);
+                } catch (error) {
+                  console.error(`[AI Bulk Generate] Failed to save ${entityType}:`, error instanceof Error ? error.message : error);
+                }
+              }
+            }) || [];
+            
+            await Promise.all(createPromises);
+          }
+          
+          return {
+            success: true,
+            count: savedCount,
+            data: suggestions.suggestions || []
+          };
+        } else {
+          const errorText = await openaiResponse.text();
+          console.error(`[AI Bulk Generate] API error for ${entityType}:`, errorText);
+          return { success: false, error: `API call failed: ${openaiResponse.status}` };
+        }
+      } catch (error) {
+        console.error(`[AI Bulk Generate] Error generating ${entityType}:`, error instanceof Error ? error.message : error);
+        return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+      }
+    };
+
+    // Process entities in batches
+    const batchSize = 3;
+    for (let i = 0; i < entityTypes.length; i += batchSize) {
+      const batch = entityTypes.slice(i, i + batchSize);
+      const batchPromises = batch.map(async entityType => {
+        const result = await processEntity(entityType);
+        results[entityType] = result;
+        console.log(`[AI Bulk Generate] Completed ${entityType}: ${result.success ? `${result.count} records` : 'failed'}`);
+        return result;
+      });
+      
+      await Promise.all(batchPromises);
+    }
+    
+    const totalGenerated = Object.values(results).reduce((sum: number, result: any) => 
+      sum + (result.success ? result.count : 0), 0);
+    
     res.json({
       success: true,
-      message: `Bulk generation feature is being implemented. Please check back soon.`,
-      results: {},
-      totalRecords: 0
+      message: `Bulk generation completed: ${totalGenerated} total records generated across ${entityTypes.length} entity types`,
+      results,
+      totalRecords: totalGenerated
     });
 
   } catch (error) {
