@@ -1583,16 +1583,16 @@ export default function MasterDataPage() {
                   className="flex flex-row space-x-6"
                 >
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="small" id="small" />
-                    <Label htmlFor="small" className="text-sm">Small (3-5 records each)</Label>
+                    <RadioGroupItem value="small" id="small" data-testid="radio-small" />
+                    <Label htmlFor="small" className="text-sm cursor-pointer">Small (3-5 records each)</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="medium" id="medium" />
-                    <Label htmlFor="medium" className="text-sm">Medium (8-15 records each)</Label>
+                    <RadioGroupItem value="medium" id="medium" data-testid="radio-medium" />
+                    <Label htmlFor="medium" className="text-sm cursor-pointer">Medium (8-15 records each)</Label>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="large" id="large" />
-                    <Label htmlFor="large" className="text-sm">Large (20-50 records each)</Label>
+                    <RadioGroupItem value="large" id="large" data-testid="radio-large" />
+                    <Label htmlFor="large" className="text-sm cursor-pointer">Large (20-50 records each)</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -1650,10 +1650,11 @@ export default function MasterDataPage() {
                   id="replace-existing"
                   checked={replaceExisting}
                   onCheckedChange={(checked) => setReplaceExisting(checked === true)}
+                  data-testid="checkbox-replace-existing"
                 />
                 <label 
                   htmlFor="replace-existing" 
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  className="text-sm font-medium leading-none cursor-pointer peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                 >
                   Replace existing data (delete all current master data first)
                 </label>
