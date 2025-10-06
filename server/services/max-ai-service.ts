@@ -2144,9 +2144,9 @@ MANUFACTURING TERMINOLOGY CONTEXT:
 - "stock" = inventory/stock items (stock_items)
 
 When user mentions:
-- "jobs" or "production jobs" → use ptjobs-related endpoints
-- "operations" → use ptjoboperations
-- "resources" or "equipment" → use ptresources
+- "jobs" or "production jobs" → use /api/jobs endpoint
+- "operations" → use /api/operations or /api/pt-operations endpoints
+- "resources" or "equipment" → use /api/resources or /api/pt-resources endpoints
 - Always interpret queries in manufacturing/production context
 
 Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.
