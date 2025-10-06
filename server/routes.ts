@@ -6204,5 +6204,120 @@ CRITICAL: Always include all required fields with valid non-null values. Use cur
   }
 });
 
+// AI-powered master data assistance endpoint
+router.post("/api/master-data/ai-assist", requireAuth, async (req, res) => {
+  try {
+    // Define request schema with Zod
+    const aiAssistRequestSchema = z.object({
+      operation: z.enum(['suggest', 'improve', 'bulk_edit', 'generate']),
+      prompt: z.string().min(1, 'Prompt cannot be empty'),
+      entityType: z.string().min(1, 'Entity type is required'),
+      selectedData: z.array(z.record(z.any())).optional(),
+      currentData: z.array(z.record(z.any())).optional()
+    });
+    
+    // Validate OpenAI API key
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'OpenAI API key not configured. AI features are unavailable.',
+      });
+    }
+    
+    // Normalize operation field (handle case variations)
+    const normalizedBody = {
+      ...req.body,
+      operation: req.body.operation?.toString().toLowerCase().trim()
+    };
+    
+    // Validate request body
+    const validationResult = aiAssistRequestSchema.safeParse(normalizedBody);
+    if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map(e => e.message).join('; ');
+      return res.status(400).json({
+        success: false,
+        message: `Validation error: ${errorMessages}. Valid operations are: suggest, improve, bulk_edit, generate`
+      });
+    }
+    
+    const { operation, prompt, entityType, selectedData, currentData } = validationResult.data;
+    
+    console.log(`[AI Assistant] Processing ${operation} for ${entityType}: ${prompt.substring(0, 50)}...`);
+    
+    // Import OpenAI
+    const { OpenAI } = await import('openai');
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+    
+    // Build context-aware system prompt
+    const systemPrompt = `You are an AI assistant helping with manufacturing master data management for ${entityType}.
+    
+Your task is to ${operation === 'suggest' ? 'provide suggestions' : operation === 'improve' ? 'improve existing data' : operation === 'bulk_edit' ? 'apply bulk edits' : 'generate new data'} for the user.
+
+Current context:
+- Entity type: ${entityType}
+- Number of existing records: ${currentData?.length || 0}
+- Operation: ${operation}
+
+Guidelines:
+- Provide realistic, industry-appropriate data
+- Maintain consistency with existing data patterns
+- Follow manufacturing industry best practices
+- Include all required fields for the entity type
+- Use proper data types and formats
+
+Return your response as a JSON object with this structure:
+{
+  "suggestions": [
+    {
+      "operation": "create" | "update",
+      "id": number | null,
+      "data": { ...entity fields... },
+      "reason": "Brief explanation of the suggestion"
+    }
+  ],
+  "message": "Summary message for the user"
+}`;
+    
+    const userPrompt = `${prompt}
+
+${selectedData && selectedData.length > 0 ? `\nSelected data to work with:\n${JSON.stringify(selectedData, null, 2)}` : ''}
+
+${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent existing data (sample):\n${JSON.stringify(currentData.slice(0, 5), null, 2)}` : ''}`;
+    
+    // Call OpenAI
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt }
+      ],
+      temperature: 0.7,
+      max_tokens: 2000,
+      response_format: { type: "json_object" }
+    });
+    
+    const aiResponse = completion.choices[0]?.message?.content;
+    if (!aiResponse) {
+      throw new Error('No response from AI');
+    }
+    
+    const result = JSON.parse(aiResponse);
+    console.log(`[AI Assistant] Generated ${result.suggestions?.length || 0} suggestions`);
+    
+    res.json({
+      success: true,
+      ...result
+    });
+    
+  } catch (error: any) {
+    console.error('[AI Assistant] Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to process AI request',
+      suggestions: []
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
