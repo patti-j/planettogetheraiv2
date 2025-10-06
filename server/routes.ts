@@ -3548,6 +3548,52 @@ router.post("/api/ai/text-to-speech", async (req, res) => {
   }
 });
 
+// Fetch available OpenAI models
+router.get("/api/ai/models", async (req, res) => {
+  try {
+    // Import OpenAI
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    // Fetch models from OpenAI API
+    const response = await openai.models.list();
+    
+    // Filter to only include GPT models relevant for chat
+    const chatModels = response.data
+      .filter((model: any) => {
+        const id = model.id.toLowerCase();
+        return (
+          id.includes('gpt-4') || 
+          id.includes('gpt-3.5') || 
+          id.includes('gpt-5') ||
+          id.includes('o1') ||
+          id.includes('o3')
+        );
+      })
+      .map((model: any) => ({
+        id: model.id,
+        created: model.created,
+        owned_by: model.owned_by
+      }))
+      .sort((a: any, b: any) => b.created - a.created); // Sort by newest first
+
+    res.json({
+      success: true,
+      models: chatModels,
+      count: chatModels.length
+    });
+
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("Error fetching OpenAI models:", errorMessage);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch available models",
+      error: errorMessage
+    });
+  }
+});
+
 // ============================================
 // Saved Schedules endpoints
 // ============================================
