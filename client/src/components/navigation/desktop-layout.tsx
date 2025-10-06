@@ -18,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
+import { useMaxDock } from '@/contexts/MaxDockContext';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -32,6 +33,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { addMessage } = useChatSync();
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
+  const { setCanvasVisible, setCanvasItems } = useMaxDock();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
@@ -224,6 +226,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         source: 'floating',
         agentId: respondingAgent
       });
+      
+      // Handle canvas actions from Max AI (charts, widgets)
+      if (data?.canvasAction) {
+        console.log('Canvas action detected from floating AI:', data.canvasAction);
+        
+        if (data.canvasAction.action === 'add') {
+          const newItem = {
+            id: data.canvasAction.item.id || `canvas-${Date.now()}`,
+            type: data.canvasAction.item.type || 'chart',
+            data: data.canvasAction.item.data || data.canvasAction.item,
+            title: data.canvasAction.item.title || 'AI Generated Chart',
+            position: data.canvasAction.item.position || { x: 0, y: 0 }
+          };
+          
+          setCanvasItems((prev: any[]) => [...prev, newItem]);
+          setCanvasVisible(true);
+          
+          console.log('Canvas item added and canvas shown:', newItem);
+        }
+      }
       
       // Handle navigation actions from Max AI
       if (data?.action?.type === 'navigate' && data?.action?.target) {
