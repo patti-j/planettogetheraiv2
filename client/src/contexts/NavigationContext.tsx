@@ -417,10 +417,12 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
       const existingIndex = current.findIndex(page => page.path === path);
       
       if (existingIndex !== -1) {
-        // If page already exists, don't change the order - just update timestamp
+        // If page already exists, update timestamp, label, and icon (in case they changed)
         const updated = [...current];
         updated[existingIndex] = {
           ...updated[existingIndex],
+          label: finalLabel,
+          icon: finalIcon,
           timestamp: Date.now()
         };
         
