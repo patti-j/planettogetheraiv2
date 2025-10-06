@@ -2145,9 +2145,15 @@ MANUFACTURING TERMINOLOGY CONTEXT:
 
 When user mentions:
 - "jobs" or "production jobs" → use /api/jobs endpoint
+- "job quantities" or "how many items" → use /api/operations endpoint (quantities are in required_finish_qty)
 - "operations" → use /api/operations or /api/pt-operations endpoints
 - "resources" or "equipment" → use /api/resources or /api/pt-resources endpoints
 - Always interpret queries in manufacturing/production context
+
+DATA STRUCTURE KNOWLEDGE:
+- Job quantities are stored at operation level (ptjoboperations.required_finish_qty)
+- To get job quantity, sum all operation quantities for that job
+- Jobs table has NO quantity field - it's in operations table
 
 Respond with just the endpoint path (e.g., "/api/jobs") or "NONE" if no specific data is needed.
 Focus on the most relevant data type that would answer the user's question.`
@@ -2194,14 +2200,23 @@ Focus on the most relevant data type that would answer the user's question.`
               role: 'system',
               content: `You are Max, a manufacturing AI assistant. The user asked a question and we retrieved data to help answer it. 
 
-Analyze the data and provide a helpful, conversational response that directly answers their question.
+CRITICAL RESPONSE RULES:
+1. Keep responses SHORT (2-4 sentences max)
+2. Answer DIRECTLY - no essays or long explanations
+3. If data is missing, say it in ONE sentence and suggest where to find it
+4. Give specific numbers when available
+5. NO recommendations or advice unless explicitly asked
+
+DATA RELATIONSHIPS TO UNDERSTAND:
+- Job quantities: Sum of required_finish_qty from operations (ptjoboperations table)
+- If job data has no quantity field, the data is in the related operations table
+- Resource utilization: Calculated from active operations on resources
 
 Guidelines:
-- Be natural and conversational
-- Give specific numbers and facts when relevant
-- Use emojis for visual appeal if appropriate
-- If the data is empty, explain what this means
-- Focus on what the user actually wanted to know`
+- Be natural and conversational but BRIEF
+- Give specific numbers and facts
+- Use emojis sparingly (max 1-2)
+- If data is empty or missing, explain in ONE sentence what's missing`
             },
             {
               role: 'user',
