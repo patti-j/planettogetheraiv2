@@ -1584,33 +1584,51 @@ export default function MasterDataPage() {
                   <button
                     type="button"
                     onClick={() => handleDatasetSizeChange('small')}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                      datasetSize === 'small' 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                    }`}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      border: datasetSize === 'small' ? '2px solid #3b82f6' : '2px solid #d1d5db',
+                      backgroundColor: datasetSize === 'small' ? '#3b82f6' : '#ffffff',
+                      color: datasetSize === 'small' ? '#ffffff' : '#374151',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
                   >
                     Small (3-5)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDatasetSizeChange('medium')}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                      datasetSize === 'medium' 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                    }`}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      border: datasetSize === 'medium' ? '2px solid #3b82f6' : '2px solid #d1d5db',
+                      backgroundColor: datasetSize === 'medium' ? '#3b82f6' : '#ffffff',
+                      color: datasetSize === 'medium' ? '#ffffff' : '#374151',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
                   >
                     Medium (8-15)
                   </button>
                   <button
                     type="button"
                     onClick={() => handleDatasetSizeChange('large')}
-                    className={`px-4 py-2 rounded-lg border-2 text-sm font-medium transition-colors ${
-                      datasetSize === 'large' 
-                        ? 'bg-blue-500 text-white border-blue-500' 
-                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400'
-                    }`}
+                    style={{
+                      padding: '0.5rem 1rem',
+                      borderRadius: '0.5rem',
+                      border: datasetSize === 'large' ? '2px solid #3b82f6' : '2px solid #d1d5db',
+                      backgroundColor: datasetSize === 'large' ? '#3b82f6' : '#ffffff',
+                      color: datasetSize === 'large' ? '#ffffff' : '#374151',
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s'
+                    }}
                   >
                     Large (20-50)
                   </button>
