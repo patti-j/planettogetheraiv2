@@ -10,6 +10,7 @@ import {
 import { eq, and, or, gte, lte, isNull, sql, desc, asc, like } from 'drizzle-orm';
 import { dataCatalog } from './data-catalog';
 import { semanticRegistry } from './semantic-registry';
+import { agentTrainingLoader } from './agent-training-loader';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
