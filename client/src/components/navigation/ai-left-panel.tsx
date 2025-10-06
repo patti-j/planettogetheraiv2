@@ -21,6 +21,7 @@ import { ALL_AGENTS } from '@/config/agents';
 import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
+import { useRealtimeVoice } from '@/hooks/use-realtime-voice';
 // Scheduler context service removed with production-scheduler cleanup
 
 interface AIInsight {
@@ -117,6 +118,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       maxTokens: 2000,
       streamResponses: true,
       // Voice Settings
+      voiceMode: 'hybrid', // 'hybrid' (Web Speech + Whisper) or 'realtime' (OpenAI Realtime API)
       voice: 'alloy',
       voiceSpeed: 1.0,
       voiceGender: 'neutral',
@@ -149,6 +151,23 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { canvasItems, setCanvasItems, isCanvasVisible, setCanvasVisible } = useMaxDock();
   const previousMessageCountRef = useRef(0);
+
+  // Initialize Realtime Voice API hook
+  const realtimeVoice = useRealtimeVoice({
+    agentId: 'max',
+    voice: aiSettings.voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
+    vadMode: 'server_vad',
+    onAction: (action: any) => {
+      console.log('[Realtime Voice] Action received:', action);
+      // Handle agent actions like navigation, switching agents, etc.
+      if (action.type === 'navigate') {
+        handleNavigation(action.path);
+      }
+    },
+    onError: (error: string) => {
+      console.error('[Realtime Voice] Error:', error);
+    }
+  });
   
   // Scheduler context removed with production-scheduler cleanup
   const [schedulerContext, setSchedulerContext] = useState<any>(null);
@@ -1633,6 +1652,68 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                         checked={aiSettings.soundEnabled}
                         onCheckedChange={(checked) => setAiSettings(prev => ({ ...prev, soundEnabled: checked }))}
                       />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="voice-mode" className="text-sm">Voice Mode</Label>
+                      <Select value={aiSettings.voiceMode} onValueChange={(value) => setAiSettings(prev => ({ ...prev, voiceMode: value }))}>
+                        <SelectTrigger className="w-full mt-2">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="hybrid">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">Hybrid (Recommended)</span>
+                              <span className="text-xs text-muted-foreground">Web Speech + Whisper • ~$0.006/min</span>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="realtime">
+                            <div className="flex flex-col items-start">
+                              <span className="font-medium">Realtime (Premium)</span>
+                              <span className="text-xs text-muted-foreground">OpenAI Realtime API • ~$0.15/min • Voice-to-voice</span>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {aiSettings.voiceMode === 'hybrid' 
+                          ? 'Cost-effective with instant feedback'
+                          : 'Premium conversational AI with natural voice-to-voice interaction'}
+                      </p>
+                      {aiSettings.voiceMode === 'realtime' && (
+                        <div className="mt-2 space-y-2">
+                          <Button
+                            variant={realtimeVoice.isSessionActive ? "destructive" : "default"}
+                            size="sm"
+                            onClick={() => {
+                              if (realtimeVoice.isSessionActive) {
+                                realtimeVoice.stopSession();
+                              } else {
+                                realtimeVoice.startSession();
+                              }
+                            }}
+                            className="w-full"
+                          >
+                            {realtimeVoice.isSessionActive ? (
+                              <>
+                                <StopCircle className="w-4 h-4 mr-2" />
+                                Stop Voice Session
+                              </>
+                            ) : (
+                              <>
+                                <Mic className="w-4 h-4 mr-2" />
+                                Start Voice Session
+                              </>
+                            )}
+                          </Button>
+                          {realtimeVoice.isConnected && (
+                            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400">
+                              <div className="w-2 h-2 rounded-full bg-green-600 dark:bg-green-400 animate-pulse" />
+                              Connected • {realtimeVoice.isListening ? 'Listening...' : 'Ready'}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                     
                     <div>
