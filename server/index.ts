@@ -242,17 +242,19 @@ app.use((req, res, next) => {
     verifyClient: (info) => {
       // Verify origin for security
       const origin = info.origin;
-      const allowedOrigins = [
-        'http://localhost:5000',
-        'https://localhost:5000',
-        process.env.ALLOWED_ORIGIN,
-        process.env.PROD_ORIGIN
-      ].filter(Boolean);
-
-      if (origin && !allowedOrigins.includes(origin)) {
-        log(`❌ Realtime Voice WebSocket rejected: invalid origin ${origin}`);
-        return false;
+      
+      // Allow localhost and Replit domains
+      if (origin) {
+        const isLocalhost = origin.includes('localhost') || origin.includes('127.0.0.1');
+        const isReplit = origin.includes('replit.dev') || origin.includes('repl.co');
+        const isAllowed = process.env.ALLOWED_ORIGIN === origin || process.env.PROD_ORIGIN === origin;
+        
+        if (!isLocalhost && !isReplit && !isAllowed) {
+          log(`❌ Realtime Voice WebSocket rejected: invalid origin ${origin}`);
+          return false;
+        }
       }
+      
       return true;
     }
   });
