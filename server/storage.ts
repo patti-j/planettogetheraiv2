@@ -1,7 +1,7 @@
 import { 
   users, roles, permissions, userRoles, rolePermissions, 
   companyOnboarding, userPreferences, recentPages,
-  ptPlants, ptResources, ptJobOperations, ptManufacturingOrders,
+  ptPlants, ptResources, ptJobs, ptJobOperations, ptManufacturingOrders,
   schedulingConversations, schedulingMessages, savedSchedules,
   widgets,
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
@@ -73,6 +73,7 @@ export interface IStorage {
   // Basic PT Table Access
   getPlants(): Promise<PtPlant[]>;
   getResources(): Promise<PtResource[]>;
+  getJobs(): Promise<any[]>;
   getJobOperations(): Promise<PtJobOperation[]>;
   getManufacturingOrders(): Promise<PtManufacturingOrder[]>;
   
@@ -523,6 +524,15 @@ export class DatabaseStorage implements IStorage {
       return result.rows as any[];
     } catch (error) {
       console.error('Error fetching resources:', error);
+      return [];
+    }
+  }
+
+  async getJobs(): Promise<any[]> {
+    try {
+      return await db.select().from(ptJobs).orderBy(ptJobs.name);
+    } catch (error) {
+      console.error('Error fetching jobs:', error);
       return [];
     }
   }
