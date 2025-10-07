@@ -276,7 +276,7 @@ export function PowerBIEmbed({
               )}
               
               {/* Dataset Information */}
-              <div className="flex items-center gap-4 text-sm">
+              <div className="flex items-center gap-2 text-sm">
                 {isLoadingDataset ? (
                   <div className="flex items-center gap-2">
                     <Skeleton className="h-4 w-4" />
@@ -285,7 +285,7 @@ export function PowerBIEmbed({
                   </div>
                 ) : dataset ? (
                   <>
-                    <div className="flex items-center gap-1 text-muted-foreground">
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
                       <Tooltip>
                         <TooltipTrigger className="cursor-help">
                           <Database className="w-4 h-4" />
