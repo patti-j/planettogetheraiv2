@@ -2223,6 +2223,57 @@ Respond with JSON:
 
   private async handleDataFetchIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
     try {
+      // Special handling for "which jobs are on resource X" queries
+      const resourceQueryPattern = /(?:which|what|show|list).*(?:jobs?|operations?|orders?).*(?:on|at|in|scheduled on).*?([\w\s-]+)/i;
+      const match = query.match(resourceQueryPattern);
+      
+      if (match) {
+        const resourceName = match[1].trim();
+        console.log(`[Max AI] Detected resource-specific query for resource: "${resourceName}"`);
+        
+        const jobs = await this.findJobsOnResource(resourceName);
+        
+        if (jobs.length === 0) {
+          return {
+            content: `I checked the schedule and found no jobs currently scheduled on "${resourceName}". This could mean the resource is available or the name might not match exactly. Would you like me to show you all active resources?`,
+            error: false
+          };
+        }
+        
+        // Use AI to format the response naturally
+        const analysisResponse = await openai.chat.completions.create({
+          model: DEFAULT_MODEL,
+          messages: [
+            {
+              role: 'system',
+              content: `You are Max, a manufacturing AI assistant. Format the job data concisely.
+
+RESPONSE FORMAT:
+- List each job with its operation name and time window
+- Be specific and brief (3-5 sentences max)
+- Use this format: "Job [Name]: [Operation] scheduled from [Start] to [End]"
+- If multiple operations from same job, group them together`
+            },
+            {
+              role: 'user',
+              content: `User asked: "${query}"
+
+Found ${jobs.length} operations on the "${resourceName}":
+${JSON.stringify(jobs, null, 2)}
+
+Format this as a clear, concise response.`
+            }
+          ],
+          temperature: DEFAULT_TEMPERATURE,
+          max_tokens: 500
+        });
+        
+        return {
+          content: analysisResponse.choices[0].message.content || `Found ${jobs.length} job(s) scheduled on ${resourceName}.`,
+          error: false
+        };
+      }
+      
       const dataMapping = await this.getDataTypeMapping();
       
       // Create dynamic endpoint list for AI
@@ -2885,6 +2936,44 @@ Respond with JSON format:
     } catch (error) {
       console.error('[Max AI] Error finding alternative resource:', error);
       return null;
+    }
+  }
+
+  private async findJobsOnResource(resourceName: string): Promise<any[]> {
+    try {
+      console.log(`[Max AI] Finding jobs on resource: ${resourceName}`);
+      
+      // Query jobs scheduled on the specified resource
+      const jobs = await db.execute(sql`
+        SELECT DISTINCT
+          j.id as job_id,
+          j.name as job_name,
+          j.external_id as job_external_id,
+          j.priority,
+          j.need_date_time,
+          jo.id as operation_id,
+          jo.name as operation_name,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          jo.cycle_hrs,
+          r.name as resource_name,
+          r.external_id as resource_external_id
+        FROM ptjoboperations jo
+        JOIN ptjobs j ON jo.job_id = j.id
+        JOIN ptjobresources jr ON jo.id = jr.operation_id
+        JOIN ptresources r ON jr.default_resource_id = r.external_id
+        WHERE 
+          LOWER(r.name) LIKE LOWER(${'%' + resourceName + '%'})
+          AND jo.scheduled_start IS NOT NULL
+        ORDER BY jo.scheduled_start
+        LIMIT 50
+      `);
+      
+      console.log(`[Max AI] Found ${jobs.rows.length} job operations on resource matching "${resourceName}"`);
+      return jobs.rows as any[];
+    } catch (error) {
+      console.error('[Max AI] Error finding jobs on resource:', error);
+      return [];
     }
   }
 
