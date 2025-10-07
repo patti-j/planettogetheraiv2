@@ -468,6 +468,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   // Track last spoken message to prevent re-speaking
   const lastSpokenMessageIdRef = useRef<number | null>(null);
+  const lastMessageTimestampRef = useRef<string | null>(null);
 
   // Add keyboard shortcut for stopping audio (Escape key)
   useEffect(() => {
@@ -497,20 +498,28 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const scrollElement = scrollAreaRef.current;
       scrollElement.scrollTop = scrollElement.scrollHeight;
       
-      // Detect if this is the initial load vs new messages being added
-      const currentMessageCount = chatMessages.length;
-      const isNewMessage = currentMessageCount > previousMessageCountRef.current;
-      previousMessageCountRef.current = currentMessageCount;
+      // Detect new messages by timestamp instead of count (more reliable)
+      const lastMessage = chatMessages[chatMessages.length - 1];
+      const isNewMessage = lastMessage && 
+        lastMessage.createdAt !== lastMessageTimestampRef.current &&
+        chatMessages.length > 0;
+      
+      if (lastMessage) {
+        lastMessageTimestampRef.current = lastMessage.createdAt;
+      }
+      
+      // Update count for other uses
+      previousMessageCountRef.current = chatMessages.length;
       
       console.log('[Voice Debug] Message detection', {
         isNewMessage,
-        currentCount: currentMessageCount,
-        lastMessageRole: chatMessages[chatMessages.length - 1]?.role
+        currentCount: chatMessages.length,
+        lastMessageRole: lastMessage?.role,
+        lastTimestamp: lastMessage?.createdAt
       });
       
       // Auto-play voice for NEW assistant messages
       if (isNewMessage) {
-        const lastMessage = chatMessages[chatMessages.length - 1];
         console.log('[Voice Debug] Checking voice conditions', {
           hasLastMessage: !!lastMessage,
           role: lastMessage?.role,
@@ -1259,8 +1268,18 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       
       if (result.success && result.text) {
         if (autoSend) {
-          // Auto-send the transcribed message
-          await handleSendMessage(result.text);
+          // IMMEDIATELY add user message to chat (don't wait for AI response)
+          addMessage({
+            role: 'user',
+            content: result.text,
+            source: 'panel'
+          });
+          
+          // Show thinking indicator immediately
+          setShowMaxThinking(true);
+          
+          // Send to AI backend (without re-adding user message since we already did)
+          await sendMessageMutation.mutateAsync(result.text);
         } else {
           // Add transcribed text to the input field for user review
           setPrompt(prev => prev + (prev ? ' ' : '') + result.text);
@@ -1284,13 +1303,15 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       setPrompt('');
     }
 
-    // Add user message immediately to chat UI
+    // Add user message immediately to chat UI (unless coming from voice transcription which already added it)
     const messageContent = currentPrompt || (attachments.length > 0 ? "Attached files for analysis" : "");
-    addMessage({
-      role: 'user',
-      content: messageContent,
-      source: 'panel'
-    });
+    if (!messageToSend) { // Only add if not from voice transcription 
+      addMessage({
+        role: 'user',
+        content: messageContent,
+        source: 'panel'
+      });
+    }
 
     // Send to AI via command endpoint (handles both text and attachments)
     setIsSendingCommand(true);
