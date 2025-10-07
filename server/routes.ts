@@ -7181,5 +7181,157 @@ router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/file", async (r
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
 
+// Realtime Voice API routes
+import { realtimeVoiceService } from './services/realtime-voice-service';
+
+// Create a new real-time voice session
+router.post('/api/realtime/sessions', async (req, res) => {
+  try {
+    const { agentId, instructions, voice, temperature } = req.body;
+    const userId = req.session?.userId || 0;
+
+    if (!agentId) {
+      return res.status(400).json({
+        message: 'Agent ID is required for real-time voice session',
+      });
+    }
+
+    console.log('🎤 Creating real-time voice session for agent:', agentId);
+
+    const sessionId = await realtimeVoiceService.createSession({
+      userId,
+      agentId,
+      instructions,
+      voice: voice || 'nova',
+      temperature: temperature || 0.8,
+    });
+
+    res.json({
+      sessionId,
+      status: 'connected',
+      model: 'gpt-realtime-mini',
+    });
+  } catch (error) {
+    console.error('Failed to create real-time voice session:', error);
+    res.status(500).json({
+      message: 'Failed to create real-time voice session',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Send audio to a real-time session
+router.post('/api/realtime/sessions/:sessionId/audio', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const audioData = req.body; // Raw audio buffer
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Send audio to the Realtime API
+    realtimeVoiceService.sendAudioInput(sessionId, audioData);
+
+    res.json({ status: 'sent' });
+  } catch (error) {
+    console.error('Failed to send audio:', error);
+    res.status(500).json({
+      message: 'Failed to send audio',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Send text to a real-time session
+router.post('/api/realtime/sessions/:sessionId/text', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        message: 'Text input is required',
+      });
+    }
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Send text to the Realtime API
+    realtimeVoiceService.sendTextInput(sessionId, text);
+
+    res.json({ status: 'sent' });
+  } catch (error) {
+    console.error('Failed to send text:', error);
+    res.status(500).json({
+      message: 'Failed to send text',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Commit audio buffer and get response
+router.post('/api/realtime/sessions/:sessionId/commit', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Commit audio and request response
+    realtimeVoiceService.commitAudioAndRespond(sessionId);
+
+    res.json({ status: 'committed' });
+  } catch (error) {
+    console.error('Failed to commit audio:', error);
+    res.status(500).json({
+      message: 'Failed to commit audio',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Close a real-time session
+router.delete('/api/realtime/sessions/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    realtimeVoiceService.closeSession(sessionId);
+
+    res.json({ status: 'closed' });
+  } catch (error) {
+    console.error('Failed to close session:', error);
+    res.status(500).json({
+      message: 'Failed to close session',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Get user's active sessions
+router.get('/api/realtime/sessions', async (req, res) => {
+  try {
+    const userId = req.session?.userId || 0;
+    const sessions = realtimeVoiceService.getUserSessions(userId);
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Failed to get sessions:', error);
+    res.status(500).json({
+      message: 'Failed to get sessions',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
