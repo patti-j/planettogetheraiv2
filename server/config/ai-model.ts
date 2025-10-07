@@ -39,3 +39,48 @@ export const AI_MODEL_CONFIG = {
 // Export the default model for easy access
 export const DEFAULT_MODEL = AI_MODEL_CONFIG.model;
 export const DEFAULT_TEMPERATURE = AI_MODEL_CONFIG.temperatures.accurate;
+
+// Realtime API configuration for voice-to-voice chat
+export const REALTIME_MODEL_CONFIG = {
+  // The model to use for real-time voice interactions
+  model: 'gpt-realtime-mini', // 70% cheaper than gpt-realtime
+  
+  // Voice settings
+  voice: 'nova', // Available voices: alloy, cedar, echo, nova, marin, shimmer
+  
+  // Temperature for voice responses
+  temperature: 0.8,
+  
+  // Voice activity detection settings
+  turnDetection: {
+    type: 'server_vad' as const,
+    threshold: 0.5,
+    prefixPaddingMs: 300,
+    silenceDurationMs: 500,
+  },
+  
+  // Audio format settings
+  audio: {
+    input: {
+      format: 'pcm16' as const,
+      sampleRate: 24000,
+    },
+    output: {
+      format: 'pcm16' as const,
+      sampleRate: 24000,
+    },
+  },
+  
+  // Connection settings
+  connection: {
+    websocketUrl: 'wss://api.openai.com/v1/realtime',
+    reconnectAttempts: 3,
+    reconnectDelay: 1000,
+  },
+  
+  // Pricing info (for reference)
+  pricing: {
+    inputPerMillion: 9.6,  // $9.60 per 1M input tokens (70% cheaper than gpt-realtime at $32)
+    outputPerMillion: 19.2, // $19.20 per 1M output tokens (70% cheaper than gpt-realtime at $64)
+  },
+};
