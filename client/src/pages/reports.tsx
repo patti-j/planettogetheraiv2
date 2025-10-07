@@ -1,842 +1,1149 @@
-import { useState, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Combobox } from "@/components/ui/combobox";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { PowerBIEmbed } from "@/components/power-bi-embed";
+import { usePowerBIEmbed } from "@/hooks/use-power-bi";
+import { usePowerBIAuth, usePowerBIWorkspaces, usePowerBIReports } from "@/hooks/use-powerbi-api";
+import { usePowerBIExport } from "@/hooks/use-powerbi-export";
+import { type ReportEmbedConfig } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
-import { useAITheme } from "@/hooks/use-ai-theme";
-import { useMaxDock } from "@/contexts/MaxDockContext";
-import { useNavigation } from "@/contexts/NavigationContext";
-
+import { useIsMobile } from "@/hooks/use-mobile";
+import { RefreshStopwatch, useRefreshNotifications } from "@/components/refresh-stopwatch";
 import { 
-  Plus, 
-  Sparkles, 
-  FileText, 
-  BarChart3, 
-  Users, 
-  TrendingUp, 
-  Eye, 
-  Download,
-  Trash2,
-  Printer,
+  ChartBar, 
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
   Settings,
-  ChevronDown,
   Maximize2,
-  Minimize2
+  RotateCcw,
+  Download,
+  Edit,
+  Eye,
+  Database,
+  Filter,
+  CheckCircle2,
+  ListFilter,
+  BadgeCheck,
+  Wand2,
+  FileDown,
+  ArrowLeft,
+  X
 } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import * as models from "powerbi-models";
 
-interface Report {
-  id: string;
-  title: string;
-  type: "production" | "resource" | "efficiency" | "custom";
-  description: string;
-  data: any;
-  createdAt: Date;
-}
-
-export default function Reports() {
-  const [isMaximized, setIsMaximized] = useState(false);
-  const [reports, setReports] = useState<Report[]>([]);
-  const [showReportDialog, setShowReportDialog] = useState(false);
-  const [showConfigDialog, setShowConfigDialog] = useState(false);
-  const [showAIDialog, setShowAIDialog] = useState(false);
-  const [reportTitle, setReportTitle] = useState("");
-  const [reportType, setReportType] = useState<Report["type"]>("production");
-  const [reportDescription, setReportDescription] = useState("");
-  const [configName, setConfigName] = useState("");
-  const [configDescription, setConfigDescription] = useState("");
-  const [aiPrompt, setAiPrompt] = useState("");
-  const [selectedConfigId, setSelectedConfigId] = useState<number | null>(null);
-  
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const { aiTheme } = useAITheme();
-  const { isMaxOpen } = useMaxDock();
-  const { addRecentPage } = useNavigation();
-
-  // Register this page in recent pages when component mounts
-  useEffect(() => {
-    addRecentPage('/reports', 'Reports', 'FileText');
-  }, [addRecentPage]);
-
-  const { data: reportConfigs = [] } = useQuery({
-    queryKey: ['/api/report-configs'],
-  });
-
-  const { data: jobs = [] } = useQuery({
-    queryKey: ['/api/jobs'],
-  });
-
-  const { data: operations = [] } = useQuery({
-    queryKey: ['/api/operations'],
-  });
-
-  const { data: resources = [] } = useQuery({
-    queryKey: ['/api/resources'],
-  });
-
-  const selectedConfig = reportConfigs.find((config: any) => config.id === selectedConfigId);
-
-  // Sample manufacturing reports based on PT Publish data
-  const getSampleReports = (): Report[] => {
-    return [
-      {
-        id: "brewery-production-summary",
-        title: "Brewery Production Summary",
-        type: "production",
-        description: "Comprehensive overview of brewery production performance including Newcastle Brown Ale, Guinness, and other beverage operations",
-        data: {
-          totalJobs: 48,
-          completedJobs: 35,
-          activeJobs: 8,
-          overdueJobs: 5,
-          operations: 533,
-          completedOperations: 387,
-          jobsByPriority: {
-            high: 12,
-            medium: 28,
-            low: 8
-          },
-          topProducts: ["Newcastle Brown Ale", "Guinness Stout", "IPA Premium"],
-          efficiency: 89.2,
-          onTimeDelivery: 91.5
-        },
-        createdAt: new Date("2025-08-27")
-      },
-      {
-        id: "resource-utilization-analysis",
-        title: "Resource Utilization Analysis",
-        type: "resource",
-        description: "Analysis of brewing equipment utilization including kettles, fermentation tanks, and bottling lines",
-        data: {
-          totalResources: 23,
-          activeResources: 20,
-          maintenanceResources: 2,
-          idleResources: 1,
-          resourceTypes: ["Brew Kettles", "Fermentation Tanks", "Bottling Lines", "Quality Control"],
-          utilizationRate: 87,
-          topPerformers: [
-            { name: "Brew Kettle 1", utilization: 95.2 },
-            { name: "Fermentation Tank A", utilization: 92.8 },
-            { name: "Bottling Line 2", utilization: 88.5 }
-          ],
-          bottlenecks: ["Quality Control Station", "Packaging Line 1"]
-        },
-        createdAt: new Date("2025-08-27")
-      },
-      {
-        id: "operational-efficiency-metrics",
-        title: "Operational Efficiency Metrics",
-        type: "efficiency",
-        description: "Key performance indicators for brewery operations including OEE, cycle times, and quality metrics",
-        data: {
-          onTimeJobs: 43,
-          totalJobs: 48,
-          averageLeadTime: 5.2,
-          resourceUtilization: 87,
-          bottlenecks: ["Quality Control", "Packaging"],
-          oee: 84.7,
-          qualityRate: 96.3,
-          cycleEfficiency: 89.1,
-          trends: {
-            weekly: "+2.3%",
-            monthly: "+5.7%",
-            quarterly: "+12.1%"
-          }
-        },
-        createdAt: new Date("2025-08-27")
-      },
-      {
-        id: "quality-control-report",
-        title: "Quality Control Report",
-        type: "custom",
-        description: "Quality metrics and inspection results across all production lines with focus on beer quality standards",
-        data: {
-          totalInspections: 156,
-          passedInspections: 150,
-          failedInspections: 6,
-          qualityScore: 96.2,
-          defectTypes: {
-            "Taste Issues": 3,
-            "Clarity Problems": 2,
-            "Packaging Defects": 1
-          },
-          batchAnalysis: {
-            "Newcastle Brown Ale": { quality: 97.8, batches: 24 },
-            "Guinness Stout": { quality: 95.6, batches: 18 },
-            "IPA Premium": { quality: 94.3, batches: 12 }
-          }
-        },
-        createdAt: new Date("2025-08-26")
-      },
-      {
-        id: "inventory-status-report",
-        title: "Inventory Status Report", 
-        type: "custom",
-        description: "Current inventory levels for raw materials, work-in-process, and finished goods across brewery operations",
-        data: {
-          rawMaterials: {
-            "Hops": { current: 2450, target: 3000, status: "Low" },
-            "Malt": { current: 8900, target: 10000, status: "Good" },
-            "Yeast": { current: 156, target: 200, status: "Good" },
-            "Water": { current: 45000, target: 50000, status: "Good" }
-          },
-          finishedGoods: {
-            "Newcastle Brown Ale": { cases: 8450, status: "High" },
-            "Guinness Stout": { cases: 6200, status: "Good" },
-            "IPA Premium": { cases: 3100, status: "Low" }
-          },
-          turnoverRate: 12.3,
-          stockoutRisk: ["Hops", "IPA Premium"]
-        },
-        createdAt: new Date("2025-08-26")
-      },
-      {
-        id: "maintenance-schedule-report",
-        title: "Maintenance Schedule Report",
-        type: "resource", 
-        description: "Preventive maintenance schedule and equipment health status for critical brewery equipment",
-        data: {
-          scheduledMaintenance: 8,
-          completedMaintenance: 6,
-          overdueMaintenance: 1,
-          criticalEquipment: [
-            { name: "Brew Kettle 2", nextMaintenance: "Aug 30", status: "Due Soon" },
-            { name: "Cooling System", nextMaintenance: "Sep 5", status: "Scheduled" },
-            { name: "Bottling Line 1", nextMaintenance: "Aug 25", status: "Overdue" }
-          ],
-          mtbf: 720, // Mean Time Between Failures (hours)
-          mttr: 4.2, // Mean Time To Repair (hours)
-          availability: 94.8
-        },
-        createdAt: new Date("2025-08-25")
-      }
-    ];
-  };
-
-  // Auto-select default or first config if none selected
-  useEffect(() => {
-    if (!selectedConfigId && reportConfigs.length > 0) {
-      const defaultConfig = reportConfigs.find(c => c.isDefault) || reportConfigs[0];
-      setSelectedConfigId(defaultConfig.id);
-    }
-  }, [reportConfigs, selectedConfigId]);
-
-  useEffect(() => {
-    if (selectedConfig && selectedConfig.configuration) {
-      setReports(selectedConfig.configuration.reports || getSampleReports());
-    } else if (selectedConfig && !selectedConfig.configuration.reports) {
-      // If config exists but has no reports, initialize with sample reports
-      setReports(getSampleReports());
-    } else if (!selectedConfig && reportConfigs.length === 0) {
-      // If no configs exist yet, show sample reports
-      setReports(getSampleReports());
-    }
-  }, [selectedConfig, reportConfigs]);
-
-  const createConfigMutation = useMutation({
-    mutationFn: async (configData: { name: string; description: string; configuration: any }) => {
-      return await apiRequest('POST', '/api/report-configs', configData);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/report-configs'] });
-      toast({
-        title: "Report configuration created",
-        description: "Your report configuration has been saved successfully.",
-      });
-      setShowConfigDialog(false);
-      setConfigName("");
-      setConfigDescription("");
-    },
-    onError: (error) => {
-      toast({
-        title: "Error creating report config",
-        description: "There was a problem creating the report configuration.",
-        variant: "destructive",
-      });
-    },
-  });
-
-
-
-  const createAIReportMutation = useMutation({
-    mutationFn: async (prompt: string) => {
-      return await apiRequest('POST', '/api/ai-agent', { command: `CREATE_REPORT: ${prompt}` });
-    },
-    onSuccess: (data) => {
-      const reportType = aiPrompt.toLowerCase().includes('resource') ? 'resource' : 
-                        aiPrompt.toLowerCase().includes('efficiency') ? 'efficiency' : 'production';
-      
-      // Create a clean, simple title from the user's prompt
-      const createSimpleTitle = (prompt: string, type: string): string => {
-        // Clean up the prompt by removing common report-related words
-        const cleanPrompt = prompt
-          .toLowerCase()
-          .replace(/\b(create|generate|show|give|me|a|an|the|report|analysis|data)\b/g, '')
-          .trim()
-          .split(/\s+/)
-          .filter(word => word.length > 0)
-          .slice(0, 3) // Take first 3 meaningful words
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(' ');
-        
-        return cleanPrompt || `${type.charAt(0).toUpperCase() + type.slice(1)} Report`;
-      };
-      
-      const newReport: Report = {
-        id: Date.now().toString(),
-        title: createSimpleTitle(aiPrompt, reportType),
-        type: reportType,
-        description: aiPrompt,
-        data: generateReportData(reportType),
-        createdAt: new Date(),
-      };
-      
-      setReports(prev => [...prev, newReport]);
-      toast({
-        title: "AI report created",
-        description: "AI has generated a new report based on your prompt.",
-      });
-      setShowAIDialog(false);
-      setAiPrompt("");
-    },
-    onError: (error) => {
-      console.error('AI report creation error:', error);
-      toast({
-        title: "Error creating AI report",
-        description: "There was a problem generating the report with AI.",
-        variant: "destructive",
-      });
-      setShowAIDialog(false);
-      setAiPrompt("");
-    },
-  });
-
-  const generateReportData = (type: Report["type"]) => {
+// Report Type Helper Component
+function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom', showLabel?: boolean }) {
+  const getIcon = () => {
     switch (type) {
-      case "production":
-        return {
-          totalJobs: jobs.length,
-          completedJobs: jobs.filter(j => j.status === "completed").length,
-          activeJobs: jobs.filter(j => j.status === "active").length,
-          overdueJobs: jobs.filter(j => new Date(j.dueDate) < new Date()).length,
-          operations: operations.length,
-          completedOperations: operations.filter(o => o.status === "completed").length,
-          jobsByPriority: {
-            high: jobs.filter(j => j.priority === "high").length,
-            medium: jobs.filter(j => j.priority === "medium").length,
-            low: jobs.filter(j => j.priority === "low").length,
-          }
-        };
-      case "resource":
-        return {
-          totalResources: resources.length,
-          activeResources: resources.filter(r => r.status === "active").length,
-          maintenanceResources: resources.filter(r => r.status === "maintenance").length,
-          resourceTypes: [...new Set(resources.map(r => r.type))],
-          utilizationRate: Math.round((operations.filter(o => o.resourceId).length / operations.length) * 100),
-        };
-      case "efficiency":
-        return {
-          onTimeJobs: jobs.filter(j => new Date(j.dueDate) >= new Date() || j.status === "completed").length,
-          averageLeadTime: 7,
-          resourceUtilization: Math.round((operations.filter(o => o.resourceId).length / operations.length) * 100),
-          bottlenecks: ["CNC Machine", "Quality Control"]
-        };
-      default:
-        return { message: "Custom report data" };
+      case 'all':
+        return ListFilter;
+      case 'standard':
+        return BadgeCheck;
+      case 'custom':
+        return Wand2;
     }
   };
 
-  const handleCreateReport = () => {
-    if (!reportTitle.trim()) return;
-    
-    const newReport: Report = {
-      id: Date.now().toString(),
-      title: reportTitle,
-      type: reportType,
-      description: reportDescription,
-      data: generateReportData(reportType),
-      createdAt: new Date(),
-    };
-    
-    setReports(prev => [...prev, newReport]);
-    setShowReportDialog(false);
-    setReportTitle("");
-    setReportType("production");
-    setReportDescription("");
-    
-    toast({
-      title: "Report created",
-      description: "Your report has been created successfully.",
-    });
-  };
-
-  const handleCreateConfig = () => {
-    if (!configName.trim()) return;
-    
-    const configData = {
-      name: configName,
-      description: configDescription,
-      configuration: {
-        reports: reports,
-        settings: {}
-      }
-    };
-    
-    createConfigMutation.mutate(configData);
-  };
-
-  const handleCreateAIReport = () => {
-    if (!aiPrompt.trim()) return;
-    
-    createAIReportMutation.mutate(aiPrompt);
-  };
-
-  const handleRemoveReport = (reportId: string) => {
-    setReports(prev => prev.filter(r => r.id !== reportId));
-    toast({
-      title: "Report removed",
-      description: "The report has been removed successfully.",
-    });
-  };
-
-  const getReportIcon = (type: Report["type"]) => {
+  const getColorClasses = () => {
     switch (type) {
-      case "production":
-        return <BarChart3 className="w-6 h-6" />;
-      case "resource":
-        return <Users className="w-6 h-6" />;
-      case "efficiency":
-        return <TrendingUp className="w-6 h-6" />;
-      default:
-        return <FileText className="w-6 h-6" />;
+      case 'all':
+        return "text-foreground";
+      case 'standard':
+        return "text-green-600 dark:text-green-300";
+      case 'custom':
+        return "text-yellow-600 dark:text-yellow-300";
     }
   };
 
-  const getTypeColor = (type: Report["type"]) => {
+  const getLabel = () => {
     switch (type) {
-      case "production":
-        return "bg-blue-100 text-blue-800";
-      case "resource":
-        return "bg-green-100 text-green-800";
-      case "efficiency":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
+      case 'all':
+        return "All";
+      case 'standard':
+        return "Standard";
+      case 'custom':
+        return "Custom";
     }
   };
 
-  const renderReportData = (report: Report) => {
-    switch (report.type) {
-      case "production":
-        return (
-          <div className="grid grid-cols-2 gap-3 sm:gap-4">
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-blue-600">{report.data.totalJobs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Total Jobs</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-green-600">{report.data.completedJobs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Completed</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-orange-600">{report.data.activeJobs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Active</div>
-            </div>
-            <div className="text-center">
-              <div className="text-xl sm:text-2xl font-bold text-red-600">{report.data.overdueJobs}</div>
-              <div className="text-xs sm:text-sm text-gray-600">Overdue</div>
-            </div>
-          </div>
-        );
-      case "resource":
-        return (
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span>Total Resources:</span>
-              <span className="font-semibold">{report.data.totalResources}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Active:</span>
-              <span className="font-semibold text-green-600">{report.data.activeResources}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Maintenance:</span>
-              <span className="font-semibold text-yellow-600">{report.data.maintenanceResources}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>Utilization Rate:</span>
-              <span className="font-semibold">{report.data.utilizationRate}%</span>
-            </div>
-          </div>
-        );
-      case "efficiency":
-        return (
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span>On-Time Jobs:</span>
-              <span className="font-semibold text-green-600">{report.data.onTimeJobs}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Avg Lead Time:</span>
-              <span className="font-semibold">{report.data.averageLeadTime} days</span>
-            </div>
-            <div className="flex justify-between">
-              <span>Resource Utilization:</span>
-              <span className="font-semibold">{report.data.resourceUtilization}%</span>
-            </div>
-            <div className="mt-4">
-              <div className="text-sm font-medium text-gray-700 mb-2">Bottlenecks:</div>
-              <div className="flex flex-wrap gap-1">
-                {report.data.bottlenecks.map((bottleneck: string) => (
-                  <Badge key={bottleneck} variant="outline" className="text-xs">
-                    {bottleneck}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
-      default:
-        return <div className="text-gray-500">Custom report data</div>;
-    }
-  };
-
-  const selectedConfigName = selectedConfig?.name || reportConfigs.find(c => c.isDefault)?.name || "Default Reports";
-
-  const PageContent = () => (
-    <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
-      {/* Header */}
-      <div className="relative">
-        <div className={`${isMaxOpen ? 'md:ml-0' : 'md:ml-12'} ml-12`}>
-          <h1 className="text-xl md:text-2xl font-semibold text-gray-800 flex items-center">
-            <FileText className="w-6 h-6 mr-2" />
-            Reports
-          </h1>
-          <p className="text-sm md:text-base text-gray-600">Create and manage production reports</p>
-        </div>
-        
-        {/* Maximize button moved to fixed top-right position */}
-        
-        {/* Controls positioned below header */}
-        <div className="mt-4 flex flex-col sm:flex-row flex-wrap items-start sm:items-center gap-3 sm:gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="w-full sm:min-w-[280px] justify-between">
-                  {selectedConfigName}
-                  <ChevronDown className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-80">
-                {reportConfigs.map((config) => (
-                  <DropdownMenuItem
-                    key={config.id}
-                    onClick={() => setSelectedConfigId(config.id)}
-                    className="flex items-center justify-between"
-                  >
-                    <span>{config.name}</span>
-                    {config.isDefault && <Badge variant="secondary" className="text-xs">Default</Badge>}
-                  </DropdownMenuItem>
-                ))}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={() => setShowConfigDialog(true)}
-                  className="text-blue-600 dark:text-blue-400"
-                >
-                  <Settings className="w-4 h-4 mr-2" />
-                  Configure Reports
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            
-            {reports.length > 0 && (
-              <>
-                <Button
-                  onClick={() => window.print()}
-                  variant="outline"
-                >
-                  <Printer className="w-4 h-4 mr-2" />
-                  Print
-                </Button>
-                <Button
-                  onClick={() => {
-                    const reportData = JSON.stringify(reports, null, 2);
-                    const blob = new Blob([reportData], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `reports-${new Date().toISOString().split('T')[0]}.json`;
-                    a.click();
-                    URL.revokeObjectURL(url);
-                  }}
-                  variant="outline"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </Button>
-              </>
-            )}
-            
-            <Button
-              onClick={() => setShowAIDialog(true)}
-              variant="outline"
-              className={`${aiTheme.gradient} text-white border-0`}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Create
-            </Button>
-            
-            <Button
-              onClick={() => setShowReportDialog(true)}
-              className="bg-primary hover:bg-primary/90 text-white"
-            >
-              <Plus className="w-4 h-4 mr-2" />
-              New Report
-            </Button>
-          </div>
-        </div>
-
-        {/* Content */}
-        {reports.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center px-4">
-              <div className="w-16 h-16 mx-auto mb-4 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <FileText className="w-8 h-8 text-gray-500 dark:text-gray-400" />
-              </div>
-              <h3 className="text-base sm:text-lg font-medium text-gray-900 dark:text-white mb-2">No Reports Created</h3>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mb-4">
-                Get started by creating your first production report
-              </p>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {reports.map((report) => (
-              <Card key={report.id} className="hover:shadow-lg transition-shadow">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex items-start space-x-3 flex-1 min-w-0">
-                      <div className="flex-shrink-0">
-                        {getReportIcon(report.type)}
-                      </div>
-                      <div className="flex-1 min-w-0 pr-2">
-                        <h3 className="text-lg font-medium text-gray-900 dark:text-white leading-tight break-words">
-                          {report.title}
-                        </h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 break-words">
-                          {report.description}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-start space-x-2 flex-shrink-0">
-                      <Badge className={getTypeColor(report.type)}>
-                        {report.type}
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleRemoveReport(report.id)}
-                        className="text-red-500 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <div className="space-y-3">
-                    {renderReportData(report)}
-                  </div>
-                  <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                      <span>Created: {new Date(report.createdAt).toLocaleDateString()}</span>
-                      <div className="flex space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => window.print()}
-                          className="text-blue-600 hover:text-blue-800"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => {
-                            const reportData = JSON.stringify(report, null, 2);
-                            const blob = new Blob([reportData], { type: 'application/json' });
-                            const url = URL.createObjectURL(blob);
-                            const a = document.createElement('a');
-                            a.href = url;
-                            a.download = `report-${report.id}.json`;
-                            a.click();
-                            URL.revokeObjectURL(url);
-                          }}
-                          className="text-green-600 hover:text-green-800"
-                        >
-                          <Download className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
-
-      {/* Dialogs */}
-      <Dialog open={showReportDialog} onOpenChange={setShowReportDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>New Report</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="report-title">Report Title</Label>
-              <Input
-                id="report-title"
-                value={reportTitle}
-                onChange={(e) => setReportTitle(e.target.value)}
-                placeholder="Enter report title..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="report-type">Report Type</Label>
-              <Select value={reportType} onValueChange={setReportType}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select report type..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="production">Production Report</SelectItem>
-                  <SelectItem value="resource">Resource Report</SelectItem>
-                  <SelectItem value="efficiency">Efficiency Report</SelectItem>
-                  <SelectItem value="custom">Custom Report</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="report-description">Description (Optional)</Label>
-              <Textarea
-                id="report-description"
-                value={reportDescription}
-                onChange={(e) => setReportDescription(e.target.value)}
-                placeholder="Enter description..."
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowReportDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateReport}>
-                Create Report
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={showConfigDialog} onOpenChange={setShowConfigDialog}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Save Report Configuration</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="config-name">Configuration Name</Label>
-              <Input
-                id="config-name"
-                value={configName}
-                onChange={(e) => setConfigName(e.target.value)}
-                placeholder="Enter configuration name..."
-              />
-            </div>
-            <div>
-              <Label htmlFor="config-description">Description</Label>
-              <Textarea
-                id="config-description"
-                value={configDescription}
-                onChange={(e) => setConfigDescription(e.target.value)}
-                placeholder="Enter description..."
-                rows={3}
-              />
-            </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowConfigDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleCreateConfig} disabled={createConfigMutation.isPending}>
-                {createConfigMutation.isPending ? "Saving..." : "Save Configuration"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-    </div>
-  );
+  const Icon = getIcon();
 
   return (
-    <>
-      {/* Maximize button in top right corner matching hamburger menu positioning */}
-      <div className="fixed right-12 z-40 top-20 md:top-4">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => setIsMaximized(!isMaximized)}
-          className="shadow-md border"
-        >
-          {isMaximized ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-        </Button>
+    <div className={`inline-flex items-center gap-1 leading-none ${getColorClasses()}`}>
+      <Icon className="w-4 h-4" />
+      {showLabel && <span>{getLabel()}</span>}
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
+  const [selectedWorkspace, setSelectedWorkspace] = useState<{id: string, name: string} | null>(null);
+  const [selectedReportId, setSelectedReportId] = useState("");
+  const [embedConfig, setEmbedConfig] = useState<ReportEmbedConfig | null>(null);
+  const [showEmbed, setShowEmbed] = useState(false);
+  const [sidebarMinimized, setSidebarMinimized] = useState(false);
+  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "standard" | "custom">("all");
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [filterPaneVisible, setFilterPaneVisible] = useState(false);
+  const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
+  const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+
+  // Refs to track timeouts and prevent race conditions
+  const embedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const loadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const currentOperationRef = useRef<string | null>(null);
+  const orientationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Sync filter pane state with actual PowerBI pane when report loads
+  useEffect(() => {
+    const syncFilterPaneState = async () => {
+      if (typeof window !== 'undefined' && (window as any).powerbi && showEmbed) {
+        try {
+          const container = document.getElementById('reportContainer');
+          if (container) {
+            const report = (window as any).powerbi.get(container);
+            if (report) {
+              const settings = await report.getSettings();
+              const isVisible = settings.panes?.filters?.visible || false;
+              setFilterPaneVisible(isVisible);
+              console.log(`Synced filter pane state: ${isVisible}`);
+            }
+          }
+        } catch (error) {
+          // Ignore sync errors - this is just for visual state
+        }
+      }
+    };
+
+    // Delay sync to allow report to fully load
+    const timeoutId = setTimeout(syncFilterPaneState, 2000);
+    return () => clearTimeout(timeoutId);
+  }, [showEmbed]);
+
+  // Orientation-aware mobile check - switches to desktop layout in landscape
+  function isMobileLike() {
+    const touch = navigator.maxTouchPoints > 0;
+    const currentWidth = window.innerWidth; // Use current width, not minimum dimension
+    return touch && currentWidth <= 820;
+  }
+
+  // Desktop: toggle built-in pane. Mobile: show custom drawer.
+  async function onFilterIconClick(report: any) {
+    if (!report) {
+      console.warn("No PowerBI report instance available");
+      return;
+    }
+
+    // Use native PowerBI filters for both mobile and desktop
+    try {
+      if (!filterPaneVisible) {
+        // Open filters
+        await report.updateSettings({
+          panes: { filters: { visible: true, expanded: true } }
+        });
+        console.log("Opened native Filters pane");
+        setFilterPaneVisible(true);
+      } else {
+        // Close filters
+        await report.updateSettings({
+          panes: { filters: { visible: false } }
+        });
+        console.log("Closed native Filters pane");
+        setFilterPaneVisible(false);
+      }
+    } catch (e) {
+      console.warn("updateSettings failed:", e);
+    }
+  }
+
+  // Example: apply a filter from custom mobile UI
+  async function applyRegionFilter(report: any, regions: string[]) {
+    const filter: models.IBasicFilter = {
+      $schema: "http://powerbi.com/product/schema#basic",
+      target: { table: "Sales", column: "Region" },
+      operator: "In",
+      values: regions,
+      filterType: models.FilterType.Basic,
+    };
+    await report.setFilters([filter]); // or updateFilters(...)
+  }
+  
+  // Authentication hooks
+  const { isAuthenticated, isAuthenticating, authenticateAuto } = usePowerBIAuth();
+  
+  // Power BI API hooks
+  const { data: workspaces, isLoading: loadingWorkspaces, error: workspacesError } = usePowerBIWorkspaces(isAuthenticated);
+  const { data: allReports, isLoading: loadingReports, error: reportsError } = usePowerBIReports(isAuthenticated, selectedWorkspaceId);
+
+  // Filter reports based on selected filter type
+  const reports = allReports?.filter(report => {
+    if (reportTypeFilter === "all") return true;
+    
+    const isStandardReport = report.name.trim().toLowerCase() === report.datasetName?.trim().toLowerCase();
+    
+    if (reportTypeFilter === "standard") return isStandardReport;
+    if (reportTypeFilter === "custom") return !isStandardReport;
+    
+    return true;
+  }) || [];
+
+  // Clear selected report if it doesn't match current filter
+  useEffect(() => {
+    if (selectedReportId && allReports && allReports.length > 0) {
+      const selectedReport = allReports.find(r => r.id === selectedReportId);
+      if (selectedReport) {
+        const isStandardReport = selectedReport.name.trim().toLowerCase() === selectedReport.datasetName?.trim().toLowerCase();
+        
+        const shouldClearSelection = 
+          (reportTypeFilter === "standard" && !isStandardReport) ||
+          (reportTypeFilter === "custom" && isStandardReport);
+          
+        if (shouldClearSelection) {
+          setSelectedReportId("");
+          setShowEmbed(false);
+          setEmbedConfig(null);
+        }
+      }
+    }
+  }, [reportTypeFilter, selectedReportId, allReports]);
+  
+  const { 
+    embedReport, 
+    isLoading, 
+    error, 
+    refreshReport, 
+    refreshDataset,
+    cancelDatasetRefresh, // Add cancel function
+    toggleFullscreen,
+    switchToEditMode,
+    switchToViewMode,
+    saveAs,
+    viewMode,
+    currentAccessLevel,
+    refreshInfo,
+    resetRefreshState,
+    // Page navigation functionality
+    pages,
+    currentPageId,
+    switchToPage
+  } = usePowerBIEmbed("reportContainer");
+  
+  const { 
+    exportToPDF, 
+    exportToPowerPoint, 
+    exportToPNG, 
+    isExporting, 
+    exportProgress, 
+    exportStatus 
+  } = usePowerBIExport();
+  
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
+  
+  
+  // Automatic authentication on component mount
+  useEffect(() => {
+    const autoConnect = async () => {
+      try {
+        await authenticateAuto();
+        // Silent connection - no toast notification
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Failed to connect automatically";
+        console.error("Auto-authentication failed:", errorMessage);
+        
+        // Show detailed error message with helpful guidance
+        const isExpiredSecret = errorMessage.includes("expired") || errorMessage.includes("7000222");
+        toast({
+          title: "Connection Failed",
+          description: isExpiredSecret 
+            ? "Your Azure app secret has expired. Please create a new client secret in Azure Portal and update POWERBI_APPLICATION_SECRET in Replit Secrets."
+            : errorMessage,
+          variant: "destructive",
+        });
+      }
+    };
+    
+    // Only try to auto-connect if not already authenticated
+    if (!isAuthenticated && !isAuthenticating) {
+      autoConnect();
+    }
+  }, [authenticateAuto, isAuthenticated, isAuthenticating, toast]);
+
+  // Auto-reset refresh state after completion (without toast notification)
+  useEffect(() => {
+    if (refreshInfo.status === 'completed' || refreshInfo.status === 'failed' || refreshInfo.status === 'cancelled') {
+      setTimeout(() => {
+        resetRefreshState();
+      }, 5000); // Reset after 5 seconds
+    }
+  }, [refreshInfo.status, resetRefreshState]);
+
+  // Cleanup timeouts on unmount to prevent race conditions
+  useEffect(() => {
+    return () => {
+      if (embedTimeoutRef.current) {
+        clearTimeout(embedTimeoutRef.current);
+      }
+      if (loadTimeoutRef.current) {
+        clearTimeout(loadTimeoutRef.current);
+      }
+      if (orientationTimeoutRef.current) {
+        clearTimeout(orientationTimeoutRef.current);
+      }
+    };
+  }, []);
+
+
+  const handleWorkspaceSelect = (workspaceId: string) => {
+    const workspace = workspaces?.find(w => w.id === workspaceId);
+    if (workspace) {
+      setSelectedWorkspaceId(workspaceId);
+      setSelectedWorkspace(workspace);
+      // Reset report selection when workspace changes
+      setSelectedReportId("");
+      setShowEmbed(false);
+      setEmbedConfig(null);
+    }
+  };
+  
+  // Auto-load report when selected - with race condition protection
+  const handleReportSelect = useCallback(async (reportId: string) => {
+    // Clear any existing timeouts to prevent race conditions
+    if (embedTimeoutRef.current) {
+      clearTimeout(embedTimeoutRef.current);
+      embedTimeoutRef.current = null;
+    }
+    if (loadTimeoutRef.current) {
+      clearTimeout(loadTimeoutRef.current);
+      loadTimeoutRef.current = null;
+    }
+
+    // Set current operation ID to prevent race conditions
+    const operationId = `${reportId}-${Date.now()}`;
+    currentOperationRef.current = operationId;
+
+    setSelectedReportId(reportId);
+    
+    // Close mobile sidebar when report is selected
+    if (showMobileSidebar) {
+      setShowMobileSidebar(false);
+    }
+    
+    if (!isAuthenticated || !selectedWorkspaceId || !reportId) {
+      // Reset embed state when no report is selected
+      setShowEmbed(false);
+      setEmbedConfig(null);
+      currentOperationRef.current = null;
+      return;
+    }
+
+    try {
+      // Reset embed state first to clean up any existing report
+      setShowEmbed(false);
+      setEmbedConfig(null);
+      
+      // Small delay to ensure cleanup, then show loading state
+      embedTimeoutRef.current = setTimeout(() => {
+        // Check if this operation is still current
+        if (currentOperationRef.current !== operationId) {
+          return; // Operation was superseded, abort
+        }
+        
+        setShowEmbed(true);
+        setEmbedConfig({ reportId, workspaceId: selectedWorkspaceId } as any);
+        
+        // Additional delay to ensure DOM is ready, then embed
+        loadTimeoutRef.current = setTimeout(async () => {
+          // Double-check operation is still current
+          if (currentOperationRef.current !== operationId) {
+            return; // Operation was superseded, abort
+          }
+
+          try {
+            const config = await embedReport({ 
+              workspaceId: selectedWorkspaceId, 
+              reportId 
+            } as any);
+            
+            // Final check before setting config
+            if (currentOperationRef.current === operationId) {
+              setEmbedConfig(config);
+            }
+          } catch (embedError) {
+            // Only handle error if operation is still current
+            if (currentOperationRef.current === operationId) {
+              console.error("Embed error:", embedError);
+              setShowEmbed(false);
+              setEmbedConfig(null);
+              toast({
+                title: "Embed Failed",
+                description: embedError instanceof Error ? embedError.message : "Failed to embed report",
+                variant: "destructive",
+              });
+            }
+          } finally {
+            // Clear operation if it's still current
+            if (currentOperationRef.current === operationId) {
+              currentOperationRef.current = null;
+            }
+          }
+        }, 150);
+      }, 50);
+      
+    } catch (error) {
+      // Only handle error if operation is still current
+      if (currentOperationRef.current === operationId) {
+        setShowEmbed(false);
+        setEmbedConfig(null);
+        toast({
+          title: "Failed to Load Report",
+          description: error instanceof Error ? error.message : "Unknown error occurred",
+          variant: "destructive",
+        });
+        currentOperationRef.current = null;
+      }
+    }
+  }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast]);
+
+  // Handle orientation changes to switch between mobile/desktop layouts with proper debouncing
+  useEffect(() => {
+    const handleOrientationChange = () => {
+      // Clear any existing orientation timeout to prevent multiple rapid calls
+      if (orientationTimeoutRef.current) {
+        clearTimeout(orientationTimeoutRef.current);
+      }
+
+      // Close mobile sidebar when orientation changes to prevent layout issues
+      if (showMobileSidebar) {
+        setShowMobileSidebar(false);
+      }
+      
+      // Debounced re-embed with proper race condition protection
+      orientationTimeoutRef.current = setTimeout(async () => {
+        // Only proceed if we have a report currently loaded
+        if (!showEmbed || !embedConfig || !selectedWorkspaceId || !selectedReportId) {
+          return;
+        }
+
+        // Check if there's already an operation in progress - if so, skip
+        if (currentOperationRef.current !== null) {
+          console.log('🔄 Skipping orientation re-embed - operation already in progress');
+          return;
+        }
+
+        console.log('🔄 Orientation changed, re-embedding report with new layout...');
+        try {
+          // Use the existing race-condition protected handleReportSelect function
+          // This ensures proper cleanup and prevents conflicts
+          await handleReportSelect(selectedReportId);
+          console.log('✅ Report re-embedded successfully with new orientation layout');
+        } catch (error) {
+          console.error('❌ Failed to re-embed report after orientation change:', error);
+          // Don't show toast error for orientation changes as it's not critical
+        } finally {
+          orientationTimeoutRef.current = null;
+        }
+      }, 500); // Longer debounce delay to ensure orientation change is fully complete
+    };
+
+    // Use only resize event - it's more reliable and fires after orientation is complete
+    window.addEventListener('resize', handleOrientationChange);
+
+    return () => {
+      window.removeEventListener('resize', handleOrientationChange);
+      if (orientationTimeoutRef.current) {
+        clearTimeout(orientationTimeoutRef.current);
+      }
+    };
+  }, [showMobileSidebar, showEmbed, embedConfig, selectedWorkspaceId, selectedReportId, handleReportSelect]);
+
+
+  return (
+    <div className="h-screen bg-background flex flex-col" data-testid="dashboard-page">
+      {/* Header with Workspace Selector */}
+      <header className="flex items-center justify-between py-2 pl-2 pr-4 border-b">
+        <div className="flex items-center space-x-0.5">
+          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+            <ChartBar className="w-4 h-4 text-primary-foreground" />
+          </div>
+          <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Power BI Reports</h1>
+        </div>
+        
+        {/* Workspace Selector in Top Right */}
+        {(isAuthenticated || isAuthenticating) && (
+          <div className="w-48 md:w-80 ml-8">
+            <Combobox
+              options={workspaces?.map(w => ({ value: w.id, label: w.name })) || []}
+              value={selectedWorkspaceId}
+              onValueChange={handleWorkspaceSelect}
+              placeholder={
+                isAuthenticating ? "Connecting..." :
+                loadingWorkspaces ? "Loading workspaces..." :
+                workspacesError ? "Error loading workspaces" :
+                "Select workspace..."
+              }
+              searchPlaceholder="Type to search workspaces..."
+              disabled={isAuthenticating || loadingWorkspaces}
+              data-testid="combobox-workspace"
+              className="text-sm"
+            />
+          </div>
+        )}
+      </header>
+      
+      {/* Main Content */}
+      <div className="flex flex-1 min-h-0">
+        {/* Left Sidebar - Report Selection - Minimizable */}
+        {selectedWorkspace && (() => {
+          // Auto-hide sidebar on mobile when a report is selected, unless mobile sidebar is explicitly shown
+          const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+          const shouldHideOnMobile = isMobile && selectedReportId && showEmbed && !showMobileSidebar;
+          return !shouldHideOnMobile;
+        })() && (
+          <div className={`${
+            // Mobile overlay vs desktop sidebar
+            showMobileSidebar ? 'fixed inset-0 z-50 bg-background' : 
+            `${sidebarMinimized ? 'w-16' : 'w-80'} bg-background border-r border-border`
+          } transition-all duration-300 flex flex-col h-full`}>
+            <div className="pt-0 pr-4 pb-4 pl-4">
+              {/* Header with Close button for mobile overlay or Minimize Toggle for desktop */}
+              <div className="flex items-center justify-between mb-4 mt-3">
+                {!sidebarMinimized && (
+                  <h2 className="text-lg font-semibold text-foreground">Select Report</h2>
+                )}
+                {showMobileSidebar ? (
+                  // Close button for mobile overlay
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowMobileSidebar(false)}
+                    className="h-8 w-8"
+                    data-testid="button-close-mobile-sidebar"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                ) : (
+                  // Minimize toggle for desktop
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setSidebarMinimized(!sidebarMinimized)}
+                    className="h-8 w-8"
+                    data-testid="button-toggle-sidebar"
+                  >
+                    {sidebarMinimized ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronLeft className="w-4 h-4" />
+                    )}
+                  </Button>
+                )}
+              </div>
+              
+              {!sidebarMinimized ? (
+                <Card className="p-4">
+                  <div className="space-y-3">
+                    {/* Report Type Filter - only show when authenticated and have reports */}
+                    {isAuthenticated && allReports && allReports.length > 0 && (
+                      <div className="space-y-2">
+                        <Label className="text-sm flex items-center gap-2">
+                          <Filter className="w-4 h-4" />
+                          Report Type
+                        </Label>
+                        <Tabs
+                          value={reportTypeFilter}
+                          onValueChange={(value) => {
+                            // Ensure we always have a valid filter value
+                            const newValue = (value as "all" | "standard" | "custom") || "all";
+                            if (newValue !== reportTypeFilter) {
+                              setReportTypeFilter(newValue);
+                              // Reset selected report when filter changes
+                              if (selectedReportId) {
+                                setSelectedReportId("");
+                                setShowEmbed(false);
+                                setEmbedConfig(null);
+                              }
+                            }
+                          }}
+                          className="w-full"
+                        >
+                          <TabsList className="grid w-full grid-cols-3 h-auto p-0 bg-transparent">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger
+                                  value="all"
+                                  className="flex items-center gap-1.5 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  style={{
+                                    borderBottom: reportTypeFilter === "all" ? "2px solid black" : "2px solid transparent"
+                                  }}
+                                  data-testid="button-filter-all"
+                                >
+                                  <ReportTypeMark type="all" showLabel={false} />
+                                  <span>All</span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
+                                <p>{allReports.length}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger
+                                  value="standard"
+                                  className="flex items-center gap-1.5 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  style={{
+                                    borderBottom: reportTypeFilter === "standard" ? "2px solid black" : "2px solid transparent"
+                                  }}
+                                  data-testid="button-filter-standard"
+                                >
+                                  <ReportTypeMark type="standard" showLabel={false} />
+                                  <span>Standard</span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
+                                <p>{allReports.filter(r => r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase()).length}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger
+                                  value="custom"
+                                  className="flex items-center gap-1.5 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  style={{
+                                    borderBottom: reportTypeFilter === "custom" ? "2px solid black" : "2px solid transparent"
+                                  }}
+                                  data-testid="button-filter-custom"
+                                >
+                                  <ReportTypeMark type="custom" showLabel={false} />
+                                  <span>Custom</span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
+                                <p>{allReports.filter(r => r.name.trim().toLowerCase() !== r.datasetName?.trim().toLowerCase()).length}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TabsList>
+                        </Tabs>
+                      </div>
+                    )}
+
+                    {/* Report Selection - only show when authenticated */}
+                    {isAuthenticated && (
+                      <div className="space-y-1">
+                        <Label className="text-sm">Report</Label>
+                        <Combobox
+                          options={reports?.map(r => {
+                            const isStandardReport = r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase();
+                            const reportType = isStandardReport ? 'standard' : 'custom';
+                            return {
+                              value: r.id,
+                              label: r.name,
+                              icon: <ReportTypeMark type={reportType} showLabel={false} />
+                            };
+                          }) || []}
+                          value={selectedReportId}
+                          onValueChange={handleReportSelect}
+                          placeholder={
+                            loadingReports ? "Loading reports..." :
+                            reportsError ? "Error loading reports" :
+                            reports?.length === 0 ? 
+                              (reportTypeFilter === "all" ? "No reports found in this workspace" :
+                               reportTypeFilter === "standard" ? "No standard reports found" :
+                               "No custom reports found") :
+                            "Search reports..."
+                          }
+                          searchPlaceholder="Type to search reports..."
+                          disabled={loadingReports || !isAuthenticated}
+                          data-testid="combobox-report"
+                          className="text-sm"
+                        />
+                        {reportsError && (
+                          <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 p-2 rounded-md">
+                            <div className="font-medium">Failed to load reports</div>
+                            <div>Please check your connection and try again.</div>
+                          </div>
+                        )}
+                        {isAuthenticated && reports?.length === 0 && !loadingReports && !reportsError && (
+                          <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded-md">
+                            <div className="font-medium">
+                              {reportTypeFilter === "all" ? "No reports found" :
+                               reportTypeFilter === "standard" ? "No standard reports found" :
+                               "No custom reports found"}
+                            </div>
+                            <div>
+                              {reportTypeFilter === "all" ? "This workspace doesn't contain any reports yet." :
+                               reportTypeFilter === "standard" ? "No reports match the dataset name in this workspace." :
+                               "No reports with different names from their datasets found."}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {error && (
+                      <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 p-2 rounded-md">
+                        {typeof error === 'string' ? error : "An error occurred"}
+                      </div>
+                    )}
+                  </div>
+                </Card>
+              ) : (
+                /* Vertical text when sidebar is minimized */
+                <div className="flex-1 flex items-center justify-center py-8">
+                  <div 
+                    className="text-sm font-semibold text-muted-foreground whitespace-nowrap"
+                    style={{ 
+                      transform: 'rotate(-90deg)',
+                      transformOrigin: 'center center',
+                      width: '120px',
+                      height: '20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
+                    Select Report
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        
+        {/* Right Content Area */}
+        <div className="flex-1 flex flex-col min-h-0">
+          {showEmbed && embedConfig ? (
+            <div className="flex-1 min-h-0 pt-0 pr-0 pb-4 pl-0 sm:pt-0 sm:pr-0 sm:pb-2 sm:pl-0 md:pt-0 md:pr-1 md:pb-4 md:pl-4 overflow-hidden md:overflow-auto">
+              <PowerBIEmbed
+                className="w-full h-full"
+                reportName={allReports?.find(r => r.id === selectedReportId)?.name}
+                workspaceId={selectedWorkspaceId}
+                datasetId={allReports?.find(r => r.id === selectedReportId)?.datasetId}
+                isAuthenticated={isAuthenticated}
+                viewMode={viewMode}
+                pages={pages}
+                currentPageId={currentPageId}
+                onPageChange={switchToPage}
+                showMobileBackButton={(() => {
+                  const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+                  return isMobile && !!selectedReportId && !!selectedWorkspace;
+                })()}
+                onMobileBackClick={() => {
+                  // Clear report selection and unhide the original sidebar
+                  setSelectedReportId("");
+                  setShowEmbed(false);
+                  setEmbedConfig(null);
+                }}
+              />
+            </div>
+          ) : selectedWorkspace ? (
+            <div className="flex-1 flex justify-center p-4">
+            </div>
+          ) : (
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="text-center text-muted-foreground max-w-md">
+                {workspacesError && (
+                  <div className="mt-4 text-sm text-destructive bg-destructive/10 border border-destructive/20 p-3 rounded-md">
+                    <div className="font-medium">Failed to load workspaces</div>
+                    <div>Please check your connection and try again.</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      {isMaximized ? (
-        <div className="fixed inset-0 bg-white z-40">
-          <PageContent />
-        </div>
-      ) : (
-        <div className="h-screen bg-gray-50 dark:bg-gray-900">
-          <PageContent />
+      
+      {/* Floating Refresh Status Card - Bottom Right during and after refresh */}
+      {(refreshInfo.status === 'refreshing' || refreshInfo.status === 'completed' || refreshInfo.status === 'failed' || refreshInfo.status === 'cancelling' || refreshInfo.status === 'cancelled') && (
+        <div className="fixed bottom-20 right-6 z-40 max-w-md" data-testid="floating-refresh-status">
+          <RefreshStopwatch 
+            refreshInfo={refreshInfo} 
+            onCancel={cancelDatasetRefresh}
+            onDismiss={() => resetRefreshState()}
+            className="bg-background/95 backdrop-blur-sm border shadow-lg"
+          />
         </div>
       )}
 
-      {/* Move dialogs outside conditional rendering to prevent remounting */}
-      <Dialog open={showAIDialog} onOpenChange={setShowAIDialog}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>AI Report Creation</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="ai-prompt">Describe your report needs</Label>
-              <Textarea
-                id="ai-prompt"
-                value={aiPrompt}
-                onChange={(e) => setAiPrompt(e.target.value)}
-                placeholder="Describe what kind of report you want to create..."
-                rows={4}
-              />
+      {/* Floating Export Status Card - Bottom Right during export */}
+      {isExporting && (
+        <div className="fixed bottom-6 right-6 z-40 max-w-md" data-testid="floating-export-status">
+          <Card className="bg-background/95 backdrop-blur-sm border shadow-lg">
+            <div className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin text-primary" />
+                  <div className="flex flex-col">
+                    <div className="text-sm font-medium text-foreground">
+                      Exporting Report
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {exportStatus || 'Processing...'}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {exportProgress > 0 && (
+                <div className="mt-2">
+                  <div className="w-full bg-muted rounded-full h-1.5">
+                    <div 
+                      className="bg-primary h-1.5 rounded-full transition-all duration-300 ease-out" 
+                      style={{ width: `${exportProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
             </div>
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setShowAIDialog(false)}>
-                Cancel
+          </Card>
+        </div>
+      )}
+
+      {/* Floating Back to Reports Button - Above Settings */}
+      {(() => {
+        const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        return showEmbed && embedConfig && !isLoading && isMobile && selectedReportId && selectedWorkspace;
+      })() && (
+        <div className="fixed bottom-28 left-2 z-50">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => {
+              // Clear report selection and unhide the original sidebar
+              setSelectedReportId("");
+              setShowEmbed(false);
+              setEmbedConfig(null);
+            }}
+            className="h-10 w-10 rounded-full shadow-lg bg-white border-border hover:shadow-xl text-muted-foreground hover:text-foreground"
+            data-testid="button-floating-back"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Floating Filters Button - Third in Line */}
+      {(() => {
+        const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+        return showEmbed && embedConfig && !isLoading && isMobile && selectedReportId && selectedWorkspace;
+      })() && (
+        <div className="fixed bottom-16 left-2 z-50">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={async () => {
+              if (typeof window !== 'undefined' && (window as any).powerbi) {
+                try {
+                  // Check if reportContainer element exists
+                  const container = document.getElementById('reportContainer');
+                  if (!container) {
+                    console.warn("PowerBI container element not found");
+                    return;
+                  }
+
+                  const report = (window as any).powerbi.get(container);
+                  await onFilterIconClick(report);
+                } catch (error) {
+                  console.error("Failed to get PowerBI report instance:", error);
+                  
+                  // Fallback to mobile drawer if desktop filter fails
+                  if (isMobileLike()) {
+                    setShowMobileFilterDrawer(true);
+                  } else {
+                    console.warn("Desktop filter pane failed, report may not be loaded yet");
+                  }
+                }
+              }
+            }}
+            className={`h-10 w-10 rounded-full shadow-lg hover:shadow-xl transition-colors ${
+              filterPaneVisible 
+                ? 'text-white' 
+                : 'bg-white text-gray-700 border-gray-300'
+            }`}
+            style={filterPaneVisible ? { 
+              backgroundColor: '#0E94D2', 
+              borderColor: '#0E94D2' 
+            } : {}}
+            data-testid="button-filters"
+          >
+            <Filter className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
+
+      {/* Floating Settings Button - Bottom Left */}
+      {showEmbed && embedConfig && !isLoading && (
+        <div className="fixed bottom-4 left-2 z-50">
+          <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className={`h-10 w-10 rounded-full shadow-lg hover:shadow-xl transition-colors ${
+                  settingsDropdownOpen 
+                    ? 'text-white' 
+                    : 'bg-white text-gray-700 border-gray-300'
+                }`}
+                style={settingsDropdownOpen ? { 
+                  backgroundColor: '#0E94D2', 
+                  borderColor: '#0E94D2' 
+                } : {}}
+                data-testid="button-settings"
+              >
+                <Settings className="w-4 h-4" />
               </Button>
-              <Button onClick={handleCreateAIReport} disabled={createAIReportMutation.isPending}>
-                {createAIReportMutation.isPending ? "Creating..." : "New Report"}
-              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="top" className="mb-2 bg-white border border-gray-200">
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await refreshReport();
+                    toast({
+                      title: "Report Refreshed",
+                      description: "The report data has been refreshed",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Refresh Failed",
+                      description: error instanceof Error ? error.message : "Failed to refresh report",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-refresh"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Refresh Report
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await refreshDataset();
+                    // Note: No toast here - the new stopwatch system handles notifications
+                  } catch (error) {
+                    // No toast notification - RefreshStopwatch component handles error display
+                    console.error("Dataset refresh initiation failed:", error);
+                  }
+                }}
+                disabled={refreshInfo.status === 'refreshing'}
+                data-testid="menu-refresh-dataset"
+                className="flex items-center gap-2"
+              >
+                {refreshInfo.status === 'refreshing' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Database className="w-4 h-4" />
+                )}
+                {refreshInfo.status === 'refreshing' ? 'Refreshing...' : 'Refresh Dataset'}
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={() => {
+                  try {
+                    toggleFullscreen();
+                    toast({
+                      title: "Fullscreen Toggled",
+                      description: "Report view mode changed",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Fullscreen Failed",
+                      description: error instanceof Error ? error.message : "Failed to toggle fullscreen",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-fullscreen"
+                className="flex items-center gap-2"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Toggle Fullscreen
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await switchToEditMode();
+                    toast({
+                      title: "Edit Mode Enabled",
+                      description: "You can now edit the report",
+                    });
+                  } catch (error) {
+                    console.error("Edit mode error:", error);
+                    let errorMessage = "Failed to switch to edit mode";
+                    
+                    if (error && typeof error === 'object' && 'message' in error) {
+                      const errorObj = error as any;
+                      if (errorObj.message === 'insufficientPermissions' || errorObj.detailedMessage?.includes('insufficient Permissions')) {
+                        errorMessage = "You don't have permission to edit this report. Contact your Power BI admin to request edit access.";
+                      } else {
+                        errorMessage = errorObj.detailedMessage || errorObj.message || errorMessage;
+                      }
+                    }
+                    
+                    toast({
+                      title: "Edit Mode Unavailable",
+                      description: errorMessage,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-edit-mode"
+                className="flex items-center gap-2"
+                disabled={isMobile || viewMode === "edit"}
+              >
+                <Edit className="w-4 h-4" />
+                Switch to Edit
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await switchToViewMode();
+                    toast({
+                      title: "View Mode Enabled",
+                      description: "Switched back to view mode",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Switch to View Failed",
+                      description: error instanceof Error ? error.message : "Failed to switch to view mode",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-view-mode"
+                className="flex items-center gap-2"
+                disabled={viewMode === "view"}
+              >
+                <Eye className="w-4 h-4" />
+                Switch to View
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  if (!selectedWorkspaceId || !selectedReportId) {
+                    toast({
+                      title: "Export Failed",
+                      description: "No report selected for export",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const selectedReport = allReports?.find(r => r.id === selectedReportId);
+                  const reportName = selectedReport?.name || 'report';
+
+                  try {
+                    // Default to PDF export for now - can be extended with format selection
+                    await exportToPDF(selectedWorkspaceId, selectedReportId, reportName);
+                  } catch (error) {
+                    console.error("Export error:", error);
+                    toast({
+                      title: "Export Failed",
+                      description: error instanceof Error ? error.message : "Failed to export report",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-export-file"
+                className="flex items-center gap-2"
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4" />
+                )}
+                {isExporting ? 'Exporting...' : 'Export Report to File'}
+              </DropdownMenuItem>
+
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      )}
+
+      {/* Mobile Filter Drawer */}
+      <Sheet open={showMobileFilterDrawer} onOpenChange={setShowMobileFilterDrawer}>
+        <SheetContent side="bottom" className="h-[80vh] bg-white">
+          <SheetHeader>
+            <SheetTitle>Report Filters</SheetTitle>
+            <SheetDescription>
+              Apply filters to customize your report data
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="mt-6 space-y-4">
+            <div className="text-sm text-muted-foreground">
+              Custom filter interface will be implemented here.
             </div>
+            
+            {/* Example region filter */}
+            <Button 
+              onClick={async () => {
+                if (typeof window !== 'undefined' && (window as any).powerbi) {
+                  try {
+                    const container = document.getElementById('reportContainer');
+                    if (!container) {
+                      console.warn("PowerBI container element not found");
+                      return;
+                    }
+
+                    const report = (window as any).powerbi.get(container);
+                    if (report) {
+                      await applyRegionFilter(report, ["West", "South"]);
+                      console.log('Applied region filter: West, South');
+                      setShowMobileFilterDrawer(false);
+                    }
+                  } catch (error) {
+                    console.error('Failed to apply filter:', error);
+                  }
+                }
+              }}
+              className="w-full"
+            >
+              Apply Region Filter (West, South)
+            </Button>
+            
+            <Button 
+              variant="outline"
+              onClick={() => {
+                setShowMobileFilterDrawer(false);
+                // Reset visual feedback state when drawer closes
+                setFilterPaneVisible(false);
+              }}
+              className="w-full"
+            >
+              Close
+            </Button>
           </div>
-        </DialogContent>
-      </Dialog>
-    </>
+        </SheetContent>
+      </Sheet>
+
+    </div>
   );
 }

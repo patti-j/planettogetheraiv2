@@ -1151,3 +1151,50 @@ export type StartOperationCommand = z.infer<typeof startOperationCommandSchema>;
 export type StopOperationCommand = z.infer<typeof stopOperationCommandSchema>;
 export type PauseOperationCommand = z.infer<typeof pauseOperationCommandSchema>;
 export type CommandResponse = z.infer<typeof commandResponseSchema>;
+
+// ============================================
+// Power BI Types
+// ============================================
+
+// Additional types for Power BI frontend
+export type ReportEmbedConfig = {
+  reportId: string;
+  embedUrl: string;
+  accessToken: string;
+  workspaceId?: string; // Workspace ID for token refresh
+  datasetId?: string; // Dataset ID for dataset refresh
+  expiration?: string; // ISO string indicating when embed token expires
+  tokenId?: string; // Token ID for tracking
+  settings: {
+    filterPaneEnabled: boolean;
+    navContentPaneEnabled: boolean;
+    background: number;
+    zoomLevel?: number;
+    bars?: {
+      statusBar?: {
+        visible: boolean;
+      };
+      actionBar?: {
+        visible: boolean;
+      };
+    };
+    panes?: {
+      pageNavigation?: {
+        visible: boolean;
+        position: number; // 0 = Left, 1 = Bottom
+      };
+      filters?: {
+        visible: boolean;
+      };
+    };
+  };
+};
+
+export type ReportFilters = {
+  startDate?: string;
+  endDate?: string;
+  region?: string[];
+  categories?: string[];
+  salesChannel?: string;
+  currency?: string;
+};

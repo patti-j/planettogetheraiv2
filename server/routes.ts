@@ -6829,6 +6829,189 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
   }
 });
 
+// ============================================
+// Power BI Routes
+// ============================================
+
+// Power BI Service import and setup
+import { PowerBIService } from "./services/powerbi";
+const powerBIService = new PowerBIService();
+
+// Enhanced server-side token cache with JWT parsing
+interface CachedPowerBIToken {
+  accessToken: string;
+  expiresAt: number;
+}
+
+let powerBITokenCache: CachedPowerBIToken | null = null;
+
+// Helper function to decode JWT and get expiration
+function decodeJWTExpiry(token: string): number {
+  try {
+    const payload = JSON.parse(Buffer.from(token.split('.')[1], 'base64').toString());
+    return payload.exp * 1000; // Convert to milliseconds
+  } catch {
+    return Date.now() + (50 * 60 * 1000); // Default to 50 minutes if parsing fails
+  }
+}
+
+// Get cached or fresh AAD token for server-side use only
+async function getServerAADToken(): Promise<string> {
+  const clientId = process.env.POWERBI_APPLICATION_ID;
+  const clientSecret = process.env.POWERBI_APPLICATION_SECRET;
+  const tenantId = process.env.POWERBI_TENANT_ID;
+  
+  if (!clientId || !clientSecret || !tenantId) {
+    throw new Error("Power BI credentials not configured. Please contact administrator.");
+  }
+
+  // Check if we have a valid cached token (with 5 min buffer)
+  const now = Date.now();
+  if (powerBITokenCache && powerBITokenCache.expiresAt > now + (5 * 60 * 1000)) {
+    return powerBITokenCache.accessToken;
+  }
+
+  // Get fresh token
+  const accessToken = await powerBIService.authenticateServicePrincipal(
+    clientId,
+    clientSecret,
+    tenantId
+  );
+
+  // Parse JWT expiration or use default
+  const jwtExpiry = decodeJWTExpiry(accessToken);
+  
+  // Cache token with actual JWT expiry (minus 5 min buffer)
+  powerBITokenCache = {
+    accessToken,
+    expiresAt: jwtExpiry - (5 * 60 * 1000)
+  };
+
+  return accessToken;
+}
+
+// Secure authentication check - establishes server token but never returns it to client
+router.get("/api/auth/auto", async (req, res) => {
+  try {
+    // Test server-side authentication by getting a token
+    await getServerAADToken();
+    
+    // Return only connection status - NEVER the token
+    res.json({ 
+      connected: true,
+      message: "Successfully connected to Power BI",
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    console.error("Failed to authenticate automatically:", error);
+    
+    // Extract meaningful error message
+    let errorMessage = "Failed to authenticate with Power BI automatically";
+    if (error instanceof Error) {
+      // Check if it's an expired secret error
+      if (error.message.includes("7000222") || error.message.includes("expired")) {
+        errorMessage = "Your Azure app secret has expired. Please create a new client secret in Azure Portal.";
+      } else if (error.message.includes("7000215")) {
+        errorMessage = "Invalid client secret. Please verify your credentials in Azure Portal.";
+      } else {
+        errorMessage = error.message;
+      }
+    }
+    
+    res.status(500).json({ 
+      connected: false,
+      message: errorMessage,
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Get workspaces from Power BI using server-cached token
+router.get("/api/powerbi/workspaces", async (req, res) => {
+  try {
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const workspaces = await powerBIService.getWorkspaces(accessToken);
+
+    res.json(workspaces);
+  } catch (error) {
+    console.error("Failed to get workspaces:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch workspaces",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Get reports from a specific workspace using server-cached token
+router.get("/api/powerbi/workspaces/:workspaceId/reports", async (req, res) => {
+  try {
+    const { workspaceId } = req.params;
+    
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const reports = await powerBIService.getReportsFromWorkspace(accessToken, workspaceId);
+
+    res.json(reports);
+  } catch (error) {
+    console.error("Failed to get reports from workspace:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch reports from workspace",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Get dataset information including storage mode
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const dataset = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
+
+    res.json(dataset);
+  } catch (error) {
+    console.error("Failed to get dataset:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch dataset information",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Secure Power BI embed endpoint - uses server-cached AAD token
+router.post("/api/embed", async (req, res) => {
+  try {
+    const { workspaceId, reportId, accessLevel, allowSaveAs } = req.body;
+    
+    if (!workspaceId || !reportId) {
+      return res.status(400).json({ 
+        message: "Workspace ID and report ID are required" 
+      });
+    }
+
+    // Use server-cached AAD token - client never sees it
+    const accessToken = await getServerAADToken();
+    const embedConfig = await powerBIService.createEmbedConfig(
+      accessToken,
+      workspaceId,
+      reportId,
+      accessLevel || "View", // Default to View if not specified
+      allowSaveAs
+    );
+
+    res.json(embedConfig);
+  } catch (error) {
+    console.error("Failed to create embed config:", error);
+    res.status(500).json({ 
+      message: "Failed to create embed configuration",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
 
