@@ -714,196 +714,6 @@ export default function Dashboard() {
                     )}
                   </div>
                 </Card>
-              
-                {/* Settings Button - positioned below Select Report card */}
-                {showEmbed && embedConfig && !isLoading && (
-                  <div className="mt-8 px-4">
-                    <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className={`h-10 w-10 rounded-full shadow-lg hover:shadow-xl transition-colors ${
-                          settingsDropdownOpen 
-                            ? 'text-white' 
-                            : 'bg-white text-gray-700 border-gray-300'
-                        }`}
-                        style={settingsDropdownOpen ? { 
-                          backgroundColor: '#0E94D2', 
-                          borderColor: '#0E94D2' 
-                        } : {}}
-                        data-testid="button-settings"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" side="right" className="bg-white border border-gray-200">
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            await refreshReport();
-                            toast({
-                              title: "Report Refreshed",
-                              description: "The report data has been refreshed",
-                            });
-                          } catch (error) {
-                            toast({
-                              title: "Refresh Failed",
-                              description: error instanceof Error ? error.message : "Failed to refresh report",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        data-testid="menu-refresh"
-                        className="flex items-center gap-2"
-                      >
-                        <RotateCcw className="w-4 h-4" />
-                        Refresh Report
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            await refreshDataset();
-                          } catch (error) {
-                            console.error("Dataset refresh initiation failed:", error);
-                          }
-                        }}
-                        disabled={refreshInfo.status === 'refreshing'}
-                        data-testid="menu-refresh-dataset"
-                        className="flex items-center gap-2"
-                      >
-                        {refreshInfo.status === 'refreshing' ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Database className="w-4 h-4" />
-                        )}
-                        {refreshInfo.status === 'refreshing' ? 'Refreshing...' : 'Refresh Dataset'}
-                      </DropdownMenuItem>
-                      
-                      <DropdownMenuItem 
-                        onClick={() => {
-                          try {
-                            toggleFullscreen();
-                            toast({
-                              title: "Fullscreen Toggled",
-                              description: "Report view mode changed",
-                            });
-                          } catch (error) {
-                            toast({
-                              title: "Fullscreen Failed",
-                              description: error instanceof Error ? error.message : "Failed to toggle fullscreen",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        data-testid="menu-fullscreen"
-                        className="flex items-center gap-2"
-                      >
-                        <Maximize2 className="w-4 h-4" />
-                        Toggle Fullscreen
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            await switchToEditMode();
-                            toast({
-                              title: "Edit Mode Enabled",
-                              description: "You can now edit the report",
-                            });
-                          } catch (error) {
-                            console.error("Edit mode error:", error);
-                            let errorMessage = "Failed to switch to edit mode";
-                            
-                            if (error && typeof error === 'object' && 'message' in error) {
-                              const errorObj = error as any;
-                              if (errorObj.message === 'insufficientPermissions' || errorObj.detailedMessage?.includes('insufficient Permissions')) {
-                                errorMessage = "You don't have permission to edit this report. Contact your Power BI admin to request edit access.";
-                              } else {
-                                errorMessage = errorObj.detailedMessage || errorObj.message || errorMessage;
-                              }
-                            }
-                            
-                            toast({
-                              title: "Edit Mode Unavailable",
-                              description: errorMessage,
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        data-testid="menu-edit-mode"
-                        className="flex items-center gap-2"
-                        disabled={isMobile || viewMode === "edit"}
-                      >
-                        <Edit className="w-4 h-4" />
-                        Switch to Edit
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          try {
-                            await switchToViewMode();
-                            toast({
-                              title: "View Mode Enabled",
-                              description: "Switched back to view mode",
-                            });
-                          } catch (error) {
-                            toast({
-                              title: "Switch to View Failed",
-                              description: error instanceof Error ? error.message : "Failed to switch to view mode",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        data-testid="menu-view-mode"
-                        className="flex items-center gap-2"
-                        disabled={viewMode === "view"}
-                      >
-                        <Eye className="w-4 h-4" />
-                        Switch to View
-                      </DropdownMenuItem>
-
-                      <DropdownMenuItem 
-                        onClick={async () => {
-                          if (!selectedWorkspaceId || !selectedReportId) {
-                            toast({
-                              title: "Export Failed",
-                              description: "No report selected for export",
-                              variant: "destructive",
-                            });
-                            return;
-                          }
-
-                          const selectedReport = allReports?.find(r => r.id === selectedReportId);
-                          const reportName = selectedReport?.name || 'report';
-
-                          try {
-                            await exportToPDF(selectedWorkspaceId, selectedReportId, reportName);
-                          } catch (error) {
-                            console.error("Export error:", error);
-                            toast({
-                              title: "Export Failed",
-                              description: error instanceof Error ? error.message : "Failed to export report",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        data-testid="menu-export-file"
-                        className="flex items-center gap-2"
-                        disabled={isExporting}
-                      >
-                        {isExporting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <FileDown className="w-4 h-4" />
-                        )}
-                        {isExporting ? 'Exporting...' : 'Export Report to File'}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                  </div>
-                )}
                 </>
               ) : (
                 /* Vertical text when sidebar is minimized */
@@ -1012,6 +822,195 @@ export default function Dashboard() {
               )}
             </div>
           </Card>
+        </div>
+      )}
+      {/* Floating Settings Button - Bottom Left (Desktop Only) */}
+      {showEmbed && embedConfig && !isLoading && !isMobile && (
+        <div className="fixed bottom-6 left-4 z-50">
+          <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className={`h-10 w-10 rounded-full shadow-lg hover:shadow-xl transition-colors ${
+                  settingsDropdownOpen 
+                    ? 'text-white' 
+                    : 'bg-white text-gray-700 border-gray-300'
+                }`}
+                style={settingsDropdownOpen ? { 
+                  backgroundColor: '#0E94D2', 
+                  borderColor: '#0E94D2' 
+                } : {}}
+                data-testid="button-settings"
+              >
+                <Settings className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" side="right" className="bg-white border border-gray-200">
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await refreshReport();
+                    toast({
+                      title: "Report Refreshed",
+                      description: "The report data has been refreshed",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Refresh Failed",
+                      description: error instanceof Error ? error.message : "Failed to refresh report",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-refresh"
+                className="flex items-center gap-2"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Refresh Report
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await refreshDataset();
+                  } catch (error) {
+                    console.error("Dataset refresh initiation failed:", error);
+                  }
+                }}
+                disabled={refreshInfo.status === 'refreshing'}
+                data-testid="menu-refresh-dataset"
+                className="flex items-center gap-2"
+              >
+                {refreshInfo.status === 'refreshing' ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Database className="w-4 h-4" />
+                )}
+                {refreshInfo.status === 'refreshing' ? 'Refreshing...' : 'Refresh Dataset'}
+              </DropdownMenuItem>
+              
+              <DropdownMenuItem 
+                onClick={() => {
+                  try {
+                    toggleFullscreen();
+                    toast({
+                      title: "Fullscreen Toggled",
+                      description: "Report view mode changed",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Fullscreen Failed",
+                      description: error instanceof Error ? error.message : "Failed to toggle fullscreen",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-fullscreen"
+                className="flex items-center gap-2"
+              >
+                <Maximize2 className="w-4 h-4" />
+                Toggle Fullscreen
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await switchToEditMode();
+                    toast({
+                      title: "Edit Mode Enabled",
+                      description: "You can now edit the report",
+                    });
+                  } catch (error) {
+                    console.error("Edit mode error:", error);
+                    let errorMessage = "Failed to switch to edit mode";
+                    
+                    if (error && typeof error === 'object' && 'message' in error) {
+                      const errorObj = error as any;
+                      if (errorObj.message === 'insufficientPermissions' || errorObj.detailedMessage?.includes('insufficient Permissions')) {
+                        errorMessage = "You don't have permission to edit this report. Contact your Power BI admin to request edit access.";
+                      } else {
+                        errorMessage = errorObj.detailedMessage || errorObj.message || errorMessage;
+                      }
+                    }
+                    
+                    toast({
+                      title: "Edit Mode Unavailable",
+                      description: errorMessage,
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-edit-mode"
+                className="flex items-center gap-2"
+                disabled={isMobile || viewMode === "edit"}
+              >
+                <Edit className="w-4 h-4" />
+                Switch to Edit
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  try {
+                    await switchToViewMode();
+                    toast({
+                      title: "View Mode Enabled",
+                      description: "Switched back to view mode",
+                    });
+                  } catch (error) {
+                    toast({
+                      title: "Switch to View Failed",
+                      description: error instanceof Error ? error.message : "Failed to switch to view mode",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-view-mode"
+                className="flex items-center gap-2"
+                disabled={viewMode === "view"}
+              >
+                <Eye className="w-4 h-4" />
+                Switch to View
+              </DropdownMenuItem>
+
+              <DropdownMenuItem 
+                onClick={async () => {
+                  if (!selectedWorkspaceId || !selectedReportId) {
+                    toast({
+                      title: "Export Failed",
+                      description: "No report selected for export",
+                      variant: "destructive",
+                    });
+                    return;
+                  }
+
+                  const selectedReport = allReports?.find(r => r.id === selectedReportId);
+                  const reportName = selectedReport?.name || 'report';
+
+                  try {
+                    await exportToPDF(selectedWorkspaceId, selectedReportId, reportName);
+                  } catch (error) {
+                    console.error("Export error:", error);
+                    toast({
+                      title: "Export Failed",
+                      description: error instanceof Error ? error.message : "Failed to export report",
+                      variant: "destructive",
+                    });
+                  }
+                }}
+                data-testid="menu-export-file"
+                className="flex items-center gap-2"
+                disabled={isExporting}
+              >
+                {isExporting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <FileDown className="w-4 h-4" />
+                )}
+                {isExporting ? 'Exporting...' : 'Export Report to File'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       )}
       {/* Floating Back to Reports Button - Above Settings */}
