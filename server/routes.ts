@@ -2397,14 +2397,41 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
               type: 'safety-incident-tracker',
               title: 'Safety Incidents',
               position: { x: 11, y: 3, w: 5, h: 4 },
+              config: {
+                incidentTypes: true,
+                trendAnalysis: true,
+                safeDays: true
+              }
+            }
+          ],
+          customWidgets: []
+        }
+      }
+    ];
+    
+    // Filter dashboards based on user roles
+    // In development mode or if user has admin role, return all dashboards
+    const isAdmin = userRoles.some((role: any) => role.name === 'admin' || role.name === 'Admin');
+    let filteredDashboards = allDashboards;
 
+    if (!isAdmin && process.env.NODE_ENV !== 'development') {
+      const userRoleNames = userRoles.map((role: any) => role.name);
+      filteredDashboards = allDashboards.filter(dashboard => 
+        dashboard.requiredRoleNames.some(roleName => userRoleNames.includes(roleName))
+      );
+    }
 
-// ============================================
-// PowerBI Integration Routes
-// ============================================
-
-import { PowerBIService } from './services/powerbi';
-const powerBIService = new PowerBIService();
+    // If no dashboards match user roles, provide a default one
+    if (filteredDashboards.length === 0) {
+      filteredDashboards = [allDashboards[0]]; // Default to Executive Dashboard
+    }
+    
+    res.json(filteredDashboards);
+  } catch (error) {
+    console.error('Error fetching dashboard configs:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
+  }
+});
 
 // Get Power BI dataset information
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", requireAuth, async (req, res) => {
@@ -2473,42 +2500,6 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh-est
   } catch (error: any) {
     console.error('Error getting refresh estimate:', error);
     res.status(500).json({ error: 'Failed to get refresh estimate', details: error.message });
-  }
-});
-
-              config: {
-                showNearMisses: true,
-                incidentTypes: true,
-                reportingStatus: true
-              }
-            }
-          ],
-          customWidgets: []
-        }
-      }
-    ];
-
-    // Filter dashboards based on user roles
-    // In development mode or if user has admin role, return all dashboards
-    const isAdmin = userRoles.some((role: any) => role.name === 'admin' || role.name === 'Admin');
-    let filteredDashboards = allDashboards;
-
-    if (!isAdmin && process.env.NODE_ENV !== 'development') {
-      const userRoleNames = userRoles.map((role: any) => role.name);
-      filteredDashboards = allDashboards.filter(dashboard => 
-        dashboard.requiredRoleNames.some(roleName => userRoleNames.includes(roleName))
-      );
-    }
-
-    // If no dashboards match user roles, provide a default one
-    if (filteredDashboards.length === 0) {
-      filteredDashboards = [allDashboards[0]]; // Default to Executive Dashboard
-    }
-    
-    res.json(filteredDashboards);
-  } catch (error: any) {
-    console.error('Error fetching dashboard configs:', error);
-    res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
   }
 });
 
@@ -6909,12 +6900,10 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
 });
 
 // ============================================
-// Power BI Routes
+// Power BI Routes (Additional)
 // ============================================
 
-// Power BI Service import and setup
-import { PowerBIService } from "./services/powerbi";
-const powerBIService = new PowerBIService();
+// PowerBIService is already imported and instantiated earlier in the file
 
 // Enhanced server-side token cache with JWT parsing
 interface CachedPowerBIToken {
