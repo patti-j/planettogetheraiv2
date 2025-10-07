@@ -998,6 +998,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     return () => document.removeEventListener('toggle-ai-panel', handleToggle);
   }, [scrollToBottom]);
 
+  // Scroll to bottom when chat tab is selected
+  useEffect(() => {
+    if (activeTab === 'chat' && chatMessages.length > 0) {
+      // Small delay to ensure tab content is rendered
+      setTimeout(() => {
+        scrollToBottom();
+      }, 100);
+    }
+  }, [activeTab, scrollToBottom, chatMessages.length]);
+
 
   // Transform Max AI insights to display format
   const displayInsights: AIInsight[] = (Array.isArray(maxInsights) ? maxInsights : []).map((insight: any, index: number) => ({
