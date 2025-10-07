@@ -2980,30 +2980,31 @@ Respond with JSON format:
   private async executeSchedulingAlgorithm(algorithmType: string, affectedItems: any, reasoning: string): Promise<MaxResponse> {
     try {
       console.log(`[Max AI] Executing scheduling algorithm: ${algorithmType}`);
+      console.log(`[Max AI] Algorithm reasoning: ${reasoning}`);
       
-      // Determine which algorithm to apply
-      const algorithmLower = algorithmType.toLowerCase();
+      // Determine which algorithm to apply - check both action_type and reasoning for algorithm name
+      const searchText = `${algorithmType} ${reasoning}`.toLowerCase();
       let algorithmName = '';
       let algorithmDescription = '';
       let executionSteps = '';
       
-      if (algorithmLower.includes('asap')) {
+      if (searchText.includes('asap')) {
         algorithmName = 'ASAP (As Soon As Possible)';
         algorithmDescription = 'This will schedule all operations to start as early as possible from the current time, minimizing lead times.';
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ASAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
-      } else if (algorithmLower.includes('alap')) {
+      } else if (searchText.includes('alap')) {
         algorithmName = 'ALAP (As Late As Possible)';
         algorithmDescription = 'This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.';
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ALAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
-      } else if (algorithmLower.includes('critical_path') || algorithmLower.includes('critical path')) {
+      } else if (searchText.includes('critical_path') || searchText.includes('critical path')) {
         algorithmName = 'Critical Path Method';
         algorithmDescription = 'This will identify and highlight operations that directly impact the completion time (shown in red).';
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Critical Path" from the dropdown\n3. Click "Analyze" to identify critical operations\n4. Critical operations will be highlighted in red';
-      } else if (algorithmLower.includes('resource_level') || algorithmLower.includes('leveling')) {
+      } else if (searchText.includes('resource_level') || searchText.includes('leveling')) {
         algorithmName = 'Resource Leveling';
         algorithmDescription = 'This will redistribute operations to balance resource utilization and reduce overloads.';
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Resource Leveling" from the dropdown\n3. Set target utilization percentage (e.g., 85%)\n4. Click "Apply" to balance the schedule';
-      } else if (algorithmLower.includes('drum') || algorithmLower.includes('toc') || algorithmLower.includes('theory of constraints')) {
+      } else if (searchText.includes('drum') || searchText.includes('toc') || searchText.includes('theory of constraints')) {
         algorithmName = 'Drum/TOC (Theory of Constraints)';
         algorithmDescription = 'This will schedule operations around the bottleneck resource to maximize throughput.';
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Drum/TOC" from the dropdown\n3. Identify the constraint resource (usually highest utilization)\n4. Click "Apply" to optimize around the constraint';
