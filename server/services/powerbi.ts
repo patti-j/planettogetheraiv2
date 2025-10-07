@@ -403,13 +403,34 @@ export class PowerBIService {
       });
 
       if (!response.ok) {
-        const error = await response.text();
-        throw new Error(`Failed to initiate dataset refresh: ${error}`);
+        const errorText = await response.text();
+        
+        // Try to parse as JSON to get structured error information
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          // If not JSON, use the text as is
+          throw new Error(`Failed to initiate dataset refresh: ${errorText}`);
+        }
+
+        // Check for specific Power BI error codes
+        const errorCode = errorData?.error?.code;
+        const errorMessage = errorData?.error?.message;
+
+        if (errorCode === 'RefreshInProgressException') {
+          throw new Error('REFRESH_IN_PROGRESS: A dataset refresh is already running. Please wait for it to complete before starting a new refresh.');
+        } else if (errorCode === 'InvalidRequest') {
+          throw new Error(`INVALID_REQUEST: ${errorMessage || 'Invalid refresh request'}`);
+        } else {
+          throw new Error(`Failed to initiate dataset refresh: ${errorMessage || errorText}`);
+        }
       }
 
       console.log(`✅ Dataset refresh initiated for dataset ${datasetId} in workspace ${workspaceId}`);
     } catch (error) {
-      throw new Error(`Failed to initiate dataset refresh: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Re-throw errors with their existing message (including our custom error codes)
+      throw error;
     }
   }
 
