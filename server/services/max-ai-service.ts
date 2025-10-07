@@ -2687,9 +2687,12 @@ Extract the action parameters from the user's request. Identify:
    - If request says "move X TO Y" or "move X onto Y", then Y is the TARGET (what to move TO)
    - Set source_resource when moving FROM something
    - Set target_resource when moving TO something (can be null if not specified)
-4. For RESCHEDULE operations: Extract the new date/time:
-   - Extract the target date as a string (e.g., "September 5th", "Sept 5 at 2pm", "tomorrow", "next Monday")
-   - Put this in the target_date field
+4. For RESCHEDULE operations: Extract the EXACT date/time string from the user's message:
+   - Look for ANY date reference in the user's request (e.g., "September 5th", "Sept 5 at 2pm", "tomorrow", "next Monday")
+   - Copy the EXACT date string to the target_date field AS-IS
+   - Do NOT try to parse or convert the date - just copy the exact text
+   - Example: If user says "to September 5th", put "September 5th" in target_date
+   - Example: If user says "on March 1st", put "March 1st" in target_date
 
 Respond with JSON format:
 {
@@ -2712,8 +2715,11 @@ Respond with JSON format:
         response_format: { type: "json_object" }
       });
 
-      const actionDetails = JSON.parse(actionResponse.choices[0].message.content || '{}');
-      console.log(`[Max AI] Parsed action details:`, actionDetails);
+      const aiContent = actionResponse.choices[0].message.content || '{}';
+      console.log(`[Max AI] Raw AI response for action extraction:`, aiContent);
+      
+      const actionDetails = JSON.parse(aiContent);
+      console.log(`[Max AI] Parsed action details:`, JSON.stringify(actionDetails, null, 2));
 
       // Execute the actual scheduling action
       const executionResult = await this.executeSchedulingAction(actionDetails, context);
