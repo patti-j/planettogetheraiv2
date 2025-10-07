@@ -6,6 +6,7 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
 import { realtimeVoiceService } from './services/realtime-voice-service';
+import { powerBIService } from './services/powerbi';
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
