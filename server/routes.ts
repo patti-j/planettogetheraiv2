@@ -7011,32 +7011,10 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
     res.status(202).json({ message: "Dataset refresh initiated successfully" });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
-    
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    
-    // Check for specific error types and return appropriate status codes
-    if (errorMessage.startsWith('REFRESH_IN_PROGRESS:')) {
-      // 409 Conflict - resource state conflict
-      res.status(409).json({ 
-        error: "RefreshInProgress",
-        message: errorMessage.replace('REFRESH_IN_PROGRESS: ', ''),
-        userMessage: "A dataset refresh is already running. Please wait for it to complete before starting a new refresh."
-      });
-    } else if (errorMessage.startsWith('INVALID_REQUEST:')) {
-      // 400 Bad Request
-      res.status(400).json({ 
-        error: "InvalidRequest",
-        message: errorMessage.replace('INVALID_REQUEST: ', ''),
-        userMessage: "Invalid refresh request. Please try again."
-      });
-    } else {
-      // 500 Internal Server Error
-      res.status(500).json({ 
-        error: "RefreshFailed",
-        message: errorMessage,
-        userMessage: "Failed to initiate dataset refresh. Please try again later."
-      });
-    }
+    res.status(500).json({ 
+      message: "Failed to initiate dataset refresh",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
   }
 });
 

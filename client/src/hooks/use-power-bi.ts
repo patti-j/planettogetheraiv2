@@ -1112,24 +1112,32 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
       if (!response.ok) {
         const errorData = await response.json();
+        const errorMessage = errorData.error || errorData.message || "Failed to refresh dataset";
         
-        // Use userMessage if available (user-friendly), otherwise fall back to technical message
-        const errorMessage = errorData.userMessage || errorData.message || errorData.error || "Failed to refresh dataset";
-        
-        console.log("🔍 Frontend received error response:", {
-          status: response.status,
-          errorType: errorData.error,
-          userMessage: errorData.userMessage,
+        console.log("🔍 Frontend received error response but checking for estimation:", {
+          hasEstimation: !!errorData.estimation,
+          estimationType: typeof errorData.estimation,
           errorData
         });
         
-        // Set refresh state to failed with the error message
+        // IMPORTANT: Even if refresh fails, check if we got estimation data for testing/debugging
+        const estimation = errorData.estimation;
+        
+        // Set refresh state to failed but include any estimation data we received
         setRefreshInfo({
           status: 'failed',
           startTime: null,
           elapsedTime: 0,
           error: errorMessage,
-          estimation: undefined
+          estimation // Include estimation even on failure for debugging
+        });
+        
+        console.log("⚠️ Refresh failed but set estimation data:", {
+          hasEstimation: !!estimation,
+          estimation: estimation ? {
+            averageDurationSeconds: estimation.averageDurationSeconds,
+            confidenceLevel: estimation.confidenceLevel
+          } : 'none'
         });
         
         throw new Error(errorMessage);
