@@ -105,6 +105,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
   const currentAccessLevelRef = useRef<"View" | "Edit">("View");
   const currentEmbedConfigRef = useRef<ReportEmbedConfig | null>(null);
   const refreshEmbedTokenRef = useRef<(cfg: ReportEmbedConfig) => Promise<void>>(async () => {});
+  const isFullscreenRef = useRef<boolean>(false);
   
   // Polling query for refresh status with timeout handling
   // Fixed: Always enable query but handle conditional logic inside queryFn to prevent hook order violations
@@ -401,6 +402,12 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
         // Responsive re-application function
         const applyResponsive = (report: PowerBIReport, embedConfig: ReportEmbedConfig) => {
+          // Skip layout updates when in fullscreen mode
+          if (isFullscreenRef.current) {
+            console.log('⏭️ Skipping layout update - in fullscreen mode');
+            return;
+          }
+          
           const mobile = isMobileLike();
           console.log(`📱 Applying responsive settings: mobile=${mobile}, viewport=${window.innerWidth}x${window.innerHeight}, touch=${navigator.maxTouchPoints}`);
           
@@ -521,6 +528,12 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
         // Try updateSettings first (fast method)
         const tryUpdateLayout = async (mode: string) => {
+          // Skip layout updates when in fullscreen mode
+          if (isFullscreenRef.current) {
+            console.log('⏭️ Skipping layout update - in fullscreen mode');
+            return;
+          }
+          
           try {
             const settings = mode === 'desktop' 
               ? { 
@@ -590,6 +603,12 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
         // Main switch function with updateSettings + re-embed fallback
         const switchLayout = async (mode: string) => {
+          // Skip layout updates when in fullscreen mode
+          if (isFullscreenRef.current) {
+            console.log('⏭️ Skipping layout switch - in fullscreen mode');
+            return;
+          }
+          
           if (currentMode === mode) return;
           
           console.log(`[autoSwitch] Switching to ${mode} layout`);
@@ -644,6 +663,12 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
         // Set up event listeners
         const debouncedSwitch = debounce(() => {
+          // Skip layout updates when in fullscreen mode
+          if (isFullscreenRef.current) {
+            console.log('⏭️ Skipping debounced switch - in fullscreen mode');
+            return;
+          }
+          
           const mode = decideMode();
           switchLayout(mode);
           // Also apply bottom navigation after layout switch
@@ -1378,7 +1403,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
   useEffect(() => {
     const handleFullscreenChange = () => {
       const isCurrentlyFullscreen = !!document.fullscreenElement;
-      // Removed fullscreen state management - using native Power BI controls
+      isFullscreenRef.current = isCurrentlyFullscreen;
       console.log("🔄 Fullscreen state synced:", isCurrentlyFullscreen);
     };
 
