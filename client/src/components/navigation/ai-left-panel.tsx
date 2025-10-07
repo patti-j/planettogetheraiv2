@@ -128,7 +128,13 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     
     if (saved) {
       try {
-        settings = { ...settings, ...JSON.parse(saved) };
+        const parsed = JSON.parse(saved);
+        // If old settings have soundEnabled: false, reset it to true (enable voice by default)
+        if (parsed.soundEnabled === false) {
+          console.log('[Voice] Resetting old soundEnabled: false to true');
+          parsed.soundEnabled = true;
+        }
+        settings = { ...settings, ...parsed };
       } catch (e) {
         // Fall back to defaults if parse fails
       }

@@ -2301,8 +2301,12 @@ Respond with JSON:
   private async handleDataFetchIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
     try {
       // Special handling for "which jobs are on resource X" queries
-      const resourceQueryPattern = /(?:which|what|show|list).*(?:jobs?|operations?|orders?).*(?:on|at|in|scheduled on).*?([\w\s-]+)/i;
-      const match = query.match(resourceQueryPattern);
+      // Pattern 1: "which jobs/operations/orders are on resource X"
+      const resourceQueryPattern1 = /(?:which|what|show|list).*(?:jobs?|operations?|orders?).*(?:on|at|in|scheduled on|assigned to).*?([\w\s-]+)/i;
+      // Pattern 2: "which resources are scheduled on X" (really asking "what's scheduled on resource X")
+      const resourceQueryPattern2 = /(?:which|what|show|list).*resources?.*(?:scheduled|assigned|running).*(?:on|at|in).*?([\w\s-]+)/i;
+      
+      let match = query.match(resourceQueryPattern1) || query.match(resourceQueryPattern2);
       
       if (match) {
         const resourceName = match[1].trim();
