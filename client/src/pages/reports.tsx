@@ -821,7 +821,7 @@ export default function Dashboard() {
         const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
         return showEmbed && embedConfig && !isLoading && isMobile && selectedReportId && selectedWorkspace;
       })() && (
-        <div className="fixed bottom-28 left-2 z-50">
+        <div className="fixed bottom-44 left-2 z-50">
           <Button
             variant="outline"
             size="icon"
@@ -843,7 +843,7 @@ export default function Dashboard() {
         const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
         return showEmbed && embedConfig && !isLoading && isMobile && selectedReportId && selectedWorkspace;
       })() && (
-        <div className="fixed bottom-16 left-2 z-50">
+        <div className="fixed bottom-32 left-2 z-50">
           <Button
             variant="outline"
             size="icon"
@@ -888,7 +888,7 @@ export default function Dashboard() {
       )}
       {/* Floating Settings Button - Bottom Left */}
       {showEmbed && embedConfig && !isLoading && (
-        <div className="fixed bottom-4 left-2 z-50">
+        <div className="fixed bottom-20 left-2 z-50">
           <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
