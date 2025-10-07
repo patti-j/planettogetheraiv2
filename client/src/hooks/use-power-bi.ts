@@ -1205,7 +1205,10 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
     }
 
     try {
+      const deleteUrl = `/api/powerbi/workspaces/${currentEmbedConfig.workspaceId}/datasets/${currentEmbedConfig.datasetId}/refreshes/${refreshInfo.refreshId}`;
       console.log("🛑 Cancelling dataset refresh...");
+      console.log("📍 DELETE URL:", deleteUrl);
+      console.log("🔑 RefreshId:", refreshInfo.refreshId);
       
       // Update status to show cancellation in progress
       setRefreshInfo(prev => ({
@@ -1213,9 +1216,17 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
         status: 'cancelling'
       }));
       
-      const response = await fetch(`/api/powerbi/workspaces/${currentEmbedConfig.workspaceId}/datasets/${currentEmbedConfig.datasetId}/refreshes/${refreshInfo.refreshId}`, {
+      console.log("📤 Sending DELETE request...");
+      const response = await fetch(deleteUrl, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' }
+      });
+      
+      console.log("📥 DELETE response received:", { 
+        status: response.status, 
+        ok: response.ok,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
       });
 
       if (!response.ok) {
