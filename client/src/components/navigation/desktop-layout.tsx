@@ -50,6 +50,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   }, [currentAgent]);
   
+  // Auto-scroll floating textarea to show the LAST line of text
+  useEffect(() => {
+    if (floatingInputRef.current) {
+      floatingInputRef.current.scrollTop = floatingInputRef.current.scrollHeight;
+    }
+  }, [floatingPrompt]);
+  
   // Voice recording state for floating bubble
   const [isFloatingRecording, setIsFloatingRecording] = useState(false);
   const [floatingMediaRecorder, setFloatingMediaRecorder] = useState<MediaRecorder | null>(null);

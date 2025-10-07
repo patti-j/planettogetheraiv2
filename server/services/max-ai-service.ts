@@ -2573,8 +2573,7 @@ Provide analysis and recommendations.`
       // If no agent training provided, load Production Scheduling Agent training
       if (!agentTraining) {
         console.log('[Max AI] No agent training provided, loading Production Scheduling Agent training for execution');
-        const agentLoader = AgentTrainingLoader.getInstance();
-        agentTraining = agentLoader.getTraining('production_scheduling');
+        agentTraining = agentTrainingLoader.getTraining('production_scheduling');
         
         if (!agentTraining) {
           console.error('[Max AI] Failed to load Production Scheduling Agent training');
