@@ -467,7 +467,7 @@ export class PowerBIService {
       },
       confidenceLevel,
       historicalDataPoints: count,
-      averageDurationSeconds: Math.round(average),
+      averageDurationSeconds: Math.round(median), // Use median instead of average - more resistant to outliers
       contextualFactors: {
         storageMode: datasetInfo?.storageMode || "Unknown",
         isLargeDataset,
