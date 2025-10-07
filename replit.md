@@ -5,6 +5,16 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 ## Recent Changes
 
+**October 7, 2025**
+- **Production Scheduling Agent Action Execution**: Implemented complete AI action execution pipeline enabling Production Scheduling Agent to perform actual database operations (move/reschedule operations), not just navigation. Key features:
+  - **EXECUTE Intent Detection**: Separate intent type for action requests (move, reschedule, relocate operations) vs navigation
+  - **Agent Training Integration**: Agent-specific training loaded and included in system prompt when agentId provided via respondToMessage
+  - **Database Operation Handlers**: executeSchedulingAction, executeMoveOperations, executeRescheduleOperations perform actual SQL UPDATE on ptjobresources table
+  - **"Move OFF" Support**: Intelligent source/target handling where "move X OFF Y" correctly identifies Y as source_resource (FROM) and uses findAlternativeResource to select compatible destination
+  - **Source/Target Logic**: If source_resource is set, use ONLY target_resource (null triggers alternative selection). If source_resource not set, fallback to legacy target field for backward compatibility
+  - **Resource Capability Matching**: Uses ptresourcecapabilities table to find alternative resources with matching capabilities (e.g., FERMENTATION)
+  - **Concise PT-Focused Responses**: Production Scheduling Agent provides technical PT-specific responses without hallucinating, using agent training context
+
 **October 6, 2025**
 - **AI Model Standardization**: Removed references to unavailable models (GPT-5, o1-mini, o1-preview). System now exclusively uses GPT-4o (the current most capable available model via API) with temperature 0.3 for all AI operations. Created centralized configuration at server/config/ai-model.ts. Removed model selection dropdown from UI since we're using a single standardized model for consistency and maintainability.
 
