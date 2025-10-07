@@ -386,6 +386,33 @@ export class PowerBIService {
     }
   }
 
+  // Initiate dataset refresh
+  async refreshDataset(accessToken: string, workspaceId: string, datasetId: string): Promise<void> {
+    const refreshUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/refreshes`;
+
+    try {
+      const response = await fetch(refreshUrl, {
+        method: 'POST',
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          notifyOption: "NoNotification"
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to initiate dataset refresh: ${error}`);
+      }
+
+      console.log(`✅ Dataset refresh initiated for dataset ${datasetId} in workspace ${workspaceId}`);
+    } catch (error) {
+      throw new Error(`Failed to initiate dataset refresh: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
   // Cancel dataset refresh
   async cancelDatasetRefresh(accessToken: string, workspaceId: string, datasetId: string, refreshId: string): Promise<void> {
     const cancelUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/refreshes/${refreshId}`;

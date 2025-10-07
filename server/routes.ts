@@ -6987,9 +6987,9 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes",
     
     // Use server-cached AAD token
     const accessToken = await getServerAADToken();
-    const refreshHistory = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
+    const refreshes = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
 
-    res.json(refreshHistory);
+    res.json({ refreshes });
   } catch (error) {
     console.error("Failed to get dataset refresh history:", error);
     res.status(500).json({ 
