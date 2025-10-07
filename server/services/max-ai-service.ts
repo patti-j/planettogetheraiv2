@@ -1600,11 +1600,13 @@ Would you like me to analyze any specific area in detail?`;
     3. **PROGRESSIVE DETAIL**: Only provide extensive information when explicitly requested
     4. **BE CONCISE**: Initial response should take no more than 3 seconds to read aloud
     
-    📝 FORMATTING RULES:
-    - **Lists with 3+ items**: ALWAYS use bullet points with one item per line
-    - **Example**: "The active resources are:\n• Grain Mill\n• Mash Tun 1\n• Lauter Tun\n• Brew Kettle 1"
-    - **Short lists (1-2 items)**: Can use inline format
-    - Use bullet points (•) for better voice readability and visual clarity
+    📝 FORMATTING RULES - CRITICAL:
+    - **ANY LIST WITH 3+ ITEMS MUST USE BULLET POINTS** - This is MANDATORY, not optional
+    - Format: "Here are the [items]:\n• Item 1\n• Item 2\n• Item 3"
+    - NEVER use comma-separated lists for 3+ items ("Item 1, Item 2, Item 3" is FORBIDDEN)
+    - Each bullet point MUST be on its own line
+    - Use bullet character (•) exactly as shown
+    - Short lists (1-2 items) can use inline format
     
     ✅ GOOD Example (with bullet list):
     "Production is at 87% with Line 2 delayed by 15 minutes. The bottleneck is Fermentation Tank B. Would you like details on recovery options?"
