@@ -525,23 +525,27 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           role: lastMessage?.role,
           soundEnabled: aiSettings.soundEnabled,
           messageId: lastMessage?.id,
+          agentId: lastMessage?.agentId,
           lastSpoken: lastSpokenMessageIdRef.current,
           isDifferent: lastMessage?.id !== lastSpokenMessageIdRef.current
         });
 
-        if (
+        // Only play voice for Production Scheduling Agent (Nova), not for Max
+        const shouldPlayVoice = 
           lastMessage?.role === 'assistant' && 
           aiSettings.soundEnabled && 
-          lastMessage.id !== lastSpokenMessageIdRef.current
-        ) {
+          lastMessage.id !== lastSpokenMessageIdRef.current &&
+          lastMessage?.agentId !== 'max'; // Disable voice for Max agent
+
+        if (shouldPlayVoice) {
           // Mark this message as spoken to prevent re-playing
           lastSpokenMessageIdRef.current = lastMessage.id;
           
-          console.log('[Voice] 🔊 Triggering TTS for message:', lastMessage.id);
+          console.log('[Voice] 🔊 Triggering TTS for message:', lastMessage.id, 'from agent:', lastMessage?.agentId);
           
           // Add small delay to ensure message is rendered
           setTimeout(() => {
-            console.log('[Voice] Playing TTS now...');
+            console.log('[Voice] Playing TTS now for agent:', lastMessage?.agentId);
             speakResponse(lastMessage.content);
           }, 300);
         }
@@ -774,10 +778,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           agentName: 'Max'
         });
 
-        // Play voice response if enabled
-        if (aiSettings.soundEnabled) {
-          speakResponse(responseContent);
-        }
+        // Don't play voice response for Max (only for other agents like Nova)
+        // Voice is handled by the message effect for non-Max agents
         
         // If panel is collapsed, also show a temporary floating notification
         if (isCollapsed) {
