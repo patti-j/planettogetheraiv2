@@ -2681,12 +2681,14 @@ ${agentTraining.rawContent}
 
 Extract the action parameters from the user's request. Identify:
 1. What action to perform (move_operation, reschedule_operation, change_resource, etc.)
-2. Which operation(s) or job(s) are affected
-3. For MOVE operations: Distinguish between source and target:
-   - If request says "move X OFF Y" or "move X away from Y", then Y is the SOURCE (what to move FROM), not the target
+2. Which operation(s) or job(s) are affected (be specific, don't include resource names in this field)
+3. For MOVE operations: Carefully distinguish between source and target:
+   - If request says "move X FROM Y" or "move operations from Y", then Y is the SOURCE resource
+   - If request says "move X OFF Y" or "move X away from Y", then Y is the SOURCE (what to move FROM)
    - If request says "move X TO Y" or "move X onto Y", then Y is the TARGET (what to move TO)
-   - Set source_resource when moving FROM something
-   - Set target_resource when moving TO something (can be null if not specified)
+   - Set source_resource when moving FROM something (extract just the resource name, e.g., "fermented tank 2")
+   - Set target_resource when moving TO something (extract just the resource name)
+   - For "move all operations from X to Y": affected_items should be "all operations", source_resource should be X, target_resource should be Y
 4. For RESCHEDULE operations: Extract the EXACT date/time string from the user's message:
    - Look for ANY date reference in the user's request (e.g., "September 5th", "Sept 5 at 2pm", "tomorrow", "next Monday")
    - Copy the EXACT date string to the target_date field AS-IS
@@ -2773,20 +2775,61 @@ Respond with JSON format:
       console.log(`[Max AI] Moving operations:`, affectedItems, 'from:', sourceResource, 'to:', targetResource);
       
       // Step 1: Find operations matching the criteria
-      let operations = await this.findOperationsByDescription(affectedItems);
+      let operations: any[] = [];
       
-      // If source resource is specified, filter operations to only those on that resource
+      // If source resource is specified, find operations on that resource
       if (sourceResource) {
         const sourceResourceName = typeof sourceResource === 'string' ? sourceResource : sourceResource?.description || sourceResource?.name || '';
-        operations = operations.filter(op => 
-          op.resource_name && op.resource_name.toLowerCase().includes(sourceResourceName.toLowerCase())
-        );
+        
+        // First find the resource to normalize the name
+        const sourceResourceObj = await this.findResourceByDescription(sourceResourceName);
+        
+        if (sourceResourceObj) {
+          // If "all operations" is requested, find all operations on the source resource
+          const searchDesc = affectedItems?.description || affectedItems || '';
+          const isAllOperations = searchDesc.toLowerCase().includes('all') || searchDesc === '';
+          
+          if (isAllOperations) {
+            // Get ALL operations on the source resource
+            const resourceOps = await db.execute(sql`
+              SELECT 
+                jo.id,
+                jo.operation_id,
+                jo.job_id,
+                jo.name as operation_name,
+                jo.description,
+                jo.scheduled_start,
+                jo.scheduled_end,
+                j.name as job_name,
+                jr.default_resource_id,
+                r.id as resource_id,
+                r.name as resource_name
+              FROM ptjoboperations jo
+              LEFT JOIN ptjobs j ON jo.job_id = j.id
+              LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+              LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
+              WHERE r.name = ${sourceResourceObj.name}
+              ORDER BY jo.scheduled_start
+              LIMIT 50
+            `);
+            operations = resourceOps.rows as any[];
+          } else {
+            // Find specific operations on the source resource
+            operations = await this.findOperationsByDescription(affectedItems);
+            operations = operations.filter(op => 
+              op.resource_name && op.resource_name.toLowerCase() === sourceResourceObj.name.toLowerCase()
+            );
+          }
+        }
+      } else {
+        // No source specified, find operations by description
+        operations = await this.findOperationsByDescription(affectedItems);
       }
       
       if (operations.length === 0) {
         const sourceInfo = sourceResource ? ` on ${typeof sourceResource === 'string' ? sourceResource : sourceResource?.description || sourceResource?.name}` : '';
         return {
-          content: `I couldn't find any operations matching "${affectedItems?.description || affectedItems}"${sourceInfo}. Could you be more specific?`,
+          content: `I couldn't find any operations${sourceInfo}. Could you be more specific about which operations to move?`,
           error: false
         };
       }
@@ -2972,6 +3015,36 @@ Respond with JSON format:
     try {
       const searchTerm = typeof description === 'string' ? description : description?.description || description?.name || '';
       
+      // Normalize common variations
+      const normalizedTerm = searchTerm
+        .toLowerCase()
+        .replace(/fermented/g, 'fermenter')  // Handle "fermented" -> "fermenter"
+        .replace(/fermentor/g, 'fermenter')  // Handle "fermentor" -> "fermenter"
+        .replace(/\s+tank\s*/gi, ' tank ')  // Normalize "tank" spacing
+        .trim();
+      
+      console.log(`[Max AI] Searching for resource - original: "${searchTerm}", normalized: "${normalizedTerm}"`);
+      
+      // Try exact match first with normalized term
+      const exactMatch = await db.execute(sql`
+        SELECT 
+          id,
+          external_id,
+          name,
+          description,
+          resource_id
+        FROM ptresources
+        WHERE 
+          active = true
+          AND LOWER(REPLACE(REPLACE(name, 'Fermentor', 'Fermenter'), 'Fermented', 'Fermenter')) = ${normalizedTerm}
+        LIMIT 1
+      `);
+      
+      if (exactMatch.rows.length > 0) {
+        return exactMatch.rows[0];
+      }
+      
+      // Fallback to partial match
       const resources = await db.execute(sql`
         SELECT 
           id,
@@ -2985,6 +3058,7 @@ Respond with JSON format:
           AND (
             LOWER(name) LIKE LOWER(${'%' + searchTerm + '%'})
             OR LOWER(description) LIKE LOWER(${'%' + searchTerm + '%'})
+            OR LOWER(name) LIKE LOWER(${'%' + normalizedTerm + '%'})
           )
         LIMIT 1
       `);
