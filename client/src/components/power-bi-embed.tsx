@@ -199,7 +199,7 @@ export function PowerBIEmbed({
       {/* Report Information Header - separate from embed container */}
       {(reportName || dataset) && (
         <div className="mb-0" data-testid="power-bi-info-header">
-          <div className="p-4 sm:p-2 md:p-4" data-testid="report-info-content">
+          <div className="px-4 py-2 sm:px-2 sm:py-1 md:px-4 md:py-2" data-testid="report-info-content">
             <div className="space-y-0">
               
               {/* Report Name with Page Navigation Dropdown */}
@@ -226,7 +226,7 @@ export function PowerBIEmbed({
                     {pages && pages.length > 1 ? (
                       <DropdownMenu>
                         <DropdownMenuTrigger className="flex items-center gap-1 hover:bg-accent hover:text-accent-foreground rounded-md px-2 py-1 -ml-2" data-testid="dropdown-page-navigation">
-                          <h3 className="text-lg font-semibold text-foreground">
+                          <h3 className="text-lg font-semibold text-foreground m-0">
                             {reportName}
                           </h3>
                           <ChevronDown className="w-4 h-4 text-muted-foreground" />
@@ -250,7 +250,7 @@ export function PowerBIEmbed({
                         </DropdownMenuContent>
                       </DropdownMenu>
                     ) : (
-                      <h3 className="text-lg font-semibold text-foreground" data-testid="text-report-name">
+                      <h3 className="text-lg font-semibold text-foreground m-0" data-testid="text-report-name">
                         {reportName}
                       </h3>
                     )}
