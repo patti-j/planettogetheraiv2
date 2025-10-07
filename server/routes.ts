@@ -7021,6 +7021,30 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
   }
 });
 
+// Cancel dataset refresh
+router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", async (req, res) => {
+  try {
+    const { workspaceId, datasetId, refreshId } = req.params;
+    
+    console.log(`🛑 Attempting to cancel dataset refresh: workspace=${workspaceId}, dataset=${datasetId}, refreshId=${refreshId}`);
+    
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
+
+    console.log(`✅ Successfully cancelled dataset refresh: ${refreshId}`);
+    res.status(200).json({ 
+      message: "Dataset refresh cancelled successfully"
+    });
+  } catch (error) {
+    console.error("Failed to cancel dataset refresh:", error);
+    res.status(500).json({ 
+      message: "Failed to cancel dataset refresh",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Secure Power BI embed endpoint - uses server-cached AAD token
 router.post("/api/embed", async (req, res) => {
   try {
