@@ -1149,18 +1149,24 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         audioChunks.push(event.data);
       };
 
+      let wasManuallyStopped = false;
+      
       recorder.onstop = async () => {
         const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-        await handleTranscription(audioBlob);
+        // Auto-send if manually stopped by user (not timeout)
+        await handleTranscription(audioBlob, wasManuallyStopped);
         
         // Clean up
         stream.getTracks().forEach(track => track.stop());
       };
 
+      // Store reference to set manual stop flag
+      (recorder as any)._setManualStop = () => { wasManuallyStopped = true; };
+
       recorder.start();
       setMediaRecorder(recorder);
       setIsRecording(true);
-      setRecordingTimeLeft(10);
+      setRecordingTimeLeft(60); // Increased from 10 to 60 seconds
 
       // Start countdown timer
       const countdownInterval = setInterval(() => {
@@ -1173,7 +1179,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         });
       }, 1000);
 
-      // Auto-stop after 10 seconds
+      // Auto-stop after 60 seconds (increased from 10)
       const timeout = setTimeout(() => {
         if (recorder.state === 'recording') {
           recorder.stop();
@@ -1181,7 +1187,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           setRecordingTimeLeft(0);
         }
         clearInterval(countdownInterval);
-      }, 10000);
+      }, 60000); // Changed from 10000 to 60000 ms
 
       setRecordingTimeout(timeout);
     } catch (error) {
@@ -1191,6 +1197,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   const stopRecording = () => {
     if (mediaRecorder && mediaRecorder.state === 'recording') {
+      // Mark as manually stopped (will trigger auto-send)
+      if ((mediaRecorder as any)._setManualStop) {
+        (mediaRecorder as any)._setManualStop();
+      }
+      
       mediaRecorder.stop();
       setIsRecording(false);
       setRecordingTimeLeft(0);
@@ -1202,7 +1213,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   };
 
-  const handleTranscription = async (audioBlob: Blob) => {
+  const handleTranscription = async (audioBlob: Blob, autoSend: boolean = false) => {
     setIsTranscribing(true);
     try {
       const formData = new FormData();
@@ -1223,8 +1234,13 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const result = await response.json();
       
       if (result.success && result.text) {
-        // Add transcribed text to the input field for user review
-        setPrompt(prev => prev + (prev ? ' ' : '') + result.text);
+        if (autoSend) {
+          // Auto-send the transcribed message
+          await handleSendMessage(result.text);
+        } else {
+          // Add transcribed text to the input field for user review
+          setPrompt(prev => prev + (prev ? ' ' : '') + result.text);
+        }
       }
     } catch (error) {
       console.error('Transcription error:', error);

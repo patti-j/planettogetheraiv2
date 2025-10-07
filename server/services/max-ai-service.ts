@@ -2568,15 +2568,25 @@ Provide analysis and recommendations.`
   private async handleExecuteIntent(query: string, intent: any, context: MaxContext, agentTraining: any = null): Promise<MaxResponse | null> {
     try {
       console.log(`[Max AI] EXECUTE Intent detected for query: "${query}"`);
+      console.log(`[Max AI] Agent training available: ${!!agentTraining}`);
       
+      // If no agent training provided, load Production Scheduling Agent training
       if (!agentTraining) {
-        return {
-          content: "I need to be in a specialized agent mode to perform actions. Please switch to the Production Scheduling Agent to modify schedules.",
-          action: {
-            type: 'navigate',
-            target: '/production-scheduler'
-          }
-        };
+        console.log('[Max AI] No agent training provided, loading Production Scheduling Agent training for execution');
+        const agentLoader = AgentTrainingLoader.getInstance();
+        agentTraining = agentLoader.getTraining('production_scheduling');
+        
+        if (!agentTraining) {
+          console.error('[Max AI] Failed to load Production Scheduling Agent training');
+          return {
+            content: "I'm having trouble loading the scheduling agent configuration. Please try again or switch to the Production Scheduling Agent manually.",
+            action: {
+              type: 'navigate',
+              target: '/production-scheduler'
+            }
+          };
+        }
+        console.log('[Max AI] Successfully loaded Production Scheduling Agent training for execution');
       }
 
       // Use OpenAI function calling to extract action parameters
