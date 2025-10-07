@@ -3072,11 +3072,11 @@ Respond with JSON format:
 
   private async findAlternativeResource(sampleOperation: any, excludeResourceName: string): Promise<any | null> {
     try {
-      // Get capabilities of the current resource
+      // Get capabilities of the current resource - use numeric id for join
       const currentResourceCapabilities = await db.execute(sql`
         SELECT DISTINCT rc.capability_id
         FROM ptresources r
-        JOIN ptresourcecapabilities rc ON r.resource_id = rc.resource_id
+        JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
         WHERE r.name = ${excludeResourceName}
       `);
       
@@ -3102,7 +3102,7 @@ Respond with JSON format:
       
       const capabilityIds = currentResourceCapabilities.rows.map((row: any) => row.capability_id);
       
-      // Find resources with same capabilities, excluding the current one
+      // Find resources with same capabilities, excluding the current one - use numeric id for join
       const alternatives = await db.execute(sql`
         SELECT DISTINCT
           r.id,
@@ -3112,7 +3112,7 @@ Respond with JSON format:
           r.resource_id,
           COUNT(rc.capability_id) as matching_capabilities
         FROM ptresources r
-        JOIN ptresourcecapabilities rc ON r.resource_id = rc.resource_id
+        JOIN ptresourcecapabilities rc ON r.id = rc.resource_id
         WHERE 
           r.active = true
           AND r.name != ${excludeResourceName}
@@ -3169,11 +3169,11 @@ Respond with JSON format:
 
   private async validateResourceCapabilities(operations: any[], targetResource: any): Promise<{ valid: boolean; reason?: string; suggestion?: string }> {
     try {
-      // Get target resource capabilities
+      // Get target resource capabilities - use numeric id, not string resource_id
       const capabilities = await db.execute(sql`
         SELECT capability_id
         FROM ptresourcecapabilities
-        WHERE resource_id = ${targetResource.resource_id}
+        WHERE resource_id = ${targetResource.id}
       `);
       
       const targetCapabilities = capabilities.rows.map((row: any) => row.capability_id);
