@@ -888,7 +888,7 @@ export default function Dashboard() {
       )}
       {/* Floating Settings Button - Bottom Left */}
       {showEmbed && embedConfig && !isLoading && (
-        <div className="fixed bottom-20 left-2 z-50">
+        <div className="fixed bottom-20 md:bottom-4 left-2 z-50">
           <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
             <DropdownMenuTrigger asChild>
               <Button
