@@ -2912,7 +2912,8 @@ Respond with JSON format:
 
   private async findOperationsByDescription(description: any): Promise<any[]> {
     try {
-      const searchTerm = typeof description === 'string' ? description : description?.description || description?.name || '';
+      // Use filter field if available (from affected_items), otherwise fallback to description
+      const searchTerm = typeof description === 'string' ? description : description?.filter || description?.description || description?.name || '';
       
       // Clean up common job prefixes from search term for more flexible matching
       const cleanedTerm = searchTerm
