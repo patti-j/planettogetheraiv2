@@ -2541,14 +2541,25 @@ ${agentTraining.rawContent}
 Extract the action parameters from the user's request. Identify:
 1. What action to perform (move_operation, reschedule_operation, change_resource, etc.)
 2. Which operation(s) or job(s) are affected
-3. The target (new resource, new time, new date)
-4. Any constraints or conditions
+3. CRITICAL: Distinguish between source and target:
+   - If request says "move X OFF Y" or "move X away from Y", then Y is the SOURCE (what to move FROM), not the target
+   - If request says "move X TO Y" or "move X onto Y", then Y is the TARGET (what to move TO)
+   - Set source_resource when moving FROM something
+   - Set target_resource when moving TO something (can be null if not specified)
 
-Respond with structured JSON that can be used to execute the action.`
+Respond with JSON format:
+{
+  "action_type": "move_operation" | "reschedule_operation" | etc,
+  "affected_items": { "description": "which operations/jobs", "filter": "search terms" },
+  "source_resource": "resource to move FROM (for OFF/away from requests)" OR null,
+  "target_resource": "resource to move TO (for TO/onto requests)" OR null,
+  "reasoning": "what the user wants to do",
+  "suggested_steps": ["step 1", "step 2"]
+}`
           },
           {
             role: 'user',
-            content: `User request: "${query}"\n\nExtract the action details and respond with JSON containing: action_type, affected_items, target, reasoning, and suggested_steps.`
+            content: `User request: "${query}"\n\nExtract the action details carefully distinguishing source vs target resources. Respond with JSON.`
           }
         ],
         temperature: 0.2,
@@ -2559,27 +2570,10 @@ Respond with structured JSON that can be used to execute the action.`
       const actionDetails = JSON.parse(actionResponse.choices[0].message.content || '{}');
       console.log(`[Max AI] Parsed action details:`, actionDetails);
 
-      // Provide response with action plan
-      const response = {
-        content: `I understand you want to ${actionDetails.reasoning || 'perform this action'}. 
-
-${actionDetails.suggested_steps ? actionDetails.suggested_steps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n') : ''}
-
-To execute this, I'll need to:
-- Query the current schedule to identify affected operations
-- Verify the target resource/time is available
-- Update the schedule in the database
-- Confirm the changes
-
-Let me navigate you to the Production Scheduler where you can see the changes take effect.`,
-        action: {
-          type: 'navigate',
-          target: '/production-scheduler'
-        },
-        data: actionDetails
-      };
-
-      return response;
+      // Execute the actual scheduling action
+      const executionResult = await this.executeSchedulingAction(actionDetails, context);
+      
+      return executionResult;
       
     } catch (error) {
       console.error('Error handling execute intent:', error);
@@ -2587,6 +2581,461 @@ Let me navigate you to the Production Scheduler where you can see the changes ta
         content: 'I encountered an error while trying to execute that action. Please try rephrasing your request or navigate to the Production Scheduler manually.',
         error: true
       };
+    }
+  }
+
+  private async executeSchedulingAction(actionDetails: any, context: MaxContext): Promise<MaxResponse> {
+    try {
+      const { action_type, affected_items, source_resource, target_resource, target, reasoning } = actionDetails;
+      
+      console.log(`[Max AI] Executing scheduling action: ${action_type}`);
+      console.log(`[Max AI] Action details:`, { affected_items, source_resource, target_resource, target, reasoning });
+      
+      // Parse the action and execute based on type
+      if (action_type?.includes('move') || action_type?.includes('relocate') || action_type?.includes('reassign')) {
+        // If source_resource is specified, use ONLY target_resource (ignore legacy target field)
+        // This ensures "move OFF" requests work correctly (source_resource set, target_resource null)
+        const finalTarget = source_resource ? target_resource : (target_resource || target);
+        return await this.executeMoveOperations(affected_items, source_resource, finalTarget, reasoning);
+      } else if (action_type?.includes('reschedule') || action_type?.includes('change_time')) {
+        return await this.executeRescheduleOperations(affected_items, target_resource || target, reasoning);
+      } else {
+        // Generic execution for other types
+        return {
+          content: `I understand you want to ${reasoning || 'perform this action'}. However, I need more specific details about what operation to perform. Could you rephrase your request?`,
+          error: false
+        };
+      }
+    } catch (error) {
+      console.error('[Max AI] Error executing scheduling action:', error);
+      return {
+        content: 'I encountered an error while trying to execute that action. Please try again or rephrase your request.',
+        error: true
+      };
+    }
+  }
+
+  private async executeMoveOperations(affectedItems: any, sourceResource: any, targetResource: any, reasoning: string): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Moving operations:`, affectedItems, 'from:', sourceResource, 'to:', targetResource);
+      
+      // Step 1: Find operations matching the criteria
+      let operations = await this.findOperationsByDescription(affectedItems);
+      
+      // If source resource is specified, filter operations to only those on that resource
+      if (sourceResource) {
+        const sourceResourceName = typeof sourceResource === 'string' ? sourceResource : sourceResource?.description || sourceResource?.name || '';
+        operations = operations.filter(op => 
+          op.resource_name && op.resource_name.toLowerCase().includes(sourceResourceName.toLowerCase())
+        );
+      }
+      
+      if (operations.length === 0) {
+        const sourceInfo = sourceResource ? ` on ${typeof sourceResource === 'string' ? sourceResource : sourceResource?.description || sourceResource?.name}` : '';
+        return {
+          content: `I couldn't find any operations matching "${affectedItems?.description || affectedItems}"${sourceInfo}. Could you be more specific?`,
+          error: false
+        };
+      }
+
+      // Step 2: Handle target resource - could be specified or need to find alternative
+      let finalTargetResource = null;
+      
+      // Check if target is specified
+      const targetDescription = typeof targetResource === 'string' ? targetResource : targetResource?.description || targetResource?.name || '';
+      const hasTarget = targetDescription && targetDescription.trim() !== '';
+      
+      if (hasTarget) {
+        // User specified a target resource
+        finalTargetResource = await this.findResourceByDescription(targetResource);
+        
+        if (!finalTargetResource) {
+          return {
+            content: `I couldn't find a resource matching "${targetDescription}". Could you specify which resource to move the operations to?`,
+            error: false
+          };
+        }
+      } else {
+        // User wants to move OFF something - find alternative resources
+        // Get the source resource from the first operation
+        const sourceResourceName = operations[0]?.resource_name;
+        
+        if (!sourceResourceName) {
+          return {
+            content: `I found ${operations.length} operation${operations.length > 1 ? 's' : ''} but couldn't determine which resource to move them to. Please specify a target resource, like "move them to Fermenter Tank 2".`,
+            error: false
+          };
+        }
+        
+        // Find alternative resources with same capabilities
+        const alternativeResource = await this.findAlternativeResource(operations[0], sourceResourceName);
+        
+        if (!alternativeResource) {
+          return {
+            content: `I found ${operations.length} operation${operations.length > 1 ? 's' : ''} on ${sourceResourceName}, but there are no available alternative resources with the required capabilities. Which resource should I move them to?`,
+            error: false
+          };
+        }
+        
+        finalTargetResource = alternativeResource;
+      }
+
+      // Step 3: Validate resource capabilities
+      const validation = await this.validateResourceCapabilities(operations, finalTargetResource);
+      
+      if (!validation.valid) {
+        return {
+          content: `I can't move those operations to ${finalTargetResource.name} because: ${validation.reason}. ${validation.suggestion || ''}`,
+          error: false
+        };
+      }
+
+      // Step 4: Execute the move
+      const moveResults = await this.performOperationMove(operations, finalTargetResource);
+      
+      // Step 5: Return success response
+      return {
+        content: `✅ Successfully moved ${moveResults.count} operation${moveResults.count > 1 ? 's' : ''} to ${finalTargetResource.name}:\n\n${moveResults.summary}\n\nThe schedule has been updated. You can view the changes in the Production Scheduler.`,
+        action: {
+          type: 'execute_function',
+          data: {
+            function: 'move_operations',
+            results: moveResults
+          }
+        },
+        error: false
+      };
+      
+    } catch (error) {
+      console.error('[Max AI] Error in executeMoveOperations:', error);
+      return {
+        content: 'I encountered an error while moving the operations. The schedule has not been changed.',
+        error: true
+      };
+    }
+  }
+
+  private async executeRescheduleOperations(affectedItems: any, target: any, reasoning: string): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Rescheduling operations:`, affectedItems, 'to:', target);
+      
+      // Find operations
+      const operations = await this.findOperationsByDescription(affectedItems);
+      
+      if (operations.length === 0) {
+        return {
+          content: `I couldn't find any operations matching "${affectedItems?.description || affectedItems}". Please be more specific.`,
+          error: false
+        };
+      }
+
+      // Parse target date/time
+      const newStartTime = this.parseDateTime(target);
+      
+      if (!newStartTime) {
+        return {
+          content: `I couldn't understand the date/time "${target?.description || target}". Please specify a clear date and time, like "September 5" or "Sept 5 at 2pm".`,
+          error: false
+        };
+      }
+
+      // Execute reschedule
+      const rescheduleResults = await this.performOperationReschedule(operations, newStartTime);
+      
+      return {
+        content: `✅ Successfully rescheduled ${rescheduleResults.count} operation${rescheduleResults.count > 1 ? 's' : ''} to ${newStartTime.toLocaleString()}:\n\n${rescheduleResults.summary}\n\nThe schedule has been updated.`,
+        action: {
+          type: 'execute_function',
+          data: {
+            function: 'reschedule_operations',
+            results: rescheduleResults
+          }
+        },
+        error: false
+      };
+      
+    } catch (error) {
+      console.error('[Max AI] Error in executeRescheduleOperations:', error);
+      return {
+        content: 'I encountered an error while rescheduling the operations. The schedule has not been changed.',
+        error: true
+      };
+    }
+  }
+
+  private async findOperationsByDescription(description: any): Promise<any[]> {
+    try {
+      const searchTerm = typeof description === 'string' ? description : description?.description || description?.name || '';
+      
+      // Query operations matching the description
+      const operations = await db.execute(sql`
+        SELECT 
+          jo.id,
+          jo.operation_id,
+          jo.job_id,
+          jo.name as operation_name,
+          jo.description,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          j.name as job_name,
+          jr.default_resource_id,
+          r.id as resource_id,
+          r.name as resource_name
+        FROM ptjoboperations jo
+        LEFT JOIN ptjobs j ON jo.job_id = j.id
+        LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+        LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
+        WHERE 
+          LOWER(jo.name) LIKE LOWER(${'%' + searchTerm + '%'})
+          OR LOWER(jo.description) LIKE LOWER(${'%' + searchTerm + '%'})
+          OR LOWER(j.name) LIKE LOWER(${'%' + searchTerm + '%'})
+          OR LOWER(r.name) LIKE LOWER(${'%' + searchTerm + '%'})
+        ORDER BY jo.scheduled_start
+        LIMIT 50
+      `);
+      
+      return operations.rows as any[];
+    } catch (error) {
+      console.error('[Max AI] Error finding operations:', error);
+      return [];
+    }
+  }
+
+  private async findResourceByDescription(description: any): Promise<any | null> {
+    try {
+      const searchTerm = typeof description === 'string' ? description : description?.description || description?.name || '';
+      
+      const resources = await db.execute(sql`
+        SELECT 
+          id,
+          external_id,
+          name,
+          description,
+          resource_id
+        FROM ptresources
+        WHERE 
+          active = true
+          AND (
+            LOWER(name) LIKE LOWER(${'%' + searchTerm + '%'})
+            OR LOWER(description) LIKE LOWER(${'%' + searchTerm + '%'})
+          )
+        LIMIT 1
+      `);
+      
+      return resources.rows[0] || null;
+    } catch (error) {
+      console.error('[Max AI] Error finding resource:', error);
+      return null;
+    }
+  }
+
+  private async findAlternativeResource(sampleOperation: any, excludeResourceName: string): Promise<any | null> {
+    try {
+      // Get capabilities of the current resource
+      const currentResourceCapabilities = await db.execute(sql`
+        SELECT DISTINCT rc.capability_id
+        FROM ptresources r
+        JOIN ptresourcecapabilities rc ON r.resource_id = rc.resource_id
+        WHERE r.name = ${excludeResourceName}
+      `);
+      
+      if (currentResourceCapabilities.rows.length === 0) {
+        // If current resource has no capabilities, just find any similar resource
+        const alternatives = await db.execute(sql`
+          SELECT 
+            id,
+            external_id,
+            name,
+            description,
+            resource_id
+          FROM ptresources
+          WHERE 
+            active = true
+            AND name != ${excludeResourceName}
+            AND LOWER(name) LIKE LOWER(${'%' + (sampleOperation.operation_name || 'ferment') + '%'})
+          LIMIT 1
+        `);
+        
+        return alternatives.rows[0] || null;
+      }
+      
+      const capabilityIds = currentResourceCapabilities.rows.map((row: any) => row.capability_id);
+      
+      // Find resources with same capabilities, excluding the current one
+      const alternatives = await db.execute(sql`
+        SELECT DISTINCT
+          r.id,
+          r.external_id,
+          r.name,
+          r.description,
+          r.resource_id,
+          COUNT(rc.capability_id) as matching_capabilities
+        FROM ptresources r
+        JOIN ptresourcecapabilities rc ON r.resource_id = rc.resource_id
+        WHERE 
+          r.active = true
+          AND r.name != ${excludeResourceName}
+          AND rc.capability_id = ANY(${capabilityIds})
+        GROUP BY r.id, r.external_id, r.name, r.description, r.resource_id
+        ORDER BY matching_capabilities DESC
+        LIMIT 1
+      `);
+      
+      return alternatives.rows[0] || null;
+    } catch (error) {
+      console.error('[Max AI] Error finding alternative resource:', error);
+      return null;
+    }
+  }
+
+  private async validateResourceCapabilities(operations: any[], targetResource: any): Promise<{ valid: boolean; reason?: string; suggestion?: string }> {
+    try {
+      // Get target resource capabilities
+      const capabilities = await db.execute(sql`
+        SELECT capability_id
+        FROM ptresourcecapabilities
+        WHERE resource_id = ${targetResource.resource_id}
+      `);
+      
+      const targetCapabilities = capabilities.rows.map((row: any) => row.capability_id);
+      
+      if (targetCapabilities.length === 0) {
+        return {
+          valid: false,
+          reason: 'The target resource has no capabilities defined',
+          suggestion: 'Please configure the resource capabilities first.'
+        };
+      }
+
+      // For now, allow the move (in production, you'd check each operation's required capability)
+      // This is a simplified validation
+      return { valid: true };
+      
+    } catch (error) {
+      console.error('[Max AI] Error validating capabilities:', error);
+      return {
+        valid: false,
+        reason: 'Could not validate resource capabilities'
+      };
+    }
+  }
+
+  private async performOperationMove(operations: any[], targetResource: any): Promise<{ count: number; summary: string }> {
+    try {
+      let movedCount = 0;
+      const summaryItems: string[] = [];
+      
+      for (const operation of operations) {
+        // Update the job resource assignment
+        await db.execute(sql`
+          UPDATE ptjobresources
+          SET default_resource_id = ${targetResource.external_id}
+          WHERE operation_id = ${operation.id}
+        `);
+        
+        movedCount++;
+        summaryItems.push(`• ${operation.operation_name} (from ${operation.resource_name || 'unassigned'})`);
+      }
+      
+      return {
+        count: movedCount,
+        summary: summaryItems.join('\n')
+      };
+    } catch (error) {
+      console.error('[Max AI] Error performing operation move:', error);
+      throw error;
+    }
+  }
+
+  private async performOperationReschedule(operations: any[], newStartTime: Date): Promise<{ count: number; summary: string }> {
+    try {
+      let rescheduledCount = 0;
+      const summaryItems: string[] = [];
+      
+      for (const operation of operations) {
+        // Calculate new end time based on operation duration
+        const duration = operation.scheduled_end && operation.scheduled_start 
+          ? new Date(operation.scheduled_end).getTime() - new Date(operation.scheduled_start).getTime()
+          : 3600000; // Default 1 hour if no duration
+        
+        const newEndTime = new Date(newStartTime.getTime() + duration);
+        
+        // Update the operation schedule
+        await db.execute(sql`
+          UPDATE ptjoboperations
+          SET 
+            scheduled_start = ${newStartTime.toISOString()},
+            scheduled_end = ${newEndTime.toISOString()}
+          WHERE id = ${operation.id}
+        `);
+        
+        rescheduledCount++;
+        summaryItems.push(`• ${operation.operation_name} (Job: ${operation.job_name || 'Unknown'})`);
+      }
+      
+      return {
+        count: rescheduledCount,
+        summary: summaryItems.join('\n')
+      };
+    } catch (error) {
+      console.error('[Max AI] Error performing reschedule:', error);
+      throw error;
+    }
+  }
+
+  private parseDateTime(dateStr: any): Date | null {
+    try {
+      const str = typeof dateStr === 'string' ? dateStr : dateStr?.description || dateStr?.date || '';
+      
+      // Simple date parsing - handle common formats
+      const lowerStr = str.toLowerCase();
+      
+      // Extract month and day
+      const months: Record<string, number> = {
+        'jan': 0, 'january': 0,
+        'feb': 1, 'february': 1,
+        'mar': 2, 'march': 2,
+        'apr': 3, 'april': 3,
+        'may': 4,
+        'jun': 5, 'june': 5,
+        'jul': 6, 'july': 6,
+        'aug': 7, 'august': 7,
+        'sep': 8, 'sept': 8, 'september': 8,
+        'oct': 9, 'october': 9,
+        'nov': 10, 'november': 10,
+        'dec': 11, 'december': 11
+      };
+      
+      let month = -1;
+      let day = -1;
+      
+      for (const [monthName, monthNum] of Object.entries(months)) {
+        if (lowerStr.includes(monthName)) {
+          month = monthNum;
+          break;
+        }
+      }
+      
+      const dayMatch = str.match(/\b(\d{1,2})\b/);
+      if (dayMatch) {
+        day = parseInt(dayMatch[1]);
+      }
+      
+      if (month >= 0 && day > 0) {
+        const year = new Date().getFullYear();
+        return new Date(year, month, day);
+      }
+      
+      // Try native parsing as fallback
+      const parsed = new Date(str);
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('[Max AI] Error parsing date:', error);
+      return null;
     }
   }
 
