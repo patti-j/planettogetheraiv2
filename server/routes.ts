@@ -7006,9 +7006,12 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
     
     // Use server-cached AAD token
     const accessToken = await getServerAADToken();
-    await powerBIService.refreshDataset(accessToken, workspaceId, datasetId);
+    const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
 
-    res.status(202).json({ message: "Dataset refresh initiated successfully" });
+    res.status(202).json({ 
+      message: "Dataset refresh initiated successfully",
+      refreshId: result.refreshId
+    });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
     res.status(500).json({ 
