@@ -216,7 +216,7 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
             onClick={onCancel}
             disabled={isCancelling}
             data-testid="button-cancel-refresh"
-            className="h-8 px-2 text-xs"
+            className="h-8 px-2 text-xs hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400 dark:hover:border-red-800"
           >
             <StopCircle className="w-3 h-3 mr-1" />
             Cancel
@@ -296,7 +296,7 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
               onClick={onCancel}
               disabled={isCancelling}
               data-testid="button-cancel-refresh"
-              className="h-8"
+              className="h-8 hover:bg-red-50 hover:text-red-600 hover:border-red-300 dark:hover:bg-red-950 dark:hover:text-red-400 dark:hover:border-red-800"
             >
               <StopCircle className="w-4 h-4 mr-2" />
               Cancel Refresh
