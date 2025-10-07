@@ -462,9 +462,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   // Track last spoken message to prevent re-speaking
   const lastSpokenMessageIdRef = useRef<number | null>(null);
-  
-  // Track if this is the initial load of chat history to prevent auto-playing old messages
-  const isInitialLoadRef = useRef<boolean>(true);
 
   // Add keyboard shortcut for stopping audio (Escape key)
   useEffect(() => {
@@ -491,8 +488,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const isNewMessage = currentMessageCount > previousMessageCountRef.current;
       previousMessageCountRef.current = currentMessageCount;
       
-      // Only auto-play voice for truly NEW assistant messages (not on initial load)
-      if (!isInitialLoadRef.current && isNewMessage) {
+      // Auto-play voice for NEW assistant messages
+      if (isNewMessage) {
         const lastMessage = chatMessages[chatMessages.length - 1];
         if (
           lastMessage?.role === 'assistant' && 
@@ -504,14 +501,10 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           
           // Add small delay to ensure message is rendered
           setTimeout(() => {
+            console.log('[Voice] Playing TTS for new assistant message');
             speakResponse(lastMessage.content);
           }, 300);
         }
-      }
-      
-      // Mark initial load as complete after first render
-      if (isInitialLoadRef.current && chatMessages.length > 0) {
-        isInitialLoadRef.current = false;
       }
     }
   }, [chatMessages, activeTab, speakResponse, aiSettings.soundEnabled]);
