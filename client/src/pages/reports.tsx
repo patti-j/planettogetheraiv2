@@ -717,7 +717,7 @@ export default function Dashboard() {
               
                 {/* Settings Button - positioned below Select Report card */}
                 {showEmbed && embedConfig && !isLoading && (
-                  <div className="mt-2 px-4">
+                  <div className="mt-8 px-4">
                     <DropdownMenu onOpenChange={setSettingsDropdownOpen}>
                     <DropdownMenuTrigger asChild>
                       <Button
