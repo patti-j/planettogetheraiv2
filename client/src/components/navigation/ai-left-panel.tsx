@@ -690,6 +690,32 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       setCurrentRequestController(null);
       console.log("Max AI Full Response:", data);
       
+      // Handle scheduler refresh action (after database updates)
+      if (data?.action?.type === 'refresh_scheduler') {
+        // Check if we're currently on the production scheduler page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/production-scheduler') {
+          // Find the production scheduler iframe and refresh it
+          const iframe = document.querySelector('iframe[title="Production Scheduler"]') as HTMLIFrameElement;
+          if (iframe) {
+            console.log('🔄 Refreshing Production Scheduler after database update');
+            // Force reload by changing the src with a cache buster
+            const currentSrc = iframe.src.split('?')[0];
+            iframe.src = `${currentSrc}?v=${Date.now()}`;
+          }
+        }
+        
+        // Show success message with the refresh note
+        await addMessage({
+          role: 'assistant',
+          content: data.content + (currentPath === '/production-scheduler' ? '\n\n📊 The schedule has been refreshed to show your changes.' : ''),
+          source: 'panel',
+          agentId: data.agentId || 'production_scheduling',
+          agentName: data.agentName || 'Production Scheduling Agent'
+        });
+        return;
+      }
+      
       // Handle navigation actions from Max AI
       if (data?.action?.type === 'navigate' && data?.action?.target) {
         const target = data.action.target;

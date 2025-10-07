@@ -2850,10 +2850,11 @@ Respond with JSON format:
       return {
         content: `✅ Successfully moved ${moveResults.count} operation${moveResults.count > 1 ? 's' : ''} to ${finalTargetResource.name}:\n\n${moveResults.summary}\n\nThe schedule has been updated. You can view the changes in the Production Scheduler.`,
         action: {
-          type: 'execute_function',
+          type: 'refresh_scheduler',
           data: {
             function: 'move_operations',
-            results: moveResults
+            results: moveResults,
+            refresh: true
           }
         },
         error: false
@@ -2898,10 +2899,11 @@ Respond with JSON format:
       return {
         content: `✅ Successfully rescheduled ${rescheduleResults.count} operation${rescheduleResults.count > 1 ? 's' : ''} to ${newStartTime.toLocaleString()}:\n\n${rescheduleResults.summary}\n\nThe schedule has been updated.`,
         action: {
-          type: 'execute_function',
+          type: 'refresh_scheduler',
           data: {
             function: 'reschedule_operations',
-            results: rescheduleResults
+            results: rescheduleResults,
+            refresh: true
           }
         },
         error: false
