@@ -2682,18 +2682,22 @@ ${agentTraining.rawContent}
 Extract the action parameters from the user's request. Identify:
 1. What action to perform (move_operation, reschedule_operation, change_resource, etc.)
 2. Which operation(s) or job(s) are affected
-3. CRITICAL: Distinguish between source and target:
+3. For MOVE operations: Distinguish between source and target:
    - If request says "move X OFF Y" or "move X away from Y", then Y is the SOURCE (what to move FROM), not the target
    - If request says "move X TO Y" or "move X onto Y", then Y is the TARGET (what to move TO)
    - Set source_resource when moving FROM something
    - Set target_resource when moving TO something (can be null if not specified)
+4. For RESCHEDULE operations: Extract the new date/time:
+   - Extract the target date as a string (e.g., "September 5th", "Sept 5 at 2pm", "tomorrow", "next Monday")
+   - Put this in the target_date field
 
 Respond with JSON format:
 {
   "action_type": "move_operation" | "reschedule_operation" | etc,
   "affected_items": { "description": "which operations/jobs", "filter": "search terms" },
-  "source_resource": "resource to move FROM (for OFF/away from requests)" OR null,
-  "target_resource": "resource to move TO (for TO/onto requests)" OR null,
+  "source_resource": "resource to move FROM (for move operations)" OR null,
+  "target_resource": "resource to move TO (for move operations)" OR null,
+  "target_date": "new date/time string (for reschedule operations)" OR null,
   "reasoning": "what the user wants to do",
   "suggested_steps": ["step 1", "step 2"]
 }`
@@ -2727,10 +2731,10 @@ Respond with JSON format:
 
   private async executeSchedulingAction(actionDetails: any, context: MaxContext): Promise<MaxResponse> {
     try {
-      const { action_type, affected_items, source_resource, target_resource, target, reasoning } = actionDetails;
+      const { action_type, affected_items, source_resource, target_resource, target_date, target, reasoning } = actionDetails;
       
       console.log(`[Max AI] Executing scheduling action: ${action_type}`);
-      console.log(`[Max AI] Action details:`, { affected_items, source_resource, target_resource, target, reasoning });
+      console.log(`[Max AI] Action details:`, { affected_items, source_resource, target_resource, target_date, target, reasoning });
       
       // Parse the action and execute based on type
       if (action_type?.includes('move') || action_type?.includes('relocate') || action_type?.includes('reassign')) {
@@ -2739,7 +2743,9 @@ Respond with JSON format:
         const finalTarget = source_resource ? target_resource : (target_resource || target);
         return await this.executeMoveOperations(affected_items, source_resource, finalTarget, reasoning);
       } else if (action_type?.includes('reschedule') || action_type?.includes('change_time')) {
-        return await this.executeRescheduleOperations(affected_items, target_resource || target, reasoning);
+        // For reschedule operations, use target_date field (not target_resource)
+        const dateToUse = target_date || target_resource || target;
+        return await this.executeRescheduleOperations(affected_items, dateToUse, reasoning);
       } else {
         // Generic execution for other types
         return {
