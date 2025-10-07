@@ -47,11 +47,20 @@ export function Combobox({
   "data-testid": testId,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLButtonElement>(null)
+  const [triggerWidth, setTriggerWidth] = React.useState<number>(0)
+
+  React.useEffect(() => {
+    if (triggerRef.current) {
+      setTriggerWidth(triggerRef.current.offsetWidth)
+    }
+  }, [open])
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
+          ref={triggerRef}
           variant="outline"
           role="combobox"
           aria-expanded={open}
@@ -65,7 +74,10 @@ export function Combobox({
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-full p-0 bg-white border border-border shadow-md">
+      <PopoverContent 
+        className="p-0 bg-white border border-border shadow-md"
+        style={{ width: triggerWidth > 0 ? `${triggerWidth}px` : 'auto' }}
+      >
         <Command className="bg-white">
           <CommandInput 
             placeholder={searchPlaceholder} 
