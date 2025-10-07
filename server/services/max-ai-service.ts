@@ -3213,7 +3213,8 @@ Respond with JSON format:
         }
       }
       
-      const dayMatch = str.match(/\b(\d{1,2})\b/);
+      // Handle ordinal numbers (1st, 2nd, 3rd, 4th, 5th, etc.)
+      const dayMatch = str.match(/\b(\d{1,2})(?:st|nd|rd|th)?\b/);
       if (dayMatch) {
         day = parseInt(dayMatch[1]);
       }
