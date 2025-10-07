@@ -7011,6 +7011,110 @@ router.post("/api/embed", async (req, res) => {
   }
 });
 
+// Power BI Export Routes
+
+// Create export job
+router.post("/api/powerbi/export/:workspaceId/:reportId", async (req, res) => {
+  try {
+    const { workspaceId, reportId } = req.params;
+    const { format, powerBIReportConfiguration } = req.body;
+
+    if (!workspaceId || !reportId) {
+      return res.status(400).json({ 
+        message: "Workspace ID and report ID are required" 
+      });
+    }
+
+    if (!format) {
+      return res.status(400).json({ 
+        message: "Export format is required" 
+      });
+    }
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    const result = await powerBIService.createExportJob(
+      accessToken,
+      workspaceId,
+      reportId,
+      format,
+      { powerBIReportConfiguration }
+    );
+
+    // Return 202 Accepted with export job ID
+    res.status(202).json({ id: result.id });
+  } catch (error) {
+    console.error("Failed to create export job:", error);
+    res.status(500).json({ 
+      message: "Failed to create export job",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Get export job status
+router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/status", async (req, res) => {
+  try {
+    const { workspaceId, reportId, exportId } = req.params;
+
+    if (!workspaceId || !reportId || !exportId) {
+      return res.status(400).json({ 
+        message: "Workspace ID, report ID, and export ID are required" 
+      });
+    }
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    const status = await powerBIService.getExportStatus(
+      accessToken,
+      workspaceId,
+      reportId,
+      exportId
+    );
+
+    res.json(status);
+  } catch (error) {
+    console.error("Failed to get export status:", error);
+    res.status(500).json({ 
+      message: "Failed to get export status",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Download exported file
+router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/file", async (req, res) => {
+  try {
+    const { workspaceId, reportId, exportId } = req.params;
+
+    if (!workspaceId || !reportId || !exportId) {
+      return res.status(400).json({ 
+        message: "Workspace ID, report ID, and export ID are required" 
+      });
+    }
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    const fileBuffer = await powerBIService.downloadExportFile(
+      accessToken,
+      workspaceId,
+      reportId,
+      exportId
+    );
+
+    // Set appropriate headers for file download
+    res.setHeader('Content-Type', 'application/octet-stream');
+    res.setHeader('Content-Disposition', `attachment; filename="export-${exportId}"`);
+    res.send(fileBuffer);
+  } catch (error) {
+    console.error("Failed to download export file:", error);
+    res.status(500).json({ 
+      message: "Failed to download export file",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
 
