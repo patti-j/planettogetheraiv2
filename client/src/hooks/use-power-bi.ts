@@ -1111,6 +1111,30 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
       });
 
       if (!response.ok) {
+        // Check if response is HTML (error page) instead of JSON
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("text/html")) {
+          console.error("Received HTML error page instead of JSON response");
+          const errorMessage = "This dataset uses Direct Query or Live Connection mode and does not support manual refresh. Data is fetched in real-time from the source.";
+          
+          setRefreshInfo({
+            status: 'failed',
+            startTime: null,
+            elapsedTime: 0,
+            error: errorMessage,
+            estimation: undefined
+          });
+          
+          toast({
+            title: "Refresh Not Supported",
+            description: errorMessage,
+            variant: "default",
+            duration: 5000,
+          });
+          
+          return; // Don't throw, just return gracefully
+        }
+        
         const errorData = await response.json();
         const errorMessage = errorData.error || errorData.message || "Failed to refresh dataset";
         

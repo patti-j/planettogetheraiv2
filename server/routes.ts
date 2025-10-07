@@ -7006,14 +7006,39 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
     
     // Use server-cached AAD token
     const accessToken = await getServerAADToken();
+    
+    // First check if the dataset supports refresh
+    const datasetInfo = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
+    
+    // Direct Query and Live Connection datasets don't support manual refresh
+    if (datasetInfo?.defaultMode === 'DirectQuery' || 
+        datasetInfo?.defaultMode === 'LiveConnection' || 
+        datasetInfo?.storageMode === 'DirectQuery') {
+      return res.status(400).json({ 
+        message: "Dataset refresh not supported",
+        error: "This dataset uses Direct Query or Live Connection mode and does not support manual refresh. Data is fetched in real-time from the source.",
+        datasetMode: datasetInfo?.defaultMode || datasetInfo?.storageMode
+      });
+    }
+    
     await powerBIService.refreshDataset(accessToken, workspaceId, datasetId);
 
     res.status(202).json({ message: "Dataset refresh initiated successfully" });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
+    
+    // Check if error indicates unsupported dataset type
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    if (errorMessage.includes("BadRequest") || errorMessage.includes("400")) {
+      return res.status(400).json({ 
+        message: "Dataset refresh not supported",
+        error: "This dataset type does not support manual refresh. Only Import mode datasets can be refreshed."
+      });
+    }
+    
     res.status(500).json({ 
       message: "Failed to initiate dataset refresh",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: errorMessage
     });
   }
 });
