@@ -100,6 +100,8 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
     elapsedTime: 0
   });
   const [refreshIntervalTimer, setRefreshIntervalTimer] = useState<ReturnType<typeof setInterval> | null>(null);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(0);
+  const [isRefreshDisabled, setIsRefreshDisabled] = useState<boolean>(false);
   
   // All useRef hooks second
   const currentAccessLevelRef = useRef<"View" | "Edit">("View");
@@ -796,15 +798,66 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
   const refreshReport = useCallback(async () => {
     if (report) {
+      const now = Date.now();
+      const timeSinceLastRefresh = now - lastRefreshTime;
+      const FIFTEEN_SECONDS = 15000;
+
+      // Check if we're within the 15-second rate limit
+      if (lastRefreshTime > 0 && timeSinceLastRefresh < FIFTEEN_SECONDS) {
+        const secondsRemaining = Math.ceil((FIFTEEN_SECONDS - timeSinceLastRefresh) / 1000);
+        toast({
+          title: "Please wait",
+          description: `Power BI limits refreshes to once every 15 seconds. Please wait ${secondsRemaining} more second${secondsRemaining !== 1 ? 's' : ''}.`,
+          variant: "default",
+          autoClose: true
+        });
+        return;
+      }
+
       try {
+        setIsRefreshDisabled(true);
+        setLastRefreshTime(now);
+        
         await report.refresh();
         console.log("✅ Report refreshed successfully");
-      } catch (err) {
+        
+        toast({
+          title: "Report refreshed",
+          description: "The report data has been refreshed successfully.",
+          variant: "default",
+          autoClose: true
+        });
+
+        // Re-enable after 15 seconds
+        setTimeout(() => {
+          setIsRefreshDisabled(false);
+        }, FIFTEEN_SECONDS);
+      } catch (err: any) {
+        setIsRefreshDisabled(false);
         console.error("Failed to refresh report:", err);
+        
+        // Check if it's a rate limit error
+        if (err.message?.includes('refreshNotAllowed') || err.detailedMessage?.includes('refresh limit')) {
+          const match = err.detailedMessage?.match(/(\d+)\s+second/);
+          const seconds = match ? match[1] : '15';
+          toast({
+            title: "Refresh limit reached",
+            description: `Power BI limits refreshes to once every ${seconds} seconds. Please wait before trying again.`,
+            variant: "destructive",
+            autoClose: true
+          });
+        } else {
+          toast({
+            title: "Refresh failed",
+            description: err.message || "Failed to refresh report",
+            variant: "destructive",
+            autoClose: true
+          });
+        }
         setError("Failed to refresh report");
       }
     }
-  }, [report]);
+  }, [report, lastRefreshTime]);
 
   // Note: useQuery moved above to maintain proper hook order
 
@@ -1531,6 +1584,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
     setAADToken, // Expose this so Dashboard can set the AAD token
     // Refresh tracking state and functions
     refreshInfo,
+    isRefreshDisabled, // Rate limit state for report refresh
     resetRefreshState: useCallback(() => {
       setRefreshInfo({
         status: 'idle',

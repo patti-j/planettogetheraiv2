@@ -6980,6 +6980,44 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", async (re
   }
 });
 
+// Get dataset refresh history
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    const refreshHistory = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
+
+    res.json(refreshHistory);
+  } catch (error) {
+    console.error("Failed to get dataset refresh history:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch dataset refresh history",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Initiate dataset refresh
+router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    await powerBIService.refreshDataset(accessToken, workspaceId, datasetId);
+
+    res.status(202).json({ message: "Dataset refresh initiated successfully" });
+  } catch (error) {
+    console.error("Failed to initiate dataset refresh:", error);
+    res.status(500).json({ 
+      message: "Failed to initiate dataset refresh",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Secure Power BI embed endpoint - uses server-cached AAD token
 router.post("/api/embed", async (req, res) => {
   try {

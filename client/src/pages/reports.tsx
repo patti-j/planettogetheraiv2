@@ -242,6 +242,7 @@ export default function Dashboard() {
     viewMode,
     currentAccessLevel,
     refreshInfo,
+    isRefreshDisabled, // Rate limit state
     resetRefreshState,
     // Page navigation functionality
     pages,
@@ -849,25 +850,18 @@ export default function Dashboard() {
             <DropdownMenuContent align="start" side="right" className="bg-white border border-gray-200">
               <DropdownMenuItem 
                 onClick={async () => {
-                  try {
-                    await refreshReport();
-                    toast({
-                      title: "Report Refreshed",
-                      description: "The report data has been refreshed",
-                    });
-                  } catch (error) {
-                    toast({
-                      title: "Refresh Failed",
-                      description: error instanceof Error ? error.message : "Failed to refresh report",
-                      variant: "destructive",
-                    });
-                  }
+                  await refreshReport();
                 }}
+                disabled={isRefreshDisabled}
                 data-testid="menu-refresh"
                 className="flex items-center gap-2"
               >
-                <RotateCcw className="w-4 h-4" />
-                Refresh Report
+                {isRefreshDisabled ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="w-4 h-4" />
+                )}
+                {isRefreshDisabled ? 'Please wait...' : 'Refresh Report'}
               </DropdownMenuItem>
               
               <DropdownMenuItem 
