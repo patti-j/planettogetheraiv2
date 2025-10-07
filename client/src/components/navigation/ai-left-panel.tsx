@@ -469,7 +469,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   // Track last spoken message to prevent re-speaking
   const lastSpokenMessageIdRef = useRef<number | null>(null);
   const lastMessageTimestampRef = useRef<string | null>(null);
-  const isInitialLoadRef = useRef(true);
+  const pageLoadTimeRef = useRef(Date.now());
 
   // Add keyboard shortcut for stopping audio (Escape key)
   useEffect(() => {
@@ -493,32 +493,24 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       messageCount: chatMessages.length,
       prevCount: previousMessageCountRef.current,
       soundEnabled: aiSettings.soundEnabled,
-      isInitialLoad: isInitialLoadRef.current
+      pageLoadTime: pageLoadTimeRef.current
     });
 
     if (scrollAreaRef.current && activeTab === 'chat') {
       const scrollElement = scrollAreaRef.current;
       scrollElement.scrollTop = scrollElement.scrollHeight;
       
-      // On initial load, mark all existing messages as "already seen"
-      if (isInitialLoadRef.current && chatMessages.length > 0) {
-        const lastMessage = chatMessages[chatMessages.length - 1];
-        if (lastMessage) {
-          lastMessageTimestampRef.current = lastMessage.createdAt;
-          lastSpokenMessageIdRef.current = lastMessage.id;
-        }
-        previousMessageCountRef.current = chatMessages.length;
-        isInitialLoadRef.current = false;
-        console.log('[Voice Debug] Initial load - marking all messages as seen');
-        return; // Don't play voice on initial load
-      }
-      
-      // Detect new messages by timestamp instead of count (more reliable)
+      // Get the last message
       const lastMessage = chatMessages[chatMessages.length - 1];
+      
+      // Check if this is a new message (created after page load)
+      const messageCreatedTime = lastMessage ? new Date(lastMessage.createdAt).getTime() : 0;
+      const isMessageAfterPageLoad = messageCreatedTime > pageLoadTimeRef.current;
+      
+      // Detect new messages by timestamp
       const isNewMessage = lastMessage && 
         lastMessage.createdAt !== lastMessageTimestampRef.current &&
-        chatMessages.length > 0 &&
-        !isInitialLoadRef.current; // Only new messages after initial load
+        chatMessages.length > 0;
       
       if (lastMessage) {
         lastMessageTimestampRef.current = lastMessage.createdAt;
@@ -529,13 +521,16 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       
       console.log('[Voice Debug] Message detection', {
         isNewMessage,
+        isMessageAfterPageLoad,
         currentCount: chatMessages.length,
         lastMessageRole: lastMessage?.role,
-        lastTimestamp: lastMessage?.createdAt
+        lastTimestamp: lastMessage?.createdAt,
+        messageTime: messageCreatedTime,
+        pageLoadTime: pageLoadTimeRef.current
       });
       
-      // Auto-play voice for NEW assistant messages (not on initial load)
-      if (isNewMessage) {
+      // Auto-play voice ONLY for messages created after page load
+      if (isNewMessage && isMessageAfterPageLoad) {
         console.log('[Voice Debug] Checking voice conditions', {
           hasLastMessage: !!lastMessage,
           role: lastMessage?.role,

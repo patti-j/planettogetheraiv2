@@ -2908,7 +2908,14 @@ Respond with JSON format:
     try {
       const searchTerm = typeof description === 'string' ? description : description?.description || description?.name || '';
       
-      // Query operations matching the description
+      // Clean up common job prefixes from search term for more flexible matching
+      const cleanedTerm = searchTerm
+        .replace(/^(job|order|work order|wo|operation|op|task)\s+/i, '') // Remove common prefixes
+        .trim();
+      
+      console.log(`[Max AI] Searching for operations - original: "${searchTerm}", cleaned: "${cleanedTerm}"`);
+      
+      // Query operations matching the description (search with both patterns)
       const operations = await db.execute(sql`
         SELECT 
           jo.id,
@@ -2931,10 +2938,14 @@ Respond with JSON format:
           OR LOWER(jo.description) LIKE LOWER(${'%' + searchTerm + '%'})
           OR LOWER(j.name) LIKE LOWER(${'%' + searchTerm + '%'})
           OR LOWER(r.name) LIKE LOWER(${'%' + searchTerm + '%'})
+          OR LOWER(jo.name) LIKE LOWER(${'%' + cleanedTerm + '%'})
+          OR LOWER(j.name) LIKE LOWER(${'%' + cleanedTerm + '%'})
+          OR LOWER(j.name) = LOWER(${cleanedTerm})
         ORDER BY jo.scheduled_start
         LIMIT 50
       `);
       
+      console.log(`[Max AI] Found ${operations.rows.length} operations`);
       return operations.rows as any[];
     } catch (error) {
       console.error('[Max AI] Error finding operations:', error);
