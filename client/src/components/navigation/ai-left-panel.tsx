@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useLocation } from 'wouter';
-import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle } from 'lucide-react';
+import { Sparkles, TrendingUp, Lightbulb, Activity, ChevronLeft, ChevronRight, Play, RefreshCw, MessageSquare, Send, User, GripVertical, Settings, Volume2, VolumeX, Palette, Zap, Shield, Bell, X, Copy, Check, ChevronDown, Square, BookOpen, History, Monitor, Layers, Calendar, Factory, Wrench, Package, Target, Truck, DollarSign, MessageCircle, Paperclip, FileText, Image, File, Mic, MicOff, StopCircle, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ import { useChatSync, type ChatMessage } from '@/hooks/useChatSync';
 import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useRealtimeVoice } from '@/hooks/use-realtime-voice';
+import { useToast } from '@/hooks/use-toast';
 // Scheduler context service removed with production-scheduler cleanup
 
 interface AIInsight {
@@ -45,6 +46,7 @@ interface AILeftPanelProps {
 export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [, navigate] = useLocation();
   const { handleNavigation } = useSplitScreen();
+  const { toast } = useToast();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('ai-panel-collapsed');
     return saved === 'true';
@@ -58,6 +60,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [floatingNotification, setFloatingNotification] = useState<ChatMessage | null>(null);
   const [showFloatingNotification, setShowFloatingNotification] = useState(false);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
   
   // File attachment state
   const [attachments, setAttachments] = useState<Array<{
@@ -2194,29 +2197,57 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   {/* Save Button */}
                   <Button 
                     className="w-full"
+                    disabled={isSavingSettings}
                     onClick={async () => {
-                      // Save settings to localStorage
-                      localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
+                      setIsSavingSettings(true);
                       
-                      // Save AI theme color to backend
-                      if (user?.id) {
-                        try {
+                      try {
+                        // Save settings to localStorage
+                        localStorage.setItem('ai-settings', JSON.stringify(aiSettings));
+                        
+                        // Save AI theme color to backend
+                        if (user?.id) {
                           await apiRequest('PATCH', `/api/user-preferences/${user.id}`, {
                             aiThemeColor: aiSettings.aiThemeColor
                           });
                           
                           // Invalidate query to refresh preferences
                           queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user.id}`] });
-                          
-                          // Show success feedback (you could add a toast here)
-                          console.log('Settings saved successfully');
-                        } catch (error) {
-                          console.error('Failed to save settings:', error);
                         }
+                        
+                        // Show success feedback
+                        toast({
+                          title: "Settings Saved",
+                          description: "Your AI settings have been saved successfully.",
+                        });
+                        
+                        // Brief delay to show saved state
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                      } catch (error) {
+                        console.error('Failed to save settings:', error);
+                        
+                        // Show error feedback
+                        toast({
+                          title: "Save Failed",
+                          description: "Failed to save your settings. Please try again.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsSavingSettings(false);
                       }
                     }}
                   >
-                    Save Settings
+                    {isSavingSettings ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="mr-2 h-4 w-4" />
+                        Save Settings
+                      </>
+                    )}
                   </Button>
                 </div>
               </ScrollArea>
