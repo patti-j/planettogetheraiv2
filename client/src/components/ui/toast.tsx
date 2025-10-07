@@ -23,7 +23,7 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-lg border p-6 pr-16 shadow-2xl backdrop-blur-sm transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
+  "group pointer-events-auto relative flex w-full items-start justify-between space-x-4 overflow-hidden rounded-lg border p-6 pt-10 shadow-2xl backdrop-blur-sm transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:scale-95 data-[state=open]:scale-100 data-[state=open]:fade-in-0 data-[state=closed]:fade-out-0 data-[state=open]:zoom-in-95 data-[state=closed]:zoom-out-95",
   {
     variants: {
       variant: {
@@ -45,7 +45,7 @@ const Toast = React.forwardRef<
       autoClose?: boolean
       onToggleAutoClose?: () => void
     }
->(({ className, variant, autoClose, onToggleAutoClose, ...props }, ref) => {
+>(({ className, variant, ...props }, ref) => {
   return (
     <ToastPrimitives.Root
       ref={ref}
@@ -53,23 +53,6 @@ const Toast = React.forwardRef<
       {...props}
     >
       {props.children}
-      {/* Auto-close toggle button */}
-      {onToggleAutoClose && (
-        <button
-          onClick={onToggleAutoClose}
-          className={cn(
-            "absolute right-16 top-2 rounded-md p-2 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-none focus:ring-2 group-hover:opacity-100",
-            autoClose ? "text-blue-500 hover:text-blue-600" : "text-gray-400 hover:text-gray-500"
-          )}
-          title={autoClose ? "Auto-close enabled (click to disable)" : "Auto-close disabled (click to enable)"}
-        >
-          {autoClose ? (
-            <Clock className="h-4 w-4" />
-          ) : (
-            <Clock3 className="h-4 w-4 opacity-50" />
-          )}
-        </button>
-      )}
     </ToastPrimitives.Root>
   )
 })
