@@ -5706,16 +5706,15 @@ router.post("/api/ai-agent/chat", async (req, res) => {
     console.log(`[AI Agent Chat] Processing request for agent: ${agentId || 'max'}`);
     console.log(`[AI Agent Chat] Message: "${message}"`);
 
-    // For now, all agents route through Max AI
-    // In the future, we can add specialized agent handling here
-    const response = await maxAI.generateResponse(message, {
+    // Use respondToMessage with agent-specific training
+    const response = await maxAI.respondToMessage(message, {
       userId,
       userRole: 'Administrator',
       currentPage: context?.currentPage || '/home',
       selectedData: context?.selectedData,
       recentActions: context?.recentActions,
       conversationHistory: context?.conversationHistory,
-      agentId: agentId || 'max' // Pass agent context to Max AI
+      agentId: agentId || 'max' // Pass agent context to enable specialized training
     });
     
     console.log(`[AI Agent Chat] Response generated for agent: ${agentId || 'max'}`);

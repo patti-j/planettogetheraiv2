@@ -1684,8 +1684,18 @@ Would you like me to analyze any specific area in detail?`;
   }
 
   // Use AI flexibly to understand user intent and determine appropriate actions
-  private async getAIFlexibleResponse(query: string, context: MaxContext, playbooks: PlaybookReference[] = []): Promise<MaxResponse | null> {
+  private async getAIFlexibleResponse(query: string, context: MaxContext, playbooks: PlaybookReference[] = [], agentTraining: any = null): Promise<MaxResponse | null> {
     try {
+      // Build agent-specific context
+      const agentContext = agentTraining ? `
+AGENT CONTEXT:
+You are the ${agentTraining.name} with the following capabilities and knowledge:
+
+${agentTraining.rawContent}
+
+Use this specialized knowledge to understand and respond to the user's request.
+` : '';
+
       // Let AI understand the user's intent and decide what to do
       const intentResponse = await openai.chat.completions.create({
         model: DEFAULT_MODEL,
@@ -1693,6 +1703,8 @@ Would you like me to analyze any specific area in detail?`;
           {
             role: 'system',
             content: `You are Max, an intelligent manufacturing AI assistant. Analyze the user's request and determine what they want.
+
+${agentContext}
 
 ${playbooks.length > 0 ? `PLAYBOOK GUIDANCE:
 You have consulted the following playbooks to guide your understanding:
@@ -1715,11 +1727,13 @@ Available actions you can take:
 2. NAVIGATE - if they want to go to a specific page/feature  
 3. ANALYZE - if they want analysis of current data
 4. CREATE - if they want to create charts, widgets, or content (keywords: create, make, show, generate, chart, pie, bar, graph, visualization, plot)
-5. HELP - if they need guidance or have questions
-6. CHAT - for general conversation
+5. EXECUTE - if they want to perform an action or modify data (keywords: move, reschedule, change, update, switch, assign, reallocate, shift)
+6. HELP - if they need guidance or have questions
+7. CHAT - for general conversation
 
 IMPORTANT: 
 - Any request containing words like "chart", "plot", "pie chart", "bar chart", "graph", "create chart", "show chart", "make chart", "generate chart" should ALWAYS be classified as CREATE intent.
+- Any request containing action words like "move", "reschedule", "change", "update", "switch", "assign", "reallocate", "shift" should be classified as EXECUTE intent.
 - Queries like "how many jobs", "show jobs", "list jobs" are about PRODUCTION JOBS (ptjobs), use FETCH_DATA or CREATE intent
 
 Manufacturing system capabilities:
@@ -1732,7 +1746,7 @@ Manufacturing system capabilities:
 
 Respond with JSON:
 {
-  "intent": "FETCH_DATA|NAVIGATE|ANALYZE|CREATE|HELP|CHAT",
+  "intent": "FETCH_DATA|NAVIGATE|ANALYZE|CREATE|EXECUTE|HELP|CHAT",
   "target": "specific endpoint or page if applicable",
   "reasoning": "brief explanation of what the user wants",
   "query_type": "what kind of information or action they're seeking"
@@ -1771,6 +1785,9 @@ Respond with JSON:
       } else if (intent.intent === 'CREATE') {
         console.log(`[Max AI] 🔧 CREATE intent detected, routing to handleCreateIntent for query: "${query}"`);
         return await this.handleCreateIntent(query, intent, context);
+      } else if (intent.intent === 'EXECUTE') {
+        console.log(`[Max AI] ⚡ EXECUTE intent detected, routing to handleExecuteIntent for query: "${query}"`);
+        return await this.handleExecuteIntent(query, intent, context, agentTraining);
       } else {
         // Let the main AI response handle HELP and CHAT
         return null;
@@ -2497,6 +2514,82 @@ Provide analysis and recommendations.`
     }
   }
 
+  private async handleExecuteIntent(query: string, intent: any, context: MaxContext, agentTraining: any = null): Promise<MaxResponse | null> {
+    try {
+      console.log(`[Max AI] EXECUTE Intent detected for query: "${query}"`);
+      
+      if (!agentTraining) {
+        return {
+          content: "I need to be in a specialized agent mode to perform actions. Please switch to the Production Scheduling Agent to modify schedules.",
+          action: {
+            type: 'navigate',
+            target: '/production-scheduler'
+          }
+        };
+      }
+
+      // Use OpenAI function calling to extract action parameters
+      const actionResponse = await openai.chat.completions.create({
+        model: DEFAULT_MODEL,
+        messages: [
+          {
+            role: 'system',
+            content: `You are the ${agentTraining.name}. The user wants you to perform an action.
+
+${agentTraining.rawContent}
+
+Extract the action parameters from the user's request. Identify:
+1. What action to perform (move_operation, reschedule_operation, change_resource, etc.)
+2. Which operation(s) or job(s) are affected
+3. The target (new resource, new time, new date)
+4. Any constraints or conditions
+
+Respond with structured JSON that can be used to execute the action.`
+          },
+          {
+            role: 'user',
+            content: `User request: "${query}"\n\nExtract the action details and respond with JSON containing: action_type, affected_items, target, reasoning, and suggested_steps.`
+          }
+        ],
+        temperature: 0.2,
+        max_tokens: 500,
+        response_format: { type: "json_object" }
+      });
+
+      const actionDetails = JSON.parse(actionResponse.choices[0].message.content || '{}');
+      console.log(`[Max AI] Parsed action details:`, actionDetails);
+
+      // Provide response with action plan
+      const response = {
+        content: `I understand you want to ${actionDetails.reasoning || 'perform this action'}. 
+
+${actionDetails.suggested_steps ? actionDetails.suggested_steps.map((step: string, i: number) => `${i + 1}. ${step}`).join('\n') : ''}
+
+To execute this, I'll need to:
+- Query the current schedule to identify affected operations
+- Verify the target resource/time is available
+- Update the schedule in the database
+- Confirm the changes
+
+Let me navigate you to the Production Scheduler where you can see the changes take effect.`,
+        action: {
+          type: 'navigate',
+          target: '/production-scheduler'
+        },
+        data: actionDetails
+      };
+
+      return response;
+      
+    } catch (error) {
+      console.error('Error handling execute intent:', error);
+      return {
+        content: 'I encountered an error while trying to execute that action. Please try rephrasing your request or navigate to the Production Scheduler manually.',
+        error: true
+      };
+    }
+  }
+
   // Enrich user query with production context
   private async enrichQuery(query: string, productionData: any, insights: ProductionInsight[], context: MaxContext, conversationContext: any): Promise<string> {
     let enriched = query;
@@ -3120,9 +3213,19 @@ class ProactiveRecommendationEngine {
   }
 
   // Main chat method to respond to user messages
-  async respondToMessage(message: string, context: MaxContext): Promise<MaxResponse> {
+  async respondToMessage(message: string, context: MaxContext & { agentId?: string }): Promise<MaxResponse> {
     try {
       console.log(`[Max AI] Processing message: "${message}"`);
+      console.log(`[Max AI] Agent context: ${context.agentId || 'max'}`);
+      
+      // Load agent-specific training if agentId is provided
+      let agentTraining = null;
+      if (context.agentId && context.agentId !== 'max') {
+        agentTraining = agentTrainingLoader.getTraining(context.agentId);
+        if (agentTraining) {
+          console.log(`[Max AI] Loaded ${agentTraining.name} training`);
+        }
+      }
       
       // Add user message to conversation history
       this.addToConversationHistory(context.userId, {
@@ -3165,8 +3268,8 @@ class ProactiveRecommendationEngine {
         return response;
       }
 
-      // Use AI flexible response for complex queries
-      const aiResponse = await this.getAIFlexibleResponse(message, context, playbooks);
+      // Use AI flexible response for complex queries (with agent training)
+      const aiResponse = await this.getAIFlexibleResponse(message, context, playbooks, agentTraining);
       if (aiResponse) {
         // Add response to conversation history
         this.addToConversationHistory(context.userId, {
