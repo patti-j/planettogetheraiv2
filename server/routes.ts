@@ -7010,7 +7010,8 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
 
     res.status(202).json({ 
       message: "Dataset refresh initiated successfully",
-      refreshId: result.refreshId
+      refreshId: result.refreshId,
+      estimation: result.estimation  // Include estimation for progress tracking
     });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
