@@ -487,7 +487,7 @@ export default function Dashboard() {
           <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
             <ChartBar className="w-4 h-4 text-black" />
           </div>
-          <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Power BI Reports</h1>
+          <h1 className="font-bold text-foreground whitespace-nowrap text-[16px]">Power BI Reports</h1>
         </div>
         
         {/* Workspace Selector in Top Right */}
@@ -511,7 +511,6 @@ export default function Dashboard() {
           </div>
         )}
       </header>
-      
       {/* Main Content */}
       <div className="flex flex-1 min-h-0">
         {/* Left Sidebar - Report Selection - Minimizable */}
@@ -534,7 +533,7 @@ export default function Dashboard() {
                 )}
                 {showMobileSidebar ? (
                   // Close button for mobile overlay
-                  <Button
+                  (<Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setShowMobileSidebar(false)}
@@ -542,10 +541,10 @@ export default function Dashboard() {
                     data-testid="button-close-mobile-sidebar"
                   >
                     <X className="w-4 h-4" />
-                  </Button>
+                  </Button>)
                 ) : (
                   // Minimize toggle for desktop
-                  <Button
+                  (<Button
                     variant="ghost"
                     size="icon"
                     onClick={() => setSidebarMinimized(!sidebarMinimized)}
@@ -557,7 +556,7 @@ export default function Dashboard() {
                     ) : (
                       <ChevronLeft className="w-4 h-4" />
                     )}
-                  </Button>
+                  </Button>)
                 )}
               </div>
               
@@ -710,7 +709,7 @@ export default function Dashboard() {
                 </Card>
               ) : (
                 /* Vertical text when sidebar is minimized */
-                <div className="flex-1 flex items-center justify-center py-8">
+                (<div className="flex-1 flex items-center justify-center py-8">
                   <div 
                     className="text-sm font-semibold text-muted-foreground whitespace-nowrap"
                     style={{ 
@@ -725,7 +724,7 @@ export default function Dashboard() {
                   >
                     Select Report
                   </div>
-                </div>
+                </div>)
               )}
             </div>
           </div>
@@ -774,8 +773,6 @@ export default function Dashboard() {
           )}
         </div>
       </div>
-
-      
       {/* Floating Refresh Status Card - Bottom Right during and after refresh */}
       {(refreshInfo.status === 'refreshing' || refreshInfo.status === 'completed' || refreshInfo.status === 'failed' || refreshInfo.status === 'cancelling' || refreshInfo.status === 'cancelled') && (
         <div className="fixed bottom-20 right-6 z-40 max-w-md" data-testid="floating-refresh-status">
@@ -787,7 +784,6 @@ export default function Dashboard() {
           />
         </div>
       )}
-
       {/* Floating Export Status Card - Bottom Right during export */}
       {isExporting && (
         <div className="fixed bottom-6 right-6 z-40 max-w-md" data-testid="floating-export-status">
@@ -820,7 +816,6 @@ export default function Dashboard() {
           </Card>
         </div>
       )}
-
       {/* Floating Back to Reports Button - Above Settings */}
       {(() => {
         const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
@@ -843,7 +838,6 @@ export default function Dashboard() {
           </Button>
         </div>
       )}
-
       {/* Floating Filters Button - Third in Line */}
       {(() => {
         const isMobile = typeof window !== 'undefined' && window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
@@ -892,7 +886,6 @@ export default function Dashboard() {
           </Button>
         </div>
       )}
-
       {/* Floating Settings Button - Bottom Left */}
       {showEmbed && embedConfig && !isLoading && (
         <div className="fixed bottom-4 left-2 z-50">
@@ -1086,7 +1079,6 @@ export default function Dashboard() {
           </DropdownMenu>
         </div>
       )}
-
       {/* Mobile Filter Drawer */}
       <Sheet open={showMobileFilterDrawer} onOpenChange={setShowMobileFilterDrawer}>
         <SheetContent side="bottom" className="h-[80vh] bg-white">
@@ -1143,7 +1135,6 @@ export default function Dashboard() {
           </div>
         </SheetContent>
       </Sheet>
-
     </div>
   );
 }
