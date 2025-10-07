@@ -112,14 +112,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       autoSuggestions: true,
       showInsights: true,
       notificationsEnabled: true,
-      soundEnabled: false,
+      soundEnabled: true, // Enable voice by default
       contextWindow: 'standard',
       temperature: 0.7,
       maxTokens: 2000,
       streamResponses: true,
       // Voice Settings
       voiceMode: 'hybrid', // 'hybrid' (Web Speech + Whisper) or 'realtime' (OpenAI Realtime API)
-      voice: 'alloy',
+      voice: 'nova', // Changed to Nova for better quality
       voiceSpeed: 1.0,
       voiceGender: 'neutral',
       // Theme Settings
@@ -802,11 +802,36 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     }
   });
 
-  // Function to render content with clickable keywords
+  // Function to render content with clickable keywords and better formatting
   const renderContentWithClickableKeywords = (content: string) => {
-    // Define important patterns to make clickable - now much more comprehensive
+    // Check if content is a bullet list
+    const isBulletList = content.includes('\n-') || content.includes('\n•');
+    
+    if (isBulletList) {
+      // Parse bullet list and render with better formatting
+      const lines = content.split('\n').filter(line => line.trim());
+      return (
+        <div className="space-y-1.5">
+          {lines.map((line, index) => {
+            const trimmedLine = line.trim();
+            if (trimmedLine.startsWith('-') || trimmedLine.startsWith('•')) {
+              const text = trimmedLine.substring(1).trim();
+              return (
+                <div key={index} className="flex items-start gap-2">
+                  <div className="mt-1.5 h-1.5 w-1.5 rounded-full bg-purple-500 flex-shrink-0" />
+                  <span className="text-sm leading-relaxed">{text}</span>
+                </div>
+              );
+            }
+            return <div key={index} className="text-sm leading-relaxed">{trimmedLine}</div>;
+          })}
+        </div>
+      );
+    }
+    
+    // Define important patterns to make clickable
     const importantPatterns = [
-      // Specific issues (alerts removed)
+      // Specific issues
       { pattern: /CNC Milling Machine/gi, query: 'Show me detailed status of the CNC Milling Machine' },
       { pattern: /Aluminum Sheets/gi, query: 'Check inventory levels for Aluminum Sheets' },
       { pattern: /defect rate/gi, query: 'Analyze defect rates and quality trends' },
@@ -843,7 +868,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     ];
 
     // Process the content
-    let processedContent = content;
     const replacements: Array<{start: number, end: number, text: string, query: string}> = [];
     
     // Find all matches
@@ -871,7 +895,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     
     // Build the result
     if (finalReplacements.length === 0) {
-      return <span>{content}</span>;
+      return <span className="text-sm leading-relaxed">{content}</span>;
     }
     
     // Sort back to normal order for rendering
@@ -918,7 +942,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       );
     }
     
-    return <span>{elements}</span>;
+    return <span className="text-sm leading-relaxed">{elements}</span>;
   };
 
 
