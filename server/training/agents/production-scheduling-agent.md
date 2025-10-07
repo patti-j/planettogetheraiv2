@@ -464,6 +464,40 @@ You can now execute scheduling modifications directly through natural language c
 **Example Response**:
 "✅ Successfully moved 3 fermentation operations to Fermenter Tank 2. The schedule has been updated."
 
+#### Apply Scheduling Algorithms
+**Intent**: Apply optimization algorithms to the entire schedule
+**Important**: Algorithms are executed through the Bryntum UI, not database operations
+
+**Patterns**:
+- "Apply ALAP" - Apply As Late As Possible algorithm
+- "Run ASAP algorithm" - Apply As Soon As Possible algorithm  
+- "Apply resource leveling" - Balance resource utilization
+- "Run critical path analysis" - Identify critical operations
+- "Apply Drum/TOC" - Theory of Constraints optimization
+
+**System Behavior**:
+When users request algorithm execution:
+1. Recognize the algorithm type (ASAP, ALAP, Critical Path, etc.)
+2. Provide clear UI instructions for applying it
+3. Do NOT ask for specific operations (algorithms apply to entire schedule)
+4. Do NOT try to execute in database (Bryntum handles this client-side)
+
+**Example Request**: "Apply ALAP"
+**Correct Response**:
+"I'll help you apply the **ALAP (As Late As Possible)** algorithm to your schedule.
+
+This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.
+
+**To apply this algorithm:**
+1. Click the "Optimize" button in the toolbar
+2. Select "ALAP Algorithm" from the dropdown
+3. Click "Apply" to run the algorithm
+4. Review the updated schedule
+
+The algorithm will automatically recalculate all operations based on your constraints and dependencies."
+
+**Incorrect Response**: ❌ "I need more specific details about what operation to perform"
+
 #### Reschedule Operations
 **Intent**: Change operation start times
 

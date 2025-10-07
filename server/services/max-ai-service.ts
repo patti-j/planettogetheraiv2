@@ -2754,6 +2754,12 @@ Respond with JSON format:
         // For reschedule operations, use target_date field (not target_resource)
         const dateToUse = target_date || target_resource || target;
         return await this.executeRescheduleOperations(affected_items, dateToUse, reasoning);
+      } else if (action_type?.includes('algorithm') || action_type?.includes('optimize') || 
+                 action_type?.includes('asap') || action_type?.includes('alap') || 
+                 action_type?.includes('critical_path') || action_type?.includes('resource_level') ||
+                 action_type?.includes('drum') || action_type?.includes('toc')) {
+        // Execute scheduling algorithm
+        return await this.executeSchedulingAlgorithm(action_type, affected_items, reasoning);
       } else {
         // Generic execution for other types
         return {
@@ -2966,6 +2972,64 @@ Respond with JSON format:
       console.error('[Max AI] Error in executeRescheduleOperations:', error);
       return {
         content: 'I encountered an error while rescheduling the operations. The schedule has not been changed.',
+        error: true
+      };
+    }
+  }
+
+  private async executeSchedulingAlgorithm(algorithmType: string, affectedItems: any, reasoning: string): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Executing scheduling algorithm: ${algorithmType}`);
+      
+      // Determine which algorithm to apply
+      const algorithmLower = algorithmType.toLowerCase();
+      let algorithmName = '';
+      let algorithmDescription = '';
+      let executionSteps = '';
+      
+      if (algorithmLower.includes('asap')) {
+        algorithmName = 'ASAP (As Soon As Possible)';
+        algorithmDescription = 'This will schedule all operations to start as early as possible from the current time, minimizing lead times.';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ASAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
+      } else if (algorithmLower.includes('alap')) {
+        algorithmName = 'ALAP (As Late As Possible)';
+        algorithmDescription = 'This will schedule operations as late as possible while still meeting due dates, reducing work-in-process inventory.';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "ALAP Algorithm" from the dropdown\n3. Click "Apply" to run the algorithm\n4. Review the updated schedule';
+      } else if (algorithmLower.includes('critical_path') || algorithmLower.includes('critical path')) {
+        algorithmName = 'Critical Path Method';
+        algorithmDescription = 'This will identify and highlight operations that directly impact the completion time (shown in red).';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Critical Path" from the dropdown\n3. Click "Analyze" to identify critical operations\n4. Critical operations will be highlighted in red';
+      } else if (algorithmLower.includes('resource_level') || algorithmLower.includes('leveling')) {
+        algorithmName = 'Resource Leveling';
+        algorithmDescription = 'This will redistribute operations to balance resource utilization and reduce overloads.';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Resource Leveling" from the dropdown\n3. Set target utilization percentage (e.g., 85%)\n4. Click "Apply" to balance the schedule';
+      } else if (algorithmLower.includes('drum') || algorithmLower.includes('toc') || algorithmLower.includes('theory of constraints')) {
+        algorithmName = 'Drum/TOC (Theory of Constraints)';
+        algorithmDescription = 'This will schedule operations around the bottleneck resource to maximize throughput.';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select "Drum/TOC" from the dropdown\n3. Identify the constraint resource (usually highest utilization)\n4. Click "Apply" to optimize around the constraint';
+      } else {
+        algorithmName = 'Schedule Optimization';
+        algorithmDescription = 'This will optimize the schedule based on your specific requirements.';
+        executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select your preferred algorithm\n3. Configure parameters if needed\n4. Click "Apply" to run the optimization';
+      }
+      
+      // Return instructions for applying the algorithm
+      return {
+        content: `I'll help you apply the **${algorithmName}** algorithm to your schedule.\n\n${algorithmDescription}\n\n**To apply this algorithm:**\n${executionSteps}\n\nThe algorithm will automatically recalculate all operations based on your constraints and dependencies. Would you like me to explain how this algorithm works in more detail?`,
+        action: {
+          type: 'highlight_algorithm',
+          data: {
+            algorithm: algorithmName,
+            description: algorithmDescription
+          }
+        },
+        error: false
+      };
+      
+    } catch (error) {
+      console.error('[Max AI] Error executing scheduling algorithm:', error);
+      return {
+        content: 'I encountered an error while preparing the algorithm execution. Please try applying the algorithm manually using the Optimize button in the toolbar.',
         error: true
       };
     }
