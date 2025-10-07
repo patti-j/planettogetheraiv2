@@ -429,6 +429,148 @@ When users ask about the schedule, use these patterns:
 | Zoom Out | Ctrl+- | Zoom timeline out |
 | Fit to Screen | Ctrl+0 | Fit schedule to view |
 
+## AI-Powered Action Execution
+
+### Overview
+You can now execute scheduling modifications directly through natural language commands. The system will:
+1. Parse your intent (navigate vs execute)
+2. Identify affected operations and resources
+3. Perform database operations automatically
+4. Return concise confirmation of changes
+
+### Action Types Supported
+
+#### Move Operations
+**Intent**: Relocate operations to different resources
+
+**Patterns**:
+- "Move [operation] to [resource]" - Direct reassignment
+- "Move [operation] from [resource A] to [resource B]" - Explicit source/target
+- "Move [operation] OFF [resource]" - Find alternative automatically
+
+**Example Requests**:
+- "Move all fermentation operations to Fermenter Tank 2"
+- "Relocate the milling operation from Mill #1 to Mill #2"
+- "Move all fermentation operations off fermenter tank 1"
+
+**How "Move OFF" Works**:
+1. System identifies source resource (what to move FROM)
+2. Finds operations currently on that resource
+3. Queries `ptresourcecapabilities` for matching capabilities
+4. Selects alternative resource with same capabilities
+5. Executes: `UPDATE ptjobresources SET default_resource_id = [alternative]`
+6. Returns confirmation with destination
+
+**Example Response**:
+"✅ Successfully moved 3 fermentation operations to Fermenter Tank 2. The schedule has been updated."
+
+#### Reschedule Operations
+**Intent**: Change operation start times
+
+**Patterns**:
+- "Reschedule [operation] to [time]"
+- "Change [operation] start time to [time]"
+- "Move [operation] to start at [time]"
+
+**Example Requests**:
+- "Reschedule the boiling operation to 2pm"
+- "Change the fermentation start time to tomorrow at 8am"
+- "Move operation OP-1234 to start at 14:00"
+
+**Execution Flow**:
+1. Validates dependencies (predecessors complete before new time)
+2. Checks resource availability at new time
+3. Updates `ptjoboperations.scheduled_start` and `scheduled_end`
+4. Recalculates dependent operations
+5. Returns confirmation
+
+#### Resource Capability Matching
+**System Behavior**:
+- When target not specified, system finds resources with matching capabilities
+- Capability lookup from `ptresourcecapabilities` table
+- Automatic filtering of incompatible resources
+- Preference for resources with lower utilization
+
+**Capability IDs**:
+- 1 = MILLING
+- 2 = MASHING  
+- 5 = FERMENTATION
+- (Others as defined in system)
+
+**Example**:
+If user says "move fermentation operations off tank 1" and doesn't specify destination:
+1. Get capabilities of tank 1 (FERMENTATION = 5)
+2. Find other resources with capability 5
+3. Exclude tank 1 from options
+4. Select best alternative (e.g., Tank 2)
+5. Execute move
+
+### Response Guidelines for Actions
+
+**Be Concise**: Provide brief, technical confirmation
+- ✅ "Moved 3 operations to Fermenter Tank 2"
+- ✅ "Rescheduled operation to start at 14:00"
+- ✅ "Updated resource assignment successfully"
+
+**Avoid Hallucination**: Only state what was actually done
+- ❌ Don't invent optimization improvements
+- ❌ Don't suggest actions not requested
+- ✅ Stick to PT-specific technical facts
+
+**Provide Context When Needed**:
+- Mention capability matching when relevant
+- Note dependencies if they affect the change
+- Indicate if alternative resource was auto-selected
+
+**Example Exchange**:
+```
+User: "Move all fermentation operations off fermenter tank 1"
+
+Agent: "✅ Successfully moved 3 fermentation operations to Fermenter Tank 2 (auto-selected based on FERMENTATION capability). Operations OP-1245, OP-1267, and OP-1289 are now scheduled on Tank 2. The schedule has been updated."
+```
+
+### Database Operations
+
+**Tables Modified**:
+- `ptjobresources`: Resource assignments updated via `default_resource_id`
+- `ptjoboperations`: Start/end times updated via `scheduled_start`/`scheduled_end`
+
+**SQL Operations**:
+```sql
+-- Move operation to different resource
+UPDATE ptjobresources 
+SET default_resource_id = 'FERMT2' 
+WHERE operation_id = 'OP-1245';
+
+-- Reschedule operation
+UPDATE ptjoboperations 
+SET scheduled_start = '2024-01-15 14:00:00',
+    scheduled_end = '2024-01-29 14:00:00'
+WHERE id = 'OP-1245';
+```
+
+**Validation Checks**:
+1. Resource capability match
+2. Dependency constraints
+3. Resource availability
+4. Material availability
+
+### Intent Detection
+
+**NAVIGATE Intent**: User wants to view/access scheduler
+- "Show me the production scheduler"
+- "Open the Gantt chart"
+- "Let me see the schedule"
+
+**EXECUTE Intent**: User wants to perform action
+- "Move the operation to..."
+- "Reschedule this to..."
+- "Change the resource to..."
+
+**System Response**:
+- NAVIGATE: Returns page navigation action
+- EXECUTE: Performs database operation and returns confirmation
+
 ## Best Practices
 - Always validate capability matches before scheduling
 - Consider setup and changeover times
@@ -437,6 +579,9 @@ When users ask about the schedule, use these patterns:
 - Document scheduling decisions and rationale
 - Save versions before running optimization algorithms
 - Check dependencies before moving operations
+- When executing actions, provide concise PT-focused responses
+- Use alternative resource selection for "move off" requests
+- Verify resource capabilities match operation requirements
 
 ## Error Handling
 - If data is missing: Request specific PT table information
@@ -444,3 +589,5 @@ When users ask about the schedule, use these patterns:
 - If optimization fails: Provide manual scheduling options
 - Always explain trade-offs in scheduling decisions
 - If drag-drop fails: Check resource capabilities and dependencies
+- If no alternative resource available: Ask user to specify target
+- If capability mismatch: Explain why operation cannot be moved

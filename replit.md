@@ -87,6 +87,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **External Partners Portal**: Single multi-tenant portal architecture for suppliers, customers, and OEM partners with AI-first features.
 - **AI Agents Control Panel**: Centralized management interface for all AI agents (Max AI Assistant, System Monitoring, Production Optimization, Quality Analysis, Predictive Maintenance).
 - **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, performance visualization, and real-time plant monitoring with automated algorithm selection and parameter tuning.
+- **Agent Documentation**: Complete agent training and operational documentation available at [Production Scheduling Agent Training](server/training/agents/production-scheduling-agent.md)
 
 ### Production Scheduler Architecture (CRITICAL)
 
