@@ -2397,6 +2397,85 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
               type: 'safety-incident-tracker',
               title: 'Safety Incidents',
               position: { x: 11, y: 3, w: 5, h: 4 },
+
+
+// ============================================
+// PowerBI Integration Routes
+// ============================================
+
+import { PowerBIService } from './services/powerbi';
+const powerBIService = new PowerBIService();
+
+// Get Power BI dataset information
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const dataset = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
+    res.json(dataset);
+  } catch (error: any) {
+    console.error('Error fetching Power BI dataset:', error);
+    res.status(500).json({ error: 'Failed to fetch dataset', details: error.message });
+  }
+});
+
+// Trigger dataset refresh
+router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error triggering dataset refresh:', error);
+    res.status(500).json({ error: 'Failed to trigger refresh', details: error.message });
+  }
+});
+
+// Get dataset refresh history
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const refreshes = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
+    res.json(refreshes);
+  } catch (error: any) {
+    console.error('Error fetching refresh history:', error);
+    res.status(500).json({ error: 'Failed to fetch refresh history', details: error.message });
+  }
+});
+
+// Cancel dataset refresh
+router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId, refreshId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
+    res.json({ success: true, message: 'Refresh cancelled successfully' });
+  } catch (error: any) {
+    console.error('Error cancelling dataset refresh:', error);
+    res.status(500).json({ error: 'Failed to cancel refresh', details: error.message });
+  }
+});
+
+// Get refresh estimate
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh-estimate", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const estimate = await powerBIService.getRefreshEstimate(accessToken, workspaceId, datasetId);
+    res.json(estimate);
+  } catch (error: any) {
+    console.error('Error getting refresh estimate:', error);
+    res.status(500).json({ error: 'Failed to get refresh estimate', details: error.message });
+  }
+});
+
               config: {
                 showNearMisses: true,
                 incidentTypes: true,
