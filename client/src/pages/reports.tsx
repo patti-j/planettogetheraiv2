@@ -484,8 +484,8 @@ export default function Dashboard() {
       {/* Header with Workspace Selector */}
       <header className="flex items-center justify-between py-2 pl-2 pr-4 border-b">
         <div className="flex items-center space-x-0.5">
-          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-            <ChartBar className="w-4 h-4 text-primary-foreground" />
+          <div className="w-8 h-8 bg-white rounded-md flex items-center justify-center">
+            <ChartBar className="w-4 h-4 text-black" />
           </div>
           <h1 className="text-lg font-bold text-foreground whitespace-nowrap">Power BI Reports</h1>
         </div>
