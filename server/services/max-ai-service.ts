@@ -2886,6 +2886,16 @@ Respond with JSON format:
         };
       }
 
+      // Step 3b: Check for scheduling conflicts on target resource
+      const conflictCheck = await this.checkResourceConflicts(operations, finalTargetResource);
+      
+      if (!conflictCheck.valid) {
+        return {
+          content: `⚠️ Cannot move operations to ${finalTargetResource.name} due to scheduling conflicts:\n\n${conflictCheck.conflicts.join('\n')}\n\nPlease choose a different resource or reschedule the conflicting operations first.`,
+          error: false
+        };
+      }
+
       // Step 4: Execute the move
       const moveResults = await this.performOperationMove(operations, finalTargetResource);
       
@@ -3394,6 +3404,59 @@ Respond with JSON format:
     }
 
     return enriched;
+  }
+
+  // Check for scheduling conflicts before moving operations to a target resource
+  private async checkResourceConflicts(operations: any[], targetResource: any): Promise<{ valid: boolean; conflicts: string[] }> {
+    try {
+      const conflicts: string[] = [];
+      
+      for (const operation of operations) {
+        if (!operation.scheduled_start || !operation.scheduled_end) continue;
+        
+        // Query existing operations on the target resource that would overlap
+        const existingOps = await db.execute(sql`
+          SELECT 
+            jo.id,
+            jo.name as operation_name,
+            jo.scheduled_start,
+            jo.scheduled_end,
+            j.name as job_name
+          FROM ptjoboperations jo
+          LEFT JOIN ptjobs j ON jo.job_id = j.id
+          LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+          WHERE 
+            jr.default_resource_id = ${targetResource.external_id}
+            AND jo.id != ${operation.id}
+            AND jo.scheduled_start IS NOT NULL
+            AND jo.scheduled_end IS NOT NULL
+            AND (
+              (jo.scheduled_start <= ${operation.scheduled_start} AND jo.scheduled_end > ${operation.scheduled_start})
+              OR (jo.scheduled_start < ${operation.scheduled_end} AND jo.scheduled_end >= ${operation.scheduled_end})
+              OR (jo.scheduled_start >= ${operation.scheduled_start} AND jo.scheduled_end <= ${operation.scheduled_end})
+            )
+        `);
+        
+        if (existingOps.rows.length > 0) {
+          for (const existing of existingOps.rows) {
+            const conflictStart = new Date(existing.scheduled_start).toLocaleString();
+            const conflictEnd = new Date(existing.scheduled_end).toLocaleString();
+            conflicts.push(
+              `• "${operation.operation_name}" (${new Date(operation.scheduled_start).toLocaleString()} - ${new Date(operation.scheduled_end).toLocaleString()}) conflicts with "${existing.operation_name}" from ${existing.job_name} (${conflictStart} - ${conflictEnd})`
+            );
+          }
+        }
+      }
+      
+      return {
+        valid: conflicts.length === 0,
+        conflicts
+      };
+    } catch (error) {
+      console.error('[Max AI] Error checking resource conflicts:', error);
+      // On error, allow the move but log the issue
+      return { valid: true, conflicts: [] };
+    }
   }
 
   // Find resource scheduling conflicts
