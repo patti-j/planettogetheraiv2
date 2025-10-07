@@ -529,7 +529,7 @@ export default function Dashboard() {
               {/* Header with Close button for mobile overlay or Minimize Toggle for desktop */}
               <div className="flex items-center justify-between mb-4 mt-3">
                 {!sidebarMinimized && (
-                  <h2 className="text-lg font-semibold text-foreground">Select Report</h2>
+                  <h2 className="font-semibold text-foreground text-[16px]">Select Report</h2>
                 )}
                 {showMobileSidebar ? (
                   // Close button for mobile overlay
