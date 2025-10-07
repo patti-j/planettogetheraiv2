@@ -42,10 +42,10 @@ export function Toaster() {
                 <ToastDescription>{description}</ToastDescription>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <button
                 onClick={() => copyToastMessage(id, title?.toString(), description?.toString())}
-                className={`rounded-md p-1.5 transition-colors ${
+                className={`rounded-md p-2 transition-colors ${
                   copiedToastId === id
                     ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
                     : variant === 'destructive'
