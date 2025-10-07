@@ -2447,20 +2447,6 @@ router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", requireAu
   }
 });
 
-// Trigger dataset refresh
-router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", requireAuth, async (req, res) => {
-  try {
-    const { workspaceId, datasetId } = req.params;
-    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
-    res.json(result);
-  } catch (error: any) {
-    console.error('Error triggering dataset refresh:', error);
-    res.status(500).json({ error: 'Failed to trigger refresh', details: error.message });
-  }
-});
-
 // Get dataset refresh history
 router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", requireAuth, async (req, res) => {
   try {
@@ -7090,9 +7076,13 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
       });
     }
     
-    await powerBIService.refreshDataset(accessToken, workspaceId, datasetId);
+    const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
 
-    res.status(202).json({ message: "Dataset refresh initiated successfully" });
+    res.status(202).json({ 
+      message: "Dataset refresh initiated successfully",
+      refreshId: result.refreshId,
+      estimation: result.estimation
+    });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
     
