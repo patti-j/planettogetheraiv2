@@ -479,6 +479,14 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   // Auto-scroll to bottom when new messages are added
   useEffect(() => {
+    console.log('[Voice Debug] Effect triggered', {
+      hasScrollRef: !!scrollAreaRef.current,
+      activeTab,
+      messageCount: chatMessages.length,
+      prevCount: previousMessageCountRef.current,
+      soundEnabled: aiSettings.soundEnabled
+    });
+
     if (scrollAreaRef.current && activeTab === 'chat') {
       const scrollElement = scrollAreaRef.current;
       scrollElement.scrollTop = scrollElement.scrollHeight;
@@ -488,9 +496,24 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       const isNewMessage = currentMessageCount > previousMessageCountRef.current;
       previousMessageCountRef.current = currentMessageCount;
       
+      console.log('[Voice Debug] Message detection', {
+        isNewMessage,
+        currentCount: currentMessageCount,
+        lastMessageRole: chatMessages[chatMessages.length - 1]?.role
+      });
+      
       // Auto-play voice for NEW assistant messages
       if (isNewMessage) {
         const lastMessage = chatMessages[chatMessages.length - 1];
+        console.log('[Voice Debug] Checking voice conditions', {
+          hasLastMessage: !!lastMessage,
+          role: lastMessage?.role,
+          soundEnabled: aiSettings.soundEnabled,
+          messageId: lastMessage?.id,
+          lastSpoken: lastSpokenMessageIdRef.current,
+          isDifferent: lastMessage?.id !== lastSpokenMessageIdRef.current
+        });
+
         if (
           lastMessage?.role === 'assistant' && 
           aiSettings.soundEnabled && 
@@ -499,9 +522,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           // Mark this message as spoken to prevent re-playing
           lastSpokenMessageIdRef.current = lastMessage.id;
           
+          console.log('[Voice] 🔊 Triggering TTS for message:', lastMessage.id);
+          
           // Add small delay to ensure message is rendered
           setTimeout(() => {
-            console.log('[Voice] Playing TTS for new assistant message');
+            console.log('[Voice] Playing TTS now...');
             speakResponse(lastMessage.content);
           }, 300);
         }

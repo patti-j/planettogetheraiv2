@@ -160,6 +160,13 @@ export class MaxAIService {
   // Store conversation history in memory (in production, use Redis or database)
   private conversationStore = new Map<number, ConversationMessage[]>();
   
+  // Performance: Cache expensive discovery operations (15 minutes)
+  private navigationCache: { data: any, timestamp: number } | null = null;
+  private dataTypesCache: { data: any, timestamp: number } | null = null;
+  private navigationPromise: Promise<any> | null = null;
+  private dataTypesPromise: Promise<any> | null = null;
+  private readonly CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+  
   // Enhanced memory system - detect and store user preferences/instructions with improved context awareness
   private async detectAndStoreMemory(userId: number, userMessage: string, aiResponse: string): Promise<void> {
     try {
@@ -1593,8 +1600,24 @@ Would you like me to analyze any specific area in detail?`;
     3. **PROGRESSIVE DETAIL**: Only provide extensive information when explicitly requested
     4. **BE CONCISE**: Initial response should take no more than 3 seconds to read aloud
     
-    ✅ GOOD Example:
+    📝 FORMATTING RULES:
+    - **Lists with 3+ items**: ALWAYS use bullet points with one item per line
+    - **Example**: "The active resources are:\n• Grain Mill\n• Mash Tun 1\n• Lauter Tun\n• Brew Kettle 1"
+    - **Short lists (1-2 items)**: Can use inline format
+    - Use bullet points (•) for better voice readability and visual clarity
+    
+    ✅ GOOD Example (with bullet list):
     "Production is at 87% with Line 2 delayed by 15 minutes. The bottleneck is Fermentation Tank B. Would you like details on recovery options?"
+    
+    ✅ GOOD Example (with bullet list for resources):
+    "Here are the active resources:
+• Grain Mill
+• Mash Tun 1
+• Lauter Tun
+• Brew Kettle 1
+• Fermenter Tank 1
+
+All are located at the Main Brewery. Would you like details on any specific resource?"
     
     ❌ BAD Example (TOO LONG):
     "Production is currently running at 87% of the daily target. Looking at the detailed breakdown, Line 1 is performing exceptionally well at 95% efficiency, Line 2 is experiencing some challenges with a 15-minute delay due to material changeover operations that took longer than expected, and Line 3 is operating normally at standard capacity..."
@@ -1958,28 +1981,54 @@ Respond with JSON:
     };
   }
 
-  // Combined navigation mapping with auto-discovery
+  // Combined navigation mapping with auto-discovery (CACHED with concurrency safety)
   private async getNavigationMapping(): Promise<Record<string, {path: string, name: string, description: string, keywords: string[]}>> {
-    const staticMapping = this.getStaticNavigationMapping();
-    const discoveredMapping = await this.discoverAvailablePages();
-    
-    // Log navigation discovery results
-    const discoveredCount = Object.keys(discoveredMapping).length;
-    const staticCount = Object.keys(staticMapping).length;
-    const totalCount = staticCount + discoveredCount - Object.keys(staticMapping).filter(key => discoveredMapping[key]).length; // Subtract overlaps
-    
-    console.log(`[Max AI] Navigation Discovery Summary:
+    // Check cache first
+    const now = Date.now();
+    if (this.navigationCache && (now - this.navigationCache.timestamp) < this.CACHE_TTL) {
+      return this.navigationCache.data;
+    }
+
+    // If already fetching, return the pending promise to avoid duplicate work
+    if (this.navigationPromise) {
+      return this.navigationPromise;
+    }
+
+    // Start new fetch and store promise
+    this.navigationPromise = (async () => {
+      try {
+        const staticMapping = this.getStaticNavigationMapping();
+        const discoveredMapping = await this.discoverAvailablePages();
+        
+        // Log navigation discovery results (only when cache miss)
+        const discoveredCount = Object.keys(discoveredMapping).length;
+        const staticCount = Object.keys(staticMapping).length;
+        const totalCount = staticCount + discoveredCount - Object.keys(staticMapping).filter(key => discoveredMapping[key]).length;
+        
+        console.log(`[Max AI] Navigation Discovery (Cache Miss):
   ✅ Static navigation routes: ${staticCount}
   🔍 Auto-discovered pages: ${discoveredCount}
   📍 Total pages available: ${totalCount}`);
-    
-    if (discoveredCount > 10) {
-      const samplePages = Object.keys(discoveredMapping).slice(0, 10).map(k => discoveredMapping[k].path);
-      console.log(`[Max AI] Sample discovered pages:`, samplePages, `... and ${discoveredCount - 10} more`);
-    }
-    
-    // Merge mappings (static takes priority)
-    return { ...discoveredMapping, ...staticMapping };
+        
+        if (discoveredCount > 10) {
+          const samplePages = Object.keys(discoveredMapping).slice(0, 10).map(k => discoveredMapping[k].path);
+          console.log(`[Max AI] Sample discovered pages:`, samplePages, `... and ${discoveredCount - 10} more`);
+        }
+        
+        // Merge mappings (static takes priority)
+        const result = { ...discoveredMapping, ...staticMapping };
+        
+        // Cache result
+        this.navigationCache = { data: result, timestamp: Date.now() };
+        
+        return result;
+      } finally {
+        // Clear promise after completion
+        this.navigationPromise = null;
+      }
+    })();
+
+    return this.navigationPromise;
   }
 
   // Auto-discovery mechanism for new data types
@@ -2198,27 +2247,53 @@ Respond with JSON:
     };
   }
 
-  // Combined data mapping - includes both static and dynamically discovered types
+  // Combined data mapping - includes both static and dynamically discovered types (CACHED with concurrency safety)
   private async getDataTypeMapping(): Promise<Record<string, {method: string, description: string, keywords: string[]}>> {
-    const staticMapping = this.getStaticDataTypeMapping();
-    const discoveredMapping = await this.discoverAdditionalDataTypes();
-    
-    // Log discovered types for visibility
-    const discoveredCount = Object.keys(discoveredMapping).length;
-    const staticCount = Object.keys(staticMapping).length;
-    const totalCount = staticCount + discoveredCount;
-    
-    console.log(`[Max AI] Data Access Summary:
+    // Check cache first
+    const now = Date.now();
+    if (this.dataTypesCache && (now - this.dataTypesCache.timestamp) < this.CACHE_TTL) {
+      return this.dataTypesCache.data;
+    }
+
+    // If already fetching, return the pending promise to avoid duplicate work
+    if (this.dataTypesPromise) {
+      return this.dataTypesPromise;
+    }
+
+    // Start new fetch and store promise
+    this.dataTypesPromise = (async () => {
+      try {
+        const staticMapping = this.getStaticDataTypeMapping();
+        const discoveredMapping = await this.discoverAdditionalDataTypes();
+        
+        // Log discovered types for visibility (only when cache miss)
+        const discoveredCount = Object.keys(discoveredMapping).length;
+        const staticCount = Object.keys(staticMapping).length;
+        const totalCount = staticCount + discoveredCount;
+        
+        console.log(`[Max AI] Data Access (Cache Miss):
   ✅ Static data types: ${staticCount}
   🔍 Auto-discovered types: ${discoveredCount}
   📊 Total data types available: ${totalCount}`);
-    
-    if (discoveredCount > 0) {
-      console.log(`[Max AI] Auto-discovered data types:`, Object.keys(discoveredMapping).map(k => `/api/${k}`));
-    }
-    
-    // Merge static and discovered mappings (static takes priority)
-    return { ...discoveredMapping, ...staticMapping };
+        
+        if (discoveredCount > 0) {
+          console.log(`[Max AI] Auto-discovered data types:`, Object.keys(discoveredMapping).map(k => `/api/${k}`));
+        }
+        
+        // Merge static and discovered mappings (static takes priority)
+        const result = { ...discoveredMapping, ...staticMapping };
+        
+        // Cache result
+        this.dataTypesCache = { data: result, timestamp: Date.now() };
+        
+        return result;
+      } finally {
+        // Clear promise after completion
+        this.dataTypesPromise = null;
+      }
+    })();
+
+    return this.dataTypesPromise;
   }
 
   private async handleDataFetchIntent(query: string, intent: any, context: MaxContext): Promise<MaxResponse | null> {
