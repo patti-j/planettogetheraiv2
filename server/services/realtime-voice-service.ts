@@ -73,9 +73,11 @@ class RealtimeVoiceService {
     
     console.log(`🎤 Connecting to Realtime API with ${REALTIME_MODEL_CONFIG.model}...`);
     
-    const ws = new WebSocket(wsUrl, {
+    // The third parameter is for subprotocols
+    const ws = new WebSocket(wsUrl, 'openai-realtime', {
       headers: {
         Authorization: `Bearer ${this.apiKey}`,
+        'OpenAI-Beta': 'realtime=v1', // Required for Realtime API GA
       },
     });
 

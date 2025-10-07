@@ -5,6 +5,7 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
+import { realtimeVoiceService } from './services/realtime-voice-service';
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
@@ -7181,9 +7182,6 @@ router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/file", async (r
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
 
-// Realtime Voice API routes
-import { realtimeVoiceService } from './services/realtime-voice-service';
-
 // Create a new real-time voice session
 router.post('/api/realtime/sessions', async (req, res) => {
   try {
@@ -7331,6 +7329,72 @@ router.get('/api/realtime/sessions', async (req, res) => {
       error: error instanceof Error ? error.message : 'Unknown error',
     });
   }
+});
+
+// Server-Sent Events endpoint for real-time session events
+router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
+  const { sessionId } = req.params;
+  
+  // Set up SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+
+  // Get session event emitter
+  const events = realtimeVoiceService.getSessionEvents(sessionId);
+  
+  if (!events) {
+    res.write('event: error\ndata: {"message": "Session not found"}\n\n');
+    res.end();
+    return;
+  }
+
+  console.log(`📡 SSE connection established for session ${sessionId}`);
+
+  // Send initial connected event
+  res.write('event: connected\ndata: {"status": "connected"}\n\n');
+
+  // Forward events to SSE
+  const transcriptHandler = (text: string) => {
+    res.write(`event: transcript\ndata: ${JSON.stringify({ text, isFinal: false })}\n\n`);
+  };
+
+  const transcriptCompleteHandler = (text: string) => {
+    res.write(`event: transcript\ndata: ${JSON.stringify({ text, isFinal: true })}\n\n`);
+  };
+
+  const audioHandler = (audioBuffer: Buffer) => {
+    const base64Audio = audioBuffer.toString('base64');
+    res.write(`event: audio\ndata: ${JSON.stringify({ audio: base64Audio })}\n\n`);
+  };
+
+  const statusHandler = (status: string) => {
+    res.write(`event: status\ndata: ${JSON.stringify({ status })}\n\n`);
+  };
+
+  const errorHandler = (error: any) => {
+    res.write(`event: error\ndata: ${JSON.stringify({ error: error.message || error })}\n\n`);
+  };
+
+  // Attach event listeners
+  events.on('transcript_delta', transcriptHandler);
+  events.on('transcript_complete', transcriptCompleteHandler);
+  events.on('audio_delta', audioHandler);
+  events.on('user_speaking_start', () => statusHandler('speaking'));
+  events.on('user_speaking_stop', () => statusHandler('listening'));
+  events.on('error', errorHandler);
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    console.log(`📡 SSE connection closed for session ${sessionId}`);
+    events.removeListener('transcript_delta', transcriptHandler);
+    events.removeListener('transcript_complete', transcriptCompleteHandler);
+    events.removeListener('audio_delta', audioHandler);
+    events.removeListener('error', errorHandler);
+  });
 });
 
 // Forced rebuild - all duplicate keys fixed
