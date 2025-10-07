@@ -583,6 +583,102 @@ WHERE id = 'OP-1245';
 - Use alternative resource selection for "move off" requests
 - Verify resource capabilities match operation requirements
 
+## Critical Implementation Details & Fixes
+
+### Resource Capability Validation (Fixed October 2025)
+**Important**: The `ptresourcecapabilities` table uses numeric IDs for resource references.
+- `resource_id` column is **bigint** type (numeric)
+- Links to `ptresources.id` (numeric), NOT `ptresources.resource_id` (string)
+- Correct JOIN: `JOIN ptresourcecapabilities rc ON r.id = rc.resource_id`
+- Incorrect JOIN: ~~`JOIN ptresourcecapabilities rc ON r.resource_id = rc.resource_id`~~
+
+**Example Query (Correct)**:
+```sql
+SELECT capability_id 
+FROM ptresourcecapabilities
+WHERE resource_id = 7  -- Numeric ID
+```
+
+### Scheduling Conflict Detection
+**Feature**: System now checks for conflicts before moving operations
+**Implementation**: `checkResourceConflicts()` method validates no overlapping operations
+
+**Process**:
+1. Query existing operations on target resource
+2. Check for time overlaps with operations being moved
+3. Prevent move if conflicts detected
+4. Provide detailed conflict messages
+
+**Conflict Response Example**:
+```
+⚠️ Cannot move operations to Fermenter Tank 3 due to scheduling conflicts:
+• "Fermentation - Wheat" (10/8/2025 2:00 PM - 10/9/2025 2:00 PM) conflicts with 
+  "Fermentation - Lager" from Beer Batch 456 (10/8/2025 12:00 PM - 10/9/2025 12:00 PM)
+```
+
+### Automatic Schedule Refresh
+**Feature**: Production Scheduler iframe automatically refreshes after database changes
+**Trigger**: `refresh_scheduler` action from backend
+**Implementation**: Frontend detects action and reloads iframe with cache buster
+
+**Process Flow**:
+1. Backend executes operation (move/reschedule)
+2. Returns `action: { type: 'refresh_scheduler' }`
+3. Frontend finds iframe: `document.querySelector('iframe[title="Production Scheduler"]')`
+4. Reloads with timestamp: `iframe.src = ${currentSrc}?v=${Date.now()}`
+5. User sees updated schedule immediately
+
+### Resource Name Normalization
+**Issue**: Users refer to fermentation resources inconsistently
+**Solution**: System normalizes variations for matching
+
+**Handled Variations**:
+- "fermentor" → "fermenter"
+- "fermented" → "fermenter"
+- Case-insensitive matching
+
+**Implementation**:
+```sql
+WHERE LOWER(REPLACE(REPLACE(name, 'Fermentor', 'Fermenter'), 'Fermented', 'Fermenter')) = $1
+```
+
+### Enhanced Date Parsing
+**Feature**: Natural language date parsing including ordinals
+**Supports**: "September 5th", "Sept 5", "9/5", "tomorrow at 2pm"
+
+**Common Patterns**:
+- Ordinals: "1st", "2nd", "3rd", "4th", "5th", etc.
+- Month abbreviations: "Jan", "Feb", "Sept", etc.
+- Relative dates: "tomorrow", "next week", "in 2 hours"
+- Time formats: "2pm", "14:00", "2:30 PM"
+
+**Example Parsing**:
+- "September 5th at 2pm" → 2025-09-05 14:00:00
+- "Move to Sept 15" → 2025-09-15 00:00:00
+- "Start tomorrow at noon" → [next day] 12:00:00
+
+### Database Operation Safety
+**Move Operation SQL**:
+```sql
+UPDATE ptjobresources
+SET default_resource_id = $1  -- Target resource external_id
+WHERE operation_id = $2        -- Operation to move
+```
+
+**Reschedule Operation SQL**:
+```sql
+UPDATE ptjoboperations
+SET scheduled_start = $1,      -- New start time
+    scheduled_end = $2          -- Calculated end time
+WHERE id = $3                   -- Operation ID
+```
+
+**Validation Before Execution**:
+1. Resource capability match (using numeric IDs)
+2. No scheduling conflicts (time overlap check)
+3. Dependency constraints satisfied
+4. Material availability verified
+
 ## Error Handling
 - If data is missing: Request specific PT table information
 - If constraints conflict: Prioritize based on business rules
@@ -591,3 +687,6 @@ WHERE id = 'OP-1245';
 - If drag-drop fails: Check resource capabilities and dependencies
 - If no alternative resource available: Ask user to specify target
 - If capability mismatch: Explain why operation cannot be moved
+- If resource ID mismatch: Ensure using numeric ID not string resource_id
+- If conflicts detected: Show detailed conflict information
+- If date parsing fails: Ask for clearer date format
