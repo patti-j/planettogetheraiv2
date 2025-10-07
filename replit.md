@@ -5,6 +5,15 @@ PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufa
 
 ## Recent Changes
 
+**October 7, 2025 (Latest)**
+- **GPT-Realtime-Mini Voice-to-Voice Chat Integration**: Implemented real-time voice chat using OpenAI's new gpt-realtime-mini model (70% cheaper than full model). Key features:
+  - **WebSocket Architecture**: Low-latency bidirectional communication with OpenAI's Realtime API
+  - **Server-Sent Events (SSE)**: Real-time audio and transcript streaming to frontend
+  - **Voice Mode Switching**: Users can toggle between "Hybrid" (cost-effective) and "Realtime" (premium voice-to-voice) modes
+  - **Session Management**: Complete API for creating, managing, and closing voice sessions
+  - **Proper Headers**: Fixed WebSocket connection with required OpenAI-Beta and openai-realtime subprotocol headers
+  - **Cost Optimization**: Using gpt-realtime-mini at $9.60/$19.20 per 1M tokens vs $32/$64 for full model
+
 **October 7, 2025**
 - **Production Scheduling Agent Action Execution**: Implemented complete AI action execution pipeline enabling Production Scheduling Agent to perform actual database operations (move/reschedule operations), not just navigation. Key features:
   - **EXECUTE Intent Detection**: Separate intent type for action requests (move, reschedule, relocate operations) vs navigation
