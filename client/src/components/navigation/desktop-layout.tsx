@@ -1058,7 +1058,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                 <div className="flex-1 min-w-[180px]">
                   <textarea
                     ref={floatingInputRef as any}
-                    placeholder={isFloatingRecording ? "🎙️ Speak now - text appears instantly..." : selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
+                    placeholder={isFloatingRecording ? "Speak now - text appears instantly..." : selectedFloatingAgent === 'unified' ? "Ask anything..." : `Ask ${activeAgents.find(a => a.id === selectedFloatingAgent)?.displayName || 'agent'}...`}
                     value={floatingPrompt}
                     onChange={(e) => setFloatingPrompt(e.target.value)}
                     onKeyPress={(e) => {
