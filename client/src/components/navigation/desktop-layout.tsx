@@ -64,6 +64,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [floatingRecordingTimeLeft, setFloatingRecordingTimeLeft] = useState<number>(0);
   const [isFloatingTranscribing, setIsFloatingTranscribing] = useState(false);
   const [floatingLiveTranscript, setFloatingLiveTranscript] = useState<string>('');
+  const [continuousConversationMode, setContinuousConversationMode] = useState(false);
   const floatingRecognitionRef = useRef<any>(null);
   const floatingAudioChunksRef = useRef<Blob[]>([]);
   
@@ -307,6 +308,14 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       }
       
       setFloatingPrompt('');
+      
+      // Auto-restart listening for continuous conversation flow
+      if (continuousConversationMode) {
+        console.log('🔄 Auto-restarting listening for continuous conversation...');
+        setTimeout(() => {
+          startFloatingListening(true);
+        }, 1500); // Wait 1.5 seconds for AI response to complete speaking
+      }
     },
     onError: (error: any) => {
       setIsFloatingSending(false);
@@ -338,9 +347,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   };
 
   // Voice recording handlers for floating bubble with real-time transcription
-  const startFloatingListening = async () => {
+  const startFloatingListening = async (enableContinuous = true) => {
     try {
       console.log('🎙️ Starting real-time transcription for floating bubble...');
+      setContinuousConversationMode(enableContinuous);
       
       // Initialize Web Speech API for instant feedback
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -389,7 +399,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           if (newText.length > 3) {
             silenceTimer = setTimeout(() => {
               console.log('🔇 Detected 2 seconds of silence, auto-sending message...');
-              stopFloatingListening();
+              stopFloatingListening(true); // Keep continuous mode active
             }, 2000);
           }
         };
@@ -400,7 +410,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           setTimeout(() => {
             const currentText = floatingPrompt.trim();
             if (currentText.length > 3) {
-              stopFloatingListening();
+              stopFloatingListening(true); // Keep continuous mode active
             }
           }, 500);
         };
@@ -499,7 +509,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       // Auto-stop after 30 seconds (safety limit)
       const timeout = setTimeout(() => {
         console.log('⏰ Maximum recording time reached (30s)');
-        stopFloatingListening();
+        stopFloatingListening(true); // Keep continuous mode active
       }, 30000);
       
       setFloatingRecordingTimeout(timeout);
@@ -513,8 +523,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     }
   };
 
-  const stopFloatingListening = () => {
+  const stopFloatingListening = (keepContinuousMode = false) => {
     console.log('Stopping floating bubble voice recording...');
+    
+    // Only disable continuous mode if explicitly told to (user clicked stop)
+    if (!keepContinuousMode) {
+      setContinuousConversationMode(false);
+    }
     
     // Stop Web Speech API
     if (floatingRecognitionRef.current) {
@@ -1204,12 +1219,19 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
-                        onClick={isFloatingRecording ? stopFloatingListening : startFloatingListening}
+                        onClick={() => {
+                          if (isFloatingRecording) {
+                            stopFloatingListening();
+                          } else {
+                            startFloatingListening(true); // Enable continuous mode
+                          }
+                        }}
                         size="sm"
                         variant="ghost"
                         className={cn(
                           "rounded-full w-4 h-4 p-0 hover:bg-muted flex-shrink-0 relative",
                           isFloatingRecording && "bg-transparent hover:bg-transparent",
+                          continuousConversationMode && "ring-1 ring-red-400",
                           isFloatingTranscribing && "opacity-50"
                         )}
                         disabled={isFloatingTranscribing || isFloatingSending}
@@ -1231,7 +1253,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      <p>{isFloatingRecording ? 'Speak now - text appears instantly' : isFloatingTranscribing ? 'Processing...' : 'Voice message (real-time transcription)'}</p>
+                      <p>{continuousConversationMode ? 'Continuous conversation mode active' : isFloatingRecording ? 'Speak now - text appears instantly' : isFloatingTranscribing ? 'Processing...' : 'Voice message (real-time transcription)'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
