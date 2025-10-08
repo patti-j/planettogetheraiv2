@@ -3014,13 +3014,22 @@ Respond with JSON format:
         executionSteps = '1. Click the "Optimize" button in the toolbar\n2. Select your preferred algorithm\n3. Configure parameters if needed\n4. Click "Apply" to run the optimization';
       }
       
-      // Return instructions for applying the algorithm
+      // Determine the algorithm direction value for Bryntum
+      let algorithmDirection = '';
+      if (algorithmName.includes('ALAP')) {
+        algorithmDirection = 'Backward';
+      } else if (algorithmName.includes('ASAP')) {
+        algorithmDirection = 'Forward';
+      }
+      
+      // Return action to apply the algorithm via PostMessage
       return {
-        content: `I'll help you apply the **${algorithmName}** algorithm to your schedule.\n\n${algorithmDescription}\n\n**To apply this algorithm:**\n${executionSteps}\n\nThe algorithm will automatically recalculate all operations based on your constraints and dependencies. Would you like me to explain how this algorithm works in more detail?`,
+        content: `✅ Applying the **${algorithmName}** algorithm to your schedule.\n\n${algorithmDescription}\n\nThe algorithm is being applied and will automatically recalculate all operations based on your constraints and dependencies. The schedule will refresh once complete.`,
         action: {
-          type: 'highlight_algorithm',
+          type: 'apply_algorithm',
           data: {
             algorithm: algorithmName,
+            direction: algorithmDirection,
             description: algorithmDescription
           }
         },

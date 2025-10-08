@@ -719,6 +719,56 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
+      // Handle apply algorithm action (ALAP, ASAP, etc.)
+      if (data?.action?.type === 'apply_algorithm') {
+        console.log('🎯 Applying scheduling algorithm:', data.action.data);
+        
+        // Check if we're on the production scheduler page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/production-scheduler') {
+          // Find the production scheduler iframe
+          const iframe = document.querySelector('iframe[title="Production Scheduler"]') as HTMLIFrameElement;
+          if (iframe && iframe.contentWindow) {
+            console.log('📮 Sending algorithm command to scheduler iframe:', data.action.data.algorithm);
+            
+            // Send PostMessage to the iframe to apply the algorithm
+            iframe.contentWindow.postMessage({
+              type: 'applyAlgorithm',
+              algorithm: data.action.data.algorithm,
+              direction: data.action.data.direction
+            }, '*');
+            
+            // Show success message
+            await addMessage({
+              role: 'assistant',
+              content: data.content,
+              source: 'panel',
+              agentId: data.agentId || 'production_scheduling',
+              agentName: data.agentName || 'Production Scheduling Agent'
+            });
+          } else {
+            // Not on scheduler page, show navigation suggestion
+            await addMessage({
+              role: 'assistant',
+              content: `To apply the ${data.action.data.algorithm} algorithm, please navigate to the Production Scheduler page first. Would you like me to take you there?`,
+              source: 'panel',
+              agentId: data.agentId || 'production_scheduling',
+              agentName: data.agentName || 'Production Scheduling Agent'
+            });
+          }
+        } else {
+          // Not on scheduler page, suggest navigation
+          await addMessage({
+            role: 'assistant',
+            content: `To apply the ${data.action.data.algorithm} algorithm, you need to be on the Production Scheduler page. Would you like me to navigate there?`,
+            source: 'panel',
+            agentId: data.agentId || 'production_scheduling',
+            agentName: data.agentName || 'Production Scheduling Agent'
+          });
+        }
+        return;
+      }
+      
       // Handle navigation actions from Max AI
       if (data?.action?.type === 'navigate' && data?.action?.target) {
         const target = data.action.target;
