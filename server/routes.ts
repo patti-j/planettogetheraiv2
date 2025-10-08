@@ -7404,6 +7404,42 @@ router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
 });
 
 // ============================================
+// Plant and Resource Routes
+// ============================================
+
+// Get all plants
+router.get("/ptplants", enhancedAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, name, description, is_active 
+      FROM ptplants 
+      WHERE is_active = true 
+      ORDER BY name
+    `);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error fetching plants:", error);
+    res.status(500).json({ error: "Failed to fetch plants" });
+  }
+});
+
+// Get all resources
+router.get("/ptresources", enhancedAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT id, name, description, resource_id, plant_id, active 
+      FROM ptresources 
+      WHERE active = true 
+      ORDER BY name
+    `);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error fetching resources:", error);
+    res.status(500).json({ error: "Failed to fetch resources" });
+  }
+});
+
+// ============================================
 // Product Wheel Routes
 // ============================================
 
