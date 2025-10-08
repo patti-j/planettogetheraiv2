@@ -50,6 +50,7 @@ export function useRealtimeVoice({
   const currentTranscriptRef = useRef<string>('');
   const lastSpeechTimeRef = useRef<number>(Date.now());
   const isSpeakingRef = useRef(false);
+  const isAiSpeakingRef = useRef(false);
 
   // Initialize AudioContext
   const initAudioContext = useCallback(() => {
@@ -98,6 +99,11 @@ export function useRealtimeVoice({
       eventSource.addEventListener('transcript', (event) => {
         const data = JSON.parse(event.data);
         
+        // Don't accumulate transcripts while AI is speaking
+        if (isAiSpeakingRef.current) {
+          return;
+        }
+        
         // Update current transcript
         if (data.isFinal) {
           // If this is a final transcript, add it to the accumulated transcript
@@ -115,15 +121,18 @@ export function useRealtimeVoice({
         }
         
         // Start pause detection timer if we have accumulated transcript
-        if (currentTranscriptRef.current && data.isFinal && onPauseDetected) {
+        // Don't start timer if AI is currently speaking
+        if (currentTranscriptRef.current && data.isFinal && onPauseDetected && !isAiSpeakingRef.current) {
           pauseTimerRef.current = setTimeout(() => {
-            // Trigger pause detected callback with accumulated transcript
-            const transcript = currentTranscriptRef.current.trim();
-            if (transcript) {
-              console.log(`🎙️ Pause detected after ${pauseDetectionMs}ms. Sending: "${transcript}"`);
-              onPauseDetected(transcript);
-              // Clear the accumulated transcript
-              currentTranscriptRef.current = '';
+            // Double check AI is not speaking before triggering
+            if (!isAiSpeakingRef.current) {
+              const transcript = currentTranscriptRef.current.trim();
+              if (transcript) {
+                console.log(`🎙️ Pause detected after ${pauseDetectionMs}ms. Sending: "${transcript}"`);
+                onPauseDetected(transcript);
+                // Clear the accumulated transcript
+                currentTranscriptRef.current = '';
+              }
             }
           }, pauseDetectionMs);
         }
@@ -193,12 +202,21 @@ export function useRealtimeVoice({
         const inputData = e.inputBuffer.getChannelData(0);
         const pcm16 = convertToPCM16(inputData);
         
-        // Send audio chunks to server
-        sendAudioChunk(sessionId, pcm16);
+        // Only send audio to server if AI is not speaking (to avoid feedback)
+        if (!isAiSpeakingRef.current) {
+          sendAudioChunk(sessionId, pcm16);
+        }
 
         // Update status based on audio level
         const level = calculateAudioLevel(inputData);
         const now = Date.now();
+        
+        // Don't process voice activity while AI is speaking
+        if (isAiSpeakingRef.current) {
+          setState((prev) => ({ ...prev, status: 'listening' }));
+          onStatusChange?.('listening');
+          return;
+        }
         
         if (level > 0.01) {
           // User is speaking
@@ -220,13 +238,17 @@ export function useRealtimeVoice({
             isSpeakingRef.current = false;
             
             // Start pause detection timer if we have transcript and pause detection is enabled
-            if (currentTranscriptRef.current && onPauseDetected && !pauseTimerRef.current) {
+            // Don't start timer if AI is speaking
+            if (currentTranscriptRef.current && onPauseDetected && !pauseTimerRef.current && !isAiSpeakingRef.current) {
               pauseTimerRef.current = setTimeout(() => {
-                const transcript = currentTranscriptRef.current.trim();
-                if (transcript) {
-                  console.log(`🎙️ Silence detected. Sending: "${transcript}"`);
-                  onPauseDetected(transcript);
-                  currentTranscriptRef.current = '';
+                // Double check AI is not speaking before sending
+                if (!isAiSpeakingRef.current) {
+                  const transcript = currentTranscriptRef.current.trim();
+                  if (transcript) {
+                    console.log(`🎙️ Silence detected. Sending: "${transcript}"`);
+                    onPauseDetected(transcript);
+                    currentTranscriptRef.current = '';
+                  }
                 }
               }, pauseDetectionMs);
             }
@@ -303,6 +325,14 @@ export function useRealtimeVoice({
       const source = audioContext.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(audioContext.destination);
+      
+      // Track when AI is speaking
+      isAiSpeakingRef.current = true;
+      source.onended = () => {
+        isAiSpeakingRef.current = false;
+        console.log('🔊 AI finished speaking, ready to listen');
+      };
+      
       source.start();
     } catch (error) {
       console.error('Failed to play audio:', error);
