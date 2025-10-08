@@ -5,6 +5,7 @@ import {
   schedulingConversations, schedulingMessages, savedSchedules,
   widgets,
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
+  ptProductWheels, ptProductWheelSegments, ptProductWheelSchedule, ptProductWheelPerformance,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -13,7 +14,11 @@ import {
   type SchedulingConversation, type InsertSchedulingConversation,
   type SchedulingMessage, type InsertSchedulingMessage,
   type SavedSchedule, type InsertSavedSchedule,
-  type Widget, type InsertWidget
+  type Widget, type InsertWidget,
+  type PtProductWheel, type InsertPtProductWheel,
+  type PtProductWheelSegment, type InsertPtProductWheelSegment,
+  type PtProductWheelSchedule, type InsertPtProductWheelSchedule,
+  type PtProductWheelPerformance, type InsertPtProductWheelPerformance
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -122,6 +127,30 @@ export interface IStorage {
   getAgentAlerts(agentConnectionId?: number, acknowledged?: boolean): Promise<any[]>;
   createAgentAlert(data: any): Promise<any>;
   acknowledgeAgentAlert(id: number, userId: number): Promise<any>;
+  
+  // Product Wheel Management
+  createProductWheel(data: InsertPtProductWheel): Promise<PtProductWheel>;
+  getProductWheels(plantId?: number): Promise<PtProductWheel[]>;
+  getProductWheel(id: number): Promise<PtProductWheel | undefined>;
+  updateProductWheel(id: number, data: Partial<InsertPtProductWheel>): Promise<PtProductWheel | undefined>;
+  deleteProductWheel(id: number): Promise<boolean>;
+  
+  // Product Wheel Segments
+  createWheelSegment(data: InsertPtProductWheelSegment): Promise<PtProductWheelSegment>;
+  getWheelSegments(wheelId: number): Promise<PtProductWheelSegment[]>;
+  updateWheelSegment(id: number, data: Partial<InsertPtProductWheelSegment>): Promise<PtProductWheelSegment | undefined>;
+  deleteWheelSegment(id: number): Promise<boolean>;
+  reorderWheelSegments(wheelId: number, segments: { id: number; sequenceNumber: number }[]): Promise<boolean>;
+  
+  // Product Wheel Schedule
+  createWheelSchedule(data: InsertPtProductWheelSchedule): Promise<PtProductWheelSchedule>;
+  getWheelSchedules(wheelId: number): Promise<PtProductWheelSchedule[]>;
+  getCurrentWheelSchedule(wheelId: number): Promise<PtProductWheelSchedule | undefined>;
+  updateWheelSchedule(id: number, data: Partial<InsertPtProductWheelSchedule>): Promise<PtProductWheelSchedule | undefined>;
+  
+  // Product Wheel Performance
+  recordWheelPerformance(data: InsertPtProductWheelPerformance): Promise<PtProductWheelPerformance>;
+  getWheelPerformance(wheelId: number, startDate?: Date, endDate?: Date): Promise<PtProductWheelPerformance[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1072,6 +1101,223 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error acknowledging agent alert:', error);
       throw error;
+    }
+  }
+  
+  // Product Wheel Management
+  async createProductWheel(data: InsertPtProductWheel): Promise<PtProductWheel> {
+    try {
+      const [wheel] = await db.insert(ptProductWheels).values(data).returning();
+      return wheel;
+    } catch (error) {
+      console.error('Error creating product wheel:', error);
+      throw error;
+    }
+  }
+
+  async getProductWheels(plantId?: number): Promise<PtProductWheel[]> {
+    try {
+      let query = db.select().from(ptProductWheels);
+      
+      if (plantId) {
+        query = query.where(eq(ptProductWheels.plantId, plantId)) as any;
+      }
+      
+      return await query.orderBy(desc(ptProductWheels.createdAt));
+    } catch (error) {
+      console.error('Error fetching product wheels:', error);
+      return [];
+    }
+  }
+
+  async getProductWheel(id: number): Promise<PtProductWheel | undefined> {
+    try {
+      const [wheel] = await db.select()
+        .from(ptProductWheels)
+        .where(eq(ptProductWheels.id, id));
+      return wheel;
+    } catch (error) {
+      console.error('Error fetching product wheel:', error);
+      return undefined;
+    }
+  }
+
+  async updateProductWheel(id: number, data: Partial<InsertPtProductWheel>): Promise<PtProductWheel | undefined> {
+    try {
+      const [updated] = await db.update(ptProductWheels)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ptProductWheels.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating product wheel:', error);
+      return undefined;
+    }
+  }
+
+  async deleteProductWheel(id: number): Promise<boolean> {
+    try {
+      await db.delete(ptProductWheels).where(eq(ptProductWheels.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting product wheel:', error);
+      return false;
+    }
+  }
+
+  // Product Wheel Segments
+  async createWheelSegment(data: InsertPtProductWheelSegment): Promise<PtProductWheelSegment> {
+    try {
+      const [segment] = await db.insert(ptProductWheelSegments).values(data).returning();
+      return segment;
+    } catch (error) {
+      console.error('Error creating wheel segment:', error);
+      throw error;
+    }
+  }
+
+  async getWheelSegments(wheelId: number): Promise<PtProductWheelSegment[]> {
+    try {
+      return await db.select()
+        .from(ptProductWheelSegments)
+        .where(eq(ptProductWheelSegments.wheelId, wheelId))
+        .orderBy(ptProductWheelSegments.sequenceNumber);
+    } catch (error) {
+      console.error('Error fetching wheel segments:', error);
+      return [];
+    }
+  }
+
+  async updateWheelSegment(id: number, data: Partial<InsertPtProductWheelSegment>): Promise<PtProductWheelSegment | undefined> {
+    try {
+      const [updated] = await db.update(ptProductWheelSegments)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ptProductWheelSegments.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating wheel segment:', error);
+      return undefined;
+    }
+  }
+
+  async deleteWheelSegment(id: number): Promise<boolean> {
+    try {
+      await db.delete(ptProductWheelSegments).where(eq(ptProductWheelSegments.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting wheel segment:', error);
+      return false;
+    }
+  }
+
+  async reorderWheelSegments(wheelId: number, segments: { id: number; sequenceNumber: number }[]): Promise<boolean> {
+    try {
+      // Update all segments in a transaction
+      await db.transaction(async (tx) => {
+        for (const segment of segments) {
+          await tx.update(ptProductWheelSegments)
+            .set({ sequenceNumber: segment.sequenceNumber, updatedAt: new Date() })
+            .where(and(
+              eq(ptProductWheelSegments.id, segment.id),
+              eq(ptProductWheelSegments.wheelId, wheelId)
+            ));
+        }
+      });
+      return true;
+    } catch (error) {
+      console.error('Error reordering wheel segments:', error);
+      return false;
+    }
+  }
+
+  // Product Wheel Schedule
+  async createWheelSchedule(data: InsertPtProductWheelSchedule): Promise<PtProductWheelSchedule> {
+    try {
+      const [schedule] = await db.insert(ptProductWheelSchedule).values(data).returning();
+      return schedule;
+    } catch (error) {
+      console.error('Error creating wheel schedule:', error);
+      throw error;
+    }
+  }
+
+  async getWheelSchedules(wheelId: number): Promise<PtProductWheelSchedule[]> {
+    try {
+      return await db.select()
+        .from(ptProductWheelSchedule)
+        .where(eq(ptProductWheelSchedule.wheelId, wheelId))
+        .orderBy(desc(ptProductWheelSchedule.plannedStartDate));
+    } catch (error) {
+      console.error('Error fetching wheel schedules:', error);
+      return [];
+    }
+  }
+
+  async getCurrentWheelSchedule(wheelId: number): Promise<PtProductWheelSchedule | undefined> {
+    try {
+      const [schedule] = await db.select()
+        .from(ptProductWheelSchedule)
+        .where(and(
+          eq(ptProductWheelSchedule.wheelId, wheelId),
+          eq(ptProductWheelSchedule.status, 'in_progress')
+        ));
+      return schedule;
+    } catch (error) {
+      console.error('Error fetching current wheel schedule:', error);
+      return undefined;
+    }
+  }
+
+  async updateWheelSchedule(id: number, data: Partial<InsertPtProductWheelSchedule>): Promise<PtProductWheelSchedule | undefined> {
+    try {
+      const [updated] = await db.update(ptProductWheelSchedule)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(ptProductWheelSchedule.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating wheel schedule:', error);
+      return undefined;
+    }
+  }
+
+  // Product Wheel Performance
+  async recordWheelPerformance(data: InsertPtProductWheelPerformance): Promise<PtProductWheelPerformance> {
+    try {
+      const [performance] = await db.insert(ptProductWheelPerformance).values(data).returning();
+      return performance;
+    } catch (error) {
+      console.error('Error recording wheel performance:', error);
+      throw error;
+    }
+  }
+
+  async getWheelPerformance(wheelId: number, startDate?: Date, endDate?: Date): Promise<PtProductWheelPerformance[]> {
+    try {
+      let query = db.select()
+        .from(ptProductWheelPerformance)
+        .where(eq(ptProductWheelPerformance.wheelId, wheelId));
+      
+      // Add date filtering if provided
+      const conditions = [eq(ptProductWheelPerformance.wheelId, wheelId)];
+      
+      if (startDate) {
+        conditions.push(sql`${ptProductWheelPerformance.metricDate} >= ${startDate}`);
+      }
+      
+      if (endDate) {
+        conditions.push(sql`${ptProductWheelPerformance.metricDate} <= ${endDate}`);
+      }
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions)) as any;
+      }
+      
+      return await query.orderBy(desc(ptProductWheelPerformance.metricDate));
+    } catch (error) {
+      console.error('Error fetching wheel performance:', error);
+      return [];
     }
   }
 }

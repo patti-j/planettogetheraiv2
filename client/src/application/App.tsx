@@ -96,6 +96,7 @@ import FederationDashboard from "@/pages/federation-dashboard";
 import ProductionScheduler from "@/pages/production-scheduler";
 import ProductionSchedulerReact from "@/pages/ProductionSchedulerReact";
 import Scheduler from "@/pages/Scheduler";
+import ProductWheels from "@/pages/product-wheels";
 
 // Fully implemented features now being connected
 import ControlTower from "@/pages/control-tower";
@@ -310,6 +311,11 @@ export default function ApplicationApp() {
               <Route path="/scheduler">
                 <ProtectedRoute feature="production-scheduling" action="view">
                   <Scheduler />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/product-wheels">
+                <ProtectedRoute feature="production-scheduling" action="view">
+                  <ProductWheels />
                 </ProtectedRoute>
               </Route>
               <Route path="/product-development">

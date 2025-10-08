@@ -535,6 +535,105 @@ export const savedSchedules = pgTable("saved_schedules", {
 });
 
 // ============================================
+// Product Wheel Scheduling System
+// ============================================
+
+export const ptProductWheels = pgTable("pt_product_wheels", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  resourceId: integer("resource_id").references(() => ptResources.id).notNull(), // Production line/resource
+  plantId: integer("plant_id").references(() => ptPlants.id).notNull(),
+  
+  // Wheel configuration
+  cycleDurationHours: numeric("cycle_duration_hours").notNull(), // Total wheel cycle time
+  changeoverMatrix: jsonb("changeover_matrix"), // Product-to-product changeover times
+  optimizationRules: jsonb("optimization_rules"), // Rules for wheel optimization
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  status: varchar("status", { length: 50 }).default("draft"), // draft, active, archived
+  
+  // Metadata
+  createdBy: integer("created_by").references(() => users.id),
+  lastModifiedBy: integer("last_modified_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ptProductWheelSegments = pgTable("pt_product_wheel_segments", {
+  id: serial("id").primaryKey(),
+  wheelId: integer("wheel_id").references(() => ptProductWheels.id).notNull(),
+  
+  // Segment details
+  sequenceNumber: integer("sequence_number").notNull(), // Order in the wheel
+  productId: integer("product_id"), // Link to product/item
+  productName: varchar("product_name", { length: 255 }).notNull(),
+  productCode: varchar("product_code", { length: 100 }),
+  
+  // Timing
+  allocatedHours: numeric("allocated_hours").notNull(), // Time slot in wheel
+  minBatchSize: numeric("min_batch_size"),
+  maxBatchSize: numeric("max_batch_size"),
+  targetBatchSize: numeric("target_batch_size"),
+  
+  // Visual
+  colorCode: varchar("color_code", { length: 7 }), // Hex color for visualization
+  
+  // Changeover
+  changeoverFromPrevious: numeric("changeover_from_previous"), // Minutes
+  setupTime: numeric("setup_time"), // Minutes
+  cleaningTime: numeric("cleaning_time"), // Minutes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ptProductWheelSchedule = pgTable("pt_product_wheel_schedule", {
+  id: serial("id").primaryKey(),
+  wheelId: integer("wheel_id").references(() => ptProductWheels.id).notNull(),
+  
+  // Schedule instance
+  cycleNumber: integer("cycle_number").notNull(),
+  plannedStartDate: timestamp("planned_start_date").notNull(),
+  plannedEndDate: timestamp("planned_end_date").notNull(),
+  actualStartDate: timestamp("actual_start_date"),
+  actualEndDate: timestamp("actual_end_date"),
+  
+  // Status tracking
+  status: varchar("status", { length: 50 }).default("scheduled"), // scheduled, in_progress, completed, cancelled
+  currentSegmentId: integer("current_segment_id").references(() => ptProductWheelSegments.id),
+  completedSegments: integer("completed_segments").default(0),
+  
+  // Performance
+  adherencePercentage: numeric("adherence_percentage"), // How closely we followed the wheel
+  totalChangeoverTime: numeric("total_changeover_time"), // Actual changeover minutes
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const ptProductWheelPerformance = pgTable("pt_product_wheel_performance", {
+  id: serial("id").primaryKey(),
+  wheelId: integer("wheel_id").references(() => ptProductWheels.id).notNull(),
+  scheduleId: integer("schedule_id").references(() => ptProductWheelSchedule.id),
+  
+  // Metrics
+  metricDate: timestamp("metric_date").notNull(),
+  oeePercentage: numeric("oee_percentage"),
+  changeoverCount: integer("changeover_count"),
+  totalChangeoverMinutes: numeric("total_changeover_minutes"),
+  inventoryTurns: numeric("inventory_turns"),
+  onTimeDelivery: numeric("on_time_delivery"),
+  
+  // Optimization suggestions from AI
+  aiSuggestions: jsonb("ai_suggestions"),
+  optimizationScore: numeric("optimization_score"), // 0-100 score
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// ============================================
 // AI Agent Team System
 // ============================================
 
@@ -830,6 +929,12 @@ export const insertPlaybookUsageSchema = createInsertSchema(playbookUsage);
 export const insertVoiceRecordingsCacheSchema = createInsertSchema(voiceRecordingsCache);
 export const insertMicrophoneRecordingSchema = createInsertSchema(microphoneRecordings);
 
+// Product Wheel schemas
+export const insertPtProductWheelSchema = createInsertSchema(ptProductWheels).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPtProductWheelSegmentSchema = createInsertSchema(ptProductWheelSegments).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPtProductWheelScheduleSchema = createInsertSchema(ptProductWheelSchedule).omit({ id: true, createdAt: true, updatedAt: true });
+export const insertPtProductWheelPerformanceSchema = createInsertSchema(ptProductWheelPerformance).omit({ id: true, createdAt: true });
+
 // Legacy schema aliases for backward compatibility  
 export const insertResourceSchema = insertPtResourceSchema;
 export const insertPlantSchema = insertPtPlantSchema;
@@ -887,6 +992,16 @@ export const semanticQueryResponseSchema = z.object({
 });
 
 export type SemanticQueryResponse = z.infer<typeof semanticQueryResponseSchema>;
+
+// Product Wheel Types
+export type PtProductWheel = typeof ptProductWheels.$inferSelect;
+export type InsertPtProductWheel = z.infer<typeof insertPtProductWheelSchema>;
+export type PtProductWheelSegment = typeof ptProductWheelSegments.$inferSelect;
+export type InsertPtProductWheelSegment = z.infer<typeof insertPtProductWheelSegmentSchema>;
+export type PtProductWheelSchedule = typeof ptProductWheelSchedule.$inferSelect;
+export type InsertPtProductWheelSchedule = z.infer<typeof insertPtProductWheelScheduleSchema>;
+export type PtProductWheelPerformance = typeof ptProductWheelPerformance.$inferSelect;
+export type InsertPtProductWheelPerformance = z.infer<typeof insertPtProductWheelPerformanceSchema>;
 
 // Types
 export type User = typeof users.$inferSelect;

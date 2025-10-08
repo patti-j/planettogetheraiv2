@@ -7403,5 +7403,234 @@ router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
   });
 });
 
+// ============================================
+// Product Wheel Routes
+// ============================================
+
+// Get all product wheels
+router.get("/product-wheels", enhancedAuth, async (req, res) => {
+  try {
+    const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
+    const wheels = await storage.getProductWheels(plantId);
+    res.json(wheels);
+  } catch (error: any) {
+    console.error("Error fetching product wheels:", error);
+    res.status(500).json({ error: "Failed to fetch product wheels" });
+  }
+});
+
+// Get specific product wheel
+router.get("/product-wheels/:id", enhancedAuth, async (req, res) => {
+  try {
+    const wheel = await storage.getProductWheel(parseInt(req.params.id));
+    if (!wheel) {
+      return res.status(404).json({ error: "Product wheel not found" });
+    }
+    res.json(wheel);
+  } catch (error: any) {
+    console.error("Error fetching product wheel:", error);
+    res.status(500).json({ error: "Failed to fetch product wheel" });
+  }
+});
+
+// Create product wheel
+router.post("/product-wheels", enhancedAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const wheelData = {
+      ...req.body,
+      createdBy: userId,
+      lastModifiedBy: userId
+    };
+    const wheel = await storage.createProductWheel(wheelData);
+    res.json(wheel);
+  } catch (error: any) {
+    console.error("Error creating product wheel:", error);
+    res.status(500).json({ error: "Failed to create product wheel" });
+  }
+});
+
+// Update product wheel
+router.put("/product-wheels/:id", enhancedAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const wheelData = {
+      ...req.body,
+      lastModifiedBy: userId
+    };
+    const wheel = await storage.updateProductWheel(parseInt(req.params.id), wheelData);
+    if (!wheel) {
+      return res.status(404).json({ error: "Product wheel not found" });
+    }
+    res.json(wheel);
+  } catch (error: any) {
+    console.error("Error updating product wheel:", error);
+    res.status(500).json({ error: "Failed to update product wheel" });
+  }
+});
+
+// Delete product wheel
+router.delete("/product-wheels/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteProductWheel(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Product wheel not found" });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting product wheel:", error);
+    res.status(500).json({ error: "Failed to delete product wheel" });
+  }
+});
+
+// Get wheel segments
+router.get("/product-wheels/:wheelId/segments", enhancedAuth, async (req, res) => {
+  try {
+    const segments = await storage.getWheelSegments(parseInt(req.params.wheelId));
+    res.json(segments);
+  } catch (error: any) {
+    console.error("Error fetching wheel segments:", error);
+    res.status(500).json({ error: "Failed to fetch wheel segments" });
+  }
+});
+
+// Create wheel segment
+router.post("/product-wheels/:wheelId/segments", enhancedAuth, async (req, res) => {
+  try {
+    const segmentData = {
+      ...req.body,
+      wheelId: parseInt(req.params.wheelId)
+    };
+    const segment = await storage.createWheelSegment(segmentData);
+    res.json(segment);
+  } catch (error: any) {
+    console.error("Error creating wheel segment:", error);
+    res.status(500).json({ error: "Failed to create wheel segment" });
+  }
+});
+
+// Update wheel segment
+router.put("/wheel-segments/:id", enhancedAuth, async (req, res) => {
+  try {
+    const segment = await storage.updateWheelSegment(parseInt(req.params.id), req.body);
+    if (!segment) {
+      return res.status(404).json({ error: "Wheel segment not found" });
+    }
+    res.json(segment);
+  } catch (error: any) {
+    console.error("Error updating wheel segment:", error);
+    res.status(500).json({ error: "Failed to update wheel segment" });
+  }
+});
+
+// Delete wheel segment
+router.delete("/wheel-segments/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteWheelSegment(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Wheel segment not found" });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error deleting wheel segment:", error);
+    res.status(500).json({ error: "Failed to delete wheel segment" });
+  }
+});
+
+// Reorder wheel segments
+router.put("/product-wheels/:wheelId/segments/reorder", enhancedAuth, async (req, res) => {
+  try {
+    const { segments } = req.body; // Array of { id, sequenceNumber }
+    const success = await storage.reorderWheelSegments(parseInt(req.params.wheelId), segments);
+    if (!success) {
+      return res.status(400).json({ error: "Failed to reorder segments" });
+    }
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error reordering wheel segments:", error);
+    res.status(500).json({ error: "Failed to reorder wheel segments" });
+  }
+});
+
+// Get wheel schedules
+router.get("/product-wheels/:wheelId/schedules", enhancedAuth, async (req, res) => {
+  try {
+    const schedules = await storage.getWheelSchedules(parseInt(req.params.wheelId));
+    res.json(schedules);
+  } catch (error: any) {
+    console.error("Error fetching wheel schedules:", error);
+    res.status(500).json({ error: "Failed to fetch wheel schedules" });
+  }
+});
+
+// Get current wheel schedule
+router.get("/product-wheels/:wheelId/current-schedule", enhancedAuth, async (req, res) => {
+  try {
+    const schedule = await storage.getCurrentWheelSchedule(parseInt(req.params.wheelId));
+    res.json(schedule || null);
+  } catch (error: any) {
+    console.error("Error fetching current wheel schedule:", error);
+    res.status(500).json({ error: "Failed to fetch current wheel schedule" });
+  }
+});
+
+// Create wheel schedule
+router.post("/product-wheels/:wheelId/schedules", enhancedAuth, async (req, res) => {
+  try {
+    const scheduleData = {
+      ...req.body,
+      wheelId: parseInt(req.params.wheelId)
+    };
+    const schedule = await storage.createWheelSchedule(scheduleData);
+    res.json(schedule);
+  } catch (error: any) {
+    console.error("Error creating wheel schedule:", error);
+    res.status(500).json({ error: "Failed to create wheel schedule" });
+  }
+});
+
+// Update wheel schedule
+router.put("/wheel-schedules/:id", enhancedAuth, async (req, res) => {
+  try {
+    const schedule = await storage.updateWheelSchedule(parseInt(req.params.id), req.body);
+    if (!schedule) {
+      return res.status(404).json({ error: "Wheel schedule not found" });
+    }
+    res.json(schedule);
+  } catch (error: any) {
+    console.error("Error updating wheel schedule:", error);
+    res.status(500).json({ error: "Failed to update wheel schedule" });
+  }
+});
+
+// Get wheel performance metrics
+router.get("/product-wheels/:wheelId/performance", enhancedAuth, async (req, res) => {
+  try {
+    const startDate = req.query.startDate ? new Date(req.query.startDate as string) : undefined;
+    const endDate = req.query.endDate ? new Date(req.query.endDate as string) : undefined;
+    const performance = await storage.getWheelPerformance(parseInt(req.params.wheelId), startDate, endDate);
+    res.json(performance);
+  } catch (error: any) {
+    console.error("Error fetching wheel performance:", error);
+    res.status(500).json({ error: "Failed to fetch wheel performance" });
+  }
+});
+
+// Record wheel performance
+router.post("/product-wheels/:wheelId/performance", enhancedAuth, async (req, res) => {
+  try {
+    const performanceData = {
+      ...req.body,
+      wheelId: parseInt(req.params.wheelId),
+      metricDate: new Date()
+    };
+    const performance = await storage.recordWheelPerformance(performanceData);
+    res.json(performance);
+  } catch (error: any) {
+    console.error("Error recording wheel performance:", error);
+    res.status(500).json({ error: "Failed to record wheel performance" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
