@@ -5,6 +5,8 @@ import { z } from "zod";
 import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
+import { realtimeVoiceService } from './services/realtime-voice-service';
+import { powerBIService } from './services/powerbi';
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
@@ -2397,9 +2399,9 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
               title: 'Safety Incidents',
               position: { x: 11, y: 3, w: 5, h: 4 },
               config: {
-                showNearMisses: true,
                 incidentTypes: true,
-                reportingStatus: true
+                trendAnalysis: true,
+                safeDays: true
               }
             }
           ],
@@ -2407,7 +2409,7 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
         }
       }
     ];
-
+    
     // Filter dashboards based on user roles
     // In development mode or if user has admin role, return all dashboards
     const isAdmin = userRoles.some((role: any) => role.name === 'admin' || role.name === 'Admin');
@@ -2426,9 +2428,65 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
     }
     
     res.json(filteredDashboards);
-  } catch (error: any) {
+  } catch (error) {
     console.error('Error fetching dashboard configs:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
+  }
+});
+
+// Get Power BI dataset information
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const dataset = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
+    res.json(dataset);
+  } catch (error: any) {
+    console.error('Error fetching Power BI dataset:', error);
+    res.status(500).json({ error: 'Failed to fetch dataset', details: error.message });
+  }
+});
+
+// Get dataset refresh history
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const refreshes = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
+    res.json(refreshes);
+  } catch (error: any) {
+    console.error('Error fetching refresh history:', error);
+    res.status(500).json({ error: 'Failed to fetch refresh history', details: error.message });
+  }
+});
+
+// Cancel dataset refresh
+router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId, refreshId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
+    res.json({ success: true, message: 'Refresh cancelled successfully' });
+  } catch (error: any) {
+    console.error('Error cancelling dataset refresh:', error);
+    res.status(500).json({ error: 'Failed to cancel refresh', details: error.message });
+  }
+});
+
+// Get refresh estimate
+router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh-estimate", requireAuth, async (req, res) => {
+  try {
+    const { workspaceId, datasetId } = req.params;
+    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
+    
+    const estimate = await powerBIService.getRefreshEstimate(accessToken, workspaceId, datasetId);
+    res.json(estimate);
+  } catch (error: any) {
+    console.error('Error getting refresh estimate:', error);
+    res.status(500).json({ error: 'Failed to get refresh estimate', details: error.message });
   }
 });
 
@@ -6829,12 +6887,10 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
 });
 
 // ============================================
-// Power BI Routes
+// Power BI Routes (Additional)
 // ============================================
 
-// Power BI Service import and setup
-import { PowerBIService } from "./services/powerbi";
-const powerBIService = new PowerBIService();
+// PowerBIService is already imported and instantiated earlier in the file
 
 // Enhanced server-side token cache with JWT parsing
 interface CachedPowerBIToken {
@@ -7006,42 +7062,43 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
     
     // Use server-cached AAD token
     const accessToken = await getServerAADToken();
+    
+    // First check if the dataset supports refresh
+    const datasetInfo = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
+    
+    // Direct Query and Live Connection datasets don't support manual refresh
+    if (datasetInfo?.defaultMode === 'DirectQuery' || 
+        datasetInfo?.defaultMode === 'LiveConnection' || 
+        datasetInfo?.storageMode === 'DirectQuery') {
+      return res.status(400).json({ 
+        message: "Dataset refresh not supported",
+        error: "This dataset uses Direct Query or Live Connection mode and does not support manual refresh. Data is fetched in real-time from the source.",
+        datasetMode: datasetInfo?.defaultMode || datasetInfo?.storageMode
+      });
+    }
+    
     const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
 
     res.status(202).json({ 
       message: "Dataset refresh initiated successfully",
       refreshId: result.refreshId,
-      estimation: result.estimation  // Include estimation for progress tracking
+      estimation: result.estimation
     });
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
+    
+    // Check if error indicates unsupported dataset type
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    if (errorMessage.includes("BadRequest") || errorMessage.includes("400")) {
+      return res.status(400).json({ 
+        message: "Dataset refresh not supported",
+        error: "This dataset type does not support manual refresh. Only Import mode datasets can be refreshed."
+      });
+    }
+    
     res.status(500).json({ 
       message: "Failed to initiate dataset refresh",
-      error: error instanceof Error ? error.message : "Unknown error"
-    });
-  }
-});
-
-// Cancel dataset refresh
-router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", async (req, res) => {
-  try {
-    const { workspaceId, datasetId, refreshId } = req.params;
-    
-    console.log(`🛑 Attempting to cancel dataset refresh: workspace=${workspaceId}, dataset=${datasetId}, refreshId=${refreshId}`);
-    
-    // Use server-cached AAD token
-    const accessToken = await getServerAADToken();
-    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
-
-    console.log(`✅ Successfully cancelled dataset refresh: ${refreshId}`);
-    res.status(200).json({ 
-      message: "Dataset refresh cancelled successfully"
-    });
-  } catch (error) {
-    console.error("Failed to cancel dataset refresh:", error);
-    res.status(500).json({ 
-      message: "Failed to cancel dataset refresh",
-      error: error instanceof Error ? error.message : "Unknown error"
+      error: errorMessage
     });
   }
 });
@@ -7183,6 +7240,221 @@ router.get("/api/powerbi/export/:workspaceId/:reportId/:exportId/file", async (r
 
 // Agent training routes
 router.use('/api', agentTrainingRoutes);
+
+// Create a new real-time voice session
+router.post('/api/realtime/sessions', async (req, res) => {
+  try {
+    const { agentId, instructions, voice, temperature } = req.body;
+    const userId = req.session?.userId || 0;
+
+    if (!agentId) {
+      return res.status(400).json({
+        message: 'Agent ID is required for real-time voice session',
+      });
+    }
+
+    console.log('🎤 Creating real-time voice session for agent:', agentId);
+
+    const sessionId = await realtimeVoiceService.createSession({
+      userId,
+      agentId,
+      instructions,
+      voice: voice || 'nova',
+      temperature: temperature || 0.8,
+    });
+
+    res.json({
+      sessionId,
+      status: 'connected',
+      model: 'gpt-realtime-mini',
+    });
+  } catch (error) {
+    console.error('Failed to create real-time voice session:', error);
+    res.status(500).json({
+      message: 'Failed to create real-time voice session',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Send audio to a real-time session
+router.post('/api/realtime/sessions/:sessionId/audio', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const audioData = req.body; // Raw audio buffer
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Send audio to the Realtime API
+    realtimeVoiceService.sendAudioInput(sessionId, audioData);
+
+    res.json({ status: 'sent' });
+  } catch (error) {
+    console.error('Failed to send audio:', error);
+    res.status(500).json({
+      message: 'Failed to send audio',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Send text to a real-time session
+router.post('/api/realtime/sessions/:sessionId/text', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const { text } = req.body;
+
+    if (!text) {
+      return res.status(400).json({
+        message: 'Text input is required',
+      });
+    }
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Send text to the Realtime API
+    realtimeVoiceService.sendTextInput(sessionId, text);
+
+    res.json({ status: 'sent' });
+  } catch (error) {
+    console.error('Failed to send text:', error);
+    res.status(500).json({
+      message: 'Failed to send text',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Commit audio buffer and get response
+router.post('/api/realtime/sessions/:sessionId/commit', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    if (!realtimeVoiceService.isSessionActive(sessionId)) {
+      return res.status(404).json({
+        message: 'Session not found or inactive',
+      });
+    }
+
+    // Commit audio and request response
+    realtimeVoiceService.commitAudioAndRespond(sessionId);
+
+    res.json({ status: 'committed' });
+  } catch (error) {
+    console.error('Failed to commit audio:', error);
+    res.status(500).json({
+      message: 'Failed to commit audio',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Close a real-time session
+router.delete('/api/realtime/sessions/:sessionId', async (req, res) => {
+  try {
+    const { sessionId } = req.params;
+
+    realtimeVoiceService.closeSession(sessionId);
+
+    res.json({ status: 'closed' });
+  } catch (error) {
+    console.error('Failed to close session:', error);
+    res.status(500).json({
+      message: 'Failed to close session',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Get user's active sessions
+router.get('/api/realtime/sessions', async (req, res) => {
+  try {
+    const userId = req.session?.userId || 0;
+    const sessions = realtimeVoiceService.getUserSessions(userId);
+
+    res.json({ sessions });
+  } catch (error) {
+    console.error('Failed to get sessions:', error);
+    res.status(500).json({
+      message: 'Failed to get sessions',
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+});
+
+// Server-Sent Events endpoint for real-time session events
+router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
+  const { sessionId } = req.params;
+  
+  // Set up SSE headers
+  res.writeHead(200, {
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+    'Access-Control-Allow-Origin': '*',
+  });
+
+  // Get session event emitter
+  const events = realtimeVoiceService.getSessionEvents(sessionId);
+  
+  if (!events) {
+    res.write('event: error\ndata: {"message": "Session not found"}\n\n');
+    res.end();
+    return;
+  }
+
+  console.log(`📡 SSE connection established for session ${sessionId}`);
+
+  // Send initial connected event
+  res.write('event: connected\ndata: {"status": "connected"}\n\n');
+
+  // Forward events to SSE
+  const transcriptHandler = (text: string) => {
+    res.write(`event: transcript\ndata: ${JSON.stringify({ text, isFinal: false })}\n\n`);
+  };
+
+  const transcriptCompleteHandler = (text: string) => {
+    res.write(`event: transcript\ndata: ${JSON.stringify({ text, isFinal: true })}\n\n`);
+  };
+
+  const audioHandler = (audioBuffer: Buffer) => {
+    const base64Audio = audioBuffer.toString('base64');
+    res.write(`event: audio\ndata: ${JSON.stringify({ audio: base64Audio })}\n\n`);
+  };
+
+  const statusHandler = (status: string) => {
+    res.write(`event: status\ndata: ${JSON.stringify({ status })}\n\n`);
+  };
+
+  const errorHandler = (error: any) => {
+    res.write(`event: error\ndata: ${JSON.stringify({ error: error.message || error })}\n\n`);
+  };
+
+  // Attach event listeners
+  events.on('transcript_delta', transcriptHandler);
+  events.on('transcript_complete', transcriptCompleteHandler);
+  events.on('audio_delta', audioHandler);
+  events.on('user_speaking_start', () => statusHandler('speaking'));
+  events.on('user_speaking_stop', () => statusHandler('listening'));
+  events.on('error', errorHandler);
+
+  // Clean up on client disconnect
+  req.on('close', () => {
+    console.log(`📡 SSE connection closed for session ${sessionId}`);
+    events.removeListener('transcript_delta', transcriptHandler);
+    events.removeListener('transcript_complete', transcriptCompleteHandler);
+    events.removeListener('audio_delta', audioHandler);
+    events.removeListener('error', errorHandler);
+  });
+});
 
 // Forced rebuild - all duplicate keys fixed
 export default router;
