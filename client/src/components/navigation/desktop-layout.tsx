@@ -67,6 +67,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const [continuousConversationMode, setContinuousConversationMode] = useState(false);
   const floatingRecognitionRef = useRef<any>(null);
   const floatingAudioChunksRef = useRef<Blob[]>([]);
+  const floatingSilenceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const floatingLastTranscriptRef = useRef<string>('');
   
   // File attachment state for floating bubble
   const [floatingAttachments, setFloatingAttachments] = useState<Array<{
@@ -365,10 +367,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         floatingRecognitionRef.current.onstart = () => {
           console.log('Web Speech API started');
           setFloatingLiveTranscript('');
+          floatingLastTranscriptRef.current = '';
         };
-        
-        let silenceTimer: NodeJS.Timeout | null = null;
-        let lastTranscriptTime = Date.now();
         
         floatingRecognitionRef.current.onresult = (event: any) => {
           let interimTranscript = '';
@@ -387,32 +387,32 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           setFloatingPrompt(newText);
           setFloatingLiveTranscript(newText);
           
-          // Update last transcript time
-          lastTranscriptTime = Date.now();
-          
-          // Clear existing silence timer
-          if (silenceTimer) {
-            clearTimeout(silenceTimer);
-          }
-          
-          // Set new silence timer - auto-send after 2 seconds of silence
-          if (newText.length > 3) {
-            silenceTimer = setTimeout(() => {
-              console.log('🔇 Detected 2 seconds of silence, auto-sending message...');
-              stopFloatingListening(true); // Keep continuous mode active
-            }, 2000);
+          // Check if transcript has changed
+          if (newText !== floatingLastTranscriptRef.current) {
+            console.log('🎤 Speech detected, resetting silence timer...');
+            floatingLastTranscriptRef.current = newText;
+            
+            // Clear existing silence timer
+            if (floatingSilenceTimerRef.current) {
+              clearTimeout(floatingSilenceTimerRef.current);
+              floatingSilenceTimerRef.current = null;
+            }
+            
+            // Set new silence timer - auto-send after 2 seconds of no new speech
+            if (newText.length > 3) {
+              console.log('⏲️ Starting 2-second silence timer...');
+              floatingSilenceTimerRef.current = setTimeout(() => {
+                console.log('🔇 Detected 2 seconds of silence, auto-sending message...');
+                stopFloatingListening(true); // Keep continuous mode active
+              }, 2000);
+            }
           }
         };
         
-        // Add speech end detection
+        // Add speech end detection (backup for browsers that support it)
         floatingRecognitionRef.current.onspeechend = () => {
-          console.log('📝 Speech ended, preparing to send...');
-          setTimeout(() => {
-            const currentText = floatingPrompt.trim();
-            if (currentText.length > 3) {
-              stopFloatingListening(true); // Keep continuous mode active
-            }
-          }, 500);
+          console.log('📝 Speech end event detected');
+          // The silence timer handles auto-submission, so we just log here
         };
         
         floatingRecognitionRef.current.onerror = (event: any) => {
@@ -529,6 +529,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
     // Only disable continuous mode if explicitly told to (user clicked stop)
     if (!keepContinuousMode) {
       setContinuousConversationMode(false);
+    }
+    
+    // Clear silence timer
+    if (floatingSilenceTimerRef.current) {
+      clearTimeout(floatingSilenceTimerRef.current);
+      floatingSilenceTimerRef.current = null;
+      console.log('🔄 Silence timer cleared');
     }
     
     // Stop Web Speech API
