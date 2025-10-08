@@ -334,8 +334,8 @@ export class PowerBIService {
     }
   }
 
-  // Trigger dataset refresh - returns refreshId for cancellation
-  async triggerDatasetRefresh(accessToken: string, workspaceId: string, datasetId: string): Promise<{refreshId?: string}> {
+  // Trigger dataset refresh - returns refreshId and estimation for progress tracking
+  async triggerDatasetRefresh(accessToken: string, workspaceId: string, datasetId: string): Promise<{refreshId?: string, estimation?: any}> {
     const refreshUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/datasets/${datasetId}/refreshes`;
 
     try {
@@ -355,35 +355,127 @@ export class PowerBIService {
         throw new Error(`Failed to trigger dataset refresh: ${error}`);
       }
 
-      // Power BI API returns 202 Accepted but doesn't include refreshId in response
-      // We need to get the refresh history to find the newly created refresh
+      // Get refresh history and dataset info for estimation
       let refreshId: string | undefined;
+      let estimation: any = undefined;
       
       try {
         // Wait a moment for the refresh to be created, then get the latest refresh
         await new Promise(resolve => setTimeout(resolve, 500));
-        const refreshHistory = await this.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
+        const [refreshHistory, datasetInfo] = await Promise.all([
+          this.getDatasetRefreshHistory(accessToken, workspaceId, datasetId),
+          this.getDataset(accessToken, workspaceId, datasetId)
+        ]);
         
         // Get the most recent refresh (should be the one we just triggered)
         if (refreshHistory && refreshHistory.length > 0) {
-          // Sort by requestId or startTime to get the most recent
           const latestRefresh = refreshHistory.sort((a, b) => 
             new Date(b.startTime || 0).getTime() - new Date(a.startTime || 0).getTime()
           )[0];
           
           refreshId = latestRefresh.requestId || latestRefresh.id;
+          
+          // Calculate estimation from historical data
+          estimation = this.calculateRefreshEstimation(refreshHistory, datasetInfo);
         }
       } catch (historyError) {
-        console.warn(`Warning: Could not retrieve refreshId for cancellation:`, historyError);
+        console.warn(`Warning: Could not retrieve refreshId or estimation:`, historyError);
         // Don't fail the entire refresh operation if we can't get the ID
       }
 
       console.log(`✅ Dataset refresh initiated for dataset ${datasetId} in workspace ${workspaceId}`, refreshId ? `(refreshId: ${refreshId})` : '(refreshId not available)');
       
-      return { refreshId };
+      return { refreshId, estimation };
     } catch (error) {
       throw new Error(`Failed to trigger dataset refresh: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  // Calculate refresh estimation from historical data
+  private calculateRefreshEstimation(refreshHistory: any[], datasetInfo: any) {
+    // Filter completed refreshes only
+    const completedRefreshes = refreshHistory.filter((r: any) => 
+      r.status === 'Completed' && r.startTime && r.endTime
+    );
+
+    if (completedRefreshes.length === 0) {
+      // No historical data - provide conservative estimate
+      return {
+        estimateRangeSeconds: { min: 5, max: 60, median: 30 },
+        confidenceLevel: "low",
+        historicalDataPoints: 0,
+        averageDurationSeconds: 30,
+        contextualFactors: {
+          storageMode: datasetInfo?.storageMode || "Unknown",
+          isLargeDataset: false,
+          isPeakHour: false,
+          recentFailures: false
+        },
+        message: "No historical data available - estimated 30 seconds"
+      };
+    }
+
+    // Calculate durations from historical data
+    const durations = completedRefreshes.map((r: any) => {
+      const start = new Date(r.startTime).getTime();
+      const end = new Date(r.endTime).getTime();
+      return (end - start) / 1000; // seconds
+    }).sort((a: number, b: number) => a - b);
+
+    const count = durations.length;
+    const sum = durations.reduce((a: number, b: number) => a + b, 0);
+    const average = sum / count;
+    const median = count % 2 === 0 
+      ? (durations[count / 2 - 1] + durations[count / 2]) / 2
+      : durations[Math.floor(count / 2)];
+    
+    // P80 (80th percentile)
+    const p80Index = Math.floor(count * 0.8);
+    const p80 = durations[Math.min(p80Index, count - 1)];
+
+    // Min/Max from historical data
+    const min = Math.max(5, durations[0]); // At least 5 seconds
+    const max = p80; // Use P80 as max to avoid outliers
+
+    // Determine confidence level
+    let confidenceLevel: "low" | "medium" | "high";
+    if (count >= 10) confidenceLevel = "high";
+    else if (count >= 5) confidenceLevel = "medium";
+    else confidenceLevel = "low";
+
+    // Check for contextual factors
+    const now = new Date();
+    const hour = now.getHours();
+    const isPeakHour = (hour >= 9 && hour <= 17); // Business hours
+    
+    const isLargeDataset = datasetInfo?.storageMode === "Import" && average > 120; // >2 min suggests large
+    
+    const recentRefreshes = refreshHistory.slice(0, 5);
+    const recentFailures = recentRefreshes.filter((r: any) => r.status === 'Failed').length > 1;
+
+    // Generate contextual message
+    let message = `Estimated ${Math.round(median)} seconds based on ${count} historical refresh${count > 1 ? 'es' : ''}`;
+    if (isPeakHour) message += " (peak hours)";
+    if (isLargeDataset) message += " (large dataset)";
+    if (recentFailures) message += " (recent failures detected)";
+
+    return {
+      estimateRangeSeconds: {
+        min: Math.round(min),
+        max: Math.round(max),
+        median: Math.round(median)
+      },
+      confidenceLevel,
+      historicalDataPoints: count,
+      averageDurationSeconds: Math.round(median), // Use median instead of average - more resistant to outliers
+      contextualFactors: {
+        storageMode: datasetInfo?.storageMode || "Unknown",
+        isLargeDataset,
+        isPeakHour,
+        recentFailures
+      },
+      message
+    };
   }
 
   // Initiate dataset refresh
