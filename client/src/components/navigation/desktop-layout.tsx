@@ -69,6 +69,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const floatingAudioChunksRef = useRef<Blob[]>([]);
   const floatingSilenceTimerRef = useRef<NodeJS.Timeout | null>(null);
   const floatingLastTranscriptRef = useRef<string>('');
+  const floatingAccumulatedTextRef = useRef<string>('');
   
   // File attachment state for floating bubble
   const [floatingAttachments, setFloatingAttachments] = useState<Array<{
@@ -368,6 +369,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           console.log('Web Speech API started');
           setFloatingLiveTranscript('');
           floatingLastTranscriptRef.current = '';
+          floatingAccumulatedTextRef.current = '';
         };
         
         floatingRecognitionRef.current.onresult = (event: any) => {
@@ -378,18 +380,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             const transcript = event.results[i][0].transcript;
             if (event.results[i].isFinal) {
               finalTranscript += transcript + ' ';
+              // Accumulate final transcript
+              floatingAccumulatedTextRef.current += finalTranscript;
             } else {
               interimTranscript += transcript;
             }
           }
           
-          const newText = (floatingPrompt + ' ' + finalTranscript + interimTranscript).trim();
+          // Build the complete text from accumulated + current interim
+          const newText = (floatingAccumulatedTextRef.current + interimTranscript).trim();
           setFloatingPrompt(newText);
           setFloatingLiveTranscript(newText);
           
           // Check if transcript has changed
-          if (newText !== floatingLastTranscriptRef.current) {
-            console.log('🎤 Speech detected, resetting silence timer...');
+          if (newText !== floatingLastTranscriptRef.current && newText.length > 0) {
+            console.log('🎤 Speech detected, text:', newText);
             floatingLastTranscriptRef.current = newText;
             
             // Clear existing silence timer
@@ -537,6 +542,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       floatingSilenceTimerRef.current = null;
       console.log('🔄 Silence timer cleared');
     }
+    
+    // Clear accumulated text
+    floatingAccumulatedTextRef.current = '';
     
     // Stop Web Speech API
     if (floatingRecognitionRef.current) {
