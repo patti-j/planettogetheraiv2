@@ -1617,13 +1617,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                           <>
                             <div className="voice-recording-container">
                               {/* Multiple pulsing rings for depth */}
-                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-1"></div>
-                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-2"></div>
-                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-3"></div>
-                              {/* Central microphone icon with glow effect */}
-                              <div className="relative z-10 w-8 h-8 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg voice-mic-glow">
-                                <Mic className="w-4 h-4 text-white" />
-                              </div>
+                              <div className="absolute w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-1"></div>
+                              <div className="absolute w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-2"></div>
+                              <div className="absolute w-10 h-10 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-3"></div>
+                              {/* Central pulsing dot without microphone icon */}
+                              <div className="relative z-10 w-3 h-3 bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg voice-mic-glow"></div>
                             </div>
                             <div className="ml-2">
                               <span className="text-sm font-medium text-red-600 dark:text-red-400">
