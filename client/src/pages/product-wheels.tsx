@@ -36,32 +36,29 @@ export default function ProductWheelsPage() {
   const queryClient = useQueryClient();
 
   // Fetch all product wheels
-  const { data: wheels = [], isLoading: wheelsLoading } = useQuery({
+  const { data: wheels = [], isLoading: wheelsLoading } = useQuery<PtProductWheel[]>({
     queryKey: ['/api/product-wheels'],
   });
 
   // Fetch plants for selection
-  const { data: plants = [], isLoading: plantsLoading } = useQuery({
+  const { data: plants = [], isLoading: plantsLoading } = useQuery<any[]>({
     queryKey: ['/api/ptplants'],
   });
 
   // Fetch resources for selection
-  const { data: resources = [], isLoading: resourcesLoading } = useQuery({
+  const { data: resources = [], isLoading: resourcesLoading } = useQuery<any[]>({
     queryKey: ['/api/ptresources'],
   });
 
   // Fetch segments for selected wheel
-  const { data: segments = [] } = useQuery({
+  const { data: segments = [] } = useQuery<PtProductWheelSegment[]>({
     queryKey: ['/api/product-wheels', selectedWheel?.id, 'segments'],
     enabled: !!selectedWheel,
   });
 
   // Create wheel mutation
   const createWheel = useMutation({
-    mutationFn: (data: any) => apiRequest('/api/product-wheels', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+    mutationFn: (data: any) => apiRequest('/api/product-wheels', 'POST', data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/product-wheels'] });
       setIsCreateDialogOpen(false);
@@ -236,10 +233,6 @@ export default function ProductWheelsPage() {
                           <span className="flex items-center">
                             <Clock className="w-3 h-3 mr-1" />
                             {wheel.cycleDurationHours}h
-                          </span>
-                          <span className="flex items-center">
-                            <Package className="w-3 h-3 mr-1" />
-                            {segments.length} products
                           </span>
                         </div>
                       </div>
