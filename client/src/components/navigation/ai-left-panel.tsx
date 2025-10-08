@@ -23,6 +23,7 @@ import { useMaxDock, type CanvasItem } from '@/contexts/MaxDockContext';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useRealtimeVoice } from '@/hooks/use-realtime-voice';
 import { useToast } from '@/hooks/use-toast';
+import { useAgentAdapter } from '@/adapters/AgentAdapter';
 // Scheduler context service removed with production-scheduler cleanup
 
 interface AIInsight {
@@ -47,6 +48,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const [, navigate] = useLocation();
   const { handleNavigation } = useSplitScreen();
   const { toast } = useToast();
+  const { currentAgent } = useAgentAdapter();
   const [isCollapsed, setIsCollapsed] = useState(() => {
     const saved = localStorage.getItem('ai-panel-collapsed');
     return saved === 'true';
