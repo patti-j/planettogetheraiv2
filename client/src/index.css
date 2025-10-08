@@ -5,6 +5,104 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Voice Recording Animation - Modern Pulsing Microphone */
+@keyframes voice-pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+@keyframes voice-glow {
+  0%, 100% {
+    filter: brightness(1);
+  }
+  50% {
+    filter: brightness(1.2);
+  }
+}
+
+@keyframes voice-ring-1 {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.8);
+    opacity: 0;
+  }
+}
+
+@keyframes voice-ring-2 {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+@keyframes voice-ring-3 {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    opacity: 0.1;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+.voice-recording-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voice-pulse-ring {
+  position: absolute;
+  border-radius: 50%;
+  animation: voice-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.voice-pulse-ring-1 {
+  animation: voice-ring-1 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+.voice-pulse-ring-2 {
+  animation: voice-ring-2 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 0.3s;
+}
+
+.voice-pulse-ring-3 {
+  animation: voice-ring-3 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  animation-delay: 0.6s;
+}
+
+.voice-mic-glow {
+  animation: voice-glow 1.5s ease-in-out infinite;
+}
+
 /* Navigation menu scrollbar styles */
 .navigation-menu-scroll [data-radix-scroll-area-viewport] {
   scrollbar-width: thin;

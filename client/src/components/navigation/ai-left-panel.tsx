@@ -1615,13 +1615,24 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                       <div className="flex items-center gap-2">
                         {realtimeVoice.isListening ? (
                           <>
-                            <div className="relative">
-                              <Mic className="w-4 h-4 text-green-600 dark:text-green-400 animate-pulse" />
-                              <div className="absolute inset-0 bg-green-600 dark:bg-green-400 rounded-full animate-ping opacity-75"></div>
+                            <div className="voice-recording-container">
+                              {/* Multiple pulsing rings for depth */}
+                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-1"></div>
+                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-2"></div>
+                              <div className="absolute w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-full voice-pulse-ring-3"></div>
+                              {/* Central microphone icon with glow effect */}
+                              <div className="relative z-10 w-8 h-8 flex items-center justify-center bg-gradient-to-r from-red-500 to-red-600 rounded-full shadow-lg voice-mic-glow">
+                                <Mic className="w-4 h-4 text-white" />
+                              </div>
                             </div>
-                            <span className="text-sm font-medium text-green-700 dark:text-green-300">
-                              Listening...
-                            </span>
+                            <div className="ml-2">
+                              <span className="text-sm font-medium text-red-600 dark:text-red-400">
+                                Listening...
+                              </span>
+                              <div className="text-xs text-muted-foreground">
+                                Speak naturally
+                              </div>
+                            </div>
                           </>
                         ) : realtimeVoice.isSpeaking ? (
                           <>
