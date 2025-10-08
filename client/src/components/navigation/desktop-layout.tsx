@@ -1208,8 +1208,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         size="sm"
                         variant="ghost"
                         className={cn(
-                          "rounded-full w-4 h-4 p-0 hover:bg-muted flex-shrink-0",
-                          isFloatingRecording && "bg-red-500 hover:bg-red-600 text-white",
+                          "rounded-full w-4 h-4 p-0 hover:bg-muted flex-shrink-0 relative",
+                          isFloatingRecording && "bg-transparent hover:bg-transparent",
                           isFloatingTranscribing && "opacity-50"
                         )}
                         disabled={isFloatingTranscribing || isFloatingSending}
@@ -1217,8 +1217,13 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                         {isFloatingTranscribing ? (
                           <div className="w-2 h-2 border-2 border-current border-t-transparent rounded-full animate-spin" />
                         ) : isFloatingRecording ? (
-                          <div className="flex items-center">
-                            <Mic className="w-2 h-2 animate-pulse" />
+                          <div className="voice-recording-container flex items-center justify-center">
+                            {/* Pulsing rings */}
+                            <div className="absolute w-4 h-4 bg-red-500 rounded-full opacity-30 voice-pulse-ring-1"></div>
+                            <div className="absolute w-4 h-4 bg-red-500 rounded-full opacity-20 voice-pulse-ring-2"></div>
+                            <div className="absolute w-4 h-4 bg-red-500 rounded-full opacity-10 voice-pulse-ring-3"></div>
+                            {/* Central dot without microphone */}
+                            <div className="relative z-10 w-1.5 h-1.5 bg-red-500 rounded-full voice-mic-glow"></div>
                           </div>
                         ) : (
                           <Mic className="w-2.5 h-2.5" />
