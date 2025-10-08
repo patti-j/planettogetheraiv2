@@ -1,7 +1,8 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
-import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Clock, Trash2, Menu, Home } from "lucide-react";
+import { Search, Sparkles, Mic, MicOff, X, Calendar, BookOpen, Settings, LogOut, Clock, Trash2, Menu, Home, BarChart3, RotateCcw, Database, Maximize2, Edit, Eye, FileDown, Loader2 } from "lucide-react";
 import { useMaxDock } from "@/contexts/MaxDockContext";
+import { usePowerBIEmbed } from "@/hooks/use-power-bi";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -30,12 +31,31 @@ export function MobileLayout({ children }: MobileLayoutProps) {
   const [showMaxResponse, setShowMaxResponse] = useState(false);
   const [showMaxThinking, setShowMaxThinking] = useState(false);
   const [showMaxSettings, setShowMaxSettings] = useState(false);
+  const [showPowerBISettings, setShowPowerBISettings] = useState(false);
   const { setMaxOpen, setCanvasVisible, addMessage } = useMaxDock();
   const { toast } = useToast();
   const [location, setLocation] = useLocation();
   const recognitionRef = useRef<any>(null);
   const { user, logout } = useAuth();
   const { hasPermission } = usePermissions();
+  
+  // Power BI functionality
+  const {
+    embedConfig,
+    refreshReport,
+    refreshDataset,
+    refreshInfo,
+    toggleFullscreen,
+    switchToEditMode,
+    switchToViewMode,
+    exportToPDF,
+    isRefreshDisabled,
+    isExporting,
+    viewMode,
+    selectedWorkspaceId,
+    selectedReportId,
+    allReports
+  } = usePowerBIEmbed();
   // Safe navigation context access with fallback
   let recentPages = [];
   let clearRecentPages = () => {};
@@ -850,6 +870,227 @@ export function MobileLayout({ children }: MobileLayoutProps) {
         </div>
       )}
 
+      {/* Power BI Settings Modal */}
+      {showPowerBISettings && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl max-w-md w-full max-h-[80vh] overflow-y-auto">
+            <div className="p-6 space-y-4">
+              {/* Header */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <BarChart3 className="h-5 w-5 text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">Power BI Settings</h2>
+                </div>
+                <button
+                  onClick={() => setShowPowerBISettings(false)}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                >
+                  <X className="h-4 w-4 text-gray-500" />
+                </button>
+              </div>
+
+              <div className="h-px bg-gray-200 dark:bg-gray-800" />
+
+              {/* Settings Options */}
+              <div className="space-y-3">
+                {/* Refresh Report */}
+                <Button
+                  onClick={async () => {
+                    await refreshReport();
+                    setShowPowerBISettings(false);
+                    toast({
+                      title: "Report Refreshed",
+                      description: "The report has been refreshed successfully.",
+                    });
+                  }}
+                  disabled={isRefreshDisabled}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  {isRefreshDisabled ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RotateCcw className="w-4 h-4" />
+                  )}
+                  <span>{isRefreshDisabled ? 'Please wait...' : 'Refresh Report'}</span>
+                </Button>
+
+                {/* Refresh Dataset */}
+                <Button
+                  onClick={async () => {
+                    try {
+                      await refreshDataset();
+                      setShowPowerBISettings(false);
+                      toast({
+                        title: "Dataset Refresh Started",
+                        description: "The dataset refresh has been initiated.",
+                      });
+                    } catch (error) {
+                      console.error("Dataset refresh failed:", error);
+                      toast({
+                        title: "Refresh Failed",
+                        description: "Failed to refresh dataset. Please try again.",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  disabled={refreshInfo.status === 'refreshing'}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  {refreshInfo.status === 'refreshing' ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Database className="w-4 h-4" />
+                  )}
+                  <span>{refreshInfo.status === 'refreshing' ? 'Refreshing...' : 'Refresh Dataset'}</span>
+                </Button>
+
+                {/* Toggle Fullscreen */}
+                <Button
+                  onClick={() => {
+                    try {
+                      toggleFullscreen();
+                      setShowPowerBISettings(false);
+                      toast({
+                        title: "Fullscreen Toggled",
+                        description: "Report view mode changed",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Fullscreen Failed",
+                        description: error instanceof Error ? error.message : "Failed to toggle fullscreen",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  <Maximize2 className="w-4 h-4" />
+                  <span>Toggle Fullscreen</span>
+                </Button>
+
+                {/* Switch to Edit Mode */}
+                <Button
+                  onClick={async () => {
+                    try {
+                      await switchToEditMode();
+                      setShowPowerBISettings(false);
+                      toast({
+                        title: "Edit Mode Enabled",
+                        description: "You can now edit the report",
+                      });
+                    } catch (error) {
+                      console.error("Edit mode error:", error);
+                      let errorMessage = "Failed to switch to edit mode";
+                      
+                      if (error && typeof error === 'object' && 'message' in error) {
+                        const errorObj = error as any;
+                        if (errorObj.message === 'insufficientPermissions' || errorObj.detailedMessage?.includes('insufficient Permissions')) {
+                          errorMessage = "You don't have permission to edit this report. Contact your Power BI admin.";
+                        } else {
+                          errorMessage = errorObj.detailedMessage || errorObj.message || errorMessage;
+                        }
+                      }
+                      
+                      toast({
+                        title: "Edit Mode Unavailable",
+                        description: errorMessage,
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  disabled={viewMode === "edit"}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  <Edit className="w-4 h-4" />
+                  <span>Switch to Edit</span>
+                </Button>
+
+                {/* Switch to View Mode */}
+                <Button
+                  onClick={async () => {
+                    try {
+                      await switchToViewMode();
+                      setShowPowerBISettings(false);
+                      toast({
+                        title: "View Mode Enabled",
+                        description: "Switched back to view mode",
+                      });
+                    } catch (error) {
+                      toast({
+                        title: "Switch to View Failed",
+                        description: error instanceof Error ? error.message : "Failed to switch to view mode",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  disabled={viewMode === "view"}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  <Eye className="w-4 h-4" />
+                  <span>Switch to View</span>
+                </Button>
+
+                {/* Export to PDF */}
+                <Button
+                  onClick={async () => {
+                    if (!selectedWorkspaceId || !selectedReportId) {
+                      toast({
+                        title: "Export Failed",
+                        description: "No report selected for export",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+
+                    const selectedReport = allReports?.find(r => r.id === selectedReportId);
+                    const reportName = selectedReport?.name || 'report';
+
+                    try {
+                      await exportToPDF(selectedWorkspaceId, selectedReportId, reportName);
+                      setShowPowerBISettings(false);
+                      toast({
+                        title: "Export Started",
+                        description: "Exporting report to PDF...",
+                      });
+                    } catch (error) {
+                      console.error("Export error:", error);
+                      toast({
+                        title: "Export Failed",
+                        description: error instanceof Error ? error.message : "Failed to export report",
+                        variant: "destructive",
+                      });
+                    }
+                  }}
+                  disabled={isExporting}
+                  variant="outline"
+                  className="w-full justify-start gap-3"
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <FileDown className="w-4 h-4" />
+                  )}
+                  <span>{isExporting ? 'Exporting...' : 'Export to PDF'}</span>
+                </Button>
+              </div>
+
+              {/* Close Button */}
+              <Button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                onClick={() => setShowPowerBISettings(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Bottom Max AI Interface - fixed at bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-800 border-t dark:border-gray-700 shadow-lg z-50" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         {/* Max AI Response Display - shows above input when there's a response */}
@@ -931,6 +1172,15 @@ export function MobileLayout({ children }: MobileLayoutProps) {
                 )}
               </Button>
             )}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowPowerBISettings(true)}
+              className="h-10 w-10 p-0 hover:bg-gray-100 dark:hover:bg-gray-700"
+              title="Power BI Settings"
+            >
+              <BarChart3 className="h-4 w-4" />
+            </Button>
             <Button
               size="sm"
               variant="ghost"
