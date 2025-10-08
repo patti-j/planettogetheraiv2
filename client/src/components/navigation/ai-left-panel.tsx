@@ -204,9 +204,27 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
 
   // Initialize Realtime Voice API hook
   const realtimeVoice = useRealtimeVoice({
-    agentId: 'max',
+    agentId: currentAgent?.agentId || 'max',
     voice: aiSettings.voice as 'alloy' | 'echo' | 'fable' | 'onyx' | 'nova' | 'shimmer',
     vadMode: 'server_vad',
+    pauseDetectionMs: 1500, // 1.5 second pause detection
+    onPauseDetected: async (transcript: string) => {
+      console.log('🎙️ Pause detected in voice conversation. Sending message:', transcript);
+      
+      // Add user message to chat immediately
+      addMessage({
+        role: 'user',
+        content: transcript,
+        source: 'panel'
+      });
+      
+      // Send message to AI (this will trigger automatic response)
+      try {
+        await sendMessageMutation.mutateAsync(transcript);
+      } catch (error) {
+        console.error('Failed to send voice message after pause detection:', error);
+      }
+    },
     onAction: (action: any) => {
       console.log('[Realtime Voice] Action received:', action);
       // Handle agent actions like navigation, switching agents, etc.
