@@ -6,7 +6,6 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
 import { realtimeVoiceService } from './services/realtime-voice-service';
-import { powerBIService } from './services/powerbi';
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
@@ -2431,62 +2430,6 @@ router.get("/dashboard-configs", requireAuth, async (req, res) => {
   } catch (error) {
     console.error('Error fetching dashboard configs:', error);
     res.status(500).json({ error: 'Failed to fetch dashboard configurations' });
-  }
-});
-
-// Get Power BI dataset information
-router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId", requireAuth, async (req, res) => {
-  try {
-    const { workspaceId, datasetId } = req.params;
-    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    const dataset = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
-    res.json(dataset);
-  } catch (error: any) {
-    console.error('Error fetching Power BI dataset:', error);
-    res.status(500).json({ error: 'Failed to fetch dataset', details: error.message });
-  }
-});
-
-// Get dataset refresh history
-router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes", requireAuth, async (req, res) => {
-  try {
-    const { workspaceId, datasetId } = req.params;
-    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    const refreshes = await powerBIService.getDatasetRefreshHistory(accessToken, workspaceId, datasetId);
-    res.json(refreshes);
-  } catch (error: any) {
-    console.error('Error fetching refresh history:', error);
-    res.status(500).json({ error: 'Failed to fetch refresh history', details: error.message });
-  }
-});
-
-// Cancel dataset refresh
-router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", requireAuth, async (req, res) => {
-  try {
-    const { workspaceId, datasetId, refreshId } = req.params;
-    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
-    res.json({ success: true, message: 'Refresh cancelled successfully' });
-  } catch (error: any) {
-    console.error('Error cancelling dataset refresh:', error);
-    res.status(500).json({ error: 'Failed to cancel refresh', details: error.message });
-  }
-});
-
-// Get refresh estimate
-router.get("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh-estimate", requireAuth, async (req, res) => {
-  try {
-    const { workspaceId, datasetId } = req.params;
-    const accessToken = req.headers.authorization?.replace('Bearer ', '') || '';
-    
-    const estimate = await powerBIService.getRefreshEstimate(accessToken, workspaceId, datasetId);
-    res.json(estimate);
-  } catch (error: any) {
-    console.error('Error getting refresh estimate:', error);
-    res.status(500).json({ error: 'Failed to get refresh estimate', details: error.message });
   }
 });
 
@@ -6887,10 +6830,12 @@ ${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent
 });
 
 // ============================================
-// Power BI Routes (Additional)
+// Power BI Routes
 // ============================================
 
-// PowerBIService is already imported and instantiated earlier in the file
+// Power BI Service import and setup
+import { PowerBIService } from "./services/powerbi";
+const powerBIService = new PowerBIService();
 
 // Enhanced server-side token cache with JWT parsing
 interface CachedPowerBIToken {
@@ -7063,20 +7008,6 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
     // Use server-cached AAD token
     const accessToken = await getServerAADToken();
     
-    // First check if the dataset supports refresh
-    const datasetInfo = await powerBIService.getDataset(accessToken, workspaceId, datasetId);
-    
-    // Direct Query and Live Connection datasets don't support manual refresh
-    if (datasetInfo?.defaultMode === 'DirectQuery' || 
-        datasetInfo?.defaultMode === 'LiveConnection' || 
-        datasetInfo?.storageMode === 'DirectQuery') {
-      return res.status(400).json({ 
-        message: "Dataset refresh not supported",
-        error: "This dataset uses Direct Query or Live Connection mode and does not support manual refresh. Data is fetched in real-time from the source.",
-        datasetMode: datasetInfo?.defaultMode || datasetInfo?.storageMode
-      });
-    }
-    
     const result = await powerBIService.triggerDatasetRefresh(accessToken, workspaceId, datasetId);
 
     res.status(202).json({ 
@@ -7087,21 +7018,37 @@ router.post("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refresh", 
   } catch (error) {
     console.error("Failed to initiate dataset refresh:", error);
     
-    // Check if error indicates unsupported dataset type
-    const errorMessage = error instanceof Error ? error.message : "Unknown error";
-    if (errorMessage.includes("BadRequest") || errorMessage.includes("400")) {
-      return res.status(400).json({ 
-        message: "Dataset refresh not supported",
-        error: "This dataset type does not support manual refresh. Only Import mode datasets can be refreshed."
-      });
-    }
-    
     res.status(500).json({ 
       message: "Failed to initiate dataset refresh",
-      error: errorMessage
+      error: error instanceof Error ? error.message : "Unknown error"
     });
-  }
-});
+    }
+    });
+
+    // Cancel dataset refresh
+    router.delete("/api/powerbi/workspaces/:workspaceId/datasets/:datasetId/refreshes/:refreshId", async (req, res) => {
+    try {
+    const { workspaceId, datasetId, refreshId } = req.params;
+
+    console.log(`🛑 Attempting to cancel dataset refresh: workspace=${workspaceId}, dataset=${datasetId}, refreshId=${refreshId}`);
+
+    // Use server-cached AAD token
+    const accessToken = await getServerAADToken();
+    await powerBIService.cancelDatasetRefresh(accessToken, workspaceId, datasetId, refreshId);
+
+    console.log(`✅ Successfully cancelled dataset refresh: ${refreshId}`);
+    res.status(200).json({ 
+      message: "Dataset refresh cancelled successfully"
+    });
+    } catch (error) {
+    console.error("Failed to cancel dataset refresh:", error);
+    res.status(500).json({ 
+      message: "Failed to cancel dataset refresh",
+      error: error instanceof Error ? error.message : "Unknown error"
+    });
+    }
+    });
+
 
 // Secure Power BI embed endpoint - uses server-cached AAD token
 router.post("/api/embed", async (req, res) => {
