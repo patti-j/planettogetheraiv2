@@ -29,6 +29,7 @@ function getPageInfo(path: string) {
   const pathMap: Record<string, { label: string; icon: string }> = {
     '/mobile-home': { label: 'Home', icon: 'Home' },
     '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
+    '/product-wheels': { label: 'Product Wheels', icon: 'Grid3X3' },
     '/smart-kpi-tracking': { label: 'SMART KPI Tracking', icon: 'Gauge' },
     '/operations': { label: 'Operations', icon: 'Settings' },
     '/resources': { label: 'Resources', icon: 'Users' },
