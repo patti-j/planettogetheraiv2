@@ -9,6 +9,8 @@ interface UseRealtimeVoiceOptions {
   onAudioReceived?: (audio: ArrayBuffer) => void;
   onStatusChange?: (status: 'idle' | 'connecting' | 'connected' | 'speaking' | 'listening') => void;
   onResponse?: (response: { text: string; audio?: ArrayBuffer }) => void;
+  onPauseDetected?: (transcript: string) => void; // New callback for pause detection
+  pauseDetectionMs?: number; // Configurable pause duration (default 1500ms)
 }
 
 interface RealtimeVoiceState {
@@ -26,6 +28,8 @@ export function useRealtimeVoice({
   onAudioReceived,
   onStatusChange,
   onResponse,
+  onPauseDetected,
+  pauseDetectionMs = 1500, // Default 1.5 second pause
 }: UseRealtimeVoiceOptions) {
   const [state, setState] = useState<RealtimeVoiceState>({
     sessionId: null,
@@ -40,6 +44,12 @@ export function useRealtimeVoice({
   const audioChunksRef = useRef<Float32Array[]>([]);
   const isRecordingRef = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  
+  // Pause detection state
+  const pauseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const currentTranscriptRef = useRef<string>('');
+  const lastSpeechTimeRef = useRef<number>(Date.now());
+  const isSpeakingRef = useRef(false);
 
   // Initialize AudioContext
   const initAudioContext = useCallback(() => {
@@ -87,7 +97,36 @@ export function useRealtimeVoice({
 
       eventSource.addEventListener('transcript', (event) => {
         const data = JSON.parse(event.data);
+        
+        // Update current transcript
+        if (data.isFinal) {
+          // If this is a final transcript, add it to the accumulated transcript
+          currentTranscriptRef.current = currentTranscriptRef.current 
+            ? currentTranscriptRef.current + ' ' + data.text 
+            : data.text;
+        }
+        
         onTranscript?.(data.text, data.isFinal);
+        
+        // Reset the pause timer whenever we get new transcript data
+        if (pauseTimerRef.current) {
+          clearTimeout(pauseTimerRef.current);
+          pauseTimerRef.current = null;
+        }
+        
+        // Start pause detection timer if we have accumulated transcript
+        if (currentTranscriptRef.current && data.isFinal && onPauseDetected) {
+          pauseTimerRef.current = setTimeout(() => {
+            // Trigger pause detected callback with accumulated transcript
+            const transcript = currentTranscriptRef.current.trim();
+            if (transcript) {
+              console.log(`🎙️ Pause detected after ${pauseDetectionMs}ms. Sending: "${transcript}"`);
+              onPauseDetected(transcript);
+              // Clear the accumulated transcript
+              currentTranscriptRef.current = '';
+            }
+          }, pauseDetectionMs);
+        }
       });
 
       eventSource.addEventListener('audio', (event) => {
@@ -159,10 +198,40 @@ export function useRealtimeVoice({
 
         // Update status based on audio level
         const level = calculateAudioLevel(inputData);
+        const now = Date.now();
+        
         if (level > 0.01) {
+          // User is speaking
+          isSpeakingRef.current = true;
+          lastSpeechTimeRef.current = now;
+          
           setState((prev) => ({ ...prev, status: 'speaking' }));
           onStatusChange?.('speaking');
+          
+          // Clear any existing pause timer while speaking
+          if (pauseTimerRef.current) {
+            clearTimeout(pauseTimerRef.current);
+            pauseTimerRef.current = null;
+          }
         } else {
+          // User is not speaking
+          if (isSpeakingRef.current) {
+            // Just stopped speaking
+            isSpeakingRef.current = false;
+            
+            // Start pause detection timer if we have transcript and pause detection is enabled
+            if (currentTranscriptRef.current && onPauseDetected && !pauseTimerRef.current) {
+              pauseTimerRef.current = setTimeout(() => {
+                const transcript = currentTranscriptRef.current.trim();
+                if (transcript) {
+                  console.log(`🎙️ Silence detected. Sending: "${transcript}"`);
+                  onPauseDetected(transcript);
+                  currentTranscriptRef.current = '';
+                }
+              }, pauseDetectionMs);
+            }
+          }
+          
           setState((prev) => ({ ...prev, status: 'listening' }));
           onStatusChange?.('listening');
         }
@@ -262,6 +331,15 @@ export function useRealtimeVoice({
   const stopSession = useCallback(async () => {
     // Stop recording
     isRecordingRef.current = false;
+    
+    // Clear pause timer
+    if (pauseTimerRef.current) {
+      clearTimeout(pauseTimerRef.current);
+      pauseTimerRef.current = null;
+    }
+    
+    // Clear accumulated transcript
+    currentTranscriptRef.current = '';
     
     if (mediaStreamRef.current) {
       mediaStreamRef.current.getTracks().forEach((track) => track.stop());
