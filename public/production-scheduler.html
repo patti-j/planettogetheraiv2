@@ -198,14 +198,61 @@
         <div id="resourceUtilization">Resource utilization: 99% (95.0h total)</div>
     </div>
 
-    <!-- Load Bryntum Scheduler Pro UMD -->
-    <script src="/schedulerpro.umd.js"></script>
-    
     <!-- Initialize the scheduler -->
     <script>
-        // Wait for DOM and Bryntum to load
         // Guard to prevent multiple initialization attempts
         let schedulerInitialized = false;
+        
+        // Manually load the Bryntum library with error handling
+        function loadBryntumLibrary() {
+            return new Promise((resolve, reject) => {
+                // Check if already loaded
+                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
+                    console.log('✅ Bryntum already loaded');
+                    resolve();
+                    return;
+                }
+                
+                const script = document.createElement('script');
+                script.src = '/schedulerpro.umd.js';
+                
+                // Add timeout for loading
+                const timeout = setTimeout(() => {
+                    reject(new Error('Timeout: Bryntum script took too long to load'));
+                }, 10000); // 10 second timeout
+                
+                script.onload = () => {
+                    console.log('✅ Bryntum script tag loaded');
+                    clearTimeout(timeout);
+                    
+                    // Check multiple times with increasing delays
+                    let checkCount = 0;
+                    const checkInterval = setInterval(() => {
+                        checkCount++;
+                        console.log(`Checking for Bryntum (attempt ${checkCount})...`);
+                        
+                        if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
+                            clearInterval(checkInterval);
+                            console.log('✅ Bryntum library initialized');
+                            console.log('Available Bryntum properties:', Object.keys(bryntum));
+                            console.log('Available schedulerpro properties:', Object.keys(bryntum.schedulerpro).length);
+                            resolve();
+                        } else if (checkCount >= 20) { // Check 20 times (5 seconds total)
+                            clearInterval(checkInterval);
+                            reject(new Error('Bryntum library loaded but not initialized after 5 seconds'));
+                        }
+                    }, 250); // Check every 250ms
+                };
+                
+                script.onerror = (error) => {
+                    clearTimeout(timeout);
+                    console.error('Script loading error:', error);
+                    reject(new Error('Failed to load Bryntum script'));
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
         
         async function initializeScheduler() {
             if (schedulerInitialized) {
@@ -708,12 +755,36 @@
             }
         }
         
-        // Initialize when DOM is ready
+        // Initialize when DOM is ready, then manually load Bryntum
+        async function startApplication() {
+            try {
+                console.log('🚀 Starting application initialization...');
+                
+                // First, load the Bryntum library
+                await loadBryntumLibrary();
+                console.log('✅ Bryntum library ready');
+                
+                // Then initialize the scheduler
+                await initializeScheduler();
+                console.log('✅ Scheduler initialization complete');
+            } catch (error) {
+                console.error('❌ Failed to initialize application:', error);
+                document.getElementById('scheduler').innerHTML = `
+                    <div style="background: #f8d7da; color: #721c24; padding: 20px; margin: 20px;">
+                        <h3>Error: Failed to Initialize Scheduler</h3>
+                        <p>${error.message}</p>
+                        <p>Please refresh the page or contact support.</p>
+                    </div>
+                `;
+            }
+        }
+        
+        // Start when DOM is ready
         if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', initializeScheduler);
+            document.addEventListener('DOMContentLoaded', startApplication);
         } else {
             // DOM is already ready
-            initializeScheduler();
+            startApplication();
         }
     </script>
 </body>

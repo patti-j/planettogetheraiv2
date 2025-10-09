@@ -14,6 +14,8 @@ export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  // Use a stable cache buster that doesn't change on re-renders
+  const cacheBusterRef = useRef(Date.now());
 
   useEffect(() => {
     // Set page title
@@ -81,7 +83,7 @@ export default function ProductionScheduler() {
         {/* Scheduler iframe with cache busting - optimized for mobile */}
         <iframe
           ref={iframeRef}
-          src={`/api/production-scheduler?v=${Date.now()}`}
+          src={`/production-scheduler.html?v=${cacheBusterRef.current}`}
           className="w-full h-full border-0"
           title="Production Scheduler"
           data-testid="production-scheduler-iframe"

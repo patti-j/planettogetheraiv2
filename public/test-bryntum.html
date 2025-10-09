@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Bryntum v7 Loading</title>
+    
+    <!-- Stockholm Light Theme -->
+    <link rel="stylesheet" href="/stockholm-light.css">
+    
+    <!-- FontAwesome (required separately for v7.0.0) -->
+    <link rel="stylesheet" href="/fontawesome.css">
+    
+    <style>
+        #test-output {
+            padding: 20px;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .success { color: green; }
+        .error { color: red; }
+        .info { color: blue; }
+    </style>
+</head>
+<body>
+    <h1>Bryntum v7.0.0-alpha.1 Loading Test</h1>
+    <div id="test-output"></div>
+    
+    <!-- Bryntum SchedulerPro UMD -->
+    <script src="/schedulerpro.umd.js"></script>
+    
+    <script>
+        const output = document.getElementById('test-output');
+        
+        function log(message, className = 'info') {
+            const line = document.createElement('div');
+            line.className = className;
+            line.textContent = message;
+            output.appendChild(line);
+        }
+        
+        // Wait for script to load
+        window.addEventListener('load', function() {
+            log('=== Bryntum v7.0.0-alpha.1 Loading Test ===\n');
+            
+            // Test 1: Check if bryntum is defined
+            if (typeof bryntum !== 'undefined') {
+                log('✓ bryntum object is defined', 'success');
+            } else {
+                log('✗ bryntum object is NOT defined', 'error');
+                return;
+            }
+            
+            // Test 2: Check bryntum properties
+            log('\nbryntum properties: ' + Object.keys(bryntum).join(', '), 'info');
+            
+            // Test 3: Check if bryntum.schedulerpro exists
+            if (typeof bryntum.schedulerpro !== 'undefined') {
+                log('✓ bryntum.schedulerpro is defined', 'success');
+                
+                // List schedulerpro properties (first 20)
+                const props = Object.keys(bryntum.schedulerpro);
+                log('\nbryntum.schedulerpro has ' + props.length + ' properties', 'info');
+                log('First 20 properties: ' + props.slice(0, 20).join(', '), 'info');
+                
+                // Check for SchedulerPro constructor
+                if (bryntum.schedulerpro.SchedulerPro) {
+                    log('\n✓ SchedulerPro constructor found at bryntum.schedulerpro.SchedulerPro', 'success');
+                    log('Type: ' + typeof bryntum.schedulerpro.SchedulerPro, 'info');
+                    
+                    // Try to check if it's a valid constructor
+                    try {
+                        if (bryntum.schedulerpro.SchedulerPro.prototype) {
+                            log('✓ SchedulerPro has prototype (valid constructor)', 'success');
+                        }
+                    } catch (e) {
+                        log('Could not check prototype: ' + e.message, 'error');
+                    }
+                } else {
+                    log('\n✗ SchedulerPro constructor NOT found at bryntum.schedulerpro.SchedulerPro', 'error');
+                    
+                    // Search for SchedulerPro in other locations
+                    log('\nSearching for SchedulerPro constructor...', 'info');
+                    
+                    // Check direct on bryntum
+                    if (bryntum.SchedulerPro) {
+                        log('Found at: bryntum.SchedulerPro', 'success');
+                    }
+                    
+                    // Check window
+                    if (window.SchedulerPro) {
+                        log('Found at: window.SchedulerPro', 'success');
+                    }
+                    
+                    // Search for any property containing "SchedulerPro"
+                    for (let key in bryntum.schedulerpro) {
+                        if (key.includes('SchedulerPro')) {
+                            log('Found property: bryntum.schedulerpro.' + key + ' (type: ' + typeof bryntum.schedulerpro[key] + ')', 'info');
+                        }
+                    }
+                }
+            } else {
+                log('✗ bryntum.schedulerpro is NOT defined', 'error');
+            }
+            
+            // Test 4: Try to create a simple scheduler instance
+            log('\n=== Attempting to create SchedulerPro instance ===', 'info');
+            
+            try {
+                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro || 
+                                    bryntum.SchedulerPro || 
+                                    window.SchedulerPro;
+                
+                if (SchedulerPro) {
+                    // Create a test div
+                    const testDiv = document.createElement('div');
+                    testDiv.id = 'test-scheduler';
+                    testDiv.style.height = '200px';
+                    document.body.appendChild(testDiv);
+                    
+                    const scheduler = new SchedulerPro({
+                        appendTo: 'test-scheduler',
+                        startDate: new Date(2025, 8, 1),
+                        endDate: new Date(2025, 8, 7),
+                        columns: [
+                            { text: 'Name', field: 'name', width: 150 }
+                        ]
+                    });
+                    
+                    log('✓ Successfully created SchedulerPro instance!', 'success');
+                    log('Scheduler ID: ' + scheduler.id, 'info');
+                } else {
+                    log('✗ Could not find SchedulerPro constructor to test', 'error');
+                }
+            } catch (e) {
+                log('✗ Error creating SchedulerPro: ' + e.message, 'error');
+                console.error(e);
+            }
+        });
+    </script>
+</body>
+</html>
