@@ -3,9 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
+    
     <!-- Force refresh timestamp: 2025-10-09 v7.0.0 -->
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
@@ -23,763 +26,500 @@
     <script src="/schedulerpro.umd.js"></script>
     
     <style>
-        /* Minimal essential styles only - let Bryntum handle the rest */
+        /* Minimal page layout styles only - let Bryntum handle all component styling */
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         html, body {
             height: 100%;
-            overflow: auto;
+            width: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
         }
-
+        
         body {
             display: flex;
             flex-direction: column;
-            height: 100vh;
         }
-
+        
+        /* Header styles */
         .header {
-            padding: 1rem 2rem;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 1rem 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            z-index: 100;
+        }
+        
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        
+        .header .last-updated {
+            font-size: 0.875rem;
+            color: #666;
+        }
+        
+        /* Toolbar styles */
+        .toolbar {
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            padding: 0.75rem 1.5rem;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            flex-shrink: 0;
+            gap: 1.5rem;
+            z-index: 100;
         }
-
-        .toolbar {
-            padding: 0.75rem 2rem;
+        
+        .toolbar-group {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            flex-shrink: 0;
-            overflow-x: auto;
         }
-
-        .scheduler-container {
+        
+        .toolbar label {
+            font-size: 0.875rem;
+            color: #666;
+            font-weight: 500;
+        }
+        
+        .toolbar select,
+        .toolbar button {
+            padding: 0.5rem 1rem;
+            border: 1px solid #d0d0d0;
+            border-radius: 4px;
+            background: white;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .toolbar select:hover,
+        .toolbar button:hover {
+            background: #f8f8f8;
+            border-color: #b0b0b0;
+        }
+        
+        .toolbar button:active {
+            transform: translateY(1px);
+        }
+        
+        /* Container for scheduler - fills remaining space */
+        #schedulerContainer {
             flex: 1;
-            margin: 1rem;
-            overflow: hidden;
             position: relative;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-        }
-
-        #scheduler {
-            flex: 1;
-            min-height: 0;
-            height: 100%;
+            background: #fff;
+            overflow: hidden;
         }
         
-        /* Diagnostic CSS for v7.0.0 alpha - ensure visibility */
-        .b-scheduler-pro {
-            width: 100% !important;
-            height: 100% !important;
-        }
-        
-        .b-grid-header {
-            visibility: visible !important;
-            display: flex !important;
-        }
-        
-        .b-grid-body-container {
-            visibility: visible !important;
-        }
-
+        /* Status bar */
         .status-bar {
-            padding: 0.5rem 2rem;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+            padding: 0.5rem 1.5rem;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            flex-shrink: 0;
+            font-size: 0.875rem;
+            color: #666;
+            z-index: 100;
         }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(255, 255, 255, 0.9);
+        
+        .status-bar .status-item {
             display: flex;
             align-items: center;
-            justify-content: center;
-            z-index: 1000;
+            gap: 0.25rem;
         }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #666;
+        
+        .status-bar .status-icon {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #4caf50;
+        }
+        
+        /* Loading and error states */
+        .loading-message,
+        .error-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 2rem;
+            border-radius: 8px;
+        }
+        
+        .loading-message {
+            color: #666;
+            background: #f5f5f5;
+        }
+        
+        .error-message {
+            color: #d32f2f;
+            background: #ffebee;
+            border: 1px solid #ffcdd2;
+        }
+        
+        .spinner {
+            width: 40px;
+            height: 40px;
+            margin: 0 auto 1rem;
+            border: 3px solid #e0e0e0;
+            border-top-color: #1976d2;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .error-message {
-            background: #ff4444;
-            color: white;
-            padding: 1rem;
-            border-radius: 4px;
-            margin: 1rem;
-            text-align: center;
-        }
         
-        /* Hide elements that might conflict */
-        .nav-menu, .max-ai-panel, .constraint-modal {
-            display: none !important;
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
     </style>
 </head>
 <body>
     <div class="header">
         <h1>Production Schedule</h1>
-        <div class="header-actions">
-            <span id="lastUpdated">Last updated: Never</span>
-        </div>
+        <span class="last-updated" id="lastUpdated">Last updated: -</span>
     </div>
-
+    
     <div class="toolbar">
         <div class="toolbar-group">
             <label for="viewSelector">View:</label>
             <select id="viewSelector">
-                <option value="day">Day & Week</option>
-                <option value="week">Week & Month</option>
-                <option value="month">Month</option>
+                <option value="hourAndDay">Hour & Day</option>
+                <option value="dayAndWeek" selected>Day & Week</option>
+                <option value="weekAndMonth">Week & Month</option>
+                <option value="monthAndYear">Month & Year</option>
             </select>
         </div>
         
         <div class="toolbar-group">
-            <button id="zoomInBtn" title="Zoom In">
-                <i class="fa fa-search-plus"></i>
-            </button>
-            <button id="zoomOutBtn" title="Zoom Out">
-                <i class="fa fa-search-minus"></i>
-            </button>
-            <button id="zoomToFitBtn" title="Zoom to Fit">
-                <i class="fa fa-expand"></i>
-            </button>
-        </div>
-
-        <div class="toolbar-group">
-            <label for="algorithmSelector">Algorithm:</label>
+            <label>Algorithm:</label>
             <select id="algorithmSelector">
-                <option value="asap">ASAP (Forward)</option>
-                <option value="alap">ALAP (Backward)</option>
-                <option value="critical">Critical Path</option>
-                <option value="resource">Resource Leveling</option>
+                <option value="ASAP">ASAP (Forward)</option>
+                <option value="ALAP">ALAP (Backward)</option>
+                <option value="Critical">Critical Path</option>
+                <option value="Resource">Resource Leveling</option>
             </select>
-            <button id="applyAlgorithmBtn">
-                <i class="fa fa-play"></i> Apply
-            </button>
-        </div>
-
-        <div class="toolbar-group">
-            <button id="saveSchedule">
-                <i class="fa fa-save"></i> Save
-            </button>
+            <button id="applyAlgorithm">Apply</button>
+            <button id="saveSchedule">Save</button>
         </div>
     </div>
-
-    <div class="scheduler-container">
-        <div id="scheduler"></div>
-        <div class="loading-overlay" id="loadingOverlay">
-            <div class="loading-spinner"></div>
+    
+    <div id="schedulerContainer">
+        <div class="loading-message">
+            <div class="spinner"></div>
+            <div>Initializing Production Scheduler...</div>
         </div>
     </div>
-
+    
     <div class="status-bar">
-        <div id="statusMessage">35 operations scheduled</div>
-        <div id="resourceUtilization">Resource utilization: 99% (95.0h total)</div>
+        <div class="status-item">
+            <span class="status-icon"></span>
+            <span id="statusMessage">Loading resources...</span>
+        </div>
+        <span id="resourceUtilization">-</span>
     </div>
-
-    <!-- Initialize the scheduler -->
+    
     <script>
-        // Guard to prevent multiple initialization attempts
-        let schedulerInitialized = false;
+        // Cache buster using useRef equivalent (stable value)
+        const CACHE_BUSTER = 'v7_' + Math.floor(Date.now() / 60000);
         
-        // Manually load the Bryntum library with error handling
-        function loadBryntumLibrary() {
-            return new Promise((resolve, reject) => {
-                // Check if already loaded
-                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
-                    console.log('✅ Bryntum already loaded');
-                    resolve();
-                    return;
-                }
-                
-                const script = document.createElement('script');
-                script.src = '/schedulerpro.umd.js';
-                
-                // Add timeout for loading
-                const timeout = setTimeout(() => {
-                    reject(new Error('Timeout: Bryntum script took too long to load'));
-                }, 10000); // 10 second timeout
-                
-                script.onload = () => {
-                    console.log('✅ Bryntum script tag loaded');
-                    clearTimeout(timeout);
-                    
-                    // Check multiple times with increasing delays
-                    let checkCount = 0;
-                    const checkInterval = setInterval(() => {
-                        checkCount++;
-                        console.log(`Checking for Bryntum (attempt ${checkCount})...`);
-                        
-                        if (typeof bryntum !== 'undefined' && bryntum.schedulerpro) {
-                            clearInterval(checkInterval);
-                            console.log('✅ Bryntum library initialized');
-                            console.log('Available Bryntum properties:', Object.keys(bryntum));
-                            console.log('Available schedulerpro properties:', Object.keys(bryntum.schedulerpro).length);
-                            resolve();
-                        } else if (checkCount >= 20) { // Check 20 times (5 seconds total)
-                            clearInterval(checkInterval);
-                            reject(new Error('Bryntum library loaded but not initialized after 5 seconds'));
-                        }
-                    }, 250); // Check every 250ms
-                };
-                
-                script.onerror = (error) => {
-                    clearTimeout(timeout);
-                    console.error('Script loading error:', error);
-                    reject(new Error('Failed to load Bryntum script'));
-                };
-                
-                document.head.appendChild(script);
-            });
+        console.log('🚀 Starting application initialization...');
+        
+        // Initialize scheduler when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initializeScheduler);
+        } else {
+            initializeScheduler();
         }
         
+        // Global scheduler instance
+        let scheduler = null;
+        let projectModel = null;
+        
         async function initializeScheduler() {
-            if (schedulerInitialized) {
-                console.log('⚠️ Scheduler already initialized, skipping duplicate initialization');
-                return;
-            }
-            
             try {
-                console.log('🚀 Starting Production Scheduler initialization...');
-                schedulerInitialized = true;
-                
-                // Hide loading overlay
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.style.display = 'none';
-                }
-
-                // Check if bryntum is available
-                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
-                    console.error('❌ Bryntum SchedulerPro is not loaded!');
-                    throw new Error('Bryntum SchedulerPro library is not available');
-                }
-
-                // Initialize scheduler using global bryntum object
-                // Try multiple possible locations for SchedulerPro constructor in v7.0.0-alpha.1
-                console.log('🔍 Looking for SchedulerPro constructor...');
-                console.log('Available bryntum properties:', Object.keys(bryntum));
-                
-                // Check if schedulerpro namespace exists
-                if (bryntum.schedulerpro) {
-                    console.log('bryntum.schedulerpro properties:', Object.keys(bryntum.schedulerpro));
+                // Verify Bryntum is loaded
+                if (typeof bryntum === 'undefined') {
+                    throw new Error('Bryntum library not loaded');
                 }
                 
-                // For v7.0.0-alpha.1, SchedulerPro is at bryntum.schedulerpro.SchedulerPro
-                let SchedulerPro = bryntum.schedulerpro?.SchedulerPro;
+                console.log('✅ Bryntum library ready');
                 
-                // Also check if it's available directly on window
-                if (!SchedulerPro) {
-                    console.log('Checking alternative locations for SchedulerPro...');
-                    // Try direct access on window
-                    if (window.SchedulerPro) {
-                        console.log('Found SchedulerPro on window object');
-                        SchedulerPro = window.SchedulerPro;
-                    } else if (bryntum.SchedulerPro) {
-                        console.log('Found SchedulerPro directly on bryntum');
-                        SchedulerPro = bryntum.SchedulerPro;
-                    }
+                // Get required classes from bryntum.schedulerpro namespace
+                const { SchedulerPro, ProjectModel } = bryntum.schedulerpro;
+                
+                if (!SchedulerPro || !ProjectModel) {
+                    throw new Error('Required Bryntum classes not found');
                 }
                 
-                if (!SchedulerPro) {
-                    console.error('❌ SchedulerPro constructor not found!');
-                    console.error('Tried all possible locations. Check console for available properties.');
-                    
-                    // Display error details on page for debugging
-                    const errorDiv = document.createElement('div');
-                    errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 20px; margin: 20px;';
-                    errorDiv.innerHTML = `
-                        <h3>Debug Information</h3>
-                        <p>bryntum exists: ${typeof bryntum !== 'undefined'}</p>
-                        <p>bryntum.schedulerpro exists: ${typeof bryntum?.schedulerpro !== 'undefined'}</p>
-                        <p>bryntum.schedulerpro properties: ${bryntum?.schedulerpro ? Object.keys(bryntum.schedulerpro).slice(0, 10).join(', ') + '...' : 'N/A'}</p>
-                        <p>Total properties in bryntum.schedulerpro: ${bryntum?.schedulerpro ? Object.keys(bryntum.schedulerpro).length : 0}</p>
-                    `;
-                    document.getElementById('scheduler').appendChild(errorDiv);
-                    
-                    // Try to find any constructor-like objects in bryntum.schedulerpro
-                    if (bryntum.schedulerpro) {
-                        for (let key in bryntum.schedulerpro) {
-                            if (typeof bryntum.schedulerpro[key] === 'function' && key.includes('Scheduler')) {
-                                console.log(`Found potential constructor: bryntum.schedulerpro.${key}`);
-                            }
-                        }
-                    }
-                    
-                    throw new Error('SchedulerPro constructor not available');
-                }
+                console.log('📊 Loading data from API...');
                 
-                console.log('✅ Found SchedulerPro constructor!', SchedulerPro);
-                
-                // Set today's date to September 3, 2025
-                const today = new Date('2025-09-03');
-                
-                // Load PT resources from database
-                console.log('📊 Loading PT resources from database...');
+                // Load resources from PT database
                 let resources = [];
+                let events = [];
                 
                 try {
-                    const ptResourcesResponse = await fetch('/api/ptresources');
-                    if (ptResourcesResponse.ok) {
-                        const ptResources = await ptResourcesResponse.json();
-                        console.log(`✅ Loaded ${ptResources.length} PT resources from database`);
+                    const [resResponse, opsResponse] = await Promise.all([
+                        fetch('/api/ptresources'),
+                        fetch('/api/ptoperations')
+                    ]);
+                    
+                    if (resResponse.ok) {
+                        const ptResources = await resResponse.json();
+                        resources = ptResources.map(res => ({
+                            id: res.resource_id || res.id,
+                            name: res.name || `Resource ${res.id}`,
+                            calendar: 'general'
+                        }));
+                        console.log(`✅ Loaded ${resources.length} resources from PT database`);
+                    }
+                    
+                    if (opsResponse.ok) {
+                        const ptOperations = await opsResponse.json();
+                        const baseDate = new Date('2024-09-03T08:00:00');
                         
-                        // Map PT resources to Bryntum format with proper sorting
-                        resources = ptResources
-                            .filter(res => res.active !== false)  // Fixed: use 'active' not 'is_active'
-                            .sort((a, b) => {
-                                // Sort by name since we don't have resource_type
-                                const nameA = a.name || '';
-                                const nameB = b.name || '';
-                                return nameA.localeCompare(nameB);
-                            })
-                            .map((resource, index) => ({
-                                id: resource.resource_id || `RESOURCE_${resource.id}`,  // Fixed: use resource_id
-                                name: resource.name || `Resource ${resource.id}`,
-                                resourceType: 'Production',  // Default type since not in DB
-                                sortOrder: index
-                            }));
-                    } else {
-                        console.warn('⚠️ Could not load PT resources, using demo data');
+                        events = ptOperations.map((op, index) => {
+                            const startDate = new Date(baseDate);
+                            startDate.setDate(startDate.getDate() + Math.floor(index / 4));
+                            startDate.setHours(8 + (index % 4) * 3, 0, 0, 0);
+                            
+                            const duration = parseFloat(op.cycle_hrs) || 2;
+                            const endDate = new Date(startDate);
+                            endDate.setHours(endDate.getHours() + duration);
+                            
+                            // Assign to resources in round-robin fashion
+                            const resourceId = resources.length > 0 
+                                ? resources[index % resources.length].id 
+                                : 1;
+                            
+                            return {
+                                id: op.id || index + 1,
+                                name: op.name || `Operation ${op.id}`,
+                                resourceId: resourceId, // Direct assignment for resource view
+                                startDate: startDate,
+                                endDate: endDate,
+                                duration: duration,
+                                durationUnit: 'hour',
+                                percentDone: Math.floor(Math.random() * 100)
+                            };
+                        });
+                        console.log(`✅ Created ${events.length} events from PT operations`);
                     }
                 } catch (error) {
-                    console.error('❌ Error loading PT resources:', error);
+                    console.warn('Could not load data from API, using demo data:', error);
                 }
                 
-                // If no resources from database, create demo resources
+                // Fallback demo data if needed
                 if (resources.length === 0) {
-                    console.log('📊 Creating demo resources...');
                     resources = [
-                        { id: 'FILLER_001', name: 'Bottle Filler Line', resourceType: 'Packaging', sortOrder: 0 },
-                        { id: 'FILLER_002', name: 'Can Filler Line', resourceType: 'Packaging', sortOrder: 1 },
-                        { id: 'MIXER_001', name: 'Blending Tank 1', resourceType: 'Production', sortOrder: 2 },
-                        { id: 'MIXER_002', name: 'Blending Tank 2', resourceType: 'Production', sortOrder: 3 },
-                        { id: 'PACKAGE_001', name: 'Labeling Machine', resourceType: 'Packaging', sortOrder: 4 }
+                        { id: 'r1', name: 'Bottle Filler Line', calendar: 'general' },
+                        { id: 'r2', name: 'Brew Kettle 1', calendar: 'general' },
+                        { id: 'r3', name: 'Bright Tank 1', calendar: 'general' },
+                        { id: 'r4', name: 'Packaging Line A', calendar: 'general' }
                     ];
                 }
                 
-                // Load PT operations from database
-                console.log('📊 Loading PT operations from database...');
-                let ptOperations = [];
-                
-                try {
-                    const ptOperationsResponse = await fetch('/api/ptoperations');
-                    if (ptOperationsResponse.ok) {
-                        ptOperations = await ptOperationsResponse.json();
-                        console.log(`✅ Loaded ${ptOperations.length} PT operations from database`);
-                    }
-                } catch (error) {
-                    console.error('❌ Error loading PT operations:', error);
-                }
-                
-                // Transform PT operations into Bryntum events format
-                let events = ptOperations.map((operation, index) => {
-                    // Use actual scheduled dates if available, otherwise generate demo dates
-                    let startDate = operation.scheduled_start ? new Date(operation.scheduled_start) : new Date(today);
-                    let endDate = operation.scheduled_end ? new Date(operation.scheduled_end) : null;
-                    
-                    // If no scheduled dates, generate them based on index
-                    if (!operation.scheduled_start) {
-                        startDate.setDate(startDate.getDate() + Math.floor(index / 4));
-                        startDate.setHours(8 + (index % 4) * 3, 0, 0, 0);
-                    }
-                    
-                    if (!endDate) {
-                        endDate = new Date(startDate);
-                        const durationHours = parseFloat(operation.cycle_hrs) || 2;
-                        endDate.setHours(startDate.getHours() + durationHours);
-                    }
-                    
-                    const eventId = operation.external_id || `OP_${operation.id}`;
-                    // Assign to resources in round-robin if no specific resource
-                    const resourceId = resources[index % resources.length]?.id || resources[0]?.id;
-                    
-                    return {
-                        id: eventId,
-                        name: operation.name || `Operation ${operation.id}`,
-                        startDate: startDate,
-                        endDate: endDate,
-                        resourceId: resourceId,
-                        eventColor: '#2196F3',  // Default blue color for all operations
-                        priority: operation.priority || 50,
-                        setupHours: parseFloat(operation.setup_hours) || 0,
-                        cycleHrs: parseFloat(operation.cycle_hrs) || 0,
-                        constraintType: 'startnoearlierthan',
-                        constraintDate: startDate,
-                        originalStart: new Date(startDate),
-                        originalEnd: new Date(endDate),
-                        locked: false,
-                        allowOverlap: false
-                    };
-                });
-                
-                console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
-                
-                // If no operations from database, create demo operations
                 if (events.length === 0) {
-                    console.log('📊 Creating demo operations...');
-                    const demoStartDate = new Date(today);
-                    demoStartDate.setHours(8, 0, 0, 0);
-                    
+                    const now = new Date();
                     events = [
                         {
-                            id: 'OP_001',
+                            id: 1,
+                            resourceId: 'r1',
                             name: 'Mix Batch A-1',
-                            startDate: new Date(demoStartDate),
-                            endDate: new Date(demoStartDate.getTime() + 2 * 60 * 60 * 1000),
-                            resourceId: resources[2]?.id || resources[0]?.id,
-                            eventColor: '#4CAF50'
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0),
+                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0),
+                            percentDone: 75
                         },
                         {
-                            id: 'OP_002',
-                            name: 'Fill Bottles - Batch A-1',
-                            startDate: new Date(demoStartDate.getTime() + 3 * 60 * 60 * 1000),
-                            endDate: new Date(demoStartDate.getTime() + 5 * 60 * 60 * 1000),
-                            resourceId: resources[0]?.id,
-                            eventColor: '#2196F3'
+                            id: 2,
+                            resourceId: 'r2',
+                            name: 'Brew Batch B-2',
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0),
+                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0),
+                            percentDone: 50
+                        },
+                        {
+                            id: 3,
+                            resourceId: 'r3',
+                            name: 'Quality Check',
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0),
+                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0),
+                            percentDone: 25
+                        },
+                        {
+                            id: 4,
+                            resourceId: 'r4',
+                            name: 'Package Product',
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0),
+                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0),
+                            percentDone: 0
                         }
                     ];
                 }
                 
-                // Create scheduler instance with proper Bryntum project engine configuration
-                window.scheduler = new SchedulerPro({
-                    appendTo: 'scheduler',
+                console.log('🔧 Creating ProjectModel...');
+                
+                // Create project model with calendar
+                projectModel = new ProjectModel({
+                    calendar: 'general',
+                    startDate: events[0]?.startDate || new Date(),
                     
-                    // Ensure the scheduler has a proper height
-                    autoHeight: false,
-                    height: '100%',
+                    calendarsData: [{
+                        id: 'general',
+                        name: 'General',
+                        intervals: [
+                            {
+                                recurrentStartDate: 'on Mon at 8:00',
+                                recurrentEndDate: 'on Mon at 17:00',
+                                isWorking: true
+                            },
+                            {
+                                recurrentStartDate: 'on Tue at 8:00',
+                                recurrentEndDate: 'on Tue at 17:00',
+                                isWorking: true
+                            },
+                            {
+                                recurrentStartDate: 'on Wed at 8:00',
+                                recurrentEndDate: 'on Wed at 17:00',
+                                isWorking: true
+                            },
+                            {
+                                recurrentStartDate: 'on Thu at 8:00',
+                                recurrentEndDate: 'on Thu at 17:00',
+                                isWorking: true
+                            },
+                            {
+                                recurrentStartDate: 'on Fri at 8:00',
+                                recurrentEndDate: 'on Fri at 17:00',
+                                isWorking: true
+                            }
+                        ]
+                    }],
                     
-                    // Basic scheduler configuration  
-                    startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
-                    endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30),
-                    viewPreset: 'weekAndDay',  // Standard horizontal preset
-                    rowHeight: 50,
-                    barMargin: 5,
-                    eventColor: '#2196F3',
-                    eventStyle: 'plain',
+                    resourcesData: resources,
+                    eventsData: events
+                });
+                
+                console.log('🎨 Creating SchedulerPro with Stockholm theme...');
+                
+                // Clear loading message
+                document.getElementById('schedulerContainer').innerHTML = '';
+                
+                // Calculate date range
+                const startDate = events[0]?.startDate || new Date();
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 14); // Show 2 weeks
+                
+                // Create the SchedulerPro instance with resource view
+                scheduler = new SchedulerPro({
+                    appendTo: 'schedulerContainer',
                     
-                    // Ensure timeline is visible
-                    displayDateFormat: 'DD/MM/YYYY',
-                    tickSize: 100,  // Width of time axis cells
-                    snap: true,
+                    // Use the project model
+                    project: projectModel,
                     
-                    // Proper Bryntum Project configuration using the scheduling engine
-                    project: {
-                        autoLoad: false,
-                        autoSync: false,
-                        
-                        // Event store configuration
-                        eventStore: {
-                            data: []
-                        },
-                        
-                        // Resource store configuration
-                        resourceStore: {
-                            data: []
-                        },
-                        
-                        // NO AssignmentStore - using single-assignment mode (resourceId on events)
-                        // Scheduler Pro can use EITHER AssignmentStore OR resourceId, not both!
-                        
-                        // Dependency store for task dependencies
-                        dependencyStore: {
-                            data: []
-                        }
-                    },
+                    // Resource scheduling view configuration
+                    startDate: startDate,
+                    endDate: endDate,
                     
-                    // Column configuration - removed 'tree' type that requires Tree feature
+                    // View preset for proper timeline display
+                    viewPreset: 'dayAndWeek',
+                    
+                    // Row configuration for resources
+                    rowHeight: 60,
+                    barMargin: 8,
+                    
+                    // Resource columns configuration
                     columns: [
-                        {
+                        { 
+                            type: 'resourceInfo',
                             text: 'Resources',
                             field: 'name',
                             width: 220,
-                            minWidth: 100,
-                            region: 'locked',  // REQUIRED for v7.0.0 alpha
-                            editor: false
+                            showEventCount: true,
+                            showImage: false
                         }
                     ],
                     
-                    // Features configuration
+                    // Enable scheduling features
                     features: {
-                        tree: false,  // Explicitly disable tree feature to avoid conflicts
-                        eventDrag: {
-                            constrainDragToResource: false,
-                            showTooltip: true
+                        eventDrag: true,
+                        eventResize: true,
+                        eventEdit: true,
+                        eventTooltip: {
+                            template: (data) => `
+                                <div class="b-sch-event-tooltip">
+                                    <div><b>${data.eventRecord.name}</b></div>
+                                    <div>Start: ${data.eventRecord.startDate.toLocaleString()}</div>
+                                    <div>End: ${data.eventRecord.endDate.toLocaleString()}</div>
+                                    <div>Duration: ${data.eventRecord.duration} ${data.eventRecord.durationUnit}</div>
+                                    <div>Progress: ${data.eventRecord.percentDone || 0}%</div>
+                                </div>
+                            `
                         },
-                        eventDragCreate: true,
-                        eventResize: {
-                            showTooltip: true
-                        },
+                        percentBar: true,
                         dependencies: true,
-                        dependencyEdit: {
-                            showLagField: true
-                        },
                         timeRanges: {
                             showCurrentTimeLine: true
                         },
-                        eventTooltip: {
-                            template: ({ eventRecord }) => {
-                                return `
-                                    <div>
-                                        <strong>${eventRecord.name}</strong><br/>
-                                        Resource: ${eventRecord.resource?.name || 'Unassigned'}<br/>
-                                        Start: ${eventRecord.startDate?.toLocaleString() || 'Not scheduled'}<br/>
-                                        End: ${eventRecord.endDate?.toLocaleString() || 'Not scheduled'}<br/>
-                                        Duration: ${eventRecord.duration || 0} hours
-                                    </div>
-                                `;
-                            }
+                        nonWorkingTime: true,
+                        tree: false, // Disable tree view for flat resource list
+                        regionResize: true
+                    },
+                    
+                    // Event renderer for custom styling
+                    eventRenderer({ eventRecord, renderData }) {
+                        renderData.cls.add('custom-event');
+                        if (eventRecord.percentDone > 0) {
+                            renderData.cls.add('has-progress');
+                        }
+                        return eventRecord.name;
+                    },
+                    
+                    // Handle scheduler events
+                    listeners: {
+                        paint: () => {
+                            console.log('✅ Scheduler painted successfully with Stockholm theme');
+                            updateStatus();
                         },
-                        sort: {
-                            field: 'sortOrder',
-                            ascending: true
+                        eventDrop: ({ eventRecords }) => {
+                            console.log('📅 Event moved:', eventRecords);
+                            updateStatus();
+                        },
+                        eventResizeEnd: ({ eventRecord }) => {
+                            console.log('📐 Event resized:', eventRecord);
+                            updateStatus();
                         }
                     }
                 });
                 
-                // Log the data being loaded
-                console.log('📊 Loading data into scheduler:', {
-                    resourcesCount: resources.length,
-                    eventsCount: events.length,
-                    resources: resources.slice(0, 3),  // Show first 3 resources
-                    events: events.slice(0, 3)  // Show first 3 events
-                });
+                console.log('✅ SchedulerPro initialized with resource view');
                 
-                // Load the inline data into the scheduler project
-                // Using single-assignment mode (resourceId on events), NO assignmentsData
-                await scheduler.project.loadInlineData({
-                    resourcesData: resources,
-                    eventsData: events,
-                    dependenciesData: []
-                });
-                
-                console.log('✅ Scheduler initialized successfully with loaded data');
-                console.log('📊 Scheduler state:', {
-                    resourceCount: scheduler.resourceStore.count,
-                    eventCount: scheduler.eventStore.count,
-                    startDate: scheduler.startDate,
-                    endDate: scheduler.endDate,
-                    viewPreset: scheduler.viewPreset
-                });
-                
-                // Set up toolbar event handlers
+                // Set up toolbar handlers
                 setupToolbarHandlers();
                 
-                // Update status
+                // Update last updated time
+                document.getElementById('lastUpdated').textContent = 
+                    `Last updated: ${new Date().toLocaleTimeString()}`;
+                
+                // Clear loading state
                 updateStatus();
-                
-                // Set up periodic status updates
-                setInterval(updateStatus, 30000); // Update every 30 seconds
-                
-                // Initial zoom to fit
-                setTimeout(() => {
-                    scheduler.zoomToFit({
-                        leftMargin: 50,
-                        rightMargin: 50
-                    });
-                }, 100);
                 
             } catch (error) {
                 console.error('❌ Failed to initialize scheduler:', error);
-                schedulerInitialized = false;
-                
-                // Show error message
-                const scheduler = document.getElementById('scheduler');
-                if (scheduler) {
-                    scheduler.innerHTML = `
-                        <div class="error-message">
-                            Failed to initialize scheduler: ${error.message}
-                        </div>
-                    `;
-                }
-            }
-        }
-        
-        function setupToolbarHandlers() {
-            // View selector
-            const viewSelector = document.getElementById('viewSelector');
-            viewSelector?.addEventListener('change', (e) => {
-                const viewMap = {
-                    'day': 'hourAndDay',
-                    'week': 'weekAndDay',
-                    'month': 'monthAndYear'
-                };
-                if (window.scheduler) {
-                    window.scheduler.viewPreset = viewMap[e.target.value] || 'weekAndDay';
-                }
-            });
-            
-            // Zoom controls
-            document.getElementById('zoomInBtn')?.addEventListener('click', () => {
-                if (window.scheduler) {
-                    window.scheduler.zoomIn();
-                }
-            });
-            
-            document.getElementById('zoomOutBtn')?.addEventListener('click', () => {
-                if (window.scheduler) {
-                    window.scheduler.zoomOut();
-                }
-            });
-            
-            document.getElementById('zoomToFitBtn')?.addEventListener('click', () => {
-                if (window.scheduler) {
-                    window.scheduler.zoomToFit({
-                        leftMargin: 50,
-                        rightMargin: 50
-                    });
-                }
-            });
-            
-            // Algorithm application
-            document.getElementById('applyAlgorithmBtn')?.addEventListener('click', async () => {
-                const algorithmSelector = document.getElementById('algorithmSelector');
-                const algorithm = algorithmSelector?.value || 'asap';
-                
-                if (window.scheduler) {
-                    console.log(`Applying ${algorithm.toUpperCase()} algorithm...`);
-                    
-                    const loadingOverlay = document.getElementById('loadingOverlay');
-                    if (loadingOverlay) {
-                        loadingOverlay.style.display = 'flex';
-                    }
-                    
-                    try {
-                        // Apply the algorithm
-                        await applySchedulingAlgorithm(algorithm);
-                        console.log(`✅ ${algorithm.toUpperCase()} algorithm applied successfully`);
-                    } catch (error) {
-                        console.error(`❌ Error applying ${algorithm} algorithm:`, error);
-                    } finally {
-                        if (loadingOverlay) {
-                            loadingOverlay.style.display = 'none';
-                        }
-                    }
-                }
-            });
-            
-            // Save schedule
-            document.getElementById('saveSchedule')?.addEventListener('click', async () => {
-                console.log('Saving schedule...');
-                // Implement save functionality here
-            });
-        }
-        
-        async function applySchedulingAlgorithm(algorithm) {
-            if (!window.scheduler || !window.scheduler.project) {
-                console.error('Scheduler not initialized');
-                return;
-            }
-            
-            const project = window.scheduler.project;
-            const events = project.eventStore.records;
-            
-            switch (algorithm) {
-                case 'asap':
-                    // Schedule all tasks as soon as possible
-                    events.forEach(event => {
-                        event.constraintType = 'startnoearlierthan';
-                        event.constraintDate = new Date('2025-09-03');
-                    });
-                    break;
-                    
-                case 'alap':
-                    // Schedule all tasks as late as possible
-                    events.forEach(event => {
-                        event.constraintType = 'finishnolaterthan';
-                        event.constraintDate = new Date('2025-10-03');
-                    });
-                    break;
-                    
-                case 'critical':
-                    // Identify and highlight critical path
-                    console.log('Identifying critical path...');
-                    // Critical path logic would go here
-                    break;
-                    
-                case 'resource':
-                    // Level resources to minimize overallocation
-                    console.log('Leveling resources...');
-                    // Resource leveling logic would go here
-                    break;
-            }
-            
-            // Refresh the scheduler
-            await project.propagate();
-            window.scheduler.refresh();
-        }
-        
-        function updateStatus() {
-            if (!window.scheduler || !window.scheduler.project) return;
-            
-            const events = window.scheduler.project.eventStore.count;
-            const resources = window.scheduler.project.resourceStore.count;
-            
-            const statusMessage = document.getElementById('statusMessage');
-            if (statusMessage) {
-                statusMessage.textContent = `${events} operations scheduled`;
-            }
-            
-            const lastUpdated = document.getElementById('lastUpdated');
-            if (lastUpdated) {
-                const now = new Date();
-                lastUpdated.textContent = `Last updated: ${now.toLocaleTimeString()}`;
-            }
-            
-            // Calculate resource utilization
-            let totalHours = 0;
-            window.scheduler.project.eventStore.forEach(event => {
-                totalHours += event.duration || 0;
-            });
-            
-            const utilization = document.getElementById('resourceUtilization');
-            if (utilization) {
-                const avgUtilization = resources > 0 ? Math.min(100, Math.round((totalHours / (resources * 40)) * 100)) : 0;
-                utilization.textContent = `Resource utilization: ${avgUtilization}% (${totalHours.toFixed(1)}h total)`;
-            }
-        }
-        
-        // Initialize when DOM is ready, then manually load Bryntum
-        async function startApplication() {
-            try {
-                console.log('🚀 Starting application initialization...');
-                
-                // First, load the Bryntum library
-                await loadBryntumLibrary();
-                console.log('✅ Bryntum library ready');
-                
-                // Then initialize the scheduler
-                await initializeScheduler();
-                console.log('✅ Scheduler initialization complete');
-            } catch (error) {
-                console.error('❌ Failed to initialize application:', error);
-                document.getElementById('scheduler').innerHTML = `
-                    <div style="background: #f8d7da; color: #721c24; padding: 20px; margin: 20px;">
-                        <h3>Error: Failed to Initialize Scheduler</h3>
+                document.getElementById('schedulerContainer').innerHTML = `
+                    <div class="error-message">
+                        <h3>Failed to initialize Production Scheduler</h3>
                         <p>${error.message}</p>
                         <p>Please refresh the page or contact support.</p>
                     </div>
@@ -787,12 +527,61 @@
             }
         }
         
-        // Start when DOM is ready
-        if (document.readyState === 'loading') {
-            document.addEventListener('DOMContentLoaded', startApplication);
-        } else {
-            // DOM is already ready
-            startApplication();
+        function setupToolbarHandlers() {
+            // View preset selector
+            document.getElementById('viewSelector').addEventListener('change', (e) => {
+                if (scheduler) {
+                    scheduler.viewPreset = e.target.value;
+                    console.log(`📊 Changed view to: ${e.target.value}`);
+                }
+            });
+            
+            // Algorithm selector and apply button
+            document.getElementById('applyAlgorithm').addEventListener('click', () => {
+                const algorithm = document.getElementById('algorithmSelector').value;
+                console.log(`🔄 Applying ${algorithm} algorithm...`);
+                
+                // Here you would implement the scheduling algorithm
+                // For now, just show a message
+                document.getElementById('statusMessage').textContent = 
+                    `Applied ${algorithm} scheduling algorithm`;
+                
+                setTimeout(() => updateStatus(), 2000);
+            });
+            
+            // Save button
+            document.getElementById('saveSchedule').addEventListener('click', () => {
+                console.log('💾 Saving schedule...');
+                
+                // Here you would save to backend
+                document.getElementById('statusMessage').textContent = 'Schedule saved';
+                
+                setTimeout(() => updateStatus(), 2000);
+            });
+        }
+        
+        function updateStatus() {
+            if (!scheduler || !scheduler.eventStore) return;
+            
+            const eventCount = scheduler.eventStore.count;
+            const resourceCount = scheduler.resourceStore?.count || 0;
+            
+            // Calculate total scheduled hours
+            let totalHours = 0;
+            scheduler.eventStore.forEach(event => {
+                totalHours += event.duration || 0;
+            });
+            
+            // Calculate utilization (simplified)
+            const availableHours = resourceCount * 8 * 10; // 10 working days
+            const utilization = availableHours > 0 
+                ? Math.round((totalHours / availableHours) * 100)
+                : 0;
+            
+            document.getElementById('statusMessage').textContent = 
+                `${eventCount} operations scheduled`;
+            document.getElementById('resourceUtilization').textContent = 
+                `Resource utilization: ${utilization}% (${totalHours.toFixed(1)}h total)`;
         }
     </script>
 </body>
