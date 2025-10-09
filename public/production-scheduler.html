@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     
     <!-- Bryntum Scheduler Pro CSS - Using Material3 Light theme for v7.0.0 -->
-    <link rel="stylesheet" href="/material3-light.css?v=7" id="scheduler-theme">
+    <link rel="stylesheet" href="/schedulerpro.css?v=8" id="scheduler-theme">
     
     <style>
         /* Minimal essential styles only - let Bryntum handle the rest */
@@ -65,6 +65,22 @@
         #scheduler {
             flex: 1;
             min-height: 0;
+            height: 100%;
+        }
+        
+        /* Diagnostic CSS for v7.0.0 alpha - ensure visibility */
+        .b-scheduler-pro {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        
+        .b-grid-header {
+            visibility: visible !important;
+            display: flex !important;
+        }
+        
+        .b-grid-body-container {
+            visibility: visible !important;
         }
 
         .status-bar {
@@ -355,110 +371,45 @@
                     // Basic scheduler configuration
                     startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
                     endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30),
-                    viewPreset: 'dayAndWeek',
+                    viewPreset: 'weekAndDay',  // Fixed typo: should be 'weekAndDay' not 'dayAndWeek'
                     rowHeight: 50,
                     barMargin: 5,
-                    eventColor: null,
-                    eventStyle: null,
+                    eventColor: '#2196F3',
+                    eventStyle: 'plain',
                     
                     // Proper Bryntum Project configuration using the scheduling engine
                     project: {
                         autoLoad: false,
                         autoSync: false,
                         
-                        // Calendar configuration for working hours
-                        calendar: 'general',
-                        calendarsData: [
-                            {
-                                id: 'general',
-                                name: 'General',
-                                intervals: [
-                                    {
-                                        recurrentStartDate: 'on Mon at 0:00',
-                                        recurrentEndDate: 'on Mon at 8:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Mon at 8:00',
-                                        recurrentEndDate: 'on Mon at 17:00',
-                                        isWorking: true
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Mon at 17:00',
-                                        recurrentEndDate: 'on Tue at 0:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Tue at 0:00',
-                                        recurrentEndDate: 'on Tue at 8:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Tue at 8:00',
-                                        recurrentEndDate: 'on Tue at 17:00',
-                                        isWorking: true
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Tue at 17:00',
-                                        recurrentEndDate: 'on Wed at 0:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Wed at 0:00',
-                                        recurrentEndDate: 'on Wed at 8:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Wed at 8:00',
-                                        recurrentEndDate: 'on Wed at 17:00',
-                                        isWorking: true
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Wed at 17:00',
-                                        recurrentEndDate: 'on Thu at 0:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Thu at 0:00',
-                                        recurrentEndDate: 'on Thu at 8:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Thu at 8:00',
-                                        recurrentEndDate: 'on Thu at 17:00',
-                                        isWorking: true
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Thu at 17:00',
-                                        recurrentEndDate: 'on Fri at 0:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Fri at 0:00',
-                                        recurrentEndDate: 'on Fri at 8:00',
-                                        isWorking: false
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Fri at 8:00',
-                                        recurrentEndDate: 'on Fri at 17:00',
-                                        isWorking: true
-                                    },
-                                    {
-                                        recurrentStartDate: 'on Fri at 17:00',
-                                        recurrentEndDate: 'on Mon at 0:00',
-                                        isWorking: false
-                                    }
-                                ]
-                            }
-                        ]
+                        // Event store configuration
+                        eventStore: {
+                            data: []
+                        },
+                        
+                        // Resource store configuration
+                        resourceStore: {
+                            data: []
+                        },
+                        
+                        // NO AssignmentStore - using single-assignment mode (resourceId on events)
+                        // Scheduler Pro can use EITHER AssignmentStore OR resourceId, not both!
+                        
+                        // Dependency store for task dependencies
+                        dependencyStore: {
+                            data: []
+                        }
                     },
                     
-                    // Column configuration
+                    // Column configuration with proper regions for v7.0.0
                     columns: [
                         {
+                            type: 'tree',
                             text: 'Resources',
                             field: 'name',
                             width: 220,
+                            minWidth: 100,
+                            region: 'locked',  // REQUIRED for v7.0.0 alpha
                             editor: false
                         }
                     ],
@@ -509,6 +460,7 @@
                 });
                 
                 // Load the inline data into the scheduler project
+                // Using single-assignment mode (resourceId on events), NO assignmentsData
                 await scheduler.project.loadInlineData({
                     resourcesData: resources,
                     eventsData: events,
