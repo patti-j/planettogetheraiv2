@@ -16,6 +16,9 @@
     <!-- Bryntum Scheduler Pro CSS - Using Material3 Light theme for v7.0.0 -->
     <link rel="stylesheet" href="/schedulerpro.css?v=8" id="scheduler-theme">
     
+    <!-- CRITICAL: Load Bryntum Scheduler Pro library in HEAD (required for initialization) -->
+    <script src="/schedulerpro.umd.js"></script>
+    
     <style>
         /* Minimal essential styles only - let Bryntum handle the rest */
         * {
@@ -401,10 +404,9 @@
                         }
                     },
                     
-                    // Column configuration with proper regions for v7.0.0
+                    // Column configuration - removed 'tree' type that requires Tree feature
                     columns: [
                         {
-                            type: 'tree',
                             text: 'Resources',
                             field: 'name',
                             width: 220,
@@ -416,6 +418,7 @@
                     
                     // Features configuration
                     features: {
+                        tree: false,  // Explicitly disable tree feature to avoid conflicts
                         eventDrag: {
                             constrainDragToResource: false,
                             showTooltip: true
