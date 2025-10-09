@@ -13,7 +13,10 @@
     <!-- FontAwesome (now required separately in v7.0.0) - Using local copy -->
     <link rel="stylesheet" href="/fontawesome/css/all.min.css">
     
-    <!-- Bryntum Scheduler Pro CSS - Using Stockholm Light theme for v7.0.0 -->
+    <!-- Bryntum Scheduler Pro CSS - Base styles MUST be loaded first -->
+    <link rel="stylesheet" href="/schedulerpro.css">
+    
+    <!-- Stockholm Light theme overlay - loaded on top of base styles -->
     <link rel="stylesheet" href="/stockholm-light.css?v=7" id="scheduler-theme">
     
     <!-- CRITICAL: Load Bryntum Scheduler Pro library in HEAD (required for initialization) -->
