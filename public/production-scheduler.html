@@ -230,8 +230,44 @@
                 }
 
                 // Initialize scheduler using global bryntum object
-                const { SchedulerPro } = bryntum.schedulerpro;
-                console.log('✅ Bryntum SchedulerPro library loaded successfully');
+                // Try multiple possible locations for SchedulerPro constructor in v7.0.0-alpha.1
+                console.log('🔍 Looking for SchedulerPro constructor...');
+                console.log('Available bryntum properties:', Object.keys(bryntum));
+                
+                // Check if schedulerpro namespace exists
+                if (bryntum.schedulerpro) {
+                    console.log('bryntum.schedulerpro properties:', Object.keys(bryntum.schedulerpro));
+                }
+                
+                // For v6.3.2, SchedulerPro should be at bryntum.schedulerpro.SchedulerPro
+                // Let's check the exact structure
+                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro;
+                
+                // If not found, try exploring the bryntum object structure
+                if (!SchedulerPro && bryntum.schedulerpro) {
+                    // Check what classes are available in the schedulerpro namespace
+                    for (let key in bryntum.schedulerpro) {
+                        if (key.includes('Scheduler')) {
+                            console.log(`Found scheduler class: bryntum.schedulerpro.${key}`);
+                        }
+                    }
+                }
+                
+                if (!SchedulerPro) {
+                    console.error('❌ SchedulerPro constructor not found!');
+                    console.error('Tried all possible locations. Check console for available properties.');
+                    
+                    // Try to find any constructor-like objects
+                    for (let key in bryntum) {
+                        if (typeof bryntum[key] === 'function' && key.includes('Scheduler')) {
+                            console.log(`Found potential constructor: bryntum.${key}`);
+                        }
+                    }
+                    
+                    throw new Error('SchedulerPro constructor not available');
+                }
+                
+                console.log('✅ Found SchedulerPro constructor!', SchedulerPro);
                 
                 // Set today's date to September 3, 2025
                 const today = new Date('2025-09-03');
