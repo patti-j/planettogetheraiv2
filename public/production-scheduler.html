@@ -386,6 +386,9 @@
                 scheduler = new SchedulerPro({
                     appendTo: 'schedulerContainer',
                     
+                    // CRITICAL: Set mode to horizontal for Gantt chart view
+                    mode: 'horizontal',
+                    
                     // Time configuration
                     startDate: startDate,
                     endDate: endDate,

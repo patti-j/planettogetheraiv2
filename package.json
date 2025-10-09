@@ -15,7 +15,7 @@
     "@aws-sdk/client-ses": "^3.844.0",
     "@aws-sdk/client-sesv2": "^3.844.0",
     "@bryntum/schedulerpro": "^6.3.3",
-    "@bryntum/schedulerpro-react": "^7.0.0-alpha.1",
+    "@bryntum/schedulerpro-react": "^6.3.3",
     "@fortawesome/fontawesome-free": "^7.1.0",
     "@google-cloud/storage": "^7.17.0",
     "@hookform/resolvers": "^3.10.0",
