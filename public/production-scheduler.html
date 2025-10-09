@@ -204,8 +204,15 @@
                     loadingOverlay.style.display = 'none';
                 }
 
+                // Check if bryntum is available
+                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                    console.error('❌ Bryntum SchedulerPro is not loaded!');
+                    throw new Error('Bryntum SchedulerPro library is not available');
+                }
+
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
+                console.log('✅ Bryntum SchedulerPro library loaded successfully');
                 
                 // Set today's date to September 3, 2025
                 const today = new Date('2025-09-03');
@@ -222,45 +229,19 @@
                         
                         // Map PT resources to Bryntum format with proper sorting
                         resources = ptResources
-                            .filter(res => res.is_active !== false)
+                            .filter(res => res.active !== false)  // Fixed: use 'active' not 'is_active'
                             .sort((a, b) => {
-                                // Sort by resource type first
-                                const typeOrder = {
-                                    'Packaging': 1,
-                                    'Production': 2,
-                                    'Processing': 3,
-                                    'Maintenance': 4,
-                                    'Quality': 5
-                                };
-                                
-                                const typeA = typeOrder[a.resource_type] || 99;
-                                const typeB = typeOrder[b.resource_type] || 99;
-                                
-                                if (typeA !== typeB) {
-                                    return typeA - typeB;
-                                }
-                                
-                                // Then by name
+                                // Sort by name since we don't have resource_type
                                 const nameA = a.name || '';
                                 const nameB = b.name || '';
                                 return nameA.localeCompare(nameB);
                             })
                             .map((resource, index) => ({
-                                id: resource.external_id || `RESOURCE_${resource.id}`,
+                                id: resource.resource_id || `RESOURCE_${resource.id}`,  // Fixed: use resource_id
                                 name: resource.name || `Resource ${resource.id}`,
-                                resourceType: resource.resource_type || 'General',
-                                department: resource.department || '',
-                                efficiency: resource.efficiency || 100,
-                                costPerHour: resource.cost_per_hour || 0,
-                                calendar: resource.calendar_id || 'general',
+                                resourceType: 'Production',  // Default type since not in DB
                                 sortOrder: index
                             }));
-                        
-                        // Add explicit sortOrder field to each resource to prevent Bryntum from re-sorting
-                        resources = resources.map((resource, index) => ({
-                            ...resource,
-                            sortOrder: index
-                        }));
                     } else {
                         console.warn('⚠️ Could not load PT resources, using demo data');
                     }
@@ -296,15 +277,25 @@
                 
                 // Transform PT operations into Bryntum events format
                 let events = ptOperations.map((operation, index) => {
-                    let startDate = new Date(today);
-                    startDate.setDate(startDate.getDate() + Math.floor(index / 4));
-                    startDate.setHours(8 + (index % 4) * 3, 0, 0, 0);
+                    // Use actual scheduled dates if available, otherwise generate demo dates
+                    let startDate = operation.scheduled_start ? new Date(operation.scheduled_start) : new Date(today);
+                    let endDate = operation.scheduled_end ? new Date(operation.scheduled_end) : null;
                     
-                    let endDate = new Date(startDate);
-                    endDate.setHours(startDate.getHours() + 2);
+                    // If no scheduled dates, generate them based on index
+                    if (!operation.scheduled_start) {
+                        startDate.setDate(startDate.getDate() + Math.floor(index / 4));
+                        startDate.setHours(8 + (index % 4) * 3, 0, 0, 0);
+                    }
+                    
+                    if (!endDate) {
+                        endDate = new Date(startDate);
+                        const durationHours = parseFloat(operation.cycle_hrs) || 2;
+                        endDate.setHours(startDate.getHours() + durationHours);
+                    }
                     
                     const eventId = operation.external_id || `OP_${operation.id}`;
-                    const resourceId = operation.resource_external_id || resources[index % resources.length]?.id || resources[0]?.id;
+                    // Assign to resources in round-robin if no specific resource
+                    const resourceId = resources[index % resources.length]?.id || resources[0]?.id;
                     
                     return {
                         id: eventId,
@@ -312,13 +303,10 @@
                         startDate: startDate,
                         endDate: endDate,
                         resourceId: resourceId,
-                        eventColor: operation.operation_type === 'Setup' ? '#FFA500' : 
-                                   operation.operation_type === 'Production' ? '#4CAF50' : 
-                                   '#2196F3',
+                        eventColor: '#2196F3',  // Default blue color for all operations
                         priority: operation.priority || 50,
-                        operationType: operation.operation_type || 'Production',
-                        setupMinutes: operation.setup_minutes || 0,
-                        durationMinutes: operation.duration_minutes || 120,
+                        setupHours: parseFloat(operation.setup_hours) || 0,
+                        cycleHrs: parseFloat(operation.cycle_hrs) || 0,
                         constraintType: 'startnoearlierthan',
                         constraintDate: startDate,
                         originalStart: new Date(startDate),
@@ -360,8 +348,9 @@
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
-                    // Use Material3 theme (default for v7.0.0)
-                    // Theme is loaded via CSS file, no need to set here
+                    // Ensure the scheduler has a proper height
+                    autoHeight: false,
+                    height: '100%',
                     
                     // Basic scheduler configuration
                     startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
@@ -511,6 +500,14 @@
                     }
                 });
                 
+                // Log the data being loaded
+                console.log('📊 Loading data into scheduler:', {
+                    resourcesCount: resources.length,
+                    eventsCount: events.length,
+                    resources: resources.slice(0, 3),  // Show first 3 resources
+                    events: events.slice(0, 3)  // Show first 3 events
+                });
+                
                 // Load the inline data into the scheduler project
                 await scheduler.project.loadInlineData({
                     resourcesData: resources,
@@ -519,6 +516,13 @@
                 });
                 
                 console.log('✅ Scheduler initialized successfully with loaded data');
+                console.log('📊 Scheduler state:', {
+                    resourceCount: scheduler.resourceStore.count,
+                    eventCount: scheduler.eventStore.count,
+                    startDate: scheduler.startDate,
+                    endDate: scheduler.endDate,
+                    viewPreset: scheduler.viewPreset
+                });
                 
                 // Set up toolbar event handlers
                 setupToolbarHandlers();
