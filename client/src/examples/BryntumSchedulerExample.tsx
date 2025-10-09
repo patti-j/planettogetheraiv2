@@ -1,8 +1,8 @@
 import React, { useRef, useEffect } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import type { BryntumSchedulerProProps } from '@bryntum/schedulerpro-react';
-// Import the Bryntum CSS theme - Using Material3 Light for v7.0.0
-import '@bryntum/schedulerpro/material3-light.css';
+// Import the Bryntum CSS theme - Using Stockholm theme for v6.3.3
+import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 
 /**
  * Example Bryntum SchedulerPro React Component

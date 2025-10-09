@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import '@bryntum/schedulerpro/stockholm-light.css';
+import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Maximize } from 'lucide-react';
 
