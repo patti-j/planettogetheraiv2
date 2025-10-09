@@ -859,10 +859,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             console.error('❌ Error saving widget to database:', error);
           }
           
-          // Show canvas if not visible
-          if (!isCanvasVisible) {
-            setCanvasVisible(true);
-          }
+          // Navigate to Canvas page to show the chart
+          console.log('🔄 Navigating to Canvas page to display chart');
+          window.location.href = '/canvas';
         }
         
         // Show chart creation confirmation
@@ -923,10 +922,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             console.error('❌ Error saving table widget to database:', error);
           }
           
-          // Show canvas if not visible
-          if (!isCanvasVisible) {
-            setCanvasVisible(true);
-          }
+          // Navigate to Canvas page to show the table
+          console.log('🔄 Navigating to Canvas page to display table');
+          window.location.href = '/canvas';
         }
         
         // Show table creation confirmation
