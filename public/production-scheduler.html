@@ -10,11 +10,11 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- FontAwesome (now required separately in v7.0.0) -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <!-- FontAwesome (now required separately in v7.0.0) - Using local copy -->
+    <link rel="stylesheet" href="/fontawesome/css/all.min.css">
     
-    <!-- Bryntum Scheduler Pro CSS - Using Material3 Light theme for v7.0.0 -->
-    <link rel="stylesheet" href="/schedulerpro.css?v=8" id="scheduler-theme">
+    <!-- Bryntum Scheduler Pro CSS - Using Stockholm Light theme for v7.0.0 -->
+    <link rel="stylesheet" href="/stockholm.css?v=7" id="scheduler-theme">
     
     <!-- CRITICAL: Load Bryntum Scheduler Pro library in HEAD (required for initialization) -->
     <script src="/schedulerpro.umd.js"></script>
@@ -239,17 +239,16 @@
                     console.log('bryntum.schedulerpro properties:', Object.keys(bryntum.schedulerpro));
                 }
                 
-                // For v6.3.2, SchedulerPro should be at bryntum.schedulerpro.SchedulerPro
-                // Let's check the exact structure
+                // For v7.0.0-alpha.1, SchedulerPro is at bryntum.schedulerpro.SchedulerPro
                 const SchedulerPro = bryntum.schedulerpro?.SchedulerPro;
                 
-                // If not found, try exploring the bryntum object structure
-                if (!SchedulerPro && bryntum.schedulerpro) {
-                    // Check what classes are available in the schedulerpro namespace
-                    for (let key in bryntum.schedulerpro) {
-                        if (key.includes('Scheduler')) {
-                            console.log(`Found scheduler class: bryntum.schedulerpro.${key}`);
-                        }
+                // Also check if it's available directly
+                if (!SchedulerPro) {
+                    console.log('Checking alternative locations for SchedulerPro...');
+                    // Try direct access
+                    if (window.SchedulerPro) {
+                        console.log('Found SchedulerPro on window object');
+                        const SchedulerPro = window.SchedulerPro;
                     }
                 }
                 
