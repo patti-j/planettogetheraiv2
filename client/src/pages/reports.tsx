@@ -1192,7 +1192,7 @@ export default function Dashboard() {
                 }}
                 data-testid="menu-edit-mode-mobile"
                 className="flex items-center gap-2"
-                disabled={viewMode === "edit"}
+                disabled={isMobile || viewMode === "edit"}
               >
                 <Edit className="w-4 h-4" />
                 Switch to Edit
