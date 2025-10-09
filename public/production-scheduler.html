@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="/fontawesome/css/all.min.css">
     
     <!-- Bryntum Scheduler Pro CSS - Using Stockholm Light theme for v7.0.0 -->
-    <link rel="stylesheet" href="/stockholm.css?v=7" id="scheduler-theme">
+    <link rel="stylesheet" href="/stockholm-light.css?v=7" id="scheduler-theme">
     
     <!-- CRITICAL: Load Bryntum Scheduler Pro library in HEAD (required for initialization) -->
     <script src="/schedulerpro.umd.js"></script>
@@ -470,10 +470,13 @@
                     autoHeight: false,
                     height: '100%',
                     
-                    // Basic scheduler configuration
+                    // Force horizontal mode - critical for correct date display
+                    mode: 'horizontal',  // Ensure horizontal timeline mode
+                    
+                    // Basic scheduler configuration  
                     startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
                     endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30),
-                    viewPreset: 'weekAndDay',  // Fixed typo: should be 'weekAndDay' not 'dayAndWeek'
+                    viewPreset: 'weekAndDay',  // Standard horizontal preset
                     rowHeight: 50,
                     barMargin: 5,
                     eventColor: '#2196F3',
@@ -616,12 +619,12 @@
             const viewSelector = document.getElementById('viewSelector');
             viewSelector?.addEventListener('change', (e) => {
                 const viewMap = {
-                    'day': 'dayAndWeek',
-                    'week': 'weekAndMonth',
+                    'day': 'hourAndDay',
+                    'week': 'weekAndDay',
                     'month': 'monthAndYear'
                 };
                 if (window.scheduler) {
-                    window.scheduler.viewPreset = viewMap[e.target.value] || 'dayAndWeek';
+                    window.scheduler.viewPreset = viewMap[e.target.value] || 'weekAndDay';
                 }
             });
             
