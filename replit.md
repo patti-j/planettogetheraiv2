@@ -72,3 +72,27 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Charting**: Recharts, Chart.js
 -   **Session Management**: connect-pg-simple
 -   **Icons**: FontAwesome Free (required separately from v7.0.0)
+
+## Recent Updates
+
+### Bryntum Scheduler Pro 7.0.0-alpha.1 Upgrade (October 9, 2025)
+
+Successfully upgraded from v6.3.3 to v7.0.0-alpha.1 with the following major changes:
+
+#### Breaking Changes Handled:
+1. **CSS Architecture Migration**: Migrated from SASS to nested CSS with custom properties
+2. **Selector Naming**: Updated all CSS selectors from camelCase to kebab-case (e.g., `b-schedulerpro` → `b-scheduler-pro`)
+3. **FontAwesome Integration**: Added as separate dependency (no longer built into Bryntum)
+4. **New Theme System**: Implemented Material3 theme as default (replaces classic themes)
+5. **Resource Image Extension**: Changed default from .jpg to .png
+
+#### CSS Conflict Resolution:
+- **Issue**: Production scheduler had 800+ lines of inline CSS interfering with Bryntum themes
+- **Solution**: Removed all conflicting inline styles, keeping only minimal essential layout CSS
+- **Result**: Clean integration with Bryntum Material3 theme without style conflicts
+
+#### Important Notes:
+- When using Bryntum components, avoid custom CSS that overrides component styling
+- Let Bryntum themes handle all component appearance
+- Keep custom styles minimal and focused on page layout only
+- The production scheduler uses a standalone HTML file with UMD build for isolation
