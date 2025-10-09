@@ -62,7 +62,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 -   **Database Provider**: Neon Database (serverless PostgreSQL)
 -   **AI/ML**: OpenAI API (GPT-4o, Whisper, TTS-1, gpt-realtime-mini)
--   **UI Libraries**: Radix UI, Shadcn/UI, Bryntum Scheduler Pro
+-   **UI Libraries**: Radix UI, Shadcn/UI, Bryntum Scheduler Pro 7.0.0-alpha.1
 -   **Styling**: Tailwind CSS
 -   **State Management**: TanStack Query (React Query)
 -   **Routing**: Wouter
@@ -71,3 +71,4 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Date Handling**: date-fns
 -   **Charting**: Recharts, Chart.js
 -   **Session Management**: connect-pg-simple
+-   **Icons**: FontAwesome Free (required separately from v7.0.0)
