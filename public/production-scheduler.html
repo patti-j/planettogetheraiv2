@@ -406,46 +406,10 @@
                     rowHeight: 60,
                     barMargin: 8,
                     
-                    // Use project configuration for proper data binding
-                    project: {
-                        // Calendar configuration
-                        calendars: [{
-                            id: 'general',
-                            name: 'General',
-                            intervals: [
-                                {
-                                    recurrentStartDate: 'on Mon at 8:00',
-                                    recurrentEndDate: 'on Mon at 17:00',
-                                    isWorking: true
-                                },
-                                {
-                                    recurrentStartDate: 'on Tue at 8:00',
-                                    recurrentEndDate: 'on Tue at 17:00',
-                                    isWorking: true
-                                },
-                                {
-                                    recurrentStartDate: 'on Wed at 8:00',
-                                    recurrentEndDate: 'on Wed at 17:00',
-                                    isWorking: true
-                                },
-                                {
-                                    recurrentStartDate: 'on Thu at 8:00',
-                                    recurrentEndDate: 'on Thu at 17:00',
-                                    isWorking: true
-                                },
-                                {
-                                    recurrentStartDate: 'on Fri at 8:00',
-                                    recurrentEndDate: 'on Fri at 17:00',
-                                    isWorking: true
-                                }
-                            ]
-                        }],
-                        
-                        // Data stores (non-deprecated properties)
-                        resources: resources,
-                        events: events,
-                        assignments: assignments
-                    },
+                    // Direct data configuration without project wrapper
+                    resources: resources,
+                    events: events,
+                    assignments: assignments,
                     
                     // Resource columns configuration
                     columns: [
@@ -510,6 +474,7 @@
                 });
                 
                 console.log('✅ SchedulerPro v6.3.3 initialized with horizontal timeline');
+                console.log(`📊 Loaded ${scheduler.eventStore.count} events, ${scheduler.resourceStore.count} resources`);
                 
                 // Set up toolbar handlers
                 setupToolbarHandlers();
