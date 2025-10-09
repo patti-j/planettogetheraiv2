@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Schedule Inspect - PlanetTogether</title>
+    
+    <!-- Bryntum Scheduler Pro CSS - Base styles first -->
+    <link rel="stylesheet" href="/schedulerpro.css">
+    
+    <!-- Stockholm Light theme overlay on top -->
+    <link rel="stylesheet" href="/stockholm-light.css">
+    
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="/fontawesome/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            padding: 20px;
+            font-family: Arial, sans-serif;
+        }
+        
+        #scheduler {
+            height: 600px !important;
+            width: 100% !important;
+            border: 3px solid red;
+            background: #f0f0f0;
+            position: relative;
+        }
+        
+        /* Force visibility of Bryntum elements */
+        .b-schedulerpro,
+        .b-scheduler-pro,
+        .b-grid,
+        .b-sch-timeaxis-column {
+            visibility: visible !important;
+            display: block !important;
+            opacity: 1 !important;
+        }
+        
+        .debug {
+            margin: 20px 0;
+            padding: 10px;
+            background: #e0e0e0;
+            border-radius: 4px;
+        }
+        
+        .found {
+            color: green;
+            font-weight: bold;
+        }
+        
+        .missing {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Production Schedule - DOM Inspection</h1>
+    
+    <div class="debug" id="status">
+        <h3>Status:</h3>
+        <div id="status-content">Initializing...</div>
+    </div>
+    
+    <div id="scheduler"></div>
+    
+    <div class="debug" id="dom-info">
+        <h3>DOM Elements Found:</h3>
+        <div id="dom-content"></div>
+    </div>
+    
+    <!-- Load Bryntum SchedulerPro UMD -->
+    <script src="/schedulerpro.umd.js"></script>
+    
+    <script>
+        function updateStatus(msg) {
+            document.getElementById('status-content').innerHTML += `<div>${msg}</div>`;
+            console.log(msg);
+        }
+        
+        function inspectDOM() {
+            const checks = [
+                { selector: '.b-schedulerpro', name: 'SchedulerPro Container' },
+                { selector: '.b-scheduler-pro', name: 'SchedulerPro Container (kebab)' },
+                { selector: '.b-grid', name: 'Grid Component' },
+                { selector: '.b-grid-subgrid', name: 'SubGrid' },
+                { selector: '.b-grid-header', name: 'Grid Header' },
+                { selector: '.b-sch-timeaxis', name: 'Time Axis' },
+                { selector: '.b-sch-event', name: 'Events' },
+                { selector: '.b-resourceinfo-cell', name: 'Resource Cells' },
+                { selector: 'svg', name: 'SVG Canvas' }
+            ];
+            
+            let html = '';
+            checks.forEach(check => {
+                const elements = document.querySelectorAll(check.selector);
+                const found = elements.length > 0;
+                html += `<div class="${found ? 'found' : 'missing'}">
+                    ${check.name}: ${elements.length} found
+                </div>`;
+                
+                if (found && elements[0]) {
+                    const rect = elements[0].getBoundingClientRect();
+                    html += `<div style="margin-left: 20px; font-size: 12px;">
+                        Dimensions: ${rect.width}x${rect.height}, 
+                        Visible: ${rect.width > 0 && rect.height > 0}
+                    </div>`;
+                }
+            });
+            
+            document.getElementById('dom-content').innerHTML = html;
+        }
+        
+        async function init() {
+            try {
+                updateStatus('Checking Bryntum...');
+                
+                if (!window.bryntum?.schedulerpro?.SchedulerPro) {
+                    throw new Error('SchedulerPro not loaded!');
+                }
+                
+                updateStatus('<span class="found">✓ SchedulerPro loaded</span>');
+                
+                const { SchedulerPro } = bryntum.schedulerpro;
+                
+                updateStatus('Creating scheduler instance...');
+                
+                // Create with very basic config
+                const scheduler = new SchedulerPro({
+                    appendTo: 'scheduler',
+                    
+                    // Explicit dimensions
+                    height: 600,
+                    width: '100%',
+                    
+                    // Simple data
+                    columns: [
+                        { text: 'Name', field: 'name', width: 200 }
+                    ],
+                    
+                    resources: [
+                        { id: 'r1', name: 'Machine 1' },
+                        { id: 'r2', name: 'Machine 2' },
+                        { id: 'r3', name: 'Machine 3' }
+                    ],
+                    
+                    events: [
+                        {
+                            id: 1,
+                            resourceId: 'r1',
+                            name: 'Operation 1',
+                            startDate: '2024-10-09T08:00:00',
+                            endDate: '2024-10-09T12:00:00'
+                        },
+                        {
+                            id: 2,
+                            resourceId: 'r2',
+                            name: 'Operation 2',
+                            startDate: '2024-10-09T09:00:00',
+                            endDate: '2024-10-09T14:00:00'
+                        }
+                    ],
+                    
+                    startDate: '2024-10-09',
+                    endDate: '2024-10-10',
+                    
+                    viewPreset: 'hourAndDay',
+                    
+                    listeners: {
+                        paint: () => {
+                            updateStatus('<span class="found">✓ Scheduler painted event fired</span>');
+                            setTimeout(inspectDOM, 100);
+                        }
+                    }
+                });
+                
+                updateStatus('<span class="found">✓ Scheduler created</span>');
+                
+                // Force a refresh
+                setTimeout(() => {
+                    updateStatus('Forcing refresh...');
+                    scheduler.refresh();
+                    scheduler.refreshRows();
+                    
+                    // Check computed styles
+                    const container = document.getElementById('scheduler');
+                    const computedStyle = window.getComputedStyle(container);
+                    updateStatus(`Container computed height: ${computedStyle.height}`);
+                    updateStatus(`Container computed display: ${computedStyle.display}`);
+                    
+                    // Final DOM inspection
+                    setTimeout(inspectDOM, 500);
+                }, 1000);
+                
+                // Store globally for console debugging
+                window.scheduler = scheduler;
+                updateStatus('Scheduler available as window.scheduler');
+                
+            } catch (error) {
+                updateStatus(`<span class="missing">ERROR: ${error.message}</span>`);
+                console.error(error);
+            }
+        }
+        
+        // Run when ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
