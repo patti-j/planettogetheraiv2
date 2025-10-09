@@ -240,15 +240,18 @@
                 }
                 
                 // For v7.0.0-alpha.1, SchedulerPro is at bryntum.schedulerpro.SchedulerPro
-                const SchedulerPro = bryntum.schedulerpro?.SchedulerPro;
+                let SchedulerPro = bryntum.schedulerpro?.SchedulerPro;
                 
-                // Also check if it's available directly
+                // Also check if it's available directly on window
                 if (!SchedulerPro) {
                     console.log('Checking alternative locations for SchedulerPro...');
-                    // Try direct access
+                    // Try direct access on window
                     if (window.SchedulerPro) {
                         console.log('Found SchedulerPro on window object');
-                        const SchedulerPro = window.SchedulerPro;
+                        SchedulerPro = window.SchedulerPro;
+                    } else if (bryntum.SchedulerPro) {
+                        console.log('Found SchedulerPro directly on bryntum');
+                        SchedulerPro = bryntum.SchedulerPro;
                     }
                 }
                 
@@ -256,10 +259,24 @@
                     console.error('❌ SchedulerPro constructor not found!');
                     console.error('Tried all possible locations. Check console for available properties.');
                     
-                    // Try to find any constructor-like objects
-                    for (let key in bryntum) {
-                        if (typeof bryntum[key] === 'function' && key.includes('Scheduler')) {
-                            console.log(`Found potential constructor: bryntum.${key}`);
+                    // Display error details on page for debugging
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'background: #f8d7da; color: #721c24; padding: 20px; margin: 20px;';
+                    errorDiv.innerHTML = `
+                        <h3>Debug Information</h3>
+                        <p>bryntum exists: ${typeof bryntum !== 'undefined'}</p>
+                        <p>bryntum.schedulerpro exists: ${typeof bryntum?.schedulerpro !== 'undefined'}</p>
+                        <p>bryntum.schedulerpro properties: ${bryntum?.schedulerpro ? Object.keys(bryntum.schedulerpro).slice(0, 10).join(', ') + '...' : 'N/A'}</p>
+                        <p>Total properties in bryntum.schedulerpro: ${bryntum?.schedulerpro ? Object.keys(bryntum.schedulerpro).length : 0}</p>
+                    `;
+                    document.getElementById('scheduler').appendChild(errorDiv);
+                    
+                    // Try to find any constructor-like objects in bryntum.schedulerpro
+                    if (bryntum.schedulerpro) {
+                        for (let key in bryntum.schedulerpro) {
+                            if (typeof bryntum.schedulerpro[key] === 'function' && key.includes('Scheduler')) {
+                                console.log(`Found potential constructor: bryntum.schedulerpro.${key}`);
+                            }
                         }
                     }
                     
