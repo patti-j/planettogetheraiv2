@@ -1085,6 +1085,72 @@ Return only the JSON object, no other text.`;
     }
   }
 
+  // Get jobs data formatted for table display
+  async getJobsTableData(query: string, context: MaxContext): Promise<MaxResponse> {
+    try {
+      console.log('[Max AI] Fetching jobs data for table display');
+      
+      // Fetch job data from ptjobs table
+      const jobsResult = await db.execute(sql`
+        SELECT 
+          j.id,
+          j.external_id,
+          j.name,
+          j.description,
+          j.priority,
+          j.need_date_time,
+          j.scheduled_status,
+          j.created_at,
+          j.updated_at
+        FROM ptjobs j
+        ORDER BY j.priority DESC, j.created_at DESC
+        LIMIT 100
+      `);
+      
+      // Format the data for table display
+      const columns = [
+        { key: 'id', label: 'ID', width: '60px' },
+        { key: 'name', label: 'Job Name', width: '200px' },
+        { key: 'external_id', label: 'External ID', width: '120px' },
+        { key: 'priority', label: 'Priority', width: '80px' },
+        { key: 'scheduled_status', label: 'Status', width: '120px' },
+        { key: 'need_date_time', label: 'Need Date', width: '150px' },
+        { key: 'description', label: 'Description', width: '250px' }
+      ];
+      
+      const rows = jobsResult.rows.map((row: any) => ({
+        id: row.id,
+        name: row.name || 'N/A',
+        external_id: row.external_id || 'N/A',
+        priority: row.priority || 0,
+        scheduled_status: row.scheduled_status || 'Not Scheduled',
+        need_date_time: row.need_date_time ? new Date(row.need_date_time).toLocaleDateString() : 'N/A',
+        description: row.description || 'No description'
+      }));
+      
+      console.log(`[Max AI] Found ${rows.length} jobs for table display`);
+      
+      return {
+        content: `I've retrieved ${rows.length} jobs from the production system. The table is now displayed in the Canvas with details including job names, priorities, status, and need dates.`,
+        action: {
+          type: 'show_jobs_table',
+          title: 'Production Jobs',
+          tableData: {
+            columns,
+            rows
+          }
+        }
+      };
+      
+    } catch (error) {
+      console.error('[Max AI] Error fetching jobs table data:', error);
+      return {
+        content: 'I encountered an error while fetching the job data. Please try again or check the system logs.',
+        error: true
+      };
+    }
+  }
+
   // Analyze production schedule for conflicts and bottlenecks
   async analyzeSchedule(context: MaxContext): Promise<ProductionInsight[]> {
     const insights: ProductionInsight[] = [];
@@ -1137,7 +1203,7 @@ Return only the JSON object, no other text.`;
   }
 
   // Use AI to intelligently determine user intent and target route
-  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart' | 'switch_agent'; target?: string; agentId?: string; confidence: number; chartType?: string }> {
+  private async analyzeUserIntentWithAI(query: string): Promise<{ type: 'navigate' | 'show_data' | 'chat' | 'create_chart' | 'switch_agent' | 'show_jobs_table'; target?: string; agentId?: string; confidence: number; chartType?: string }> {
     const navigationMapping = await this.getNavigationMapping();
     const routes = Object.values(navigationMapping).map(page => ({
       route: page.path,
@@ -1170,6 +1236,17 @@ Return only the JSON object, no other text.`;
           return { type: 'switch_agent', agentId, confidence: 0.95 };
         }
       }
+    }
+    
+    // Check for table/grid requests for job data
+    const tableKeywords = ['table', 'grid', 'list', 'show jobs', 'display jobs', 'job list', 'job table', 'jobs grid'];
+    const jobKeywords = ['job', 'jobs', 'production', 'work order', 'manufacturing order'];
+    const hasTableIntent = tableKeywords.some(keyword => queryLower.includes(keyword));
+    const hasJobContext = jobKeywords.some(keyword => queryLower.includes(keyword));
+    
+    if (hasTableIntent && hasJobContext) {
+      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED!`);
+      return { type: 'show_jobs_table', confidence: 0.9 };
     }
     
     // Check for chart creation requests with more liberal matching
@@ -1299,6 +1376,12 @@ Rules:
         if (intent.type === 'create_chart' && intent.confidence > 0.7) {
           console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
           return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
+        }
+        
+        // Handle job table/grid intent
+        if (intent.type === 'show_jobs_table' && intent.confidence > 0.7) {
+          console.log(`[Max AI] Detected job table intent with confidence ${intent.confidence}`);
+          return await this.getJobsTableData(query, context);
         }
         
         // Handle agent switching intent

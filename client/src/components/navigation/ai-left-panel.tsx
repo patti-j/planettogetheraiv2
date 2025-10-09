@@ -876,6 +876,70 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
+      // Handle table/grid creation actions for job data
+      if (data?.action?.type === 'create_table' || data?.action?.type === 'show_jobs_table') {
+        console.log('AI Left Panel - Handling table creation action:', data.action);
+        
+        // Process table data and add to canvas via Max Dock
+        if (data.action.tableData && setCanvasItems) {
+          const tableItem: CanvasItem = {
+            id: `table_${Date.now()}`,
+            type: 'table',
+            title: data.action.title || 'Jobs Table',
+            content: {
+              title: data.action.title || 'Jobs Table',
+              rows: data.action.tableData.rows || [],
+              columns: data.action.tableData.columns || []
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          // Add table item to canvas
+          setCanvasItems(prev => [...prev, tableItem]);
+          
+          // Save widget to database so it persists across sessions
+          try {
+            const widgetData = {
+              type: 'table',
+              title: tableItem.title,
+              position: { x: 0, y: 0, w: 8, h: 6 },
+              config: {
+                data: tableItem.content,
+                createdByMaxAI: true
+              },
+              dashboardId: 1
+            };
+
+            const response = await apiRequest('POST', '/api/canvas/widgets', widgetData);
+
+            if (response.ok) {
+              console.log('✅ Table widget saved to database successfully');
+              // Invalidate canvas widgets cache to refresh the canvas
+              queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+            } else {
+              console.error('❌ Failed to save table widget to database:', response.statusText);
+            }
+          } catch (error) {
+            console.error('❌ Error saving table widget to database:', error);
+          }
+          
+          // Show canvas if not visible
+          if (!isCanvasVisible) {
+            setCanvasVisible(true);
+          }
+        }
+        
+        // Show table creation confirmation
+        await addMessage({
+          role: 'assistant',
+          content: data.content || 'I\'ve created a jobs table and added it to the canvas.',
+          source: 'panel',
+          agentId: data.agentId || 'max',
+          agentName: data.agentName || 'Max'
+        });
+        return;
+      }
+      
       // Store response for display
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;

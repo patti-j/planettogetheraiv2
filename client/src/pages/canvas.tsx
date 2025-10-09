@@ -829,14 +829,69 @@ const ChartWidget: React.FC<{ data: any; configuration?: any; title?: string }> 
 };
 
 const TableWidget: React.FC<{ data: any }> = ({ data }) => {
-  const sampleData = data?.rows || [
+  // Use provided columns and rows, or fall back to sample data
+  const columns = data?.columns || [
+    { key: 'id', label: 'ID', width: '60px' },
+    { key: 'name', label: 'Name', width: '200px' },
+    { key: 'status', label: 'Status', width: '120px' },
+    { key: 'progress', label: 'Progress', width: '100px' }
+  ];
+
+  const rows = data?.rows || [
     { id: 1, name: 'Job #1234', status: 'In Progress', progress: 75 },
     { id: 2, name: 'Job #1235', status: 'Completed', progress: 100 },
     { id: 3, name: 'Job #1236', status: 'Pending', progress: 0 },
   ];
 
+  // Helper function to render cell content based on column type
+  const renderCellContent = (row: any, column: any) => {
+    const value = row[column.key];
+    
+    // Special rendering for specific columns
+    if (column.key === 'scheduled_status' || column.key === 'status') {
+      // Determine badge variant based on status
+      let variant: 'default' | 'secondary' | 'outline' | 'destructive' = 'outline';
+      if (value === 'Completed' || value === 'COMPLETED') variant = 'default';
+      else if (value === 'In Progress' || value === 'RUNNING') variant = 'secondary';
+      else if (value === 'Not Scheduled' || value === 'PENDING') variant = 'outline';
+      else if (value === 'ERROR' || value === 'FAILED') variant = 'destructive';
+      
+      return (
+        <Badge variant={variant}>
+          {value || 'Unknown'}
+        </Badge>
+      );
+    }
+    
+    // Special rendering for priority
+    if (column.key === 'priority') {
+      const priorityColors = {
+        1: 'text-red-600 font-bold',
+        2: 'text-orange-600 font-semibold',
+        3: 'text-yellow-600',
+        4: 'text-green-600',
+        5: 'text-gray-600'
+      };
+      const colorClass = priorityColors[value as keyof typeof priorityColors] || 'text-gray-600';
+      return <span className={colorClass}>Priority {value}</span>;
+    }
+    
+    // Special rendering for progress
+    if (column.key === 'progress' && typeof value === 'number') {
+      return (
+        <div className="flex items-center gap-2">
+          <Progress value={value} className="w-16 h-2" />
+          <span className="text-sm text-gray-600">{value}%</span>
+        </div>
+      );
+    }
+    
+    // Default rendering
+    return <span className="text-sm text-gray-900">{value || '-'}</span>;
+  };
+
   return (
-    <div className="bg-white rounded-lg border">
+    <div className="bg-white dark:bg-gray-900 rounded-lg border">
       <div className="p-4 border-b">
         <h4 className="font-medium">{data?.title || 'Data Table'}</h4>
       </div>
@@ -844,31 +899,35 @@ const TableWidget: React.FC<{ data: any }> = ({ data }) => {
         <table className="w-full">
           <thead className="bg-gray-50 dark:bg-gray-800">
             <tr>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Name</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Status</th>
-              <th className="px-4 py-2 text-left text-sm font-medium text-gray-900">Progress</th>
+              {columns.map((column: any) => (
+                <th 
+                  key={column.key}
+                  className="px-4 py-2 text-left text-sm font-medium text-gray-900 dark:text-gray-100"
+                  style={{ width: column.width || 'auto' }}
+                >
+                  {column.label}
+                </th>
+              ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200">
-            {sampleData.map((row: any) => (
-              <tr key={row.id}>
-                <td className="px-4 py-2 text-sm text-gray-900">{row.name}</td>
-                <td className="px-4 py-2">
-                  <Badge variant={row.status === 'Completed' ? 'default' : row.status === 'In Progress' ? 'secondary' : 'outline'}>
-                    {row.status}
-                  </Badge>
-                </td>
-                <td className="px-4 py-2">
-                  <div className="flex items-center gap-2">
-                    <Progress value={row.progress} className="w-16 h-2" />
-                    <span className="text-sm text-gray-600">{row.progress}%</span>
-                  </div>
-                </td>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {rows.map((row: any, rowIndex: number) => (
+              <tr key={row.id || rowIndex} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                {columns.map((column: any) => (
+                  <td key={`${row.id || rowIndex}-${column.key}`} className="px-4 py-2">
+                    {renderCellContent(row, column)}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      {rows.length === 0 && (
+        <div className="p-8 text-center text-gray-500">
+          No data available
+        </div>
+      )}
     </div>
   );
 };
