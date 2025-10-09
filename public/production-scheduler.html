@@ -272,7 +272,7 @@
                     if (resResponse.ok) {
                         const ptResources = await resResponse.json();
                         resources = ptResources.map(res => ({
-                            id: res.resource_id || res.id,
+                            id: res.id,  // Use the numeric ID from the database
                             name: res.name || `Resource ${res.id}`,
                             calendar: 'general'
                         }));
@@ -303,14 +303,20 @@
                         });
                         
                         // Create assignments linking events to resources
+                        // SchedulerPro v6 expects 'eventId' and 'resourceId' fields
                         assignments = events.map((event, index) => ({
                             id: index + 1,
-                            event: event.id,
-                            resource: resources[index % resources.length]?.id || 1
+                            eventId: event.id,
+                            resourceId: resources[index % resources.length]?.id || 1
                         }));
                         
                         console.log(`✅ Created ${events.length} events from PT operations`);
                         console.log(`✅ Created ${assignments.length} assignments`);
+                        
+                        // Debug: Log sample event and assignment data  
+                        console.log('Sample event:', events[0]);
+                        console.log('Sample assignment:', assignments[0]);
+                        console.log('Sample resource:', resources[0]);
                     }
                 } catch (error) {
                     console.warn('Could not load data from API, using demo data:', error);
@@ -367,8 +373,8 @@
                     
                     assignments = events.map((event, index) => ({
                         id: index + 1,
-                        event: event.id,
-                        resource: resources[index % resources.length].id
+                        eventId: event.id,
+                        resourceId: resources[index % resources.length].id
                     }));
                 }
                 
@@ -393,45 +399,53 @@
                     startDate: startDate,
                     endDate: endDate,
                     
-                    // View preset for horizontal timeline
-                    viewPreset: 'dayAndWeek',
+                    // View preset for horizontal timeline - show hours and days
+                    viewPreset: 'hourAndDay',
                     
                     // Row configuration
                     rowHeight: 60,
                     barMargin: 8,
                     
-                    // Calendar configuration
-                    calendarsData: [{
-                        id: 'general',
-                        name: 'General',
-                        intervals: [
-                            {
-                                recurrentStartDate: 'on Mon at 8:00',
-                                recurrentEndDate: 'on Mon at 17:00',
-                                isWorking: true
-                            },
-                            {
-                                recurrentStartDate: 'on Tue at 8:00',
-                                recurrentEndDate: 'on Tue at 17:00',
-                                isWorking: true
-                            },
-                            {
-                                recurrentStartDate: 'on Wed at 8:00',
-                                recurrentEndDate: 'on Wed at 17:00',
-                                isWorking: true
-                            },
-                            {
-                                recurrentStartDate: 'on Thu at 8:00',
-                                recurrentEndDate: 'on Thu at 17:00',
-                                isWorking: true
-                            },
-                            {
-                                recurrentStartDate: 'on Fri at 8:00',
-                                recurrentEndDate: 'on Fri at 17:00',
-                                isWorking: true
-                            }
-                        ]
-                    }],
+                    // Use project configuration for proper data binding
+                    project: {
+                        // Calendar configuration
+                        calendars: [{
+                            id: 'general',
+                            name: 'General',
+                            intervals: [
+                                {
+                                    recurrentStartDate: 'on Mon at 8:00',
+                                    recurrentEndDate: 'on Mon at 17:00',
+                                    isWorking: true
+                                },
+                                {
+                                    recurrentStartDate: 'on Tue at 8:00',
+                                    recurrentEndDate: 'on Tue at 17:00',
+                                    isWorking: true
+                                },
+                                {
+                                    recurrentStartDate: 'on Wed at 8:00',
+                                    recurrentEndDate: 'on Wed at 17:00',
+                                    isWorking: true
+                                },
+                                {
+                                    recurrentStartDate: 'on Thu at 8:00',
+                                    recurrentEndDate: 'on Thu at 17:00',
+                                    isWorking: true
+                                },
+                                {
+                                    recurrentStartDate: 'on Fri at 8:00',
+                                    recurrentEndDate: 'on Fri at 17:00',
+                                    isWorking: true
+                                }
+                            ]
+                        }],
+                        
+                        // Data stores (non-deprecated properties)
+                        resources: resources,
+                        events: events,
+                        assignments: assignments
+                    },
                     
                     // Resource columns configuration
                     columns: [
@@ -444,11 +458,6 @@
                             showImage: false
                         }
                     ],
-                    
-                    // Data stores
-                    resourcesData: resources,
-                    eventsData: events,
-                    assignmentsData: assignments,
                     
                     // Features
                     features: {
