@@ -25,7 +25,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/hooks/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import type { PtProductWheel, PtProductWheelSegment } from "@shared/schema";
 
@@ -34,6 +34,7 @@ export default function ProductWheelsPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("designer");
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   // Fetch all product wheels
   const { data: wheels = [], isLoading: wheelsLoading } = useQuery<PtProductWheel[]>({

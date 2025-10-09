@@ -7408,7 +7408,7 @@ router.get('/api/realtime/sessions/:sessionId/events', async (req, res) => {
 // ============================================
 
 // Get all plants
-router.get("/ptplants", enhancedAuth, async (req, res) => {
+router.get("/api/ptplants", enhancedAuth, async (req, res) => {
   try {
     const result = await db.execute(sql`
       SELECT id, name, description, is_active 
@@ -7424,7 +7424,7 @@ router.get("/ptplants", enhancedAuth, async (req, res) => {
 });
 
 // Get all resources
-router.get("/ptresources", enhancedAuth, async (req, res) => {
+router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   try {
     const result = await db.execute(sql`
       SELECT id, name, description, resource_id, plant_id, active 
@@ -7444,7 +7444,7 @@ router.get("/ptresources", enhancedAuth, async (req, res) => {
 // ============================================
 
 // Get all product wheels
-router.get("/product-wheels", enhancedAuth, async (req, res) => {
+router.get("/api/product-wheels", enhancedAuth, async (req, res) => {
   try {
     const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
     const wheels = await storage.getProductWheels(plantId);
