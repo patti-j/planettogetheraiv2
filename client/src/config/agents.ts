@@ -1,6 +1,6 @@
 import { Agent } from '@/types/agents';
 
-// Core Agents Configuration - Phase 1 Implementation
+// Core Agents Configuration - Updated with all 8 active agents
 export const CORE_AGENTS: Agent[] = [
   {
     id: 'max',
@@ -165,50 +165,113 @@ export const CORE_AGENTS: Agent[] = [
     status: 'active',
     priority: 4,
     department: 'operations'
-  }
-];
-
-// Extended Agents - Future Phases
-export const EXTENDED_AGENTS: Agent[] = [
+  },
+  {
+    id: 'predictive_maintenance',
+    name: 'predictive_maintenance',
+    displayName: 'Predictive Maintenance',
+    description: 'Predictive maintenance, equipment health monitoring, and failure prevention',
+    icon: 'Wrench',
+    color: '#F97316', // orange
+    specialties: [
+      'Predictive analytics',
+      'Equipment health monitoring',
+      'Failure prediction',
+      'Maintenance optimization',
+      'Downtime prevention'
+    ],
+    capabilities: [
+      {
+        id: 'predict_failures',
+        name: 'Failure Prediction',
+        description: 'Predict equipment failures before they occur',
+        inputTypes: ['sensor_data', 'maintenance_history'],
+        outputTypes: ['failure_predictions', 'maintenance_recommendations'],
+        requiresData: ['ptresources', 'maintenance_logs']
+      },
+      {
+        id: 'optimize_maintenance',
+        name: 'Maintenance Optimization',
+        description: 'Optimize maintenance schedules to minimize downtime',
+        inputTypes: ['equipment_data', 'production_schedule'],
+        outputTypes: ['maintenance_schedule', 'cost_analysis'],
+        requiresData: ['ptjobs', 'ptresources']
+      }
+    ],
+    status: 'active',
+    priority: 5,
+    department: 'operations'
+  },
   {
     id: 'demand_management',
     name: 'demand_management',
-    displayName: 'Demand Management Agent',
+    displayName: 'Demand Management',
     description: 'Demand forecasting, trend analysis, and market intelligence',
     icon: 'TrendingUp',
     color: '#3B82F6', // blue
     specialties: ['Demand forecasting', 'Trend analysis', 'Market intelligence'],
-    capabilities: [],
-    status: 'idle',
-    priority: 5,
+    capabilities: [
+      {
+        id: 'forecast_demand',
+        name: 'Demand Forecasting',
+        description: 'Predict future demand based on historical data and market trends',
+        inputTypes: ['sales_history', 'market_data'],
+        outputTypes: ['demand_forecast', 'confidence_intervals'],
+        requiresData: ['sales_orders', 'market_trends']
+      }
+    ],
+    status: 'active',
+    priority: 6,
     department: 'planning'
   },
   {
     id: 'supply_plan',
     name: 'supply_plan',
-    displayName: 'Supply Plan Agent',
+    displayName: 'Supply Planning',
     description: 'Production planning, procurement, and subcontract management',
     icon: 'Package',
     color: '#06B6D4', // cyan
     specialties: ['Production planning', 'Procurement', 'Subcontract management'],
-    capabilities: [],
-    status: 'idle',
-    priority: 6,
+    capabilities: [
+      {
+        id: 'plan_supply',
+        name: 'Supply Planning',
+        description: 'Optimize supply chain and procurement strategies',
+        inputTypes: ['demand_forecast', 'inventory_levels'],
+        outputTypes: ['supply_plan', 'procurement_schedule'],
+        requiresData: ['ptmanufacturingorders', 'inventory']
+      }
+    ],
+    status: 'active',
+    priority: 7,
     department: 'planning'
   },
   {
     id: 'inventory_planning',
     name: 'inventory_planning',
-    displayName: 'Inventory Planning Agent',
+    displayName: 'Inventory Planning',
     description: 'Stock optimization, inventory management, and supply coordination',
     icon: 'Layers',
     color: '#84CC16', // lime
     specialties: ['Stock optimization', 'Inventory management', 'ABC analysis'],
-    capabilities: [],
-    status: 'idle',
-    priority: 7,
+    capabilities: [
+      {
+        id: 'optimize_inventory',
+        name: 'Inventory Optimization',
+        description: 'Optimize inventory levels and reduce carrying costs',
+        inputTypes: ['inventory_data', 'demand_forecast'],
+        outputTypes: ['inventory_plan', 'reorder_points'],
+        requiresData: ['inventory', 'ptmanufacturingorders']
+      }
+    ],
+    status: 'active',
+    priority: 8,
     department: 'planning'
-  },
+  }
+];
+
+// Extended Agents - Future Phases
+export const EXTENDED_AGENTS: Agent[] = [
   {
     id: 'capacity_planning',
     name: 'capacity_planning',
