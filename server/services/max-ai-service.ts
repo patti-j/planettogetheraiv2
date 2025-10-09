@@ -1238,15 +1238,25 @@ Return only the JSON object, no other text.`;
       }
     }
     
-    // Check for table/grid requests for job data
-    const tableKeywords = ['table', 'grid', 'list', 'show jobs', 'display jobs', 'job list', 'job table', 'jobs grid'];
-    const jobKeywords = ['job', 'jobs', 'production', 'work order', 'manufacturing order'];
-    const hasTableIntent = tableKeywords.some(keyword => queryLower.includes(keyword));
-    const hasJobContext = jobKeywords.some(keyword => queryLower.includes(keyword));
+    // Check for table/grid requests for job data - check FIRST before other data requests
+    const tableKeywords = ['table', 'grid', 'list'];
+    const jobRelatedKeywords = ['job', 'jobs', 'production', 'work order', 'manufacturing order'];
+    const showKeywords = ['show', 'display', 'view'];
     
-    if (hasTableIntent && hasJobContext) {
-      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED!`);
-      return { type: 'show_jobs_table', confidence: 0.9 };
+    const hasTableKeyword = tableKeywords.some(keyword => queryLower.includes(keyword));
+    const hasJobInTableContext = jobRelatedKeywords.some(keyword => queryLower.includes(keyword));
+    const hasShowKeyword = showKeywords.some(keyword => queryLower.includes(keyword));
+    
+    // More specific detection: "show/display/view" + "table/grid/list" + "jobs"
+    if ((hasShowKeyword || queryLower.includes('see')) && hasTableKeyword && hasJobInTableContext) {
+      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED! Query: "${query}"`);
+      return { type: 'show_jobs_table', confidence: 0.95 };
+    }
+    
+    // Also check for explicit phrases
+    if (queryLower.includes('show jobs') && (queryLower.includes('table') || queryLower.includes('grid'))) {
+      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED (explicit)! Query: "${query}"`);
+      return { type: 'show_jobs_table', confidence: 0.95 };
     }
     
     // Check for chart creation requests with more liberal matching
