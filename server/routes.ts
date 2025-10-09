@@ -678,6 +678,70 @@ router.post("/user-preferences/:userId", async (req, res) => {
   }
 });
 
+// PUT route for updating user preferences (full update)
+router.put("/user-preferences", async (req, res) => {
+  try {
+    const userId = (req.session as any)?.userId;
+    if (!userId) {
+      return res.status(401).json({ message: "Not authenticated" });
+    }
+    
+    const existing = await storage.getUserPreferences(userId);
+    
+    if (existing) {
+      const updated = await storage.updateUserPreferences(userId, req.body);
+      res.json(updated);
+    } else {
+      const created = await storage.createUserPreferences({ userId, ...req.body });
+      res.json(created);
+    }
+  } catch (error) {
+    console.error("Error updating user preferences:", error);
+    res.status(500).json({ message: "Failed to update user preferences" });
+  }
+});
+
+// PUT route with userId in path
+router.put("/user-preferences/:userId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const existing = await storage.getUserPreferences(userId);
+    
+    if (existing) {
+      const updated = await storage.updateUserPreferences(userId, req.body);
+      res.json(updated);
+    } else {
+      const created = await storage.createUserPreferences({ userId, ...req.body });
+      res.json(created);
+    }
+  } catch (error) {
+    console.error("Error updating user preferences:", error);
+    res.status(500).json({ message: "Failed to update user preferences" });
+  }
+});
+
+// PATCH route for partial updates to user preferences
+router.patch("/user-preferences/:userId", async (req, res) => {
+  try {
+    const userId = Number(req.params.userId);
+    const existing = await storage.getUserPreferences(userId);
+    
+    if (existing) {
+      // Merge existing preferences with new ones for partial update
+      const mergedPreferences = { ...existing, ...req.body };
+      const updated = await storage.updateUserPreferences(userId, mergedPreferences);
+      res.json(updated);
+    } else {
+      // Create new preferences if they don't exist
+      const created = await storage.createUserPreferences({ userId, ...req.body });
+      res.json(created);
+    }
+  } catch (error) {
+    console.error("Error patching user preferences:", error);
+    res.status(500).json({ message: "Failed to update user preferences" });
+  }
+});
+
 // Recent pages routes
 router.post("/api/recent-pages", async (req, res) => {
   try {
