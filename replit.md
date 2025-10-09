@@ -75,9 +75,19 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ## Recent Updates
 
-### Bryntum Scheduler Pro 7.0.0-alpha.1 Upgrade (October 9, 2025)
+### Bryntum Scheduler Event Rendering Issue (October 9, 2025)
 
-Successfully upgraded from v6.3.3 to v7.0.0-alpha.1 with the following major changes:
+**CRITICAL ISSUE**: Events not rendering in both v6.3.3 and v7.0.0-alpha.1
+- **Symptoms**: Scheduler loads resources and data (41 events, 12 resources) but events don't display on timeline
+- **Root Cause**: Configuration issue, not a version bug - affects both v6 and v7
+- **Current State**: Using v6.3.3 with Stockholm theme, horizontal timeline confirmed working
+- **Data Loading**: Verified - console shows all events/assignments load successfully
+- **Rendering**: Failed - visual timeline remains empty despite data presence
+- **Next Steps**: Need to investigate SchedulerPro event rendering requirements vs regular Scheduler
+
+### Bryntum Scheduler Pro 7.0.0-alpha.1 Initial Testing (October 9, 2025)
+
+Attempted upgrade from v6.3.3 to v7.0.0-alpha.1 but reverted due to rendering issues:
 
 #### Breaking Changes Handled:
 1. **CSS Architecture Migration**: Migrated from SASS to nested CSS with custom properties
