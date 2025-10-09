@@ -861,7 +861,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           
           // Navigate to Canvas page to show the chart
           console.log('🔄 Navigating to Canvas page to display chart');
-          window.location.href = '/canvas';
+          navigate('/canvas');
         }
         
         // Show chart creation confirmation
@@ -924,7 +924,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           
           // Navigate to Canvas page to show the table
           console.log('🔄 Navigating to Canvas page to display table');
-          window.location.href = '/canvas';
+          navigate('/canvas');
         }
         
         // Show table creation confirmation
