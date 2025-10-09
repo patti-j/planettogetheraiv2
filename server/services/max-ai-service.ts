@@ -1151,6 +1151,121 @@ Return only the JSON object, no other text.`;
     }
   }
 
+  // Generic method to get table data for any entity type
+  async getEntityTableData(entityType: string, tableName: string, query: string, context: MaxContext): Promise<MaxResponse> {
+    try {
+      console.log(`[Max AI] Fetching ${entityType} data from ${tableName} for table display`);
+      
+      // Define column mappings for each entity type
+      const columnMappings: Record<string, any[]> = {
+        'resources': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'external_id', label: 'Resource ID', width: '120px' },
+          { key: 'name', label: 'Resource Name', width: '200px' },
+          { key: 'resource_type', label: 'Type', width: '120px' },
+          { key: 'department', label: 'Department', width: '150px' },
+          { key: 'cost_per_hour', label: 'Cost/Hour', width: '100px' },
+          { key: 'efficiency', label: 'Efficiency', width: '100px' },
+          { key: 'is_active', label: 'Active', width: '80px' }
+        ],
+        'operations': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'external_id', label: 'Operation ID', width: '120px' },
+          { key: 'name', label: 'Operation Name', width: '200px' },
+          { key: 'operation_type', label: 'Type', width: '120px' },
+          { key: 'duration_minutes', label: 'Duration (min)', width: '120px' },
+          { key: 'setup_minutes', label: 'Setup (min)', width: '100px' },
+          { key: 'priority', label: 'Priority', width: '80px' }
+        ],
+        'products': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'external_id', label: 'Product ID', width: '120px' },
+          { key: 'name', label: 'Product Name', width: '200px' },
+          { key: 'product_type', label: 'Type', width: '120px' },
+          { key: 'unit_of_measure', label: 'UOM', width: '80px' },
+          { key: 'standard_cost', label: 'Cost', width: '100px' },
+          { key: 'list_price', label: 'Price', width: '100px' }
+        ],
+        'materials': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'external_id', label: 'Material ID', width: '120px' },
+          { key: 'name', label: 'Material Name', width: '200px' },
+          { key: 'material_type', label: 'Type', width: '120px' },
+          { key: 'unit_of_measure', label: 'UOM', width: '80px' },
+          { key: 'quantity_on_hand', label: 'On Hand', width: '100px' },
+          { key: 'reorder_point', label: 'Reorder Point', width: '100px' }
+        ],
+        'jobs': [
+          { key: 'id', label: 'ID', width: '60px' },
+          { key: 'name', label: 'Job Name', width: '200px' },
+          { key: 'external_id', label: 'External ID', width: '120px' },
+          { key: 'priority', label: 'Priority', width: '80px' },
+          { key: 'scheduled_status', label: 'Status', width: '120px' },
+          { key: 'need_date_time', label: 'Need Date', width: '150px' },
+          { key: 'description', label: 'Description', width: '250px' }
+        ]
+      };
+      
+      // Get columns for this entity type (default to jobs if not found)
+      const columns = columnMappings[entityType] || columnMappings['jobs'];
+      
+      // Build dynamic query based on table name
+      let dataResult;
+      try {
+        // Execute raw query to fetch data
+        const queryStr = `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 100`;
+        dataResult = await db.execute(sql.raw(queryStr));
+      } catch (dbError) {
+        console.error(`[Max AI] Error fetching from ${tableName}:`, dbError);
+        // Provide helpful error message
+        return {
+          content: `I couldn't fetch the ${entityType} data from the database. The table "${tableName}" might not exist or have different structure. Please check that the ${entityType} data has been properly set up in the system.`,
+          error: `Database error: ${dbError}`
+        };
+      }
+      
+      console.log(`[Max AI] Found ${dataResult.rows.length} ${entityType} for table display`);
+      
+      // Format rows for display
+      const rows = dataResult.rows.map((row: any) => {
+        const formattedRow: any = {};
+        columns.forEach(col => {
+          let value = row[col.key];
+          
+          // Format specific field types
+          if (col.key.includes('date') && value) {
+            value = new Date(value).toLocaleDateString();
+          } else if (col.key === 'is_active') {
+            value = value ? 'Yes' : 'No';
+          } else if (typeof value === 'number' && col.key.includes('cost') || col.key.includes('price')) {
+            value = `$${value.toFixed(2)}`;
+          }
+          
+          formattedRow[col.key] = value || '-';
+        });
+        return formattedRow;
+      });
+      
+      return {
+        content: `I've retrieved ${rows.length} ${entityType} from the system. The table is now displayed in the Canvas with all relevant details.`,
+        action: {
+          type: 'show_table',
+          title: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`,
+          tableData: {
+            columns,
+            rows
+          }
+        }
+      };
+    } catch (error) {
+      console.error(`[Max AI] Error fetching ${entityType} table data:`, error);
+      return {
+        content: `I encountered an error while fetching the ${entityType} data. Please try again or check if the ${entityType} data is properly configured in the system.`,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      };
+    }
+  }
+
   // Analyze production schedule for conflicts and bottlenecks
   async analyzeSchedule(context: MaxContext): Promise<ProductionInsight[]> {
     const insights: ProductionInsight[] = [];
@@ -1238,25 +1353,64 @@ Return only the JSON object, no other text.`;
       }
     }
     
-    // Check for table/grid requests for job data - check FIRST before other data requests
+    // Check for table/grid requests for ANY entity - check FIRST before other data requests
     const tableKeywords = ['table', 'grid', 'list'];
-    const jobRelatedKeywords = ['job', 'jobs', 'production', 'work order', 'manufacturing order'];
-    const showKeywords = ['show', 'display', 'view'];
+    const entityKeywords = [
+      'job', 'jobs', 
+      'resource', 'resources', 'equipment', 'machine', 'machines',
+      'operation', 'operations',
+      'product', 'products', 'item', 'items',
+      'material', 'materials',
+      'work order', 'manufacturing order', 'production'
+    ];
+    const showKeywords = ['show', 'display', 'view', 'see', 'create'];
     
     const hasTableKeyword = tableKeywords.some(keyword => queryLower.includes(keyword));
-    const hasJobInTableContext = jobRelatedKeywords.some(keyword => queryLower.includes(keyword));
+    const hasEntityKeyword = entityKeywords.some(keyword => queryLower.includes(keyword));
     const hasShowKeyword = showKeywords.some(keyword => queryLower.includes(keyword));
     
-    // More specific detection: "show/display/view" + "table/grid/list" + "jobs"
-    if ((hasShowKeyword || queryLower.includes('see')) && hasTableKeyword && hasJobInTableContext) {
-      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED! Query: "${query}"`);
-      return { type: 'show_jobs_table', confidence: 0.95 };
+    // Detect any table/grid/list request for entities
+    if (hasTableKeyword && hasEntityKeyword && (hasShowKeyword || queryLower.includes('of'))) {
+      // Determine which entity type is being requested
+      let entityType = 'general';
+      let tableName = '';
+      
+      if (queryLower.includes('job')) {
+        entityType = 'jobs';
+        tableName = 'ptjobs';
+      } else if (queryLower.includes('resource') || queryLower.includes('equipment') || queryLower.includes('machine')) {
+        entityType = 'resources';
+        tableName = 'ptresources';
+      } else if (queryLower.includes('operation')) {
+        entityType = 'operations';
+        tableName = 'ptoperations';
+      } else if (queryLower.includes('product') || queryLower.includes('item')) {
+        entityType = 'products';
+        tableName = 'ptproducts';
+      } else if (queryLower.includes('material')) {
+        entityType = 'materials';
+        tableName = 'ptmaterials';
+      }
+      
+      console.log(`[Max AI Intent] 📊 TABLE/GRID DETECTED! Entity: ${entityType}, Query: "${query}"`);
+      return { type: 'show_table', entityType, tableName, confidence: 0.95 };
     }
     
-    // Also check for explicit phrases
-    if (queryLower.includes('show jobs') && (queryLower.includes('table') || queryLower.includes('grid'))) {
-      console.log(`[Max AI Intent] 📊 JOB TABLE/GRID DETECTED (explicit)! Query: "${query}"`);
-      return { type: 'show_jobs_table', confidence: 0.95 };
+    // Also check for explicit phrases like "show jobs" or "show resources"
+    const showPhrases = ['show jobs', 'show resources', 'show operations', 'show products', 'show materials'];
+    for (const phrase of showPhrases) {
+      if (queryLower.includes(phrase) && (queryLower.includes('table') || queryLower.includes('grid') || queryLower.includes('list'))) {
+        const entityType = phrase.split(' ')[1];
+        const tableMap: Record<string, string> = {
+          'jobs': 'ptjobs',
+          'resources': 'ptresources', 
+          'operations': 'ptoperations',
+          'products': 'ptproducts',
+          'materials': 'ptmaterials'
+        };
+        console.log(`[Max AI Intent] 📊 TABLE/GRID DETECTED (explicit)! Entity: ${entityType}, Query: "${query}"`);
+        return { type: 'show_table', entityType, tableName: tableMap[entityType], confidence: 0.95 };
+      }
     }
     
     // Check for chart creation requests with more liberal matching
@@ -1388,10 +1542,17 @@ Rules:
           return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
         }
         
-        // Handle job table/grid intent
-        if (intent.type === 'show_jobs_table' && intent.confidence > 0.7) {
-          console.log(`[Max AI] Detected job table intent with confidence ${intent.confidence}`);
-          return await this.getJobsTableData(query, context);
+        // Handle table/grid intent for any entity
+        if ((intent.type === 'show_table' || intent.type === 'show_jobs_table') && intent.confidence > 0.7) {
+          console.log(`[Max AI] Detected table intent for ${intent.entityType || 'jobs'} with confidence ${intent.confidence}`);
+          
+          // Handle backwards compatibility for old show_jobs_table intent
+          if (intent.type === 'show_jobs_table') {
+            return await this.getJobsTableData(query, context);
+          }
+          
+          // Handle new generic table intent
+          return await this.getEntityTableData(intent.entityType || 'jobs', intent.tableName || 'ptjobs', query, context);
         }
         
         // Handle agent switching intent

@@ -875,8 +875,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
-      // Handle table/grid creation actions for job data
-      if (data?.action?.type === 'create_table' || data?.action?.type === 'show_jobs_table') {
+      // Handle table/grid creation actions for any entity data
+      if (data?.action?.type === 'create_table' || data?.action?.type === 'show_jobs_table' || data?.action?.type === 'show_table') {
         console.log('AI Left Panel - Handling table creation action:', data.action);
         
         // Process table data and add to canvas via Max Dock
@@ -884,9 +884,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
           const tableItem: CanvasItem = {
             id: `table_${Date.now()}`,
             type: 'table',
-            title: data.action.title || 'Jobs Table',
+            title: data.action.title || 'Data Table',
             content: {
-              title: data.action.title || 'Jobs Table',
+              title: data.action.title || 'Data Table',
               rows: data.action.tableData.rows || [],
               columns: data.action.tableData.columns || []
             },
