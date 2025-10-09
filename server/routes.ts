@@ -7547,6 +7547,37 @@ router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   }
 });
 
+// Get all operations from ptjoboperations table
+router.get("/api/ptoperations", enhancedAuth, async (req, res) => {
+  try {
+    const result = await db.execute(sql`
+      SELECT 
+        id,
+        job_id,
+        external_id,
+        name,
+        description,
+        operation_id,
+        base_operation_id,
+        required_finish_qty,
+        cycle_hrs,
+        setup_hours,
+        post_processing_hours,
+        scheduled_start,
+        scheduled_end,
+        percent_finished,
+        created_at,
+        updated_at
+      FROM ptjoboperations 
+      ORDER BY scheduled_start, id
+    `);
+    res.json(result.rows);
+  } catch (error: any) {
+    console.error("Error fetching operations:", error);
+    res.status(500).json({ error: "Failed to fetch operations" });
+  }
+});
+
 // ============================================
 // Product Wheel Routes
 // ============================================
