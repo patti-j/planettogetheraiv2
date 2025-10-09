@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize, Mic, MicOff, Paperclip, StopCircle } from 'lucide-react';
+import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize, Mic, MicOff, Paperclip, StopCircle, Wrench, TrendingUp, Layers } from 'lucide-react';
 import { getActiveAgents } from '@/config/agents';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -664,6 +664,10 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       case 'production_scheduling': return Calendar;
       case 'shop_floor': return Factory;
       case 'quality_management': return Shield;
+      case 'predictive_maintenance': return Wrench;
+      case 'demand_management': return TrendingUp;
+      case 'supply_plan': return Package;
+      case 'inventory_planning': return Layers;
       case 'unified': return Users;
       default: return Sparkles;
     }
