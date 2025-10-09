@@ -11,8 +11,8 @@
   "dependencies": {
     "@planettogether/shared-components": "workspace:*",
     "@planettogether/core-platform": "workspace:*",
-    "@bryntum/schedulerpro": "^6.3.1",
-    "@bryntum/schedulerpro-react": "^6.3.1",
+    "@bryntum/schedulerpro": "7.0.0-alpha.1",
+    "@bryntum/schedulerpro-react": "7.0.0-alpha.1",
     "react": "^18.0.0",
     "date-fns": "^2.30.0"
   },

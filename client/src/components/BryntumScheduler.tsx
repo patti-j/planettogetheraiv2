@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
+import '@bryntum/schedulerpro/material3-light.css';
 
 // Type definitions
 interface Resource {

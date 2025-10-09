@@ -164,14 +164,58 @@ const uploadFiles = multer({
   }
 });
 
-// Serve Bryntum static assets
+// Serve Bryntum static assets - v7.0.0 themes
+// Support for new themes: Material3, Stockholm, Svalbard, Visby (light and dark variants)
+router.get('/material3-light.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/material3-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-dark.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/stockholm-light.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/stockholm-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/stockholm-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/stockholm-dark.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/svalbard-light.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/svalbard-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/svalbard-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/svalbard-dark.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/visby-light.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/visby-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/visby-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/visby-dark.css');
+  res.sendFile(cssPath);
+});
+
+// Keep backwards compatibility for now
 router.get('/schedulerpro.classic-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
+  // Redirect to Material3 Light theme as fallback
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-light.css');
   res.sendFile(cssPath);
 });
 
 router.get('/schedulerpro.umd.js', (req, res) => {
-  const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
+  // Serve v7.0.0-alpha.1 UMD build from node_modules
+  const jsPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.umd.js');
   res.sendFile(jsPath);
 });
 

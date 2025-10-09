@@ -1,7 +1,7 @@
 import React, { useRef, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+import '@bryntum/schedulerpro/stockholm-light.css';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, RefreshCw, Maximize } from 'lucide-react';
 
@@ -432,7 +432,7 @@ export default function ProductionSchedulerReact() {
               {
                 type: 'button',
                 text: 'Today',
-                icon: 'b-fa b-fa-calendar-day',
+                icon: 'fa fa-calendar-day',
                 onAction: () => {
                   if (schedulerRef.current?.instance) {
                     schedulerRef.current.instance.scrollToDate(new Date(), { block: 'center' });
@@ -442,7 +442,7 @@ export default function ProductionSchedulerReact() {
               {
                 type: 'button',
                 text: 'Zoom to Fit',
-                icon: 'b-fa b-fa-expand',
+                icon: 'fa fa-expand',
                 onAction: handleZoomToFit
               },
               '->',
