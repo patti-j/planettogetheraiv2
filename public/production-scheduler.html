@@ -470,9 +470,6 @@
                     autoHeight: false,
                     height: '100%',
                     
-                    // Force horizontal mode - critical for correct date display
-                    mode: 'horizontal',  // Ensure horizontal timeline mode
-                    
                     // Basic scheduler configuration  
                     startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() - 1),
                     endDate: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 30),
@@ -481,6 +478,11 @@
                     barMargin: 5,
                     eventColor: '#2196F3',
                     eventStyle: 'plain',
+                    
+                    // Ensure timeline is visible
+                    displayDateFormat: 'DD/MM/YYYY',
+                    tickSize: 100,  // Width of time axis cells
+                    snap: true,
                     
                     // Proper Bryntum Project configuration using the scheduling engine
                     project: {
