@@ -9,20 +9,14 @@
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
     
-    <!-- Force refresh timestamp: 2025-10-09 v7.0.0 -->
+    <!-- Force refresh timestamp: 2025-10-09 v6.3.3 -->
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- FontAwesome (now required separately in v7.0.0) - Using local copy -->
-    <link rel="stylesheet" href="/fontawesome/css/all.min.css">
+    <!-- Bryntum Scheduler Pro v6.3.3 Stockholm Theme CSS -->
+    <link rel="stylesheet" href="/schedulerpro.stockholm.css" id="scheduler-theme">
     
-    <!-- Bryntum Scheduler Pro CSS - Base styles MUST be loaded first -->
-    <link rel="stylesheet" href="/schedulerpro.css">
-    
-    <!-- Stockholm Light theme overlay - loaded on top of base styles -->
-    <link rel="stylesheet" href="/stockholm-light.css?v=7" id="scheduler-theme">
-    
-    <!-- CRITICAL: Load Bryntum Scheduler Pro library in HEAD (required for initialization) -->
+    <!-- CRITICAL: Load Bryntum Scheduler Pro v6.3.3 library in HEAD -->
     <script src="/schedulerpro.umd.js"></script>
     
     <style>
@@ -231,10 +225,10 @@
     </div>
     
     <script>
-        // Cache buster using useRef equivalent (stable value)
-        const CACHE_BUSTER = 'v7_' + Math.floor(Date.now() / 60000);
+        // Cache buster using stable value (v6.3.3)
+        const VERSION = 'v6.3.3';
         
-        console.log('🚀 Starting application initialization...');
+        console.log('🚀 Starting Bryntum Scheduler Pro v6.3.3 with Stockholm theme');
         
         // Initialize scheduler when DOM is ready
         if (document.readyState === 'loading') {
@@ -245,7 +239,6 @@
         
         // Global scheduler instance
         let scheduler = null;
-        let projectModel = null;
         
         async function initializeScheduler() {
             try {
@@ -254,20 +247,21 @@
                     throw new Error('Bryntum library not loaded');
                 }
                 
-                console.log('✅ Bryntum library ready');
+                console.log('✅ Bryntum v6.3.3 library ready');
                 
                 // Get required classes from bryntum.schedulerpro namespace
-                const { SchedulerPro, ProjectModel } = bryntum.schedulerpro;
+                const { SchedulerPro } = bryntum.schedulerpro;
                 
-                if (!SchedulerPro || !ProjectModel) {
-                    throw new Error('Required Bryntum classes not found');
+                if (!SchedulerPro) {
+                    throw new Error('SchedulerPro class not found');
                 }
                 
-                console.log('📊 Loading data from API...');
+                console.log('📊 Loading data from PT database...');
                 
                 // Load resources from PT database
                 let resources = [];
                 let events = [];
+                let assignments = [];
                 
                 try {
                     const [resResponse, opsResponse] = await Promise.all([
@@ -287,7 +281,7 @@
                     
                     if (opsResponse.ok) {
                         const ptOperations = await opsResponse.json();
-                        const baseDate = new Date('2024-09-03T08:00:00');
+                        const baseDate = new Date('2024-10-09T08:00:00');
                         
                         events = ptOperations.map((op, index) => {
                             const startDate = new Date(baseDate);
@@ -295,26 +289,28 @@
                             startDate.setHours(8 + (index % 4) * 3, 0, 0, 0);
                             
                             const duration = parseFloat(op.cycle_hrs) || 2;
-                            const endDate = new Date(startDate);
-                            endDate.setHours(endDate.getHours() + duration);
-                            
-                            // Assign to resources in round-robin fashion
-                            const resourceId = resources.length > 0 
-                                ? resources[index % resources.length].id 
-                                : 1;
                             
                             return {
                                 id: op.id || index + 1,
                                 name: op.name || `Operation ${op.id}`,
-                                resourceId: resourceId, // Direct assignment for resource view
                                 startDate: startDate,
-                                endDate: endDate,
                                 duration: duration,
                                 durationUnit: 'hour',
-                                percentDone: Math.floor(Math.random() * 100)
+                                percentDone: Math.floor(Math.random() * 100),
+                                constraintType: 'muststarton',
+                                constraintDate: startDate
                             };
                         });
+                        
+                        // Create assignments linking events to resources
+                        assignments = events.map((event, index) => ({
+                            id: index + 1,
+                            event: event.id,
+                            resource: resources[index % resources.length]?.id || 1
+                        }));
+                        
                         console.log(`✅ Created ${events.length} events from PT operations`);
+                        console.log(`✅ Created ${assignments.length} assignments`);
                     }
                 } catch (error) {
                     console.warn('Could not load data from API, using demo data:', error);
@@ -322,59 +318,86 @@
                 
                 // Fallback demo data if needed
                 if (resources.length === 0) {
+                    console.log('📊 Using demo resources');
                     resources = [
-                        { id: 'r1', name: 'Bottle Filler Line', calendar: 'general' },
-                        { id: 'r2', name: 'Brew Kettle 1', calendar: 'general' },
-                        { id: 'r3', name: 'Bright Tank 1', calendar: 'general' },
-                        { id: 'r4', name: 'Packaging Line A', calendar: 'general' }
+                        { id: 1, name: 'Bottle Filler Line', calendar: 'general' },
+                        { id: 2, name: 'Brew Kettle 1', calendar: 'general' },
+                        { id: 3, name: 'Bright Tank 1', calendar: 'general' },
+                        { id: 4, name: 'Packaging Line A', calendar: 'general' }
                     ];
                 }
                 
                 if (events.length === 0) {
+                    console.log('📊 Using demo operations');
                     const now = new Date();
                     events = [
                         {
                             id: 1,
-                            resourceId: 'r1',
                             name: 'Mix Batch A-1',
                             startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 8, 0),
-                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 11, 0),
+                            duration: 3,
+                            durationUnit: 'hour',
                             percentDone: 75
                         },
                         {
                             id: 2,
-                            resourceId: 'r2',
                             name: 'Brew Batch B-2',
-                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 0),
-                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0),
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0),
+                            duration: 2,
+                            durationUnit: 'hour',
                             percentDone: 50
                         },
                         {
                             id: 3,
-                            resourceId: 'r3',
                             name: 'Quality Check',
-                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 12, 0),
-                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 13, 0),
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 8, 0),
+                            duration: 1,
+                            durationUnit: 'hour',
                             percentDone: 25
                         },
                         {
                             id: 4,
-                            resourceId: 'r4',
                             name: 'Package Product',
-                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 14, 0),
-                            endDate: new Date(now.getFullYear(), now.getMonth(), now.getDate(), 17, 0),
+                            startDate: new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 10, 0),
+                            duration: 3,
+                            durationUnit: 'hour',
                             percentDone: 0
                         }
                     ];
+                    
+                    assignments = events.map((event, index) => ({
+                        id: index + 1,
+                        event: event.id,
+                        resource: resources[index % resources.length].id
+                    }));
                 }
                 
-                console.log('🔧 Creating ProjectModel...');
+                console.log('🎨 Creating SchedulerPro v6.3.3 with Stockholm theme...');
                 
-                // Create project model with calendar
-                projectModel = new ProjectModel({
-                    calendar: 'general',
-                    startDate: events[0]?.startDate || new Date(),
+                // Clear loading message
+                document.getElementById('schedulerContainer').innerHTML = '';
+                
+                // Calculate date range
+                const startDate = events[0]?.startDate || new Date();
+                const endDate = new Date(startDate);
+                endDate.setDate(endDate.getDate() + 14); // Show 2 weeks
+                
+                // Create the SchedulerPro instance (v6.3.3 configuration)
+                scheduler = new SchedulerPro({
+                    appendTo: 'schedulerContainer',
                     
+                    // Time configuration
+                    startDate: startDate,
+                    endDate: endDate,
+                    
+                    // View preset for horizontal timeline
+                    viewPreset: 'dayAndWeek',
+                    
+                    // Row configuration
+                    rowHeight: 60,
+                    barMargin: 8,
+                    
+                    // Calendar configuration
                     calendarsData: [{
                         id: 'general',
                         name: 'General',
@@ -407,38 +430,6 @@
                         ]
                     }],
                     
-                    resourcesData: resources,
-                    eventsData: events
-                });
-                
-                console.log('🎨 Creating SchedulerPro with Stockholm theme...');
-                
-                // Clear loading message
-                document.getElementById('schedulerContainer').innerHTML = '';
-                
-                // Calculate date range
-                const startDate = events[0]?.startDate || new Date();
-                const endDate = new Date(startDate);
-                endDate.setDate(endDate.getDate() + 14); // Show 2 weeks
-                
-                // Create the SchedulerPro instance with resource view
-                scheduler = new SchedulerPro({
-                    appendTo: 'schedulerContainer',
-                    
-                    // Use the project model
-                    project: projectModel,
-                    
-                    // Resource scheduling view configuration
-                    startDate: startDate,
-                    endDate: endDate,
-                    
-                    // View preset for proper timeline display
-                    viewPreset: 'dayAndWeek',
-                    
-                    // Row configuration for resources
-                    rowHeight: 60,
-                    barMargin: 8,
-                    
                     // Resource columns configuration
                     columns: [
                         { 
@@ -446,12 +437,17 @@
                             text: 'Resources',
                             field: 'name',
                             width: 220,
-                            showEventCount: true,
+                            showEventCount: false,
                             showImage: false
                         }
                     ],
                     
-                    // Enable scheduling features
+                    // Data stores
+                    resourcesData: resources,
+                    eventsData: events,
+                    assignmentsData: assignments,
+                    
+                    // Features
                     features: {
                         eventDrag: true,
                         eventResize: true,
@@ -460,8 +456,7 @@
                             template: (data) => `
                                 <div class="b-sch-event-tooltip">
                                     <div><b>${data.eventRecord.name}</b></div>
-                                    <div>Start: ${data.eventRecord.startDate.toLocaleString()}</div>
-                                    <div>End: ${data.eventRecord.endDate.toLocaleString()}</div>
+                                    <div>Start: ${data.eventRecord.startDate?.toLocaleString()}</div>
                                     <div>Duration: ${data.eventRecord.duration} ${data.eventRecord.durationUnit}</div>
                                     <div>Progress: ${data.eventRecord.percentDone || 0}%</div>
                                 </div>
@@ -473,15 +468,14 @@
                             showCurrentTimeLine: true
                         },
                         nonWorkingTime: true,
-                        tree: false, // Disable tree view for flat resource list
+                        tree: false,
                         regionResize: true
                     },
                     
                     // Event renderer for custom styling
                     eventRenderer({ eventRecord, renderData }) {
-                        renderData.cls.add('custom-event');
                         if (eventRecord.percentDone > 0) {
-                            renderData.cls.add('has-progress');
+                            renderData.cls = 'has-progress';
                         }
                         return eventRecord.name;
                     },
@@ -489,7 +483,7 @@
                     // Handle scheduler events
                     listeners: {
                         paint: () => {
-                            console.log('✅ Scheduler painted successfully with Stockholm theme');
+                            console.log('✅ Scheduler v6.3.3 painted successfully with Stockholm theme');
                             updateStatus();
                         },
                         eventDrop: ({ eventRecords }) => {
@@ -503,7 +497,7 @@
                     }
                 });
                 
-                console.log('✅ SchedulerPro initialized with resource view');
+                console.log('✅ SchedulerPro v6.3.3 initialized with horizontal timeline');
                 
                 // Set up toolbar handlers
                 setupToolbarHandlers();
