@@ -3311,6 +3311,64 @@ Respond with JSON format:
       
       console.log(`[Max AI] Searching for operations - original: "${searchTerm}", cleaned: "${cleanedTerm}"`);
       
+      // Detect if user is asking about "all jobs" or just "jobs" - they want ALL operations from jobs
+      // Use substring matching to catch variations like "show me all jobs", "all the jobs", etc.
+      // Be careful to avoid false positives like "all operations for job 2001" or "all jobs for line 2"
+      const lowerTerm = searchTerm.toLowerCase().trim();
+      
+      // Check for patterns that clearly indicate wanting ALL jobs (not a specific job or filtered subset)
+      const hasAllJobsPhrase = 
+        lowerTerm.includes('all jobs') || 
+        lowerTerm.includes('all the jobs') ||
+        lowerTerm.includes('every job');
+      
+      // Check for standalone "jobs" request without specifics
+      const isGenericJobsRequest = 
+        lowerTerm === 'jobs' || 
+        lowerTerm === 'all' ||
+        lowerTerm === 'everything' ||
+        lowerTerm === 'all operations' ||
+        /^(show|list|get|display|give me|fetch)\s+(me\s+)?(all\s+)?(the\s+)?jobs?$/i.test(searchTerm);
+      
+      // Exclude if query has additional qualifiers that filter the results
+      const hasQualifiers = 
+        /job\s+[0-9a-zA-Z-]+/i.test(lowerTerm) ||     // "job 2001", "job MO-123"
+        /for\s+(job|line|resource|this|next|last|today|week|month|year)/i.test(lowerTerm) ||  // "for job X", "for line 2", "for this week"
+        /on\s+(job|line|resource)/i.test(lowerTerm) ||  // "on job X", "on line 2"
+        /in\s+(line|area|department|week|month)/i.test(lowerTerm) ||  // "in line 2", "in this week"
+        /(this|next|last)\s+(week|month|year|day)/i.test(lowerTerm) ||  // "this week", "next month"
+        /(today|tomorrow|yesterday)/i.test(lowerTerm);  // time-based filters
+      
+      const isAllJobsQuery = (hasAllJobsPhrase || isGenericJobsRequest) && !hasQualifiers;
+      
+      if (isAllJobsQuery) {
+        console.log(`[Max AI] Detected "all jobs" query - fetching ALL operations from all jobs`);
+        const allOperations = await db.execute(sql`
+          SELECT 
+            jo.id,
+            jo.operation_id,
+            jo.job_id,
+            jo.name as operation_name,
+            jo.description,
+            jo.scheduled_start,
+            jo.scheduled_end,
+            j.name as job_name,
+            jr.default_resource_id,
+            r.id as resource_id,
+            r.name as resource_name
+          FROM ptjoboperations jo
+          LEFT JOIN ptjobs j ON jo.job_id = j.id
+          LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+          LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
+          WHERE jo.scheduled_start IS NOT NULL
+          ORDER BY jo.scheduled_start
+          LIMIT 100
+        `);
+        
+        console.log(`[Max AI] Found ${allOperations.rows.length} operations from all jobs`);
+        return allOperations.rows as any[];
+      }
+      
       // Query operations matching the description (search with both patterns)
       const operations = await db.execute(sql`
         SELECT 
