@@ -14,6 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Minimize, Send, Sparkles, Menu, Eye, EyeOff, Sidebar, ChevronDown, Calendar, Factory, Shield, Package, Users, Maximize, Mic, MicOff, Paperclip, StopCircle, Wrench, TrendingUp, Layers } from 'lucide-react';
 import { getActiveAgents } from '@/config/agents';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryClient } from '@/lib/queryClient';
 import { useAuth } from '@/hooks/useAuth';
 import { useChatSync } from '@/hooks/useChatSync';
 import { useLocation } from 'wouter';
@@ -288,6 +289,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
             if (response.ok) {
               console.log('✅ Chart widget saved to database successfully');
+              // Invalidate canvas widgets cache to force refresh
+              queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
             } else {
               console.error('❌ Failed to save chart widget to database:', response.statusText);
             }
@@ -351,6 +354,8 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               if (response.ok) {
                 console.log('✅ Table widget saved to database successfully');
+                // Invalidate canvas widgets cache to force refresh
+                queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
                 // Widget saved successfully, navigation will happen below
               } else {
                 console.error('❌ Failed to save table widget to database:', response.statusText);
