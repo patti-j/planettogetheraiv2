@@ -182,15 +182,96 @@
         const targetElement = document.getElementById('scheduler');
         const { SchedulerPro } = bryntum.schedulerpro;
         
-        // Create scheduler instance
+        // Create scheduler instance with inline demo data
         const schedulerPro = new SchedulerPro({
             project : {
-                autoLoad  : true,
-                transport : {
-                    load : {
-                        url : 'data/SchedulerPro/examples/guides/readme/intro.json'
+                // Inline demo data for PlanetTogether production schedule
+                resourcesData : [
+                    { id : 1, name : 'Assembly Line 1', type : 'Production Line' },
+                    { id : 2, name : 'Assembly Line 2', type : 'Production Line' },
+                    { id : 3, name : 'Packaging Station A', type : 'Packaging' },
+                    { id : 4, name : 'Packaging Station B', type : 'Packaging' },
+                    { id : 5, name : 'Quality Control Bay', type : 'Quality' },
+                    { id : 6, name : 'Maintenance Crew', type : 'Support' }
+                ],
+                eventsData : [
+                    {
+                        id           : 1,
+                        name         : 'Product A - Batch 001',
+                        startDate    : new Date(2025, 2, 23, 6),
+                        duration     : 4,
+                        durationUnit : 'h',
+                        resourceId   : 1,
+                        percentDone  : 75,
+                        eventColor   : 'blue'
+                    },
+                    {
+                        id           : 2,
+                        name         : 'Product B - Batch 002',
+                        startDate    : new Date(2025, 2, 23, 11),
+                        duration     : 3,
+                        durationUnit : 'h',
+                        resourceId   : 1,
+                        percentDone  : 25,
+                        eventColor   : 'green'
+                    },
+                    {
+                        id           : 3,
+                        name         : 'Product C - Batch 003',
+                        startDate    : new Date(2025, 2, 23, 8),
+                        duration     : 5,
+                        durationUnit : 'h',
+                        resourceId   : 2,
+                        percentDone  : 50,
+                        eventColor   : 'orange'
+                    },
+                    {
+                        id           : 4,
+                        name         : 'Packaging Run 101',
+                        startDate    : new Date(2025, 2, 23, 14),
+                        duration     : 2,
+                        durationUnit : 'h',
+                        resourceId   : 3,
+                        percentDone  : 100,
+                        eventColor   : 'purple'
+                    },
+                    {
+                        id           : 5,
+                        name         : 'Packaging Run 102',
+                        startDate    : new Date(2025, 2, 23, 16),
+                        duration     : 3,
+                        durationUnit : 'h',
+                        resourceId   : 3,
+                        percentDone  : 10,
+                        eventColor   : 'purple'
+                    },
+                    {
+                        id           : 6,
+                        name         : 'Quality Inspection',
+                        startDate    : new Date(2025, 2, 24, 9),
+                        duration     : 2,
+                        durationUnit : 'h',
+                        resourceId   : 5,
+                        percentDone  : 0,
+                        eventColor   : 'red'
+                    },
+                    {
+                        id           : 7,
+                        name         : 'Maintenance Window',
+                        startDate    : new Date(2025, 2, 24, 14),
+                        duration     : 3,
+                        durationUnit : 'h',
+                        resourceId   : 6,
+                        percentDone  : 0,
+                        eventColor   : 'gray'
                     }
-                }
+                ],
+                dependenciesData : [
+                    { id : 1, from : 1, to : 4 },
+                    { id : 2, from : 2, to : 5 },
+                    { id : 3, from : 4, to : 6 },
+                    { id : 4, from : 5, to : 6 }
+                ]
             },
             style             : 'font-size:0.85em',
             resourceImagePath : 'data/Scheduler/images/users/',
@@ -299,19 +380,7 @@
             if (loadingOverlay) {
                 loadingOverlay.style.display = 'none';
             }
-        });
-
-        // Handle errors
-        schedulerPro.project.on('load', ({ response }) => {
-            if (!response || !response.success) {
-                console.error('Failed to load project data');
-                const container = document.getElementById('scheduler');
-                container.innerHTML = `
-                    <div class="error-message">
-                        Failed to load schedule data. Please refresh the page or contact support.
-                    </div>
-                `;
-            }
+            console.log('📊 Scheduler painted with', schedulerPro.eventStore.count, 'tasks');
         });
 
         // Expose scheduler to parent window for iframe communication
