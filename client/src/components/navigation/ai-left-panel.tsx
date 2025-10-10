@@ -1867,69 +1867,12 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
                   <Button
                     onClick={scrollToBottom}
                     size="sm"
-                    className="absolute bottom-20 right-2 z-10 rounded-full shadow-lg"
+                    className="absolute bottom-2 right-2 z-10 rounded-full shadow-lg"
                     title="Scroll to bottom"
                   >
                     <ChevronDown className="h-4 w-4" />
                   </Button>
                 )}
-              </div>
-
-              {/* Chat Input Field */}
-              <div className="absolute bottom-0 left-0 right-0 bg-background border-t p-3">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey && prompt.trim()) {
-                        e.preventDefault();
-                        const message = prompt.trim();
-                        setPrompt('');
-                        
-                        // Add user message to chat
-                        addMessage({
-                          role: 'user',
-                          content: message,
-                          source: 'panel'
-                        });
-                        
-                        // Send to Max AI
-                        sendMessageMutation.mutate(message);
-                      }
-                    }}
-                    placeholder="Ask Max AI anything..."
-                    className="flex-1 px-3 py-2 text-sm border rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      if (prompt.trim()) {
-                        const message = prompt.trim();
-                        setPrompt('');
-                        
-                        // Add user message to chat
-                        addMessage({
-                          role: 'user',
-                          content: message,
-                          source: 'panel'
-                        });
-                        
-                        // Send to Max AI
-                        sendMessageMutation.mutate(message);
-                      }
-                    }}
-                    disabled={!prompt.trim() || sendMessageMutation.isPending}
-                    className="px-3"
-                  >
-                    {sendMessageMutation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
               </div>
             </TabsContent>
 
