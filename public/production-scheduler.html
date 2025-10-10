@@ -2230,16 +2230,10 @@
                             ]
                         },
                         
-                        // Load inline data - properly structured
-                        resourceStore: {
-                            data: resources
-                        },
-                        eventStore: {
-                            data: events
-                        },
-                        dependencyStore: {
-                            data: dependencies
-                        },
+                        // Initialize empty stores - data will be loaded later after fetching from API
+                        resourceStore: {},
+                        eventStore: {},
+                        dependencyStore: {},
                         
                         // Disable automatic date calculations to use our specific dates
                         autoCalculateStartDate: false,
