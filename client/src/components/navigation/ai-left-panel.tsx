@@ -880,7 +880,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         console.log('AI Left Panel - Handling table creation action:', data.action);
         
         // Process table data and add to canvas via Max Dock
-        if (data.action.tableData && setCanvasItems) {
+        if (data.action.tableData) {
           const tableItem: CanvasItem = {
             id: `table_${Date.now()}`,
             type: 'table',
@@ -893,8 +893,13 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             timestamp: new Date().toISOString()
           };
           
-          // Add table item to canvas
-          setCanvasItems(prev => [...prev, tableItem]);
+          // Add table item to canvas if the context is available
+          if (setCanvasItems) {
+            console.log('✅ Adding table to canvas items');
+            setCanvasItems(prev => [...prev, tableItem]);
+          } else {
+            console.warn('⚠️ Canvas context not available, but will navigate anyway');
+          }
           
           // Save widget to database so it persists across sessions
           try {
@@ -922,7 +927,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             console.error('❌ Error saving table widget to database:', error);
           }
           
-          // Navigate to Canvas page to show the table
+          // Always navigate to Canvas page to show the table
           console.log('🔄 Navigating to Canvas page to display table');
           navigate('/canvas');
         }
@@ -930,7 +935,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         // Show table creation confirmation
         await addMessage({
           role: 'assistant',
-          content: data.content || 'I\'ve created a jobs table and added it to the canvas.',
+          content: data.content || 'I\'ve created a table and added it to the canvas.',
           source: 'panel',
           agentId: data.agentId || 'max',
           agentName: data.agentName || 'Max'
