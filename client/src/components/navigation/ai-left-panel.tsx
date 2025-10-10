@@ -1577,16 +1577,26 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
     >
       
       {/* Header */}
-      <div className={cn("px-4 py-2 border-b flex items-center justify-between text-white", getThemeGradient(aiSettings.aiThemeColor))}>
+      <div className={cn("px-4 py-2 border-b flex items-center text-white", getThemeGradient(aiSettings.aiThemeColor))}>
+        {/* Collapse/Expand Button - always on the left for easy access */}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="text-white hover:text-white/80 bg-transparent mr-2 flex-shrink-0"
+          title={isCollapsed ? "Expand panel" : "Collapse panel"}
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </Button>
+        
         {!isCollapsed && (
-          <div className="flex items-center gap-2">
-            <span className="font-semibold">Agents</span>
-          </div>
-        )}
-        <div className="flex items-center gap-1">
-          {/* Navigation Icons - show when expanded */}
-          {!isCollapsed && (
-            <>
+          <>
+            <div className="flex items-center gap-2 flex-1">
+              <span className="font-semibold">Agents</span>
+            </div>
+            
+            <div className="flex items-center gap-1">
+              {/* Navigation Icons - show when expanded */}
               <Button
                 variant="ghost"
                 size="icon"
@@ -1623,31 +1633,22 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
               >
                 <TrendingUp className="w-4 h-4" />
               </Button>
-            </>
-          )}
-          
-          {/* Audio Control Button - show when audio is playing */}
-          {isPlaying && (
-            <Button
-              variant="destructive"
-              size="icon"
-              onClick={stopAudio}
-              className="bg-red-500 hover:bg-red-600 text-white animate-pulse"
-              title="Stop audio playback (Esc key)"
-            >
-              <Square className="w-4 h-4 fill-white" />
-            </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-white hover:text-white/80 bg-transparent"
-            title={isCollapsed ? "Expand panel" : "Collapse panel"}
-          >
-            {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-          </Button>
-        </div>
+              
+              {/* Audio Control Button - show when audio is playing */}
+              {isPlaying && (
+                <Button
+                  variant="destructive"
+                  size="icon"
+                  onClick={stopAudio}
+                  className="bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                  title="Stop audio playback (Esc key)"
+                >
+                  <Square className="w-4 h-4 fill-white" />
+                </Button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {!isCollapsed && (
