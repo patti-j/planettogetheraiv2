@@ -3720,11 +3720,36 @@
                 document.getElementById('zoomToFit').addEventListener('click', () => {
                     // Zoom to fit all events according to Bryntum official documentation
                     // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('Zoom to fit applied with 50px margins');
+                    try {
+                        console.log('ZoomToFit button clicked');
+                        console.log('Event store count before zoom:', scheduler.eventStore.count);
+                        
+                        // Check if events exist
+                        if (scheduler.eventStore.count === 0) {
+                            console.warn('No events to zoom to!');
+                            return;
+                        }
+                        
+                        // Get the first and last event dates for debugging
+                        const events = scheduler.eventStore.records;
+                        if (events.length > 0) {
+                            const sortedEvents = [...events].sort((a, b) => a.startDate - b.startDate);
+                            console.log('First event date:', sortedEvents[0].startDate);
+                            console.log('Last event date:', sortedEvents[sortedEvents.length - 1].endDate || sortedEvents[sortedEvents.length - 1].startDate);
+                        }
+                        
+                        // Call zoomToFit with proper options
+                        const result = scheduler.zoomToFit({
+                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                            rightMargin: 50   // Margin in pixels between last event end and last visible date
+                        });
+                        
+                        console.log('Zoom to fit result:', result);
+                        console.log('After zoom - Start date:', scheduler.startDate);
+                        console.log('After zoom - End date:', scheduler.endDate);
+                    } catch (error) {
+                        console.error('Error in zoomToFit:', error);
+                    }
                 });
                 
                 // Version Management Button Handlers
@@ -4504,27 +4529,43 @@
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
                 
-                // Initial zoom to fit - click the button programmatically to ensure it works
+                // Initial positioning - navigate to September 2025 where the events are
                 setTimeout(() => {
                     try {
-                        // First try clicking the zoom to fit button
-                        const zoomFitButton = document.getElementById('zoomToFit');
-                        if (zoomFitButton) {
-                            console.log('Clicking zoom to fit button to show all events...');
-                            zoomFitButton.click();
-                            console.log('✅ Zoom to fit button clicked');
+                        console.log('Navigating to September 2025 where events are located...');
+                        
+                        // Method 1: Direct scroll to September 1, 2025
+                        const targetDate = new Date(2025, 8, 1); // September 1, 2025
+                        if (scheduler && scheduler.scrollToDate) {
+                            scheduler.scrollToDate(targetDate, { 
+                                block: 'center',
+                                animate: false 
+                            });
+                            console.log('✅ Scrolled to September 2025');
                         }
                         
-                        // Also try the API directly as a backup
-                        if (scheduler && scheduler.zoomToFit) {
-                            scheduler.zoomToFit({
-                                leftMargin: 50,
-                                rightMargin: 50
-                            });
-                            console.log('✅ ZoomToFit API called - scheduler should now show all events');
-                        }
+                        // Method 2: Try zoomToFit after scrolling
+                        setTimeout(() => {
+                            if (scheduler && scheduler.zoomToFit) {
+                                scheduler.zoomToFit({
+                                    leftMargin: 50,
+                                    rightMargin: 50
+                                });
+                                console.log('✅ ZoomToFit applied after scroll');
+                            }
+                            
+                            // Method 3: If zoomToFit still doesn't work, try zoomToSpan as a fallback
+                            if (scheduler && scheduler.zoomToSpan) {
+                                scheduler.zoomToSpan({
+                                    startDate: new Date(2025, 8, 1),  // Sept 1
+                                    endDate: new Date(2025, 8, 30)    // Sept 30
+                                });
+                                console.log('✅ ZoomToSpan to September 2025 as fallback');
+                            }
+                        }, 500);
+                        
                     } catch (error) {
-                        console.error('Failed during zoom to fit:', error);
+                        console.error('Failed during date navigation:', error);
                     }
                 }, 2000); // Wait 2 seconds to ensure everything is loaded
                 
