@@ -264,10 +264,36 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         
         console.log('✅ Canvas item added and canvas shown:', chartItem);
         
-        // Show toast to navigate to canvas
-        setTimeout(() => {
+        // Navigate to canvas immediately
+        handleNavigation('/canvas', 'Canvas');
+      }
+      
+      // Handle table/grid creation from Max AI
+      if (data?.action?.type === 'show_table' || data?.action?.type === 'create_table' || 
+          data?.action?.type === 'show_jobs_table') {
+        console.log('📊 Table/grid creation detected from floating AI:', data.action);
+        
+        if (data.action.tableData) {
+          const tableItem = {
+            id: `table_${Date.now()}`,
+            type: 'table',
+            title: data.action.title || 'Data Table',
+            content: {
+              title: data.action.title || 'Data Table',
+              rows: data.action.tableData.rows || [],
+              columns: data.action.tableData.columns || []
+            },
+            timestamp: new Date().toISOString()
+          };
+          
+          setCanvasItems((prev: any[]) => [...prev, tableItem]);
+          setCanvasVisible(true);
+          
+          console.log('✅ Table added to canvas and navigating to Canvas page');
+          
+          // Navigate to canvas immediately to show the table
           handleNavigation('/canvas', 'Canvas');
-        }, 800);
+        }
       }
       
       // Handle agent switching actions from Max AI
