@@ -20,16 +20,32 @@ Note on concurrent work:
 
 ## Recent Changes
 
-### October 10, 2025 - AI Agent "Jobs" Terminology Fix
-- **Issue**: Max AI and Production Scheduling Agent didn't understand "jobs" terminology. Query "all jobs" returned "I couldn't find any operations matching 'all jobs'".
+### October 10, 2025 - AI Agent "Jobs" Terminology & Edge Case Enhancement
+- **Original Issue**: Max AI and Production Scheduling Agent didn't understand "jobs" terminology. Query "all jobs" returned "I couldn't find any operations matching 'all jobs'".
 - **Training Updates**:
   - Enhanced Max AI agent training with comprehensive "Understanding Jobs vs Operations" section
   - Added Production Scheduling Agent manufacturing terminology clarification at the top
   - Provided query translation examples (e.g., "all jobs" → fetch from ptjobs table)
-- **Code Fix**: Enhanced `findOperationsByDescription` method to detect "all jobs" queries and return ALL operations from jobs instead of searching for operations named "all jobs"
-- **Detection Logic**: Recognizes patterns like "all jobs", "show me all jobs", "every job" while excluding qualified queries like "all jobs for line 2" or "jobs this week"
-- **Result**: Original issue "change start date on all jobs to oct 11" is now fixed
-- **Known Limitations**: Some edge cases like time-filtered queries ("jobs for this week") could be future enhancements
+- **Code Fixes - "All Jobs" Detection**:
+  - Enhanced `findOperationsByDescription` method to detect "all jobs" queries and return ALL operations from jobs
+  - Recognizes patterns like "all jobs", "show me all jobs", "every job"
+  - Excludes qualified queries like "all jobs for line 2" to preserve location filters
+- **Code Fixes - Time-Filtered Job Queries**:
+  - Added optimized shortcut for simple time-based queries: "jobs today", "jobs this week", "operations next week", "jobs this month"
+  - Comprehensive query preprocessing handles natural language variations:
+    - **Leading fillers**: Iteratively removes "please", "hey", "hi", "can you", "could you", "would you" (handles multiple: "please can you")
+    - **Trailing fillers**: Removes "please", "now", "thanks", "thank you"
+    - **Punctuation**: Strips trailing ?, !, .
+    - **Articles**: Removes "the", "a", "an"
+    - **Spaces**: Normalizes multiple spaces
+  - Conservative fallback: Complex queries (e.g., "jobs this week for line 2") safely fall back to regular search to preserve all qualifiers
+- **Supported Patterns**:
+  - ✅ "all jobs" → Returns ALL operations
+  - ✅ "change start date on all jobs to oct 11" → Works correctly
+  - ✅ "jobs today", "operations this week", "jobs next week", "jobs this month" → Time-filtered
+  - ✅ "please show me jobs today?", "can you list operations this week" → Preprocessed and matched
+  - ✅ "jobs this week for line 2" → Falls back to regular search (preserves location filter)
+- **Known Limitations**: Some rare polite variations may fall back to regular search (which still works correctly). Only 4 time filters fully supported (today, this week, next week, this month).
 
 ## System Architecture
 
