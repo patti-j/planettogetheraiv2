@@ -232,7 +232,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       }
       return await response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: async (data: any) => {
       setIsFloatingSending(false);
       
       // Determine which agent responded
@@ -289,6 +289,44 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           setCanvasItems((prev: any[]) => [...prev, tableItem]);
           setCanvasVisible(true);
           
+          // Save table widget to database so it persists
+          const saveWidget = async () => {
+            try {
+              const widgetData = {
+                type: 'table',
+                title: tableItem.title,
+                position: { x: 0, y: 0, w: 8, h: 6 },
+                config: {
+                  columns: data.action.tableData.columns,
+                  rows: data.action.tableData.rows,
+                  createdByMaxAI: true
+                },
+                dashboardId: 1
+              };
+
+              const authToken = localStorage.getItem('auth_token');
+              const response = await fetch('/api/canvas/widgets', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+                },
+                body: JSON.stringify(widgetData)
+              });
+
+              if (response.ok) {
+                console.log('✅ Table widget saved to database successfully');
+                // Invalidate canvas widgets cache to refresh the canvas
+                window.location.href = '/canvas'; // Force reload to show the new widget
+              } else {
+                console.error('❌ Failed to save table widget to database:', response.statusText);
+              }
+            } catch (error) {
+              console.error('❌ Error saving table widget to database:', error);
+            }
+          };
+          
+          await saveWidget();
           console.log('✅ Table added to canvas and navigating to Canvas page');
           
           // Navigate to canvas immediately to show the table
