@@ -712,6 +712,8 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
       setShowMaxThinking(false);
       setCurrentRequestController(null);
       console.log("Max AI Full Response:", data);
+      console.log("Response action type:", data?.action?.type);
+      console.log("Response has tableData:", !!data?.action?.tableData);
       
       // Handle scheduler refresh action (after database updates)
       if (data?.action?.type === 'refresh_scheduler') {
