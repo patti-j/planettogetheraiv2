@@ -164,58 +164,14 @@ const uploadFiles = multer({
   }
 });
 
-// Serve Bryntum static assets - v7.0.0 themes
-// Support for new themes: Material3, Stockholm, Svalbard, Visby (light and dark variants)
-router.get('/material3-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-light.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/material3-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-dark.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/stockholm-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/stockholm-light.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/stockholm-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/stockholm-dark.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/svalbard-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/svalbard-light.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/svalbard-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/svalbard-dark.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/visby-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/visby-light.css');
-  res.sendFile(cssPath);
-});
-
-router.get('/visby-dark.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/visby-dark.css');
-  res.sendFile(cssPath);
-});
-
-// Keep backwards compatibility for now
+// Serve Bryntum static assets
 router.get('/schedulerpro.classic-light.css', (req, res) => {
-  // Redirect to Material3 Light theme as fallback
-  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/material3-light.css');
+  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
   res.sendFile(cssPath);
 });
 
 router.get('/schedulerpro.umd.js', (req, res) => {
-  // Serve v7.0.0-alpha.1 UMD build from node_modules
-  const jsPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.umd.js');
+  const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
   res.sendFile(jsPath);
 });
 
@@ -7544,37 +7500,6 @@ router.get("/api/ptresources", enhancedAuth, async (req, res) => {
   } catch (error: any) {
     console.error("Error fetching resources:", error);
     res.status(500).json({ error: "Failed to fetch resources" });
-  }
-});
-
-// Get all operations from ptjoboperations table
-router.get("/api/ptoperations", enhancedAuth, async (req, res) => {
-  try {
-    const result = await db.execute(sql`
-      SELECT 
-        id,
-        job_id,
-        external_id,
-        name,
-        description,
-        operation_id,
-        base_operation_id,
-        required_finish_qty,
-        cycle_hrs,
-        setup_hours,
-        post_processing_hours,
-        scheduled_start,
-        scheduled_end,
-        percent_finished,
-        created_at,
-        updated_at
-      FROM ptjoboperations 
-      ORDER BY scheduled_start, id
-    `);
-    res.json(result.rows);
-  } catch (error: any) {
-    console.error("Error fetching operations:", error);
-    res.status(500).json({ error: "Failed to fetch operations" });
   }
 });
 

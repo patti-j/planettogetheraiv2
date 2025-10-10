@@ -2166,10 +2166,6 @@
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
-                    // Set the scheduler to September 2025 where the data is
-                    startDate: new Date(2025, 8, 1),  // September 1, 2025
-                    endDate: new Date(2025, 9, 1),    // October 1, 2025
-                    
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
                     
@@ -2215,10 +2211,6 @@
                         // Enable the scheduling engine's automatic calculations
                         autoCalculatePercentDone: true,
                         
-                        // Set the project date range to September 2025 where the data is
-                        startDate: new Date(2025, 8, 1),  // September 1, 2025
-                        endDate: new Date(2025, 9, 1),    // October 1, 2025
-                        
                         // Define project calendar with working hours
                         calendar: {
                             intervals: [
@@ -2230,14 +2222,20 @@
                             ]
                         },
                         
-                        // Initialize empty stores - data will be loaded later after fetching from API
-                        resourceStore: {},
-                        eventStore: {},
-                        dependencyStore: {},
+                        // Load inline data - properly structured
+                        resourceStore: {
+                            data: resources
+                        },
+                        eventStore: {
+                            data: events
+                        },
+                        dependencyStore: {
+                            data: dependencies
+                        },
                         
-                        // Disable automatic date calculations to use our specific dates
-                        autoCalculateStartDate: false,
-                        autoCalculateEndDate: false
+                        // Enable automatic date calculations by the engine
+                        autoCalculateStartDate: true,
+                        autoCalculateEndDate: true
                     },
 
                     features: {
@@ -3714,36 +3712,11 @@
                 document.getElementById('zoomToFit').addEventListener('click', () => {
                     // Zoom to fit all events according to Bryntum official documentation
                     // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
-                    try {
-                        console.log('ZoomToFit button clicked');
-                        console.log('Event store count before zoom:', scheduler.eventStore.count);
-                        
-                        // Check if events exist
-                        if (scheduler.eventStore.count === 0) {
-                            console.warn('No events to zoom to!');
-                            return;
-                        }
-                        
-                        // Get the first and last event dates for debugging
-                        const events = scheduler.eventStore.records;
-                        if (events.length > 0) {
-                            const sortedEvents = [...events].sort((a, b) => a.startDate - b.startDate);
-                            console.log('First event date:', sortedEvents[0].startDate);
-                            console.log('Last event date:', sortedEvents[sortedEvents.length - 1].endDate || sortedEvents[sortedEvents.length - 1].startDate);
-                        }
-                        
-                        // Call zoomToFit with proper options
-                        const result = scheduler.zoomToFit({
-                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                            rightMargin: 50   // Margin in pixels between last event end and last visible date
-                        });
-                        
-                        console.log('Zoom to fit result:', result);
-                        console.log('After zoom - Start date:', scheduler.startDate);
-                        console.log('After zoom - End date:', scheduler.endDate);
-                    } catch (error) {
-                        console.error('Error in zoomToFit:', error);
-                    }
+                    scheduler.zoomToFit({
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
+                    });
+                    console.log('Zoom to fit applied with 50px margins');
                 });
                 
                 // Version Management Button Handlers
@@ -4460,53 +4433,7 @@
                 
                 // Database times are now fixed with no overlaps, so we don't need to run ASAP automatically
                 console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
-                
-                // Use a timeout to ensure scheduler is fully rendered before zooming
-                setTimeout(() => {
-                    // Simply zoom to fit all events - this should show September 2025 where the events are
-                    if (scheduler && scheduler.zoomToFit) {
-                        try {
-                            console.log('Attempting to zoom to fit all events...');
-                            
-                            // First, make sure the scheduler has the events
-                            const eventCount = scheduler.eventStore ? scheduler.eventStore.count : 0;
-                            console.log(`Event store has ${eventCount} events`);
-                            
-                            if (eventCount > 0) {
-                                // Use zoomToFit to show all events
-                                scheduler.zoomToFit({
-                                    leftMargin: 50,
-                                    rightMargin: 50
-                                });
-                                console.log('✅ Zoomed to fit all events');
-                                
-                                // Also try to scroll to the first event
-                                const firstEvent = scheduler.eventStore.first;
-                                if (firstEvent) {
-                                    console.log('First event date:', firstEvent.startDate);
-                                    scheduler.scrollToDate(firstEvent.startDate, { animate: false });
-                                    console.log('✅ Scrolled to first event');
-                                }
-                            } else {
-                                console.warn('No events in store to zoom to');
-                                
-                                // Fallback: manually set the time span to September
-                                const startDate = new Date(2025, 8, 1);
-                                const endDate = new Date(2025, 9, 1);
-                                
-                                if (scheduler.timeAxis && scheduler.timeAxis.setTimeSpan) {
-                                    scheduler.timeAxis.setTimeSpan(startDate, endDate);
-                                    console.log('✅ Manually set time axis to September 2025');
-                                }
-                            }
-                        } catch (error) {
-                            console.error('Failed to zoom:', error);
-                        }
-                    }
-                }, 1000); // Wait 1 second for scheduler to fully render and load data
-                // Safe logging - check if eventStore exists first
-                const eventStoreCount = scheduler.eventStore ? scheduler.eventStore.count : 0;
-                console.log('📊 Event store has', eventStoreCount, 'events loaded from database');
+                console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
                 // Add welcome message to Max AI indicating schedule is ready
                 setTimeout(() => {
@@ -4523,45 +4450,15 @@
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
                 
-                // Initial positioning - navigate to September 2025 where the events are
+                // Initial zoom to fit using Bryntum official documentation
+                // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
                 setTimeout(() => {
-                    try {
-                        console.log('Navigating to September 2025 where events are located...');
-                        
-                        // Method 1: Direct scroll to September 1, 2025
-                        const targetDate = new Date(2025, 8, 1); // September 1, 2025
-                        if (scheduler && scheduler.scrollToDate) {
-                            scheduler.scrollToDate(targetDate, { 
-                                block: 'center',
-                                animate: false 
-                            });
-                            console.log('✅ Scrolled to September 2025');
-                        }
-                        
-                        // Method 2: Try zoomToFit after scrolling
-                        setTimeout(() => {
-                            if (scheduler && scheduler.zoomToFit) {
-                                scheduler.zoomToFit({
-                                    leftMargin: 50,
-                                    rightMargin: 50
-                                });
-                                console.log('✅ ZoomToFit applied after scroll');
-                            }
-                            
-                            // Method 3: If zoomToFit still doesn't work, try zoomToSpan as a fallback
-                            if (scheduler && scheduler.zoomToSpan) {
-                                scheduler.zoomToSpan({
-                                    startDate: new Date(2025, 8, 1),  // Sept 1
-                                    endDate: new Date(2025, 8, 30)    // Sept 30
-                                });
-                                console.log('✅ ZoomToSpan to September 2025 as fallback');
-                            }
-                        }, 500);
-                        
-                    } catch (error) {
-                        console.error('Failed during date navigation:', error);
-                    }
-                }, 2000); // Wait 2 seconds to ensure everything is loaded
+                    scheduler.zoomToFit({
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
+                    });
+                    console.log('Initial zoom to fit applied - scheduler always loads in fit-to-view mode');
+                }, 750);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';

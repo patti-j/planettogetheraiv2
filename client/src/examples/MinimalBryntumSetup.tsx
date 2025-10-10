@@ -1,7 +1,7 @@
 import React from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
-// CRITICAL: Import ONE theme CSS file - Using Stockholm theme for v6.3.3
-import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
+// CRITICAL: Import ONE theme CSS file - this is all you need for styling
+import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
 
 /**
  * Minimal Bryntum SchedulerPro Setup

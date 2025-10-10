@@ -187,7 +187,7 @@
 }
 
 /* Force Bryntum SchedulerPro styles */
-.b-scheduler-pro,
+.b-schedulerpro,
 .b-scheduler {
   font-family: inherit !important;
   font-size: 14px !important;
@@ -200,7 +200,7 @@
 }
 
 /* Ensure proper rendering of scheduler elements */
-.b-widget.b-scheduler-pro {
+.b-widget.b-schedulerpro {
   display: flex !important;
   flex-direction: column !important;
 }
