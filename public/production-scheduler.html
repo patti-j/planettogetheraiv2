@@ -4443,12 +4443,16 @@
                 // Initial zoom to fit using Bryntum official documentation
                 // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
                 setTimeout(() => {
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('Initial zoom to fit applied - scheduler always loads in fit-to-view mode');
-                }, 750);
+                    if (scheduler && scheduler.eventStore && scheduler.eventStore.count > 0) {
+                        scheduler.zoomToFit({
+                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                            rightMargin: 50   // Margin in pixels between last event end and last visible date
+                        });
+                        console.log('✅ Initial zoom to fit applied - scheduler loaded in fit-to-view mode');
+                    } else {
+                        console.log('⚠️ No events found for zoom to fit, keeping default view');
+                    }
+                }, 1000);
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
