@@ -47,27 +47,27 @@ Note on concurrent work:
   - ✅ "jobs this week for line 2" → Falls back to regular search (preserves location filter)
 - **Known Limitations**: Some rare polite variations may fall back to regular search (which still works correctly). Only 4 time filters fully supported (today, this week, next week, this month).
 
-### October 10, 2025 - Production Scheduler Auto-Refresh & Constraint Fixes
+### October 10, 2025 - Production Scheduler Auto-Refresh & Constraint Fixes (FINAL)
 - **Issue 1 - No Auto-Refresh**: After AI agent rescheduled operations, production schedule didn't refresh automatically, requiring manual page refresh
-- **Issue 2 - Constraint Violations**: Rescheduling set all operations to the same start time, causing overlaps on same resources for operations from the same job
+- **Issue 2 - Constraint Violations**: Rescheduling set all operations to the same start time, causing overlaps on same resources across different jobs
 - **Root Causes**:
-  1. Frontend didn't listen for Max AI refresh actions
-  2. Reschedule logic didn't sequence operations by job - all operations set to same start time
+  1. Floating AI in desktop-layout.tsx didn't handle refresh_scheduler action (was only in ai-left-panel.tsx)
+  2. Reschedule logic sequenced operations within jobs but didn't track resource availability across jobs
 - **Fixes Implemented**:
-  - **Auto-Refresh System** (Event-Based):
-    - Added event listener in production-scheduler.tsx to listen for 'maxai:action' CustomEvents
-    - Added event dispatcher in integrated-ai-assistant.tsx to dispatch refresh_scheduler events when received from backend
-    - When refresh_scheduler action received, iframe reloads with cache busting and shows toast notification
-  - **Sequential Operation Scheduling**:
-    - Modified performOperationReschedule in max-ai-service.ts to group operations by job_id
-    - Operations within each job sorted by original scheduled_start to maintain sequence
-    - Each job's first operation starts at target date
-    - Subsequent operations in same job start when previous ends (sequential, no overlaps)
-    - Prevents resource conflicts for operations from the same job
+  - **Auto-Refresh System** (Floating AI):
+    - Added refresh_scheduler handler in desktop-layout.tsx sendFloatingMessage.onSuccess (lines 422-445)
+    - When refresh_scheduler action received, finds iframe by title and refreshes with cache busting
+    - Shows success message with refresh confirmation to user
+  - **Resource Conflict Prevention**:
+    - Modified performOperationReschedule in max-ai-service.ts to use resourceSchedule Map (lines 3721-3799)
+    - Tracks resource availability across ALL jobs, not just within each job
+    - Before scheduling operation, checks if resource is busy and delays start if needed
+    - After scheduling operation, marks resource as busy until operation ends
+    - Maintains operation sequencing within each job while preventing cross-job resource conflicts
 - **Results**: 
   - ✅ Schedule automatically refreshes after AI rescheduling (no manual refresh needed)
-  - ✅ Operations properly sequenced by job with no overlaps
-  - ✅ Constraint violations eliminated
+  - ✅ Operations properly sequenced within each job
+  - ✅ Resource conflicts eliminated across all jobs (no overlapping operations on same resource)
 
 ## System Architecture
 
