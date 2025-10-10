@@ -3720,6 +3720,9 @@ Respond with JSON format:
       let rescheduledCount = 0;
       const summaryItems: string[] = [];
       
+      // Track resource availability across all jobs
+      const resourceSchedule = new Map<number, Date>(); // resource_id -> next available time
+      
       // Group operations by job to maintain sequencing
       const operationsByJob = new Map<number, any[]>();
       
@@ -3742,6 +3745,17 @@ Respond with JSON format:
         let currentStartTime = new Date(newStartTime);
         
         for (const operation of sortedOperations) {
+          const resourceId = operation.resource_id;
+          
+          // Check if this resource is already in use by another job
+          if (resourceId && resourceSchedule.has(resourceId)) {
+            const resourceAvailableTime = resourceSchedule.get(resourceId)!;
+            // If resource is busy, start this operation when resource becomes available
+            if (resourceAvailableTime > currentStartTime) {
+              currentStartTime = new Date(resourceAvailableTime);
+            }
+          }
+          
           // Calculate operation duration
           const duration = operation.scheduled_end && operation.scheduled_start 
             ? new Date(operation.scheduled_end).getTime() - new Date(operation.scheduled_start).getTime()
@@ -3757,6 +3771,11 @@ Respond with JSON format:
               scheduled_end = ${newEndTime.toISOString()}
             WHERE id = ${operation.id}
           `);
+          
+          // Mark this resource as busy until the operation ends
+          if (resourceId) {
+            resourceSchedule.set(resourceId, newEndTime);
+          }
           
           rescheduledCount++;
           summaryItems.push(`• ${operation.operation_name} (Job: ${operation.job_name || 'Unknown'})`);

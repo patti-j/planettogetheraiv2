@@ -415,6 +415,31 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           source: 'floating',
           agentId: respondingAgent
         });
+      }
+      // Handle refresh_scheduler action
+      else if (data?.action?.type === 'refresh_scheduler') {
+        console.log('🔄 Refresh scheduler action received from floating AI');
+        
+        // Check if we're on the production scheduler page
+        const currentPath = window.location.pathname;
+        if (currentPath === '/production-scheduler') {
+          // Find the production scheduler iframe and refresh it
+          const iframe = document.querySelector('iframe[title="Production Scheduler"]') as HTMLIFrameElement;
+          if (iframe) {
+            console.log('🔄 Refreshing Production Scheduler after database update');
+            // Force reload with cache busting
+            const currentSrc = iframe.src.split('?')[0];
+            iframe.src = `${currentSrc}?v=${Date.now()}`;
+          }
+        }
+        
+        // Add response message with refresh note
+        addMessage({
+          role: 'assistant',
+          content: data.content + (currentPath === '/production-scheduler' ? '\n\n📊 The schedule has been refreshed to show your changes.' : ''),
+          source: 'floating',
+          agentId: respondingAgent
+        });
       } else {
         // Add assistant response
         if (data?.content || data?.message || data?.response) {
