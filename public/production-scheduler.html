@@ -2151,9 +2151,7 @@
                     { text: 'Resource', field: 'name', width: resourceColumnWidth, locked: isMobile }
                 ];
                 
-                if (!isMobile) {
-                    schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
-                }
+                // Category column removed as per requirement
                 
                 // Create scheduler instance with proper Bryntum project engine configuration
                 // Make scheduler globally accessible for Max AI
@@ -2306,15 +2304,7 @@
                                 
                                 if (!isValid) {
                                     console.warn(`⚠️ Cannot assign ${operationName} to ${resourceName} - incompatible resource type`);
-                                    // Show toast notification if available
-                                    if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.Toast) {
-                                        bryntum.schedulerpro.Toast.show({
-                                            html: `Cannot assign ${operationName} to ${resourceName} - incompatible resource type`,
-                                            color: 'b-red',
-                                            style: 'border',
-                                            timeout: 3000
-                                        });
-                                    }
+                                    // Toast notification removed - drag box message is sufficient
                                     return {
                                         valid: false,
                                         message: `${operationName} cannot be assigned to ${resourceName}`
