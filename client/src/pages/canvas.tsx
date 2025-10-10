@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +38,8 @@ import {
   Trash2,
   Copy,
   FileImage,
-  RefreshCw
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { useAITheme } from '@/hooks/use-ai-theme';
 import { toast } from '@/hooks/use-toast';
@@ -66,6 +68,7 @@ interface CanvasWidget {
 
 export default function CanvasPage() {
   const { aiTheme } = useAITheme();
+  const [, navigate] = useLocation();
   const [items, setItems] = useState<CanvasItem[]>([]);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
   const [previousWidgetIds, setPreviousWidgetIds] = useState<string[]>([]);
@@ -416,6 +419,19 @@ export default function CanvasPage() {
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3 md:ml-0 ml-12">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const previousPage = sessionStorage.getItem('previousPage') || '/production-scheduler';
+                navigate(previousPage);
+              }}
+              className="text-white hover:bg-white/20 flex-shrink-0"
+              title="Close Canvas"
+              data-testid="button-close-canvas"
+            >
+              <X className="w-5 h-5" />
+            </Button>
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
               <BarChart3 className="w-4 h-4" />
             </div>

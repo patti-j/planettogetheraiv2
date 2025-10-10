@@ -47,6 +47,14 @@ export function SplitScreenProvider({ children }: SplitScreenProviderProps) {
 
   // New method for handling navigation that might trigger pane selection
   const handleNavigation = (path: string, label: string) => {
+    // Save current page before navigating to Canvas (for back button)
+    if (path === '/canvas') {
+      const currentPath = window.location.pathname;
+      if (currentPath !== '/canvas') {
+        sessionStorage.setItem('previousPage', currentPath);
+      }
+    }
+    
     if (splitMode !== 'none') {
       // Check if this path is already displayed in either pane
       if (path === primaryPage || path === secondaryPage) {
