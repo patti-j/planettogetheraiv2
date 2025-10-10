@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { SchedulingAgent } from '@/components/ai-consultant/SchedulingAgent';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -95,9 +94,6 @@ export default function ProductionScheduler() {
           // Allow fullscreen for better mobile experience
           allowFullScreen
         />
-        
-        {/* AI Scheduling Agent positioned within the content area - hide on mobile for more screen space */}
-        {!isMobile && <SchedulingAgent />}
       </div>
     </div>
   );
