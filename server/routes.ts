@@ -2827,9 +2827,13 @@ router.get("/api/canvas/widget-library", async (req, res) => {
 });
 
 router.post("/api/canvas/widgets", async (req, res) => {
+  let userId = 1; // Default user ID for development
+  
   // Development bypass - skip authentication in dev mode
   if (process.env.NODE_ENV === 'development') {
     console.log("🔧 [Canvas Widgets POST] Development mode: Skipping authentication");
+    // Set default user for development
+    (req as any).user = { id: 1, username: 'admin', email: 'admin@planettogether.com' };
   } else {
     // In production, require authentication
     await new Promise((resolve, reject) => {
@@ -2838,7 +2842,12 @@ router.post("/api/canvas/widgets", async (req, res) => {
         else resolve(undefined);
       });
     });
+    userId = (req as any).user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
   }
+  
   try {
     // Validate request body using widget schema
     const validationResult = insertWidgetSchema.safeParse(req.body);
@@ -2850,12 +2859,6 @@ router.post("/api/canvas/widgets", async (req, res) => {
     }
 
     const { type, title, position, config, dashboardId } = validationResult.data;
-    
-    // Ensure user has access to the dashboard
-    const userId = (req as any).user?.id;
-    if (!userId) {
-      return res.status(401).json({ error: "User not authenticated" });
-    }
     
     // Verify dashboard access - in production would query database
     if (dashboardId && !Number.isInteger(Number(dashboardId))) {
