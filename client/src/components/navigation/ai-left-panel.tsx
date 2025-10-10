@@ -45,7 +45,7 @@ interface AILeftPanelProps {
 }
 
 export function AILeftPanel({ onClose }: AILeftPanelProps) {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const { handleNavigation } = useSplitScreen();
   const { toast } = useToast();
   const { currentAgent } = useAgentAdapter();
@@ -87,7 +87,6 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   const chatScrollRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const [location, setLocation] = useLocation();
   
   // Helper function to get gradient class based on theme
   const getThemeGradient = (theme: string) => {
@@ -861,8 +860,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             console.error('❌ Error saving widget to database:', error);
           }
           
-          // Navigate to Canvas page to show the chart
+          // Make canvas visible and navigate to Canvas page to show the chart
           console.log('🔄 Navigating to Canvas page to display chart');
+          if (setCanvasVisible) {
+            setCanvasVisible(true);
+          }
           navigate('/canvas');
         }
         
@@ -932,8 +934,11 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
             console.error('❌ Error saving table widget to database:', error);
           }
           
-          // Always navigate to Canvas page to show the table
+          // Make canvas visible and navigate to Canvas page to show the table
           console.log('🔄 Navigating to Canvas page to display table');
+          if (setCanvasVisible) {
+            setCanvasVisible(true);
+          }
           navigate('/canvas');
         }
         
