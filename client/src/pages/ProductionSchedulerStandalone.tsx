@@ -16,15 +16,15 @@ export default function ProductionSchedulerStandalone() {
           Back to Production Schedule
         </Button>
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-          Production Scheduler Pro
+          Standalone Blazor Scheduler
         </h1>
         <div className="w-[180px]"></div> {/* Spacer for centering */}
       </div>
       
       {/* Iframe container */}
       <iframe
-        src="/production-scheduler.html"
-        title="Production Scheduler Pro"
+        src="/scheduler-blazor/index.html"
+        title="Scheduler (Blazor vanilla)"
         className="flex-1 border-0"
         style={{ width: '100%' }}
       />
