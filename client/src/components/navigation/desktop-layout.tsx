@@ -852,14 +852,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         const collapsed = localStorage.getItem('ai-panel-collapsed') === 'true';
         if (collapsed !== isAiPanelCollapsed) {
           if (!collapsed) {
-            // Expanding - restore saved size immediately
+            // Expanding - restore saved size with minimum 25% for proper visibility
             const savedSize = localStorage.getItem('aiPanelSize');
+            let targetSize = 25; // Default to 25%
+            
             if (savedSize) {
               const parsedSize = parseInt(savedSize);
-              if (parsedSize > 0) {
-                setAiPanelSize(parsedSize); // Update the AI panel size state
+              if (parsedSize >= 15) {
+                targetSize = parsedSize; // Use saved size if it's reasonable
               }
             }
+            
+            setAiPanelSize(targetSize);
+            
+            // Force panel group to refresh layout
+            setPanelGroupKey(prev => prev + 1);
           } else {
             // Collapsing - save current size for later restoration
             localStorage.setItem('aiPanelSize', aiPanelSize.toString());

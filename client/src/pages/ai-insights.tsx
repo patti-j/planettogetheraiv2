@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useLocation } from 'wouter';
 import { 
   Sparkles, 
   TrendingUp, 
@@ -102,6 +103,7 @@ function getTypeIcon(type: string) {
 }
 
 export default function AIInsightsPage() {
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [priorityFilter, setPriorityFilter] = useState('all');
@@ -392,6 +394,19 @@ export default function AIInsightsPage() {
         </div>
         
         <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const previousPage = sessionStorage.getItem('previousPage') || '/production-scheduler';
+              navigate(previousPage);
+            }}
+            className="flex-shrink-0"
+            title="Close AI Insights"
+            data-testid="button-close-ai-insights"
+          >
+            <X className="w-5 h-5" />
+          </Button>
           <Button 
             onClick={async () => {
               setIsAnalyzing(true);

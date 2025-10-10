@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,7 @@ import {
   Bot, ChevronDown, ChevronRight, Undo2, AlertTriangle, 
   CheckCircle, XCircle, Clock, Search, Filter, RotateCcw, 
   Eye, EyeOff, Calendar, User, Database, Zap, BarChart3,
-  Factory, Package, Shield, Sparkles
+  Factory, Package, Shield, Sparkles, X
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -78,6 +79,7 @@ const actionTypeColors = {
 } as const;
 
 export default function AgentHistory() {
+  const [, navigate] = useLocation();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterAgent, setFilterAgent] = useState<string>('all');
   const [filterAction, setFilterAction] = useState<string>('all');
@@ -181,6 +183,19 @@ export default function AgentHistory() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => {
+              const previousPage = sessionStorage.getItem('previousPage') || '/production-scheduler';
+              navigate(previousPage);
+            }}
+            className="flex-shrink-0"
+            title="Close Agent History"
+            data-testid="button-close-agent-history"
+          >
+            <X className="w-5 h-5" />
+          </Button>
           <Badge variant="outline" className="px-3 py-1">
             {filteredActions.length} actions
           </Badge>

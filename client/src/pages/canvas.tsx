@@ -419,6 +419,16 @@ export default function CanvasPage() {
       <div className={`${aiTheme.gradient} text-white p-3 sm:p-6 space-y-4 sm:space-y-6`}>
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div className="flex items-center gap-3 md:ml-0 ml-12">
+            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+              <BarChart3 className="w-4 h-4" />
+            </div>
+            <div>
+              <h1 className="text-xl md:text-2xl font-bold">Agent Canvas</h1>
+              <p className="text-white/80 text-sm md:text-base">Dynamic content space for AI-generated visualizations</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2 lg:flex-shrink-0">
             <Button
               variant="ghost"
               size="icon"
@@ -432,16 +442,6 @@ export default function CanvasPage() {
             >
               <X className="w-5 h-5" />
             </Button>
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <BarChart3 className="w-4 h-4" />
-            </div>
-            <div>
-              <h1 className="text-xl md:text-2xl font-bold">Agent Canvas</h1>
-              <p className="text-white/80 text-sm md:text-base">Dynamic content space for AI-generated visualizations</p>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-2 lg:flex-shrink-0">
             <Button
               variant="ghost"
               size="sm"
