@@ -156,11 +156,17 @@ export default function CanvasPage() {
       }
     };
 
+    // For table widgets, use configuration data which has rows and columns
+    const canvasType = getCanvasType(widget.widgetType);
+    const content = canvasType === 'table' 
+      ? widget.configuration // Tables: use configuration which has rows/columns
+      : widget.data;          // Charts: use data array
+    
     return {
       id: widget.id.toString(),
-      type: getCanvasType(widget.widgetType),
+      type: canvasType,
       title: widget.title,
-      content: widget.data, // ✅ FIXED: Pass array data directly, not spread into object
+      content: content,
       configuration: widget.configuration, // Keep configuration separate
       width: widget.configuration?.size === 'large' ? '600px' : widget.configuration?.size === 'small' ? '300px' : '400px',
       height: '300px',
