@@ -2863,14 +2863,16 @@
                     },
 
                     startDate: (() => {
-                        // Start from today (September 3, 2025)
-                        const start = new Date(2025, 8, 3); // Month is 0-indexed, so 8 = September
+                        // Start from 2 weeks before today to show recent context
+                        const start = new Date();
+                        start.setDate(start.getDate() - 14); // Go back 2 weeks
                         start.setHours(0, 0, 0, 0);
                         return start;
                     })(),
                     endDate: (() => {
-                        // Show 4 weeks from today to ensure all operations are visible
-                        const end = new Date(2025, 9, 3); // October 3, 2025
+                        // Show 6 weeks from today to ensure all operations are visible
+                        const end = new Date();
+                        end.setDate(end.getDate() + 42); // Go forward 6 weeks
                         end.setHours(23, 59, 59, 999);
                         return end;
                     })(),
@@ -3704,10 +3706,19 @@
                 
                 // Theme toggle removed - using consistent light theme with blue-purple gradient
                 
-                // View preset selector - each preset has its own natural zoom level
+                // View preset selector - preserve current date when changing views
                 document.getElementById('viewPreset').addEventListener('change', (e) => {
+                    // Save the current center date before changing view
+                    const currentCenterDate = scheduler.viewportCenterDate || new Date();
+                    
+                    // Change the view preset
                     scheduler.viewPreset = e.target.value;
-                    console.log(`✅ View changed to: ${e.target.value}`);
+                    
+                    // Restore the center date so we stay in the same time period
+                    setTimeout(() => {
+                        scheduler.scrollToDate(currentCenterDate, { block: 'center' });
+                        console.log(`✅ View changed to: ${e.target.value}, centered on: ${currentCenterDate.toISOString().split('T')[0]}`);
+                    }, 100);
                 });
                 
                 // Zoom controls
