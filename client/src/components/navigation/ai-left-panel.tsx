@@ -705,6 +705,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         throw new Error('Failed to get response from Max AI');
       }
       const data = await response.json();
+      console.log("✅ Max AI Response received:", data);
+      console.log("📊 Has action?", !!data?.action);
+      console.log("📊 Action type:", data?.action?.type);
       return data;
     },
     onSuccess: async (data: any) => {
