@@ -432,7 +432,7 @@ export default function ProductionSchedulerReact() {
               {
                 type: 'button',
                 text: 'Today',
-                icon: 'fa fa-calendar-day',
+                icon: 'b-fa b-fa-calendar-day',
                 onAction: () => {
                   if (schedulerRef.current?.instance) {
                     schedulerRef.current.instance.scrollToDate(new Date(), { block: 'center' });
@@ -442,7 +442,7 @@ export default function ProductionSchedulerReact() {
               {
                 type: 'button',
                 text: 'Zoom to Fit',
-                icon: 'fa fa-expand',
+                icon: 'b-fa b-fa-expand',
                 onAction: handleZoomToFit
               },
               '->',
