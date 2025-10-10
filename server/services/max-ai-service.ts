@@ -3311,10 +3311,105 @@ Respond with JSON format:
       
       console.log(`[Max AI] Searching for operations - original: "${searchTerm}", cleaned: "${cleanedTerm}"`);
       
-      // Detect if user is asking about "all jobs" or just "jobs" - they want ALL operations from jobs
+      const lowerTerm = searchTerm.toLowerCase().trim();
+      
+      // EDGE CASE 1: Time-filtered job queries (e.g., "jobs for this week", "jobs today")
+      // Only use shortcut for SIMPLE time queries - fall back to regular search for complex queries
+      
+      // Pre-process query: remove filler words, punctuation, and articles for pattern matching
+      let cleanedForPattern = lowerTerm;
+      
+      // Remove leading fillers (loop to handle multiple: "please can you")
+      let prevLength;
+      do {
+        prevLength = cleanedForPattern.length;
+        cleanedForPattern = cleanedForPattern.replace(/^(please|hey|hi|can\s+you|could\s+you|would\s+you)\s+/i, '');
+      } while (cleanedForPattern.length < prevLength);
+      
+      // Remove trailing fillers and cleanup
+      cleanedForPattern = cleanedForPattern
+        .replace(/\s+(please|now|thanks|thank\s+you)$/i, '') // Remove trailing filler
+        .replace(/[?!.]+$/, '')  // Remove trailing punctuation
+        .replace(/\b(the|a|an)\b/g, '') // Remove articles
+        .replace(/\s+/g, ' ')    // Normalize multiple spaces
+        .trim();
+      
+      // Check for ONLY the time filters we fully support
+      const isTodayQuery = lowerTerm.includes('today');
+      const isThisWeekQuery = lowerTerm.includes('this week');
+      const isNextWeekQuery = lowerTerm.includes('next week');
+      const isThisMonthQuery = lowerTerm.includes('this month');
+      
+      // Only use time filter shortcut for simple queries without additional qualifiers
+      // Patterns support both "jobs" and "operations", various verbs (show, list, get, give me, etc.)
+      const isSimpleTimeQuery = 
+        /^(show|list|get|display|give)\s+(me\s+)?(jobs?|operations?)\s+(for\s+)?(today|this\s+week|next\s+week|this\s+month)$/i.test(cleanedForPattern) ||
+        /^(jobs?|operations?)\s+(for\s+)?(today|this\s+week|next\s+week|this\s+month)$/i.test(cleanedForPattern) ||
+        /^(today|this\s+week|next\s+week|this\s+month)s?\s+(jobs?|operations?)$/i.test(cleanedForPattern);
+      
+      const hasImplementedTimeFilter = isTodayQuery || isThisWeekQuery || isNextWeekQuery || isThisMonthQuery;
+      
+      if (hasImplementedTimeFilter && isSimpleTimeQuery) {
+        console.log(`[Max AI] Detected time-filtered job query - fetching operations with time filter`);
+        
+        // Calculate date range based on the specific filter
+        let startDate = new Date();
+        let endDate = new Date();
+        
+        if (isTodayQuery) {
+          startDate.setHours(0, 0, 0, 0);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (isThisWeekQuery) {
+          const dayOfWeek = startDate.getDay();
+          const diff = startDate.getDate() - dayOfWeek;
+          startDate = new Date(startDate.setDate(diff));
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (isNextWeekQuery) {
+          const dayOfWeek = startDate.getDay();
+          const diff = startDate.getDate() - dayOfWeek + 7;
+          startDate = new Date(startDate.setDate(diff));
+          startDate.setHours(0, 0, 0, 0);
+          endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + 6);
+          endDate.setHours(23, 59, 59, 999);
+        } else if (isThisMonthQuery) {
+          startDate = new Date(startDate.getFullYear(), startDate.getMonth(), 1);
+          endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
+        }
+        
+        const timeFilteredOps = await db.execute(sql`
+          SELECT 
+            jo.id,
+            jo.operation_id,
+            jo.job_id,
+            jo.name as operation_name,
+            jo.description,
+            jo.scheduled_start,
+            jo.scheduled_end,
+            j.name as job_name,
+            jr.default_resource_id,
+            r.id as resource_id,
+            r.name as resource_name
+          FROM ptjoboperations jo
+          LEFT JOIN ptjobs j ON jo.job_id = j.id
+          LEFT JOIN ptjobresources jr ON jo.id = jr.operation_id
+          LEFT JOIN ptresources r ON jr.default_resource_id = r.external_id
+          WHERE jo.scheduled_start >= ${startDate.toISOString()}
+            AND jo.scheduled_start <= ${endDate.toISOString()}
+          ORDER BY jo.scheduled_start
+          LIMIT 100
+        `);
+        
+        console.log(`[Max AI] Found ${timeFilteredOps.rows.length} operations with time filter`);
+        return timeFilteredOps.rows as any[];
+      }
+      
+      // EDGE CASE 2: Detect if user is asking about "all jobs" or just "jobs" - they want ALL operations from jobs
       // Use substring matching to catch variations like "show me all jobs", "all the jobs", etc.
       // Be careful to avoid false positives like "all operations for job 2001" or "all jobs for line 2"
-      const lowerTerm = searchTerm.toLowerCase().trim();
       
       // Check for patterns that clearly indicate wanting ALL jobs (not a specific job or filtered subset)
       const hasAllJobsPhrase = 
@@ -3330,16 +3425,14 @@ Respond with JSON format:
         lowerTerm === 'all operations' ||
         /^(show|list|get|display|give me|fetch)\s+(me\s+)?(all\s+)?(the\s+)?jobs?$/i.test(searchTerm);
       
-      // Exclude if query has additional qualifiers that filter the results
-      const hasQualifiers = 
+      // Exclude if query has additional qualifiers that filter the results (excluding time filters handled above)
+      const hasLocationQualifiers = 
         /job\s+[0-9a-zA-Z-]+/i.test(lowerTerm) ||     // "job 2001", "job MO-123"
-        /for\s+(job|line|resource|this|next|last|today|week|month|year)/i.test(lowerTerm) ||  // "for job X", "for line 2", "for this week"
+        /for\s+(job|line|resource|crew|team|area|department)/i.test(lowerTerm) ||  // "for job X", "for line 2", "for maintenance crew"
         /on\s+(job|line|resource)/i.test(lowerTerm) ||  // "on job X", "on line 2"
-        /in\s+(line|area|department|week|month)/i.test(lowerTerm) ||  // "in line 2", "in this week"
-        /(this|next|last)\s+(week|month|year|day)/i.test(lowerTerm) ||  // "this week", "next month"
-        /(today|tomorrow|yesterday)/i.test(lowerTerm);  // time-based filters
+        /in\s+(line|area|department)/i.test(lowerTerm);  // "in line 2", "in department X"
       
-      const isAllJobsQuery = (hasAllJobsPhrase || isGenericJobsRequest) && !hasQualifiers;
+      const isAllJobsQuery = (hasAllJobsPhrase || isGenericJobsRequest) && !hasLocationQualifiers;
       
       if (isAllJobsQuery) {
         console.log(`[Max AI] Detected "all jobs" query - fetching ALL operations from all jobs`);
