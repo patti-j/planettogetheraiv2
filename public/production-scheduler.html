@@ -1719,17 +1719,13 @@
                 // Map resources to create resource lookup by both ID and name
                 const resourceMap = new Map();
                 const resourceByName = new Map();
-                const originalIdMap = new Map(); // Map external IDs to database IDs
+                const originalIdMap = new Map(); // Map original numeric IDs to new string IDs
                 resources.forEach(resource => {
                     resourceMap.set(resource.id, resource);
                     resourceMap.set(resource.name, resource);
                     // Also create a name-based lookup for better matching
                     resourceByName.set(resource.name?.toLowerCase(), resource);
-                    // Map external_id to database id for resource matching
-                    if (resource.external_id) {
-                        originalIdMap.set(resource.external_id, resource.id);
-                    }
-                    // Also support originalId for backward compatibility
+                    // Map original numeric ID to new string ID
                     if (resource.originalId) {
                         originalIdMap.set(resource.originalId, resource.id);
                     }
@@ -4432,37 +4428,6 @@
                 console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
                 console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
-                // Apply zoom-to-fit immediately after data is committed
-                // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
-                const eventCount = scheduler.eventStore.count;
-                console.log('🔍 Applying zoom-to-fit with', eventCount, 'events');
-                
-                if (eventCount > 0) {
-                    try {
-                        scheduler.zoomToFit({
-                            leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                            rightMargin: 50   // Margin in pixels between last event end and last visible date
-                        });
-                        console.log('✅ Zoom to fit applied successfully - scheduler in fit-to-view mode');
-                    } catch (error) {
-                        console.error('❌ Zoom to fit failed:', error);
-                        // Retry after a short delay in case of timing issue
-                        setTimeout(() => {
-                            try {
-                                scheduler.zoomToFit({
-                                    leftMargin: 50,
-                                    rightMargin: 50
-                                });
-                                console.log('✅ Zoom to fit applied on retry');
-                            } catch (retryError) {
-                                console.error('❌ Zoom to fit retry also failed:', retryError);
-                            }
-                        }, 500);
-                    }
-                } else {
-                    console.warn('⚠️ No events to zoom to fit');
-                }
-                
                 // Add welcome message to Max AI indicating schedule is ready
                 setTimeout(() => {
                     const maxMessages = document.getElementById('maxMessages');
@@ -4477,6 +4442,20 @@
                 
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
+                
+                // Auto zoom-to-fit after scheduler fully renders
+                // Use requestAnimationFrame to wait for render completion
+                requestAnimationFrame(() => {
+                    setTimeout(() => {
+                        if (scheduler && scheduler.eventStore && scheduler.eventStore.count > 0) {
+                            scheduler.zoomToFit({
+                                leftMargin: 50,
+                                rightMargin: 50
+                            });
+                            console.log('✅ Auto zoom-to-fit applied');
+                        }
+                    }, 100);
+                });
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
