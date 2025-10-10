@@ -21,6 +21,7 @@ import { useLocation } from 'wouter';
 import { useSplitScreen } from '@/contexts/SplitScreenContext';
 import { useMaxDock } from '@/contexts/MaxDockContext';
 import { useAgent } from '@/contexts/AgentContext';
+import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
 interface DesktopLayoutProps {
@@ -37,6 +38,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { handleNavigation } = useSplitScreen();
   const { setCanvasVisible, setCanvasItems } = useMaxDock();
   const { currentAgent, switchToAgent } = useAgent();
+  const { toast } = useToast();
   const [floatingPrompt, setFloatingPrompt] = useState('');
   const [isFloatingSending, setIsFloatingSending] = useState(false);
   const [isNavigationOpen, setIsNavigationOpen] = useState(false);
