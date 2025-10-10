@@ -128,9 +128,26 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
   // Note: aiPanelRef no longer needed with direct state management
 
-  // Calculate dynamic AI panel size based on collapse state - fix config error
-  const currentAiPanelSize = isAiPanelCollapsed ? 6 : Math.max(aiPanelSize, 15);
-  const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 15;
+  // Calculate dynamic AI panel size based on collapse state
+  // When expanding, read directly from localStorage to avoid state timing issues
+  const currentAiPanelSize = isAiPanelCollapsed ? 6 : (() => {
+    try {
+      const savedSize = localStorage.getItem('aiPanelSize');
+      if (savedSize) {
+        const parsedSize = parseInt(savedSize);
+        // Enforce minimum 25% width - clamp any smaller saved values
+        if (parsedSize >= 25) {
+          return parsedSize;
+        } else if (parsedSize >= 15) {
+          // Update localStorage to the new minimum if old saved size was too narrow
+          localStorage.setItem('aiPanelSize', '25');
+          return 25;
+        }
+      }
+    } catch {}
+    return 25; // Default to 25% if no valid saved size
+  })();
+  const currentAiPanelMinSize = isAiPanelCollapsed ? 4 : 25;
   const currentAiPanelMaxSize = isAiPanelCollapsed ? 8 : 40;
 
   // Debug logging will be added after variables are defined
