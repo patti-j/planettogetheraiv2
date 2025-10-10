@@ -37,6 +37,21 @@ export default function ProductionScheduler() {
       }
     };
 
+    // Listen for Max AI actions (refresh_scheduler)
+    const handleMaxAIAction = (event: CustomEvent) => {
+      const { type, data } = event.detail || {};
+      
+      if (type === 'refresh_scheduler') {
+        console.log('[Production Scheduler] Received refresh request from Max AI:', data);
+        
+        // Reload the scheduler iframe with cache busting
+        if (iframeRef.current) {
+          setIsLoading(true);
+          iframeRef.current.src = `/api/production-scheduler?v=${Date.now()}`;
+        }
+      }
+    };
+
     const iframe = iframeRef.current;
     if (iframe) {
       iframe.addEventListener('load', handleLoad);
@@ -48,11 +63,15 @@ export default function ProductionScheduler() {
       });
     }
 
+    // Listen for Max AI actions
+    window.addEventListener('maxai:action' as any, handleMaxAIAction as any);
+
     return () => {
       if (iframe) {
         iframe.removeEventListener('load', handleLoad);
       }
       window.removeEventListener('resize', checkMobile);
+      window.removeEventListener('maxai:action' as any, handleMaxAIAction as any);
     };
   }, [isMobile]);
 

@@ -3720,25 +3720,50 @@ Respond with JSON format:
       let rescheduledCount = 0;
       const summaryItems: string[] = [];
       
+      // Group operations by job to maintain sequencing
+      const operationsByJob = new Map<number, any[]>();
+      
       for (const operation of operations) {
-        // Calculate new end time based on operation duration
-        const duration = operation.scheduled_end && operation.scheduled_start 
-          ? new Date(operation.scheduled_end).getTime() - new Date(operation.scheduled_start).getTime()
-          : 3600000; // Default 1 hour if no duration
+        if (!operationsByJob.has(operation.job_id)) {
+          operationsByJob.set(operation.job_id, []);
+        }
+        operationsByJob.get(operation.job_id)!.push(operation);
+      }
+      
+      // Process each job separately to maintain operation sequences
+      for (const [jobId, jobOperations] of operationsByJob.entries()) {
+        // Sort operations by their original scheduled start time to maintain sequence
+        const sortedOperations = jobOperations.sort((a, b) => {
+          const timeA = a.scheduled_start ? new Date(a.scheduled_start).getTime() : 0;
+          const timeB = b.scheduled_start ? new Date(b.scheduled_start).getTime() : 0;
+          return timeA - timeB;
+        });
         
-        const newEndTime = new Date(newStartTime.getTime() + duration);
+        let currentStartTime = new Date(newStartTime);
         
-        // Update the operation schedule
-        await db.execute(sql`
-          UPDATE ptjoboperations
-          SET 
-            scheduled_start = ${newStartTime.toISOString()},
-            scheduled_end = ${newEndTime.toISOString()}
-          WHERE id = ${operation.id}
-        `);
-        
-        rescheduledCount++;
-        summaryItems.push(`• ${operation.operation_name} (Job: ${operation.job_name || 'Unknown'})`);
+        for (const operation of sortedOperations) {
+          // Calculate operation duration
+          const duration = operation.scheduled_end && operation.scheduled_start 
+            ? new Date(operation.scheduled_end).getTime() - new Date(operation.scheduled_start).getTime()
+            : 3600000; // Default 1 hour if no duration
+          
+          const newEndTime = new Date(currentStartTime.getTime() + duration);
+          
+          // Update the operation schedule
+          await db.execute(sql`
+            UPDATE ptjoboperations
+            SET 
+              scheduled_start = ${currentStartTime.toISOString()},
+              scheduled_end = ${newEndTime.toISOString()}
+            WHERE id = ${operation.id}
+          `);
+          
+          rescheduledCount++;
+          summaryItems.push(`• ${operation.operation_name} (Job: ${operation.job_name || 'Unknown'})`);
+          
+          // Next operation in this job starts after this one ends (sequential)
+          currentStartTime = newEndTime;
+        }
       }
       
       return {

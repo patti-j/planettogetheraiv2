@@ -657,6 +657,26 @@ export default function IntegratedAIAssistant() {
         }
       }
       
+      // Handle refresh_scheduler action
+      if (data.action && data.action.type === 'refresh_scheduler') {
+        console.log('[AI Assistant] Dispatching refresh_scheduler event:', data.action);
+        
+        // Dispatch custom event to notify the production scheduler to refresh
+        const event = new CustomEvent('maxai:action', {
+          detail: {
+            type: 'refresh_scheduler',
+            data: data.action.data
+          }
+        });
+        window.dispatchEvent(event);
+        
+        // Show a toast notification
+        toast({
+          title: "Schedule Updated",
+          description: "The production schedule has been refreshed to show the latest changes.",
+        });
+      }
+      
       const assistantMessage: Message = {
         id: Date.now().toString() + '_assistant',
         type: 'assistant',
