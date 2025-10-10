@@ -141,6 +141,94 @@
     <!-- Load Bryntum JavaScript -->
     <script src="/schedulerpro.umd.js"></script>
     
+    <!-- Custom styles for maintenance periods and icons -->
+    <style>
+        /* Style for maintenance time ranges - red dashed lines */
+        .b-sch-range.maintenance-range {
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 4px,
+                rgba(255, 0, 0, 0.15) 4px,
+                rgba(255, 0, 0, 0.15) 8px
+            );
+            border: 2px dashed #ff0000;
+            border-radius: 4px;
+        }
+
+        /* Style for recharge time ranges - amber dashed lines */
+        .b-sch-range.recharge-range {
+            background: repeating-linear-gradient(
+                -45deg,
+                transparent,
+                transparent 4px,
+                rgba(255, 193, 7, 0.15) 4px,
+                rgba(255, 193, 7, 0.15) 8px
+            );
+            border: 2px dashed #ffc107;
+            border-radius: 4px;
+        }
+
+        /* Make the time range labels more prominent */
+        .b-sch-range-header {
+            background-color: rgba(255, 255, 255, 0.95);
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-weight: 600;
+            font-size: 11px;
+        }
+
+        .maintenance-range .b-sch-range-header {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .recharge-range .b-sch-range-header {
+            background-color: #fff8e1;
+            color: #f57c00;
+        }
+
+        /* Icon styling in resource cells */
+        .b-grid-cell .b-resource-info-cell .b-icon {
+            margin-right: 8px;
+            font-size: 16px;
+            opacity: 0.8;
+        }
+
+        /* Color coding for different resource types */
+        .b-grid-row[data-group="Production Line"] .b-icon {
+            color: #2196f3;
+        }
+        
+        .b-grid-row[data-group="Packaging"] .b-icon {
+            color: #9c27b0;
+        }
+        
+        .b-grid-row[data-group="Quality"] .b-icon {
+            color: #4caf50;
+        }
+        
+        .b-grid-row[data-group="Support"] .b-icon {
+            color: #ff9800;
+        }
+        
+        .b-grid-row[data-group="Robots"] .b-icon {
+            color: #3f51b5;
+        }
+        
+        .b-grid-row[data-group="Workstations"] .b-icon {
+            color: #009688;
+        }
+        
+        .b-grid-row[data-group="Equipment"] .b-icon {
+            color: #ffc107;
+        }
+        
+        .b-grid-row[data-group="Operators"] .b-icon {
+            color: #00bcd4;
+        }
+    </style>
+
     <!-- Toast utility (simple implementation) -->
     <script>
         const Toast = {
@@ -212,12 +300,76 @@
             project : {
                 // Inline demo data for PlanetTogether production schedule
                 resourcesData : [
-                    { id : 1, name : 'Assembly Line 1', type : 'Production Line' },
-                    { id : 2, name : 'Assembly Line 2', type : 'Production Line' },
-                    { id : 3, name : 'Packaging Station A', type : 'Packaging' },
-                    { id : 4, name : 'Packaging Station B', type : 'Packaging' },
-                    { id : 5, name : 'Quality Control Bay', type : 'Quality' },
-                    { id : 6, name : 'Maintenance Crew', type : 'Support' }
+                    { 
+                        id : 1, 
+                        name : 'Assembly Line 1', 
+                        type : 'Production Line',
+                        iconCls : 'b-fa b-fa-industry',
+                        eventColor : 'blue'
+                    },
+                    { 
+                        id : 2, 
+                        name : 'Assembly Line 2', 
+                        type : 'Production Line',
+                        iconCls : 'b-fa b-fa-industry',
+                        eventColor : 'blue'
+                    },
+                    { 
+                        id : 3, 
+                        name : 'Packaging Station A', 
+                        type : 'Packaging',
+                        iconCls : 'b-fa b-fa-box',
+                        eventColor : 'purple'
+                    },
+                    { 
+                        id : 4, 
+                        name : 'Packaging Station B', 
+                        type : 'Packaging',
+                        iconCls : 'b-fa b-fa-box',
+                        eventColor : 'purple'
+                    },
+                    { 
+                        id : 5, 
+                        name : 'Quality Control Bay', 
+                        type : 'Quality',
+                        iconCls : 'b-fa b-fa-clipboard-check',
+                        eventColor : 'green'
+                    },
+                    { 
+                        id : 6, 
+                        name : 'Maintenance Crew', 
+                        type : 'Support',
+                        iconCls : 'b-fa b-fa-tools',
+                        eventColor : 'orange'
+                    },
+                    { 
+                        id : 7, 
+                        name : 'Robot AT4', 
+                        type : 'Robots',
+                        iconCls : 'b-fa b-fa-robot',
+                        eventColor : 'indigo'
+                    },
+                    { 
+                        id : 8, 
+                        name : 'Workstation T22', 
+                        type : 'Workstations',
+                        iconCls : 'b-fa b-fa-desktop',
+                        eventColor : 'teal'
+                    },
+                    { 
+                        id : 9, 
+                        name : 'Electric Forklift', 
+                        type : 'Equipment',
+                        iconCls : 'b-fa b-fa-truck',
+                        eventColor : 'amber'
+                    },
+                    { 
+                        id : 10, 
+                        name : 'Operators Team A', 
+                        type : 'Operators',
+                        iconCls : 'b-fa b-fa-users',
+                        eventColor : 'cyan'
+                    }
                 ],
                 eventsData : [
                     {
@@ -289,6 +441,67 @@
                         resourceId   : 6,
                         percentDone  : 0,
                         eventColor   : 'gray'
+                    },
+                    // Tasks for new resources
+                    {
+                        id           : 8,
+                        name         : 'Robot Assembly Task',
+                        startDate    : new Date(2025, 2, 23, 7),
+                        duration     : 6,
+                        durationUnit : 'h',
+                        resourceId   : 7,
+                        percentDone  : 60,
+                        eventColor   : 'indigo'
+                    },
+                    {
+                        id           : 9,
+                        name         : 'Data Entry & Processing',
+                        startDate    : new Date(2025, 2, 23, 9),
+                        duration     : 4,
+                        durationUnit : 'h',
+                        resourceId   : 8,
+                        percentDone  : 30,
+                        eventColor   : 'teal'
+                    },
+                    {
+                        id           : 10,
+                        name         : 'Material Transport',
+                        startDate    : new Date(2025, 2, 23, 10),
+                        duration     : 2,
+                        durationUnit : 'h',
+                        resourceId   : 9,
+                        percentDone  : 100,
+                        eventColor   : 'amber'
+                    },
+                    {
+                        id           : 11,
+                        name         : 'Manual Assembly',
+                        startDate    : new Date(2025, 2, 23, 8),
+                        duration     : 5,
+                        durationUnit : 'h',
+                        resourceId   : 10,
+                        percentDone  : 45,
+                        eventColor   : 'cyan'
+                    },
+                    {
+                        id           : 12,
+                        name         : 'Robot Calibration',
+                        startDate    : new Date(2025, 2, 24, 10),
+                        duration     : 2,
+                        durationUnit : 'h',
+                        resourceId   : 7,
+                        percentDone  : 0,
+                        eventColor   : 'indigo'
+                    },
+                    {
+                        id           : 13,
+                        name         : 'Inventory Update',
+                        startDate    : new Date(2025, 2, 24, 13),
+                        duration     : 1,
+                        durationUnit : 'h',
+                        resourceId   : 8,
+                        percentDone  : 0,
+                        eventColor   : 'teal'
                     }
                 ],
                 dependenciesData : [
@@ -320,10 +533,40 @@
                 ]
             },
 
+            // Add time ranges for maintenance periods (red dashed lines)
+            timeRanges : [
+                {
+                    id        : 'maintenance1',
+                    startDate : new Date(2025, 2, 23, 17),
+                    endDate   : new Date(2025, 2, 23, 19),
+                    name      : 'Scheduled Maintenance',
+                    cls       : 'maintenance-range',
+                    iconCls   : 'b-fa b-fa-wrench'
+                },
+                {
+                    id        : 'maintenance2',
+                    startDate : new Date(2025, 2, 24, 6),
+                    endDate   : new Date(2025, 2, 24, 8),
+                    name      : 'Recharge',
+                    cls       : 'recharge-range',
+                    iconCls   : 'b-fa b-fa-bolt'
+                },
+                {
+                    id        : 'maintenance3',
+                    startDate : new Date(2025, 2, 25, 12),
+                    endDate   : new Date(2025, 2, 25, 14),
+                    name      : 'Maintenance Window',
+                    cls       : 'maintenance-range',
+                    iconCls   : 'b-fa b-fa-cog'
+                }
+            ],
+
             features : {
                 timeRanges : {
                     narrowThreshold : 10,
-                    enableResizing  : true
+                    enableResizing  : true,
+                    showCurrentTimeLine : true,
+                    showHeaderElements : true
                 },
                 resourceNonWorkingTime : true,
                 cellEdit               : true,
