@@ -11,7 +11,7 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     
     <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.stockholm.css?v=6" id="scheduler-theme">
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
     
     <style>
         * {
@@ -2166,7 +2166,7 @@
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
-                    // Set start/end dates to September 2025 where the data actually is
+                    // Set the scheduler to September 2025 where the data is
                     startDate: new Date(2025, 8, 1),  // September 1, 2025
                     endDate: new Date(2025, 9, 1),    // October 1, 2025
                     
@@ -4421,9 +4421,6 @@
                 // The events array was created but never actually loaded into the scheduler
                 console.log('📊 Loading data into scheduler - resources:', resources.length, 'events:', events.length, 'dependencies:', dependencies.length);
                 
-                // CRITICAL: Set the scheduler to September 2025 BEFORE loading data
-                scheduler.setTimeSpan(new Date(2025, 8, 1), new Date(2025, 9, 15)); // Sept 1 - Oct 15, 2025
-                
                 // Load the inline data into the scheduler project
                 // CRITICAL: Bryntum requires specific property names ending with 'Data'
                 await scheduler.project.loadInlineData({
@@ -4460,10 +4457,6 @@
                 // Initial zoom to fit using Bryntum official documentation
                 // https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/mixin/TimelineZoomable#function-zoomToFit
                 setTimeout(() => {
-                    // First set the time span to September 2025 where the data is
-                    scheduler.setTimeSpan(new Date(2025, 8, 1), new Date(2025, 9, 1)); // Sept 1 - Oct 1, 2025
-                    
-                    // Then zoom to fit the events
                     scheduler.zoomToFit({
                         leftMargin: 50,   // Margin in pixels between first event start and first visible date
                         rightMargin: 50   // Margin in pixels between last event end and last visible date
