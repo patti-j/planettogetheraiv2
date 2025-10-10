@@ -262,6 +262,41 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         setCanvasItems((prev: any[]) => [...prev, chartItem]);
         setCanvasVisible(true);
         
+        // Save chart widget to database
+        const saveChart = async () => {
+          try {
+            const widgetData = {
+              type: 'chart',
+              title: chartItem.title,
+              position: { x: 0, y: 0, w: 8, h: 6 },
+              config: {
+                chartConfig: data.action.chartConfig,
+                createdByMaxAI: true
+              },
+              dashboardId: 1
+            };
+
+            const authToken = localStorage.getItem('auth_token');
+            const response = await fetch('/api/canvas/widgets', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                ...(authToken && { 'Authorization': `Bearer ${authToken}` })
+              },
+              body: JSON.stringify(widgetData)
+            });
+
+            if (response.ok) {
+              console.log('✅ Chart widget saved to database successfully');
+            } else {
+              console.error('❌ Failed to save chart widget to database:', response.statusText);
+            }
+          } catch (error) {
+            console.error('❌ Error saving chart widget to database:', error);
+          }
+        };
+        
+        await saveChart();
         console.log('✅ Canvas item added and canvas shown:', chartItem);
         
         // Navigate to canvas immediately
@@ -316,8 +351,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
 
               if (response.ok) {
                 console.log('✅ Table widget saved to database successfully');
-                // Invalidate canvas widgets cache to refresh the canvas
-                window.location.href = '/canvas'; // Force reload to show the new widget
+                // Widget saved successfully, navigation will happen below
               } else {
                 console.error('❌ Failed to save table widget to database:', response.statusText);
               }
