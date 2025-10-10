@@ -2174,6 +2174,22 @@
                     // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
                     
+                    // Listen for the paint event to trigger zoom-to-fit on first render
+                    listeners: {
+                        paint: ({ source, firstPaint }) => {
+                            if (firstPaint && source.eventStore.count > 0) {
+                                // Apply zoom-to-fit on first paint when events are loaded
+                                setTimeout(() => {
+                                    source.zoomToFit({
+                                        leftMargin: 50,
+                                        rightMargin: 50
+                                    });
+                                    console.log('✅ Auto zoom-to-fit applied on first paint');
+                                }, 200); // Small delay to ensure everything is rendered
+                            }
+                        }
+                    },
+                    
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
                     
@@ -4442,20 +4458,6 @@
                 
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
-                
-                // Auto zoom-to-fit after scheduler fully renders
-                // Use requestAnimationFrame to wait for render completion
-                requestAnimationFrame(() => {
-                    setTimeout(() => {
-                        if (scheduler && scheduler.eventStore && scheduler.eventStore.count > 0) {
-                            scheduler.zoomToFit({
-                                leftMargin: 50,
-                                rightMargin: 50
-                            });
-                            console.log('✅ Auto zoom-to-fit applied');
-                        }
-                    }, 100);
-                });
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
