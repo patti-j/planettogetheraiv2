@@ -57,6 +57,11 @@
             align-items: center;
             justify-content: center;
             z-index: 1000;
+            pointer-events: none; /* Allow clicks through when hidden */
+        }
+        
+        .loading-overlay.hidden {
+            display: none !important;
         }
 
         .loading-spinner {
@@ -133,7 +138,10 @@
     </div>
 
     <!-- Bryntum Scheduler Pro JavaScript -->
-    <script src="/schedulerpro.umd.js?v=4"></script>
+    <!-- Load Bryntum CSS -->
+    <link rel="stylesheet" href="/attached_assets/build/thin/schedulerpro.classic-light.thin.css">
+    <!-- Load Bryntum JavaScript -->
+    <script src="/attached_assets/build/schedulerpro.umd.js"></script>
     
     <!-- Toast utility (simple implementation) -->
     <script>
@@ -274,7 +282,6 @@
                 ]
             },
             style             : 'font-size:0.85em',
-            resourceImagePath : 'data/Scheduler/images/users/',
             appendTo          : targetElement,
             autoHeight        : true,
             eventStyle        : 'rounded',
@@ -374,14 +381,15 @@
             ]
         });
 
-        // Hide loading overlay when scheduler is ready
-        schedulerPro.on('paint', () => {
+        // Hide loading overlay immediately after scheduler is created
+        setTimeout(() => {
             const loadingOverlay = document.getElementById('loadingOverlay');
             if (loadingOverlay) {
-                loadingOverlay.style.display = 'none';
+                loadingOverlay.classList.add('hidden');
             }
-            console.log('📊 Scheduler painted with', schedulerPro.eventStore.count, 'tasks');
-        });
+            console.log('📊 Scheduler initialized with', schedulerPro.eventStore.count, 'tasks and', schedulerPro.resourceStore.count, 'resources');
+            console.log('✅ Production scheduler fully loaded and ready');
+        }, 100);
 
         // Expose scheduler to parent window for iframe communication
         if (window.parent && window.parent !== window) {
