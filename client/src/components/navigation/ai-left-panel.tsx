@@ -875,6 +875,9 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
+      // IMPORTANT: Check for actions BEFORE checking for content
+      // This ensures actions with content are processed correctly
+      
       // Handle table/grid creation actions for any entity data
       if (data?.action?.type === 'create_table' || data?.action?.type === 'show_jobs_table' || data?.action?.type === 'show_table') {
         console.log('AI Left Panel - Handling table creation action:', data.action);
@@ -943,7 +946,7 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
         return;
       }
       
-      // Store response for display
+      // Store response for display (process this AFTER checking for actions)
       if (data?.content || data?.message) {
         const responseContent = data.content || data.message;
         
