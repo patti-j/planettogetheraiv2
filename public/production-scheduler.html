@@ -3704,9 +3704,20 @@
                 
                 // Theme toggle removed - using consistent light theme with blue-purple gradient
                 
-                // View preset selector
+                // View preset selector with auto zoom-to-fit
                 document.getElementById('viewPreset').addEventListener('change', (e) => {
                     scheduler.viewPreset = e.target.value;
+                    
+                    // Apply zoom-to-fit after view change to show all events optimally
+                    setTimeout(() => {
+                        if (scheduler.eventStore.count > 0) {
+                            scheduler.zoomToFit({
+                                leftMargin: 50,
+                                rightMargin: 50
+                            });
+                            console.log(`✅ Zoom-to-fit applied for ${e.target.value} view`);
+                        }
+                    }, 100); // Small delay to let the view change complete
                 });
                 
                 // Zoom controls
