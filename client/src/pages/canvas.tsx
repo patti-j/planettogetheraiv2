@@ -68,6 +68,7 @@ export default function CanvasPage() {
   const { aiTheme } = useAITheme();
   const [items, setItems] = useState<CanvasItem[]>([]);
   const [showClearConfirmation, setShowClearConfirmation] = useState(false);
+  const [previousWidgetIds, setPreviousWidgetIds] = useState<string[]>([]);
 
   // Fetch canvas widgets from API (created by Max AI)
   const { data: canvasWidgets, isLoading, refetch: refetchWidgets } = useQuery({
@@ -197,6 +198,48 @@ export default function CanvasPage() {
   
   console.log('🔍 Canvas Debug - Final allItems array:', allItems);
   console.log('🔍 Canvas Debug - allItems.length:', allItems.length);
+
+  // Auto-scroll to newly added widgets
+  useEffect(() => {
+    // Get the current widget IDs
+    const currentWidgetIds = convertedApiWidgets.map(w => w.id);
+    
+    // Check if there are new widgets (more widgets than before)
+    if (currentWidgetIds.length > previousWidgetIds.length && previousWidgetIds.length > 0) {
+      // Find the new widget(s)
+      const newWidgetIds = currentWidgetIds.filter(id => !previousWidgetIds.includes(id));
+      
+      if (newWidgetIds.length > 0) {
+        // Small delay to ensure DOM is updated
+        setTimeout(() => {
+          // Find the first new widget element
+          const newWidgetElement = document.querySelector(`[data-widget-id="${newWidgetIds[0]}"]`);
+          
+          if (newWidgetElement) {
+            // Scroll to the new widget with smooth animation
+            newWidgetElement.scrollIntoView({ 
+              behavior: 'smooth', 
+              block: 'center',
+              inline: 'nearest'
+            });
+            
+            // Add a highlight effect
+            newWidgetElement.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
+            
+            // Remove highlight after 3 seconds
+            setTimeout(() => {
+              newWidgetElement.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
+            }, 3000);
+            
+            console.log('📍 Scrolled to new widget:', newWidgetIds[0]);
+          }
+        }, 100);
+      }
+    }
+    
+    // Update the previous widget IDs for next comparison
+    setPreviousWidgetIds(currentWidgetIds);
+  }, [convertedApiWidgets, previousWidgetIds]); // Run when API widgets change
 
   const renderCanvasItem = (item: CanvasItem) => {
     switch (item.type) {
