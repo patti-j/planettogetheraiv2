@@ -10,7 +10,6 @@
     <link rel="icon" type="image/png" href="/favicon.png">
     
     <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=4" id="scheduler-theme">
     
     <style>
         * {
@@ -137,11 +136,10 @@
         </div>
     </div>
 
-    <!-- Bryntum Scheduler Pro JavaScript -->
     <!-- Load Bryntum CSS -->
-    <link rel="stylesheet" href="/attached_assets/build/thin/schedulerpro.classic-light.thin.css">
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css">
     <!-- Load Bryntum JavaScript -->
-    <script src="/attached_assets/build/schedulerpro.umd.js"></script>
+    <script src="/schedulerpro.umd.js"></script>
     
     <!-- Toast utility (simple implementation) -->
     <script>
@@ -186,9 +184,28 @@
     </script>
 
     <script>
-        // Initialize Bryntum Scheduler Pro
-        const targetElement = document.getElementById('scheduler');
-        const { SchedulerPro } = bryntum.schedulerpro;
+        // Wait for DOM and Bryntum to be ready
+        function initScheduler() {
+            console.log('Initializing scheduler...');
+            
+            // Check if Bryntum is loaded
+            if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                console.error('❌ Bryntum library not loaded! Retrying in 500ms...');
+                setTimeout(initScheduler, 500);
+                return;
+            }
+            
+            console.log('✅ Bryntum library loaded:', bryntum);
+            
+            // Hide loading overlay
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            if (loadingOverlay) {
+                loadingOverlay.style.display = 'none';
+            }
+            
+            // Initialize Bryntum Scheduler Pro
+            const targetElement = document.getElementById('scheduler');
+            const { SchedulerPro } = bryntum.schedulerpro;
         
         // Create scheduler instance with inline demo data
         const schedulerPro = new SchedulerPro({
@@ -402,7 +419,16 @@
             }, '*');
         }
 
-        console.log('✅ Bryntum SchedulerPro initialized successfully');
+            console.log('✅ Bryntum SchedulerPro initialized successfully');
+        }
+        
+        // Call initScheduler when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initScheduler);
+        } else {
+            // DOM is already loaded, initialize immediately
+            initScheduler();
+        }
     </script>
 </body>
 </html>
