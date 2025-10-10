@@ -18,6 +18,19 @@ Note on concurrent work:
 - Best practice: Start each request with your name/initials for clarity
 - If continuing previous work, briefly mention what was done before
 
+## Recent Changes
+
+### October 10, 2025 - AI Agent "Jobs" Terminology Fix
+- **Issue**: Max AI and Production Scheduling Agent didn't understand "jobs" terminology. Query "all jobs" returned "I couldn't find any operations matching 'all jobs'".
+- **Training Updates**:
+  - Enhanced Max AI agent training with comprehensive "Understanding Jobs vs Operations" section
+  - Added Production Scheduling Agent manufacturing terminology clarification at the top
+  - Provided query translation examples (e.g., "all jobs" → fetch from ptjobs table)
+- **Code Fix**: Enhanced `findOperationsByDescription` method to detect "all jobs" queries and return ALL operations from jobs instead of searching for operations named "all jobs"
+- **Detection Logic**: Recognizes patterns like "all jobs", "show me all jobs", "every job" while excluding qualified queries like "all jobs for line 2" or "jobs this week"
+- **Result**: Original issue "change start date on all jobs to oct 11" is now fixed
+- **Known Limitations**: Some edge cases like time-filtered queries ("jobs for this week") could be future enhancements
+
 ## System Architecture
 
 ### Design Principles & Guidelines
