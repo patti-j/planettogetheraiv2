@@ -440,6 +440,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
           source: 'floating',
           agentId: respondingAgent
         });
+      }
+      // Handle clear_canvas action
+      else if (data?.action?.type === 'clear_canvas') {
+        console.log('🧹 Clear canvas action received from floating AI');
+        
+        // Invalidate the canvas widgets query to trigger a refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
+        
+        // Add response message
+        addMessage({
+          role: 'assistant',
+          content: data.content,
+          source: 'floating',
+          agentId: respondingAgent
+        });
       } else {
         // Add assistant response
         if (data?.content || data?.message || data?.response) {
