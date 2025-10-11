@@ -283,24 +283,15 @@ export default function CanvasPage() {
       setItems([]);
       localStorage.removeItem('max-canvas-items');
       
-      // Clear database widgets by making them invisible
+      // Clear all database widgets in a single fast batch request
       if (canvasWidgets && canvasWidgets.length > 0) {
-        await Promise.all(
-          canvasWidgets.map(async (widget: CanvasWidget) => {
-            try {
-              await fetch(`/api/canvas/widgets/${widget.id}/visibility`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
-                },
-                body: JSON.stringify({ visible: false }),
-              });
-            } catch (error) {
-              console.log(`Failed to hide widget ${widget.id}:`, error);
-            }
-          })
-        );
+        await fetch('/api/canvas/widgets/batch-clear', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+          },
+        });
       }
       
       setShowClearConfirmation(false);

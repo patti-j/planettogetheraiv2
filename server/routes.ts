@@ -3081,6 +3081,34 @@ router.put("/api/canvas/widgets/:id/visibility", async (req, res) => {
   }
 });
 
+// Batch clear all canvas widgets - fast endpoint for clearing canvas
+router.post("/api/canvas/widgets/batch-clear", async (req, res) => {
+  // Development bypass - skip authentication in dev mode
+  if (process.env.NODE_ENV === 'development') {
+    console.log("🔧 [Canvas Widgets Batch Clear] Development mode: Skipping authentication");
+  } else {
+    // In production, require authentication
+    await new Promise((resolve, reject) => {
+      requireAuth(req, res, (error: any) => {
+        if (error) reject(error);
+        else resolve(undefined);
+      });
+    });
+  }
+
+  try {
+    // Clear all widgets in a single database query - MUCH faster than individual updates
+    const result = await db.update(widgets)
+      .set({ isActive: false })
+      .where(eq(widgets.isActive, true));
+
+    res.json({ success: true, message: 'All widgets cleared' });
+  } catch (error) {
+    console.error("Error batch clearing widgets:", error);
+    res.status(500).json({ error: "Failed to clear widgets" });
+  }
+});
+
 // Widget data endpoints for specific widget types
 router.get("/api/widget-data/production-efficiency-heatmap", requireAuth, async (req, res) => {
   try {

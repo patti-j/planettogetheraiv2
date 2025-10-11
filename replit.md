@@ -149,3 +149,15 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Added: `const iconName = item.icon?.displayName || item.icon?.name || 'FileText'`
   - Now passes string name: `addRecentPage(item.href, item.label, iconName)`
 - **Result**: Product Wheels and all pages now display correct icons in recent pages menu
+
+### October 11, 2025 - Canvas Clear Performance Optimization
+- **Issue**: Clicking "Clear Canvas" took several seconds, making it feel slow and unresponsive
+- **Root Cause**: Clear operation made N individual API calls, one per widget
+  - First widget visibility update took 574ms, each subsequent widget added more time
+  - Code used `Promise.all()` but each individual PUT request was still slow
+  - With 10 widgets, this meant 10 separate database queries executed sequentially
+- **Fix**: Created batch clear endpoint that updates all widgets in a single database query
+  - Added `/api/canvas/widgets/batch-clear` POST endpoint
+  - Single SQL query: `UPDATE widgets SET is_active = false WHERE is_active = true`
+  - Frontend now makes 1 API call instead of N API calls
+- **Result**: Clear Canvas now completes instantly - one fast batch operation instead of many slow individual updates
