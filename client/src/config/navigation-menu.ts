@@ -6,7 +6,7 @@ import {
   Package, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
-  Workflow, Users, ArrowUpDown, FolderKanban
+  Workflow, Users, ArrowUpDown, FolderKanban, Disc
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -64,7 +64,7 @@ export const navigationGroups: NavigationGroup[] = [
       // 5. Scheduling and execution
       { icon: Package, label: "ATP/CTP", href: "/atp-ctp", feature: "schedule", action: "view", color: "bg-teal-500" },
       { icon: Calendar, label: "Production Scheduler", href: "/production-scheduler", feature: "schedule", action: "view", color: "bg-indigo-600" },
-      { icon: Grid3X3, label: "Product Wheels", href: "/product-wheels", feature: "schedule", action: "view", color: "bg-gradient-to-r from-purple-500 to-blue-600" },
+      { icon: Disc, label: "Product Wheels", href: "/product-wheels", feature: "schedule", action: "view", color: "bg-gradient-to-r from-purple-500 to-blue-600" },
       { icon: ArrowUpDown, label: "Schedule Sequences", href: "/schedule-sequences", feature: "schedule", action: "view", color: "bg-purple-500" },
       { icon: Clock, label: "Shift Management", href: "/shift-management", feature: "schedule", action: "view", color: "bg-cyan-500" },
       
