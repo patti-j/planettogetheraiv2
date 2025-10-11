@@ -761,36 +761,59 @@ Format as: "Based on what I remember about you: [relevant info]" or return empty
 
 **ptjobs** - Manufacturing job orders
   - id (integer, primary key)
-  - name (varchar) - Job name/identifier
-  - priority (integer) - Priority level (numeric)
-  - scheduled_status (varchar) - Current scheduling status
   - external_id (varchar) - External system identifier
+  - name (varchar) - Job name/identifier
+  - description (text) - Job description
+  - priority (integer) - Priority level (numeric)
+  - need_date_time (timestamp) - Required completion date and time
+  - scheduled_status (varchar) - Current scheduling status
+  - created_at (timestamp) - Record creation timestamp
+  - updated_at (timestamp) - Last update timestamp
 
 **ptresources** - Production resources and equipment
   - id (integer, primary key)
   - resource_id (varchar) - Resource identifier
   - name (varchar) - Resource name
+  - description (text) - Resource description
+  - external_id (varchar) - External system identifier
+  - plant_id (integer) - Plant identifier
   - plant_name (varchar) - Manufacturing plant location
+  - department_id (integer) - Department identifier
   - department_name (varchar) - Department within plant
   - active (boolean) - Whether resource is active
+  - bottleneck (boolean) - Whether resource is a bottleneck
+  - capacity_type (varchar) - Type of capacity constraint
+  - hourly_cost (numeric) - Cost per hour of operation
+  - created_at (timestamp) - Record creation timestamp
 
 **ptjoboperations** - Individual operations within jobs
   - id (integer, primary key)
   - job_id (integer, foreign key to ptjobs)
+  - external_id (varchar) - External system identifier
   - name (varchar) - Operation name
+  - description (text) - Operation description
   - operation_id (varchar) - Operation identifier
+  - required_finish_qty (numeric) - Required quantity to complete
+  - cycle_hrs (numeric) - Cycle time in hours
+  - setup_hours (numeric) - Setup time in hours
   - scheduled_start (timestamp) - Scheduled start time
   - scheduled_end (timestamp) - Scheduled end time
   - percent_finished (numeric) - Completion percentage
+  - created_at (timestamp) - Record creation timestamp
 
 Example queries and EXACT column names to use:
 - "show jobs" → Count ptjobs grouped by scheduled_status column
-- "jobs chart" or "count jobs" → Count(*) from ptjobs grouped by ANY column like scheduled_status or external_id
+- "jobs by priority" → Count ptjobs grouped by priority column  
+- "jobs by need date" → Count ptjobs grouped by need_date_time column (use DATE() for grouping)
 - "resources by plant" → Count ptresources grouped by plant_name column
 - "resources by department" → Count ptresources grouped by department_name column
+- "bottleneck resources" → Count ptresources where bottleneck = true
 - "operations" → Count ptjoboperations grouped by name column
 
-CRITICAL: Use EXACT column names shown above. Do NOT use made-up names like "job_name", "resource_name", "operation_name", "status", "duration" - these columns do NOT exist!`;
+CRITICAL: 
+- Use EXACT column names shown above. Do NOT use made-up names like "job_name", "resource_name", "operation_name", "status", "duration" - these columns do NOT exist!
+- For timestamp columns (need_date_time, scheduled_start, scheduled_end), use DATE() to group by date without time
+- For "need date" or "due date" queries, use the need_date_time column from ptjobs`;
       }
       
       // Extract intent using OpenAI
@@ -993,14 +1016,19 @@ Return only the JSON object, no other text.`;
     const tableName = primaryDimension.tableName;
     const columnName = primaryDimension.columnName;
     
-    // Build safe SELECT statement
+    // Check if column is a timestamp - use DATE() for cleaner grouping
+    const timestampColumns = ['need_date_time', 'scheduled_start', 'scheduled_end', 'created_at', 'updated_at', 'publish_date'];
+    const isTimestampColumn = timestampColumns.includes(columnName);
+    
+    // Build safe SELECT statement - use DATE() for timestamps
+    const selectColumn = isTimestampColumn ? `DATE(${columnName})` : columnName;
     const query = `
       SELECT 
-        ${columnName} as name,
+        ${selectColumn} as name,
         COUNT(*) as value
       FROM ${tableName}
       WHERE ${columnName} IS NOT NULL
-      GROUP BY ${columnName}
+      GROUP BY ${selectColumn}
       ORDER BY COUNT(*) DESC
     `;
     

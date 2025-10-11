@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useLocation } from 'wouter';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -264,9 +264,12 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     enabled: !!user?.id,
   });
 
-  const currentRole = currentRoleData || user?.currentRole || 
-    (user?.activeRoleId && user?.roles ? 
-      user.roles.find(role => role.id === user.activeRoleId) : null);
+  // Memoize currentRole to prevent infinite re-renders
+  const currentRole = useMemo(() => {
+    return currentRoleData || user?.currentRole || 
+      (user?.activeRoleId && user?.roles ? 
+        user.roles.find(role => role.id === user.activeRoleId) : null);
+  }, [currentRoleData, user?.currentRole, user?.activeRoleId, user?.roles]);
 
   // Load header configuration from preferences
   useEffect(() => {

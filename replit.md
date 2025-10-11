@@ -76,15 +76,28 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ### October 11, 2025 - Infinite Re-Render Loop Fix (Page Freeze on Load)
 - **Issue**: Page freezing on load with excessive memory usage, even without user interaction
-- **Root Cause**: Infinite re-render loop in customizable-header.tsx useEffect hook
-  - useEffect synced density state with context: `if (density !== prefDensity) { setDensity(prefDensity); }`
-  - But `density` was NOT in dependency array `[preferences, currentRole]`
-  - Calling `setDensity()` triggered re-render, which triggered useEffect again
+- **Root Cause**: Infinite re-render loop in customizable-header.tsx useEffect hook - TWO separate issues
+  1. **Density sync issue**: useEffect synced density state with context but `density` was NOT in dependency array, causing infinite re-renders
+  2. **CurrentRole recreation**: `currentRole` was computed fresh on every render with `.find()`, creating new object references that triggered useEffect infinitely
   - Browser console showed: "Maximum update depth exceeded" error in DropdownMenu component stack
-- **Fix**: Removed problematic density context sync from useEffect to prevent state change loop
-  - Changed from syncing both local and context state to only setting local state
-  - Comment added: "only set local state, don't sync with context to avoid infinite loop"
-- **Result**: Page loads without freezing, no more infinite re-render errors
+- **Fix**: Two-part solution
+  1. Removed problematic density context sync from useEffect (only sets local state now)
+  2. Used `useMemo()` to memoize `currentRole` value, preventing new object creation on each render
+- **Result**: Page loads without freezing, no more infinite re-render errors, browser console is clean
+
+### October 11, 2025 - Chart Generation Wrong Data Type Fix
+- **Issue**: Asked Max AI to "plot job quantities by need date" but it created a chart plotting jobs by priority instead
+- **Root Cause**: Chart generation catalog was missing critical columns from database schema
+  - ptjobs table has `need_date_time` column but catalog only listed: id, name, priority, scheduled_status, external_id
+  - When OpenAI couldn't find "need date" column in catalog, it defaulted to "priority"
+  - Other tables (ptresources, ptjoboperations) were also missing important columns
+- **Fix**: Updated complete catalog schema with all important columns for chart generation
+  - Added need_date_time, description, created_at, updated_at to ptjobs catalog
+  - Added bottleneck, capacity_type, hourly_cost, and other key fields to ptresources catalog
+  - Added cycle_hrs, setup_hours, required_finish_qty to ptjoboperations catalog
+  - Added timestamp handling: DATE() wrapper for timestamp columns to group by date without time
+  - Updated example queries to show proper usage of need_date_time and other new columns
+- **Result**: Chart generation now correctly maps user requests to actual database columns
 
 ### October 11, 2025 - AI Query Filtering Fix
 - **Issue**: Asked for "priority 8 jobs" but all 37 jobs were displayed instead of filtering
