@@ -74,6 +74,18 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ## Recent Fixes
 
+### October 11, 2025 - Infinite Re-Render Loop Fix (Page Freeze on Load)
+- **Issue**: Page freezing on load with excessive memory usage, even without user interaction
+- **Root Cause**: Infinite re-render loop in customizable-header.tsx useEffect hook
+  - useEffect synced density state with context: `if (density !== prefDensity) { setDensity(prefDensity); }`
+  - But `density` was NOT in dependency array `[preferences, currentRole]`
+  - Calling `setDensity()` triggered re-render, which triggered useEffect again
+  - Browser console showed: "Maximum update depth exceeded" error in DropdownMenu component stack
+- **Fix**: Removed problematic density context sync from useEffect to prevent state change loop
+  - Changed from syncing both local and context state to only setting local state
+  - Comment added: "only set local state, don't sync with context to avoid infinite loop"
+- **Result**: Page loads without freezing, no more infinite re-render errors
+
 ### October 11, 2025 - AI Query Filtering Fix
 - **Issue**: Asked for "priority 8 jobs" but all 37 jobs were displayed instead of filtering
 - **Root Cause**: Max AI table queries had hardcoded SQL without WHERE clause - filters were never extracted from user query

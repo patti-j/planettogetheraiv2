@@ -283,13 +283,9 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
     const showText = (preferences as any)?.dashboardLayout?.showHeaderText ?? true;
     setShowHeaderText(showText);
     
-    // Load UI density setting
+    // Load UI density setting - only set local state, don't sync with context to avoid infinite loop
     const prefDensity = (preferences as any)?.dashboardLayout?.uiDensity ?? 'standard';
     setUiDensity(prefDensity);
-    // Also sync with context if different
-    if (density !== prefDensity) {
-      setDensity(prefDensity);
-    }
   }, [preferences, currentRole]);
 
   // Save header configuration
