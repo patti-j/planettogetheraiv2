@@ -86,18 +86,25 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **Result**: Page loads without freezing, no more infinite re-render errors, browser console is clean
 
 ### October 11, 2025 - Chart Generation Wrong Data Type Fix
-- **Issue**: Asked Max AI to "plot job quantities by need date" but it created a chart plotting jobs by priority instead
-- **Root Cause**: Chart generation catalog was missing critical columns from database schema
+- **Issue**: Chart title correct ("Jobs by Need Date") but plotted wrong data (priority instead of need_date_time)
+- **Root Cause Part 1**: Chart generation catalog was missing critical columns from database schema
   - ptjobs table has `need_date_time` column but catalog only listed: id, name, priority, scheduled_status, external_id
-  - When OpenAI couldn't find "need date" column in catalog, it defaulted to "priority"
   - Other tables (ptresources, ptjoboperations) were also missing important columns
-- **Fix**: Updated complete catalog schema with all important columns for chart generation
+- **Fix Part 1**: Updated complete catalog schema with all important columns for chart generation
   - Added need_date_time, description, created_at, updated_at to ptjobs catalog
   - Added bottleneck, capacity_type, hourly_cost, and other key fields to ptresources catalog
   - Added cycle_hrs, setup_hours, required_finish_qty to ptjoboperations catalog
   - Added timestamp handling: DATE() wrapper for timestamp columns to group by date without time
   - Updated example queries to show proper usage of need_date_time and other new columns
-- **Result**: Chart generation now correctly maps user requests to actual database columns
+- **Root Cause Part 2**: OpenAI intent extraction prompt was too vague
+  - Prompt didn't emphasize using the EXACT column names from catalog examples
+  - When user said "need date", OpenAI guessed "priority" instead of matching to "need_date_time" example
+- **Fix Part 2**: Enhanced OpenAI prompt with explicit mapping rules
+  - Added "CRITICAL MAPPING RULES" section with specific term-to-column mappings
+  - Explicitly listed: "need date" → need_date_time, "priority" → priority, "status" → scheduled_status
+  - Added example responses showing exact JSON structure with correct column names
+  - Emphasized using catalog's example queries section for exact matches
+- **Result**: Chart generation now correctly maps user requests to actual database columns and plots correct data
 
 ### October 11, 2025 - AI Query Filtering Fix
 - **Issue**: Asked for "priority 8 jobs" but all 37 jobs were displayed instead of filtering
@@ -122,3 +129,14 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Happened after canvas shown because that's when data loads and logs start executing
 - **Fix**: Removed all debug console.log statements from canvas.tsx
 - **Result**: Canvas renders smoothly without performance degradation
+
+### October 11, 2025 - Recent Pages Icon Display Fix (Product Wheels)
+- **Issue**: Product Wheels showed FileText icon instead of wheel/disc icon in recent pages menu
+- **Root Cause**: Navigation menu was passing React component object (Disc component) instead of string name "Disc"
+  - `addRecentPage(item.href, item.label, item.icon)` passed the component object
+  - Navigation context checked `typeof finalIcon !== 'string'` and defaulted to 'FileText'
+  - Icon was stored as object in state, not as string name
+- **Fix**: Extract icon name from React component before passing to addRecentPage
+  - Added: `const iconName = item.icon?.displayName || item.icon?.name || 'FileText'`
+  - Now passes string name: `addRecentPage(item.href, item.label, iconName)`
+- **Result**: Product Wheels and all pages now display correct icons in recent pages menu

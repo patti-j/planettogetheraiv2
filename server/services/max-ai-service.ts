@@ -890,6 +890,17 @@ ${catalogSummary}
 
 User Query: "${query}"
 
+CRITICAL MAPPING RULES:
+1. The catalog above shows "Example queries and EXACT column names to use" - USE THESE EXACT MAPPINGS!
+2. Match user terms to catalog examples:
+   - "need date" or "due date" → need_date_time column in ptjobs
+   - "priority" → priority column in ptjobs
+   - "status" → scheduled_status column in ptjobs
+   - "plant" → plant_name column in ptresources
+   - "department" → department_name column in ptresources
+3. Use the EXACT columnName shown in the catalog examples
+4. Do NOT make up column names - only use what's explicitly listed in the catalog
+
 Analyze the query and return a JSON object with this exact structure:
 {
   "measures": [{
@@ -912,7 +923,9 @@ Analyze the query and return a JSON object with this exact structure:
 }
 
 Rules:
-- Use only tables/columns from the available data
+- Use EXACT column names from the catalog's example queries section
+- For "jobs by need date" → dimensions: [{"term": "need date", "tableName": "ptjobs", "columnName": "need_date_time"}]
+- For "jobs by priority" → dimensions: [{"term": "priority", "tableName": "ptjobs", "columnName": "priority"}]
 - For counting items, use COUNT(*) as measure
 - Pick appropriate chart type based on data
 - Higher confidence for exact matches, lower for guesses
