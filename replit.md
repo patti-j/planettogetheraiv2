@@ -85,7 +85,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
   2. Used `useMemo()` to memoize `currentRole` value, preventing new object creation on each render
 - **Result**: Page loads without freezing, no more infinite re-render errors, browser console is clean
 
-### October 11, 2025 - Chart Generation Wrong Data Type Fix
+### October 11, 2025 - Chart Generation Wrong Data Type Fix (Three-Layer Bug)
 - **Issue**: Chart title correct ("Jobs by Need Date") but plotted wrong data (priority instead of need_date_time)
 - **Root Cause Part 1**: Chart generation catalog was missing critical columns from database schema
   - ptjobs table has `need_date_time` column but catalog only listed: id, name, priority, scheduled_status, external_id
@@ -104,7 +104,16 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Explicitly listed: "need date" → need_date_time, "priority" → priority, "status" → scheduled_status
   - Added example responses showing exact JSON structure with correct column names
   - Emphasized using catalog's example queries section for exact matches
-- **Result**: Chart generation now correctly maps user requests to actual database columns and plots correct data
+- **Root Cause Part 3**: Canvas widget loader ignored stored chart data and regenerated it with hardcoded legacy logic
+  - Chart generation correctly extracted need_date_time and saved data: `[{name: "2024-12-31", value: 3}, ...]`
+  - But widget loader called `generateChartData(config.userQuery)` which used `getRelevantChartData()` 
+  - `getRelevantChartData()` had hardcoded fallback: "if query contains 'job' → return jobs by priority"
+  - This overrode the correct saved data every time the widget rendered
+- **Fix Part 3**: Modified canvas widget loader to use stored chart data when available
+  - Now checks if `config.chartConfig.data` exists (pre-generated from AI chart creation)
+  - Uses stored data directly instead of regenerating with legacy method
+  - Only calls `generateChartData()` for legacy widgets without stored data
+- **Result**: Chart generation now correctly maps user requests to actual database columns and widget renders with the correct stored data
 
 ### October 11, 2025 - AI Query Filtering Fix
 - **Issue**: Asked for "priority 8 jobs" but all 37 jobs were displayed instead of filtering

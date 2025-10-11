@@ -2618,7 +2618,17 @@ router.get("/api/canvas/widgets", async (req, res) => {
     const canvasWidgets = await Promise.all(savedWidgets.rows.map(async (widget) => {
       const config = typeof widget.config === 'string' ? JSON.parse(widget.config) : widget.config;
       const position = typeof widget.position === 'string' ? JSON.parse(widget.position) : widget.position;
-      const chartData = await generateChartData(config.dataSource || 'jobs', config.userQuery, widget.title);
+      
+      // Use stored chart data if available (from AI chart generation), otherwise generate fresh data
+      let chartData;
+      if (config.chartConfig && config.chartConfig.data) {
+        // Widget has pre-generated chart data from AI - use it directly
+        chartData = config.chartConfig.data;
+        console.log('[Canvas Widgets] Using stored chart data from widget config:', chartData.length, 'items');
+      } else {
+        // Legacy widget without stored data - generate it
+        chartData = await generateChartData(config.dataSource || 'jobs', config.userQuery, widget.title);
+      }
       
       return {
         id: widget.id,
