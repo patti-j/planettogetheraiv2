@@ -74,10 +74,11 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ## Recent Fixes
 
-### October 11, 2025 - Canvas UI Lag & Background Polling Fix
-- **Issue**: Canvas page lagging even when idle after data loads
-- **Root Cause**: Home page and AI panel were polling APIs every 30-60 seconds even when user navigated away to Canvas, causing constant React re-renders and UI lag
-- **Fix**: Added route detection to make polling conditional - only enabled when actively on home page
-  - `home.tsx`: Made all refetchInterval conditional on `isOnHomePage`
-  - `ai-left-panel.tsx`: Made polling conditional on active tab AND home page location
-- **Result**: Canvas now truly idle when not on home page - no background API calls or React re-renders
+### October 11, 2025 - Canvas UI Lag Fix
+- **Issue**: Canvas page lagging after data loads (lag only started AFTER canvas was shown, not before)
+- **Root Cause**: Debug console.log statements with large data objects (37 rows) running on every React re-render
+  - `console.log('🔍 Canvas Debug - Raw canvasWidgets:', canvasWidgets)` - logs entire dataset on each render
+  - Logging large objects to console is extremely expensive and causes UI lag
+  - Happened after canvas shown because that's when data loads and logs start executing
+- **Fix**: Removed all debug console.log statements from canvas.tsx
+- **Result**: Canvas renders smoothly without performance degradation

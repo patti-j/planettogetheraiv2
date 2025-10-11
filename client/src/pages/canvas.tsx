@@ -186,21 +186,14 @@ export default function CanvasPage() {
     };
   };
 
-  // Debug API data loading
-  console.log('🔍 Canvas Debug - API Loading:', isLoading);
-  console.log('🔍 Canvas Debug - Raw canvasWidgets:', canvasWidgets);
-  console.log('🔍 Canvas Debug - localStorage items:', items);
-  
   // Filter and convert API widgets - MEMOIZED to prevent re-creation on every render
   const convertedApiWidgets = useMemo(() => {
     const apiWidgets = canvasWidgets?.filter((w: CanvasWidget) => w.isVisible) || [];
-    console.log('🔍 Canvas Debug - Visible API widgets:', apiWidgets);
     
     const converted = apiWidgets.map(widget => {
       const canvasItem = convertWidgetToCanvasItem(widget);
       return { ...canvasItem, id: `api-${canvasItem.id}` }; // Prefix API widgets
     });
-    console.log('🔍 Canvas Debug - Converted API widgets:', converted);
     return converted;
   }, [canvasWidgets]);
 
@@ -210,8 +203,6 @@ export default function CanvasPage() {
       ...items.map(item => ({ ...item, id: `local-${item.id}` })), // Prefix localStorage items
       ...convertedApiWidgets
     ];
-    console.log('🔍 Canvas Debug - Final allItems array:', combined);
-    console.log('🔍 Canvas Debug - allItems.length:', combined.length);
     return combined;
   }, [items, convertedApiWidgets]);
 
