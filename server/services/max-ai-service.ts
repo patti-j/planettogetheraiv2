@@ -900,6 +900,10 @@ CRITICAL MAPPING RULES:
    - "department" → department_name column in ptresources
 3. Use the EXACT columnName shown in the catalog examples
 4. Do NOT make up column names - only use what's explicitly listed in the catalog
+5. IMPORTANT: "quantities" or "counts" of JOBS means counting jobs grouped by something, NOT item quantities!
+   - "job quantities by need date" → Count jobs (ptjobs) grouped by need_date_time
+   - "job counts by priority" → Count jobs (ptjobs) grouped by priority
+   - "number of jobs by status" → Count jobs (ptjobs) grouped by scheduled_status
 
 Analyze the query and return a JSON object with this exact structure:
 {
@@ -925,7 +929,10 @@ Analyze the query and return a JSON object with this exact structure:
 Rules:
 - Use EXACT column names from the catalog's example queries section
 - For "jobs by need date" → dimensions: [{"term": "need date", "tableName": "ptjobs", "columnName": "need_date_time"}]
+- For "job quantities by need date" → dimensions: [{"term": "need date", "tableName": "ptjobs", "columnName": "need_date_time"}]
 - For "jobs by priority" → dimensions: [{"term": "priority", "tableName": "ptjobs", "columnName": "priority"}]
+- For "job counts by status" → dimensions: [{"term": "status", "tableName": "ptjobs", "columnName": "scheduled_status"}]
+- The dimension (grouping field) is what comes AFTER "by" in the query
 - For counting items, use COUNT(*) as measure
 - Pick appropriate chart type based on data
 - Higher confidence for exact matches, lower for guesses
