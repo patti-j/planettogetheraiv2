@@ -111,8 +111,10 @@ export default function CanvasPage() {
     const scrollToWidgetId = sessionStorage.getItem('scrollToWidget');
     
     if (scrollToWidgetId && !isLoading && canvasWidgets) {
+      let highlightTimeout: NodeJS.Timeout | null = null;
+      
       // Wait for widgets to render
-      setTimeout(() => {
+      const scrollTimeout = setTimeout(() => {
         const targetElement = document.querySelector(`[data-widget-id="api-${scrollToWidgetId}"]`);
         
         if (targetElement) {
@@ -121,7 +123,7 @@ export default function CanvasPage() {
           
           // Highlight the widget briefly
           targetElement.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-50');
-          setTimeout(() => {
+          highlightTimeout = setTimeout(() => {
             targetElement.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-50');
           }, 2000);
         } else {
@@ -133,6 +135,12 @@ export default function CanvasPage() {
         // Clear the flag
         sessionStorage.removeItem('scrollToWidget');
       }, 500);
+      
+      // Cleanup: clear both timeouts on unmount or dependency change
+      return () => {
+        clearTimeout(scrollTimeout);
+        if (highlightTimeout) clearTimeout(highlightTimeout);
+      };
     }
   }, [canvasWidgets, isLoading]);
 
@@ -218,8 +226,10 @@ export default function CanvasPage() {
       const newWidgetIds = currentWidgetIds.filter(id => !previousWidgetIds.includes(id));
       
       if (newWidgetIds.length > 0) {
+        let highlightTimeout: NodeJS.Timeout | null = null;
+        
         // Small delay to ensure DOM is updated
-        setTimeout(() => {
+        const scrollTimeout = setTimeout(() => {
           // Find the first new widget element
           const newWidgetElement = document.querySelector(`[data-widget-id="${newWidgetIds[0]}"]`);
           
@@ -235,13 +245,19 @@ export default function CanvasPage() {
             newWidgetElement.classList.add('ring-2', 'ring-blue-500', 'ring-offset-2');
             
             // Remove highlight after 3 seconds
-            setTimeout(() => {
+            highlightTimeout = setTimeout(() => {
               newWidgetElement.classList.remove('ring-2', 'ring-blue-500', 'ring-offset-2');
             }, 3000);
             
             console.log('📍 Scrolled to new widget:', newWidgetIds[0]);
           }
         }, 100);
+        
+        // Cleanup: clear both timeouts on unmount or dependency change
+        return () => {
+          clearTimeout(scrollTimeout);
+          if (highlightTimeout) clearTimeout(highlightTimeout);
+        };
       }
     }
     
