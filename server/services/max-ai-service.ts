@@ -1243,25 +1243,37 @@ Return only the JSON object, no other text.`;
       // Build dynamic query based on table name and filters
       let dataResult;
       try {
-        // Build WHERE clause from filters
-        let whereClause = '';
-        const params: any[] = [];
-        
+        // Build and execute query with filters
         if (filters.length > 0) {
-          const conditions = filters.map((filter, index) => {
-            params.push(filter.value);
-            return `${filter.column} = $${index + 1}`;
+          // Build parameterized query using sql template
+          let query = sql.raw(`SELECT * FROM ${tableName} WHERE `);
+          
+          // Add filter conditions
+          const conditions = filters.map((filter, idx) => {
+            if (typeof filter.value === 'string') {
+              return sql`${sql.raw(filter.column)} = ${filter.value}`;
+            } else {
+              return sql`${sql.raw(filter.column)} = ${filter.value}`;
+            }
           });
-          whereClause = ` WHERE ${conditions.join(' AND ')}`;
-        }
-        
-        // Execute raw query to fetch data with filters
-        const queryStr = `SELECT * FROM ${tableName}${whereClause} ORDER BY id DESC LIMIT 100`;
-        console.log(`[Max AI] Executing query: ${queryStr}`, params);
-        
-        if (params.length > 0) {
-          dataResult = await db.execute(sql.raw(queryStr, params));
+          
+          // Combine conditions with AND
+          let fullQuery = sql`SELECT * FROM ${sql.raw(tableName)} WHERE `;
+          conditions.forEach((condition, idx) => {
+            if (idx > 0) {
+              fullQuery = sql`${fullQuery} AND ${condition}`;
+            } else {
+              fullQuery = sql`${fullQuery}${condition}`;
+            }
+          });
+          fullQuery = sql`${fullQuery} ORDER BY id DESC LIMIT 100`;
+          
+          console.log(`[Max AI] Executing filtered query for ${entityType} with filters:`, filters);
+          dataResult = await db.execute(fullQuery);
         } else {
+          // No filters, just fetch all
+          const queryStr = `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 100`;
+          console.log(`[Max AI] Executing query: ${queryStr}`);
           dataResult = await db.execute(sql.raw(queryStr));
         }
       } catch (dbError) {

@@ -79,12 +79,15 @@ The system prioritizes user experience, data integrity, performance, accessibili
 - **Root Cause**: Max AI table queries had hardcoded SQL without WHERE clause - filters were never extracted from user query
   - Query ran: `SELECT * FROM ptjobs ORDER BY id DESC LIMIT 100` (no filter applied!)
   - Both `getJobsTableData` and `getEntityTableData` ignored filter keywords in user queries
-- **Fix**: Added `extractTableFilters()` method to parse filters from user query and build dynamic WHERE clause
+- **Fix Part 1**: Added `extractTableFilters()` method to parse filters from user query
   - Extracts priority filter: "priority 8", "priority=8", "priority: 8"
   - Extracts status filter: "status scheduled", "status: in progress"
   - Extracts ID filter: "id 5", "id=10"
-  - Builds parameterized SQL: `SELECT * FROM ptjobs WHERE priority = $1 ORDER BY id DESC LIMIT 100`
-- **Result**: Queries now properly filter data based on user request
+- **Fix Part 2**: Fixed SQL parameter binding error
+  - Initial fix used `sql.raw(queryStr, params)` which doesn't support parameter binding
+  - Error: "bind message supplies 0 parameters, but prepared statement requires 1"
+  - Solution: Use Drizzle's sql template literals for proper parameter binding: `sql\`${sql.raw(column)} = ${value}\``
+- **Result**: Queries now properly filter data based on user request with correct parameter binding
 
 ### October 11, 2025 - Canvas UI Lag Fix
 - **Issue**: Canvas page lagging after data loads (lag only started AFTER canvas was shown, not before)
