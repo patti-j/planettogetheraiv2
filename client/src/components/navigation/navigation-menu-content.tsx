@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown } from 'lucide-react';
+import { Search, Pin, PinOff, List, Folder, X, Home, Clock, Calendar, Brain, Briefcase, Database, Factory, Settings, FileText, Package, Target, BarChart3, Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, Grid, PlayCircle, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -73,7 +73,7 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       Wrench, Shield, BookOpen, Eye, MessageSquare, Sparkles, Building, Server, TrendingUp, 
       Truck, AlertTriangle, MessageCircle, GraduationCap, Monitor, Columns3, Code, Network, Globe, 
       GitBranch, DollarSign, Headphones, Upload, ArrowRightLeft, FileSearch, Presentation, FileX, 
-      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown
+      Grid, PlayCircle, Search, History, Layout, Puzzle, AlertCircle, Layers, Workflow, ArrowUpDown, Disc
     };
     
     const IconComponent = icons[iconName] || FileText;
