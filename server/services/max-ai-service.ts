@@ -1643,13 +1643,7 @@ Rules:
         // Analyze user intent using AI
         const intent = await this.analyzeUserIntentWithAI(query);
         
-        // Handle create chart intent FIRST (before other processing)
-        if (intent.type === 'create_chart' && intent.confidence > 0.7) {
-          console.log(`[Max AI] Detected chart creation intent with confidence ${intent.confidence}`);
-          return await this.handleCreateIntent(query, { intent: 'CREATE', chartType: intent.chartType }, context);
-        }
-        
-        // Handle table/grid intent for any entity
+        // Handle table/grid intent for any entity (high priority)
         if ((intent.type === 'show_table' || intent.type === 'show_jobs_table') && intent.confidence > 0.7) {
           console.log(`[Max AI] Detected table intent for ${intent.entityType || 'jobs'} with confidence ${intent.confidence}`);
           
@@ -1692,6 +1686,7 @@ Rules:
         }
         
         // Use the new flexible AI response system with playbook guidance
+        // This handles CREATE intent (charts), FETCH_DATA, ANALYZE, EXECUTE, etc.
         const flexibleResponse = await this.getAIFlexibleResponse(query, context, playbooks);
         if (flexibleResponse) {
           // Add playbook reasoning to response
