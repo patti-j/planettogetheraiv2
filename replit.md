@@ -106,3 +106,20 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Removed frontend chart saving since backend already saves to database
   - Now: Backend saves ONCE, frontend just invalidates cache and navigates to canvas
 - **Result**: Chart requests now create exactly ONE chart with single database save
+
+### October 11, 2025 - Chart Data Persistence Bug Fix
+- **Issue**: Charts displaying generic "Item 1", "Item 2", "Item 3" labels instead of actual dates
+- **Root Cause**: Chart data was NOT being saved to database at all
+  - `saveChartWidget()` function was only saving metadata (chartType, dataSource, etc.)
+  - The actual chart data array (dates, values, labels) was never persisted to `config` field
+  - API was regenerating fresh data on every load using wrong query (priority instead of need_date)
+- **Fix**: Updated `saveChartWidget()` to save complete `chartConfig` object:
+  - `config.chartConfig.data` - The actual chart data array with dates/values
+  - `config.chartConfig.type` - Chart type (bar, line, pie, etc.)
+  - `config.chartConfig.title` - Chart title
+  - `config.chartConfig.configuration` - Display settings
+- **API Enhancement**: `/api/canvas/widgets` now prefers stored data with fallback chain:
+  1. `config.chartConfig.data` (new saved data from Max AI)
+  2. `config.data` (legacy fallback)
+  3. Regeneration (only if no stored data exists)
+- **Result**: Charts now persist their data correctly and display actual dates instead of generic labels
