@@ -83,8 +83,8 @@ export default function CanvasPage() {
       }
       return response.json();
     },
-    staleTime: 1000, // Consider data fresh for 1 second
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    staleTime: 5 * 60 * 1000, // Keep data fresh for 5 minutes
+    refetchOnWindowFocus: false, // Don't refetch on tab focus to prevent memory leak
     refetchInterval: false, // Disable automatic polling - use manual refetch instead
     refetchIntervalInBackground: false
   });

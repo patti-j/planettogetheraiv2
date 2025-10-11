@@ -20,6 +20,20 @@ Note on concurrent work:
 
 ## Recent Changes
 
+### October 11, 2025 - Canvas Memory Leak Fix
+- **Issue**: Canvas page consuming excessive memory causing page reloads. Memory usage increased with each browser tab switch.
+- **Root Cause**: Canvas had `refetchOnWindowFocus: true` with `staleTime: 1000ms`, causing aggressive refetching of all widgets (including full table data) every time user switched tabs. Old data wasn't properly garbage collected, leading to memory accumulation.
+- **Investigation**: User rejected 20-row limit as unacceptable workaround. Deep dive revealed canvas was the ONLY page with aggressive refetch settings - all other pages (scheduling-optimizer, etc.) properly use `refetchOnWindowFocus: false`.
+- **Fix Applied** (canvas.tsx):
+  - Changed `refetchOnWindowFocus: true` → `false` to stop refetching on tab focus
+  - Increased `staleTime: 1000ms` → `5 * 60 * 1000ms` (5 minutes) to enable proper caching
+  - Matches refetch pattern used by other pages in the system
+- **Results**:
+  - ✅ No more memory accumulation on tab switches
+  - ✅ Canvas still refetches when needed (manual refresh, AI actions)
+  - ✅ All table rows display properly (no artificial limits)
+  - ✅ Proper data caching prevents unnecessary network requests
+
 ### October 10, 2025 - AI Agent "Jobs" Terminology & Edge Case Enhancement
 - **Original Issue**: Max AI and Production Scheduling Agent didn't understand "jobs" terminology. Query "all jobs" returned "I couldn't find any operations matching 'all jobs'".
 - **Training Updates**:

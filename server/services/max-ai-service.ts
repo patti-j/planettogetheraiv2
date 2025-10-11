@@ -1246,22 +1246,14 @@ Return only the JSON object, no other text.`;
         return formattedRow;
       });
       
-      // Limit rows to prevent memory issues - max 20 rows
-      const maxRows = 20;
-      const limitedRows = rows.slice(0, maxRows);
-      const totalRows = rows.length;
-      const displayMessage = totalRows > maxRows 
-        ? `I've retrieved ${totalRows} ${entityType} from the system. Displaying the first ${maxRows} rows in the Canvas. ${totalRows - maxRows} more rows are available.`
-        : `I've retrieved ${totalRows} ${entityType} from the system. The table is now displayed in the Canvas with all relevant details.`;
-      
       return {
-        content: displayMessage,
+        content: `I've retrieved ${rows.length} ${entityType} from the system. The table is now displayed in the Canvas with all relevant details.`,
         action: {
           type: 'show_table',
           title: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`,
           tableData: {
             columns,
-            rows: limitedRows
+            rows
           }
         }
       };
