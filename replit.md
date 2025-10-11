@@ -47,6 +47,22 @@ Note on concurrent work:
   - ✅ "jobs this week for line 2" → Falls back to regular search (preserves location filter)
 - **Known Limitations**: Some rare polite variations may fall back to regular search (which still works correctly). Only 4 time filters fully supported (today, this week, next week, this month).
 
+### October 11, 2025 - Canvas Clearing Intelligence Enhancement
+- **Issue**: Max AI didn't understand "clear the canvas" command, responded with "I need more specific details"
+- **Training Enhancement**:
+  - Added comprehensive "Canvas Management" section to Max AI agent training
+  - Documented canvas as visualization workspace for tables, charts, and widgets
+  - Provided clear examples mapping "clear canvas", "remove all widgets", "reset canvas" to clear_canvas action
+- **Implementation**:
+  - Added clear_canvas action handler in max-ai-service.ts executeSchedulingAction method
+  - Properly scoped deletion to current user's widgets only (prevents cross-user data loss)
+  - SQL: `DELETE FROM widgets WHERE dashboard_id IN (SELECT id FROM dashboards WHERE user_id = ${context.userId}) AND is_active = true`
+  - Returns success message and action response for potential frontend refresh
+- **Results**:
+  - ✅ Max AI now understands canvas clearing commands
+  - ✅ Secure deletion scoped to current user only
+  - ✅ Clear confirmation message to user
+
 ### October 10, 2025 - Production Scheduler Auto-Refresh & Constraint Fixes (FINAL)
 - **Issue 1 - No Auto-Refresh**: After AI agent rescheduled operations, production schedule didn't refresh automatically, requiring manual page refresh
 - **Issue 2 - Constraint Violations**: Rescheduling set all operations to the same start time, causing overlaps on same resources across different jobs
