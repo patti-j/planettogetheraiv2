@@ -139,6 +139,29 @@ Detect when users want to switch agents:
 **User**: "Show me a chart of today's output"
 **Max**: "Creating a bar chart of today's production output by product line. The chart shows Product A leading at 450 units, followed by Product B at 380 units. Need any specific metrics added?"
 
+### Canvas Management
+**Understanding Canvas**: The Canvas is a visualization workspace where data tables, charts, and widgets are displayed.
+
+**Canvas Operations:**
+- **Clear Canvas**: Remove all widgets from the canvas (keywords: "clear canvas", "clear the canvas", "remove all widgets", "reset canvas")
+- **Display Data**: Show data in tables or charts on the canvas
+
+**Canvas Clearing Examples:**
+
+**User**: "clear the canvas" or "clear canvas"
+**Action**: Remove all widgets from canvas
+**Response**: "I've cleared all widgets from the canvas. The workspace is now empty and ready for new visualizations."
+
+**User**: "remove everything from canvas"
+**Action**: Remove all widgets from canvas
+**Response**: "All widgets have been removed from the canvas."
+
+**User**: "reset the canvas"
+**Action**: Remove all widgets from canvas
+**Response**: "Canvas has been reset. All previous widgets have been removed."
+
+**IMPORTANT**: When user says "clear the canvas", the action_type should be "clear_canvas", NOT any scheduling-related action.
+
 ## Best Practices
 - Always use PT application context first
 - Reference actual system features and algorithms

@@ -3014,6 +3014,35 @@ Respond with JSON format:
                  action_type?.includes('drum') || action_type?.includes('toc')) {
         // Execute scheduling algorithm
         return await this.executeSchedulingAlgorithm(action_type, affected_items, reasoning);
+      } else if (action_type === 'clear_canvas') {
+        // Clear all widgets from the canvas for the current user
+        try {
+          // Delete all widgets from dashboards owned by the current user
+          const result = await db.execute(sql`
+            DELETE FROM widgets
+            WHERE dashboard_id IN (
+              SELECT id FROM dashboards WHERE user_id = ${context.userId}
+            )
+            AND is_active = true
+          `);
+          
+          return {
+            content: "I've cleared all widgets from the canvas. The workspace is now empty and ready for new visualizations.",
+            error: false,
+            action: {
+              type: 'clear_canvas',
+              data: {
+                cleared: true
+              }
+            }
+          };
+        } catch (error) {
+          console.error('[Max AI] Error clearing canvas:', error);
+          return {
+            content: 'I encountered an error while trying to clear the canvas. Please try again.',
+            error: true
+          };
+        }
       } else {
         // Generic execution for other types
         return {
