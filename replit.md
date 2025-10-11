@@ -71,3 +71,13 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Date Handling**: date-fns
 -   **Charting**: Recharts, Chart.js
 -   **Session Management**: connect-pg-simple
+
+## Recent Fixes
+
+### October 11, 2025 - Canvas UI Lag & Background Polling Fix
+- **Issue**: Canvas page lagging even when idle after data loads
+- **Root Cause**: Home page and AI panel were polling APIs every 30-60 seconds even when user navigated away to Canvas, causing constant React re-renders and UI lag
+- **Fix**: Added route detection to make polling conditional - only enabled when actively on home page
+  - `home.tsx`: Made all refetchInterval conditional on `isOnHomePage`
+  - `ai-left-panel.tsx`: Made polling conditional on active tab AND home page location
+- **Result**: Canvas now truly idle when not on home page - no background API calls or React re-renders

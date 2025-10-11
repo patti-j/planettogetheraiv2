@@ -621,17 +621,20 @@ export function AILeftPanel({ onClose }: AILeftPanelProps) {
   
 
   
+  // Only enable polling when on home page to prevent background lag
+  const isOnHomePage = location === '/home' || location === '/';
+  
   // Fetch production status from Max AI
   const { data: productionStatus } = useQuery({
     queryKey: [`/api/max-ai/production-status?page=${location}`],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: (activeTab === 'insights' && isOnHomePage) ? 30000 : false, // Only poll on home page
     enabled: activeTab === 'insights'
   });
   
   // Fetch proactive insights from Max AI
   const { data: maxInsights } = useQuery({
     queryKey: [`/api/max-ai/insights?page=${location}`],
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: (activeTab === 'insights' && isOnHomePage) ? 60000 : false, // Only poll on home page
     enabled: activeTab === 'insights'
   });
   

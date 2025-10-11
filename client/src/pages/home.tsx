@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { useLocation } from 'wouter';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -104,6 +105,11 @@ interface DashboardMetrics {
 export default function HomePage() {
   const { user } = useAuth();
   const isMobile = useDeviceType() === 'mobile';
+  const [location] = useLocation();
+  
+  // Only enable polling when we're actively on the home page
+  const isOnHomePage = location === '/home' || location === '/';
+  
   const [selectedDashboard, setSelectedDashboard] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState('actions');
   const [isDashboardCollapsed, setIsDashboardCollapsed] = useState(false);
@@ -161,7 +167,7 @@ export default function HomePage() {
     refetch: refetchMetrics 
   } = useQuery<DashboardMetrics>({
     queryKey: ['/api/dashboard-metrics'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: isOnHomePage ? 30000 : false, // Only poll when on home page
     retry: 3,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
   });
@@ -174,7 +180,7 @@ export default function HomePage() {
     refetch: refetchRecommendations 
   } = useQuery<ActionRecommendation[]>({
     queryKey: ['/api/ai/recommendations'],
-    refetchInterval: 300000, // Refresh every 5 minutes
+    refetchInterval: isOnHomePage ? 300000 : false, // Only poll when on home page
   });
 
   const { 
@@ -184,7 +190,7 @@ export default function HomePage() {
     refetch: refetchEvents 
   } = useQuery<SystemEvent[]>({
     queryKey: ['/api/system/events'],
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: isOnHomePage ? 60000 : false, // Only poll when on home page
   });
 
   const { 
@@ -194,7 +200,7 @@ export default function HomePage() {
     refetch: refetchAlerts 
   } = useQuery<Alert[]>({
     queryKey: ['/api/alerts'],
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: isOnHomePage ? 30000 : false, // Only poll when on home page
   });
 
   // Ensure alerts is always an array to prevent null errors
@@ -207,7 +213,7 @@ export default function HomePage() {
     refetch: refetchInbox 
   } = useQuery<InboxMessage[]>({
     queryKey: ['/api/inbox'],
-    refetchInterval: 60000, // Refresh every minute
+    refetchInterval: isOnHomePage ? 60000 : false, // Only poll when on home page
   });
 
   // Get default dashboard or first available
