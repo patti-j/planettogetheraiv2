@@ -1119,7 +1119,13 @@ Return only the JSON object, no other text.`;
           colorScheme: 'multi',
           description: chartConfig.title,
           createdByMaxAI: true,
-          userQuery: query
+          userQuery: query,
+          chartConfig: {
+            type: chartConfig.type || 'bar',
+            title: chartConfig.title || 'AI Generated Chart',
+            data: chartConfig.data || [],  // CRITICAL: Save the actual chart data!
+            configuration: chartConfig.configuration || {}
+          }
         },
         isActive: true
       };

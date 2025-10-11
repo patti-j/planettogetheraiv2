@@ -2624,10 +2624,15 @@ router.get("/api/canvas/widgets", async (req, res) => {
       if (config.chartConfig && config.chartConfig.data) {
         // Widget has pre-generated chart data from AI - use it directly
         chartData = config.chartConfig.data;
-        console.log('[Canvas Widgets] Using stored chart data from widget config:', chartData.length, 'items');
+        console.log('[Canvas Widgets] ✅ Using stored chart data from widget config:', chartData.length, 'items');
+      } else if (config.data && Array.isArray(config.data)) {
+        // Chart data stored directly in config.data
+        chartData = config.data;
+        console.log('[Canvas Widgets] ✅ Using stored chart data from config.data:', chartData.length, 'items');
       } else {
         // Legacy widget without stored data - generate it
         chartData = await generateChartData(config.dataSource || 'jobs', config.userQuery, widget.title);
+        console.log('[Canvas Widgets] ⚙️ Generated fresh chart data:', chartData?.length || 0, 'items');
       }
       
       return {
