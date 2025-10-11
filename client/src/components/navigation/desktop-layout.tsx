@@ -271,58 +271,14 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       if (data?.action?.type === 'create_chart' && data?.action?.chartConfig) {
         console.log('🎨 Chart creation detected from floating AI:', data.action);
         
-        const chartItem = {
-          id: data.action.widgetId || `canvas-${Date.now()}`,
-          type: 'chart',
-          data: data.action.chartConfig,
-          title: data.action.chartConfig.title || 'AI Generated Chart',
-          position: { x: 0, y: 0 }
-        };
+        // Backend already saved the chart to database, just invalidate cache to refresh
+        queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
         
-        setCanvasItems((prev: any[]) => [...prev, chartItem]);
+        // Navigate to canvas to show the chart
         setCanvasVisible(true);
-        
-        // Save chart widget to database
-        const saveChart = async () => {
-          try {
-            const widgetData = {
-              type: 'chart',
-              title: chartItem.title,
-              position: { x: 0, y: 0, w: 8, h: 6 },
-              config: {
-                chartConfig: data.action.chartConfig,
-                createdByMaxAI: true
-              },
-              dashboardId: 1
-            };
-
-            const authToken = localStorage.getItem('auth_token');
-            const response = await fetch('/api/canvas/widgets', {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                ...(authToken && { 'Authorization': `Bearer ${authToken}` })
-              },
-              body: JSON.stringify(widgetData)
-            });
-
-            if (response.ok) {
-              console.log('✅ Chart widget saved to database successfully');
-              // Invalidate canvas widgets cache to force refresh
-              queryClient.invalidateQueries({ queryKey: ['/api/canvas/widgets'] });
-            } else {
-              console.error('❌ Failed to save chart widget to database:', response.statusText);
-            }
-          } catch (error) {
-            console.error('❌ Error saving chart widget to database:', error);
-          }
-        };
-        
-        await saveChart();
-        console.log('✅ Canvas item added and canvas shown:', chartItem);
-        
-        // Navigate to canvas immediately
         handleNavigation('/canvas', 'Canvas');
+        
+        console.log('✅ Chart widget already saved by backend, canvas refreshed');
       }
       
       // Handle table/grid creation from Max AI

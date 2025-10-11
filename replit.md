@@ -71,3 +71,17 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Date Handling**: date-fns
 -   **Charting**: Recharts, Chart.js
 -   **Session Management**: connect-pg-simple
+## Recent Changes & Fixes
+
+### October 11, 2025 - Duplicate Chart Creation Fix (Two-Layer Bug)
+- **Issue**: Asked for "jobs by need date" but TWO charts were created
+- **Root Cause**: Two-layer duplication problem
+  - **Layer 1 - AI Intent**: Two separate AI systems both detecting and creating charts
+  - **Layer 2 - Frontend/Backend**: Chart saved twice to database
+    - Backend: `getDynamicChart()` → `saveChartWidget()` → saves to database
+    - Frontend: desktop-layout.tsx ALSO saved chart to database → duplicate
+- **Fix**: 
+  - Removed duplicate early chart detection in `generateResponse()`
+  - Removed frontend chart saving since backend already saves to database
+  - Now: Backend saves ONCE, frontend just invalidates cache and navigates to canvas
+- **Result**: Chart requests now create exactly ONE chart with single database save
