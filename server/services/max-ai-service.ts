@@ -1151,6 +1151,33 @@ Return only the JSON object, no other text.`;
     }
   }
 
+  // Extract filters from user query
+  extractTableFilters(query: string): { column: string; value: any }[] {
+    const filters: { column: string; value: any }[] = [];
+    const lowerQuery = query.toLowerCase();
+    
+    // Extract priority filter (e.g., "priority 8", "priority=8", "priority: 8")
+    const priorityMatch = query.match(/priority[:\s=]+(\d+)/i);
+    if (priorityMatch) {
+      filters.push({ column: 'priority', value: parseInt(priorityMatch[1]) });
+    }
+    
+    // Extract status filter (e.g., "status scheduled", "status: in progress")
+    const statusMatch = query.match(/status[:\s=]+([a-z\s]+)/i);
+    if (statusMatch) {
+      const statusValue = statusMatch[1].trim();
+      filters.push({ column: 'scheduled_status', value: statusValue });
+    }
+    
+    // Extract ID filter (e.g., "id 5", "id=10")
+    const idMatch = query.match(/\bid[:\s=]+(\d+)/i);
+    if (idMatch) {
+      filters.push({ column: 'id', value: parseInt(idMatch[1]) });
+    }
+    
+    return filters;
+  }
+
   // Generic method to get table data for any entity type
   async getEntityTableData(entityType: string, tableName: string, query: string, context: MaxContext): Promise<MaxResponse> {
     try {
@@ -1209,12 +1236,34 @@ Return only the JSON object, no other text.`;
       // Get columns for this entity type (default to jobs if not found)
       const columns = columnMappings[entityType] || columnMappings['jobs'];
       
-      // Build dynamic query based on table name
+      // Extract filters from the query
+      const filters = this.extractTableFilters(query);
+      console.log(`[Max AI] Extracted filters:`, filters);
+      
+      // Build dynamic query based on table name and filters
       let dataResult;
       try {
-        // Execute raw query to fetch data
-        const queryStr = `SELECT * FROM ${tableName} ORDER BY id DESC LIMIT 100`;
-        dataResult = await db.execute(sql.raw(queryStr));
+        // Build WHERE clause from filters
+        let whereClause = '';
+        const params: any[] = [];
+        
+        if (filters.length > 0) {
+          const conditions = filters.map((filter, index) => {
+            params.push(filter.value);
+            return `${filter.column} = $${index + 1}`;
+          });
+          whereClause = ` WHERE ${conditions.join(' AND ')}`;
+        }
+        
+        // Execute raw query to fetch data with filters
+        const queryStr = `SELECT * FROM ${tableName}${whereClause} ORDER BY id DESC LIMIT 100`;
+        console.log(`[Max AI] Executing query: ${queryStr}`, params);
+        
+        if (params.length > 0) {
+          dataResult = await db.execute(sql.raw(queryStr, params));
+        } else {
+          dataResult = await db.execute(sql.raw(queryStr));
+        }
       } catch (dbError) {
         console.error(`[Max AI] Error fetching from ${tableName}:`, dbError);
         // Provide helpful error message
@@ -1246,11 +1295,16 @@ Return only the JSON object, no other text.`;
         return formattedRow;
       });
       
+      // Build informative message
+      const filterInfo = filters.length > 0 
+        ? ` matching ${filters.map(f => `${f.column} = ${f.value}`).join(' and ')}`
+        : '';
+      
       return {
-        content: `I've retrieved ${rows.length} ${entityType} from the system. The table is now displayed in the Canvas with all relevant details.`,
+        content: `I've retrieved ${rows.length} ${entityType}${filterInfo} from the system. The table is now displayed in the Canvas with all relevant details.`,
         action: {
           type: 'show_table',
-          title: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)}`,
+          title: `${entityType.charAt(0).toUpperCase() + entityType.slice(1)}${filterInfo}`,
           tableData: {
             columns,
             rows

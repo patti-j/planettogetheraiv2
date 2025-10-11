@@ -74,6 +74,18 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ## Recent Fixes
 
+### October 11, 2025 - AI Query Filtering Fix
+- **Issue**: Asked for "priority 8 jobs" but all 37 jobs were displayed instead of filtering
+- **Root Cause**: Max AI table queries had hardcoded SQL without WHERE clause - filters were never extracted from user query
+  - Query ran: `SELECT * FROM ptjobs ORDER BY id DESC LIMIT 100` (no filter applied!)
+  - Both `getJobsTableData` and `getEntityTableData` ignored filter keywords in user queries
+- **Fix**: Added `extractTableFilters()` method to parse filters from user query and build dynamic WHERE clause
+  - Extracts priority filter: "priority 8", "priority=8", "priority: 8"
+  - Extracts status filter: "status scheduled", "status: in progress"
+  - Extracts ID filter: "id 5", "id=10"
+  - Builds parameterized SQL: `SELECT * FROM ptjobs WHERE priority = $1 ORDER BY id DESC LIMIT 100`
+- **Result**: Queries now properly filter data based on user request
+
 ### October 11, 2025 - Canvas UI Lag Fix
 - **Issue**: Canvas page lagging after data loads (lag only started AFTER canvas was shown, not before)
 - **Root Cause**: Debug console.log statements with large data objects (37 rows) running on every React re-render
