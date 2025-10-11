@@ -109,9 +109,12 @@ export function NavigationMenuContent({ isPinned, onTogglePin, onClose, isOpen }
       return;
     }
     
+    // Extract icon name from React component
+    const iconName = item.icon?.displayName || item.icon?.name || 'FileText';
+    
     // Use the split screen context's navigation handler - this will show the dialog if needed
     handleNavigation(item.href, item.label);
-    addRecentPage(item.href, item.label, item.icon);
+    addRecentPage(item.href, item.label, iconName);
     if (!isPinned && onClose) onClose();
   };
 
