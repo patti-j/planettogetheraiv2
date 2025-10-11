@@ -430,6 +430,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       
       setFloatingPrompt('');
       
+      // MEMORY LEAK FIX: Clear attachments after successful send
+      setFloatingAttachments([]);
+      
       // Auto-restart listening for continuous conversation flow
       if (continuousConversationMode) {
         console.log('🔄 Auto-restarting listening for continuous conversation...');
@@ -457,6 +460,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       });
       
       setFloatingPrompt('');
+      
+      // MEMORY LEAK FIX: Clear attachments on error too
+      setFloatingAttachments([]);
     }
   });
 
