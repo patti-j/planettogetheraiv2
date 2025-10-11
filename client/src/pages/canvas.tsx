@@ -172,7 +172,7 @@ export default function CanvasPage() {
     const canvasType = getCanvasType(widget.widgetType);
     const content = canvasType === 'table' 
       ? widget.configuration // Tables: use configuration which has rows/columns
-      : widget.data;          // Charts: use data array
+      : widget.configuration?.chartConfig?.data || widget.configuration?.data || widget.data || [];  // Charts: extract data from chartConfig
     
     return {
       id: widget.id.toString(),
