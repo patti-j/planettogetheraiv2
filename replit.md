@@ -73,6 +73,27 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Session Management**: connect-pg-simple
 ## Recent Changes & Fixes
 
+### October 11, 2025 - Chart Display Bug Fix (Data Extraction Issue)
+- **Issue**: Charts showing "Item 1", "Item 2" instead of actual data labels (dates, categories, etc.)
+- **Root Cause**: Canvas widget data extraction reading from non-existent `widget.data` column
+  - Database schema has `widget.config` (JSONB) containing chart data at `config.chartConfig.data`
+  - Canvas.tsx was trying to read `widget.data` which doesn't exist → undefined → fallback to generic "Item" labels
+- **Fix**: Updated convertWidgetToCanvasItem() in canvas.tsx to properly extract chart data:
+  1. `widget.configuration?.chartConfig?.data` (primary path for Max AI charts)
+  2. `widget.configuration?.data` (fallback)
+  3. `widget.data` (legacy fallback)
+  4. `[]` (empty array as last resort)
+- **Result**: Charts now display actual data labels (dates, categories) correctly
+
+### October 11, 2025 - Chart Dimension Mapping Fix
+- **Issue**: "Job quantities by need date" created chart grouped "by item" instead of "by need date"
+- **Root Cause**: OpenAI misinterpreting "quantities" as item quantities rather than job counts
+- **Fix**: Enhanced OpenAI prompt in extractIntent() with explicit rules:
+  - "quantities/counts of JOBS" means counting jobs, NOT item quantities
+  - Dimension (grouping field) is what comes AFTER "by" in the query
+  - Added specific examples: "job quantities by need date" → group by need_date_time
+- **Result**: Charts now correctly map to requested dimensions
+
 ### October 11, 2025 - Duplicate Chart Creation Fix (Two-Layer Bug)
 - **Issue**: Asked for "jobs by need date" but TWO charts were created
 - **Root Cause**: Two-layer duplication problem
