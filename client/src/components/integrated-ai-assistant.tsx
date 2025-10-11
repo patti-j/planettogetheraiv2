@@ -373,12 +373,67 @@ export default function IntegratedAIAssistant() {
     if ('speechSynthesis' in window) {
       synthesis.current = window.speechSynthesis;
     }
+    
+    // MEMORY LEAK FIX: Clean up on unmount
+    return () => {
+      // Stop speech recognition if active
+      if (recognition.current) {
+        try {
+          recognition.current.stop();
+          recognition.current = null;
+        } catch (err) {
+          console.log('Speech recognition cleanup error:', err);
+        }
+      }
+      
+      // Cancel any ongoing speech synthesis
+      if (synthesis.current) {
+        try {
+          synthesis.current.cancel();
+        } catch (err) {
+          console.log('Speech synthesis cleanup error:', err);
+        }
+      }
+    };
   }, []);
 
   // Auto-scroll to bottom of messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // MEMORY LEAK FIX: Clean up MediaRecorder on unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Cleaning up MediaRecorder on unmount...');
+      
+      // Stop active recording if any
+      if (mediaRecorder && mediaRecorder.state === 'recording') {
+        try {
+          mediaRecorder.stop();
+        } catch (err) {
+          console.log('Error stopping MediaRecorder:', err);
+        }
+      }
+      
+      // Clear recording timeout
+      if (recordingTimeout) {
+        clearTimeout(recordingTimeout);
+      }
+      
+      // Release MediaRecorder and stream
+      if (mediaRecorder) {
+        const stream = mediaRecorder.stream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        setMediaRecorder(null);
+      }
+      
+      // Clear attachments to free memory
+      setAttachments([]);
+    };
+  }, [mediaRecorder, recordingTimeout]);
 
   // Monitor page context and generate insights
   useEffect(() => {
@@ -759,6 +814,10 @@ export default function IntegratedAIAssistant() {
         console.log('🛑 Recording stopped, processing audio...');
         // Use the actual MIME type from the MediaRecorder
         const blob = new Blob(chunks, { type: selectedMimeType });
+        
+        // MEMORY LEAK FIX: Clear chunks array after creating blob
+        chunks.length = 0;
+        
         console.log('📄 Audio blob created, size:', blob.size, 'type:', blob.type);
         await handleAudioRecording(blob);
         stream.getTracks().forEach(track => track.stop());
