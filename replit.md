@@ -20,19 +20,25 @@ Note on concurrent work:
 
 ## Recent Changes
 
-### October 11, 2025 - Canvas Memory Leak Fix
-- **Issue**: Canvas page consuming excessive memory causing page reloads. Memory usage increased with each browser tab switch.
-- **Root Cause**: Canvas had `refetchOnWindowFocus: true` with `staleTime: 1000ms`, causing aggressive refetching of all widgets (including full table data) every time user switched tabs. Old data wasn't properly garbage collected, leading to memory accumulation.
-- **Investigation**: User rejected 20-row limit as unacceptable workaround. Deep dive revealed canvas was the ONLY page with aggressive refetch settings - all other pages (scheduling-optimizer, etc.) properly use `refetchOnWindowFocus: false`.
-- **Fix Applied** (canvas.tsx):
-  - Changed `refetchOnWindowFocus: true` → `false` to stop refetching on tab focus
-  - Increased `staleTime: 1000ms` → `5 * 60 * 1000ms` (5 minutes) to enable proper caching
-  - Matches refetch pattern used by other pages in the system
+### October 11, 2025 - Canvas Memory Leak Fix (FINAL)
+- **Issue**: Canvas page consuming excessive memory causing page reloads, even when just displaying the page without any interaction or tab switching.
+- **Root Causes Identified**:
+  1. **Tab-switch refetching**: Canvas had `refetchOnWindowFocus: true` with `staleTime: 1000ms`, causing aggressive refetching every tab switch
+  2. **Cascading useEffects**: `convertedApiWidgets` and `allItems` were recreated on every React render, triggering useEffect cascades and repeated DOM queries, causing memory accumulation
+- **Investigation**: User rejected 20-row limit as unacceptable workaround. Architect analysis revealed cascading useEffects creating new objects in memory on every render, preventing garbage collection.
+- **Fixes Applied** (canvas.tsx):
+  1. **Query Settings**: Changed `refetchOnWindowFocus: true` → `false`, increased `staleTime: 1000ms` → `5 * 60 * 1000ms` (5 minutes)
+  2. **Memoization**: Wrapped `convertedApiWidgets` and `allItems` in `useMemo()` to prevent re-creation on every render
+  3. **Effect Dependencies**: Fixed useEffect dependency chains to only trigger when data actually changes
+- **Technical Details**:
+  - Before: Widget conversions ran on every render, creating new arrays/objects and triggering effects repeatedly
+  - After: useMemo caches widget conversions, only recalculating when `canvasWidgets` or `items` actually change
+  - Prevents effect cascades and repeated DOM queries that were accumulating in memory
 - **Results**:
-  - ✅ No more memory accumulation on tab switches
-  - ✅ Canvas still refetches when needed (manual refresh, AI actions)
+  - ✅ No more memory accumulation (even when canvas displayed without interaction)
+  - ✅ No tab-switch refetching
   - ✅ All table rows display properly (no artificial limits)
-  - ✅ Proper data caching prevents unnecessary network requests
+  - ✅ Proper React memoization prevents render loops
 
 ### October 10, 2025 - AI Agent "Jobs" Terminology & Edge Case Enhancement
 - **Original Issue**: Max AI and Production Scheduling Agent didn't understand "jobs" terminology. Query "all jobs" returned "I couldn't find any operations matching 'all jobs'".

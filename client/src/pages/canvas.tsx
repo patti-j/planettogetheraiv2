@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -183,24 +183,29 @@ export default function CanvasPage() {
   console.log('🔍 Canvas Debug - Raw canvasWidgets:', canvasWidgets);
   console.log('🔍 Canvas Debug - localStorage items:', items);
   
-  // Filter and convert API widgets
-  const apiWidgets = canvasWidgets?.filter((w: CanvasWidget) => w.isVisible) || [];
-  console.log('🔍 Canvas Debug - Visible API widgets:', apiWidgets);
-  
-  const convertedApiWidgets = apiWidgets.map(widget => {
-    const canvasItem = convertWidgetToCanvasItem(widget);
-    return { ...canvasItem, id: `api-${canvasItem.id}` }; // Prefix API widgets
-  });
-  console.log('🔍 Canvas Debug - Converted API widgets:', convertedApiWidgets);
+  // Filter and convert API widgets - MEMOIZED to prevent re-creation on every render
+  const convertedApiWidgets = useMemo(() => {
+    const apiWidgets = canvasWidgets?.filter((w: CanvasWidget) => w.isVisible) || [];
+    console.log('🔍 Canvas Debug - Visible API widgets:', apiWidgets);
+    
+    const converted = apiWidgets.map(widget => {
+      const canvasItem = convertWidgetToCanvasItem(widget);
+      return { ...canvasItem, id: `api-${canvasItem.id}` }; // Prefix API widgets
+    });
+    console.log('🔍 Canvas Debug - Converted API widgets:', converted);
+    return converted;
+  }, [canvasWidgets]);
 
-  // Combine localStorage items with API widgets (with unique IDs to prevent React key conflicts)
-  const allItems = [
-    ...items.map(item => ({ ...item, id: `local-${item.id}` })), // Prefix localStorage items
-    ...convertedApiWidgets
-  ];
-  
-  console.log('🔍 Canvas Debug - Final allItems array:', allItems);
-  console.log('🔍 Canvas Debug - allItems.length:', allItems.length);
+  // Combine localStorage items with API widgets (with unique IDs to prevent React key conflicts) - MEMOIZED
+  const allItems = useMemo(() => {
+    const combined = [
+      ...items.map(item => ({ ...item, id: `local-${item.id}` })), // Prefix localStorage items
+      ...convertedApiWidgets
+    ];
+    console.log('🔍 Canvas Debug - Final allItems array:', combined);
+    console.log('🔍 Canvas Debug - allItems.length:', combined.length);
+    return combined;
+  }, [items, convertedApiWidgets]);
 
   // Auto-scroll to newly added widgets
   useEffect(() => {
