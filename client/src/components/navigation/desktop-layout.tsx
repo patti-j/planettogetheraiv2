@@ -595,6 +595,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
         if (floatingAudioChunksRef.current.length > 0) {
           const audioBlob = new Blob(floatingAudioChunksRef.current, { type: 'audio/webm' });
           
+          // MEMORY LEAK FIX: Clear audio chunks immediately after creating blob
+          floatingAudioChunksRef.current = [];
+          
           if (audioBlob.size >= 1000) {
             const formData = new FormData();
             formData.append('audio', audioBlob, 'recording.webm');
@@ -618,6 +621,9 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               console.log('⚠️ Whisper transcription failed:', error);
             });
           }
+        } else {
+          // MEMORY LEAK FIX: Clear empty audio chunks array
+          floatingAudioChunksRef.current = [];
         }
         
         // Clean up
@@ -934,6 +940,59 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
       floatingInputRef.current.focus();
     }
   }, [isFloatingBubbleMinimized]);
+
+  // MEMORY LEAK FIX: Clean up voice recording resources on unmount
+  useEffect(() => {
+    return () => {
+      console.log('🧹 Cleaning up voice recording resources on unmount...');
+      
+      // Stop any active recording
+      if (floatingMediaRecorder && floatingMediaRecorder.state === 'recording') {
+        try {
+          floatingMediaRecorder.stop();
+        } catch (err) {
+          console.log('Error stopping MediaRecorder:', err);
+        }
+      }
+      
+      // Clear all timers
+      if (floatingRecordingTimeout) {
+        clearTimeout(floatingRecordingTimeout);
+      }
+      if (floatingSilenceTimerRef.current) {
+        clearTimeout(floatingSilenceTimerRef.current);
+      }
+      
+      // Stop Web Speech API
+      if (floatingRecognitionRef.current) {
+        try {
+          floatingRecognitionRef.current.stop();
+          floatingRecognitionRef.current = null;
+        } catch (err) {
+          console.log('Error stopping Web Speech API:', err);
+        }
+      }
+      
+      // Clear audio chunks to free memory
+      floatingAudioChunksRef.current = [];
+      
+      // Clear text refs
+      floatingLastTranscriptRef.current = '';
+      floatingAccumulatedTextRef.current = '';
+      
+      // Clear attachments to free memory
+      setFloatingAttachments([]);
+      
+      // Release MediaRecorder and stream
+      if (floatingMediaRecorder) {
+        const stream = floatingMediaRecorder.stream;
+        if (stream) {
+          stream.getTracks().forEach(track => track.stop());
+        }
+        setFloatingMediaRecorder(null);
+      }
+    };
+  }, [floatingMediaRecorder, floatingRecordingTimeout]);
 
   // Determine if panels should be hidden - only hide on actual mobile devices (touch + small screen)
   // Never hide panels on desktop, regardless of window size
