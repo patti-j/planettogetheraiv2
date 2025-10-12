@@ -1692,7 +1692,19 @@ Rules:
         // Handle chart creation intent directly (high priority)
         if (intent.type === 'create_chart' && intent.confidence > 0.7) {
           console.log(`[Max AI] 🎨 Chart creation intent detected with confidence ${intent.confidence}, routing to getDynamicChart`);
-          return await this.getDynamicChart(query, context);
+          const chartResponse = await this.getDynamicChart(query, context);
+          
+          if (chartResponse) {
+            // Add playbook reasoning to response
+            const reasoning = this.buildReasoningExplanation(query, playbooks, chartResponse.content);
+            chartResponse.reasoning = reasoning;
+            chartResponse.playbooksUsed = playbooks;
+            
+            // Track AI action for transparency
+            await this.trackAIAction(context, query, chartResponse.content, playbooks);
+          }
+          
+          return chartResponse;
         }
         
         // If streaming is enabled, handle differently
