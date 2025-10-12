@@ -123,3 +123,12 @@ The system prioritizes user experience, data integrity, performance, accessibili
   2. `config.data` (legacy fallback)
   3. Regeneration (only if no stored data exists)
 - **Result**: Charts now persist their data correctly and display actual dates instead of generic labels
+
+### October 12, 2025 - "Plot" Keyword Detection Fix
+- **Issue**: "plot jobs by need date" request hanging and never finishing
+- **Root Cause**: "plot" was not in chartKeywords array, so chart requests using "plot" weren't detected
+  - Intent analysis didn't recognize "plot" as chart creation → got stuck in processing
+- **Fix**: Added "plot" to chartKeywords array in `analyzeUserIntentWithAI()`
+  - Before: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi']`
+  - After: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi', 'plot']`
+- **Result**: Requests like "plot jobs by need date" now properly detected as chart creation requests
