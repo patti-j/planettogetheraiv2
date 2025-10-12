@@ -1689,6 +1689,12 @@ Rules:
           };
         }
         
+        // Handle chart creation intent directly (high priority)
+        if (intent.type === 'create_chart' && intent.confidence > 0.7) {
+          console.log(`[Max AI] 🎨 Chart creation intent detected with confidence ${intent.confidence}, routing to getDynamicChart`);
+          return await this.getDynamicChart(query, context);
+        }
+        
         // If streaming is enabled, handle differently
         if (options?.streaming && options.onChunk) {
           // Stream the response chunks
