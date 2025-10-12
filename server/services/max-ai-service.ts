@@ -1534,7 +1534,7 @@ Return only the JSON object, no other text.`;
     }
     
     // Check for chart creation requests with more liberal matching
-    const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi'];
+    const chartKeywords = ['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi', 'plot'];
     const createKeywords = ['create', 'show', 'make', 'generate', 'display', 'build'];
     const canvasKeywords = ['canvas', 'in the canvas', 'on canvas', 'to canvas'];
     
