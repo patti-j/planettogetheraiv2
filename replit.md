@@ -132,3 +132,14 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Before: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi']`
   - After: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi', 'plot']`
 - **Result**: Requests like "plot jobs by need date" now properly detected as chart creation requests
+
+### October 12, 2025 - Chart Creation Intent Handler Fix
+- **Issue**: "plot jobs by need date" still hanging after keyword detection fix
+- **Root Cause**: Intent was detected as 'create_chart' but no handler existed in generateResponse
+  - Intent fell through to getAIFlexibleResponse which called OpenAI again → redundant call caused timeout/hang
+  - Only 'show_table' and 'switch_agent' intents had direct handlers
+- **Fix**: Added direct handler for 'create_chart' intent in generateResponse:
+  - Routes directly to getDynamicChart (bypasses redundant OpenAI call)
+  - Adds playbook reasoning to response (restores metadata parity)
+  - Tracks AI action for transparency (maintains telemetry)
+- **Result**: Chart creation requests now complete successfully with full metadata without redundant API calls
