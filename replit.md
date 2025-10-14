@@ -160,3 +160,15 @@ The system prioritizes user experience, data integrity, performance, accessibili
      - Respects both database state and in-batch scheduling
   4. Use conflict detection when scheduling each operation
 - **Result**: Operations can no longer be double-booked on the same resource - scheduler automatically finds next available time slot when conflicts exist
+
+### October 14, 2025 - Scheduler Auto-Refresh Fix (Page-Independent)
+- **Issue**: After rescheduling operations via AI, scheduler didn't show the updated schedule
+- **Root Cause**: The refresh_scheduler action only worked if user was already on the production scheduler page
+  - The refresh logic checked currentPath and only refreshed iframe if on /production-scheduler
+  - If user was on a different page when rescheduling, the refresh action was ignored
+- **Fix**: Enhanced refresh_scheduler handler in desktop-layout.tsx to handle both scenarios:
+  1. **If on scheduler page**: Refresh the iframe immediately with cache busting
+     - Added fallback: If iframe not found, wait 1s and try again (handles slow iframe loading)
+  2. **If NOT on scheduler page**: Navigate to scheduler page first (fresh data loads automatically)
+  3. Always show confirmation message that scheduler is being opened
+- **Result**: Users now always see the updated schedule after AI actions, regardless of which page they're on when the action is triggered
