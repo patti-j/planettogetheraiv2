@@ -3379,7 +3379,7 @@ router.patch("/api/pt-operations/schedule", async (req, res) => {
     
     console.log(`📝 Saving schedule updates for ${updates.length} operations...`);
     
-    // Update each operation's scheduled_start and scheduled_end
+    // Update each operation's scheduled_start, scheduled_end, and manually_scheduled flag
     let updated = 0;
     for (const op of updates) {
       try {
@@ -3388,6 +3388,7 @@ router.patch("/api/pt-operations/schedule", async (req, res) => {
           SET 
             scheduled_start = ${op.start},
             scheduled_end = ${op.end},
+            manually_scheduled = ${op.manuallyScheduled || false},
             updated_at = NOW()
           WHERE id = ${op.id}
         `;

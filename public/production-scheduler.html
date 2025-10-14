@@ -2192,6 +2192,13 @@
                         // Auto-save when event is dropped (moved)
                         afterEventDrop: async ({ eventRecords }) => {
                             console.log('💾 Event dropped, auto-saving changes...');
+                            
+                            // Mark manually positioned events to preserve them from algorithm changes
+                            eventRecords.forEach(event => {
+                                event.manuallyScheduled = true;
+                                console.log(`🔒 Marked ${event.name} as manually scheduled - will be preserved from algorithms`);
+                            });
+                            
                             await saveOperationChanges(eventRecords);
                         },
                         
@@ -3889,7 +3896,8 @@
                         const operations = eventRecords.map(event => ({
                             id: event.id,
                             start: event.startDate.toISOString(),
-                            end: event.endDate.toISOString()
+                            end: event.endDate.toISOString(),
+                            manuallyScheduled: event.manuallyScheduled || false
                         }));
                         
                         console.log(`💾 Auto-saving ${operations.length} operation(s) to database...`);
@@ -3968,8 +3976,14 @@
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
-                    // Apply ASAP constraints to all events
+                    // Apply ASAP constraints to all events (except manually scheduled ones)
                     events.forEach(event => {
+                        // Skip events that were manually positioned by the user
+                        if (event.manuallyScheduled) {
+                            console.log(`🔒 Preserving manual position for: ${event.name}`);
+                            return;
+                        }
+                        
                         // Clear any existing constraints
                         event.constraintType = null;
                         event.constraintDate = null;
@@ -3977,7 +3991,6 @@
                         // Apply Start No Earlier Than constraint for ASAP behavior
                         event.constraintType = 'startnoearlierthan';
                         event.constraintDate = baseDate;
-                        event.manuallyScheduled = false; // Let the engine control dates
                     });
                     
                     // Create dependencies between sequential operations on the same resource
@@ -4124,11 +4137,16 @@
                         }
                     }
                     
-                    // Apply Finish No Later Than constraints to ALL events for ALAP
+                    // Apply Finish No Later Than constraints to ALL events for ALAP (except manually scheduled)
                     events.forEach(event => {
+                        // Skip events that were manually positioned by the user
+                        if (event.manuallyScheduled) {
+                            console.log(`🔒 Preserving manual position for: ${event.name}`);
+                            return;
+                        }
+                        
                         event.constraintType = 'finishnolaterthan';
                         event.constraintDate = dueDate;
-                        event.manuallyScheduled = false;
                     });
                     
                     // Let the Bryntum engine recalculate with backward scheduling
@@ -4191,11 +4209,16 @@
                     const baseDate = new Date(2025, 8, 3, 7, 0, 0);
                     project.startDate = baseDate;
                     
-                    // Apply ASAP constraints to establish schedule
+                    // Apply ASAP constraints to establish schedule (except manually scheduled)
                     events.forEach(event => {
+                        // Skip events that were manually positioned by the user
+                        if (event.manuallyScheduled) {
+                            console.log(`🔒 Preserving manual position for: ${event.name}`);
+                            return;
+                        }
+                        
                         event.constraintType = 'startnoearlierthan';
                         event.constraintDate = baseDate;
-                        event.manuallyScheduled = false;
                     });
                     
                     // Ensure dependencies exist for proper critical path calculation
