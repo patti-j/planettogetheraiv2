@@ -3478,6 +3478,98 @@ router.put("/api/operations/:id/constraint", async (req, res) => {
   }
 });
 
+// Update operation PERT estimates
+router.put("/api/operations/:id/pert", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timeOptimistic, timeMostLikely, timePessimistic } = req.body;
+    
+    // Validate that all three estimates are provided
+    if (timeOptimistic === undefined || timeMostLikely === undefined || timePessimistic === undefined) {
+      return res.status(400).json({ 
+        error: 'All three PERT estimates are required: timeOptimistic, timeMostLikely, timePessimistic' 
+      });
+    }
+    
+    // Validate that estimates are numbers
+    const optimistic = parseFloat(timeOptimistic);
+    const mostLikely = parseFloat(timeMostLikely);
+    const pessimistic = parseFloat(timePessimistic);
+    
+    if (isNaN(optimistic) || isNaN(mostLikely) || isNaN(pessimistic)) {
+      return res.status(400).json({ 
+        error: 'All PERT estimates must be valid numbers' 
+      });
+    }
+    
+    // Validate that optimistic <= most likely <= pessimistic
+    if (optimistic > mostLikely || mostLikely > pessimistic) {
+      return res.status(400).json({ 
+        error: 'Invalid PERT estimates: optimistic time must be <= most likely time <= pessimistic time' 
+      });
+    }
+    
+    // Calculate PERT metrics
+    const timeExpected = (optimistic + 4 * mostLikely + pessimistic) / 6;
+    const timeStdDev = (pessimistic - optimistic) / 6;
+    const timeVariance = Math.pow(timeStdDev, 2);
+    
+    console.log(`🎲 Updating PERT estimates for operation ${id}:`);
+    console.log(`   Optimistic: ${optimistic}, Most Likely: ${mostLikely}, Pessimistic: ${pessimistic}`);
+    console.log(`   Expected: ${timeExpected.toFixed(4)}, Std Dev: ${timeStdDev.toFixed(4)}, Variance: ${timeVariance.toFixed(6)}`);
+    
+    // Update the operation's PERT fields
+    await directSql`
+      UPDATE ptjoboperations 
+      SET 
+        time_optimistic = ${optimistic},
+        time_most_likely = ${mostLikely},
+        time_pessimistic = ${pessimistic},
+        time_expected = ${timeExpected},
+        time_variance = ${timeVariance},
+        time_std_dev = ${timeStdDev},
+        updated_at = NOW()
+      WHERE id = ${id}
+    `;
+    
+    // Fetch the updated operation to return
+    const [updatedOperation] = await directSql`
+      SELECT 
+        id,
+        name,
+        cycle_hrs as "cycleHrs",
+        time_optimistic as "timeOptimistic",
+        time_most_likely as "timeMostLikely",
+        time_pessimistic as "timePessimistic",
+        time_expected as "timeExpected",
+        time_variance as "timeVariance",
+        time_std_dev as "timeStdDev",
+        scheduled_start as "scheduledStart",
+        scheduled_end as "scheduledEnd"
+      FROM ptjoboperations 
+      WHERE id = ${id}
+    ` as any[];
+    
+    console.log(`✅ Successfully updated PERT estimates for operation ${id}`);
+    
+    res.json({ 
+      success: true, 
+      operation: updatedOperation,
+      calculations: {
+        timeExpected: parseFloat(timeExpected.toFixed(4)),
+        timeVariance: parseFloat(timeVariance.toFixed(6)),
+        timeStdDev: parseFloat(timeStdDev.toFixed(4))
+      }
+    });
+  } catch (error) {
+    console.error("Error updating operation PERT estimates:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update PERT estimates'
+    });
+  }
+});
+
 // Step 3: Save scheduler changes endpoint (Legacy - keeping for compatibility)
 router.post("/scheduler/sync", async (req, res) => {
   try {

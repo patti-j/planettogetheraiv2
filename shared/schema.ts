@@ -316,6 +316,13 @@ export const ptJobOperations = pgTable("ptjoboperations", {
   // Constraint fields
   constraintType: varchar("constraint_type", { length: 10 }), // MSO, MFO, SNET, FNET, SNLT, FNLT
   constraintDate: timestamp("constraint_date"),
+  // PERT (Program Evaluation Review Technique) fields for three-point estimation
+  timeOptimistic: decimal("time_optimistic", { precision: 10, scale: 4 }), // Best case duration
+  timeMostLikely: decimal("time_most_likely", { precision: 10, scale: 4 }), // Expected duration
+  timePessimistic: decimal("time_pessimistic", { precision: 10, scale: 4 }), // Worst case duration
+  timeExpected: decimal("time_expected", { precision: 10, scale: 4 }), // Calculated: (O + 4M + P) / 6
+  timeVariance: decimal("time_variance", { precision: 10, scale: 6 }), // Calculated: ((P - O) / 6)^2
+  timeStdDev: decimal("time_std_dev", { precision: 10, scale: 4 }), // Calculated: (P - O) / 6
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
