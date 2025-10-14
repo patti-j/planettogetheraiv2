@@ -297,7 +297,50 @@ scheduler.on('paint', () => {
 3. Ensure scheduler page route is correct
 4. Check Max AI service triggers refresh action
 
+## Algorithm Implementation Status
+
+### ⚠️ Critical Issues Identified (October 14, 2025)
+
+A comprehensive review against Bryntum Scheduler Pro documentation revealed several critical issues with the current algorithm implementations:
+
+#### **ASAP Algorithm**
+- ❌ Uses invalid constraint type `'assoonaspossible'` (not supported by Bryntum)
+- ❌ Does not preserve manually positioned events
+- ✅ Auto-saves results to database
+
+#### **ALAP Algorithm**
+- ❌ Uses invalid constraint type `'aslateaspossible'` (not supported by Bryntum)
+- ❌ Does not preserve manually positioned events
+- ⚠️ ALAP is not natively supported in Scheduler Pro (Gantt only)
+- ✅ Auto-saves results to database
+
+#### **Critical Path Algorithm**
+- ❌ Checks for `event.critical` property that doesn't exist in Scheduler Pro
+- ❌ Does not preserve manually positioned events
+- ⚠️ Critical Path is exclusive to Bryntum Gantt, not Scheduler Pro
+- ❌ No auto-save implemented
+
+### Valid Bryntum Constraint Types
+- `startnoearlierthan` (SNET) - Semi-flexible
+- `finishnoearlierthan` (FNET) - Semi-flexible
+- `startnolaterthan` (SNLT) - Semi-flexible
+- `finishnolaterthan` (FNLT) - Semi-flexible
+- `muststarton` (MSO) - Inflexible
+- `mustfinishon` (MFO) - Inflexible
+
+### Required Corrections
+See detailed corrections in:
+- **[Algorithm Analysis & Corrections](./SCHEDULER_ALGORITHM_ANALYSIS.md)** - Complete analysis with fixed implementations
+- **[Algorithm Test Plan](./SCHEDULER_ALGORITHM_TESTS.md)** - Comprehensive test cases for validation
+
 ## Future Enhancements
+
+### High Priority (Algorithm Fixes)
+- [ ] Fix ASAP to use valid constraint types
+- [ ] Fix ALAP or implement workaround for Scheduler Pro
+- [ ] Implement custom Critical Path with slack calculation
+- [ ] Add manual position preservation to all algorithms
+- [ ] Implement auto-save for Critical Path results
 
 ### Planned Features
 - [ ] Bulk "Clear Manual Positions" action
@@ -308,6 +351,7 @@ scheduler.on('paint', () => {
 - [ ] Manual position validation warnings
 
 ### Under Consideration
+- [ ] Upgrade to Bryntum Gantt for full ALAP/Critical Path support
 - [ ] Save queue for offline capability
 - [ ] Real-time multi-user sync
 - [ ] Position history/audit trail
@@ -319,8 +363,11 @@ scheduler.on('paint', () => {
 - [PT Tables Schema Documentation](./PT-Tables-Complete-Documentation.md)
 - [Max AI Service Documentation](./replit.md#ai-integration)
 - [Production Scheduler Architecture](./replit.md#production-scheduler-architecture)
+- **[Scheduler Algorithm Analysis](./SCHEDULER_ALGORITHM_ANALYSIS.md)** - Critical issues and corrections
+- **[Scheduler Algorithm Tests](./SCHEDULER_ALGORITHM_TESTS.md)** - Comprehensive test plan
 
 ---
 
 **Last Updated**: October 14, 2025  
+**Status**: Algorithm Issues Identified - Corrections Documented  
 **Maintainer**: PlanetTogether Development Team
