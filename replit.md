@@ -30,7 +30,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **State Management**: TanStack Query (React Query) for server state.
 -   **Routing**: Wouter.
 -   **Drag & Drop**: react-dnd.
--   **Gantt Chart**: Bryntum Scheduler Pro for production scheduling visualization, including optimization engines, drag-and-drop rescheduling, and real-time synchronization.
+-   **Gantt Chart**: Bryntum Scheduler Pro for production scheduling visualization.
 -   **UI/UX Decisions**: Consistent color schemes, professional modal designs, responsive layouts, standardized button styling, intuitive navigation, integrated workflow for dashboard and widget creation, Excel-like cell editing, user-configurable layouts with persistence, and centralized layout density controls.
 
 ### Backend Architecture
@@ -44,10 +44,10 @@ The system prioritizes user experience, data integrity, performance, accessibili
 
 ### Core System Design & Features
 -   **Navigation**: Unified layout system with consistent header/navigation for desktop and footer bar for mobile.
--   **Data Model**: Comprehensive database schema emphasizing normalized relationships, including SAP-compliant production version architecture and migration from external text IDs to integer foreign keys. The system exclusively uses PT (PlanetTogether) tables for all manufacturing-related data.
+-   **Data Model**: Comprehensive database schema, including SAP-compliant production version architecture and migration to integer foreign keys. Exclusively uses PT (PlanetTogether) tables for manufacturing data.
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
--   **Production Scheduling**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management. Includes a PT Resource Capabilities System for appropriate resource-operation matching. Auto zoom-to-fit on initial load only, each view preset maintains its own natural zoom level.
+-   **Production Scheduling**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management, including PT Resource Capabilities System for resource-operation matching. Auto zoom-to-fit on initial load only.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer with widget library and professional templates.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, and comprehensive error handling.
@@ -56,7 +56,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **AI Agents Control Panel**: Centralized management interface for all AI agents.
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
 -   **Production Scheduler Architecture**: Uses a hybrid iframe/React architecture where a React wrapper component loads a standalone HTML file containing the Bryntum Scheduler Pro via a backend API route.
--   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model, featuring WebSocket architecture, SSE for audio/transcript streaming, and automatic pause detection for natural conversation flow.
+-   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model, featuring WebSocket architecture, SSE for audio/transcript streaming, and automatic pause detection.
 
 ## External Dependencies
 
@@ -71,104 +71,3 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Date Handling**: date-fns
 -   **Charting**: Recharts, Chart.js
 -   **Session Management**: connect-pg-simple
-## Recent Changes & Fixes
-
-### October 11, 2025 - Chart Display Bug Fix (Data Extraction Issue)
-- **Issue**: Charts showing "Item 1", "Item 2" instead of actual data labels (dates, categories, etc.)
-- **Root Cause**: Canvas widget data extraction reading from non-existent `widget.data` column
-  - Database schema has `widget.config` (JSONB) containing chart data at `config.chartConfig.data`
-  - Canvas.tsx was trying to read `widget.data` which doesn't exist → undefined → fallback to generic "Item" labels
-- **Fix**: Updated convertWidgetToCanvasItem() in canvas.tsx to properly extract chart data:
-  1. `widget.configuration?.chartConfig?.data` (primary path for Max AI charts)
-  2. `widget.configuration?.data` (fallback)
-  3. `widget.data` (legacy fallback)
-  4. `[]` (empty array as last resort)
-- **Result**: Charts now display actual data labels (dates, categories) correctly
-
-### October 11, 2025 - Chart Dimension Mapping Fix
-- **Issue**: "Job quantities by need date" created chart grouped "by item" instead of "by need date"
-- **Root Cause**: OpenAI misinterpreting "quantities" as item quantities rather than job counts
-- **Fix**: Enhanced OpenAI prompt in extractIntent() with explicit rules:
-  - "quantities/counts of JOBS" means counting jobs, NOT item quantities
-  - Dimension (grouping field) is what comes AFTER "by" in the query
-  - Added specific examples: "job quantities by need date" → group by need_date_time
-- **Result**: Charts now correctly map to requested dimensions
-
-### October 11, 2025 - Duplicate Chart Creation Fix (Two-Layer Bug)
-- **Issue**: Asked for "jobs by need date" but TWO charts were created
-- **Root Cause**: Two-layer duplication problem
-  - **Layer 1 - AI Intent**: Two separate AI systems both detecting and creating charts
-  - **Layer 2 - Frontend/Backend**: Chart saved twice to database
-    - Backend: `getDynamicChart()` → `saveChartWidget()` → saves to database
-    - Frontend: desktop-layout.tsx ALSO saved chart to database → duplicate
-- **Fix**: 
-  - Removed duplicate early chart detection in `generateResponse()`
-  - Removed frontend chart saving since backend already saves to database
-  - Now: Backend saves ONCE, frontend just invalidates cache and navigates to canvas
-- **Result**: Chart requests now create exactly ONE chart with single database save
-
-### October 11, 2025 - Chart Data Persistence Bug Fix
-- **Issue**: Charts displaying generic "Item 1", "Item 2", "Item 3" labels instead of actual dates
-- **Root Cause**: Chart data was NOT being saved to database at all
-  - `saveChartWidget()` function was only saving metadata (chartType, dataSource, etc.)
-  - The actual chart data array (dates, values, labels) was never persisted to `config` field
-  - API was regenerating fresh data on every load using wrong query (priority instead of need_date)
-- **Fix**: Updated `saveChartWidget()` to save complete `chartConfig` object:
-  - `config.chartConfig.data` - The actual chart data array with dates/values
-  - `config.chartConfig.type` - Chart type (bar, line, pie, etc.)
-  - `config.chartConfig.title` - Chart title
-  - `config.chartConfig.configuration` - Display settings
-- **API Enhancement**: `/api/canvas/widgets` now prefers stored data with fallback chain:
-  1. `config.chartConfig.data` (new saved data from Max AI)
-  2. `config.data` (legacy fallback)
-  3. Regeneration (only if no stored data exists)
-- **Result**: Charts now persist their data correctly and display actual dates instead of generic labels
-
-### October 12, 2025 - "Plot" Keyword Detection Fix
-- **Issue**: "plot jobs by need date" request hanging and never finishing
-- **Root Cause**: "plot" was not in chartKeywords array, so chart requests using "plot" weren't detected
-  - Intent analysis didn't recognize "plot" as chart creation → got stuck in processing
-- **Fix**: Added "plot" to chartKeywords array in `analyzeUserIntentWithAI()`
-  - Before: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi']`
-  - After: `['chart', 'graph', 'visualization', 'pie chart', 'bar chart', 'line chart', 'gauge', 'kpi', 'plot']`
-- **Result**: Requests like "plot jobs by need date" now properly detected as chart creation requests
-
-### October 12, 2025 - Chart Creation Intent Handler Fix
-- **Issue**: "plot jobs by need date" still hanging after keyword detection fix
-- **Root Cause**: Intent was detected as 'create_chart' but no handler existed in generateResponse
-  - Intent fell through to getAIFlexibleResponse which called OpenAI again → redundant call caused timeout/hang
-  - Only 'show_table' and 'switch_agent' intents had direct handlers
-- **Fix**: Added direct handler for 'create_chart' intent in generateResponse:
-  - Routes directly to getDynamicChart (bypasses redundant OpenAI call)
-  - Adds playbook reasoning to response (restores metadata parity)
-  - Tracks AI action for transparency (maintains telemetry)
-- **Result**: Chart creation requests now complete successfully with full metadata without redundant API calls
-
-### October 14, 2025 - Resource Conflict Detection Fix
-- **Issue**: After moving jobs to a specific date (e.g., October 5th), multiple operations were scheduled on the same resource at the same time
-- **Root Cause**: performOperationReschedule only checked for conflicts within the current reschedule batch
-  - The resourceSchedule map was empty at the start of each reschedule call
-  - It didn't query existing operations in the database, only tracked operations in the current batch
-  - If jobs were moved in separate requests, conflicts weren't detected
-- **Fix**: Implemented comprehensive resource conflict detection in performOperationReschedule:
-  1. Preload ALL existing scheduled operations from database before rescheduling
-  2. Build complete map of resource schedules with all existing time slots
-  3. Implement findNextAvailableSlot function that:
-     - Checks for time overlap with existing operations (start < existing.end && end > existing.start)
-     - Recursively finds next available slot if conflict detected
-     - Skips operations being rescheduled (to avoid false conflicts)
-     - Respects both database state and in-batch scheduling
-  4. Use conflict detection when scheduling each operation
-- **Result**: Operations can no longer be double-booked on the same resource - scheduler automatically finds next available time slot when conflicts exist
-
-### October 14, 2025 - Scheduler Auto-Refresh Fix (Page-Independent)
-- **Issue**: After rescheduling operations via AI, scheduler didn't show the updated schedule
-- **Root Cause**: The refresh_scheduler action only worked if user was already on the production scheduler page
-  - The refresh logic checked currentPath and only refreshed iframe if on /production-scheduler
-  - If user was on a different page when rescheduling, the refresh action was ignored
-- **Fix**: Enhanced refresh_scheduler handler in desktop-layout.tsx to handle both scenarios:
-  1. **If on scheduler page**: Refresh the iframe immediately with cache busting
-     - Added fallback: If iframe not found, wait 1s and try again (handles slow iframe loading)
-  2. **If NOT on scheduler page**: Navigate to scheduler page first (fresh data loads automatically)
-  3. Always show confirmation message that scheduler is being opened
-- **Result**: Users now always see the updated schedule after AI actions, regardless of which page they're on when the action is triggered
