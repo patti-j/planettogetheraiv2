@@ -386,13 +386,28 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
             // Force reload with cache busting
             const currentSrc = iframe.src.split('?')[0];
             iframe.src = `${currentSrc}?v=${Date.now()}`;
+          } else {
+            console.warn('⚠️ Scheduler iframe not found, waiting for it to load...');
+            // Wait for iframe to load, then refresh
+            setTimeout(() => {
+              const delayedIframe = document.querySelector('iframe[title="Production Scheduler"]') as HTMLIFrameElement;
+              if (delayedIframe) {
+                console.log('🔄 Refreshing Production Scheduler (delayed) after database update');
+                const currentSrc = delayedIframe.src.split('?')[0];
+                delayedIframe.src = `${currentSrc}?v=${Date.now()}`;
+              }
+            }, 1000);
           }
+        } else {
+          // Not on scheduler page - navigate there first, then refresh will happen automatically
+          console.log('🔄 Navigating to Production Scheduler to show changes');
+          handleNavigation('/production-scheduler', 'Production Scheduler');
         }
         
         // Add response message with refresh note
         addMessage({
           role: 'assistant',
-          content: data.content + (currentPath === '/production-scheduler' ? '\n\n📊 The schedule has been refreshed to show your changes.' : ''),
+          content: data.content + '\n\n📊 Opening Production Scheduler to show your changes...',
           source: 'floating',
           agentId: respondingAgent
         });
