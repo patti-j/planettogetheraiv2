@@ -47,7 +47,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Data Model**: Comprehensive database schema, including SAP-compliant production version architecture and migration to integer foreign keys. Exclusively uses PT (PlanetTogether) tables for manufacturing data.
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
--   **Production Scheduling**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management, including PT Resource Capabilities System for resource-operation matching. Auto zoom-to-fit on initial load only.
+-   **Production Scheduling**: Visual Gantt chart, operation sequencer, advanced scheduling algorithms, and constraints management, including PT Resource Capabilities System for resource-operation matching. Auto zoom-to-fit on initial load only. **Auto-Save System**: Comprehensive auto-save for all manual changes (drag/drop, resize, edit) with `manually_scheduled` flag preservation - manual positions are protected from future algorithmic optimizations. See [Production Scheduler Documentation](./PRODUCTION_SCHEDULER_DOCUMENTATION.md) for complete implementation details.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer with widget library and professional templates.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, and comprehensive error handling.
