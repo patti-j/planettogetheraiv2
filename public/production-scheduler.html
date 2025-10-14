@@ -774,6 +774,46 @@
             }
         }
         
+        /* Resource Leveling Visual Indicators */
+        .resource-leveled {
+            border: 2px dashed #8b5cf6 !important;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%) !important;
+            position: relative;
+        }
+        
+        .resource-leveled::after {
+            content: '⚖';
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            font-size: 12px;
+            color: #8b5cf6;
+            font-weight: bold;
+        }
+        
+        .resource-overallocated {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.2) 0%, rgba(239, 68, 68, 0.2) 100%) !important;
+            border-left: 4px solid #dc2626 !important;
+        }
+        
+        .resource-overallocated-period {
+            background: rgba(220, 38, 38, 0.1) !important;
+            border: 1px solid rgba(220, 38, 38, 0.3) !important;
+        }
+        
+        @keyframes pulse-moved {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-2px);
+            }
+        }
+        
+        .resource-leveled.animate-move {
+            animation: pulse-moved 1s ease-in-out 3;
+        }
+        
         /* Critical path dependency lines */
         .b-sch-dependency.critical-path {
             stroke: #dc2626 !important;
@@ -5105,108 +5145,652 @@
                 }
                 
                 async function levelResourcesScheduling() {
-                    // Balance workload using dependencies to manage resource conflicts
-                    console.log('⚖️ Resource Leveling with dependency management...');
-                    currentSchedulingMode = 'Level Resources'; // Set mode for drag handler
+                    // Enhanced Resource Leveling Algorithm with CPM integration
+                    console.log('⚖️ Starting Enhanced Resource Leveling Algorithm...');
+                    currentSchedulingMode = 'Level Resources';
+                    
+                    const project = scheduler.project;
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
+                    const dependencies = scheduler.dependencyStore.records;
                     
-                    if (events.length === 0 || resources.length === 0) return;
+                    if (events.length === 0 || resources.length === 0) {
+                        showNotification('No operations or resources to level', 'warning');
+                        return;
+                    }
                     
-                    // Calculate current resource loads and identify overloaded resources
-                    const resourceEvents = {};
-                    resources.forEach(r => {
-                        resourceEvents[r.id] = [];
+                    // Initialize metrics tracking
+                    const metrics = {
+                        initialConflicts: 0,
+                        resolvedConflicts: 0,
+                        operationsMoved: 0,
+                        maxUtilization: 0,
+                        efficiencyScore: 0,
+                        iterations: 0
+                    };
+                    
+                    // Step 1: Calculate Critical Path and Slack for all operations
+                    console.log('Step 1: Calculating Critical Path and Slack...');
+                    const cpmAnalysis = await calculateCPMAnalysis(events, dependencies);
+                    
+                    // Step 2: Build resource utilization profile
+                    console.log('Step 2: Building resource utilization profile...');
+                    const utilizationProfile = buildResourceUtilizationProfile(events, resources);
+                    
+                    // Step 3: Identify overallocations
+                    console.log('Step 3: Identifying resource overallocations...');
+                    const overallocations = identifyOverallocations(utilizationProfile, resources);
+                    metrics.initialConflicts = overallocations.length;
+                    
+                    console.log(`Found ${overallocations.length} overallocation periods`);
+                    
+                    // Step 4: Resolve conflicts through iterative leveling
+                    console.log('Step 4: Resolving resource conflicts...');
+                    const maxIterations = 50; // Prevent infinite loops
+                    let currentOverallocations = [...overallocations];
+                    
+                    while (currentOverallocations.length > 0 && metrics.iterations < maxIterations) {
+                        metrics.iterations++;
+                        console.log(`Iteration ${metrics.iterations}: ${currentOverallocations.length} conflicts remaining`);
+                        
+                        let movesThisIteration = 0;
+                        
+                        for (const conflict of currentOverallocations) {
+                            // Find movable operations in this conflict
+                            const movableOps = findMovableOperations(
+                                conflict.operations,
+                                cpmAnalysis,
+                                events
+                            );
+                            
+                            if (movableOps.length === 0) continue;
+                            
+                            // Try to move operations to resolve conflict
+                            for (const operation of movableOps) {
+                                const newTimeSlot = findBestTimeSlot(
+                                    operation,
+                                    conflict.resourceId,
+                                    utilizationProfile,
+                                    resources,
+                                    dependencies
+                                );
+                                
+                                if (newTimeSlot && newTimeSlot.start !== operation.startDate) {
+                                    // Move the operation
+                                    moveOperation(operation, newTimeSlot);
+                                    metrics.operationsMoved++;
+                                    movesThisIteration++;
+                                    
+                                    // Mark operation as moved for visualization
+                                    operation.cls = (operation.cls || '') + ' resource-leveled';
+                                    operation.data = operation.data || {};
+                                    operation.data.wasLeveled = true;
+                                    operation.data.originalStart = operation.startDate;
+                                    
+                                    console.log(`  Moved ${operation.name} to ${newTimeSlot.start.toLocaleString()}`);
+                                    
+                                    // Rebuild utilization profile after move
+                                    utilizationProfile[conflict.resourceId] = buildResourceUtilizationForResource(
+                                        events.filter(e => e.resourceId === conflict.resourceId),
+                                        conflict.resourceId
+                                    );
+                                    
+                                    break; // Move one operation per conflict per iteration
+                                }
+                            }
+                        }
+                        
+                        if (movesThisIteration === 0) {
+                            console.log('No more moves possible, stopping iteration');
+                            break;
+                        }
+                        
+                        // Recalculate overallocations
+                        currentOverallocations = identifyOverallocations(utilizationProfile, resources);
+                        metrics.resolvedConflicts = metrics.initialConflicts - currentOverallocations.length;
+                    }
+                    
+                    // Step 5: Calculate final metrics
+                    console.log('Step 5: Calculating final metrics...');
+                    metrics.maxUtilization = calculateMaxUtilization(utilizationProfile, resources);
+                    metrics.efficiencyScore = calculateEfficiencyScore(events, resources, utilizationProfile);
+                    
+                    // Step 6: Display results
+                    displayResourceLevelingResults(metrics, utilizationProfile, resources);
+                    
+                    // Step 7: Create utilization visualization
+                    createUtilizationVisualization(utilizationProfile, resources);
+                    
+                    // Commit changes
+                    await project.commitAsync();
+                    scheduler.refresh();
+                    
+                    console.log(`✅ Resource Leveling completed:
+                        - Initial conflicts: ${metrics.initialConflicts}
+                        - Resolved conflicts: ${metrics.resolvedConflicts}
+                        - Operations moved: ${metrics.operationsMoved}
+                        - Max utilization: ${metrics.maxUtilization.toFixed(1)}%
+                        - Efficiency score: ${metrics.efficiencyScore.toFixed(1)}%
+                        - Iterations: ${metrics.iterations}`);
+                    
+                    await saveSchedule();
+                }
+                
+                // Helper functions for Resource Leveling
+                function calculateCPMAnalysis(events, dependencies) {
+                    const analysis = new Map();
+                    
+                    // Initialize CPM data for each event
+                    events.forEach(event => {
+                        analysis.set(event.id, {
+                            earlyStart: 0,
+                            earlyFinish: 0,
+                            lateStart: Infinity,
+                            lateFinish: Infinity,
+                            totalSlack: 0,
+                            freeSlack: 0,
+                            isCritical: false,
+                            isManuallyScheduled: event.manuallyScheduled || false,
+                            priority: event.priority || 5,
+                            duration: event.duration || 2
+                        });
                     });
                     
+                    // Build dependency graph
+                    const successors = new Map();
+                    const predecessors = new Map();
+                    
                     events.forEach(event => {
-                        if (resourceEvents[event.resourceId]) {
-                            resourceEvents[event.resourceId].push(event);
+                        successors.set(event.id, []);
+                        predecessors.set(event.id, []);
+                    });
+                    
+                    dependencies.forEach(dep => {
+                        if (successors.has(dep.from) && predecessors.has(dep.to)) {
+                            successors.get(dep.from).push(dep.to);
+                            predecessors.get(dep.to).push(dep.from);
                         }
                     });
                     
-                    // Set base scheduling date - Sept 3, 2025
-                    const baseDate = new Date(2025, 8, 3);
-                    baseDate.setHours(7, 0, 0, 0); // 7 AM start
+                    // Forward pass - calculate early start/finish
+                    const visited = new Set();
+                    const queue = events.filter(e => predecessors.get(e.id).length === 0);
                     
-                    // Calculate scheduling span - 14 days (2 weeks)
-                    const endDate = new Date(2025, 8, 17);
-                    endDate.setHours(17, 0, 0, 0); // 5 PM end
+                    while (queue.length > 0) {
+                        const event = queue.shift();
+                        if (visited.has(event.id)) continue;
+                        
+                        const data = analysis.get(event.id);
+                        const preds = predecessors.get(event.id);
+                        
+                        if (preds.length > 0) {
+                            let maxEarlyFinish = 0;
+                            preds.forEach(predId => {
+                                const predData = analysis.get(predId);
+                                if (predData) {
+                                    maxEarlyFinish = Math.max(maxEarlyFinish, predData.earlyFinish);
+                                }
+                            });
+                            data.earlyStart = maxEarlyFinish;
+                        }
+                        
+                        data.earlyFinish = data.earlyStart + data.duration;
+                        visited.add(event.id);
+                        
+                        // Add successors to queue
+                        successors.get(event.id).forEach(succId => {
+                            const succ = events.find(e => e.id === succId);
+                            if (succ && !visited.has(succId)) {
+                                queue.push(succ);
+                            }
+                        });
+                    }
                     
-                    const workingHoursPerDay = 10; // 7 AM to 5 PM
-                    const totalDays = 14;
-                    const totalAvailableHours = totalDays * workingHoursPerDay * resources.length;
-                    
-                    // Level the resources by spreading operations evenly
-                    const resourceNextAvailable = {};
-                    resources.forEach(r => {
-                        resourceNextAvailable[r.id] = new Date(baseDate);
+                    // Calculate project duration
+                    let projectDuration = 0;
+                    analysis.forEach(data => {
+                        projectDuration = Math.max(projectDuration, data.earlyFinish);
                     });
                     
-                    // Sort events by priority/duration to optimize scheduling
-                    events.sort((a, b) => {
-                        // Prioritize longer operations first for better packing
-                        return (b.duration || 0) - (a.duration || 0);
+                    // Backward pass - calculate late start/finish
+                    visited.clear();
+                    const reverseQueue = events.filter(e => successors.get(e.id).length === 0);
+                    
+                    // Initialize leaf nodes
+                    reverseQueue.forEach(event => {
+                        const data = analysis.get(event.id);
+                        data.lateFinish = projectDuration;
+                        data.lateStart = data.lateFinish - data.duration;
                     });
                     
-                    // Redistribute operations to level resource utilization
-                    events.forEach(event => {
-                        // Find the resource that becomes available earliest
-                        let earliestResource = event.resourceId;
-                        let earliestTime = resourceNextAvailable[event.resourceId] || new Date(baseDate);
+                    while (reverseQueue.length > 0) {
+                        const event = reverseQueue.shift();
+                        if (visited.has(event.id)) continue;
                         
-                        // For leveling, we can look for other compatible resources with earlier availability
-                        // For now, keep original resource assignments but spread timing
+                        const data = analysis.get(event.id);
+                        const preds = predecessors.get(event.id);
                         
-                        // Schedule the operation
-                        const startTime = new Date(resourceNextAvailable[event.resourceId] || baseDate);
+                        visited.add(event.id);
                         
-                        // Add gaps between operations to reduce utilization percentage
-                        // This simulates maintenance, changeover, or buffer time
-                        const bufferMinutes = 60; // 1 hour buffer between operations
+                        // Process predecessors
+                        preds.forEach(predId => {
+                            const predData = analysis.get(predId);
+                            if (predData) {
+                                predData.lateFinish = Math.min(predData.lateFinish, data.lateStart);
+                                predData.lateStart = predData.lateFinish - predData.duration;
+                                
+                                const pred = events.find(e => e.id === predId);
+                                if (pred && !visited.has(predId)) {
+                                    reverseQueue.push(pred);
+                                }
+                            }
+                        });
+                    }
+                    
+                    // Calculate slack and identify critical path
+                    analysis.forEach((data, eventId) => {
+                        data.totalSlack = data.lateStart - data.earlyStart;
+                        data.isCritical = Math.abs(data.totalSlack) < 0.01;
+                    });
+                    
+                    return analysis;
+                }
+                
+                function buildResourceUtilizationProfile(events, resources) {
+                    const profile = {};
+                    
+                    resources.forEach(resource => {
+                        profile[resource.id] = buildResourceUtilizationForResource(
+                            events.filter(e => e.resourceId === resource.id),
+                            resource.id
+                        );
+                    });
+                    
+                    return profile;
+                }
+                
+                function buildResourceUtilizationForResource(resourceEvents, resourceId) {
+                    const utilization = new Map();
+                    const hourlySlots = new Map();
+                    
+                    resourceEvents.forEach(event => {
+                        if (!event.startDate || !event.endDate) return;
                         
-                        event.startDate = startTime;
-                        const durationMs = (event.duration || 2) * 60 * 60 * 1000;
-                        event.endDate = new Date(startTime.getTime() + durationMs);
+                        let currentTime = new Date(event.startDate);
+                        const endTime = new Date(event.endDate);
                         
-                        // Update next available time for this resource (with buffer)
-                        resourceNextAvailable[event.resourceId] = new Date(event.endDate.getTime() + bufferMinutes * 60 * 1000);
-                        
-                        // If we've exceeded working hours for the day, move to next day
-                        const nextAvail = resourceNextAvailable[event.resourceId];
-                        if (nextAvail.getHours() >= 17) {
-                            // Move to next day at 7 AM
-                            nextAvail.setDate(nextAvail.getDate() + 1);
-                            nextAvail.setHours(7, 0, 0, 0);
-                            resourceNextAvailable[event.resourceId] = nextAvail;
+                        while (currentTime < endTime) {
+                            const hourKey = getHourKey(currentTime);
+                            
+                            if (!hourlySlots.has(hourKey)) {
+                                hourlySlots.set(hourKey, []);
+                            }
+                            
+                            hourlySlots.get(hourKey).push(event);
+                            currentTime.setHours(currentTime.getHours() + 1);
                         }
                     });
                     
-                    // Commit the changes
-                    scheduler.eventStore.commit();
-                    console.log('✅ Level Resources scheduling completed');
+                    return hourlySlots;
+                }
+                
+                function getHourKey(date) {
+                    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}_${String(date.getHours()).padStart(2, '0')}`;
+                }
+                
+                function identifyOverallocations(utilizationProfile, resources) {
+                    const overallocations = [];
                     
-                    // VERIFY no overlaps
-                    let overlapsFound = 0;
-                    Object.keys(resourceEvents).forEach(resourceId => {
-                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
-                        for (let i = 0; i < resEvents.length - 1; i++) {
-                            if (resEvents[i].endDate > resEvents[i + 1].startDate) {
-                                overlapsFound++;
+                    Object.entries(utilizationProfile).forEach(([resourceId, hourlySlots]) => {
+                        const resource = resources.find(r => r.id == resourceId);
+                        const capacity = resource?.capacity || 1;
+                        
+                        hourlySlots.forEach((operations, hourKey) => {
+                            if (operations.length > capacity) {
+                                overallocations.push({
+                                    resourceId: resourceId,
+                                    hourKey: hourKey,
+                                    operations: operations,
+                                    overallocation: operations.length - capacity,
+                                    capacity: capacity
+                                });
+                            }
+                        });
+                    });
+                    
+                    return overallocations;
+                }
+                
+                function findMovableOperations(operations, cpmAnalysis, allEvents) {
+                    // Sort operations by movability criteria
+                    return operations
+                        .filter(op => {
+                            const cpmData = cpmAnalysis.get(op.id);
+                            // Don't move critical path operations or manually scheduled ones
+                            return cpmData && !cpmData.isCritical && !cpmData.isManuallyScheduled;
+                        })
+                        .sort((a, b) => {
+                            const aData = cpmAnalysis.get(a.id);
+                            const bData = cpmAnalysis.get(b.id);
+                            
+                            // Sort by: 1) Total slack (more slack = more movable)
+                            //          2) Priority (lower priority = more movable)
+                            //          3) Duration (shorter = easier to fit elsewhere)
+                            
+                            if (aData.totalSlack !== bData.totalSlack) {
+                                return bData.totalSlack - aData.totalSlack; // More slack first
+                            }
+                            if (aData.priority !== bData.priority) {
+                                return bData.priority - aData.priority; // Lower priority first
+                            }
+                            return aData.duration - bData.duration; // Shorter duration first
+                        });
+                }
+                
+                function findBestTimeSlot(operation, resourceId, utilizationProfile, resources, dependencies) {
+                    const resource = resources.find(r => r.id == resourceId);
+                    const capacity = resource?.capacity || 1;
+                    const resourceUtilization = utilizationProfile[resourceId];
+                    
+                    // Define search window based on operation's slack
+                    const cpmData = window.scheduler.cpmAnalysis?.get(operation.id);
+                    const earliestStart = operation.startDate;
+                    const latestStart = new Date(earliestStart.getTime() + (cpmData?.totalSlack || 0) * 60 * 60 * 1000);
+                    
+                    // Find a time slot with available capacity
+                    let bestSlot = null;
+                    let minConflicts = Infinity;
+                    
+                    // Try different start times within the allowed window
+                    const testTime = new Date(earliestStart);
+                    const duration = operation.duration || 2;
+                    
+                    while (testTime <= latestStart) {
+                        // Check if this time slot has capacity
+                        let conflicts = 0;
+                        let canFit = true;
+                        
+                        for (let h = 0; h < duration; h++) {
+                            const checkTime = new Date(testTime.getTime() + h * 60 * 60 * 1000);
+                            const hourKey = getHourKey(checkTime);
+                            const existingOps = resourceUtilization.get(hourKey) || [];
+                            
+                            if (existingOps.filter(op => op.id !== operation.id).length >= capacity) {
+                                canFit = false;
+                                conflicts++;
+                            }
+                        }
+                        
+                        if (canFit) {
+                            // Found a slot with capacity
+                            bestSlot = {
+                                start: new Date(testTime),
+                                end: new Date(testTime.getTime() + duration * 60 * 60 * 1000)
+                            };
+                            break;
+                        } else if (conflicts < minConflicts) {
+                            // Track best partial fit if no perfect slot found
+                            minConflicts = conflicts;
+                            bestSlot = {
+                                start: new Date(testTime),
+                                end: new Date(testTime.getTime() + duration * 60 * 60 * 1000)
+                            };
+                        }
+                        
+                        // Move to next hour
+                        testTime.setHours(testTime.getHours() + 1);
+                    }
+                    
+                    return bestSlot;
+                }
+                
+                function moveOperation(operation, newTimeSlot) {
+                    operation.startDate = newTimeSlot.start;
+                    operation.endDate = newTimeSlot.end;
+                }
+                
+                function calculateMaxUtilization(utilizationProfile, resources) {
+                    let maxUtilization = 0;
+                    
+                    Object.entries(utilizationProfile).forEach(([resourceId, hourlySlots]) => {
+                        const resource = resources.find(r => r.id == resourceId);
+                        const capacity = resource?.capacity || 1;
+                        
+                        hourlySlots.forEach(operations => {
+                            const utilization = (operations.length / capacity) * 100;
+                            maxUtilization = Math.max(maxUtilization, utilization);
+                        });
+                    });
+                    
+                    return Math.min(maxUtilization, 100);
+                }
+                
+                function calculateEfficiencyScore(events, resources, utilizationProfile) {
+                    let totalUsedSlots = 0;
+                    let totalAvailableSlots = 0;
+                    
+                    // Calculate time span of schedule
+                    let minStart = null;
+                    let maxEnd = null;
+                    
+                    events.forEach(event => {
+                        if (event.startDate) {
+                            if (!minStart || event.startDate < minStart) {
+                                minStart = event.startDate;
+                            }
+                        }
+                        if (event.endDate) {
+                            if (!maxEnd || event.endDate > maxEnd) {
+                                maxEnd = event.endDate;
                             }
                         }
                     });
-                    if (overlapsFound === 0) {
-                        console.log('✅ Level Resources Verification passed');
-                        await saveSchedule();
-                    } else {
-                        console.log(`❌ Level Resources FAILED: ${overlapsFound} overlaps`);
+                    
+                    if (!minStart || !maxEnd) return 0;
+                    
+                    const totalHours = Math.ceil((maxEnd - minStart) / (1000 * 60 * 60));
+                    totalAvailableSlots = totalHours * resources.length;
+                    
+                    Object.values(utilizationProfile).forEach(hourlySlots => {
+                        hourlySlots.forEach(operations => {
+                            totalUsedSlots += Math.min(operations.length, 1);
+                        });
+                    });
+                    
+                    return totalAvailableSlots > 0 ? (totalUsedSlots / totalAvailableSlots) * 100 : 0;
+                }
+                
+                function displayResourceLevelingResults(metrics, utilizationProfile, resources) {
+                    // Remove existing panel if any
+                    const existingPanel = document.querySelector('.resource-leveling-panel');
+                    if (existingPanel) {
+                        existingPanel.remove();
                     }
                     
-                    // Force a refresh to recalculate utilization
+                    // Create metrics panel
+                    const panel = document.createElement('div');
+                    panel.className = 'resource-leveling-panel';
+                    panel.style.cssText = `
+                        position: absolute;
+                        top: 10px;
+                        left: 10px;
+                        background: rgba(255, 255, 255, 0.95);
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        padding: 12px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        font-size: 0.875rem;
+                        z-index: 100;
+                        min-width: 250px;
+                    `;
+                    
+                    panel.innerHTML = `
+                        <div style="font-weight: bold; color: #333; margin-bottom: 8px; padding-bottom: 4px; border-bottom: 1px solid #e0e0e0;">
+                            Resource Leveling Results
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666;">Initial Conflicts:</span>
+                            <span style="font-weight: 600; color: #dc2626;">${metrics.initialConflicts}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666;">Resolved:</span>
+                            <span style="font-weight: 600; color: #10b981;">${metrics.resolvedConflicts}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666;">Operations Moved:</span>
+                            <span style="font-weight: 600; color: #333;">${metrics.operationsMoved}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666;">Max Utilization:</span>
+                            <span style="font-weight: 600; color: ${metrics.maxUtilization > 90 ? '#dc2626' : '#333'};">${metrics.maxUtilization.toFixed(1)}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <span style="color: #666;">Efficiency:</span>
+                            <span style="font-weight: 600; color: #333;">${metrics.efficiencyScore.toFixed(1)}%</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #666;">Iterations:</span>
+                            <span style="font-weight: 600; color: #333;">${metrics.iterations}</span>
+                        </div>
+                    `;
+                    
+                    const schedulerContainer = document.querySelector('.scheduler-container');
+                    if (schedulerContainer) {
+                        schedulerContainer.appendChild(panel);
+                    }
+                    
+                    // Auto-hide after 10 seconds
                     setTimeout(() => {
-                        updateStatus();
-                    }, 100);
+                        panel.style.transition = 'opacity 0.5s';
+                        panel.style.opacity = '0';
+                        setTimeout(() => panel.remove(), 500);
+                    }, 10000);
+                }
+                
+                function createUtilizationVisualization(utilizationProfile, resources) {
+                    // Remove existing visualization if any
+                    const existingViz = document.querySelector('.resource-utilization-chart');
+                    if (existingViz) {
+                        existingViz.remove();
+                    }
+                    
+                    // Create utilization chart container
+                    const chartContainer = document.createElement('div');
+                    chartContainer.className = 'resource-utilization-chart';
+                    chartContainer.style.cssText = `
+                        position: absolute;
+                        bottom: 10px;
+                        left: 10px;
+                        right: 10px;
+                        height: 120px;
+                        background: rgba(255, 255, 255, 0.95);
+                        border: 1px solid #e0e0e0;
+                        border-radius: 8px;
+                        padding: 10px;
+                        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+                        z-index: 100;
+                        display: flex;
+                        flex-direction: column;
+                    `;
+                    
+                    // Create chart header
+                    const header = document.createElement('div');
+                    header.style.cssText = 'font-weight: bold; font-size: 0.875rem; margin-bottom: 10px;';
+                    header.textContent = 'Resource Utilization Timeline';
+                    chartContainer.appendChild(header);
+                    
+                    // Create chart area
+                    const chartArea = document.createElement('div');
+                    chartArea.style.cssText = 'flex: 1; display: flex; gap: 8px; overflow-x: auto;';
+                    
+                    // Create bars for each resource
+                    resources.forEach(resource => {
+                        const resourceBar = document.createElement('div');
+                        resourceBar.style.cssText = 'display: flex; flex-direction: column; min-width: 100px;';
+                        
+                        const label = document.createElement('div');
+                        label.style.cssText = 'font-size: 0.75rem; color: #666; margin-bottom: 4px; white-space: nowrap;';
+                        label.textContent = resource.name;
+                        resourceBar.appendChild(label);
+                        
+                        const bar = document.createElement('div');
+                        bar.style.cssText = 'flex: 1; background: #e0e0e0; border-radius: 4px; position: relative; overflow: hidden;';
+                        
+                        // Calculate utilization percentage for this resource
+                        const resourceUtilization = utilizationProfile[resource.id];
+                        if (resourceUtilization) {
+                            const capacity = resource.capacity || 1;
+                            let totalUtilization = 0;
+                            let slots = 0;
+                            
+                            resourceUtilization.forEach(operations => {
+                                totalUtilization += Math.min((operations.length / capacity) * 100, 100);
+                                slots++;
+                            });
+                            
+                            const avgUtilization = slots > 0 ? totalUtilization / slots : 0;
+                            
+                            // Create utilization fill
+                            const fill = document.createElement('div');
+                            fill.style.cssText = `
+                                position: absolute;
+                                bottom: 0;
+                                left: 0;
+                                right: 0;
+                                height: ${avgUtilization}%;
+                                background: ${avgUtilization > 90 ? '#dc2626' : avgUtilization > 70 ? '#f59e0b' : '#10b981'};
+                                transition: height 0.3s;
+                            `;
+                            bar.appendChild(fill);
+                            
+                            // Add percentage label
+                            const percentLabel = document.createElement('div');
+                            percentLabel.style.cssText = `
+                                position: absolute;
+                                top: 50%;
+                                left: 50%;
+                                transform: translate(-50%, -50%);
+                                font-size: 0.75rem;
+                                font-weight: bold;
+                                color: ${avgUtilization > 50 ? 'white' : '#333'};
+                            `;
+                            percentLabel.textContent = `${avgUtilization.toFixed(0)}%`;
+                            bar.appendChild(percentLabel);
+                        }
+                        
+                        resourceBar.appendChild(bar);
+                        chartArea.appendChild(resourceBar);
+                    });
+                    
+                    chartContainer.appendChild(chartArea);
+                    
+                    // Add close button
+                    const closeBtn = document.createElement('button');
+                    closeBtn.style.cssText = `
+                        position: absolute;
+                        top: 8px;
+                        right: 8px;
+                        background: transparent;
+                        border: none;
+                        font-size: 1.2rem;
+                        cursor: pointer;
+                        color: #666;
+                    `;
+                    closeBtn.textContent = '×';
+                    closeBtn.onclick = () => chartContainer.remove();
+                    chartContainer.appendChild(closeBtn);
+                    
+                    const schedulerContainer = document.querySelector('.scheduler-container');
+                    if (schedulerContainer) {
+                        schedulerContainer.appendChild(chartContainer);
+                    }
+                    
+                    // Auto-hide after 15 seconds
+                    setTimeout(() => {
+                        chartContainer.style.transition = 'opacity 0.5s';
+                        chartContainer.style.opacity = '0';
+                        setTimeout(() => chartContainer.remove(), 500);
+                    }, 15000);
                 }
                 
                 async function drumScheduling() {
