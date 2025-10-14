@@ -1846,7 +1846,7 @@ Rules:
     try {
       console.log("=== AUTH CHECK ===");
       console.log("Session ID:", req.sessionID);
-      console.log("Authorization header:", req.headers.authorization);
+      console.log("Authorization header:", req.headers.authorization ? "Bearer ***" : "None");
       console.log("Session userId:", req.session?.userId);
       console.log("Session isDemo:", (req.session as any)?.isDemo);
       
@@ -10975,7 +10975,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
   app.get("/api/roles/all", async (req, res) => {
     try {
       console.log("=== ROLES/ALL ENDPOINT ===");
-      console.log("Authorization header:", req.headers.authorization);
+      console.log("Authorization header:", req.headers.authorization ? "Bearer ***" : "None");
       console.log("Session userId:", req.session?.userId);
       
       let userId = req.session?.userId;
@@ -11517,7 +11517,7 @@ Focus on realistic, actionable scenarios that help with decision making.`;
     console.log(`Request body:`, req.body);
     console.log(`User ID param:`, req.params.userId);
     console.log(`Session userId:`, req.session?.userId);
-    console.log(`Authorization header:`, req.headers.authorization);
+    console.log(`Authorization header:`, req.headers.authorization ? "Bearer ***" : "None");
     
     try {
       // First, authenticate the user (same logic as /api/auth/me)

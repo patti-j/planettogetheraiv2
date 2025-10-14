@@ -368,7 +368,7 @@ router.get("/api/auth/dev-token", async (req, res) => {
 
 router.get("/api/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
-  console.log(`Authorization header: ${req.headers.authorization}`);
+  console.log(`Authorization header: ${req.headers.authorization ? 'Bearer ***' : 'None'}`);
   console.log(`Session userId: ${req.session.userId}`);
   
   // Development bypass - automatically provide admin access
@@ -629,7 +629,7 @@ router.post("/onboarding", async (req, res) => {
 });
 
 // User preferences routes
-router.get("/user-preferences/:userId", async (req, res) => {
+router.get("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const preferences = await storage.getUserPreferences(userId);
@@ -663,7 +663,7 @@ router.get("/user-preferences/:userId", async (req, res) => {
   }
 });
 
-router.post("/user-preferences/:userId", async (req, res) => {
+router.post("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -682,7 +682,7 @@ router.post("/user-preferences/:userId", async (req, res) => {
 });
 
 // PUT route for updating user preferences (full update)
-router.put("/user-preferences", async (req, res) => {
+router.put("/api/user-preferences", async (req, res) => {
   try {
     const userId = (req.session as any)?.userId;
     if (!userId) {
@@ -705,7 +705,7 @@ router.put("/user-preferences", async (req, res) => {
 });
 
 // PUT route with userId in path
-router.put("/user-preferences/:userId", async (req, res) => {
+router.put("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -724,7 +724,7 @@ router.put("/user-preferences/:userId", async (req, res) => {
 });
 
 // PATCH route for partial updates to user preferences
-router.patch("/user-preferences/:userId", async (req, res) => {
+router.patch("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -2053,7 +2053,7 @@ router.get("/api/inbox", requireAuth, async (req, res) => {
 });
 
 // Dashboard Configurations endpoint
-router.get("/dashboard-configs", requireAuth, async (req, res) => {
+router.get("/api/dashboard-configs", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
