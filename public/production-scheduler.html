@@ -4867,10 +4867,15 @@
                             window.scheduler.stateId = originalStateId;
                         }
                         
+                        // Auto-save algorithm results to database
+                        console.log('💾 Auto-saving algorithm results to database...');
+                        const allEvents = [...window.scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                        await saveOperationChanges(allEvents);
+                        
                         // Show success feedback
                         const notification = document.createElement('div');
                         notification.className = 'scheduler-notification success';
-                        notification.textContent = `✅ ${algorithm.toUpperCase()} algorithm applied successfully`;
+                        notification.textContent = `✅ ${algorithm.toUpperCase()} algorithm applied and saved successfully`;
                         notification.style.cssText = 'position: fixed; top: 20px; right: 20px; background: #10b981; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 10000; animation: slideIn 0.3s ease-out;';
                         document.body.appendChild(notification);
                         
