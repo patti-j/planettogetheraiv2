@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
+import { createProxyMiddleware } from 'http-proxy-middleware';
 import routes from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
@@ -142,6 +143,23 @@ app.use((req, res, next) => {
 
   // Serve Bryntum static assets from public directory
   app.use(express.static(path.resolve(import.meta.dirname, "public")));
+
+  // Streamlit forecasting app proxy - serves from same domain to avoid CORS/iframe issues
+  app.use('/forecasting', createProxyMiddleware({
+    target: 'http://localhost:8080',
+    changeOrigin: true,
+    ws: true, // Enable WebSocket proxying for Streamlit
+    pathRewrite: {
+      '^/forecasting': '', // Remove /forecasting prefix when forwarding
+    },
+    onProxyReq: (proxyReq, req, res) => {
+      // Add headers to ensure Streamlit works properly
+      proxyReq.setHeader('X-Forwarded-For', req.ip || '');
+      proxyReq.setHeader('X-Forwarded-Proto', req.protocol);
+      proxyReq.setHeader('X-Forwarded-Host', req.get('host') || '');
+    },
+    logLevel: 'silent', // Reduce noise in logs
+  }));
 
   // IMPORTANT: Register API routes BEFORE Vite middleware
   // This ensures API routes are handled before Vite's catch-all
