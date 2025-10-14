@@ -6,6 +6,7 @@ import {
   widgets,
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
   ptProductWheels, ptProductWheelSegments, ptProductWheelSchedule, ptProductWheelPerformance,
+  calendars, maintenancePeriods,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -18,7 +19,9 @@ import {
   type PtProductWheel, type InsertPtProductWheel,
   type PtProductWheelSegment, type InsertPtProductWheelSegment,
   type PtProductWheelSchedule, type InsertPtProductWheelSchedule,
-  type PtProductWheelPerformance, type InsertPtProductWheelPerformance
+  type PtProductWheelPerformance, type InsertPtProductWheelPerformance,
+  type Calendar, type InsertCalendar,
+  type MaintenancePeriod, type InsertMaintenancePeriod
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -151,6 +154,24 @@ export interface IStorage {
   // Product Wheel Performance
   recordWheelPerformance(data: InsertPtProductWheelPerformance): Promise<PtProductWheelPerformance>;
   getWheelPerformance(wheelId: number, startDate?: Date, endDate?: Date): Promise<PtProductWheelPerformance[]>;
+  
+  // Calendar Management
+  createCalendar(data: InsertCalendar): Promise<Calendar>;
+  getCalendars(filters?: { resourceId?: number; jobId?: number; plantId?: number }): Promise<Calendar[]>;
+  getCalendar(id: number): Promise<Calendar | undefined>;
+  getDefaultCalendar(): Promise<Calendar | undefined>;
+  updateCalendar(id: number, data: Partial<InsertCalendar>): Promise<Calendar | undefined>;
+  deleteCalendar(id: number): Promise<boolean>;
+  assignCalendarToResource(resourceId: number, calendarId: number): Promise<boolean>;
+  assignCalendarToJob(jobId: number, calendarId: number): Promise<boolean>;
+  
+  // Maintenance Periods
+  createMaintenancePeriod(data: InsertMaintenancePeriod): Promise<MaintenancePeriod>;
+  getMaintenancePeriods(filters?: { resourceId?: number; jobId?: number; plantId?: number; calendarId?: number }): Promise<MaintenancePeriod[]>;
+  getMaintenancePeriod(id: number): Promise<MaintenancePeriod | undefined>;
+  getActiveMaintenancePeriods(date: Date): Promise<MaintenancePeriod[]>;
+  updateMaintenancePeriod(id: number, data: Partial<InsertMaintenancePeriod>): Promise<MaintenancePeriod | undefined>;
+  deleteMaintenancePeriod(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -568,7 +589,7 @@ export class DatabaseStorage implements IStorage {
 
   async getJobOperations(): Promise<PtJobOperation[]> {
     try {
-      return await db.select().from(ptJobOperations).orderBy(ptJobOperations.operationName);
+      return await db.select().from(ptJobOperations).orderBy(ptJobOperations.name);
     } catch (error) {
       console.error('Error fetching job operations:', error);
       return [];
@@ -621,43 +642,44 @@ export class DatabaseStorage implements IStorage {
 
   async getPtOperationsWithDetails(): Promise<any[]> {
     try {
-      const operations = await db.select({
-        id: ptJobOperations.id,
-        operationId: ptJobOperations.operationId,
-        manufacturingOrderId: ptJobOperations.manufacturingOrderId,
-        plantId: ptJobOperations.plantId,
-        name: ptJobOperations.operationName,
-        description: ptJobOperations.description,
-        resourceId: ptJobOperations.resourceId,
-        startDate: ptJobOperations.startDate,
-        endDate: ptJobOperations.endDate,
-        duration: sql`COALESCE(${ptJobOperations.duration}, 60)`,
-        setupTime: ptJobOperations.setupTime,
-        processTime: ptJobOperations.processTime,
-        teardownTime: ptJobOperations.teardownTime,
-        queueTime: ptJobOperations.queueTime,
-        moveTime: ptJobOperations.moveTime,
-        waitTime: ptJobOperations.waitTime,
-        sequenceNumber: ptJobOperations.sequenceNumber,
-        workCenterName: ptJobOperations.workCenterName,
-        status: ptJobOperations.status,
-        actualStartDate: ptJobOperations.actualStartDate,
-        actualEndDate: ptJobOperations.actualEndDate,
-        percentDone: sql`CASE
-          WHEN ${ptJobOperations.status} = 'completed' THEN 100
-          WHEN ${ptJobOperations.status} = 'in_progress' THEN 50
-          ELSE 0
-        END`,
-        priority: sql`CASE
-          WHEN ${ptJobOperations.sequenceNumber} = 1 THEN 'Critical'
-          WHEN ${ptJobOperations.sequenceNumber} <= 3 THEN 'High'
-          WHEN ${ptJobOperations.sequenceNumber} <= 6 THEN 'Medium'
-          ELSE 'Low'
-        END`,
-        isActive: ptJobOperations.isActive
-      }).from(ptJobOperations)
-        .orderBy(ptJobOperations.startDate, ptJobOperations.operationName);
-      return operations;
+      // Use raw SQL since the minimal schema doesn't have all the columns
+      const result = await db.execute(sql`
+        SELECT 
+          jo.id,
+          jo.operation_id as "operationId",
+          jo.job_id as "jobId",
+          jo.name,
+          jo.description,
+          jo.scheduled_start as "startDate",
+          jo.scheduled_end as "endDate",
+          COALESCE(EXTRACT(EPOCH FROM (jo.scheduled_end - jo.scheduled_start)) / 60, 60) as duration,
+          jo.setup_hours as "setupTime",
+          jo.cycle_hrs as "processTime",
+          jo.post_processing_hours as "teardownTime",
+          0 as "queueTime",
+          0 as "moveTime",
+          0 as "waitTime",
+          ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start, jo.id) as "sequenceNumber",
+          'Work Center' as "workCenterName",
+          CASE
+            WHEN jo.percent_finished >= 100 THEN 'completed'
+            WHEN jo.percent_finished > 0 THEN 'in_progress'
+            ELSE 'pending'
+          END as status,
+          jo.scheduled_start as "actualStartDate",
+          jo.scheduled_end as "actualEndDate",
+          COALESCE(jo.percent_finished, 0) as "percentDone",
+          CASE
+            WHEN ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start) = 1 THEN 'Critical'
+            WHEN ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start) <= 3 THEN 'High'
+            WHEN ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start) <= 6 THEN 'Medium'
+            ELSE 'Low'
+          END as priority,
+          true as "isActive"
+        FROM ptjoboperations jo
+        ORDER BY jo.scheduled_start, jo.name
+      `);
+      return result.rows as any[];
     } catch (error) {
       console.error('Error fetching PT operations with details:', error);
       return [];
@@ -980,19 +1002,16 @@ export class DatabaseStorage implements IStorage {
   // Agent Metrics
   async getAgentMetrics(agentConnectionId: number, startTime?: Date, endTime?: Date): Promise<any[]> {
     try {
-      let query = db.select().from(agentMetricsHourly)
-        .where(eq(agentMetricsHourly.agentConnectionId, agentConnectionId));
+      const conditions = [eq(agentMetricsHourly.agentConnectionId, agentConnectionId)];
       
       if (startTime && endTime) {
-        query = query.where(
-          and(
-            sql`${agentMetricsHourly.hourTimestamp} >= ${startTime}`,
-            sql`${agentMetricsHourly.hourTimestamp} <= ${endTime}`
-          )
-        ) as any;
+        conditions.push(sql`${agentMetricsHourly.hourTimestamp} >= ${startTime}`);
+        conditions.push(sql`${agentMetricsHourly.hourTimestamp} <= ${endTime}`);
       }
       
-      return await query.orderBy(desc(agentMetricsHourly.hourTimestamp));
+      return await db.select().from(agentMetricsHourly)
+        .where(and(...conditions))
+        .orderBy(desc(agentMetricsHourly.hourTimestamp));
     } catch (error) {
       console.error('Error fetching agent metrics:', error);
       return [];
@@ -1295,11 +1314,6 @@ export class DatabaseStorage implements IStorage {
 
   async getWheelPerformance(wheelId: number, startDate?: Date, endDate?: Date): Promise<PtProductWheelPerformance[]> {
     try {
-      let query = db.select()
-        .from(ptProductWheelPerformance)
-        .where(eq(ptProductWheelPerformance.wheelId, wheelId));
-      
-      // Add date filtering if provided
       const conditions = [eq(ptProductWheelPerformance.wheelId, wheelId)];
       
       if (startDate) {
@@ -1310,14 +1324,232 @@ export class DatabaseStorage implements IStorage {
         conditions.push(sql`${ptProductWheelPerformance.metricDate} <= ${endDate}`);
       }
       
-      if (conditions.length > 0) {
-        query = query.where(and(...conditions)) as any;
-      }
-      
-      return await query.orderBy(desc(ptProductWheelPerformance.metricDate));
+      return await db.select()
+        .from(ptProductWheelPerformance)
+        .where(and(...conditions))
+        .orderBy(desc(ptProductWheelPerformance.metricDate));
     } catch (error) {
       console.error('Error fetching wheel performance:', error);
       return [];
+    }
+  }
+
+  // Calendar Management
+  async createCalendar(data: InsertCalendar): Promise<Calendar> {
+    try {
+      const [calendar] = await db.insert(calendars).values(data).returning();
+      return calendar;
+    } catch (error) {
+      console.error('Error creating calendar:', error);
+      throw error;
+    }
+  }
+
+  async getCalendars(filters?: { resourceId?: number; jobId?: number; plantId?: number }): Promise<Calendar[]> {
+    try {
+      const conditions = [eq(calendars.isActive, true)];
+      
+      if (filters?.resourceId) {
+        conditions.push(eq(calendars.resourceId, filters.resourceId));
+      }
+      if (filters?.jobId) {
+        conditions.push(eq(calendars.jobId, filters.jobId));
+      }
+      if (filters?.plantId) {
+        conditions.push(eq(calendars.plantId, filters.plantId));
+      }
+      
+      return await db.select()
+        .from(calendars)
+        .where(and(...conditions))
+        .orderBy(calendars.name);
+    } catch (error) {
+      console.error('Error fetching calendars:', error);
+      return [];
+    }
+  }
+
+  async getCalendar(id: number): Promise<Calendar | undefined> {
+    try {
+      const [calendar] = await db.select().from(calendars).where(eq(calendars.id, id));
+      return calendar;
+    } catch (error) {
+      console.error('Error fetching calendar:', error);
+      return undefined;
+    }
+  }
+
+  async getDefaultCalendar(): Promise<Calendar | undefined> {
+    try {
+      const [calendar] = await db.select()
+        .from(calendars)
+        .where(and(eq(calendars.isDefault, true), eq(calendars.isActive, true)));
+      return calendar;
+    } catch (error) {
+      console.error('Error fetching default calendar:', error);
+      return undefined;
+    }
+  }
+
+  async updateCalendar(id: number, data: Partial<InsertCalendar>): Promise<Calendar | undefined> {
+    try {
+      const [updated] = await db.update(calendars)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(calendars.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating calendar:', error);
+      return undefined;
+    }
+  }
+
+  async deleteCalendar(id: number): Promise<boolean> {
+    try {
+      // Soft delete by setting isActive to false
+      const [deleted] = await db.update(calendars)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(calendars.id, id))
+        .returning();
+      return !!deleted;
+    } catch (error) {
+      console.error('Error deleting calendar:', error);
+      return false;
+    }
+  }
+
+  async assignCalendarToResource(resourceId: number, calendarId: number): Promise<boolean> {
+    try {
+      // First clear any existing calendar assignment for this resource
+      await db.update(calendars)
+        .set({ resourceId: null, updatedAt: new Date() })
+        .where(eq(calendars.resourceId, resourceId));
+      
+      // Then assign the new calendar
+      const [updated] = await db.update(calendars)
+        .set({ resourceId, updatedAt: new Date() })
+        .where(eq(calendars.id, calendarId))
+        .returning();
+      
+      return !!updated;
+    } catch (error) {
+      console.error('Error assigning calendar to resource:', error);
+      return false;
+    }
+  }
+
+  async assignCalendarToJob(jobId: number, calendarId: number): Promise<boolean> {
+    try {
+      // First clear any existing calendar assignment for this job
+      await db.update(calendars)
+        .set({ jobId: null, updatedAt: new Date() })
+        .where(eq(calendars.jobId, jobId));
+      
+      // Then assign the new calendar
+      const [updated] = await db.update(calendars)
+        .set({ jobId, updatedAt: new Date() })
+        .where(eq(calendars.id, calendarId))
+        .returning();
+      
+      return !!updated;
+    } catch (error) {
+      console.error('Error assigning calendar to job:', error);
+      return false;
+    }
+  }
+
+  // Maintenance Periods
+  async createMaintenancePeriod(data: InsertMaintenancePeriod): Promise<MaintenancePeriod> {
+    try {
+      const [period] = await db.insert(maintenancePeriods).values(data).returning();
+      return period;
+    } catch (error) {
+      console.error('Error creating maintenance period:', error);
+      throw error;
+    }
+  }
+
+  async getMaintenancePeriods(filters?: { resourceId?: number; jobId?: number; plantId?: number; calendarId?: number }): Promise<MaintenancePeriod[]> {
+    try {
+      const conditions = [eq(maintenancePeriods.isActive, true)];
+      
+      if (filters?.resourceId) {
+        conditions.push(eq(maintenancePeriods.resourceId, filters.resourceId));
+      }
+      if (filters?.jobId) {
+        conditions.push(eq(maintenancePeriods.jobId, filters.jobId));
+      }
+      if (filters?.plantId) {
+        conditions.push(eq(maintenancePeriods.plantId, filters.plantId));
+      }
+      if (filters?.calendarId) {
+        conditions.push(eq(maintenancePeriods.calendarId, filters.calendarId));
+      }
+      
+      return await db.select()
+        .from(maintenancePeriods)
+        .where(and(...conditions))
+        .orderBy(maintenancePeriods.startDate);
+    } catch (error) {
+      console.error('Error fetching maintenance periods:', error);
+      return [];
+    }
+  }
+
+  async getMaintenancePeriod(id: number): Promise<MaintenancePeriod | undefined> {
+    try {
+      const [period] = await db.select().from(maintenancePeriods).where(eq(maintenancePeriods.id, id));
+      return period;
+    } catch (error) {
+      console.error('Error fetching maintenance period:', error);
+      return undefined;
+    }
+  }
+
+  async getActiveMaintenancePeriods(date: Date): Promise<MaintenancePeriod[]> {
+    try {
+      const periods = await db.select()
+        .from(maintenancePeriods)
+        .where(
+          and(
+            eq(maintenancePeriods.isActive, true),
+            sql`${maintenancePeriods.startDate} <= ${date}`,
+            sql`${maintenancePeriods.endDate} >= ${date}`
+          )
+        )
+        .orderBy(maintenancePeriods.startDate);
+      
+      return periods;
+    } catch (error) {
+      console.error('Error fetching active maintenance periods:', error);
+      return [];
+    }
+  }
+
+  async updateMaintenancePeriod(id: number, data: Partial<InsertMaintenancePeriod>): Promise<MaintenancePeriod | undefined> {
+    try {
+      const [updated] = await db.update(maintenancePeriods)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(maintenancePeriods.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating maintenance period:', error);
+      return undefined;
+    }
+  }
+
+  async deleteMaintenancePeriod(id: number): Promise<boolean> {
+    try {
+      // Soft delete by setting isActive to false
+      const [deleted] = await db.update(maintenancePeriods)
+        .set({ isActive: false, updatedAt: new Date() })
+        .where(eq(maintenancePeriods.id, id))
+        .returning();
+      return !!deleted;
+    } catch (error) {
+      console.error('Error deleting maintenance period:', error);
+      return false;
     }
   }
 }

@@ -1269,6 +1269,105 @@ export type PauseOperationCommand = z.infer<typeof pauseOperationCommandSchema>;
 export type CommandResponse = z.infer<typeof commandResponseSchema>;
 
 // ============================================
+// Calendar Management Tables
+// ============================================
+
+export const calendars = pgTable("calendars", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Working hours
+  startTime: varchar("start_time", { length: 5 }).default("08:00").notNull(), // HH:MM format
+  endTime: varchar("end_time", { length: 5 }).default("17:00").notNull(), // HH:MM format
+  
+  // Working days (true = working day, false = non-working day)
+  monday: boolean("monday").default(true).notNull(),
+  tuesday: boolean("tuesday").default(true).notNull(),
+  wednesday: boolean("wednesday").default(true).notNull(),
+  thursday: boolean("thursday").default(true).notNull(),
+  friday: boolean("friday").default(true).notNull(),
+  saturday: boolean("saturday").default(false).notNull(),
+  sunday: boolean("sunday").default(false).notNull(),
+  
+  // Time zone
+  timeZone: varchar("time_zone", { length: 50 }).default("UTC").notNull(),
+  
+  // Associations (null means it's a default/global calendar)
+  resourceId: integer("resource_id").references(() => ptResources.id),
+  jobId: integer("job_id").references(() => ptJobs.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  
+  // Metadata
+  isDefault: boolean("is_default").default(false).notNull(), // Is this a default calendar
+  isActive: boolean("is_active").default(true).notNull(),
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Create enum for recurrence patterns
+export const recurrencePatternEnum = pgEnum("recurrence_pattern", [
+  "none",
+  "daily",
+  "weekly",
+  "monthly",
+  "yearly"
+]);
+
+export const maintenancePeriods = pgTable("maintenance_periods", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Period definition
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  
+  // Recurrence settings
+  isRecurring: boolean("is_recurring").default(false).notNull(),
+  recurrencePattern: recurrencePatternEnum("recurrence_pattern").default("none"),
+  recurrenceInterval: integer("recurrence_interval").default(1), // e.g., every 2 weeks
+  recurrenceEndDate: timestamp("recurrence_end_date"), // When the recurrence ends
+  
+  // Days of week for weekly recurrence (if applicable)
+  recurrenceDaysOfWeek: jsonb("recurrence_days_of_week"), // ["monday", "friday"] for weekly pattern
+  recurrenceDayOfMonth: integer("recurrence_day_of_month"), // e.g., 15th of each month
+  
+  // Associations
+  resourceId: integer("resource_id").references(() => ptResources.id),
+  jobId: integer("job_id").references(() => ptJobs.id),
+  plantId: integer("plant_id").references(() => ptPlants.id),
+  calendarId: integer("calendar_id").references(() => calendars.id),
+  
+  // Metadata
+  isActive: boolean("is_active").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+});
+
+// Insert schemas
+export const insertCalendarSchema = createInsertSchema(calendars).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertMaintenancePeriodSchema = createInsertSchema(maintenancePeriods).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Type definitions
+export type Calendar = typeof calendars.$inferSelect;
+export type InsertCalendar = z.infer<typeof insertCalendarSchema>;
+export type MaintenancePeriod = typeof maintenancePeriods.$inferSelect;
+export type InsertMaintenancePeriod = z.infer<typeof insertMaintenancePeriodSchema>;
+
+// ============================================
 // Power BI Types
 // ============================================
 

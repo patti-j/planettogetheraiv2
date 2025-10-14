@@ -18,6 +18,9 @@ import {
   InsertDashboard,
   InsertWidget,
   InsertWidgetType,
+  // Calendar schemas
+  insertCalendarSchema,
+  insertMaintenancePeriodSchema,
   // Command & Control schemas
   scheduleJobCommandSchema,
   rescheduleJobCommandSchema,
@@ -1648,9 +1651,8 @@ async function requireAuth(req: any, res: any, next: any) {
   
   // Use the optimized enhancedAuth middleware
   await enhancedAuth(req, res, () => {
-    // Backwards compatibility: set req.userId and req.userData from req.user
+    // Backwards compatibility: set req.userData from req.user
     if (req.user) {
-      req.userId = req.user.id;
       req.userData = {
         id: req.user.id,
         username: req.user.username,
@@ -4519,10 +4521,10 @@ function createCommandResponse(
 // JOB SCHEDULING COMMANDS
 
 // POST /api/v1/commands/schedule-job - Create a new production job
-router.post("/api/v1/commands/schedule-job", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/schedule-job", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Schedule Job requested by user ${(req as any).userId}`);
+    log(`🎯 Command ${commandId}: Schedule Job requested by user ${req.user?.id}`);
     
     const command = scheduleJobCommandSchema.parse(req.body);
     
@@ -4574,15 +4576,16 @@ router.post("/api/v1/commands/schedule-job", requireAuth, async (req, res) => {
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Schedule job failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Schedule job failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
         false,
         commandId,
         "Invalid request data",
-        null,
-        null,
+        undefined,
+        undefined,
         error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
       ));
     } else {
@@ -4590,30 +4593,30 @@ router.post("/api/v1/commands/schedule-job", requireAuth, async (req, res) => {
         false,
         commandId,
         "Failed to schedule job",
-        null,
-        null,
-        [error.message]
+        undefined,
+        undefined,
+        [errorMessage]
       ));
     }
   }
 });
 
 // PUT /api/v1/commands/reschedule-job/:id - Reschedule an existing job
-router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req, res) => {
+router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
     const jobId = parseInt(req.params.id);
-    log(`🎯 Command ${commandId}: Reschedule Job ${jobId} requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Reschedule Job ${jobId} requested by user ${req.user?.id}`);
     
     const command = rescheduleJobCommandSchema.parse(req.body);
     
     // Update job scheduling information
     const updatedJob = await db.update(ptJobs)
       .set({
-        scheduledStartDateTime: new Date(command.newStartDateTime),
-        scheduledEndDateTime: command.newEndDateTime ? new Date(command.newEndDateTime) : undefined,
+        needDateTime: new Date(command.newStartDateTime),
+        scheduledStatus: 'rescheduled',
       })
-      .where(eq(ptJobs.jobId, jobId))
+      .where(eq(ptJobs.id, jobId))
       .returning();
 
     if (updatedJob.length === 0) {
@@ -4621,8 +4624,8 @@ router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req, res) 
         false,
         commandId,
         `Job ${jobId} not found`,
-        null,
-        null,
+        undefined,
+        undefined,
         [`Job with ID ${jobId} does not exist`]
       ));
       return;
@@ -4642,15 +4645,16 @@ router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req, res) 
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Reschedule job failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Reschedule job failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
         false,
         commandId,
         "Invalid request data",
-        null,
-        null,
+        undefined,
+        undefined,
         error.errors.map(e => `${e.path.join('.')}: ${e.message}`)
       ));
     } else {
@@ -4658,25 +4662,25 @@ router.put("/api/v1/commands/reschedule-job/:id", requireAuth, async (req, res) 
         false,
         commandId,
         "Failed to reschedule job",
-        null,
-        null,
-        [error.message]
+        undefined,
+        undefined,
+        [errorMessage]
       ));
     }
   }
 });
 
 // POST /api/v1/commands/prioritize-job - Change job priority
-router.post("/api/v1/commands/prioritize-job", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/prioritize-job", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Prioritize Job requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Prioritize Job requested by user ${req.user?.id}`);
     
     const command = prioritizeJobCommandSchema.parse(req.body);
     
     const updatedJob = await db.update(ptJobs)
       .set({ priority: command.newPriority })
-      .where(eq(ptJobs.jobId, command.jobId))
+      .where(eq(ptJobs.id, command.jobId))
       .returning();
 
     if (updatedJob.length === 0) {
@@ -4705,7 +4709,8 @@ router.post("/api/v1/commands/prioritize-job", requireAuth, async (req, res) => 
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Prioritize job failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Prioritize job failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -4723,24 +4728,24 @@ router.post("/api/v1/commands/prioritize-job", requireAuth, async (req, res) => 
         "Failed to prioritize job",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
 });
 
 // POST /api/v1/commands/cancel-job/:id - Cancel a job
-router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
     const jobId = parseInt(req.params.id);
-    log(`🎯 Command ${commandId}: Cancel Job ${jobId} requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Cancel Job ${jobId} requested by user ${req.user?.id}`);
     
     const command = cancelJobCommandSchema.parse(req.body);
     
     const updatedJob = await db.update(ptJobs)
       .set({ cancelled: true })
-      .where(eq(ptJobs.jobId, jobId))
+      .where(eq(ptJobs.id, jobId))
       .returning();
 
     if (updatedJob.length === 0) {
@@ -4769,7 +4774,8 @@ router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req, res) => 
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Cancel job failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Cancel job failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -4787,7 +4793,7 @@ router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req, res) => 
         "Failed to cancel job",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
@@ -4796,10 +4802,10 @@ router.post("/api/v1/commands/cancel-job/:id", requireAuth, async (req, res) => 
 // RESOURCE MANAGEMENT COMMANDS
 
 // POST /api/v1/commands/assign-resource - Assign resource to operation
-router.post("/api/v1/commands/assign-resource", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/assign-resource", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Assign Resource requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Assign Resource requested by user ${req.user?.id}`);
     
     const command = assignResourceCommandSchema.parse(req.body);
     
@@ -4845,7 +4851,8 @@ router.post("/api/v1/commands/assign-resource", requireAuth, async (req, res) =>
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Assign resource failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Assign resource failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -4863,7 +4870,7 @@ router.post("/api/v1/commands/assign-resource", requireAuth, async (req, res) =>
         "Failed to assign resource",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
@@ -4872,10 +4879,10 @@ router.post("/api/v1/commands/assign-resource", requireAuth, async (req, res) =>
 // QUALITY CONTROL COMMANDS
 
 // POST /api/v1/commands/quality-hold - Place quality hold on job/operation
-router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/quality-hold", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Quality Hold requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Quality Hold requested by user ${req.user?.id}`);
     
     const command = qualityHoldCommandSchema.parse(req.body);
     
@@ -4886,15 +4893,15 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
     if (command.jobId) {
       updatedEntity = await db.update(ptJobs)
         .set({ 
-          holdUntil: command.expectedResolutionTime ? new Date(command.expectedResolutionTime) : undefined 
+          scheduledStatus: 'on_hold'
         })
-        .where(eq(ptJobs.jobId, command.jobId))
+        .where(eq(ptJobs.id, command.jobId))
         .returning();
       entityType = 'job';
     } else if (command.operationId) {
       updatedEntity = await db.update(ptJobOperations)
-        .set({ status: 'on_hold' })
-        .where(eq(ptJobOperations.operationId, command.operationId))
+        .set({ percentFinished: "0" })
+        .where(eq(ptJobOperations.id, command.operationId))
         .returning();
       entityType = 'operation';
     }
@@ -4932,7 +4939,8 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Quality hold failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Quality hold failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -4950,7 +4958,7 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
         "Failed to place quality hold",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
@@ -4959,19 +4967,19 @@ router.post("/api/v1/commands/quality-hold", requireAuth, async (req, res) => {
 // PRODUCTION CONTROL COMMANDS
 
 // POST /api/v1/commands/start-operation - Start an operation
-router.post("/api/v1/commands/start-operation", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/start-operation", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Start Operation requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Start Operation requested by user ${req.user?.id}`);
     
     const command = startOperationCommandSchema.parse(req.body);
     
     const updatedOperation = await db.update(ptJobOperations)
       .set({ 
-        status: 'in_progress',
-        startDate: command.actualStartDateTime ? new Date(command.actualStartDateTime) : new Date()
+        percentFinished: "50",
+        scheduledStart: command.actualStartDateTime ? new Date(command.actualStartDateTime) : new Date()
       })
-      .where(eq(ptJobOperations.operationId, command.operationId))
+      .where(eq(ptJobOperations.id, command.operationId))
       .returning();
 
     if (updatedOperation.length === 0) {
@@ -4992,7 +5000,7 @@ router.post("/api/v1/commands/start-operation", requireAuth, async (req, res) =>
       `Operation ${command.operationId} started successfully`,
       {
         operation: updatedOperation[0],
-        startTime: updatedOperation[0].startDate,
+        startTime: updatedOperation[0].scheduledStart,
         notes: command.operatorNotes
       }
     );
@@ -5001,7 +5009,8 @@ router.post("/api/v1/commands/start-operation", requireAuth, async (req, res) =>
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Start operation failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Start operation failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -5019,31 +5028,31 @@ router.post("/api/v1/commands/start-operation", requireAuth, async (req, res) =>
         "Failed to start operation",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
 });
 
 // POST /api/v1/commands/stop-operation - Stop an operation
-router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => {
+router.post("/api/v1/commands/stop-operation", requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const commandId = generateCommandId();
-    log(`🎯 Command ${commandId}: Stop Operation requested by user ${req.userId}`);
+    log(`🎯 Command ${commandId}: Stop Operation requested by user ${req.user?.id}`);
     
     const command = stopOperationCommandSchema.parse(req.body);
     
-    let status = 'completed';
+    let percentFinished = "100";
     if (command.reason !== 'completed') {
-      status = 'stopped';
+      percentFinished = "75";
     }
 
     const updatedOperation = await db.update(ptJobOperations)
       .set({ 
-        status: status,
-        endDate: command.actualEndDateTime ? new Date(command.actualEndDateTime) : new Date()
+        percentFinished: percentFinished,
+        scheduledEnd: command.actualEndDateTime ? new Date(command.actualEndDateTime) : new Date()
       })
-      .where(eq(ptJobOperations.operationId, command.operationId))
+      .where(eq(ptJobOperations.id, command.operationId))
       .returning();
 
     if (updatedOperation.length === 0) {
@@ -5064,7 +5073,7 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
       `Operation ${command.operationId} stopped - ${command.reason}`,
       {
         operation: updatedOperation[0],
-        endTime: updatedOperation[0].endDate,
+        endTime: updatedOperation[0].scheduledEnd,
         reason: command.reason,
         reasonDetails: command.reasonDetails,
         notes: command.operatorNotes
@@ -5075,7 +5084,8 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
     res.json(response);
   } catch (error) {
     const commandId = generateCommandId();
-    log(`❌ Command ${commandId}: Stop operation failed - ${error.message}`);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    log(`❌ Command ${commandId}: Stop operation failed - ${errorMessage}`);
     
     if (error instanceof z.ZodError) {
       res.status(400).json(createCommandResponse(
@@ -5093,7 +5103,7 @@ router.post("/api/v1/commands/stop-operation", requireAuth, async (req, res) => 
         "Failed to stop operation",
         null,
         null,
-        [error.message]
+        [errorMessage]
       ));
     }
   }
@@ -5477,7 +5487,7 @@ router.post("/api/v1/query/semantic", requireAuth, async (req, res) => {
       query: query.substring(0, 100) + (query.length > 100 ? '...' : ''),
       context,
       maxResults,
-      user: req.userId
+      user: req.user?.id
     });
 
     // Initialize OpenAI
@@ -6901,9 +6911,9 @@ Return your response as a JSON object with this structure:
     
     const userPrompt = `${prompt}
 
-${selectedData && selectedData.length > 0 ? `\nSelected data to work with:\n${JSON.stringify(selectedData, null, 2)}` : ''}
+${selectedData && selectedData.length > 0 ? `\nSelected data to work with:\n${JSON.stringify(selectedData, undefined, 2)}` : ''}
 
-${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent existing data (sample):\n${JSON.stringify(currentData.slice(0, 5), null, 2)}` : ''}`;
+${currentData && currentData.length > 0 && currentData.length <= 10 ? `\nCurrent existing data (sample):\n${JSON.stringify(currentData.slice(0, 5), undefined, 2)}` : ''}`;
     
     // Call OpenAI
     const completion = await openai.chat.completions.create({
@@ -7776,6 +7786,253 @@ router.post("/product-wheels/:wheelId/performance", enhancedAuth, async (req, re
   } catch (error: any) {
     console.error("Error recording wheel performance:", error);
     res.status(500).json({ error: "Failed to record wheel performance" });
+  }
+});
+
+// ============================================
+// Calendar Management Routes
+// ============================================
+
+// Get all calendars
+router.get("/api/calendars", enhancedAuth, async (req, res) => {
+  try {
+    const filters = {
+      resourceId: req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined,
+      jobId: req.query.jobId ? parseInt(req.query.jobId as string) : undefined,
+      plantId: req.query.plantId ? parseInt(req.query.plantId as string) : undefined,
+    };
+    const calendars = await storage.getCalendars(filters);
+    res.json(calendars);
+  } catch (error) {
+    console.error("Error fetching calendars:", error);
+    res.status(500).json({ error: "Failed to fetch calendars" });
+  }
+});
+
+// Get single calendar
+router.get("/api/calendars/:id", enhancedAuth, async (req, res) => {
+  try {
+    const calendar = await storage.getCalendar(parseInt(req.params.id));
+    if (!calendar) {
+      return res.status(404).json({ error: "Calendar not found" });
+    }
+    res.json(calendar);
+  } catch (error) {
+    console.error("Error fetching calendar:", error);
+    res.status(500).json({ error: "Failed to fetch calendar" });
+  }
+});
+
+// Get default calendar
+router.get("/api/calendars/default", enhancedAuth, async (req, res) => {
+  try {
+    const calendar = await storage.getDefaultCalendar();
+    if (!calendar) {
+      return res.status(404).json({ error: "Default calendar not found" });
+    }
+    res.json(calendar);
+  } catch (error) {
+    console.error("Error fetching default calendar:", error);
+    res.status(500).json({ error: "Failed to fetch default calendar" });
+  }
+});
+
+// Create calendar
+router.post("/api/calendars", enhancedAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const calendarData = insertCalendarSchema.parse({
+      ...req.body,
+      createdBy: userId
+    });
+    
+    const calendar = await storage.createCalendar(calendarData);
+    res.status(201).json(calendar);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid calendar data", details: error.errors });
+    }
+    console.error("Error creating calendar:", error);
+    res.status(500).json({ error: "Failed to create calendar" });
+  }
+});
+
+// Update calendar
+router.put("/api/calendars/:id", enhancedAuth, async (req, res) => {
+  try {
+    const calendarId = parseInt(req.params.id);
+    const updateData = insertCalendarSchema.partial().parse(req.body);
+    
+    const calendar = await storage.updateCalendar(calendarId, updateData);
+    if (!calendar) {
+      return res.status(404).json({ error: "Calendar not found" });
+    }
+    res.json(calendar);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid update data", details: error.errors });
+    }
+    console.error("Error updating calendar:", error);
+    res.status(500).json({ error: "Failed to update calendar" });
+  }
+});
+
+// Delete calendar
+router.delete("/api/calendars/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteCalendar(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Calendar not found" });
+    }
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting calendar:", error);
+    res.status(500).json({ error: "Failed to delete calendar" });
+  }
+});
+
+// Assign calendar to resource
+router.post("/api/resources/:id/calendar", enhancedAuth, async (req, res) => {
+  try {
+    const resourceId = parseInt(req.params.id);
+    const { calendarId } = req.body;
+    
+    if (!calendarId) {
+      return res.status(400).json({ error: "Calendar ID is required" });
+    }
+    
+    const success = await storage.assignCalendarToResource(resourceId, calendarId);
+    if (!success) {
+      return res.status(400).json({ error: "Failed to assign calendar to resource" });
+    }
+    
+    res.json({ message: "Calendar assigned to resource successfully" });
+  } catch (error) {
+    console.error("Error assigning calendar to resource:", error);
+    res.status(500).json({ error: "Failed to assign calendar to resource" });
+  }
+});
+
+// Assign calendar to job (using job instead of project)
+router.post("/api/jobs/:id/calendar", enhancedAuth, async (req, res) => {
+  try {
+    const jobId = parseInt(req.params.id);
+    const { calendarId } = req.body;
+    
+    if (!calendarId) {
+      return res.status(400).json({ error: "Calendar ID is required" });
+    }
+    
+    const success = await storage.assignCalendarToJob(jobId, calendarId);
+    if (!success) {
+      return res.status(400).json({ error: "Failed to assign calendar to job" });
+    }
+    
+    res.json({ message: "Calendar assigned to job successfully" });
+  } catch (error) {
+    console.error("Error assigning calendar to job:", error);
+    res.status(500).json({ error: "Failed to assign calendar to job" });
+  }
+});
+
+// ============================================
+// Maintenance Period Routes
+// ============================================
+
+// Get all maintenance periods
+router.get("/api/maintenance-periods", enhancedAuth, async (req, res) => {
+  try {
+    const filters = {
+      resourceId: req.query.resourceId ? parseInt(req.query.resourceId as string) : undefined,
+      jobId: req.query.jobId ? parseInt(req.query.jobId as string) : undefined,
+      plantId: req.query.plantId ? parseInt(req.query.plantId as string) : undefined,
+      calendarId: req.query.calendarId ? parseInt(req.query.calendarId as string) : undefined,
+    };
+    const periods = await storage.getMaintenancePeriods(filters);
+    res.json(periods);
+  } catch (error) {
+    console.error("Error fetching maintenance periods:", error);
+    res.status(500).json({ error: "Failed to fetch maintenance periods" });
+  }
+});
+
+// Get single maintenance period
+router.get("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => {
+  try {
+    const period = await storage.getMaintenancePeriod(parseInt(req.params.id));
+    if (!period) {
+      return res.status(404).json({ error: "Maintenance period not found" });
+    }
+    res.json(period);
+  } catch (error) {
+    console.error("Error fetching maintenance period:", error);
+    res.status(500).json({ error: "Failed to fetch maintenance period" });
+  }
+});
+
+// Get active maintenance periods for a specific date
+router.get("/api/maintenance-periods/active", enhancedAuth, async (req, res) => {
+  try {
+    const date = req.query.date ? new Date(req.query.date as string) : new Date();
+    const periods = await storage.getActiveMaintenancePeriods(date);
+    res.json(periods);
+  } catch (error) {
+    console.error("Error fetching active maintenance periods:", error);
+    res.status(500).json({ error: "Failed to fetch active maintenance periods" });
+  }
+});
+
+// Create maintenance period
+router.post("/api/maintenance-periods", enhancedAuth, async (req, res) => {
+  try {
+    const userId = (req as any).user?.id;
+    const periodData = insertMaintenancePeriodSchema.parse({
+      ...req.body,
+      createdBy: userId
+    });
+    
+    const period = await storage.createMaintenancePeriod(periodData);
+    res.status(201).json(period);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid maintenance period data", details: error.errors });
+    }
+    console.error("Error creating maintenance period:", error);
+    res.status(500).json({ error: "Failed to create maintenance period" });
+  }
+});
+
+// Update maintenance period
+router.put("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => {
+  try {
+    const periodId = parseInt(req.params.id);
+    const updateData = insertMaintenancePeriodSchema.partial().parse(req.body);
+    
+    const period = await storage.updateMaintenancePeriod(periodId, updateData);
+    if (!period) {
+      return res.status(404).json({ error: "Maintenance period not found" });
+    }
+    res.json(period);
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ error: "Invalid update data", details: error.errors });
+    }
+    console.error("Error updating maintenance period:", error);
+    res.status(500).json({ error: "Failed to update maintenance period" });
+  }
+});
+
+// Delete maintenance period
+router.delete("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteMaintenancePeriod(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Maintenance period not found" });
+    }
+    res.status(204).send();
+  } catch (error) {
+    console.error("Error deleting maintenance period:", error);
+    res.status(500).json({ error: "Failed to delete maintenance period" });
   }
 });
 
