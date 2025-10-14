@@ -2398,6 +2398,19 @@
                             }
                         },
                         
+                        // Event edit dialog feature
+                        eventEdit: {
+                            // Show edit dialog on double-click
+                            disabled: false,
+                            listeners: {
+                                // Auto-save when user saves via edit dialog
+                                afterEventSave: async ({ eventRecord }) => {
+                                    console.log('💾 Event edited via dialog, auto-saving changes...');
+                                    await saveOperationChanges([eventRecord]);
+                                }
+                            }
+                        },
+                        
                         // Enable resize with overlap validation
                         eventResize: {
                             showTooltip: true,
