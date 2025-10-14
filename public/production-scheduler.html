@@ -2187,6 +2187,18 @@
                                     console.log('✅ Auto zoom-to-fit applied on first paint');
                                 }, 200); // Small delay to ensure everything is rendered
                             }
+                        },
+                        
+                        // Auto-save when event is dropped (moved)
+                        afterEventDrop: async ({ eventRecords }) => {
+                            console.log('💾 Event dropped, auto-saving changes...');
+                            await saveOperationChanges(eventRecords);
+                        },
+                        
+                        // Auto-save when event is resized
+                        afterEventResize: async ({ eventRecord }) => {
+                            console.log('💾 Event resized, auto-saving changes...');
+                            await saveOperationChanges([eventRecord]);
                         }
                     },
                     
@@ -3857,6 +3869,42 @@
                         }, 300);
                     });
                 });
+                
+                // Auto-save operation changes after drag/drop or resize
+                async function saveOperationChanges(eventRecords) {
+                    try {
+                        const operations = eventRecords.map(event => ({
+                            id: event.id,
+                            start: event.startDate.toISOString(),
+                            end: event.endDate.toISOString()
+                        }));
+                        
+                        console.log(`💾 Auto-saving ${operations.length} operation(s) to database...`);
+                        
+                        const response = await fetch('/api/pt-operations/schedule', {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ operations })
+                        });
+                        
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log(`✅ Auto-saved ${result.updated} operation(s)`);
+                            
+                            // Update last update time
+                            const lastUpdateElement = document.getElementById('lastUpdate');
+                            if (lastUpdateElement) {
+                                lastUpdateElement.textContent = `Last update: ${new Date().toLocaleTimeString()}`;
+                            }
+                        } else {
+                            console.error('❌ Failed to auto-save operations:', await response.text());
+                        }
+                    } catch (error) {
+                        console.error('❌ Error auto-saving operations:', error);
+                    }
+                }
                 
                 // Save schedule to database
                 async function saveSchedule() {
