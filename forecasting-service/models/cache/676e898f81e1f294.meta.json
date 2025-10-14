@@ -1,0 +1,28 @@
+{
+  "schema": "publish",
+  "table": "DASHt_SalesOrders",
+  "date_col": "RequiredAvailableDate",
+  "item_col": "ItemName",
+  "qty_col": "QtyOrdered",
+  "model_type": "Prophet",
+  "forecast_days": 30,
+  "item": "SUB1",
+  "cache_key": "676e898f81e1f294",
+  "cached_at": "2025-09-22T18:45:10.373134",
+  "mae": 10.006212376582045,
+  "rmse": 36.219730004063415,
+  "mape": Infinity,
+  "data_points": 3,
+  "date_range_start": "2024-02-21 08:00:00",
+  "date_range_end": "2024-11-15 08:00:00",
+  "feature_cols": [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_30",
+    "ma_7",
+    "ma_30",
+    "trend_7",
+    "momentum"
+  ]
+}

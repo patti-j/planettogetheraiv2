@@ -1,0 +1,795 @@
+{
+  "9233aa7e72a0ddd4": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "9233aa7e72a0ddd4",
+    "cached_at": "2025-09-23T23:29:05.435753",
+    "mae": 0.6712243629583592,
+    "rmse": 24.119033588238523,
+    "mape": 3.358806434334739e+16,
+    "data_points": 5,
+    "data_range_start": "2020-08-01 07:00:00",
+    "date_range_end": "2024-12-26 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "e91367c1d46f87f2": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "e91367c1d46f87f2",
+    "cached_at": "2025-09-23T23:29:07.947073",
+    "mae": 0.5989583333333334,
+    "rmse": 14.877975892797604,
+    "mape": 3.5184372088832e+16,
+    "data_points": 4,
+    "data_range_start": "2020-08-03 07:00:00",
+    "date_range_end": "2024-10-16 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "090ac095cbe8a150": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "090ac095cbe8a150",
+    "cached_at": "2025-09-23T22:44:15.702737",
+    "mae": 1.973531598513011,
+    "rmse": 22.94436704688443,
+    "mape": 6.93119050457764e+16,
+    "data_points": 3,
+    "data_range_start": "2024-02-21 08:00:00",
+    "date_range_end": "2024-11-15 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "ecf17623e832819f": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "ecf17623e832819f",
+    "cached_at": "2025-09-24T02:36:41.304769",
+    "mae": 4.768995215311006,
+    "rmse": 34.86930984946491,
+    "mape": 3.979544398003747e+17,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "0acee643e4efc7a5": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "0acee643e4efc7a5",
+    "cached_at": "2025-09-24T02:36:43.912176",
+    "mae": 9.007407407407406,
+    "rmse": 52.25126821072987,
+    "mape": 9.057239250600664e+17,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "676e898f81e1f294": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "676e898f81e1f294",
+    "cached_at": "2025-09-22T18:45:10.373134",
+    "mae": 10.006212376582045,
+    "rmse": 36.219730004063415,
+    "mape": Infinity,
+    "data_points": 3,
+    "date_range_start": "2024-02-21 08:00:00",
+    "date_range_end": "2024-11-15 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "d547eade9e19027a": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "d547eade9e19027a",
+    "cached_at": "2025-09-24T02:04:05.798775",
+    "mae": 20.8383692434092,
+    "rmse": 70.69038667592734,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "a4e22e34b61ccfb2": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "a4e22e34b61ccfb2",
+    "cached_at": "2025-09-23T20:40:17.008934",
+    "mae": 5.399411956034843,
+    "rmse": 45.62173769574098,
+    "mape": Infinity,
+    "data_points": 5,
+    "date_range_start": "2020-08-01 07:00:00",
+    "date_range_end": "2024-12-26 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "e7cb2667344f5aae": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "e7cb2667344f5aae",
+    "cached_at": "2025-09-23T20:40:19.929195",
+    "mae": 3.8489418105925943,
+    "rmse": 35.24067083995929,
+    "mape": Infinity,
+    "data_points": 4,
+    "date_range_start": "2020-08-03 07:00:00",
+    "date_range_end": "2024-10-16 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "9dac3ced1229019a": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "9dac3ced1229019a",
+    "cached_at": "2025-09-24T01:17:25.835051",
+    "mae": 78.1453560885088,
+    "rmse": 168.78559353913394,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ]
+  },
+  "c71e5fed7cd452da": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "c71e5fed7cd452da",
+    "cached_at": "2025-09-24T15:55:46.571667",
+    "mae": 4.768995215311006,
+    "rmse": 34.86930984946491,
+    "mape": 3.979544398003747e+17,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "e92dc2914209d23d": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "e92dc2914209d23d",
+    "cached_at": "2025-09-24T15:55:49.158049",
+    "mae": 9.007407407407406,
+    "rmse": 52.25126821072987,
+    "mape": 9.057239250600664e+17,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "6fe3202437186d3b": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "6fe3202437186d3b",
+    "cached_at": "2025-09-24T03:13:21.315351",
+    "mae": 20.8383692434092,
+    "rmse": 70.69038667592734,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "b0e95201d95f5e40": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "b0e95201d95f5e40",
+    "cached_at": "2025-09-24T03:13:22.801833",
+    "mae": 78.1453560885088,
+    "rmse": 168.78559353913394,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "afcbb67f4206d4f4": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "afcbb67f4206d4f4",
+    "cached_at": "2025-09-24T15:39:35.197421",
+    "mae": 0.5989583333333334,
+    "rmse": 14.877975892797604,
+    "mape": 3.5184372088832e+16,
+    "data_points": 4,
+    "data_range_start": "2020-08-03 07:00:00",
+    "date_range_end": "2024-10-16 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "05c8461a18d392c1": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "05c8461a18d392c1",
+    "cached_at": "2025-09-24T15:39:37.652208",
+    "mae": 1.973531598513011,
+    "rmse": 22.94436704688443,
+    "mape": 6.93119050457764e+16,
+    "data_points": 3,
+    "data_range_start": "2024-02-21 08:00:00",
+    "date_range_end": "2024-11-15 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "32eebcbb57273e68": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "32eebcbb57273e68",
+    "cached_at": "2025-09-24T16:07:28.436131",
+    "mae": 0.6712243629583592,
+    "rmse": 24.119033588238523,
+    "mape": 3.358806434334739e+16,
+    "data_points": 5,
+    "data_range_start": "2020-08-01 07:00:00",
+    "date_range_end": "2024-12-26 07:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "cb77b275c2470b6e": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "cb77b275c2470b6e",
+    "cached_at": "2025-09-24T16:41:57.440515",
+    "mae": 20.8383692434092,
+    "rmse": 70.69038667592734,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario Copy 1"
+    ]
+  },
+  "dcb7dfcc30a9fc2d": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "dcb7dfcc30a9fc2d",
+    "cached_at": "2025-09-24T16:42:12.058698",
+    "mae": 78.1453560885088,
+    "rmse": 168.78559353913394,
+    "mape": Infinity,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario Copy 1"
+    ]
+  },
+  "9cdca4c54b70b5f4": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "9cdca4c54b70b5f4",
+    "cached_at": "2025-09-24T17:48:58.641960",
+    "mae": 4.768995215311006,
+    "rmse": 34.86930984946491,
+    "mape": 3.979544398003747e+17,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1",
+      "Scenario Copy 1"
+    ]
+  },
+  "5a1bc1d81c1be414": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 60,
+    "item": "SUB2",
+    "cache_key": "5a1bc1d81c1be414",
+    "cached_at": "2025-09-24T18:06:00.220019",
+    "mae": 4.768995215311006,
+    "rmse": 34.86930984946491,
+    "mape": 3.979544398003747e+17,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "fbe748a37e8a3911": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 60,
+    "item": "SUB3",
+    "cache_key": "fbe748a37e8a3911",
+    "cached_at": "2025-09-24T18:06:02.748358",
+    "mae": 9.007407407407406,
+    "rmse": 52.25126821072987,
+    "mape": 9.057239250600664e+17,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "d325ab290262d4dc": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "d325ab290262d4dc",
+    "cached_at": "2025-09-24T18:17:01.773865",
+    "mae": 4.768995215311006,
+    "rmse": 34.86930984946491,
+    "mape": 3.979544398003747e+17,
+    "data_points": 4,
+    "data_range_start": "2024-06-19 08:00:00",
+    "date_range_end": "2025-01-13 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "c1fd87a278b35680": {
+    "schema": "publish",
+    "table": "DASHt_SalesOrders",
+    "date_col": "RequiredAvailableDate",
+    "item_col": "ItemName",
+    "qty_col": "QtyOrdered",
+    "model_type": "Random Forest",
+    "forecast_days": 16,
+    "item": "SUB3",
+    "cache_key": "c1fd87a278b35680",
+    "cached_at": "2025-09-24T18:22:53.000438",
+    "mae": 9.007407407407406,
+    "rmse": 52.25126821072987,
+    "mape": 9.057239250600664e+17,
+    "data_points": 4,
+    "data_range_start": "2024-09-17 08:00:00",
+    "date_range_end": "2025-01-02 08:00:00",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "Scenario 1"
+    ]
+  },
+  "be707a625c95bfff": {
+    "schema": "publish",
+    "table": "DASHt_HistoricalKPIs",
+    "date_col": "PublishDate",
+    "item_col": "PlanningAreaId",
+    "qty_col": "CurrentValue",
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "7ed0d167-90dc-40a8-acc1-c12bb720dd5a",
+    "cache_key": "be707a625c95bfff",
+    "cached_at": "2025-09-29T19:05:03.902817",
+    "mae": 27055825087.42236,
+    "rmse": 154591459354.6478,
+    "mape": 3.6103290009456787e+27,
+    "data_points": 15,
+    "data_range_start": "2025-02-11 20:10:03.323000",
+    "date_range_end": "2025-04-07 20:10:03.323000",
+    "feature_cols": [
+      "lag_1",
+      "lag_7",
+      "lag_14",
+      "lag_30",
+      "ma_7",
+      "ma_30",
+      "trend_7",
+      "momentum"
+    ],
+    "planning_areas": [
+      "BI01"
+    ],
+    "scenario_names": [
+      "BI01"
+    ]
+  }
+}

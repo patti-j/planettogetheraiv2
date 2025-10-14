@@ -1,0 +1,34 @@
+{
+  "schema": "publish",
+  "table": "DASHt_HistoricalKPIs",
+  "date_col": "PublishDate",
+  "item_col": "PlanningAreaId",
+  "qty_col": "CurrentValue",
+  "model_type": "Random Forest",
+  "forecast_days": 30,
+  "item": "7ed0d167-90dc-40a8-acc1-c12bb720dd5a",
+  "cache_key": "be707a625c95bfff",
+  "cached_at": "2025-09-29T19:05:03.902817",
+  "mae": 27055825087.42236,
+  "rmse": 154591459354.6478,
+  "mape": 3.6103290009456787e+27,
+  "data_points": 15,
+  "data_range_start": "2025-02-11 20:10:03.323000",
+  "date_range_end": "2025-04-07 20:10:03.323000",
+  "feature_cols": [
+    "lag_1",
+    "lag_7",
+    "lag_14",
+    "lag_30",
+    "ma_7",
+    "ma_30",
+    "trend_7",
+    "momentum"
+  ],
+  "planning_areas": [
+    "BI01"
+  ],
+  "scenario_names": [
+    "BI01"
+  ]
+}
