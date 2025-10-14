@@ -141,19 +141,18 @@ app.use((req, res, next) => {
     }
   });
 
-  // Serve Bryntum static assets from public directory
-  app.use(express.static(path.resolve(import.meta.dirname, "public")));
-
-  // Streamlit forecasting app proxy - serves from same domain to avoid CORS/iframe issues
+  // Streamlit forecasting app proxy - serve at /forecasting
+  // IMPORTANT: This must come BEFORE the static middleware to avoid path conflicts
+  // Streamlit is configured with baseUrlPath="forecasting" so we don't rewrite paths
   app.use('/forecasting', createProxyMiddleware({
     target: 'http://localhost:8080',
     changeOrigin: true,
     ws: true, // Enable WebSocket proxying for Streamlit
-    pathRewrite: {
-      '^/forecasting': '', // Remove /forecasting prefix when forwarding
-    },
-    logLevel: 'silent', // Reduce noise in logs
+    logLevel: 'silent',
   }));
+
+  // Serve Bryntum static assets from public directory
+  app.use(express.static(path.resolve(import.meta.dirname, "public")));
 
   // IMPORTANT: Register API routes BEFORE Vite middleware
   // This ensures API routes are handled before Vite's catch-all
