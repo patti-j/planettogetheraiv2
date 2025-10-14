@@ -973,6 +973,328 @@
             min-width: 200px;
         }
         
+        /* PERT-specific styles */
+        .pert-low-uncertainty {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%) !important;
+            border: 2px solid #10b981 !important;
+        }
+        
+        .pert-medium-uncertainty {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%) !important;
+            border: 2px solid #f59e0b !important;
+        }
+        
+        .pert-high-uncertainty {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%) !important;
+            border: 2px solid #dc2626 !important;
+            animation: pulse-uncertainty 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-uncertainty {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            }
+        }
+        
+        .pert-error-bar {
+            position: absolute;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        .pert-error-bar::before,
+        .pert-error-bar::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            top: -3px;
+        }
+        
+        .pert-error-bar::before {
+            left: 0;
+        }
+        
+        .pert-error-bar::after {
+            right: 0;
+        }
+        
+        /* PERT Dialog Styles */
+        .pert-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            width: 500px;
+            max-width: 90vw;
+            display: none;
+        }
+        
+        .pert-dialog.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .pert-dialog-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pert-dialog-body {
+            padding: 1.5rem;
+        }
+        
+        .pert-form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .pert-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .pert-form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        
+        .pert-form-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+        
+        .pert-form-group input.error {
+            border-color: #dc2626;
+        }
+        
+        .pert-error-message {
+            color: #dc2626;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        
+        .pert-calculations {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        .pert-calc-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pert-calc-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .pert-calc-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .pert-dialog-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        .pert-dialog-footer button {
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pert-btn-cancel {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+        
+        .pert-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+        
+        .pert-btn-save {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            border: none;
+            color: white;
+        }
+        
+        .pert-btn-save:hover {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* PERT Metrics Panel */
+        .pert-metrics-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #8b5cf6;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+            font-size: 0.875rem;
+            z-index: 100;
+            min-width: 280px;
+            display: none;
+        }
+        
+        .pert-metrics-panel.active {
+            display: block;
+        }
+        
+        .pert-metrics-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 10px;
+            margin: -15px -15px 15px -15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pert-metrics-section {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .pert-metrics-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .pert-metrics-title {
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .pert-confidence-level {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding: 5px 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+        
+        .pert-confidence-label {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        
+        .pert-confidence-date {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.85rem;
+        }
+        
+        .pert-high-uncertainty-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .pert-uncertainty-item {
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: #fef2f2;
+            border-left: 3px solid #dc2626;
+            border-radius: 4px;
+            font-size: 0.825rem;
+        }
+        
+        .pert-uncertainty-name {
+            font-weight: 500;
+            color: #991b1b;
+        }
+        
+        .pert-uncertainty-cv {
+            color: #7f1d1d;
+            font-size: 0.8rem;
+        }
+        
+        /* Dark theme support for PERT elements */
+        .dark-theme .pert-dialog {
+            background: #1f2937;
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-dialog-body {
+            background: #1f2937;
+        }
+        
+        .dark-theme .pert-form-group label {
+            color: #d1d5db;
+        }
+        
+        .dark-theme .pert-form-group input {
+            background: #111827;
+            color: #f9fafb;
+            border-color: #374151;
+        }
+        
+        .dark-theme .pert-calculations {
+            background: #111827;
+        }
+        
+        .dark-theme .pert-calc-value {
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-metrics-panel {
+            background: rgba(31, 41, 55, 0.98);
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-confidence-level {
+            background: #111827;
+        }
+        
+        .dark-theme .pert-confidence-date {
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-uncertainty-item {
+            background: #7f1d1d20;
+        }
+        
         .dark-theme .cpm-metrics-panel {
             background: rgba(30, 30, 30, 0.95);
             border-color: #444;
@@ -1487,6 +1809,7 @@
                 <option value="criticalPath">Critical Path (Simplified)</option>
                 <option value="levelResources">Resource Leveling</option>
                 <option value="dbr">Theory of Constraints (DBR)</option>
+                <option value="pert">PERT (Probabilistic)</option>
             </select>
             <button id="applyScheduling">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1980,6 +2303,306 @@
             
             // Make notification function globally available
             window.showNotification = showNotification;
+            
+            // PERT Data Storage
+            window.pertEstimates = {};
+            window.currentPertOperationId = null;
+            
+            // PERT Calculation Engine
+            const PERTCalculator = {
+                // Calculate expected time: (O + 4M + P) / 6
+                calculateExpectedTime: function(optimistic, mostLikely, pessimistic) {
+                    return (optimistic + 4 * mostLikely + pessimistic) / 6;
+                },
+                
+                // Calculate variance: ((P - O) / 6)^2
+                calculateVariance: function(optimistic, pessimistic) {
+                    const diff = (pessimistic - optimistic) / 6;
+                    return diff * diff;
+                },
+                
+                // Calculate standard deviation: (P - O) / 6
+                calculateStandardDeviation: function(optimistic, pessimistic) {
+                    return (pessimistic - optimistic) / 6;
+                },
+                
+                // Calculate coefficient of variation: std dev / expected time
+                calculateCoefficientOfVariation: function(stdDev, expectedTime) {
+                    if (expectedTime === 0) return 0;
+                    return (stdDev / expectedTime) * 100;
+                },
+                
+                // Calculate project metrics from critical path
+                calculateProjectMetrics: function(criticalPathEvents) {
+                    let totalExpectedDuration = 0;
+                    let totalVariance = 0;
+                    const highUncertaintyOps = [];
+                    
+                    criticalPathEvents.forEach(event => {
+                        const eventId = event.id;
+                        if (window.pertEstimates[eventId]) {
+                            const estimates = window.pertEstimates[eventId];
+                            totalExpectedDuration += estimates.expectedTime;
+                            totalVariance += estimates.variance;
+                            
+                            if (estimates.cv > 20) {
+                                highUncertaintyOps.push({
+                                    name: event.name,
+                                    cv: estimates.cv.toFixed(1),
+                                    stdDev: estimates.stdDev
+                                });
+                            }
+                        } else {
+                            // Use current duration if no PERT estimates
+                            totalExpectedDuration += event.duration || 2;
+                        }
+                    });
+                    
+                    const projectStdDev = Math.sqrt(totalVariance);
+                    
+                    return {
+                        expectedDuration: totalExpectedDuration,
+                        variance: totalVariance,
+                        stdDev: projectStdDev,
+                        highUncertaintyOps: highUncertaintyOps
+                    };
+                },
+                
+                // Calculate confidence levels using normal distribution
+                calculateConfidenceLevels: function(expectedDuration, stdDev, startDate) {
+                    const baseDate = new Date(startDate);
+                    
+                    // Expected completion date
+                    const expectedDate = new Date(baseDate);
+                    expectedDate.setHours(expectedDate.getHours() + expectedDuration);
+                    
+                    // 68% confidence (±1σ)
+                    const date68 = new Date(expectedDate);
+                    date68.setHours(date68.getHours() + stdDev);
+                    
+                    // 95% confidence (±2σ)
+                    const date95 = new Date(expectedDate);
+                    date95.setHours(date95.getHours() + (2 * stdDev));
+                    
+                    // 99.7% confidence (±3σ)
+                    const date99 = new Date(expectedDate);
+                    date99.setHours(date99.getHours() + (3 * stdDev));
+                    
+                    return {
+                        confidence68: date68,
+                        confidence95: date95,
+                        confidence99: date99
+                    };
+                }
+            };
+            
+            // PERT Dialog Functions
+            window.openPertDialog = function(operationId, operationName) {
+                window.currentPertOperationId = operationId;
+                document.getElementById('pertOperationName').textContent = operationName || 'Operation ' + operationId;
+                
+                // Clear previous values
+                document.getElementById('pertOptimistic').value = '';
+                document.getElementById('pertMostLikely').value = '';
+                document.getElementById('pertPessimistic').value = '';
+                document.getElementById('pertCalculations').style.display = 'none';
+                
+                // Clear error messages
+                document.getElementById('pertOptimisticError').textContent = '';
+                document.getElementById('pertMostLikelyError').textContent = '';
+                document.getElementById('pertPessimisticError').textContent = '';
+                
+                // Load existing PERT estimates if available
+                if (window.pertEstimates[operationId]) {
+                    const estimates = window.pertEstimates[operationId];
+                    document.getElementById('pertOptimistic').value = estimates.optimistic;
+                    document.getElementById('pertMostLikely').value = estimates.mostLikely;
+                    document.getElementById('pertPessimistic').value = estimates.pessimistic;
+                    updatePertCalculations();
+                }
+                
+                // Show dialog
+                document.getElementById('pertDialog').classList.add('active');
+            };
+            
+            window.closePertDialog = function() {
+                document.getElementById('pertDialog').classList.remove('active');
+                window.currentPertOperationId = null;
+            };
+            
+            window.savePertEstimates = function() {
+                const optimistic = parseFloat(document.getElementById('pertOptimistic').value);
+                const mostLikely = parseFloat(document.getElementById('pertMostLikely').value);
+                const pessimistic = parseFloat(document.getElementById('pertPessimistic').value);
+                
+                // Validate inputs
+                let hasError = false;
+                
+                if (!optimistic || optimistic <= 0) {
+                    document.getElementById('pertOptimisticError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertOptimisticError').textContent = '';
+                }
+                
+                if (!mostLikely || mostLikely <= 0) {
+                    document.getElementById('pertMostLikelyError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertMostLikelyError').textContent = '';
+                }
+                
+                if (!pessimistic || pessimistic <= 0) {
+                    document.getElementById('pertPessimisticError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertPessimisticError').textContent = '';
+                }
+                
+                // Check O ≤ M ≤ P constraint
+                if (!hasError) {
+                    if (optimistic > mostLikely) {
+                        document.getElementById('pertOptimisticError').textContent = 'Optimistic time must be ≤ Most Likely time';
+                        hasError = true;
+                    }
+                    if (mostLikely > pessimistic) {
+                        document.getElementById('pertPessimisticError').textContent = 'Pessimistic time must be ≥ Most Likely time';
+                        hasError = true;
+                    }
+                }
+                
+                if (hasError) return;
+                
+                // Calculate PERT values
+                const expectedTime = PERTCalculator.calculateExpectedTime(optimistic, mostLikely, pessimistic);
+                const variance = PERTCalculator.calculateVariance(optimistic, pessimistic);
+                const stdDev = PERTCalculator.calculateStandardDeviation(optimistic, pessimistic);
+                const cv = PERTCalculator.calculateCoefficientOfVariation(stdDev, expectedTime);
+                
+                // Store PERT estimates
+                window.pertEstimates[window.currentPertOperationId] = {
+                    optimistic: optimistic,
+                    mostLikely: mostLikely,
+                    pessimistic: pessimistic,
+                    expectedTime: expectedTime,
+                    variance: variance,
+                    stdDev: stdDev,
+                    cv: cv
+                };
+                
+                // Update the event duration with expected time
+                if (window.scheduler && window.scheduler.eventStore) {
+                    const event = window.scheduler.eventStore.getById(window.currentPertOperationId);
+                    if (event) {
+                        event.duration = expectedTime;
+                        
+                        // Apply uncertainty visual indicators
+                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                        if (cv < 10) {
+                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                        } else if (cv < 20) {
+                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                        } else {
+                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                        }
+                        
+                        // Store PERT data on the event
+                        event.pertData = window.pertEstimates[window.currentPertOperationId];
+                        
+                        window.scheduler.refresh();
+                    }
+                }
+                
+                // Update PERT metrics if panel is visible
+                if (document.getElementById('pertMetricsPanel').classList.contains('active')) {
+                    updatePertMetrics();
+                }
+                
+                showNotification(`PERT estimates saved: Expected time = ${expectedTime.toFixed(2)} hours`, 'success');
+                closePertDialog();
+            };
+            
+            // Update PERT calculations in real-time
+            function updatePertCalculations() {
+                const optimistic = parseFloat(document.getElementById('pertOptimistic').value);
+                const mostLikely = parseFloat(document.getElementById('pertMostLikely').value);
+                const pessimistic = parseFloat(document.getElementById('pertPessimistic').value);
+                
+                if (optimistic && mostLikely && pessimistic && optimistic <= mostLikely && mostLikely <= pessimistic) {
+                    const expectedTime = PERTCalculator.calculateExpectedTime(optimistic, mostLikely, pessimistic);
+                    const variance = PERTCalculator.calculateVariance(optimistic, pessimistic);
+                    const stdDev = PERTCalculator.calculateStandardDeviation(optimistic, pessimistic);
+                    const cv = PERTCalculator.calculateCoefficientOfVariation(stdDev, expectedTime);
+                    
+                    document.getElementById('pertExpectedTime').textContent = expectedTime.toFixed(2) + ' hours';
+                    document.getElementById('pertStdDev').textContent = stdDev.toFixed(2) + ' hours';
+                    document.getElementById('pertVariance').textContent = variance.toFixed(2);
+                    document.getElementById('pertCV').textContent = cv.toFixed(1) + '%';
+                    
+                    document.getElementById('pertCalculations').style.display = 'block';
+                } else {
+                    document.getElementById('pertCalculations').style.display = 'none';
+                }
+            }
+            
+            // Add event listeners for real-time calculation updates
+            document.addEventListener('DOMContentLoaded', function() {
+                const pertInputs = ['pertOptimistic', 'pertMostLikely', 'pertPessimistic'];
+                pertInputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.addEventListener('input', updatePertCalculations);
+                    }
+                });
+            });
+            
+            // Update PERT metrics panel
+            function updatePertMetrics() {
+                if (!window.scheduler) return;
+                
+                // Get all events
+                const events = window.scheduler.eventStore.records;
+                
+                // For simplicity, consider all events as critical path
+                // In production, you would identify the actual critical path
+                const criticalPathEvents = events.filter(e => e.resourceId !== 'unscheduled');
+                
+                const metrics = PERTCalculator.calculateProjectMetrics(criticalPathEvents);
+                
+                // Update duration metrics
+                document.getElementById('pertProjectDuration').textContent = metrics.expectedDuration.toFixed(1) + ' hours';
+                document.getElementById('pertProjectStdDev').textContent = metrics.stdDev.toFixed(2) + ' hours';
+                document.getElementById('pertCriticalVariance').textContent = metrics.variance.toFixed(2);
+                
+                // Calculate confidence dates
+                const startDate = new Date(2025, 8, 3, 7, 0, 0);
+                const confidenceLevels = PERTCalculator.calculateConfidenceLevels(
+                    metrics.expectedDuration,
+                    metrics.stdDev,
+                    startDate
+                );
+                
+                document.getElementById('pertConfidence68').textContent = confidenceLevels.confidence68.toLocaleDateString();
+                document.getElementById('pertConfidence95').textContent = confidenceLevels.confidence95.toLocaleDateString();
+                document.getElementById('pertConfidence99').textContent = confidenceLevels.confidence99.toLocaleDateString();
+                
+                // Update high uncertainty operations list
+                const listContainer = document.getElementById('pertHighUncertaintyList');
+                if (metrics.highUncertaintyOps.length > 0) {
+                    listContainer.innerHTML = metrics.highUncertaintyOps.map(op => `
+                        <div class="pert-uncertainty-item">
+                            <div class="pert-uncertainty-name">${op.name}</div>
+                            <div class="pert-uncertainty-cv">CV: ${op.cv}%</div>
+                        </div>
+                    `).join('');
+                } else {
+                    listContainer.innerHTML = '<div style="color: #6b7280; font-size: 0.85rem;">All operations have acceptable uncertainty</div>';
+                }
+            }
+            
+            window.closePertMetrics = function() {
+                document.getElementById('pertMetricsPanel').classList.remove('active');
+            };
             
             // Constraint Management Functions
             window.currentOperationId = null;
@@ -3056,6 +3679,9 @@
                                 // Check if CPM data is available
                                 const hasCPMData = eventRecord.cpmData && typeof eventRecord.cpmData.totalSlack !== 'undefined';
                                 
+                                // Check if PERT data is available
+                                const hasPertData = window.pertEstimates && window.pertEstimates[eventRecord.id];
+                                
                                 let cpmSection = '';
                                 if (hasCPMData) {
                                     const cpm = eventRecord.cpmData;
@@ -3107,6 +3733,50 @@
                                     `;
                                 }
                                 
+                                // Add PERT section if data exists
+                                let pertSection = '';
+                                if (hasPertData) {
+                                    const pert = window.pertEstimates[eventRecord.id];
+                                    const uncertaintyLevel = pert.cv < 10 ? 'Low' : pert.cv < 20 ? 'Medium' : 'High';
+                                    const uncertaintyColor = pert.cv < 10 ? '#10b981' : pert.cv < 20 ? '#f59e0b' : '#dc2626';
+                                    
+                                    pertSection = `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                            <strong style="color: #333;">📊 PERT Estimates</strong>
+                                            <div style="font-size: 0.85em; margin-top: 5px; line-height: 1.6;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Optimistic:</span>
+                                                    <span style="font-weight: 600;">${pert.optimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Most Likely:</span>
+                                                    <span style="font-weight: 600;">${pert.mostLikely.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Pessimistic:</span>
+                                                    <span style="font-weight: 600;">${pert.pessimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
+                                                    <span style="color: #2563eb; font-weight: bold;">Expected:</span>
+                                                    <span style="color: #2563eb; font-weight: bold;">${pert.expectedTime.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Std Deviation:</span>
+                                                    <span style="font-weight: 600;">±${pert.stdDev.toFixed(2)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Range:</span>
+                                                    <span style="font-weight: 600;">${pert.optimistic.toFixed(1)}-${pert.pessimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="margin-top: 8px; padding: 5px; background: ${uncertaintyColor === '#10b981' ? 'rgba(16, 185, 129, 0.1)' : uncertaintyColor === '#f59e0b' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(220, 38, 38, 0.1)'}; border-radius: 4px; text-align: center;">
+                                                    <span style="color: ${uncertaintyColor}; font-weight: bold;">
+                                                        Uncertainty: ${uncertaintyLevel} (CV: ${pert.cv.toFixed(1)}%)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                }
+                                
                                 return `
                                     <div style="padding: 10px; min-width: 250px; max-width: 350px;">
                                         ${jobDisplay}
@@ -3119,6 +3789,7 @@
                                         </div>
                                         ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
                                         ${cpmSection}
+                                        ${pertSection}
                                     </div>
                                 `;
                             }
@@ -3720,6 +4391,50 @@
                                 // TOC logic would go here
                                 // This is a placeholder as full implementation would require bottleneck identification
                                 showNotification('Drum/TOC optimization applied', 'success');
+                                
+                            } else if (algorithm.includes('PERT') || algorithm.includes('pert')) {
+                                // Apply PERT algorithm
+                                console.log('📊 Applying PERT (Probabilistic) scheduling');
+                                
+                                const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                                let hasAnyPertData = false;
+                                
+                                // Apply PERT expected times to events
+                                events.forEach(event => {
+                                    if (window.pertEstimates[event.id]) {
+                                        const estimates = window.pertEstimates[event.id];
+                                        
+                                        // Update duration to expected time
+                                        event.duration = estimates.expectedTime;
+                                        
+                                        // Apply uncertainty visual indicators
+                                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                                        if (estimates.cv < 10) {
+                                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                                        } else if (estimates.cv < 20) {
+                                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                                        } else {
+                                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                                        }
+                                        
+                                        event.pertData = estimates;
+                                        hasAnyPertData = true;
+                                    }
+                                });
+                                
+                                // Show PERT metrics panel
+                                document.getElementById('pertMetricsPanel').classList.add('active');
+                                updatePertMetrics();
+                                
+                                // Trigger recalculation
+                                await scheduler.project.propagate();
+                                scheduler.refresh();
+                                
+                                if (!hasAnyPertData) {
+                                    showNotification('⚠️ No PERT estimates found. Right-click on operations to add three-point estimates.', 'warning');
+                                } else {
+                                    showNotification('✅ PERT algorithm applied with probabilistic scheduling', 'success');
+                                }
                                 
                             } else {
                                 console.warn('Unknown algorithm:', algorithm);
@@ -4518,7 +5233,8 @@
                         'criticalPath': 'Critical Path',
                         'levelResources': 'Resource Leveling',
                         'drum': 'Drum TOC',
-                        'dbr': 'Theory of Constraints (DBR)'
+                        'dbr': 'Theory of Constraints (DBR)',
+                        'pert': 'PERT (Probabilistic)'
                     };
                     
                     createVersion(`Before ${algorithmNames[algorithm]} Algorithm`);
@@ -6832,6 +7548,57 @@
                                 console.log('🥁 Drum/TOC scheduling not yet implemented');
                                 break;
                                 
+                            case 'dbr':
+                                // Theory of Constraints DBR scheduling - placeholder
+                                console.log('🎯 DBR/TOC scheduling not yet implemented');
+                                break;
+                                
+                            case 'pert':
+                                // Apply PERT algorithm
+                                console.log('📊 Applying PERT (Probabilistic) scheduling');
+                                
+                                const pertEventList = window.scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                                let hasPertEstimates = false;
+                                
+                                // Apply PERT expected times
+                                pertEventList.forEach(event => {
+                                    if (window.pertEstimates && window.pertEstimates[event.id]) {
+                                        const estimates = window.pertEstimates[event.id];
+                                        
+                                        // Update duration to expected time
+                                        event.duration = estimates.expectedTime;
+                                        
+                                        // Apply uncertainty visual indicators
+                                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                                        if (estimates.cv < 10) {
+                                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                                        } else if (estimates.cv < 20) {
+                                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                                        } else {
+                                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                                        }
+                                        
+                                        event.pertData = estimates;
+                                        hasPertEstimates = true;
+                                    }
+                                });
+                                
+                                // Show PERT metrics panel
+                                if (document.getElementById('pertMetricsPanel')) {
+                                    document.getElementById('pertMetricsPanel').classList.add('active');
+                                    updatePertMetrics();
+                                }
+                                
+                                // Recalculate schedule
+                                window.scheduler.project.propagate();
+                                
+                                if (!hasPertEstimates) {
+                                    showNotification('⚠️ No PERT estimates found. Right-click operations to add three-point estimates.', 'warning');
+                                } else {
+                                    showNotification('✅ PERT algorithm applied with probabilistic scheduling', 'success');
+                                }
+                                break;
+                                
                             default:
                                 console.warn('Unknown algorithm:', algorithm);
                         }
@@ -7180,5 +7947,104 @@
             });
         });
     </script>
+    
+    <!-- PERT Estimation Dialog -->
+    <div id="pertDialog" class="pert-dialog">
+        <div class="pert-dialog-header">
+            <h2>PERT Three-Point Estimation</h2>
+            <button class="constraint-modal-close" onclick="closePertDialog()">×</button>
+        </div>
+        <div class="pert-dialog-body">
+            <p><strong>Operation:</strong> <span id="pertOperationName"></span></p>
+            
+            <div class="pert-form-group">
+                <label for="pertOptimistic">Optimistic Time (O) - Best Case (hours):</label>
+                <input type="number" id="pertOptimistic" step="0.5" min="0.5" placeholder="e.g., 2.0">
+                <div class="pert-error-message" id="pertOptimisticError"></div>
+            </div>
+            
+            <div class="pert-form-group">
+                <label for="pertMostLikely">Most Likely Time (M) - Normal Case (hours):</label>
+                <input type="number" id="pertMostLikely" step="0.5" min="0.5" placeholder="e.g., 3.0">
+                <div class="pert-error-message" id="pertMostLikelyError"></div>
+            </div>
+            
+            <div class="pert-form-group">
+                <label for="pertPessimistic">Pessimistic Time (P) - Worst Case (hours):</label>
+                <input type="number" id="pertPessimistic" step="0.5" min="0.5" placeholder="e.g., 5.0">
+                <div class="pert-error-message" id="pertPessimisticError"></div>
+            </div>
+            
+            <div class="pert-calculations" id="pertCalculations" style="display: none;">
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Expected Time (Te):</span>
+                    <span class="pert-calc-value" id="pertExpectedTime">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Standard Deviation (σ):</span>
+                    <span class="pert-calc-value" id="pertStdDev">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Variance (σ²):</span>
+                    <span class="pert-calc-value" id="pertVariance">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Coefficient of Variation:</span>
+                    <span class="pert-calc-value" id="pertCV">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="pert-dialog-footer">
+            <button class="pert-btn-cancel" onclick="closePertDialog()">Cancel</button>
+            <button class="pert-btn-save" onclick="savePertEstimates()">Save Estimates</button>
+        </div>
+    </div>
+    
+    <!-- PERT Metrics Panel -->
+    <div id="pertMetricsPanel" class="pert-metrics-panel">
+        <div class="pert-metrics-header">
+            <span>📊 PERT Analysis</span>
+            <button onclick="closePertMetrics()" style="background: transparent; border: none; color: white; font-size: 1.2rem; cursor: pointer;">×</button>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">Project Duration</div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Expected Duration:</span>
+                <span class="pert-calc-value" id="pertProjectDuration">-</span>
+            </div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Standard Deviation:</span>
+                <span class="pert-calc-value" id="pertProjectStdDev">-</span>
+            </div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Critical Path Variance:</span>
+                <span class="pert-calc-value" id="pertCriticalVariance">-</span>
+            </div>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">Confidence Levels</div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">68% (±1σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence68">-</span>
+            </div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">95% (±2σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence95">-</span>
+            </div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">99.7% (±3σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence99">-</span>
+            </div>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">High Uncertainty Operations</div>
+            <div class="pert-high-uncertainty-list" id="pertHighUncertaintyList">
+                <div style="color: #6b7280; font-size: 0.85rem;">No PERT estimates yet</div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
