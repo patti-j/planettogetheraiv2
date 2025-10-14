@@ -742,11 +742,23 @@
             animation: spin 1s linear infinite;
         }
         
-        /* Critical Path Visualization Styles */
+        /* Enhanced Critical Path Visualization Styles */
         .critical-path-task {
             border: 2px solid #dc2626 !important;
-            box-shadow: 0 0 10px rgba(220, 38, 38, 0.3) !important;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%) !important;
+            box-shadow: 0 0 10px rgba(220, 38, 38, 0.4) !important;
             animation: pulse-critical 2s ease-in-out infinite;
+        }
+        
+        .near-critical-task {
+            border: 2px solid #f59e0b !important;
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.08) 100%) !important;
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.3) !important;
+        }
+        
+        .high-slack-task {
+            border: 1px solid #10b981 !important;
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05) 0%, rgba(34, 197, 94, 0.05) 100%) !important;
         }
         
         .critical-path-task .b-sch-event-content {
@@ -755,21 +767,154 @@
         
         @keyframes pulse-critical {
             0%, 100% {
-                box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.4);
             }
             50% {
-                box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+                box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
             }
         }
         
         /* Critical path dependency lines */
         .b-sch-dependency.critical-path {
             stroke: #dc2626 !important;
-            stroke-width: 2px !important;
+            stroke-width: 3px !important;
+            opacity: 1 !important;
         }
         
         .b-sch-dependency-arrow.critical-path {
             fill: #dc2626 !important;
+            stroke: #dc2626 !important;
+        }
+        
+        /* Near-critical dependency lines */
+        .b-sch-dependency.near-critical {
+            stroke: #f59e0b !important;
+            stroke-width: 2px !important;
+            opacity: 0.9 !important;
+        }
+        
+        /* CPM Metrics Panel */
+        .cpm-metrics-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            font-size: 0.875rem;
+            z-index: 100;
+            min-width: 200px;
+        }
+        
+        .dark-theme .cpm-metrics-panel {
+            background: rgba(30, 30, 30, 0.95);
+            border-color: #444;
+            color: #e0e0e0;
+        }
+        
+        .cpm-metrics-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .dark-theme .cpm-metrics-title {
+            color: #e0e0e0;
+            border-bottom-color: #444;
+        }
+        
+        .cpm-metric {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 4px;
+        }
+        
+        .cpm-metric-label {
+            color: #666;
+        }
+        
+        .dark-theme .cpm-metric-label {
+            color: #a0a0a0;
+        }
+        
+        .cpm-metric-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .dark-theme .cpm-metric-value {
+            color: #e0e0e0;
+        }
+        
+        .cpm-metric-value.critical {
+            color: #dc2626;
+        }
+        
+        /* Enhanced task tooltips */
+        .cpm-tooltip {
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            max-width: 300px;
+        }
+        
+        .cpm-tooltip-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3px;
+        }
+        
+        .cpm-tooltip-label {
+            color: #a0a0a0;
+            margin-right: 8px;
+        }
+        
+        .cpm-tooltip-value {
+            color: white;
+            font-weight: 500;
+        }
+        
+        .cpm-tooltip-critical {
+            color: #ff6b6b;
+            font-weight: bold;
+        }
+        
+        .cpm-tooltip-near-critical {
+            color: #ffd43b;
+        }
+        
+        .cpm-tooltip-safe {
+            color: #51cf66;
+        }
+        
+        /* Notification animations */
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
         
         /* Constraint Settings Styles */
@@ -2734,15 +2879,69 @@
                             }
                         },
                         
-                        // Event tooltips on hover
+                        // Enhanced event tooltips with CPM metrics
                         eventTooltip: {
                             template: ({ eventRecord }) => {
                                 // Extract job name/batch from the event data
                                 const jobInfo = eventRecord.jobName || eventRecord.data?.jobName || '';
                                 const jobDisplay = jobInfo ? `<strong style="color: #0066cc;">Job: ${jobInfo}</strong><br>` : '';
                                 
+                                // Check if CPM data is available
+                                const hasCPMData = eventRecord.cpmData && typeof eventRecord.cpmData.totalSlack !== 'undefined';
+                                
+                                let cpmSection = '';
+                                if (hasCPMData) {
+                                    const cpm = eventRecord.cpmData;
+                                    const criticalStyle = cpm.isCritical ? 'color: #dc2626; font-weight: bold;' : 
+                                                         cpm.isNearCritical ? 'color: #f59e0b; font-weight: bold;' : 
+                                                         'color: #10b981;';
+                                    
+                                    cpmSection = `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                            <strong style="color: #333;">CPM Analysis</strong>
+                                            <div style="margin-top: 5px; font-size: 0.85em; line-height: 1.6;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Early Start:</span>
+                                                    <span style="font-weight: 600;">${cpm.earlyStart.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Early Finish:</span>
+                                                    <span style="font-weight: 600;">${cpm.earlyFinish.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Late Start:</span>
+                                                    <span style="font-weight: 600;">${cpm.lateStart === Infinity ? 'N/A' : cpm.lateStart.toFixed(1) + 'h'}</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Late Finish:</span>
+                                                    <span style="font-weight: 600;">${cpm.lateFinish === Infinity ? 'N/A' : cpm.lateFinish.toFixed(1) + 'h'}</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
+                                                    <span style="color: #333; font-weight: bold;">Total Slack:</span>
+                                                    <span style="${criticalStyle}">
+                                                        ${cpm.totalSlack === Infinity ? 'N/A' : cpm.totalSlack.toFixed(1) + 'h'}
+                                                    </span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #333; font-weight: bold;">Free Slack:</span>
+                                                    <span style="${criticalStyle}">
+                                                        ${cpm.freeSlack === Infinity ? 'N/A' : cpm.freeSlack.toFixed(1) + 'h'}
+                                                    </span>
+                                                </div>
+                                                <div style="margin-top: 8px; padding: 5px; background: ${cpm.isCritical ? 'rgba(220, 38, 38, 0.1)' : cpm.isNearCritical ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)'}; border-radius: 4px; text-align: center;">
+                                                    ${cpm.isCritical ? 
+                                                        '<span style="color: #dc2626; font-weight: bold;">🔴 CRITICAL PATH</span>' : 
+                                                      cpm.isNearCritical ? 
+                                                        '<span style="color: #f59e0b; font-weight: bold;">⚠️ Near Critical</span>' : 
+                                                        '<span style="color: #10b981;">✅ Has Slack</span>'}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                                }
+                                
                                 return `
-                                    <div style="padding: 10px; min-width: 200px;">
+                                    <div style="padding: 10px; min-width: 250px; max-width: 350px;">
                                         ${jobDisplay}
                                         <strong>${eventRecord.name}</strong><br>
                                         <div style="margin-top: 5px; font-size: 0.9em;">
@@ -2752,6 +2951,7 @@
                                             Progress: ${eventRecord.percentDone}%
                                         </div>
                                         ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                        ${cpmSection}
                                     </div>
                                 `;
                             }
@@ -4543,123 +4743,365 @@
                     await saveSchedule();
                 }
                 
-                async function criticalPathScheduling() {
-                    // Use Bryntum's built-in critical path calculation
-                    console.log('🎯 Calculating Critical Path using Bryntum engine...');
-                    currentSchedulingMode = 'Critical Path'; // Set mode for drag handler
+                // Enhanced Critical Path Method Implementation
+                async function applyCriticalPathMethod() {
+                    console.log('🎯 Starting Enhanced Critical Path Method Analysis...');
+                    currentSchedulingMode = 'Critical Path';
                     
                     const project = scheduler.project;
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                    const dependencies = scheduler.dependencyStore.records;
                     
-                    // First apply ASAP scheduling to establish baseline
-                    const baseDate = new Date(2025, 8, 3, 7, 0, 0);
-                    project.startDate = baseDate;
+                    if (events.length === 0) {
+                        showNotification('No operations to analyze', 'warning');
+                        return;
+                    }
                     
-                    // Apply ASAP constraints to establish schedule (except manually scheduled)
+                    // Build adjacency lists for the dependency graph
+                    const successors = new Map(); // Task ID -> Array of successor task IDs
+                    const predecessors = new Map(); // Task ID -> Array of predecessor task IDs
+                    const eventMap = new Map(); // Task ID -> Event object
+                    
+                    // Initialize maps
                     events.forEach(event => {
-                        // Skip events that were manually positioned by the user
+                        eventMap.set(event.id, event);
+                        successors.set(event.id, []);
+                        predecessors.set(event.id, []);
+                        
+                        // Initialize CPM data on each event
+                        event.cpmData = {
+                            earlyStart: 0,
+                            earlyFinish: 0,
+                            lateStart: Infinity,
+                            lateFinish: Infinity,
+                            totalSlack: 0,
+                            freeSlack: 0,
+                            isCritical: false,
+                            isNearCritical: false
+                        };
+                    });
+                    
+                    // Build dependency graph
+                    dependencies.forEach(dep => {
+                        if (eventMap.has(dep.from) && eventMap.has(dep.to)) {
+                            successors.get(dep.from).push({
+                                id: dep.to,
+                                lag: dep.lag || 0,
+                                type: dep.type || 2 // Default to Finish-to-Start
+                            });
+                            predecessors.get(dep.to).push({
+                                id: dep.from,
+                                lag: dep.lag || 0,
+                                type: dep.type || 2
+                            });
+                        }
+                    });
+                    
+                    // Find tasks with no predecessors (start nodes)
+                    const startNodes = events.filter(e => predecessors.get(e.id).length === 0);
+                    
+                    // FORWARD PASS - Calculate Early Start (ES) and Early Finish (EF)
+                    console.log('📈 Forward Pass: Calculating ES and EF...');
+                    const visited = new Set();
+                    const queue = [...startNodes];
+                    
+                    // Set initial ES for start nodes based on their current positions
+                    startNodes.forEach(node => {
+                        node.cpmData.earlyStart = 0; // Use relative time from project start
+                        node.cpmData.earlyFinish = node.duration || 2; // Duration in hours
+                    });
+                    
+                    while (queue.length > 0) {
+                        const current = queue.shift();
+                        if (visited.has(current.id)) continue;
+                        
+                        visited.add(current.id);
+                        const currentSuccessors = successors.get(current.id) || [];
+                        
+                        currentSuccessors.forEach(succ => {
+                            const successor = eventMap.get(succ.id);
+                            if (!successor) return;
+                            
+                            // Calculate earliest start for successor based on dependency type
+                            let earliestStart = current.cpmData.earlyFinish;
+                            
+                            // Add lag time
+                            earliestStart += succ.lag;
+                            
+                            // Update successor's early start if this path provides a later start
+                            if (earliestStart > successor.cpmData.earlyStart) {
+                                successor.cpmData.earlyStart = earliestStart;
+                                successor.cpmData.earlyFinish = earliestStart + (successor.duration || 2);
+                            }
+                            
+                            // Check if all predecessors have been processed
+                            const predList = predecessors.get(succ.id) || [];
+                            const allPredsVisited = predList.every(p => visited.has(p.id));
+                            
+                            if (allPredsVisited && !visited.has(succ.id)) {
+                                queue.push(successor);
+                            }
+                        });
+                    }
+                    
+                    // Find project completion time (maximum EF)
+                    let projectDuration = 0;
+                    events.forEach(event => {
+                        if (event.cpmData.earlyFinish > projectDuration) {
+                            projectDuration = event.cpmData.earlyFinish;
+                        }
+                    });
+                    
+                    // BACKWARD PASS - Calculate Late Start (LS) and Late Finish (LF)
+                    console.log('📉 Backward Pass: Calculating LS and LF...');
+                    
+                    // Find tasks with no successors (end nodes)
+                    const endNodes = events.filter(e => successors.get(e.id).length === 0);
+                    
+                    // Initialize late finish for end nodes
+                    endNodes.forEach(node => {
+                        node.cpmData.lateFinish = projectDuration;
+                        node.cpmData.lateStart = projectDuration - (node.duration || 2);
+                    });
+                    
+                    // Process backwards through the network
+                    const backwardQueue = [...endNodes];
+                    const backwardVisited = new Set();
+                    
+                    while (backwardQueue.length > 0) {
+                        const current = backwardQueue.shift();
+                        if (backwardVisited.has(current.id)) continue;
+                        
+                        backwardVisited.add(current.id);
+                        const currentPredecessors = predecessors.get(current.id) || [];
+                        
+                        currentPredecessors.forEach(pred => {
+                            const predecessor = eventMap.get(pred.id);
+                            if (!predecessor) return;
+                            
+                            // Calculate latest finish for predecessor
+                            let latestFinish = current.cpmData.lateStart - pred.lag;
+                            
+                            // Update predecessor's late finish if this path requires an earlier finish
+                            if (latestFinish < predecessor.cpmData.lateFinish) {
+                                predecessor.cpmData.lateFinish = latestFinish;
+                                predecessor.cpmData.lateStart = latestFinish - (predecessor.duration || 2);
+                            }
+                            
+                            // Check if all successors have been processed
+                            const succList = successors.get(pred.id) || [];
+                            const allSuccsVisited = succList.every(s => backwardVisited.has(s.id));
+                            
+                            if (allSuccsVisited && !backwardVisited.has(pred.id)) {
+                                backwardQueue.push(predecessor);
+                            }
+                        });
+                    }
+                    
+                    // CALCULATE SLACK VALUES
+                    console.log('🔄 Calculating Slack Values...');
+                    
+                    let criticalCount = 0;
+                    let nearCriticalCount = 0;
+                    let totalSlack = 0;
+                    let nonCriticalCount = 0;
+                    
+                    events.forEach(event => {
+                        // Total Slack = LS - ES (or LF - EF)
+                        event.cpmData.totalSlack = event.cpmData.lateStart - event.cpmData.earlyStart;
+                        
+                        // Free Slack = Min(successor ES) - EF
+                        const eventSuccessors = successors.get(event.id) || [];
+                        if (eventSuccessors.length > 0) {
+                            let minSuccessorES = Infinity;
+                            eventSuccessors.forEach(succ => {
+                                const successor = eventMap.get(succ.id);
+                                if (successor && successor.cpmData.earlyStart < minSuccessorES) {
+                                    minSuccessorES = successor.cpmData.earlyStart;
+                                }
+                            });
+                            event.cpmData.freeSlack = minSuccessorES - event.cpmData.earlyFinish;
+                        } else {
+                            // No successors, free slack equals total slack
+                            event.cpmData.freeSlack = event.cpmData.totalSlack;
+                        }
+                        
+                        // Mark critical and near-critical tasks
+                        const SLACK_THRESHOLD = 2; // Hours - tasks with less than 2 hours slack are near-critical
+                        
+                        if (Math.abs(event.cpmData.totalSlack) < 0.01) { // Essentially zero (accounting for float precision)
+                            event.cpmData.isCritical = true;
+                            criticalCount++;
+                        } else if (event.cpmData.totalSlack < SLACK_THRESHOLD) {
+                            event.cpmData.isNearCritical = true;
+                            nearCriticalCount++;
+                            totalSlack += event.cpmData.totalSlack;
+                            nonCriticalCount++;
+                        } else {
+                            totalSlack += event.cpmData.totalSlack;
+                            nonCriticalCount++;
+                        }
+                    });
+                    
+                    // APPLY VISUALIZATION
+                    console.log('🎨 Applying CPM Visualization...');
+                    
+                    events.forEach(event => {
+                        // Skip manually positioned events for visualization changes
                         if (event.manuallyScheduled) {
                             console.log(`🔒 Preserving manual position for: ${event.name}`);
                             return;
                         }
                         
-                        event.constraintType = 'startnoearlierthan';
-                        event.constraintDate = baseDate;
-                    });
-                    
-                    // Ensure dependencies exist for proper critical path calculation
-                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
-                    
-                    for (const resource of resources) {
-                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
-                        
-                        if (resourceEvents.length < 2) continue;
-                        
-                        resourceEvents.sort((a, b) => {
-                            if (a.startDate && b.startDate) {
-                                return a.startDate.getTime() - b.startDate.getTime();
-                            }
-                            return a.id - b.id;
-                        });
-                        
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const fromEvent = resourceEvents[i];
-                            const toEvent = resourceEvents[i + 1];
-                            
-                            const existingDep = scheduler.dependencyStore.find(d =>
-                                d.from === fromEvent.id && d.to === toEvent.id
-                            );
-                            
-                            if (!existingDep) {
-                                scheduler.dependencyStore.add({
-                                    id: `cp_dep_${fromEvent.id}_${toEvent.id}`,
-                                    from: fromEvent.id,
-                                    to: toEvent.id,
-                                    type: 2, // Finish-to-Start
-                                    lag: 0.5,
-                                    lagUnit: 'hour'
-                                });
-                            }
-                        }
-                    }
-                    
-                    // Commit to calculate the schedule
-                    await project.commitAsync();
-                    
-                    // Now identify critical path based on dependency chains
-                    // In Bryntum Scheduler Pro, we need to infer critical path from dependencies
-                    let criticalTasks = [];
-                    let nonCriticalTasks = [];
-                    
-                    events.forEach(event => {
-                        // Check if this event has successors
-                        const hasSuccessors = scheduler.dependencyStore.query(d => d.from === event.id).length > 0;
-                        const hasPredecessors = scheduler.dependencyStore.query(d => d.to === event.id).length > 0;
-                        
-                        // Events in a dependency chain are more likely to be critical
-                        const isInChain = hasSuccessors || hasPredecessors;
-                        
-                        // For simplified approach, mark events that are part of dependency chains as potentially critical
-                        if (isInChain) {
-                            // Check if moving this task would affect others
-                            const successors = scheduler.dependencyStore.query(d => d.from === event.id);
-                            const isCritical = successors.length > 0; // Simplified check
-                            
-                            if (isCritical) {
-                                criticalTasks.push(event);
-                                // Highlight critical path in red
-                                event.eventColor = '#dc2626';
-                                event.cls = 'critical-path-task';
-                            } else {
-                                nonCriticalTasks.push(event);
-                                event.eventColor = getOperationColor(event.name);
-                                event.cls = '';
-                            }
+                        // Apply visual styling based on criticality
+                        if (event.cpmData.isCritical) {
+                            event.cls = 'critical-path-task';
+                            event.eventColor = '#dc2626'; // Red for critical
+                        } else if (event.cpmData.isNearCritical) {
+                            event.cls = 'near-critical-task';
+                            event.eventColor = '#f59e0b'; // Orange for near-critical
                         } else {
-                            // Standalone tasks are not critical
-                            nonCriticalTasks.push(event);
-                            event.eventColor = getOperationColor(event.name);
-                            event.cls = '';
+                            event.cls = 'high-slack-task';
+                            // Use green gradient based on slack amount
+                            const slackRatio = Math.min(event.cpmData.totalSlack / 10, 1); // Normalize to 0-1
+                            const greenIntensity = Math.round(100 + slackRatio * 155); // 100-255
+                            event.eventColor = `rgb(34, ${greenIntensity}, 94)`;
                         }
                     });
                     
-                    console.log(`✅ Critical Path identified: ${criticalTasks.length} critical tasks`);
-                    console.log(`   ${nonCriticalTasks.length} non-critical tasks with slack`);
+                    // Update dependency visualization
+                    dependencies.forEach(dep => {
+                        const fromEvent = eventMap.get(dep.from);
+                        const toEvent = eventMap.get(dep.to);
+                        
+                        if (fromEvent?.cpmData.isCritical && toEvent?.cpmData.isCritical) {
+                            dep.cls = 'critical-path';
+                        } else if (fromEvent?.cpmData.isNearCritical || toEvent?.cpmData.isNearCritical) {
+                            dep.cls = 'near-critical';
+                        } else {
+                            dep.cls = '';
+                        }
+                    });
                     
-                    // Display critical path
-                    if (criticalTasks.length > 0) {
-                        console.log('\n🎯 Critical Path Operations:');
-                        criticalTasks
-                            .sort((a, b) => a.startDate - b.startDate)
-                            .forEach((task, idx) => {
-                                console.log(`   ${idx + 1}. ${task.name} (${task.startDate.toLocaleDateString()})`);
-                            });
+                    // CREATE METRICS PANEL
+                    updateCPMMetricsPanel({
+                        projectDuration: projectDuration,
+                        criticalCount: criticalCount,
+                        nearCriticalCount: nearCriticalCount,
+                        averageSlack: nonCriticalCount > 0 ? (totalSlack / nonCriticalCount).toFixed(2) : 0,
+                        totalOperations: events.length
+                    });
+                    
+                    // LOG RESULTS
+                    console.log('✅ Critical Path Analysis Complete:');
+                    console.log(`   📊 Project Duration: ${projectDuration.toFixed(1)} hours`);
+                    console.log(`   🔴 Critical Operations: ${criticalCount}`);
+                    console.log(`   🟡 Near-Critical Operations: ${nearCriticalCount}`);
+                    console.log(`   🟢 Non-Critical Operations: ${events.length - criticalCount - nearCriticalCount}`);
+                    console.log(`   📈 Average Slack (non-critical): ${nonCriticalCount > 0 ? (totalSlack / nonCriticalCount).toFixed(2) : 0} hours`);
+                    
+                    // List critical path
+                    const criticalPath = events
+                        .filter(e => e.cpmData.isCritical)
+                        .sort((a, b) => a.cpmData.earlyStart - b.cpmData.earlyStart);
+                    
+                    if (criticalPath.length > 0) {
+                        console.log('\n🎯 Critical Path:');
+                        criticalPath.forEach((task, idx) => {
+                            console.log(`   ${idx + 1}. ${task.name} (ES: ${task.cpmData.earlyStart.toFixed(1)}h, Duration: ${task.duration || 2}h)`);
+                        });
                     }
                     
-                    // Refresh the scheduler view
+                    // Refresh scheduler and save
+                    await scheduler.project.commitAsync();
                     scheduler.refresh();
                     
+                    // Save with CPM data
                     await saveSchedule();
+                    
+                    showNotification(`✅ CPM Analysis Complete: ${criticalCount} critical operations identified`, 'success');
+                }
+                
+                // Wrapper for backward compatibility
+                async function criticalPathScheduling() {
+                    await applyCriticalPathMethod();
+                }
+                
+                // Helper function to show notifications
+                function showNotification(message, type = 'info') {
+                    const colors = {
+                        success: '#10b981',
+                        error: '#dc2626',
+                        warning: '#f59e0b',
+                        info: '#3b82f6'
+                    };
+                    
+                    const notification = document.createElement('div');
+                    notification.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        background: white;
+                        color: ${colors[type]};
+                        padding: 12px 20px;
+                        border-radius: 8px;
+                        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                        z-index: 10000;
+                        font-weight: 500;
+                        border-left: 4px solid ${colors[type]};
+                        animation: slideIn 0.3s ease-out;
+                        max-width: 400px;
+                    `;
+                    notification.textContent = message;
+                    
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.animation = 'slideOut 0.3s ease-in';
+                        setTimeout(() => notification.remove(), 300);
+                    }, 3000);
+                }
+                
+                // Helper function to update CPM metrics panel
+                function updateCPMMetricsPanel(metrics) {
+                    // Remove existing panel if any
+                    const existingPanel = document.querySelector('.cpm-metrics-panel');
+                    if (existingPanel) {
+                        existingPanel.remove();
+                    }
+                    
+                    // Create new metrics panel
+                    const panel = document.createElement('div');
+                    panel.className = 'cpm-metrics-panel';
+                    panel.innerHTML = `
+                        <div class="cpm-metrics-title">CPM Analysis</div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Project Duration:</span>
+                            <span class="cpm-metric-value">${metrics.projectDuration.toFixed(1)}h</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Critical Ops:</span>
+                            <span class="cpm-metric-value critical">${metrics.criticalCount}</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Near-Critical:</span>
+                            <span class="cpm-metric-value" style="color: #f59e0b;">${metrics.nearCriticalCount}</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Avg Slack:</span>
+                            <span class="cpm-metric-value">${metrics.averageSlack}h</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Total Ops:</span>
+                            <span class="cpm-metric-value">${metrics.totalOperations}</span>
+                        </div>
+                    `;
+                    
+                    // Add to scheduler container
+                    const schedulerContainer = document.querySelector('.scheduler-container');
+                    if (schedulerContainer) {
+                        schedulerContainer.appendChild(panel);
+                    }
                 }
                 
                 async function levelResourcesScheduling() {
