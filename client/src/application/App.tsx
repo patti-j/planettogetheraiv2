@@ -97,6 +97,7 @@ import ProductionScheduler from "@/pages/production-scheduler";
 import ProductionSchedulerReact from "@/pages/ProductionSchedulerReact";
 import Scheduler from "@/pages/Scheduler";
 import ProductWheels from "@/pages/product-wheels";
+import CalendarManagementPage from "@/pages/CalendarManagementPage";
 
 // Fully implemented features now being connected
 import ControlTower from "@/pages/control-tower";
@@ -306,6 +307,11 @@ export default function ApplicationApp() {
               <Route path="/production-scheduler-react">
                 <ProtectedRoute feature="production-scheduling" action="view">
                   <ProductionSchedulerReact />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/calendar-management">
+                <ProtectedRoute feature="production-scheduling" action="view">
+                  <CalendarManagementPage />
                 </ProtectedRoute>
               </Route>
               <Route path="/scheduler">
