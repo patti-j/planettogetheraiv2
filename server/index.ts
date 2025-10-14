@@ -152,12 +152,6 @@ app.use((req, res, next) => {
     pathRewrite: {
       '^/forecasting': '', // Remove /forecasting prefix when forwarding
     },
-    onProxyReq: (proxyReq, req, res) => {
-      // Add headers to ensure Streamlit works properly
-      proxyReq.setHeader('X-Forwarded-For', req.ip || '');
-      proxyReq.setHeader('X-Forwarded-Proto', req.protocol);
-      proxyReq.setHeader('X-Forwarded-Host', req.get('host') || '');
-    },
     logLevel: 'silent', // Reduce noise in logs
   }));
 
