@@ -143,11 +143,19 @@ app.use((req, res, next) => {
 
   // Streamlit forecasting app proxy - serve at /forecasting
   // IMPORTANT: This must come BEFORE the static middleware to avoid path conflicts
-  // Streamlit is configured with baseUrlPath="forecasting" so we don't rewrite paths
   app.use('/forecasting', createProxyMiddleware({
     target: 'http://localhost:8080',
     changeOrigin: true,
     ws: true, // Enable WebSocket proxying for Streamlit
+    pathRewrite: {
+      '^/forecasting': '', // Remove /forecasting prefix when forwarding
+    },
+    onProxyRes: (proxyRes) => {
+      // Allow iframe embedding by modifying security headers
+      delete proxyRes.headers['x-frame-options'];
+      delete proxyRes.headers['content-security-policy'];
+      proxyRes.headers['x-frame-options'] = 'SAMEORIGIN';
+    },
     logLevel: 'silent',
   }));
 
