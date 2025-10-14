@@ -3313,6 +3313,19 @@ router.get("/health", (req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });
 });
 
+// Forecasting service URL
+router.get("/api/forecasting-service-url", (req, res) => {
+  const replitDevDomain = process.env.REPLIT_DEV_DOMAIN || process.env.REPLIT_DOMAINS?.split(',')[0];
+  const protocol = 'https'; // Always use HTTPS for Replit public URLs
+  
+  // Replit uses port-prefixed subdomains for public access (e.g., 8080-<slug>.<cluster>.replit.dev)
+  const forecastingUrl = replitDevDomain 
+    ? `${protocol}://8080-${replitDevDomain}`
+    : `${protocol}://${req.get('host')}`;
+  
+  res.json({ url: forecastingUrl });
+});
+
 // API endpoints for the Bryntum scheduler
 router.get("/api/resources", async (req, res) => {
   try {
