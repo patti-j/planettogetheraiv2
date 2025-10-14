@@ -1061,6 +1061,69 @@
         .scheduler-notification {
             transition: all 0.3s ease-out;
         }
+        
+        /* Constraint visual indicators */
+        .b-sch-event.constraint-mso {
+            border-left: 4px solid #ff5722 !important;
+        }
+        
+        .b-sch-event.constraint-mfo {
+            border-right: 4px solid #ff5722 !important;
+        }
+        
+        .b-sch-event.constraint-snet {
+            border-left: 4px solid #2196F3 !important;
+        }
+        
+        .b-sch-event.constraint-fnet {
+            border-right: 4px solid #2196F3 !important;
+        }
+        
+        .b-sch-event.constraint-snlt {
+            border-left: 4px solid #9C27B0 !important;
+        }
+        
+        .b-sch-event.constraint-fnlt {
+            border-right: 4px solid #9C27B0 !important;
+        }
+        
+        /* Constraint badge styles */
+        .constraint-badge {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            font-size: 10px;
+            padding: 1px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+            z-index: 10;
+        }
+        
+        .constraint-badge.mso {
+            background: #ff5722;
+        }
+        
+        .constraint-badge.mfo {
+            background: #ff5722;
+        }
+        
+        .constraint-badge.snet {
+            background: #2196F3;
+        }
+        
+        .constraint-badge.fnet {
+            background: #2196F3;
+        }
+        
+        .constraint-badge.snlt {
+            background: #9C27B0;
+        }
+        
+        .constraint-badge.fnlt {
+            background: #9C27B0;
+        }
     </style>
 </head>
 <body>
@@ -1187,6 +1250,39 @@
             <div class="loading-spinner"></div>
         </div>
     </div>
+    
+    <!-- Constraint Editor Dialog -->
+    <div id="constraintDialog" style="display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; border: 1px solid #ccc; padding: 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); z-index: 3000; min-width: 400px;">
+        <h3 style="margin-top: 0; color: #333;">Set Operation Constraint</h3>
+        <div id="constraintOperationName" style="font-weight: bold; margin-bottom: 15px; color: #666;"></div>
+        
+        <div style="margin-bottom: 15px;">
+            <label for="constraintType" style="display: block; margin-bottom: 5px; font-weight: 500;">Constraint Type:</label>
+            <select id="constraintType" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                <option value="">Select constraint...</option>
+                <option value="MSO">MSO - Must Start On</option>
+                <option value="MFO">MFO - Must Finish On</option>
+                <option value="SNET">SNET - Start No Earlier Than</option>
+                <option value="FNET">FNET - Finish No Earlier Than</option>
+                <option value="SNLT">SNLT - Start No Later Than</option>
+                <option value="FNLT">FNLT - Finish No Later Than</option>
+                <option value="None">None - Remove Constraint</option>
+            </select>
+        </div>
+        
+        <div id="constraintDateContainer" style="margin-bottom: 20px;">
+            <label for="constraintDate" style="display: block; margin-bottom: 5px; font-weight: 500;">Constraint Date:</label>
+            <input type="datetime-local" id="constraintDate" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+        </div>
+        
+        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+            <button onclick="closeConstraintDialog()" style="padding: 8px 16px; background: #f5f5f5; border: 1px solid #ddd; border-radius: 4px; cursor: pointer;">Cancel</button>
+            <button onclick="saveConstraint()" style="padding: 8px 16px; background: #4CAF50; color: white; border: none; border-radius: 4px; cursor: pointer;">Save Constraint</button>
+        </div>
+    </div>
+    
+    <!-- Constraint overlay backdrop -->
+    <div id="constraintOverlay" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2999;"></div>
 
     <div class="status-bar">
         <span id="operationCount">0 operations scheduled</span>
@@ -1573,6 +1669,124 @@
             // Make notification function globally available
             window.showNotification = showNotification;
             
+            // Constraint Management Functions
+            window.currentOperationId = null;
+            
+            // Open constraint dialog for an operation
+            window.openConstraintDialog = function(operationId, operationName) {
+                window.currentOperationId = operationId;
+                document.getElementById('constraintOperationName').textContent = operationName || 'Operation ' + operationId;
+                
+                // Reset form
+                document.getElementById('constraintType').value = '';
+                document.getElementById('constraintDate').value = '';
+                
+                // Check if operation already has constraint
+                if (window.scheduler && window.scheduler.eventStore) {
+                    const event = window.scheduler.eventStore.getById(operationId);
+                    if (event && event.data) {
+                        if (event.data.constraintType) {
+                            document.getElementById('constraintType').value = event.data.constraintType;
+                        }
+                        if (event.data.constraintDate) {
+                            const date = new Date(event.data.constraintDate);
+                            const localDateTime = new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+                            document.getElementById('constraintDate').value = localDateTime;
+                        }
+                    }
+                }
+                
+                // Show dialog
+                document.getElementById('constraintDialog').style.display = 'block';
+                document.getElementById('constraintOverlay').style.display = 'block';
+                
+                // Handle constraint type change
+                document.getElementById('constraintType').onchange = function() {
+                    const dateContainer = document.getElementById('constraintDateContainer');
+                    if (this.value === 'None' || this.value === '') {
+                        dateContainer.style.display = 'none';
+                    } else {
+                        dateContainer.style.display = 'block';
+                    }
+                };
+                
+                // Trigger initial visibility check
+                document.getElementById('constraintType').onchange();
+            };
+            
+            // Close constraint dialog
+            window.closeConstraintDialog = function() {
+                document.getElementById('constraintDialog').style.display = 'none';
+                document.getElementById('constraintOverlay').style.display = 'none';
+                window.currentOperationId = null;
+            };
+            
+            // Save constraint to backend
+            window.saveConstraint = async function() {
+                const constraintType = document.getElementById('constraintType').value;
+                const constraintDate = document.getElementById('constraintDate').value;
+                
+                if (!constraintType) {
+                    alert('Please select a constraint type');
+                    return;
+                }
+                
+                if (constraintType !== 'None' && !constraintDate) {
+                    alert('Please select a constraint date');
+                    return;
+                }
+                
+                try {
+                    // Send constraint update to backend
+                    const response = await fetch(`/api/operations/${window.currentOperationId}/constraint`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            constraintType: constraintType,
+                            constraintDate: constraintType === 'None' ? null : constraintDate
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Update the event in scheduler
+                        if (window.scheduler && window.scheduler.eventStore) {
+                            const event = window.scheduler.eventStore.getById(window.currentOperationId);
+                            if (event) {
+                                event.data.constraintType = constraintType === 'None' ? null : constraintType;
+                                event.data.constraintDate = constraintType === 'None' ? null : constraintDate;
+                                
+                                // Update event rendering to show constraint badge
+                                event.cls = event.cls ? event.cls.replace(/constraint-\w+/g, '') : '';
+                                if (constraintType !== 'None' && constraintType) {
+                                    event.cls = (event.cls || '') + ' constraint-' + constraintType.toLowerCase();
+                                }
+                                
+                                // Refresh the scheduler view
+                                window.scheduler.refresh();
+                            }
+                        }
+                        
+                        // Show success notification
+                        showNotification('Constraint updated successfully', 'success');
+                        closeConstraintDialog();
+                    } else {
+                        alert('Failed to update constraint: ' + (result.error || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error updating constraint:', error);
+                    alert('Failed to update constraint. Please try again.');
+                }
+            };
+            
+            // Add click handler to overlay to close dialog
+            document.getElementById('constraintOverlay').onclick = function() {
+                closeConstraintDialog();
+            };
+            
             try {
                 // Mark first task as in progress
                 
@@ -1802,9 +2016,9 @@
                         resourceId: resourceId,
                         percentDone: operation.percent_finished || 0,
                         eventColor: isUnscheduled ? '#808080' : (operation.eventColor || getOperationColor(operation.name)),
-                        // ASAP scheduling constraints (not for unscheduled operations)
-                        constraintType: isUnscheduled ? null : 'startnoearlierthan', // No constraints for unscheduled
-                        constraintDate: isUnscheduled ? null : startDate,
+                        // Use actual constraint from database if available
+                        constraintType: isUnscheduled ? null : (operation.constraintType || operation.constraint_type || 'startnoearlierthan'),
+                        constraintDate: isUnscheduled ? null : (operation.constraintDate || operation.constraint_date || startDate),
                         manuallyScheduled: false, // Allow automatic scheduling
                         draggable: true, // Allow dragging to schedule
                         // Additional PT operation data
@@ -1813,7 +2027,12 @@
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
-                        ptData: operation // Keep original PT data for algorithms
+                        ptData: operation, // Keep original PT data for algorithms
+                        // Include constraint data for UI rendering
+                        data: {
+                            constraintType: operation.constraintType || operation.constraint_type,
+                            constraintDate: operation.constraintDate || operation.constraint_date
+                        }
                     };
                 }).filter(event => event.resourceId); // Only include operations with valid resources
                 
@@ -2272,6 +2491,51 @@
                     features: {
                         // Dependencies feature for showing task relationships
                         dependencies: true,
+                        
+                        // Context menu for events
+                        eventMenu: {
+                            items: {
+                                setConstraint: {
+                                    text: 'Set Constraint',
+                                    icon: 'b-fa b-fa-link',
+                                    onItem: ({ eventRecord }) => {
+                                        window.openConstraintDialog(eventRecord.id, eventRecord.name);
+                                    }
+                                },
+                                removeConstraint: {
+                                    text: 'Remove Constraint',
+                                    icon: 'b-fa b-fa-unlink',
+                                    onItem: ({ eventRecord }) => {
+                                        window.currentOperationId = eventRecord.id;
+                                        if (confirm('Are you sure you want to remove the constraint?')) {
+                                            // Set constraint type to None
+                                            fetch(`/api/operations/${eventRecord.id}/constraint`, {
+                                                method: 'PUT',
+                                                headers: {
+                                                    'Content-Type': 'application/json'
+                                                },
+                                                body: JSON.stringify({
+                                                    constraintType: 'None',
+                                                    constraintDate: null
+                                                })
+                                            }).then(response => response.json())
+                                              .then(result => {
+                                                if (result.success) {
+                                                    eventRecord.data.constraintType = null;
+                                                    eventRecord.data.constraintDate = null;
+                                                    eventRecord.cls = eventRecord.cls ? eventRecord.cls.replace(/constraint-\w+/g, '') : '';
+                                                    window.scheduler.refresh();
+                                                    window.showNotification('Constraint removed successfully', 'success');
+                                                }
+                                            }).catch(error => {
+                                                console.error('Error removing constraint:', error);
+                                                alert('Failed to remove constraint');
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         
                         // Event drag feature with validation to prevent incompatible resource assignments
                         eventDrag: {
@@ -2880,9 +3144,24 @@
 
                     eventRenderer({ eventRecord, renderData }) {
                         renderData.eventColor = eventRecord.eventColor;
+                        
+                        // Add constraint class to event if present
+                        if (eventRecord.data && eventRecord.data.constraintType) {
+                            const constraintType = eventRecord.data.constraintType.toLowerCase();
+                            eventRecord.cls = (eventRecord.cls || '') + ' constraint-' + constraintType;
+                        }
+                        
+                        // Create constraint badge HTML
+                        let constraintBadge = '';
+                        if (eventRecord.data && eventRecord.data.constraintType && eventRecord.data.constraintType !== 'None') {
+                            const constraintType = eventRecord.data.constraintType.toLowerCase();
+                            constraintBadge = `<div class="constraint-badge ${constraintType}">${eventRecord.data.constraintType}</div>`;
+                        }
+                        
                         return {
                             html: `
-                                <div style="padding: 4px;">
+                                <div style="padding: 4px; position: relative;">
+                                    ${constraintBadge}
                                     <div style="font-weight: 500; font-size: 12px;">${eventRecord.name}</div>
                                     <div style="font-size: 11px; opacity: 0.8;">
                                         ${eventRecord.percentDone}% complete

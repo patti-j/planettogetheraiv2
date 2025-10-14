@@ -755,6 +755,8 @@ export class DatabaseStorage implements IStorage {
           jo.setup_hours,
           jo.cycle_hrs,
           jo.post_processing_hours,
+          jo.constraint_type,
+          jo.constraint_date,
           j.name as job_name,
           j.priority,
           j.need_date_time as due_date,
@@ -789,7 +791,9 @@ export class DatabaseStorage implements IStorage {
         runTime: op.cycle_hrs || 0,
         teardownTime: op.post_processing_hours || 0,
         dueDate: op.due_date,
-        percentFinished: op.percent_finished || 0
+        percentFinished: op.percent_finished || 0,
+        constraintType: op.constraint_type,
+        constraintDate: op.constraint_date
       }));
     } catch (error) {
       console.error('Error fetching discrete operations:', error);

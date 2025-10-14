@@ -296,7 +296,7 @@ export const ptJobs = pgTable("ptjobs", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
-// Minimal ptjoboperations table matching actual database structure (17 columns)
+// Minimal ptjoboperations table matching actual database structure (17 columns + constraint fields)
 export const ptJobOperations = pgTable("ptjoboperations", {
   id: serial("id").primaryKey(),
   jobId: integer("job_id").references(() => ptJobs.id),
@@ -313,6 +313,9 @@ export const ptJobOperations = pgTable("ptjoboperations", {
   scheduledEnd: timestamp("scheduled_end"),
   percentFinished: numeric("percent_finished").default('0'),
   manuallyScheduled: boolean("manually_scheduled").default(false),
+  // Constraint fields
+  constraintType: varchar("constraint_type", { length: 10 }), // MSO, MFO, SNET, FNET, SNLT, FNLT
+  constraintDate: timestamp("constraint_date"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

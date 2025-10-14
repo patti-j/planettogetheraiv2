@@ -3413,6 +3413,71 @@ router.patch("/api/pt-operations/schedule", async (req, res) => {
   }
 });
 
+// Update operation constraint
+router.put("/api/operations/:id/constraint", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { constraintType, constraintDate } = req.body;
+    
+    // Validate constraint type
+    const validConstraints = ['MSO', 'MFO', 'SNET', 'FNET', 'SNLT', 'FNLT', 'None'];
+    if (constraintType && !validConstraints.includes(constraintType)) {
+      return res.status(400).json({ 
+        error: 'Invalid constraint type. Must be one of: MSO, MFO, SNET, FNET, SNLT, FNLT, None' 
+      });
+    }
+    
+    // Validate that constraint date is provided when type is not None
+    if (constraintType !== 'None' && !constraintDate) {
+      return res.status(400).json({ 
+        error: 'Constraint date is required when setting a constraint type' 
+      });
+    }
+    
+    console.log(`🎯 Updating constraint for operation ${id}: ${constraintType} - ${constraintDate}`);
+    
+    // If constraint type is None, clear both fields
+    const finalConstraintType = constraintType === 'None' ? null : constraintType;
+    const finalConstraintDate = constraintType === 'None' ? null : constraintDate;
+    
+    // Update the operation's constraint fields
+    await directSql`
+      UPDATE ptjoboperations 
+      SET 
+        constraint_type = ${finalConstraintType},
+        constraint_date = ${finalConstraintDate},
+        updated_at = NOW()
+      WHERE id = ${id}
+    `;
+    
+    // Fetch the updated operation to return
+    const [updatedOperation] = await directSql`
+      SELECT 
+        id,
+        name,
+        constraint_type as "constraintType",
+        constraint_date as "constraintDate",
+        scheduled_start as "scheduledStart",
+        scheduled_end as "scheduledEnd"
+      FROM ptjoboperations 
+      WHERE id = ${id}
+    ` as any[];
+    
+    console.log(`✅ Successfully updated constraint for operation ${id}`);
+    
+    res.json({ 
+      success: true, 
+      operation: updatedOperation
+    });
+  } catch (error) {
+    console.error("Error updating operation constraint:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update operation constraint' 
+    });
+  }
+});
+
 // Step 3: Save scheduler changes endpoint (Legacy - keeping for compatibility)
 router.post("/scheduler/sync", async (req, res) => {
   try {
