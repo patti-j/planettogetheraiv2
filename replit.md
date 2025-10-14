@@ -143,3 +143,20 @@ The system prioritizes user experience, data integrity, performance, accessibili
   - Adds playbook reasoning to response (restores metadata parity)
   - Tracks AI action for transparency (maintains telemetry)
 - **Result**: Chart creation requests now complete successfully with full metadata without redundant API calls
+
+### October 14, 2025 - Resource Conflict Detection Fix
+- **Issue**: After moving jobs to a specific date (e.g., October 5th), multiple operations were scheduled on the same resource at the same time
+- **Root Cause**: performOperationReschedule only checked for conflicts within the current reschedule batch
+  - The resourceSchedule map was empty at the start of each reschedule call
+  - It didn't query existing operations in the database, only tracked operations in the current batch
+  - If jobs were moved in separate requests, conflicts weren't detected
+- **Fix**: Implemented comprehensive resource conflict detection in performOperationReschedule:
+  1. Preload ALL existing scheduled operations from database before rescheduling
+  2. Build complete map of resource schedules with all existing time slots
+  3. Implement findNextAvailableSlot function that:
+     - Checks for time overlap with existing operations (start < existing.end && end > existing.start)
+     - Recursively finds next available slot if conflict detected
+     - Skips operations being rescheduled (to avoid false conflicts)
+     - Respects both database state and in-batch scheduling
+  4. Use conflict detection when scheduling each operation
+- **Result**: Operations can no longer be double-booked on the same resource - scheduler automatically finds next available time slot when conflicts exist
