@@ -3885,6 +3885,71 @@ Respond with JSON format:
       // Track resource availability across all jobs
       const resourceSchedule = new Map<number, Date>(); // resource_id -> next available time
       
+      // CRITICAL FIX: Load existing scheduled operations from database to prevent conflicts
+      console.log('[Max AI] 🔍 Loading existing scheduled operations to prevent resource conflicts...');
+      
+      // Get ALL existing operations (not just those being rescheduled) to check for conflicts
+      const existingOpsResult = await db.execute(sql`
+        SELECT 
+          r.id as resource_id,
+          jo.scheduled_start,
+          jo.scheduled_end,
+          jo.id as operation_id
+        FROM ptjoboperations jo
+        INNER JOIN ptjobresources jr ON jo.id = jr.operation_id
+        INNER JOIN ptresources r ON jr.default_resource_id = r.external_id
+        WHERE jo.scheduled_start IS NOT NULL
+          AND jo.scheduled_end IS NOT NULL
+          AND r.id IS NOT NULL
+        ORDER BY r.id, jo.scheduled_start
+      `);
+      
+      // Build a map of resource schedules with all existing time slots
+      const existingResourceSchedules = new Map<number, Array<{start: Date, end: Date, opId: number}>>();
+      for (const row of existingOpsResult.rows) {
+        const resourceId = row.resource_id as number;
+        const start = new Date(row.scheduled_start as string);
+        const end = new Date(row.scheduled_end as string);
+        const opId = row.operation_id as number;
+        
+        if (!existingResourceSchedules.has(resourceId)) {
+          existingResourceSchedules.set(resourceId, []);
+        }
+        existingResourceSchedules.get(resourceId)!.push({ start, end, opId });
+      }
+      
+      // Helper function to find next available slot for a resource
+      const findNextAvailableSlot = (resourceId: number, desiredStart: Date, duration: number): Date => {
+        const existingSlots = existingResourceSchedules.get(resourceId) || [];
+        const desiredEnd = new Date(desiredStart.getTime() + duration);
+        
+        // Check if desired slot conflicts with any existing operation
+        for (const slot of existingSlots) {
+          // Skip operations that are being rescheduled (they're in our operations list)
+          const isBeingRescheduled = operations.some(op => op.id === slot.opId);
+          if (isBeingRescheduled) continue;
+          
+          // Check for overlap: new operation overlaps if it starts before existing ends AND ends after existing starts
+          const overlaps = desiredStart < slot.end && desiredEnd > slot.start;
+          
+          if (overlaps) {
+            // Conflict found - try scheduling after this operation
+            return findNextAvailableSlot(resourceId, slot.end, duration);
+          }
+        }
+        
+        // Also check against operations scheduled in current batch (resourceSchedule map)
+        const batchEndTime = resourceSchedule.get(resourceId);
+        if (batchEndTime && desiredStart < batchEndTime) {
+          return batchEndTime;
+        }
+        
+        // No conflict found
+        return desiredStart;
+      };
+      
+      console.log(`[Max AI] 📅 Loaded ${existingOpsResult.rows.length} existing operations for conflict detection`);
+      
       // Group operations by job to maintain sequencing
       const operationsByJob = new Map<number, any[]>();
       
@@ -3909,19 +3974,16 @@ Respond with JSON format:
         for (const operation of sortedOperations) {
           const resourceId = operation.resource_id;
           
-          // Check if this resource is already in use by another job
-          if (resourceId && resourceSchedule.has(resourceId)) {
-            const resourceAvailableTime = resourceSchedule.get(resourceId)!;
-            // If resource is busy, start this operation when resource becomes available
-            if (resourceAvailableTime > currentStartTime) {
-              currentStartTime = new Date(resourceAvailableTime);
-            }
-          }
-          
           // Calculate operation duration
           const duration = operation.scheduled_end && operation.scheduled_start 
             ? new Date(operation.scheduled_end).getTime() - new Date(operation.scheduled_start).getTime()
             : 3600000; // Default 1 hour if no duration
+          
+          // CRITICAL FIX: Use conflict detection to find next available slot
+          if (resourceId) {
+            currentStartTime = findNextAvailableSlot(resourceId, currentStartTime, duration);
+            console.log(`[Max AI] 📍 Scheduling ${operation.operation_name} on resource ${resourceId} at ${currentStartTime.toISOString()}`);
+          }
           
           const newEndTime = new Date(currentStartTime.getTime() + duration);
           
