@@ -1653,6 +1653,40 @@
             opacity: 0.8 !important;
         }
         
+        /* Force uniform row heights for ALL rows including header rows */
+        .b-grid-row,
+        .b-sch-timeaxis-cell,
+        .b-grid-header-container .b-grid-row,
+        .b-grid-headers .b-grid-row,
+        .b-sch-header-row,
+        .b-grid-header {
+            height: 45px !important;
+            max-height: 45px !important;
+            min-height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        /* Ensure time axis header rows are also uniform */
+        .b-sch-header-timeaxis-cell {
+            height: 22px !important; /* Half height for split time axis headers */
+            max-height: 22px !important;
+            min-height: 22px !important;
+        }
+        
+        /* Resource column cells should match row height */
+        .b-grid-cell {
+            height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        /* Fix any padding that might affect row heights */
+        .b-grid-row .b-grid-cell-inner {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            display: flex;
+            align-items: center;
+        }
+        
         .b-sch-timespan-highlight:hover {
             opacity: 1 !important;
         }
@@ -3338,6 +3372,11 @@
                     viewPreset: viewPreset,
                     rowHeight: 45,  // Consistent row height for all rows
                     barMargin: 5,    // Consistent bar margin
+                    
+                    // Force consistent resource row heights
+                    resourceTimeRanges: {
+                        rowHeight: 45
+                    },
                     
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
@@ -7268,8 +7307,10 @@
                             }
                         }
                     } else if (event.data?.type === 'SET_THEME') {
-                        // Theme toggle removed - using consistent light theme with blue-purple gradient
-                        console.log('Theme toggle disabled - using consistent light theme');
+                        // Apply theme received from parent
+                        console.log('📥 [Scheduler] Applying theme from parent:', event.data.theme);
+                        applyTheme(event.data.theme);
+                        localStorage.setItem('theme', event.data.theme);
                     }
                 });
                 
@@ -7461,8 +7502,20 @@
         });
         
         // Apply theme immediately - priority: URL param > localStorage > default
-        const initialTheme = themeFromUrl || localStorage.getItem('theme') || 'light';
-        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : 'localStorage', ')');
+        // But first check if we're in an iframe and can get parent theme
+        let parentTheme = null;
+        if (window.parent !== window) {
+            try {
+                // Try to get theme from parent's localStorage
+                parentTheme = window.parent.localStorage.getItem('theme');
+                console.log('👆 [Production Scheduler] Parent theme detected:', parentTheme);
+            } catch (e) {
+                console.log('⚠️ [Production Scheduler] Could not access parent theme (cross-origin)');
+            }
+        }
+        
+        const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
+        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : 'localStorage', ')');
         applyTheme(initialTheme);
         
         // Setup event listeners when DOM is ready
