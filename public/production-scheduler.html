@@ -10,8 +10,7 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS - Stockholm theme with dynamic light/dark switching -->
-    <link rel="stylesheet" href="/schedulerpro.stockholm.css?v=3" id="scheduler-theme">
+    <!-- Bryntum theme will be loaded in body for proper theme switching -->
     
     <style>
         * {
@@ -320,15 +319,36 @@
             background: #2a2a2a;
         }
         
-        /* Dark theme for scheduler - use Bryntum's Stockholm dark class */
-        .dark-theme #scheduler {
-            /* Remove filter approach - it affects row heights */
-            /* Use Stockholm's built-in dark theme classes instead */
+        /* Dark theme for scheduler - Stockholm dark overrides */
+        .dark-theme #scheduler,
+        .b-theme-stockholm-dark #scheduler {
+            background: #1a1a1a;
         }
         
-        /* Apply dark theme class to Bryntum scheduler */
-        .dark-theme .b-schedulerpro {
-            /* Stockholm dark theme will handle the colors */
+        /* Ensure Stockholm dark theme is applied to scheduler elements */
+        .b-theme-stockholm-dark .b-sch-header-timeaxis-cell,
+        .b-theme-stockholm-dark .b-grid-header {
+            background: #2a2a2a !important;
+            color: #e0e0e0 !important;
+            border-color: #444 !important;
+        }
+        
+        .b-theme-stockholm-dark .b-grid-row {
+            background: #1a1a1a !important;
+            color: #e0e0e0 !important;
+        }
+        
+        .b-theme-stockholm-dark .b-grid-row:nth-child(odd) {
+            background: #222 !important;
+        }
+        
+        .b-theme-stockholm-dark .b-sch-event {
+            border-color: #444 !important;
+        }
+        
+        .b-theme-stockholm-dark .b-grid-cell {
+            border-color: #333 !important;
+            color: #e0e0e0 !important;
         }
         
         /* Dependency lines styling */
@@ -1759,6 +1779,9 @@
     </style>
 </head>
 <body>
+    <!-- Bryntum Stockholm theme link - must be in body for proper theme switching -->
+    <link rel="stylesheet" href="/schedulerpro.stockholm.css" id="bryntum-theme">
+    
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
@@ -3313,8 +3336,8 @@
                     columns: schedulerColumns,
 
                     viewPreset: viewPreset,
-                    rowHeight: isMobile ? 50 : 60,
-                    barMargin: isMobile ? 5 : 8,
+                    rowHeight: 45,  // Consistent row height for all rows
+                    barMargin: 5,    // Consistent bar margin
                     
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
@@ -7388,24 +7411,38 @@
             console.log('🎨 [Production Scheduler] Applying theme:', theme);
             const isDark = theme === 'dark';
             
-            // Stockholm theme uses data-theme attribute for dark/light mode
+            // Apply Bryntum Stockholm theme classes
             if (isDark) {
+                // Apply dark theme
                 document.documentElement.setAttribute('data-theme', 'dark');
-                document.body.classList.add('b-theme-dark');
-                document.body.classList.remove('b-theme-light');
-                console.log('🌙 [Production Scheduler] Dark theme applied');
+                document.body.classList.add('b-theme-stockholm-dark');
+                document.body.classList.remove('b-theme-stockholm');
+                // Also add general dark theme class
+                document.body.classList.add('dark-theme');
+                console.log('🌙 [Production Scheduler] Dark theme applied with Stockholm dark');
             } else {
+                // Apply light theme
                 document.documentElement.setAttribute('data-theme', 'light');
-                document.body.classList.add('b-theme-light');
-                document.body.classList.remove('b-theme-dark');
-                console.log('☀️ [Production Scheduler] Light theme applied');
+                document.body.classList.add('b-theme-stockholm');
+                document.body.classList.remove('b-theme-stockholm-dark');
+                // Remove dark theme class
+                document.body.classList.remove('dark-theme');
+                console.log('☀️ [Production Scheduler] Light theme applied with Stockholm light');
             }
             
-            // Also apply dark-theme class for custom styles
-            if (isDark) {
-                document.body.classList.add('dark-theme');
-            } else {
-                document.body.classList.remove('dark-theme');
+            // If scheduler is already initialized, apply theme to it
+            if (window.scheduler) {
+                // Force scheduler to use the correct theme
+                const schedulerEl = window.scheduler.element;
+                if (schedulerEl) {
+                    if (isDark) {
+                        schedulerEl.classList.add('b-theme-stockholm-dark');
+                        schedulerEl.classList.remove('b-theme-stockholm');
+                    } else {
+                        schedulerEl.classList.add('b-theme-stockholm');
+                        schedulerEl.classList.remove('b-theme-stockholm-dark');
+                    }
+                }
             }
         }
         
