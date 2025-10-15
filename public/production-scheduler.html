@@ -1810,6 +1810,64 @@
         .constraint-badge.fnlt {
             background: #9C27B0;
         }
+        
+        /* Force uniform 45px row heights for all rows in the scheduler */
+        .b-schedulerpro .b-grid-row,
+        .b-schedulerpro .b-sch-timeaxiscolumn,
+        .b-schedulerpro .b-grid-headers-normal .b-grid-header-row,
+        .b-schedulerpro .b-sch-timeaxis-cell,
+        .b-schedulerpro .b-resourceheader,
+        .b-schedulerpro .b-depth-0,
+        .b-schedulerpro .b-depth-1,
+        .b-schedulerpro .b-grid-body-container .b-grid-row {
+            height: 45px !important;
+            min-height: 45px !important;
+            max-height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        /* Ensure all grid cells match the row height */
+        .b-schedulerpro .b-grid-cell,
+        .b-schedulerpro .b-grid-cell-inner,
+        .b-schedulerpro .b-resourceheader-cell {
+            height: 45px !important;
+            line-height: 45px !important;
+            padding: 0 10px !important;
+            display: flex !important;
+            align-items: center !important;
+        }
+        
+        /* Fix time axis header heights */
+        .b-schedulerpro .b-sch-header-row,
+        .b-schedulerpro .b-sch-header-timeaxis-main,
+        .b-schedulerpro .b-sch-header-row-main,
+        .b-schedulerpro .b-sch-simple-timeaxis .b-sch-header-row {
+            height: 45px !important;
+            min-height: 45px !important;
+            max-height: 45px !important;
+        }
+        
+        /* Ensure event bars fit within row height */
+        .b-schedulerpro .b-sch-event-wrap,
+        .b-schedulerpro .b-sch-event {
+            max-height: 35px !important; /* 45px row minus 10px for margins */
+        }
+        
+        /* Fix row containers and background elements */
+        .b-schedulerpro .b-scheduler-foreground-canvas,
+        .b-schedulerpro .b-sch-timeaxis-tick,
+        .b-schedulerpro .b-grid-row > * {
+            height: 45px !important;
+        }
+        
+        /* Prevent any flex or auto-sizing from overriding row height */
+        .b-schedulerpro .b-grid-body-container {
+            font-size: 14px !important; /* Consistent font size */
+        }
+        
+        .b-schedulerpro .b-grid-row {
+            flex: 0 0 45px !important; /* Fixed flex height */
+        }
     </style>
 </head>
 <body>
@@ -3372,11 +3430,6 @@
                     viewPreset: viewPreset,
                     rowHeight: 45,  // Consistent row height for all rows
                     barMargin: 5,    // Consistent bar margin
-                    
-                    // Force consistent resource row heights
-                    resourceTimeRanges: {
-                        rowHeight: 45
-                    },
                     
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
