@@ -129,7 +129,10 @@ function calculateRMSE(actual: number[], predicted: number[]): number {
 // Generate forecast
 router.post('/forecast', async (req, res) => {
   try {
-    const { schema, table, dateColumn, itemColumn, quantityColumn, selectedItem, forecastDays } = req.body;
+    const { 
+      schema, table, dateColumn, itemColumn, quantityColumn, selectedItem, forecastDays,
+      modelType, planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
+    } = req.body;
     
     if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
       return res.status(400).json({ error: 'Missing required fields' });
@@ -143,6 +146,25 @@ router.post('/forecast', async (req, res) => {
     const itemCol = `[${itemColumn}]`;
     const qtyCol = `[${quantityColumn}]`;
     
+    // Build WHERE clause with hierarchical filtering
+    let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+    
+    // Add planning area filter
+    if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
+      const planningAreaCol = `[${planningAreaColumn}]`;
+      const planningAreaList = selectedPlanningAreas.map((area: string) => `'${area.replace(/'/g, "''")}'`).join(',');
+      whereConditions.push(`${planningAreaCol} IN (${planningAreaList})`);
+    }
+    
+    // Add scenario filter
+    if (scenarioColumn && selectedScenarios && selectedScenarios.length > 0) {
+      const scenarioCol = `[${scenarioColumn}]`;
+      const scenarioList = selectedScenarios.map((scenario: string) => `'${scenario.replace(/'/g, "''")}'`).join(',');
+      whereConditions.push(`${scenarioCol} IN (${scenarioList})`);
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
     // Fetch historical data
     const result = await pool.request()
       .input('item', sql.VarChar, selectedItem)
@@ -151,9 +173,7 @@ router.post('/forecast', async (req, res) => {
           ${dateCol} as date,
           SUM(CAST(${qtyCol} AS FLOAT)) as value
         FROM ${tableName}
-        WHERE ${itemCol} = @item
-          AND ${dateCol} IS NOT NULL
-          AND ${qtyCol} IS NOT NULL
+        WHERE ${whereClause}
         GROUP BY ${dateCol}
         ORDER BY ${dateCol}
       `);
@@ -209,6 +229,11 @@ router.post('/forecast', async (req, res) => {
       metrics: {
         mape,
         rmse
+      },
+      modelType: modelType || 'random_forest',
+      filters: {
+        planningAreas: selectedPlanningAreas || [],
+        scenarios: selectedScenarios || []
       }
     });
 
