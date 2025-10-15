@@ -1668,6 +1668,20 @@
             align-items: center;
         }
         
+        /* Remove top padding on grid rows and cells */
+        .b-grid-row,
+        .b-sch-timeaxis-cell,
+        .b-grid-cell {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ensure scheduler events don't have top padding/margin */
+        .b-sch-event-wrap,
+        .b-sch-event {
+            margin-top: 0 !important;
+        }
+        
         .b-sch-timespan-highlight:hover {
             opacity: 1 !important;
         }
@@ -3574,7 +3588,30 @@
                             constrainDragToResource: false, // Allow dragging between resources
                             // Validation function to check if an operation can be dropped on a resource
                             validatorFn: (context) => {
-                                const { eventRecord, newResource } = context;
+                                const { eventRecord, newResource, startDate, endDate } = context;
+                                
+                                // First check for temporal overlaps with other operations on the same resource
+                                const events = window.scheduler.eventStore.records;
+                                for (let existingEvent of events) {
+                                    // Skip checking against itself
+                                    if (existingEvent.id === eventRecord.id) continue;
+                                    
+                                    // Check if on same resource and would overlap
+                                    if (existingEvent.resourceId === newResource.id) {
+                                        const newStart = startDate || eventRecord.startDate;
+                                        const newEnd = endDate || eventRecord.endDate;
+                                        
+                                        // Check for temporal overlap
+                                        if (newStart < existingEvent.endDate && existingEvent.startDate < newEnd) {
+                                            console.warn(`Cannot place operation here - would overlap with "${existingEvent.name}" on ${newResource.name}`);
+                                            showNotification(`⚠️ Cannot overlap with "${existingEvent.name}"`, 'warning');
+                                            return {
+                                                valid: false,
+                                                message: `Overlaps with ${existingEvent.name}`
+                                            };
+                                        }
+                                    }
+                                }
                                 
                                 // Helper function to extract operation type from operation name
                                 function getOperationType(operationName) {
