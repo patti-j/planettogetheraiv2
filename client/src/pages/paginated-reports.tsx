@@ -362,12 +362,12 @@ export default function PaginatedReports() {
                   {/* Sort By */}
                   <div className="space-y-2">
                     <Label htmlFor="sortBy">Sort By</Label>
-                    <Select value={sortBy} onValueChange={setSortBy} disabled={loadingSchema || !tableSchema}>
+                    <Select value={sortBy || "none"} onValueChange={(value) => setSortBy(value === "none" ? "" : value)} disabled={loadingSchema || !tableSchema}>
                       <SelectTrigger id="sortBy" data-testid="select-sort-by">
                         <SelectValue placeholder={loadingSchema ? "Loading columns..." : "Select column..."} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No sorting</SelectItem>
+                        <SelectItem value="none">No sorting</SelectItem>
                         {tableSchema?.map((col) => (
                           <SelectItem key={col.columnName} value={col.columnName}>
                             {col.columnName}
