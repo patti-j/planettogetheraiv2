@@ -3431,6 +3431,12 @@
                     rowHeight: 45,  // Consistent row height for all rows
                     barMargin: 5,    // Consistent bar margin
                     
+                    // CRITICAL: Disable variable row height to force all rows to be exactly 45px
+                    rowManager: {
+                        variableRowHeight: false,
+                        rowHeight: 45
+                    },
+                    
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
                     
@@ -7503,7 +7509,16 @@
         // Apply theme immediately (before DOMContentLoaded to prevent flash)
         function applyTheme(theme) {
             console.log('🎨 [Production Scheduler] Applying theme:', theme);
-            const isDark = theme === 'dark';
+            
+            // Handle "system" theme by detecting system preference
+            let effectiveTheme = theme;
+            if (theme === 'system') {
+                const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                effectiveTheme = prefersDark ? 'dark' : 'light';
+                console.log('🖥️ [Production Scheduler] System theme resolved to:', effectiveTheme);
+            }
+            
+            const isDark = effectiveTheme === 'dark';
             
             // Apply Bryntum Stockholm theme classes
             if (isDark) {
@@ -7570,6 +7585,12 @@
         const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
         console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : 'localStorage', ')');
         applyTheme(initialTheme);
+        
+        // Also apply theme after a slight delay to ensure DOM is ready
+        setTimeout(() => {
+            console.log('⏰ [Production Scheduler] Reapplying theme after delay:', initialTheme);
+            applyTheme(initialTheme);
+        }, 500);
         
         // Setup event listeners when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
