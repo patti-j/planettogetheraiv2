@@ -30,7 +30,9 @@ import {
 } from "@/components/ui/pagination";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Search, Download, Calendar, Database } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { FileText, Search, Download, Calendar, Database, Columns3, X } from "lucide-react";
 import { format } from "date-fns";
 
 interface SQLTable {
@@ -60,6 +62,8 @@ export default function PaginatedReports() {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<string>("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [columnFilters, setColumnFilters] = useState<Record<string, string>>({});
 
   // Fetch list of SQL Server tables
   const { data: tables, isLoading: loadingTables } = useQuery<SQLTable[]>({
@@ -121,13 +125,70 @@ export default function PaginatedReports() {
     enabled: !!selectedTable,
   });
 
+  // Update selected columns when table schema loads
+  useEffect(() => {
+    if (tableSchema) {
+      setSelectedColumns(tableSchema.map(col => col.columnName));
+    }
+  }, [tableSchema]);
+
   const handleTableSelect = (value: string) => {
     const [schemaName, tableName] = value.split('.');
     setSelectedTable({ schemaName, tableName });
     setCurrentPage(1);
     setSortBy("");
     setSearchTerm("");
+    setColumnFilters({});
   };
+
+  const handleColumnToggle = (columnName: string) => {
+    setSelectedColumns(prev => 
+      prev.includes(columnName)
+        ? prev.filter(c => c !== columnName)
+        : [...prev, columnName]
+    );
+  };
+
+  const handleSelectAllColumns = () => {
+    if (tableSchema) {
+      setSelectedColumns(tableSchema.map(col => col.columnName));
+    }
+  };
+
+  const handleDeselectAllColumns = () => {
+    setSelectedColumns([]);
+  };
+
+  const handleColumnFilterChange = (columnName: string, value: string) => {
+    setColumnFilters(prev => ({
+      ...prev,
+      [columnName]: value
+    }));
+    setCurrentPage(1);
+  };
+
+  const clearColumnFilter = (columnName: string) => {
+    setColumnFilters(prev => {
+      const newFilters = { ...prev };
+      delete newFilters[columnName];
+      return newFilters;
+    });
+  };
+
+  const clearAllFilters = () => {
+    setColumnFilters({});
+    setSearchTerm("");
+  };
+
+  // Filter data locally based on column filters
+  const filteredData = data?.items.filter(item => {
+    return Object.entries(columnFilters).every(([column, filterValue]) => {
+      if (!filterValue) return true;
+      const cellValue = item[column];
+      if (cellValue === null || cellValue === undefined) return false;
+      return String(cellValue).toLowerCase().includes(filterValue.toLowerCase());
+    });
+  }) || [];
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -413,6 +474,65 @@ export default function PaginatedReports() {
                       )}
                     </CardDescription>
                   </div>
+                  <div className="flex items-center gap-2">
+                    {/* Column Selector */}
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <Button variant="outline" size="sm" disabled={!tableSchema} data-testid="button-column-selector">
+                          <Columns3 className="w-4 h-4 mr-2" />
+                          Columns ({selectedColumns.length}/{tableSchema?.length || 0})
+                        </Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-80" align="end">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm">Select Columns</h4>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleSelectAllColumns}
+                                className="h-6 text-xs"
+                                data-testid="button-select-all-columns"
+                              >
+                                All
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={handleDeselectAllColumns}
+                                className="h-6 text-xs"
+                                data-testid="button-deselect-all-columns"
+                              >
+                                None
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="max-h-80 overflow-y-auto space-y-2">
+                            {tableSchema?.map((col) => (
+                              <div key={col.columnName} className="flex items-center space-x-2">
+                                <Checkbox
+                                  id={`col-${col.columnName}`}
+                                  checked={selectedColumns.includes(col.columnName)}
+                                  onCheckedChange={() => handleColumnToggle(col.columnName)}
+                                  data-testid={`checkbox-column-${col.columnName}`}
+                                />
+                                <label
+                                  htmlFor={`col-${col.columnName}`}
+                                  className="text-sm flex-1 cursor-pointer"
+                                >
+                                  {col.columnName}
+                                  <span className="text-xs text-muted-foreground ml-2">
+                                    ({col.dataType})
+                                  </span>
+                                </label>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </PopoverContent>
+                    </Popover>
+                  </div>
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Calendar className="w-4 h-4" />
                     <span>Page {currentPage} of {data?.totalPages || 0}</span>
@@ -443,18 +563,49 @@ export default function PaginatedReports() {
                   </div>
                 ) : data && data.items.length > 0 && tableSchema ? (
                   <>
+                    {/* Active Filters Display */}
+                    {Object.keys(columnFilters).length > 0 && (
+                      <div className="mb-4 flex flex-wrap gap-2 items-center">
+                        <span className="text-sm font-medium">Active Filters:</span>
+                        {Object.entries(columnFilters).map(([column, value]) => (
+                          <Badge key={column} variant="secondary" className="gap-1">
+                            {column}: {value}
+                            <button
+                              onClick={() => clearColumnFilter(column)}
+                              className="ml-1 hover:bg-muted rounded-full"
+                              data-testid={`button-clear-filter-${column}`}
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </Badge>
+                        ))}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={clearAllFilters}
+                          className="h-6 text-xs"
+                          data-testid="button-clear-all-filters"
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                    )}
+                    
                     <div className="rounded-md border overflow-x-auto">
                       <Table>
                         <TableHeader>
+                          {/* Column Headers */}
                           <TableRow>
-                            {tableSchema.map((column) => (
+                            {tableSchema.filter(col => selectedColumns.includes(col.columnName)).map((column) => (
                               <TableHead
                                 key={column.columnName}
-                                className="cursor-pointer hover:bg-muted/50"
-                                onClick={() => handleSort(column.columnName)}
+                                className="min-w-[150px]"
                                 data-testid={`header-${column.columnName}`}
                               >
-                                <div className="flex items-center gap-1">
+                                <div 
+                                  className="flex items-center gap-1 cursor-pointer hover:text-foreground"
+                                  onClick={() => handleSort(column.columnName)}
+                                >
                                   {column.columnName}
                                   {sortBy === column.columnName && (
                                     <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
@@ -466,20 +617,57 @@ export default function PaginatedReports() {
                               </TableHead>
                             ))}
                           </TableRow>
+                          {/* Column Filters */}
+                          <TableRow className="bg-muted/50">
+                            {tableSchema.filter(col => selectedColumns.includes(col.columnName)).map((column) => (
+                              <TableHead key={`filter-${column.columnName}`} className="p-2">
+                                <div className="relative">
+                                  <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
+                                  <Input
+                                    placeholder={`Filter ${column.columnName}...`}
+                                    value={columnFilters[column.columnName] || ""}
+                                    onChange={(e) => handleColumnFilterChange(column.columnName, e.target.value)}
+                                    className="h-8 pl-7 pr-7 text-xs"
+                                    data-testid={`input-filter-${column.columnName}`}
+                                  />
+                                  {columnFilters[column.columnName] && (
+                                    <button
+                                      onClick={() => clearColumnFilter(column.columnName)}
+                                      className="absolute right-2 top-1/2 transform -translate-y-1/2 hover:bg-muted rounded-full p-0.5"
+                                      data-testid={`button-clear-column-filter-${column.columnName}`}
+                                    >
+                                      <X className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </div>
+                              </TableHead>
+                            ))}
+                          </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {data.items.map((item, index) => (
-                            <TableRow key={index} data-testid={`row-report-${index}`}>
-                              {tableSchema.map((column) => (
-                                <TableCell
-                                  key={column.columnName}
-                                  data-testid={`cell-${column.columnName}-${index}`}
-                                >
-                                  {formatCellValue(item[column.columnName], column.dataType)}
-                                </TableCell>
-                              ))}
+                          {filteredData.length > 0 ? (
+                            filteredData.map((item, index) => (
+                              <TableRow key={index} data-testid={`row-report-${index}`}>
+                                {tableSchema.filter(col => selectedColumns.includes(col.columnName)).map((column) => (
+                                  <TableCell
+                                    key={column.columnName}
+                                    data-testid={`cell-${column.columnName}-${index}`}
+                                  >
+                                    {formatCellValue(item[column.columnName], column.dataType)}
+                                  </TableCell>
+                                ))}
+                              </TableRow>
+                            ))
+                          ) : (
+                            <TableRow>
+                              <TableCell 
+                                colSpan={selectedColumns.length} 
+                                className="text-center py-8 text-muted-foreground"
+                              >
+                                No records match your filters. Try adjusting the filter criteria.
+                              </TableCell>
                             </TableRow>
-                          ))}
+                          )}
                         </TableBody>
                       </Table>
                     </div>
