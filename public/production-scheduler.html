@@ -10,8 +10,7 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS - Theme will be set dynamically -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme">
+    <!-- Bryntum theme CSS will be in body for dynamic switching -->
     
     <style>
         * {
@@ -1873,6 +1872,8 @@
     </style>
 </head>
 <body>
+    <!-- Bryntum theme link in body for dynamic switching - must follow {product}.{theme}.css pattern -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme" data-bryntum-theme />
     
     <div class="header">
         <h1>Production Schedule</h1>
@@ -7534,19 +7535,34 @@
             console.log('🎨 [Production Scheduler] Applying theme:', theme);
             
             const isDark = theme === 'dark';
-            const themeLink = document.getElementById('bryntum-theme');
+            const themeName = isDark ? 'classic-dark' : 'classic-light';
             
-            if (themeLink) {
-                // Switch between Bryntum's built-in light and dark themes
-                const newThemeUrl = isDark 
-                    ? '/schedulerpro.classic-dark.css' 
-                    : '/schedulerpro.classic-light.css';
+            // Try to use Bryntum's DomHelper.setTheme() if available
+            if (window.bryntum && window.bryntum.schedulerpro && window.bryntum.schedulerpro.DomHelper) {
+                console.log(`🔄 [Production Scheduler] Using DomHelper.setTheme('${themeName}')`);
                 
-                // Only update if the theme actually changed
-                if (!themeLink.href.includes(newThemeUrl)) {
-                    console.log(`🔄 [Production Scheduler] Switching Bryntum theme to: ${newThemeUrl}`);
-                    themeLink.href = newThemeUrl;
-                }
+                window.bryntum.schedulerpro.DomHelper.setTheme(themeName).then((context) => {
+                    if (context) {
+                        const { theme: newTheme, prev } = context;
+                        console.log(`✅ [Production Scheduler] Theme changed from '${prev}' to '${newTheme}'`);
+                        
+                        // Update body classes for Bryntum theme tracking
+                        if (prev) {
+                            document.body.classList.remove(`b-theme-${prev}`);
+                        }
+                        document.body.classList.add(`b-theme-${newTheme}`);
+                    } else {
+                        console.log('ℹ️ [Production Scheduler] Theme already set to', themeName);
+                    }
+                }).catch(error => {
+                    console.error('❌ [Production Scheduler] DomHelper.setTheme failed:', error);
+                    // Fallback to manual switching
+                    manualThemeSwitch(isDark);
+                });
+            } else {
+                // Fallback to manual theme switching if DomHelper not available
+                console.log('⚠️ [Production Scheduler] DomHelper not available, using manual switching');
+                manualThemeSwitch(isDark);
             }
             
             // Also apply dark-theme class for custom styles (header, toolbar, etc.)
@@ -7558,6 +7574,24 @@
                 document.body.classList.remove('dark-theme');
                 document.documentElement.classList.remove('dark-theme');
                 console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
+            }
+        }
+        
+        // Manual theme switching fallback
+        function manualThemeSwitch(isDark) {
+            const themeLink = document.getElementById('bryntum-theme');
+            
+            if (themeLink) {
+                // Switch between Bryntum's built-in light and dark themes
+                const newThemeUrl = isDark 
+                    ? '/schedulerpro.classic-dark.css' 
+                    : '/schedulerpro.classic-light.css';
+                
+                // Only update if the theme actually changed
+                if (!themeLink.href.includes(newThemeUrl)) {
+                    console.log(`🔄 [Production Scheduler] Manual: Switching Bryntum theme to: ${newThemeUrl}`);
+                    themeLink.href = newThemeUrl;
+                }
             }
         }
         
@@ -7594,12 +7628,20 @@
         const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
         console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : localStorage.getItem('theme') ? 'localStorage' : 'default', ')');
         console.log('📱 [Production Scheduler] Document ready state:', document.readyState);
+        
+        // Apply theme immediately (might use manual switching if Bryntum not loaded)
         applyTheme(initialTheme);
         
         // Also apply theme after DOM is ready and scheduler is initialized
         document.addEventListener('DOMContentLoaded', () => {
             console.log('📄 [Production Scheduler] DOM ready, reapplying theme:', initialTheme);
             applyTheme(initialTheme);
+            
+            // Try again after a short delay to ensure Bryntum is fully loaded
+            setTimeout(() => {
+                console.log('⏱️ [Production Scheduler] Delayed theme application:', initialTheme);
+                applyTheme(initialTheme);
+            }, 500);
         });
         
         // Setup event listeners when DOM is ready
