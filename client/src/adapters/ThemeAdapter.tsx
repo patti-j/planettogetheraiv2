@@ -73,7 +73,7 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
       }
       
       // Fallback to existing API
-      const response = await apiRequest('PUT', '/api/user-preferences', {
+      const response = await apiRequest('PUT', `/api/user-preferences/${user.id}`, {
         theme: newTheme
       });
       return response.json();

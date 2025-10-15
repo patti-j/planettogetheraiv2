@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const updateThemeMutation = useMutation({
     mutationFn: async (newTheme: Theme) => {
       if (!user) return;
-      const response = await apiRequest('PUT', '/api/user-preferences', {
+      const response = await apiRequest('PUT', `/api/user-preferences/${user.id}`, {
         theme: newTheme
       });
       return response.json();
