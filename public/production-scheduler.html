@@ -10,8 +10,7 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
+    <!-- Bryntum theme CSS will be in body for dynamic switching -->
     
     <style>
         * {
@@ -265,11 +264,11 @@
         
         /* Dark theme overrides */
         .dark-theme {
-            background: #1a1a1a;
+            background: #0f172a;
         }
         
         .dark-theme .header {
-            background: rgba(30, 30, 30, 0.95);
+            background: rgba(30, 41, 59, 0.95);
             color: white;
         }
         
@@ -278,12 +277,12 @@
         }
         
         .dark-theme .toolbar {
-            background: rgba(40, 40, 40, 0.9);
-            border-bottom-color: #444;
+            background: rgba(30, 41, 59, 0.9);
+            border-bottom-color: #334155;
         }
         
         .dark-theme .toolbar label {
-            color: #ccc;
+            color: #e2e8f0;
         }
         
         .dark-theme .toolbar button {
@@ -300,36 +299,64 @@
         }
         
         .dark-theme .toolbar select {
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border-color: #444;
+            background: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
         }
         
         .dark-theme .toolbar select:hover {
-            background: #333;
-            border-color: #666;
+            background: #334155;
+            border-color: #64748b;
         }
         
         .dark-theme .status-bar {
-            background: rgba(30, 30, 30, 0.95);
-            color: #ccc;
-            border-top-color: #444;
+            background: rgba(30, 41, 59, 0.95);
+            color: #e2e8f0;
+            border-top-color: #334155;
         }
         
         .dark-theme .scheduler-container {
             background: #2a2a2a;
         }
         
-        /* Dark theme for scheduler using filter */
-        .dark-theme #scheduler {
-            filter: invert(0.9) hue-rotate(180deg);
+        /* Dark theme specific adjustments */
+        .dark-theme .scheduler-container {
+            background: #1a1a1a;
         }
         
-        /* Re-invert images and icons in dark mode */
-        .dark-theme #scheduler img,
-        .dark-theme #scheduler .b-icon {
-            filter: invert(1) hue-rotate(-180deg);
+        /* Fix time axis (date row) height - needs even more for two lines */
+        .b-sch-timeaxis-cell {
+            height: 80px !important;
+            min-height: 80px !important;
+            line-height: 24px !important; /* Better spacing for multi-line */
+            padding: 8px 4px !important;
         }
+        
+        .b-sch-header-row {
+            height: 80px !important;
+            min-height: 80px !important;
+        }
+        
+        /* Ensure header text doesn't get cut off */
+        .b-sch-header-timeaxis-cell {
+            height: 80px !important;
+            min-height: 80px !important;
+            overflow: visible !important;
+        }
+        
+        /* Also fix the header container heights */
+        .b-schedulerpro .b-sch-header-container {
+            height: auto !important;
+            min-height: 80px !important;
+        }
+        
+        .b-schedulerpro .b-grid-headers {
+            height: auto !important;
+            min-height: 80px !important;
+        }
+        
+        /* Dark theme now handled by Bryntum's native Classic Dark theme */
+        /* No CSS filters needed - using proper theme switching */
         
         /* Dependency lines styling */
         .b-sch-dependency {
@@ -742,6 +769,131 @@
             animation: spin 1s linear infinite;
         }
         
+        /* DBR (Theory of Constraints) Visual Styles */
+        .bottleneck-resource {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%) !important;
+            border-left: 4px solid #8b5cf6 !important;
+            position: relative;
+        }
+        
+        .bottleneck-resource::after {
+            content: '🥁';
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 20px;
+        }
+        
+        .bottleneck-operation {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(168, 85, 247, 0.2) 100%) !important;
+            border: 2px solid #8b5cf6 !important;
+            box-shadow: 0 0 12px rgba(139, 92, 246, 0.5) !important;
+            font-weight: bold !important;
+            position: relative;
+        }
+        
+        .bottleneck-operation::before {
+            content: '🥁';
+            position: absolute;
+            left: 4px;
+            top: 4px;
+            font-size: 14px;
+        }
+        
+        /* Buffer Zone Visual Indicators */
+        .buffer-green {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(34, 197, 94, 0.15) 100%) !important;
+            border: 1px solid #10b981 !important;
+        }
+        
+        .buffer-yellow {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(251, 191, 36, 0.15) 100%) !important;
+            border: 2px solid #f59e0b !important;
+            animation: pulse-warning 2s ease-in-out infinite;
+        }
+        
+        .buffer-red {
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.15) 0%, rgba(239, 68, 68, 0.15) 100%) !important;
+            border: 2px solid #dc2626 !important;
+            box-shadow: 0 0 8px rgba(220, 38, 38, 0.4) !important;
+            animation: pulse-critical 1.5s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-warning {
+            0%, 100% {
+                box-shadow: 0 0 6px rgba(245, 158, 11, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 15px rgba(245, 158, 11, 0.5);
+            }
+        }
+        
+        /* Shipping Buffer Styles */
+        .shipping-buffer {
+            position: relative;
+        }
+        
+        .shipping-buffer::after {
+            content: '📦';
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            font-size: 12px;
+        }
+        
+        /* Assembly Buffer Styles */
+        .assembly-buffer {
+            position: relative;
+        }
+        
+        .assembly-buffer::after {
+            content: '🔧';
+            position: absolute;
+            right: 4px;
+            top: 4px;
+            font-size: 12px;
+        }
+        
+        /* ROPE Material Release Indicators */
+        .material-release {
+            border-left: 3px dashed #6366f1 !important;
+            position: relative;
+        }
+        
+        .material-release::before {
+            content: '🪢';
+            position: absolute;
+            left: -20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 14px;
+        }
+        
+        /* DBR Metrics Panel Specific Styles */
+        #dbr-metrics-panel {
+            animation: slideIn 0.5s ease-out;
+        }
+        
+        #dbr-metrics-panel .cpm-metrics-title {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white !important;
+            padding: 10px;
+            margin: -12px -12px 12px -12px;
+            border-radius: 6px 6px 0 0;
+        }
+        
+        /* WIP Indicators */
+        .high-wip {
+            opacity: 0.7;
+            filter: grayscale(30%);
+        }
+        
+        .reduced-wip {
+            opacity: 1;
+            filter: none;
+        }
+        
         /* Enhanced Critical Path Visualization Styles */
         .critical-path-task {
             border: 2px solid #dc2626 !important;
@@ -846,6 +998,328 @@
             font-size: 0.875rem;
             z-index: 100;
             min-width: 200px;
+        }
+        
+        /* PERT-specific styles */
+        .pert-low-uncertainty {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%) !important;
+            border: 2px solid #10b981 !important;
+        }
+        
+        .pert-medium-uncertainty {
+            background: linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.15) 100%) !important;
+            border: 2px solid #f59e0b !important;
+        }
+        
+        .pert-high-uncertainty {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.2) 100%) !important;
+            border: 2px solid #dc2626 !important;
+            animation: pulse-uncertainty 2s ease-in-out infinite;
+        }
+        
+        @keyframes pulse-uncertainty {
+            0%, 100% {
+                box-shadow: 0 0 10px rgba(220, 38, 38, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(220, 38, 38, 0.5);
+            }
+        }
+        
+        .pert-error-bar {
+            position: absolute;
+            height: 2px;
+            background: rgba(0, 0, 0, 0.3);
+            z-index: 10;
+        }
+        
+        .pert-error-bar::before,
+        .pert-error-bar::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: rgba(0, 0, 0, 0.5);
+            top: -3px;
+        }
+        
+        .pert-error-bar::before {
+            left: 0;
+        }
+        
+        .pert-error-bar::after {
+            right: 0;
+        }
+        
+        /* PERT Dialog Styles */
+        .pert-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            z-index: 3000;
+            width: 500px;
+            max-width: 90vw;
+            display: none;
+        }
+        
+        .pert-dialog.active {
+            display: block;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        .pert-dialog-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 12px 12px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pert-dialog-body {
+            padding: 1.5rem;
+        }
+        
+        .pert-form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .pert-form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #374151;
+        }
+        
+        .pert-form-group input {
+            width: 100%;
+            padding: 0.75rem;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            transition: border-color 0.2s;
+        }
+        
+        .pert-form-group input:focus {
+            outline: none;
+            border-color: #8b5cf6;
+        }
+        
+        .pert-form-group input.error {
+            border-color: #dc2626;
+        }
+        
+        .pert-error-message {
+            color: #dc2626;
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+        
+        .pert-calculations {
+            background: #f9fafb;
+            padding: 1rem;
+            border-radius: 6px;
+            margin-top: 1rem;
+        }
+        
+        .pert-calc-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+        
+        .pert-calc-label {
+            color: #6b7280;
+            font-size: 0.9rem;
+        }
+        
+        .pert-calc-value {
+            font-weight: 600;
+            color: #111827;
+        }
+        
+        .pert-dialog-footer {
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+        
+        .pert-dialog-footer button {
+            padding: 0.625rem 1.25rem;
+            border-radius: 6px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .pert-btn-cancel {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            color: #374151;
+        }
+        
+        .pert-btn-cancel:hover {
+            background: #e5e7eb;
+        }
+        
+        .pert-btn-save {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            border: none;
+            color: white;
+        }
+        
+        .pert-btn-save:hover {
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+            transform: translateY(-1px);
+        }
+        
+        /* PERT Metrics Panel */
+        .pert-metrics-panel {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255, 255, 255, 0.98);
+            border: 2px solid #8b5cf6;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 20px rgba(139, 92, 246, 0.2);
+            font-size: 0.875rem;
+            z-index: 100;
+            min-width: 280px;
+            display: none;
+        }
+        
+        .pert-metrics-panel.active {
+            display: block;
+        }
+        
+        .pert-metrics-header {
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            color: white;
+            padding: 10px;
+            margin: -15px -15px 15px -15px;
+            border-radius: 8px 8px 0 0;
+            font-weight: bold;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .pert-metrics-section {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .pert-metrics-section:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        
+        .pert-metrics-title {
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 8px;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .pert-confidence-level {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6px;
+            padding: 5px 8px;
+            background: #f9fafb;
+            border-radius: 4px;
+        }
+        
+        .pert-confidence-label {
+            color: #6b7280;
+            font-size: 0.85rem;
+        }
+        
+        .pert-confidence-date {
+            font-weight: 600;
+            color: #111827;
+            font-size: 0.85rem;
+        }
+        
+        .pert-high-uncertainty-list {
+            max-height: 150px;
+            overflow-y: auto;
+        }
+        
+        .pert-uncertainty-item {
+            padding: 6px 8px;
+            margin-bottom: 4px;
+            background: #fef2f2;
+            border-left: 3px solid #dc2626;
+            border-radius: 4px;
+            font-size: 0.825rem;
+        }
+        
+        .pert-uncertainty-name {
+            font-weight: 500;
+            color: #991b1b;
+        }
+        
+        .pert-uncertainty-cv {
+            color: #7f1d1d;
+            font-size: 0.8rem;
+        }
+        
+        /* Dark theme support for PERT elements */
+        .dark-theme .pert-dialog {
+            background: #1f2937;
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-dialog-body {
+            background: #1f2937;
+        }
+        
+        .dark-theme .pert-form-group label {
+            color: #d1d5db;
+        }
+        
+        .dark-theme .pert-form-group input {
+            background: #111827;
+            color: #f9fafb;
+            border-color: #374151;
+        }
+        
+        .dark-theme .pert-calculations {
+            background: #111827;
+        }
+        
+        .dark-theme .pert-calc-value {
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-metrics-panel {
+            background: rgba(31, 41, 55, 0.98);
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-confidence-level {
+            background: #111827;
+        }
+        
+        .dark-theme .pert-confidence-date {
+            color: #f9fafb;
+        }
+        
+        .dark-theme .pert-uncertainty-item {
+            background: #7f1d1d20;
         }
         
         .dark-theme .cpm-metrics-panel {
@@ -1186,6 +1660,55 @@
             opacity: 0.8 !important;
         }
         
+        /* COMMENTED OUT - This was forcing row heights and causing issues
+        Force uniform row heights for ALL rows including header rows 
+        .b-grid-row,
+        .b-sch-timeaxis-cell,
+        .b-grid-header-container .b-grid-row,
+        .b-grid-headers .b-grid-row,
+        .b-sch-header-row,
+        .b-grid-header {
+            height: 45px !important;
+            max-height: 45px !important;
+            min-height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        Ensure time axis header rows are also uniform
+        .b-sch-header-timeaxis-cell {
+            height: 22px !important; 
+            max-height: 22px !important;
+            min-height: 22px !important;
+        } */
+        
+        /* Resource column cells should match row height */
+        .b-grid-cell {
+            height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        /* Fix any padding that might affect row heights */
+        .b-grid-row .b-grid-cell-inner {
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Remove top padding on grid rows and cells */
+        .b-grid-row,
+        .b-sch-timeaxis-cell,
+        .b-grid-cell {
+            padding-top: 0 !important;
+            margin-top: 0 !important;
+        }
+        
+        /* Ensure scheduler events don't have top padding/margin */
+        .b-sch-event-wrap,
+        .b-sch-event {
+            margin-top: 0 !important;
+        }
+        
         .b-sch-timespan-highlight:hover {
             opacity: 1 !important;
         }
@@ -1309,9 +1832,276 @@
         .constraint-badge.fnlt {
             background: #9C27B0;
         }
+        
+        /* Force uniform 45px row heights for all rows in the scheduler */
+        .b-schedulerpro .b-grid-row,
+        .b-schedulerpro .b-sch-timeaxiscolumn,
+        .b-schedulerpro .b-grid-headers-normal .b-grid-header-row,
+        .b-schedulerpro .b-sch-timeaxis-cell,
+        .b-schedulerpro .b-resourceheader,
+        .b-schedulerpro .b-depth-0,
+        .b-schedulerpro .b-depth-1,
+        .b-schedulerpro .b-grid-body-container .b-grid-row {
+            height: 45px !important;
+            min-height: 45px !important;
+            max-height: 45px !important;
+            line-height: 45px !important;
+        }
+        
+        /* Ensure all grid cells match the row height - COMMENTED OUT TO FIX ROW HEIGHT ISSUE
+        .b-schedulerpro .b-grid-cell,
+        .b-schedulerpro .b-grid-cell-inner,
+        .b-schedulerpro .b-resourceheader-cell {
+            height: 45px !important;
+            line-height: 45px !important;
+            padding: 0 10px !important;
+            display: flex !important;
+            align-items: center !important;
+        } */
+        
+        /* Fix time axis header heights */
+        .b-schedulerpro .b-sch-header-row,
+        .b-schedulerpro .b-sch-header-timeaxis-main,
+        .b-schedulerpro .b-sch-header-row-main,
+        .b-schedulerpro .b-sch-simple-timeaxis .b-sch-header-row {
+            height: 45px !important;
+            min-height: 45px !important;
+            max-height: 45px !important;
+        }
+        
+        /* Ensure event bars fit within row height */
+        .b-schedulerpro .b-sch-event-wrap,
+        .b-schedulerpro .b-sch-event {
+            max-height: 35px !important; /* 45px row minus 10px for margins */
+        }
+        
+        /* Fix row containers and background elements */
+        .b-schedulerpro .b-scheduler-foreground-canvas,
+        .b-schedulerpro .b-sch-timeaxis-tick,
+        .b-schedulerpro .b-grid-row > * {
+            height: 45px !important;
+        }
+        
+        /* Prevent any flex or auto-sizing from overriding row height */
+        .b-schedulerpro .b-grid-body-container {
+            font-size: 14px !important; /* Consistent font size */
+        }
+        
+        .b-schedulerpro .b-grid-row {
+            flex: 0 0 45px !important; /* Fixed flex height */
+        }
+        
+        /* ===== COMPREHENSIVE BRYNTUM DARK THEME STYLES ===== */
+        .dark-theme .b-schedulerpro,
+        .dark-theme .b-scheduler,
+        .dark-theme .b-grid,
+        .dark-theme .b-grid-subgrid,
+        .dark-theme .b-grid-body,
+        .dark-theme .b-grid-body-container,
+        .dark-theme .b-timeline-subgrid {
+            background: #0f172a !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Grid rows and cells */
+        .dark-theme .b-grid-row {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-grid-row:hover {
+            background: #334155 !important;
+        }
+        
+        .dark-theme .b-grid-cell {
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Timeline area */
+        .dark-theme .b-sch-background-canvas,
+        .dark-theme .b-timeline-body-wrap,
+        .dark-theme .b-sch-timerange,
+        .dark-theme .b-sch-foreground-canvas {
+            background: #0f172a !important;
+        }
+        
+        .dark-theme .b-sch-timeaxis-cell,
+        .dark-theme .b-timeline-cell {
+            background: transparent !important;
+            border-color: #334155 !important;
+        }
+        
+        .dark-theme .b-sch-timeaxis-cell:nth-child(even) {
+            background: rgba(30, 41, 59, 0.2) !important;
+        }
+        
+        /* Headers */
+        .dark-theme .b-grid-headers,
+        .dark-theme .b-grid-header,
+        .dark-theme .b-sch-header-timeaxis,
+        .dark-theme .b-sch-timeaxiscolumn {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-sch-header-row {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-sch-header-timeaxis-cell {
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Event/Task bars */
+        .dark-theme .b-sch-event,
+        .dark-theme .b-pro-event,
+        .dark-theme .b-sch-event-wrap {
+            filter: brightness(1.1);
+            color: #ffffff !important;
+        }
+        
+        .dark-theme .b-sch-event-selected {
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
+        }
+        
+        /* Dependencies */
+        .dark-theme .b-sch-dependency line,
+        .dark-theme .b-sch-dependency path {
+            stroke: #64748b !important;
+        }
+        
+        .dark-theme .b-sch-dependency-arrow {
+            fill: #64748b !important;
+        }
+        
+        /* Tooltips and popups */
+        .dark-theme .b-tooltip,
+        .dark-theme .b-popup {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+        }
+        
+        /* Scrollbars */
+        .dark-theme ::-webkit-scrollbar {
+            background: #1e293b !important;
+        }
+        
+        .dark-theme ::-webkit-scrollbar-thumb {
+            background: #475569 !important;
+            border-radius: 6px;
+        }
+        
+        .dark-theme ::-webkit-scrollbar-thumb:hover {
+            background: #64748b !important;
+        }
+        
+        /* Non-working time */
+        .dark-theme .b-sch-nonworkingtime {
+            background: rgba(100, 116, 139, 0.08) !important;
+        }
+        
+        /* Splitter */
+        .dark-theme .b-grid-splitter {
+            background: #334155 !important;
+        }
+        
+        /* Menus and dropdowns */
+        .dark-theme .b-menu,
+        .dark-theme .b-list,
+        .dark-theme .b-combo-picker {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-menuitem:hover,
+        .dark-theme .b-list-item:hover {
+            background: #334155 !important;
+        }
+        
+        /* Buttons */
+        .dark-theme .b-button {
+            background: #334155 !important;
+            color: #f1f5f9 !important;
+            border-color: #475569 !important;
+        }
+        
+        .dark-theme .b-button:hover {
+            background: #475569 !important;
+        }
+        
+        /* Input fields */
+        .dark-theme .b-field input,
+        .dark-theme .b-field select,
+        .dark-theme .b-combo input {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+        
+        /* Weekend highlighting */
+        .dark-theme .b-sch-dayheadercell-nonworking {
+            background: rgba(100, 116, 139, 0.05) !important;
+        }
+        
+        /* Scheduler container */
+        .dark-theme #scheduler {
+            background: #0f172a !important;
+        }
+        
+        /* Fix Date Header Formatting - Both Themes */
+        .b-sch-header-timeaxis {
+            height: auto !important;
+            min-height: 64px !important;
+        }
+        
+        .b-sch-header-row {
+            height: 32px !important;
+            line-height: 30px !important;
+            overflow: visible !important;
+        }
+        
+        /* Week row separator */
+        .b-sch-header-row-0 {
+            border-bottom: 2px solid #cbd5e1 !important;
+            font-weight: 500;
+        }
+        
+        .dark-theme .b-sch-header-row-0 {
+            border-bottom-color: #475569 !important;
+        }
+        
+        /* Day row */
+        .b-sch-header-row-1 {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        
+        .dark-theme .b-sch-header-row-1 {
+            border-bottom-color: #334155 !important;
+        }
+        
+        /* Cell padding to prevent text cutoff */
+        .b-sch-header-timeaxis-cell {
+            padding: 6px 8px !important;
+            overflow: visible !important;
+            line-height: normal !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+        }
     </style>
 </head>
 <body>
+    <!-- Bryntum theme link in body for dynamic switching - must follow {product}.{theme}.css pattern -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme" data-bryntum-theme />
+    
     <div class="header">
         <h1>Production Schedule</h1>
         <div class="header-actions">
@@ -1360,6 +2150,9 @@
                 <option value="asap">ASAP (Forward)</option>
                 <option value="alap">ALAP (Limited Support)</option>
                 <option value="criticalPath">Critical Path (Simplified)</option>
+                <option value="levelResources">Resource Leveling</option>
+                <option value="dbr">Theory of Constraints (DBR)</option>
+                <option value="pert">PERT (Probabilistic)</option>
             </select>
             <button id="applyScheduling">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1854,6 +2647,306 @@
             // Make notification function globally available
             window.showNotification = showNotification;
             
+            // PERT Data Storage
+            window.pertEstimates = {};
+            window.currentPertOperationId = null;
+            
+            // PERT Calculation Engine
+            const PERTCalculator = {
+                // Calculate expected time: (O + 4M + P) / 6
+                calculateExpectedTime: function(optimistic, mostLikely, pessimistic) {
+                    return (optimistic + 4 * mostLikely + pessimistic) / 6;
+                },
+                
+                // Calculate variance: ((P - O) / 6)^2
+                calculateVariance: function(optimistic, pessimistic) {
+                    const diff = (pessimistic - optimistic) / 6;
+                    return diff * diff;
+                },
+                
+                // Calculate standard deviation: (P - O) / 6
+                calculateStandardDeviation: function(optimistic, pessimistic) {
+                    return (pessimistic - optimistic) / 6;
+                },
+                
+                // Calculate coefficient of variation: std dev / expected time
+                calculateCoefficientOfVariation: function(stdDev, expectedTime) {
+                    if (expectedTime === 0) return 0;
+                    return (stdDev / expectedTime) * 100;
+                },
+                
+                // Calculate project metrics from critical path
+                calculateProjectMetrics: function(criticalPathEvents) {
+                    let totalExpectedDuration = 0;
+                    let totalVariance = 0;
+                    const highUncertaintyOps = [];
+                    
+                    criticalPathEvents.forEach(event => {
+                        const eventId = event.id;
+                        if (window.pertEstimates[eventId]) {
+                            const estimates = window.pertEstimates[eventId];
+                            totalExpectedDuration += estimates.expectedTime;
+                            totalVariance += estimates.variance;
+                            
+                            if (estimates.cv > 20) {
+                                highUncertaintyOps.push({
+                                    name: event.name,
+                                    cv: estimates.cv.toFixed(1),
+                                    stdDev: estimates.stdDev
+                                });
+                            }
+                        } else {
+                            // Use current duration if no PERT estimates
+                            totalExpectedDuration += event.duration || 2;
+                        }
+                    });
+                    
+                    const projectStdDev = Math.sqrt(totalVariance);
+                    
+                    return {
+                        expectedDuration: totalExpectedDuration,
+                        variance: totalVariance,
+                        stdDev: projectStdDev,
+                        highUncertaintyOps: highUncertaintyOps
+                    };
+                },
+                
+                // Calculate confidence levels using normal distribution
+                calculateConfidenceLevels: function(expectedDuration, stdDev, startDate) {
+                    const baseDate = new Date(startDate);
+                    
+                    // Expected completion date
+                    const expectedDate = new Date(baseDate);
+                    expectedDate.setHours(expectedDate.getHours() + expectedDuration);
+                    
+                    // 68% confidence (±1σ)
+                    const date68 = new Date(expectedDate);
+                    date68.setHours(date68.getHours() + stdDev);
+                    
+                    // 95% confidence (±2σ)
+                    const date95 = new Date(expectedDate);
+                    date95.setHours(date95.getHours() + (2 * stdDev));
+                    
+                    // 99.7% confidence (±3σ)
+                    const date99 = new Date(expectedDate);
+                    date99.setHours(date99.getHours() + (3 * stdDev));
+                    
+                    return {
+                        confidence68: date68,
+                        confidence95: date95,
+                        confidence99: date99
+                    };
+                }
+            };
+            
+            // PERT Dialog Functions
+            window.openPertDialog = function(operationId, operationName) {
+                window.currentPertOperationId = operationId;
+                document.getElementById('pertOperationName').textContent = operationName || 'Operation ' + operationId;
+                
+                // Clear previous values
+                document.getElementById('pertOptimistic').value = '';
+                document.getElementById('pertMostLikely').value = '';
+                document.getElementById('pertPessimistic').value = '';
+                document.getElementById('pertCalculations').style.display = 'none';
+                
+                // Clear error messages
+                document.getElementById('pertOptimisticError').textContent = '';
+                document.getElementById('pertMostLikelyError').textContent = '';
+                document.getElementById('pertPessimisticError').textContent = '';
+                
+                // Load existing PERT estimates if available
+                if (window.pertEstimates[operationId]) {
+                    const estimates = window.pertEstimates[operationId];
+                    document.getElementById('pertOptimistic').value = estimates.optimistic;
+                    document.getElementById('pertMostLikely').value = estimates.mostLikely;
+                    document.getElementById('pertPessimistic').value = estimates.pessimistic;
+                    updatePertCalculations();
+                }
+                
+                // Show dialog
+                document.getElementById('pertDialog').classList.add('active');
+            };
+            
+            window.closePertDialog = function() {
+                document.getElementById('pertDialog').classList.remove('active');
+                window.currentPertOperationId = null;
+            };
+            
+            window.savePertEstimates = function() {
+                const optimistic = parseFloat(document.getElementById('pertOptimistic').value);
+                const mostLikely = parseFloat(document.getElementById('pertMostLikely').value);
+                const pessimistic = parseFloat(document.getElementById('pertPessimistic').value);
+                
+                // Validate inputs
+                let hasError = false;
+                
+                if (!optimistic || optimistic <= 0) {
+                    document.getElementById('pertOptimisticError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertOptimisticError').textContent = '';
+                }
+                
+                if (!mostLikely || mostLikely <= 0) {
+                    document.getElementById('pertMostLikelyError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertMostLikelyError').textContent = '';
+                }
+                
+                if (!pessimistic || pessimistic <= 0) {
+                    document.getElementById('pertPessimisticError').textContent = 'Please enter a valid positive number';
+                    hasError = true;
+                } else {
+                    document.getElementById('pertPessimisticError').textContent = '';
+                }
+                
+                // Check O ≤ M ≤ P constraint
+                if (!hasError) {
+                    if (optimistic > mostLikely) {
+                        document.getElementById('pertOptimisticError').textContent = 'Optimistic time must be ≤ Most Likely time';
+                        hasError = true;
+                    }
+                    if (mostLikely > pessimistic) {
+                        document.getElementById('pertPessimisticError').textContent = 'Pessimistic time must be ≥ Most Likely time';
+                        hasError = true;
+                    }
+                }
+                
+                if (hasError) return;
+                
+                // Calculate PERT values
+                const expectedTime = PERTCalculator.calculateExpectedTime(optimistic, mostLikely, pessimistic);
+                const variance = PERTCalculator.calculateVariance(optimistic, pessimistic);
+                const stdDev = PERTCalculator.calculateStandardDeviation(optimistic, pessimistic);
+                const cv = PERTCalculator.calculateCoefficientOfVariation(stdDev, expectedTime);
+                
+                // Store PERT estimates
+                window.pertEstimates[window.currentPertOperationId] = {
+                    optimistic: optimistic,
+                    mostLikely: mostLikely,
+                    pessimistic: pessimistic,
+                    expectedTime: expectedTime,
+                    variance: variance,
+                    stdDev: stdDev,
+                    cv: cv
+                };
+                
+                // Update the event duration with expected time
+                if (window.scheduler && window.scheduler.eventStore) {
+                    const event = window.scheduler.eventStore.getById(window.currentPertOperationId);
+                    if (event) {
+                        event.duration = expectedTime;
+                        
+                        // Apply uncertainty visual indicators
+                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                        if (cv < 10) {
+                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                        } else if (cv < 20) {
+                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                        } else {
+                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                        }
+                        
+                        // Store PERT data on the event
+                        event.pertData = window.pertEstimates[window.currentPertOperationId];
+                        
+                        window.scheduler.refresh();
+                    }
+                }
+                
+                // Update PERT metrics if panel is visible
+                if (document.getElementById('pertMetricsPanel').classList.contains('active')) {
+                    updatePertMetrics();
+                }
+                
+                showNotification(`PERT estimates saved: Expected time = ${expectedTime.toFixed(2)} hours`, 'success');
+                closePertDialog();
+            };
+            
+            // Update PERT calculations in real-time
+            function updatePertCalculations() {
+                const optimistic = parseFloat(document.getElementById('pertOptimistic').value);
+                const mostLikely = parseFloat(document.getElementById('pertMostLikely').value);
+                const pessimistic = parseFloat(document.getElementById('pertPessimistic').value);
+                
+                if (optimistic && mostLikely && pessimistic && optimistic <= mostLikely && mostLikely <= pessimistic) {
+                    const expectedTime = PERTCalculator.calculateExpectedTime(optimistic, mostLikely, pessimistic);
+                    const variance = PERTCalculator.calculateVariance(optimistic, pessimistic);
+                    const stdDev = PERTCalculator.calculateStandardDeviation(optimistic, pessimistic);
+                    const cv = PERTCalculator.calculateCoefficientOfVariation(stdDev, expectedTime);
+                    
+                    document.getElementById('pertExpectedTime').textContent = expectedTime.toFixed(2) + ' hours';
+                    document.getElementById('pertStdDev').textContent = stdDev.toFixed(2) + ' hours';
+                    document.getElementById('pertVariance').textContent = variance.toFixed(2);
+                    document.getElementById('pertCV').textContent = cv.toFixed(1) + '%';
+                    
+                    document.getElementById('pertCalculations').style.display = 'block';
+                } else {
+                    document.getElementById('pertCalculations').style.display = 'none';
+                }
+            }
+            
+            // Add event listeners for real-time calculation updates
+            document.addEventListener('DOMContentLoaded', function() {
+                const pertInputs = ['pertOptimistic', 'pertMostLikely', 'pertPessimistic'];
+                pertInputs.forEach(id => {
+                    const input = document.getElementById(id);
+                    if (input) {
+                        input.addEventListener('input', updatePertCalculations);
+                    }
+                });
+            });
+            
+            // Update PERT metrics panel
+            function updatePertMetrics() {
+                if (!window.scheduler) return;
+                
+                // Get all events
+                const events = window.scheduler.eventStore.records;
+                
+                // For simplicity, consider all events as critical path
+                // In production, you would identify the actual critical path
+                const criticalPathEvents = events.filter(e => e.resourceId !== 'unscheduled');
+                
+                const metrics = PERTCalculator.calculateProjectMetrics(criticalPathEvents);
+                
+                // Update duration metrics
+                document.getElementById('pertProjectDuration').textContent = metrics.expectedDuration.toFixed(1) + ' hours';
+                document.getElementById('pertProjectStdDev').textContent = metrics.stdDev.toFixed(2) + ' hours';
+                document.getElementById('pertCriticalVariance').textContent = metrics.variance.toFixed(2);
+                
+                // Calculate confidence dates
+                const startDate = new Date(2025, 8, 3, 7, 0, 0);
+                const confidenceLevels = PERTCalculator.calculateConfidenceLevels(
+                    metrics.expectedDuration,
+                    metrics.stdDev,
+                    startDate
+                );
+                
+                document.getElementById('pertConfidence68').textContent = confidenceLevels.confidence68.toLocaleDateString();
+                document.getElementById('pertConfidence95').textContent = confidenceLevels.confidence95.toLocaleDateString();
+                document.getElementById('pertConfidence99').textContent = confidenceLevels.confidence99.toLocaleDateString();
+                
+                // Update high uncertainty operations list
+                const listContainer = document.getElementById('pertHighUncertaintyList');
+                if (metrics.highUncertaintyOps.length > 0) {
+                    listContainer.innerHTML = metrics.highUncertaintyOps.map(op => `
+                        <div class="pert-uncertainty-item">
+                            <div class="pert-uncertainty-name">${op.name}</div>
+                            <div class="pert-uncertainty-cv">CV: ${op.cv}%</div>
+                        </div>
+                    `).join('');
+                } else {
+                    listContainer.innerHTML = '<div style="color: #6b7280; font-size: 0.85rem;">All operations have acceptable uncertainty</div>';
+                }
+            }
+            
+            window.closePertMetrics = function() {
+                document.getElementById('pertMetricsPanel').classList.remove('active');
+            };
+            
             // Constraint Management Functions
             window.currentOperationId = null;
             
@@ -1976,6 +3069,16 @@
                 // Mark first task as in progress
                 
                 // Initialize scheduler using global bryntum object
+                console.log('🚀 Checking for Bryntum library...');
+                console.log('window.bryntum:', window.bryntum);
+                
+                if (!window.bryntum || !window.bryntum.schedulerpro) {
+                    console.error('❌ Bryntum library not loaded!');
+                    console.log('Available window properties:', Object.keys(window).filter(k => k.includes('bryntum')));
+                    document.getElementById('scheduler').innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Error: Scheduler library not loaded. Please check console for details.</div>';
+                    return;
+                }
+                
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
                 // Set today's date to September 3, 2025
@@ -2728,7 +3831,30 @@
                             constrainDragToResource: false, // Allow dragging between resources
                             // Validation function to check if an operation can be dropped on a resource
                             validatorFn: (context) => {
-                                const { eventRecord, newResource } = context;
+                                const { eventRecord, newResource, startDate, endDate } = context;
+                                
+                                // First check for temporal overlaps with other operations on the same resource
+                                const events = window.scheduler.eventStore.records;
+                                for (let existingEvent of events) {
+                                    // Skip checking against itself
+                                    if (existingEvent.id === eventRecord.id) continue;
+                                    
+                                    // Check if on same resource and would overlap
+                                    if (existingEvent.resourceId === newResource.id) {
+                                        const newStart = startDate || eventRecord.startDate;
+                                        const newEnd = endDate || eventRecord.endDate;
+                                        
+                                        // Check for temporal overlap
+                                        if (newStart < existingEvent.endDate && existingEvent.startDate < newEnd) {
+                                            console.warn(`Cannot place operation here - would overlap with "${existingEvent.name}" on ${newResource.name}`);
+                                            showNotification(`⚠️ Cannot overlap with "${existingEvent.name}"`, 'warning');
+                                            return {
+                                                valid: false,
+                                                message: `Overlaps with ${existingEvent.name}`
+                                            };
+                                        }
+                                    }
+                                }
                                 
                                 // Helper function to extract operation type from operation name
                                 function getOperationType(operationName) {
@@ -2929,6 +4055,9 @@
                                 // Check if CPM data is available
                                 const hasCPMData = eventRecord.cpmData && typeof eventRecord.cpmData.totalSlack !== 'undefined';
                                 
+                                // Check if PERT data is available
+                                const hasPertData = window.pertEstimates && window.pertEstimates[eventRecord.id];
+                                
                                 let cpmSection = '';
                                 if (hasCPMData) {
                                     const cpm = eventRecord.cpmData;
@@ -2980,6 +4109,50 @@
                                     `;
                                 }
                                 
+                                // Add PERT section if data exists
+                                let pertSection = '';
+                                if (hasPertData) {
+                                    const pert = window.pertEstimates[eventRecord.id];
+                                    const uncertaintyLevel = pert.cv < 10 ? 'Low' : pert.cv < 20 ? 'Medium' : 'High';
+                                    const uncertaintyColor = pert.cv < 10 ? '#10b981' : pert.cv < 20 ? '#f59e0b' : '#dc2626';
+                                    
+                                    pertSection = `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                            <strong style="color: #333;">📊 PERT Estimates</strong>
+                                            <div style="font-size: 0.85em; margin-top: 5px; line-height: 1.6;">
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Optimistic:</span>
+                                                    <span style="font-weight: 600;">${pert.optimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Most Likely:</span>
+                                                    <span style="font-weight: 600;">${pert.mostLikely.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Pessimistic:</span>
+                                                    <span style="font-weight: 600;">${pert.pessimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between; margin-top: 5px; padding-top: 5px; border-top: 1px solid #eee;">
+                                                    <span style="color: #2563eb; font-weight: bold;">Expected:</span>
+                                                    <span style="color: #2563eb; font-weight: bold;">${pert.expectedTime.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Std Deviation:</span>
+                                                    <span style="font-weight: 600;">±${pert.stdDev.toFixed(2)}h</span>
+                                                </div>
+                                                <div style="display: flex; justify-content: space-between;">
+                                                    <span style="color: #666;">Range:</span>
+                                                    <span style="font-weight: 600;">${pert.optimistic.toFixed(1)}-${pert.pessimistic.toFixed(1)}h</span>
+                                                </div>
+                                                <div style="margin-top: 8px; padding: 5px; background: ${uncertaintyColor === '#10b981' ? 'rgba(16, 185, 129, 0.1)' : uncertaintyColor === '#f59e0b' ? 'rgba(245, 158, 11, 0.1)' : 'rgba(220, 38, 38, 0.1)'}; border-radius: 4px; text-align: center;">
+                                                    <span style="color: ${uncertaintyColor}; font-weight: bold;">
+                                                        Uncertainty: ${uncertaintyLevel} (CV: ${pert.cv.toFixed(1)}%)
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                }
+                                
                                 return `
                                     <div style="padding: 10px; min-width: 250px; max-width: 350px;">
                                         ${jobDisplay}
@@ -2992,6 +4165,7 @@
                                         </div>
                                         ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
                                         ${cpmSection}
+                                        ${pertSection}
                                     </div>
                                 `;
                             }
@@ -3593,6 +4767,50 @@
                                 // TOC logic would go here
                                 // This is a placeholder as full implementation would require bottleneck identification
                                 showNotification('Drum/TOC optimization applied', 'success');
+                                
+                            } else if (algorithm.includes('PERT') || algorithm.includes('pert')) {
+                                // Apply PERT algorithm
+                                console.log('📊 Applying PERT (Probabilistic) scheduling');
+                                
+                                const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                                let hasAnyPertData = false;
+                                
+                                // Apply PERT expected times to events
+                                events.forEach(event => {
+                                    if (window.pertEstimates[event.id]) {
+                                        const estimates = window.pertEstimates[event.id];
+                                        
+                                        // Update duration to expected time
+                                        event.duration = estimates.expectedTime;
+                                        
+                                        // Apply uncertainty visual indicators
+                                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                                        if (estimates.cv < 10) {
+                                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                                        } else if (estimates.cv < 20) {
+                                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                                        } else {
+                                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                                        }
+                                        
+                                        event.pertData = estimates;
+                                        hasAnyPertData = true;
+                                    }
+                                });
+                                
+                                // Show PERT metrics panel
+                                document.getElementById('pertMetricsPanel').classList.add('active');
+                                updatePertMetrics();
+                                
+                                // Trigger recalculation
+                                await scheduler.project.propagate();
+                                scheduler.refresh();
+                                
+                                if (!hasAnyPertData) {
+                                    showNotification('⚠️ No PERT estimates found. Right-click on operations to add three-point estimates.', 'warning');
+                                } else {
+                                    showNotification('✅ PERT algorithm applied with probabilistic scheduling', 'success');
+                                }
                                 
                             } else {
                                 console.warn('Unknown algorithm:', algorithm);
@@ -4390,7 +5608,9 @@
                         'alap': 'ALAP Backward',
                         'criticalPath': 'Critical Path',
                         'levelResources': 'Resource Leveling',
-                        'drum': 'Drum TOC'
+                        'drum': 'Drum TOC',
+                        'dbr': 'Theory of Constraints (DBR)',
+                        'pert': 'PERT (Probabilistic)'
                     };
                     
                     createVersion(`Before ${algorithmNames[algorithm]} Algorithm`);
@@ -4435,6 +5655,13 @@
                                         await drumScheduling();
                                         message = 'Drum scheduling applied - optimized around bottleneck!';
                                         color = 'brown';
+                                        break;
+                                        
+                                    case 'dbr':
+                                        // Theory of Constraints DBR (Drum-Buffer-Rope)
+                                        await dbrScheduling();
+                                        message = 'Theory of Constraints (DBR) applied - Bottleneck optimized with buffers!';
+                                        color = '#8b5cf6';
                                         break;
                                 }
                                 
@@ -5793,6 +7020,382 @@
                     }, 15000);
                 }
                 
+                // Comprehensive Theory of Constraints DBR Implementation
+                async function dbrScheduling() {
+                    console.log('🥁 Starting Theory of Constraints (DBR) Scheduling...');
+                    currentSchedulingMode = 'DBR/TOC';
+                    
+                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    const resources = [...scheduler.resourceStore.records].filter(r => r.id !== 'unscheduled');
+                    
+                    if (events.length === 0) {
+                        console.warn('No events to schedule');
+                        return;
+                    }
+                    
+                    // =======================================
+                    // DRUM: Identify and Schedule the Constraint
+                    // =======================================
+                    
+                    // Calculate resource utilization
+                    const resourceUtilization = {};
+                    const resourceOperations = {};
+                    const totalTimeAvailable = 24 * 5; // 5 days * 24 hours for calculation
+                    
+                    resources.forEach(resource => {
+                        resourceUtilization[resource.id] = {
+                            resourceId: resource.id,
+                            resourceName: resource.name,
+                            totalDuration: 0,
+                            operationCount: 0,
+                            utilization: 0,
+                            operations: []
+                        };
+                        resourceOperations[resource.id] = [];
+                    });
+                    
+                    // Calculate total duration per resource
+                    events.forEach(event => {
+                        if (resourceUtilization[event.resourceId]) {
+                            resourceUtilization[event.resourceId].totalDuration += event.duration || 0;
+                            resourceUtilization[event.resourceId].operationCount += 1;
+                            resourceUtilization[event.resourceId].operations.push(event);
+                            resourceOperations[event.resourceId].push(event);
+                        }
+                    });
+                    
+                    // Calculate utilization percentage and identify bottleneck
+                    let bottleneck = null;
+                    let maxUtilization = 0;
+                    
+                    Object.values(resourceUtilization).forEach(util => {
+                        util.utilization = (util.totalDuration / totalTimeAvailable) * 100;
+                        if (util.utilization > maxUtilization) {
+                            maxUtilization = util.utilization;
+                            bottleneck = util;
+                        }
+                    });
+                    
+                    if (!bottleneck) {
+                        console.error('Could not identify bottleneck');
+                        return;
+                    }
+                    
+                    console.log(`🔴 Bottleneck Identified: ${bottleneck.resourceName}`);
+                    console.log(`   Utilization: ${bottleneck.utilization.toFixed(1)}%`);
+                    console.log(`   Total Load: ${bottleneck.totalDuration.toFixed(1)}h`);
+                    console.log(`   Operations: ${bottleneck.operationCount}`);
+                    
+                    // Schedule the bottleneck (DRUM) for maximum throughput
+                    const baseDate = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 2025, 7 AM
+                    let drumTime = new Date(baseDate);
+                    
+                    // Sort bottleneck operations by priority (can be customized)
+                    // For now, sort by duration (longest first) for better throughput
+                    const bottleneckOps = bottleneck.operations.sort((a, b) => b.duration - a.duration);
+                    
+                    bottleneckOps.forEach(event => {
+                        event.startDate = new Date(drumTime);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        
+                        // Add small buffer between operations on bottleneck (5 minutes)
+                        drumTime = new Date(event.endDate.getTime() + 5 * 60 * 1000);
+                        
+                        // Mark as bottleneck operation for visual styling
+                        event.cls = (event.cls || '') + ' bottleneck-operation';
+                        event.iconCls = 'b-icon b-icon-drum'; // Drum icon
+                    });
+                    
+                    // =======================================
+                    // BUFFER: Add Time Buffers
+                    // =======================================
+                    
+                    // Calculate buffer times (25-50% of lead time)
+                    const bufferPercentage = 0.35; // 35% buffer initially
+                    
+                    // Group events by type for buffer management
+                    const shippingEvents = [];
+                    const constraintFeederEvents = [];
+                    const assemblyEvents = [];
+                    const otherEvents = [];
+                    
+                    events.forEach(event => {
+                        if (event.resourceId === bottleneck.resourceId) {
+                            // Skip bottleneck operations (already scheduled)
+                            return;
+                        }
+                        
+                        const eventName = (event.name || '').toLowerCase();
+                        
+                        if (eventName.includes('packag') || eventName.includes('ship')) {
+                            shippingEvents.push(event);
+                        } else if (eventName.includes('assembl') || eventName.includes('final')) {
+                            assemblyEvents.push(event);
+                        } else if (hasDownstreamDependency(event, bottleneckOps)) {
+                            constraintFeederEvents.push(event);
+                        } else {
+                            otherEvents.push(event);
+                        }
+                    });
+                    
+                    // Helper function to check if event feeds into bottleneck
+                    function hasDownstreamDependency(event, bottleneckOps) {
+                        // Simplified check - in real implementation, check actual dependencies
+                        return bottleneckOps.some(bOp => {
+                            return event.jobId === bOp.jobId && event.sequenceNumber < bOp.sequenceNumber;
+                        });
+                    }
+                    
+                    // Add buffers and schedule non-bottleneck operations
+                    const resourceSchedules = {};
+                    
+                    // Schedule constraint feeder operations with buffer
+                    constraintFeederEvents.forEach(event => {
+                        const bufferTime = event.duration * bufferPercentage;
+                        const bufferMs = bufferTime * 60 * 60 * 1000;
+                        
+                        // Find corresponding bottleneck operation
+                        const bottleneckOp = bottleneckOps.find(bOp => bOp.jobId === event.jobId);
+                        if (bottleneckOp) {
+                            // Schedule to complete with buffer before bottleneck needs it
+                            const targetEnd = new Date(bottleneckOp.startDate.getTime() - bufferMs);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = targetEnd;
+                            event.startDate = new Date(targetEnd.getTime() - durationMs);
+                            
+                            // Calculate buffer consumption (for visualization)
+                            const bufferConsumed = calculateBufferConsumption(event, bottleneckOp, bufferMs);
+                            event.bufferZone = getBufferZone(bufferConsumed);
+                            event.cls = (event.cls || '') + ' buffer-' + event.bufferZone;
+                        }
+                    });
+                    
+                    // Schedule shipping operations with shipping buffer
+                    let shipTime = new Date(baseDate.getTime() + 48 * 60 * 60 * 1000); // Start shipping 2 days later
+                    shippingEvents.forEach(event => {
+                        const bufferTime = event.duration * bufferPercentage * 1.5; // Larger buffer for shipping
+                        const bufferMs = bufferTime * 60 * 60 * 1000;
+                        
+                        event.startDate = new Date(shipTime);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        
+                        // Add shipping buffer
+                        shipTime = new Date(event.endDate.getTime() + bufferMs);
+                        
+                        event.bufferZone = 'green'; // Initially green
+                        event.cls = (event.cls || '') + ' shipping-buffer buffer-green';
+                    });
+                    
+                    // Schedule assembly operations with assembly buffer
+                    assemblyEvents.forEach(event => {
+                        if (!resourceSchedules[event.resourceId]) {
+                            resourceSchedules[event.resourceId] = new Date(baseDate);
+                        }
+                        
+                        const bufferTime = event.duration * bufferPercentage;
+                        const bufferMs = bufferTime * 60 * 60 * 1000;
+                        
+                        event.startDate = new Date(resourceSchedules[event.resourceId]);
+                        const durationMs = event.duration * 60 * 60 * 1000;
+                        event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        
+                        // Update resource schedule with buffer
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + bufferMs);
+                        
+                        event.bufferZone = 'green';
+                        event.cls = (event.cls || '') + ' assembly-buffer buffer-green';
+                    });
+                    
+                    // =======================================
+                    // ROPE: Control Material Release
+                    // =======================================
+                    
+                    // Calculate material release dates (rope)
+                    const materialReleases = {};
+                    
+                    events.forEach(event => {
+                        if (!event.jobId) return;
+                        
+                        if (!materialReleases[event.jobId]) {
+                            materialReleases[event.jobId] = {
+                                jobId: event.jobId,
+                                jobName: event.jobName,
+                                operations: [],
+                                constraintDate: null,
+                                bufferTime: 0,
+                                processingTime: 0,
+                                releaseDate: null
+                            };
+                        }
+                        
+                        materialReleases[event.jobId].operations.push(event);
+                        
+                        // If this is a bottleneck operation, mark constraint date
+                        if (event.resourceId === bottleneck.resourceId) {
+                            materialReleases[event.jobId].constraintDate = event.startDate;
+                        }
+                        
+                        materialReleases[event.jobId].processingTime += event.duration;
+                    });
+                    
+                    // Calculate release dates
+                    Object.values(materialReleases).forEach(release => {
+                        if (release.constraintDate) {
+                            // Rope calculation: Release = Constraint - Buffer - Processing
+                            const bufferTime = release.processingTime * bufferPercentage;
+                            const totalLeadTime = (release.processingTime + bufferTime) * 60 * 60 * 1000;
+                            
+                            release.releaseDate = new Date(release.constraintDate.getTime() - totalLeadTime);
+                            release.bufferTime = bufferTime;
+                            
+                            // Apply release date to first operation of job
+                            const firstOp = release.operations.sort((a, b) => 
+                                (a.sequenceNumber || 0) - (b.sequenceNumber || 0))[0];
+                            
+                            if (firstOp && firstOp.startDate < release.releaseDate) {
+                                // Delay release to prevent excess WIP
+                                const delay = release.releaseDate.getTime() - firstOp.startDate.getTime();
+                                release.operations.forEach(op => {
+                                    op.startDate = new Date(op.startDate.getTime() + delay);
+                                    op.endDate = new Date(op.endDate.getTime() + delay);
+                                });
+                            }
+                        }
+                    });
+                    
+                    // Schedule remaining operations
+                    otherEvents.forEach(event => {
+                        if (!resourceSchedules[event.resourceId]) {
+                            resourceSchedules[event.resourceId] = new Date(baseDate);
+                        }
+                        
+                        if (!event.startDate || event.startDate < resourceSchedules[event.resourceId]) {
+                            event.startDate = new Date(resourceSchedules[event.resourceId]);
+                            const durationMs = event.duration * 60 * 60 * 1000;
+                            event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        }
+                        
+                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 15 * 60 * 1000);
+                    });
+                    
+                    // =======================================
+                    // Visual Indicators & Metrics
+                    // =======================================
+                    
+                    // Add visual classes to bottleneck resource
+                    const bottleneckResource = scheduler.resourceStore.getById(bottleneck.resourceId);
+                    if (bottleneckResource) {
+                        bottleneckResource.cls = 'bottleneck-resource';
+                        bottleneckResource.name = '🥁 ' + bottleneckResource.name + ' (BOTTLENECK)';
+                    }
+                    
+                    // Create or update DBR metrics panel
+                    updateDBRMetrics(bottleneck, resourceUtilization, materialReleases, events);
+                    
+                    // Commit changes
+                    scheduler.eventStore.commit();
+                    scheduler.resourceStore.commit();
+                    
+                    console.log('✅ DBR Scheduling completed successfully');
+                    console.log(`   Bottleneck: ${bottleneck.resourceName} (${bottleneck.utilization.toFixed(1)}%)`);
+                    console.log(`   Material Releases: ${Object.keys(materialReleases).length} jobs`);
+                    console.log(`   Buffered Operations: ${constraintFeederEvents.length + shippingEvents.length + assemblyEvents.length}`);
+                    
+                    // Save schedule
+                    await saveSchedule();
+                }
+                
+                // Helper function to calculate buffer consumption
+                function calculateBufferConsumption(event, bottleneckOp, bufferMs) {
+                    const actualGap = bottleneckOp.startDate.getTime() - event.endDate.getTime();
+                    const consumption = ((bufferMs - actualGap) / bufferMs) * 100;
+                    return Math.max(0, Math.min(100, consumption));
+                }
+                
+                // Helper function to determine buffer zone
+                function getBufferZone(consumption) {
+                    if (consumption <= 33) return 'green';
+                    if (consumption <= 66) return 'yellow';
+                    return 'red';
+                }
+                
+                // Function to update DBR metrics panel
+                function updateDBRMetrics(bottleneck, utilization, releases, events) {
+                    // Remove existing panel if any
+                    const existingPanel = document.getElementById('dbr-metrics-panel');
+                    if (existingPanel) {
+                        existingPanel.remove();
+                    }
+                    
+                    // Calculate metrics
+                    const avgUtilization = Object.values(utilization).reduce((sum, u) => sum + u.utilization, 0) / Object.keys(utilization).length;
+                    const wipBefore = events.length; // Simplified - all operations
+                    const wipAfter = Object.keys(releases).length; // Jobs in progress
+                    const reductionPct = ((wipBefore - wipAfter) / wipBefore * 100).toFixed(1);
+                    
+                    // Count operations by buffer zone
+                    let greenCount = 0, yellowCount = 0, redCount = 0;
+                    events.forEach(event => {
+                        if (event.bufferZone === 'green') greenCount++;
+                        else if (event.bufferZone === 'yellow') yellowCount++;
+                        else if (event.bufferZone === 'red') redCount++;
+                    });
+                    
+                    // Create metrics panel
+                    const panel = document.createElement('div');
+                    panel.id = 'dbr-metrics-panel';
+                    panel.className = 'cpm-metrics-panel';
+                    panel.style.cssText = 'position: absolute; top: 10px; right: 420px; background: rgba(255, 255, 255, 0.95); border: 2px solid #8b5cf6; min-width: 280px;';
+                    panel.innerHTML = `
+                        <div class="cpm-metrics-title" style="color: #8b5cf6; font-size: 14px; display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">🥁</span> DBR Metrics
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Bottleneck Resource:</span>
+                            <span class="cpm-metric-value critical">${bottleneck.resourceName}</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Bottleneck Utilization:</span>
+                            <span class="cpm-metric-value" style="color: ${bottleneck.utilization > 80 ? '#dc2626' : '#333'};">${bottleneck.utilization.toFixed(1)}%</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Avg Resource Utilization:</span>
+                            <span class="cpm-metric-value">${avgUtilization.toFixed(1)}%</span>
+                        </div>
+                        <div class="cpm-metric" style="border-top: 1px solid #e0e0e0; padding-top: 4px; margin-top: 4px;">
+                            <span class="cpm-metric-label">Buffer Zones:</span>
+                            <span class="cpm-metric-value" style="font-size: 11px;">
+                                <span style="color: #10b981;">●${greenCount}</span>
+                                <span style="color: #f59e0b;">●${yellowCount}</span>
+                                <span style="color: #dc2626;">●${redCount}</span>
+                            </span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">WIP Reduction:</span>
+                            <span class="cpm-metric-value" style="color: #10b981;">${reductionPct}%</span>
+                        </div>
+                        <div class="cpm-metric">
+                            <span class="cpm-metric-label">Active Jobs:</span>
+                            <span class="cpm-metric-value">${wipAfter} / ${wipBefore}</span>
+                        </div>
+                        <div class="cpm-metric" style="border-top: 1px solid #e0e0e0; padding-top: 4px; margin-top: 4px;">
+                            <span class="cpm-metric-label">Throughput Status:</span>
+                            <span class="cpm-metric-value" style="color: #10b981;">Optimized ✓</span>
+                        </div>
+                    `;
+                    
+                    document.querySelector('.scheduler-container').appendChild(panel);
+                    
+                    // Auto-hide after 30 seconds
+                    setTimeout(() => {
+                        panel.style.transition = 'opacity 0.5s';
+                        panel.style.opacity = '0';
+                        setTimeout(() => panel.remove(), 500);
+                    }, 30000);
+                }
+                
                 async function drumScheduling() {
                     // Theory of Constraints - optimize around bottleneck
                     console.log('🚀 Starting Drum (TOC) scheduling...');
@@ -5910,6 +7513,12 @@
                 
                 // Database times are now fixed with no overlaps, so we don't need to run ASAP automatically
                 console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
+                
+                // Reapply theme after scheduler is fully initialized  
+                const currentTheme = localStorage.getItem('theme') || new URLSearchParams(window.location.search).get('theme') || 'light';
+                console.log('🎨 [Scheduler] Reapplying theme after initialization:', currentTheme);
+                // Use the applyTheme function to ensure proper Bryntum theme is set
+                applyTheme(currentTheme);
                 console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
                 // Add welcome message to Max AI indicating schedule is ready
@@ -6018,8 +7627,10 @@
                             }
                         }
                     } else if (event.data?.type === 'SET_THEME') {
-                        // Theme toggle removed - using consistent light theme with blue-purple gradient
-                        console.log('Theme toggle disabled - using consistent light theme');
+                        // Apply theme received from parent
+                        console.log('📥 [Scheduler] Applying theme from parent:', event.data.theme);
+                        applyTheme(event.data.theme);
+                        localStorage.setItem('theme', event.data.theme);
                     }
                 });
                 
@@ -6156,12 +7767,81 @@
             });
         }
         
+        // Apply theme immediately (before DOMContentLoaded to prevent flash)
+        function applyTheme(theme) {
+            console.log('🎨 [Production Scheduler] Applying theme:', theme);
+            
+            const isDark = theme === 'dark';
+            const themeLink = document.getElementById('bryntum-theme');
+            
+            if (themeLink) {
+                // Switch between Bryntum's built-in light and dark themes
+                const newThemeUrl = isDark 
+                    ? '/schedulerpro.classic-dark.css' 
+                    : '/schedulerpro.classic-light.css';
+                
+                // Only update if the theme actually changed
+                if (!themeLink.href.includes(newThemeUrl)) {
+                    console.log(`🔄 [Production Scheduler] Switching Bryntum theme to: ${newThemeUrl}`);
+                    themeLink.href = newThemeUrl;
+                }
+            }
+            
+            // Also apply dark-theme class for custom styles (header, toolbar, etc.)
+            if (isDark) {
+                document.body.classList.add('dark-theme');
+                document.documentElement.classList.add('dark-theme');
+                console.log('🌙 [Production Scheduler] Dark theme applied with Bryntum Classic Dark');
+            } else {
+                document.body.classList.remove('dark-theme');
+                document.documentElement.classList.remove('dark-theme');
+                console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
+            }
+        }
+        
+        // Get theme from URL parameter (most reliable)
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeFromUrl = urlParams.get('theme');
+        
+        console.log('🌐 [Scheduler iframe] URL params:', window.location.search);
+        console.log('🎨 [Scheduler iframe] Theme from URL:', themeFromUrl);
+        
+        // Listen for theme messages from parent window (set up early)
+        window.addEventListener('message', (event) => {
+            if (event.data?.type === 'SET_THEME') {
+                console.log('📥 [Scheduler iframe] Received theme from parent:', event.data.theme);
+                applyTheme(event.data.theme);
+                // Also save to iframe's localStorage for consistency
+                localStorage.setItem('theme', event.data.theme);
+            }
+        });
+        
+        // Apply theme immediately - priority: URL param > localStorage > default
+        // But first check if we're in an iframe and can get parent theme
+        let parentTheme = null;
+        if (window.parent !== window) {
+            try {
+                // Try to get theme from parent's localStorage
+                parentTheme = window.parent.localStorage.getItem('theme');
+                console.log('👆 [Production Scheduler] Parent theme detected:', parentTheme);
+            } catch (e) {
+                console.log('⚠️ [Production Scheduler] Could not access parent theme (cross-origin)');
+            }
+        }
+        
+        const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
+        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : localStorage.getItem('theme') ? 'localStorage' : 'default', ')');
+        console.log('📱 [Production Scheduler] Document ready state:', document.readyState);
+        applyTheme(initialTheme);
+        
+        // Also apply theme after DOM is ready and scheduler is initialized
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 [Production Scheduler] DOM ready, reapplying theme:', initialTheme);
+            applyTheme(initialTheme);
+        });
+        
         // Setup event listeners when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            // Apply theme from localStorage on page load
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
-            
             // Constraint settings button
             document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
             
@@ -6175,7 +7855,7 @@
             // Listen for theme changes from parent window
             window.addEventListener('message', (e) => {
                 if (e.data && e.data.type === 'SET_THEME') {
-                    document.body.className = e.data.theme === 'dark' ? 'dark-theme' : '';
+                    applyTheme(e.data.theme);
                     localStorage.setItem('theme', e.data.theme);
                 }
             });
@@ -6183,7 +7863,7 @@
             // Listen for storage changes (theme changes in main app)
             window.addEventListener('storage', (e) => {
                 if (e.key === 'theme') {
-                    document.body.className = e.newValue === 'dark' ? 'dark-theme' : '';
+                    applyTheme(e.newValue);
                 }
             });
             
@@ -6312,13 +7992,64 @@
                                 break;
                                 
                             case 'levelResources':
-                                // Resource leveling - placeholder
-                                console.log('⚖️ Resource leveling not yet implemented');
+                                // Call the comprehensive Resource Leveling algorithm
+                                await levelResourcesScheduling();
                                 break;
                                 
                             case 'drum':
                                 // Theory of Constraints / Drum scheduling - placeholder
                                 console.log('🥁 Drum/TOC scheduling not yet implemented');
+                                break;
+                                
+                            case 'dbr':
+                                // Theory of Constraints DBR scheduling - placeholder
+                                console.log('🎯 DBR/TOC scheduling not yet implemented');
+                                break;
+                                
+                            case 'pert':
+                                // Apply PERT algorithm
+                                console.log('📊 Applying PERT (Probabilistic) scheduling');
+                                
+                                const pertEventList = window.scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                                let hasPertEstimates = false;
+                                
+                                // Apply PERT expected times
+                                pertEventList.forEach(event => {
+                                    if (window.pertEstimates && window.pertEstimates[event.id]) {
+                                        const estimates = window.pertEstimates[event.id];
+                                        
+                                        // Update duration to expected time
+                                        event.duration = estimates.expectedTime;
+                                        
+                                        // Apply uncertainty visual indicators
+                                        event.cls = event.cls ? event.cls.replace(/pert-\w+-uncertainty/g, '') : '';
+                                        if (estimates.cv < 10) {
+                                            event.cls = (event.cls || '') + ' pert-low-uncertainty';
+                                        } else if (estimates.cv < 20) {
+                                            event.cls = (event.cls || '') + ' pert-medium-uncertainty';
+                                        } else {
+                                            event.cls = (event.cls || '') + ' pert-high-uncertainty';
+                                        }
+                                        
+                                        event.pertData = estimates;
+                                        hasPertEstimates = true;
+                                    }
+                                });
+                                
+                                // Show PERT metrics panel
+                                if (document.getElementById('pertMetricsPanel')) {
+                                    document.getElementById('pertMetricsPanel').classList.add('active');
+                                    updatePertMetrics();
+                                }
+                                
+                                // Recalculate schedule
+                                window.scheduler.project.propagate();
+                                
+                                if (!hasPertEstimates) {
+                                    showNotification('⚠️ No PERT estimates found. Right-click operations to add three-point estimates.', 'warning');
+                                } else {
+                                    showNotification('✅ PERT algorithm applied with probabilistic scheduling', 'success');
+                                }
                                 break;
                                 
                             default:
@@ -6669,5 +8400,104 @@
             });
         });
     </script>
+    
+    <!-- PERT Estimation Dialog -->
+    <div id="pertDialog" class="pert-dialog">
+        <div class="pert-dialog-header">
+            <h2>PERT Three-Point Estimation</h2>
+            <button class="constraint-modal-close" onclick="closePertDialog()">×</button>
+        </div>
+        <div class="pert-dialog-body">
+            <p><strong>Operation:</strong> <span id="pertOperationName"></span></p>
+            
+            <div class="pert-form-group">
+                <label for="pertOptimistic">Optimistic Time (O) - Best Case (hours):</label>
+                <input type="number" id="pertOptimistic" step="0.5" min="0.5" placeholder="e.g., 2.0">
+                <div class="pert-error-message" id="pertOptimisticError"></div>
+            </div>
+            
+            <div class="pert-form-group">
+                <label for="pertMostLikely">Most Likely Time (M) - Normal Case (hours):</label>
+                <input type="number" id="pertMostLikely" step="0.5" min="0.5" placeholder="e.g., 3.0">
+                <div class="pert-error-message" id="pertMostLikelyError"></div>
+            </div>
+            
+            <div class="pert-form-group">
+                <label for="pertPessimistic">Pessimistic Time (P) - Worst Case (hours):</label>
+                <input type="number" id="pertPessimistic" step="0.5" min="0.5" placeholder="e.g., 5.0">
+                <div class="pert-error-message" id="pertPessimisticError"></div>
+            </div>
+            
+            <div class="pert-calculations" id="pertCalculations" style="display: none;">
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Expected Time (Te):</span>
+                    <span class="pert-calc-value" id="pertExpectedTime">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Standard Deviation (σ):</span>
+                    <span class="pert-calc-value" id="pertStdDev">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Variance (σ²):</span>
+                    <span class="pert-calc-value" id="pertVariance">-</span>
+                </div>
+                <div class="pert-calc-row">
+                    <span class="pert-calc-label">Coefficient of Variation:</span>
+                    <span class="pert-calc-value" id="pertCV">-</span>
+                </div>
+            </div>
+        </div>
+        <div class="pert-dialog-footer">
+            <button class="pert-btn-cancel" onclick="closePertDialog()">Cancel</button>
+            <button class="pert-btn-save" onclick="savePertEstimates()">Save Estimates</button>
+        </div>
+    </div>
+    
+    <!-- PERT Metrics Panel -->
+    <div id="pertMetricsPanel" class="pert-metrics-panel">
+        <div class="pert-metrics-header">
+            <span>📊 PERT Analysis</span>
+            <button onclick="closePertMetrics()" style="background: transparent; border: none; color: white; font-size: 1.2rem; cursor: pointer;">×</button>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">Project Duration</div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Expected Duration:</span>
+                <span class="pert-calc-value" id="pertProjectDuration">-</span>
+            </div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Standard Deviation:</span>
+                <span class="pert-calc-value" id="pertProjectStdDev">-</span>
+            </div>
+            <div class="pert-calc-row">
+                <span class="pert-calc-label">Critical Path Variance:</span>
+                <span class="pert-calc-value" id="pertCriticalVariance">-</span>
+            </div>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">Confidence Levels</div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">68% (±1σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence68">-</span>
+            </div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">95% (±2σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence95">-</span>
+            </div>
+            <div class="pert-confidence-level">
+                <span class="pert-confidence-label">99.7% (±3σ):</span>
+                <span class="pert-confidence-date" id="pertConfidence99">-</span>
+            </div>
+        </div>
+        
+        <div class="pert-metrics-section">
+            <div class="pert-metrics-title">High Uncertainty Operations</div>
+            <div class="pert-high-uncertainty-list" id="pertHighUncertaintyList">
+                <div style="color: #6b7280; font-size: 0.85rem;">No PERT estimates yet</div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
