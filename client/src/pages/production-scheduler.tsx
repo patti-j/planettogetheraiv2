@@ -14,11 +14,11 @@ export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
-  const { resolvedTheme } = useTheme();
+  const { resolvedTheme, theme } = useTheme();
 
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
   const [iframeUrl, setIframeUrl] = useState(() => {
-    return `/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`;
+    return `/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme || 'light'}`;
   });
 
   useEffect(() => {
@@ -102,18 +102,21 @@ export default function ProductionScheduler() {
   // Update iframe when resolved theme changes
   useEffect(() => {
     if (resolvedTheme && iframeRef.current) {
-      console.log('📤 [Parent] Theme changed to:', resolvedTheme);
+      console.log('📤 [Parent] Theme changed to:', resolvedTheme, '(raw theme:', theme, ')');
       // Update iframe URL with new theme
       setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
       // Also send via postMessage for instant update
-      if (iframeRef.current?.contentWindow) {
-        iframeRef.current.contentWindow.postMessage({
-          type: 'SET_THEME',
-          theme: resolvedTheme
-        }, '*');
-      }
+      setTimeout(() => {
+        if (iframeRef.current?.contentWindow) {
+          console.log('📤 [Parent] Sending theme via postMessage:', resolvedTheme);
+          iframeRef.current.contentWindow.postMessage({
+            type: 'SET_THEME',
+            theme: resolvedTheme
+          }, '*');
+        }
+      }, 100); // Small delay to ensure iframe is ready
     }
-  }, [resolvedTheme]);
+  }, [resolvedTheme, theme]);
 
   return (
     <div className="h-full flex flex-col">
