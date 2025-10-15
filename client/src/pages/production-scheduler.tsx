@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink } from 'lucide-react';
-import { useTheme } from '@/contexts/ThemeContext';
+import { useTheme } from '@/hooks/useThemeFederated';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
