@@ -624,7 +624,6 @@ export default function PaginatedReports() {
                                 <div className="relative">
                                   <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3 h-3 text-muted-foreground" />
                                   <Input
-                                    placeholder={`Filter ${column.columnName}...`}
                                     value={columnFilters[column.columnName] || ""}
                                     onChange={(e) => handleColumnFilterChange(column.columnName, e.target.value)}
                                     className="h-8 pl-7 pr-7 text-xs"
