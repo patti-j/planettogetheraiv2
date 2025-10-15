@@ -173,6 +173,11 @@ router.get('/schedulerpro.classic-light.css', (req, res) => {
   res.sendFile(cssPath);
 });
 
+router.get('/schedulerpro.stockholm.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.stockholm.css');
+  res.sendFile(cssPath);
+});
+
 router.get('/schedulerpro.umd.js', (req, res) => {
   const jsPath = path.join(process.cwd(), 'attached_assets/build/schedulerpro.umd.js');
   res.sendFile(jsPath);

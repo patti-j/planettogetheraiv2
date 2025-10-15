@@ -10,8 +10,8 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=3" id="scheduler-theme">
+    <!-- Bryntum Scheduler Pro CSS - Stockholm theme with dynamic light/dark switching -->
+    <link rel="stylesheet" href="/schedulerpro.stockholm.css?v=3" id="scheduler-theme">
     
     <style>
         * {
@@ -7386,13 +7386,14 @@
         // Apply theme immediately (before DOMContentLoaded to prevent flash)
         function applyTheme(theme) {
             const isDark = theme === 'dark';
-            document.body.className = isDark ? 'dark-theme' : '';
             
-            // Switch Bryntum CSS file
-            const themeLink = document.getElementById('scheduler-theme');
-            if (themeLink) {
-                const cssFile = isDark ? 'schedulerpro.classic-dark.css' : 'schedulerpro.classic-light.css';
-                themeLink.href = `/${cssFile}?v=3`;
+            // Stockholm theme uses data-theme attribute instead of separate CSS files
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+                document.body.classList.add('dark-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', 'light');
+                document.body.classList.remove('dark-theme');
             }
         }
         
