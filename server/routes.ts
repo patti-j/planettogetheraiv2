@@ -8198,5 +8198,109 @@ router.delete("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => 
   }
 });
 
+// ============================================
+// Paginated Reports Routes
+// ============================================
+
+router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 10;
+    const searchTerm = (req.query.searchTerm as string) || "";
+    const statusFilter = (req.query.statusFilter as string) || "all";
+    const sortBy = (req.query.sortBy as string) || "timestamp";
+    const sortOrder = (req.query.sortOrder as string) || "desc";
+
+    const offset = (page - 1) * pageSize;
+
+    // Import schema tables
+    const { agentActions, agentConnections } = await import("@shared/schema");
+    
+    // Build the query with filters
+    const conditions = [];
+    
+    // Search filter
+    if (searchTerm) {
+      conditions.push(
+        sql`(${agentActions.actionType} ILIKE ${`%${searchTerm}%`} OR 
+             ${agentActions.endpoint} ILIKE ${`%${searchTerm}%`})`
+      );
+    }
+    
+    // Status filter
+    if (statusFilter !== "all") {
+      if (statusFilter === "success") {
+        conditions.push(sql`${agentActions.responseStatus} >= 200 AND ${agentActions.responseStatus} < 300`);
+      } else if (statusFilter === "client-error") {
+        conditions.push(sql`${agentActions.responseStatus} >= 400 AND ${agentActions.responseStatus} < 500`);
+      } else if (statusFilter === "server-error") {
+        conditions.push(sql`${agentActions.responseStatus} >= 500`);
+      }
+    }
+
+    // Get total count
+    const countResult = await db
+      .select({ count: sql<number>`count(*)` })
+      .from(agentActions)
+      .where(conditions.length > 0 ? and(...conditions) : undefined);
+    
+    const total = Number(countResult[0]?.count || 0);
+
+    // Determine sort column
+    let orderByColumn;
+    switch (sortBy) {
+      case 'id':
+        orderByColumn = agentActions.id;
+        break;
+      case 'actionType':
+        orderByColumn = agentActions.actionType;
+        break;
+      case 'responseStatus':
+        orderByColumn = agentActions.responseStatus;
+        break;
+      case 'executionTimeMs':
+        orderByColumn = agentActions.executionTimeMs;
+        break;
+      case 'timestamp':
+      default:
+        orderByColumn = agentActions.timestamp;
+        break;
+    }
+
+    // Get paginated data with joins
+    const items = await db
+      .select({
+        id: agentActions.id,
+        agentConnectionId: agentActions.agentConnectionId,
+        agentName: agentConnections.name,
+        actionType: agentActions.actionType,
+        endpoint: agentActions.endpoint,
+        method: agentActions.method,
+        responseStatus: agentActions.responseStatus,
+        executionTimeMs: agentActions.executionTimeMs,
+        timestamp: agentActions.timestamp,
+      })
+      .from(agentActions)
+      .leftJoin(agentConnections, eq(agentActions.agentConnectionId, agentConnections.id))
+      .where(conditions.length > 0 ? and(...conditions) : undefined)
+      .orderBy(sortOrder === "asc" ? orderByColumn : desc(orderByColumn))
+      .limit(pageSize)
+      .offset(offset);
+
+    const totalPages = Math.ceil(total / pageSize);
+
+    res.json({
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages,
+    });
+  } catch (error) {
+    console.error("Error fetching paginated reports:", error);
+    res.status(500).json({ error: "Failed to fetch paginated reports" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

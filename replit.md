@@ -1,5 +1,13 @@
 # PlanetTogether - Manufacturing SCM + APS System
 
+## Recent Changes
+
+### October 15, 2025
+- **Added Paginated Reports page**: New dedicated page at `/paginated-reports` for viewing agent activity reports with pagination, filtering, sorting, and search capabilities
+  - Backend API endpoint: `/api/paginated-reports` with full pagination support
+  - Features: status filtering, search, sortable columns, configurable page size (10, 25, 50, 100 items)
+  - Displays agent actions with response status badges, execution times, and timestamps
+
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. Key capabilities include multi-agent support, modular federation, and advanced AI integration for scheduling and system intelligence.
 
