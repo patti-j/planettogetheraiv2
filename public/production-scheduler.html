@@ -325,6 +325,16 @@
             background: #1a1a1a;
         }
         
+        /* Fix time axis (date row) height */
+        .b-sch-timeaxis-cell {
+            height: 40px !important;
+            line-height: 40px !important;
+        }
+        
+        .b-sch-header-row {
+            height: 40px !important;
+        }
+        
         /* Dark theme for scheduler using CSS filter - THIS IS WHAT WAS WORKING! */
         .dark-theme #scheduler {
             filter: invert(0.9) hue-rotate(180deg);
@@ -7273,6 +7283,15 @@
                 
                 // Database times are now fixed with no overlaps, so we don't need to run ASAP automatically
                 console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
+                
+                // Reapply theme after scheduler is fully initialized  
+                const currentTheme = localStorage.getItem('theme') || new URLSearchParams(window.location.search).get('theme') || 'light';
+                console.log('🎨 [Scheduler] Applying theme after initialization:', currentTheme);
+                if (currentTheme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                    document.documentElement.classList.add('dark-theme');
+                    console.log('🌙 [Scheduler] Dark theme applied to scheduler after data load');
+                }
                 console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
                 // Add welcome message to Max AI indicating schedule is ready
@@ -7538,27 +7557,17 @@
                 console.log('☀️ [Production Scheduler] Light theme applied');
             }
             
-            // If scheduler is already initialized, apply theme to it
-            if (window.scheduler) {
-                // Force scheduler to use the correct theme
-                const schedulerEl = window.scheduler.element;
-                if (schedulerEl) {
-                    if (isDark) {
-                        schedulerEl.classList.add('b-theme-stockholm-dark');
-                        schedulerEl.classList.remove('b-theme-stockholm');
-                    } else {
-                        schedulerEl.classList.add('b-theme-stockholm');
-                        schedulerEl.classList.remove('b-theme-stockholm-dark');
-                    }
-                }
-            }
+            // No need to modify scheduler element - CSS filter handles the theme
         }
         
         // Get theme from URL parameter (most reliable)
         const urlParams = new URLSearchParams(window.location.search);
         const themeFromUrl = urlParams.get('theme');
         
-        // Listen for theme messages from parent window
+        console.log('🌐 [Scheduler iframe] URL params:', window.location.search);
+        console.log('🎨 [Scheduler iframe] Theme from URL:', themeFromUrl);
+        
+        // Listen for theme messages from parent window (set up early)
         window.addEventListener('message', (event) => {
             if (event.data?.type === 'SET_THEME') {
                 console.log('📥 [Scheduler iframe] Received theme from parent:', event.data.theme);
@@ -7582,14 +7591,15 @@
         }
         
         const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
-        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : 'localStorage', ')');
+        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : localStorage.getItem('theme') ? 'localStorage' : 'default', ')');
+        console.log('📱 [Production Scheduler] Document ready state:', document.readyState);
         applyTheme(initialTheme);
         
-        // Also apply theme after a slight delay to ensure DOM is ready
-        setTimeout(() => {
-            console.log('⏰ [Production Scheduler] Reapplying theme after delay:', initialTheme);
+        // Also apply theme after DOM is ready and scheduler is initialized
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📄 [Production Scheduler] DOM ready, reapplying theme:', initialTheme);
             applyTheme(initialTheme);
-        }, 500);
+        });
         
         // Setup event listeners when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
