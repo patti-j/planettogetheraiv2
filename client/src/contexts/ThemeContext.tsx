@@ -122,6 +122,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Save to localStorage for immediate effect
     localStorage.setItem('theme', newTheme);
     
+    // Dispatch custom event for iframe communication
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
+    
     // Update user preferences if authenticated
     if (user) {
       updateThemeMutation.mutate(newTheme);

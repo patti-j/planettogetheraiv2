@@ -14,6 +14,13 @@ export default function ProductionScheduler() {
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
 
+  // Get current theme
+  const getCurrentTheme = () => localStorage.getItem('theme') || 'light';
+  const [iframeUrl, setIframeUrl] = useState(() => {
+    const theme = getCurrentTheme();
+    return `/api/production-scheduler?v=${Date.now()}&theme=${theme}`;
+  });
+
   useEffect(() => {
     // Set page title
     document.title = 'Production Schedule - PlanetTogether';
@@ -31,9 +38,36 @@ export default function ProductionScheduler() {
       setIsLoading(false);
       console.log('✅ Production scheduler loaded successfully');
       
+      // Also send theme via postMessage as backup
+      const currentTheme = getCurrentTheme();
+      console.log('📤 [Parent] Sending theme to scheduler iframe:', currentTheme);
+      setTimeout(() => {
+        iframeRef.current?.contentWindow?.postMessage({
+          type: 'SET_THEME',
+          theme: currentTheme
+        }, '*');
+      }, 100); // Small delay to ensure iframe is ready
+      
       // Ensure iframe is touch-friendly on mobile
       if (iframeRef.current && isMobile) {
         iframeRef.current.style.touchAction = 'pan-x pan-y';
+      }
+    };
+
+    // Listen for theme changes in parent and forward to iframe
+    const handleThemeChange = (e: CustomEvent) => {
+      const theme = e.detail?.theme;
+      if (theme) {
+        console.log('📤 [Parent] Theme changed, reloading iframe with theme:', theme);
+        // Update iframe URL with new theme
+        setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${theme}`);
+        // Also send via postMessage for instant update
+        if (iframeRef.current?.contentWindow) {
+          iframeRef.current.contentWindow.postMessage({
+            type: 'SET_THEME',
+            theme: theme
+          }, '*');
+        }
       }
     };
 
@@ -63,8 +97,9 @@ export default function ProductionScheduler() {
       });
     }
 
-    // Listen for Max AI actions
+    // Listen for Max AI actions and theme changes
     window.addEventListener('maxai:action' as any, handleMaxAIAction as any);
+    window.addEventListener('themechange' as any, handleThemeChange as any);
 
     return () => {
       if (iframe) {
@@ -72,6 +107,7 @@ export default function ProductionScheduler() {
       }
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('maxai:action' as any, handleMaxAIAction as any);
+      window.removeEventListener('themechange' as any, handleThemeChange as any);
     };
   }, [isMobile]);
 
@@ -99,7 +135,7 @@ export default function ProductionScheduler() {
         {/* Scheduler iframe with cache busting - optimized for mobile */}
         <iframe
           ref={iframeRef}
-          src={`/api/production-scheduler?v=${Date.now()}`}
+          src={iframeUrl}
           className="w-full h-full border-0"
           title="Production Scheduler"
           data-testid="production-scheduler-iframe"

@@ -7385,20 +7385,47 @@
         
         // Apply theme immediately (before DOMContentLoaded to prevent flash)
         function applyTheme(theme) {
+            console.log('🎨 [Production Scheduler] Applying theme:', theme);
             const isDark = theme === 'dark';
             
-            // Stockholm theme uses data-theme attribute instead of separate CSS files
+            // Stockholm theme uses data-theme attribute for dark/light mode
             if (isDark) {
                 document.documentElement.setAttribute('data-theme', 'dark');
-                document.body.classList.add('dark-theme');
+                document.body.classList.add('b-theme-dark');
+                document.body.classList.remove('b-theme-light');
+                console.log('🌙 [Production Scheduler] Dark theme applied');
             } else {
                 document.documentElement.setAttribute('data-theme', 'light');
+                document.body.classList.add('b-theme-light');
+                document.body.classList.remove('b-theme-dark');
+                console.log('☀️ [Production Scheduler] Light theme applied');
+            }
+            
+            // Also apply dark-theme class for custom styles
+            if (isDark) {
+                document.body.classList.add('dark-theme');
+            } else {
                 document.body.classList.remove('dark-theme');
             }
         }
         
-        // Apply theme immediately
-        const initialTheme = localStorage.getItem('theme') || 'light';
+        // Get theme from URL parameter (most reliable)
+        const urlParams = new URLSearchParams(window.location.search);
+        const themeFromUrl = urlParams.get('theme');
+        
+        // Listen for theme messages from parent window
+        window.addEventListener('message', (event) => {
+            if (event.data?.type === 'SET_THEME') {
+                console.log('📥 [Scheduler iframe] Received theme from parent:', event.data.theme);
+                applyTheme(event.data.theme);
+                // Also save to iframe's localStorage for consistency
+                localStorage.setItem('theme', event.data.theme);
+            }
+        });
+        
+        // Apply theme immediately - priority: URL param > localStorage > default
+        const initialTheme = themeFromUrl || localStorage.getItem('theme') || 'light';
+        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : 'localStorage', ')');
         applyTheme(initialTheme);
         
         // Setup event listeners when DOM is ready
