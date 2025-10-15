@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ExternalLink } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -13,12 +14,11 @@ export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const { resolvedTheme } = useTheme();
 
-  // Get current theme
-  const getCurrentTheme = () => localStorage.getItem('theme') || 'light';
+  // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
   const [iframeUrl, setIframeUrl] = useState(() => {
-    const theme = getCurrentTheme();
-    return `/api/production-scheduler?v=${Date.now()}&theme=${theme}`;
+    return `/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`;
   });
 
   useEffect(() => {
@@ -39,12 +39,11 @@ export default function ProductionScheduler() {
       console.log('✅ Production scheduler loaded successfully');
       
       // Also send theme via postMessage as backup
-      const currentTheme = getCurrentTheme();
-      console.log('📤 [Parent] Sending theme to scheduler iframe:', currentTheme);
+      console.log('📤 [Parent] Sending theme to scheduler iframe:', resolvedTheme);
       setTimeout(() => {
         iframeRef.current?.contentWindow?.postMessage({
           type: 'SET_THEME',
-          theme: currentTheme
+          theme: resolvedTheme
         }, '*');
       }, 100); // Small delay to ensure iframe is ready
       
@@ -56,19 +55,8 @@ export default function ProductionScheduler() {
 
     // Listen for theme changes in parent and forward to iframe
     const handleThemeChange = (e: CustomEvent) => {
-      const theme = e.detail?.theme;
-      if (theme) {
-        console.log('📤 [Parent] Theme changed, reloading iframe with theme:', theme);
-        // Update iframe URL with new theme
-        setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${theme}`);
-        // Also send via postMessage for instant update
-        if (iframeRef.current?.contentWindow) {
-          iframeRef.current.contentWindow.postMessage({
-            type: 'SET_THEME',
-            theme: theme
-          }, '*');
-        }
-      }
+      // Note: When theme changes, the resolvedTheme will automatically update via useTheme hook
+      // So we'll handle it in a separate useEffect
     };
 
     // Listen for Max AI actions (refresh_scheduler)
@@ -109,7 +97,23 @@ export default function ProductionScheduler() {
       window.removeEventListener('maxai:action' as any, handleMaxAIAction as any);
       window.removeEventListener('themechange' as any, handleThemeChange as any);
     };
-  }, [isMobile]);
+  }, [isMobile, resolvedTheme]);
+  
+  // Update iframe when resolved theme changes
+  useEffect(() => {
+    if (resolvedTheme && iframeRef.current) {
+      console.log('📤 [Parent] Theme changed to:', resolvedTheme);
+      // Update iframe URL with new theme
+      setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
+      // Also send via postMessage for instant update
+      if (iframeRef.current?.contentWindow) {
+        iframeRef.current.contentWindow.postMessage({
+          type: 'SET_THEME',
+          theme: resolvedTheme
+        }, '*');
+      }
+    }
+  }, [resolvedTheme]);
 
   return (
     <div className="h-full flex flex-col">
