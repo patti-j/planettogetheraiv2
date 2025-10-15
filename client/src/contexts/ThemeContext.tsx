@@ -37,7 +37,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
       : getInitialTheme() as 'light' | 'dark'
   );
-  const [isChangingTheme, setIsChangingTheme] = useState(false);
 
   // Query user preferences
   const { data: preferences } = useQuery<{ theme?: Theme }>({
@@ -58,26 +57,17 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user.id}`] });
       }
-      // Clear the flag after mutation completes
-      setTimeout(() => setIsChangingTheme(false), 100);
     }
   });
 
-  // Set theme from preferences only on initial load or when not actively changing
+  // Set theme from preferences only on initial load
   useEffect(() => {
-    // Don't override theme if user just changed it
-    if (isChangingTheme) return;
-    
-    if (preferences?.theme) {
+    // Only set from preferences if we haven't explicitly set a theme yet
+    if (preferences?.theme && localStorage.getItem('theme') !== preferences.theme) {
       setThemeState(preferences.theme as Theme);
-    } else {
-      // Fallback to localStorage for non-authenticated users
-      const savedTheme = localStorage.getItem('theme') as Theme;
-      if (savedTheme) {
-        setThemeState(savedTheme);
-      }
+      localStorage.setItem('theme', preferences.theme);
     }
-  }, [preferences, isChangingTheme]);
+  }, [preferences]);
 
   // Apply theme to document and resolve system theme
   useEffect(() => {
@@ -123,8 +113,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, [theme]);
 
   const setTheme = (newTheme: Theme) => {
-    // Set flag to prevent preferences from overriding our change
-    setIsChangingTheme(true);
     setThemeState(newTheme);
     
     // Save to localStorage for immediate effect
