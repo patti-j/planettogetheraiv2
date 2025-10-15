@@ -333,14 +333,14 @@ export default function DemandForecasting() {
             <div className="space-y-2">
               <Label>Planning Area Column (Optional)</Label>
               <Select value={planningAreaColumn} onValueChange={(value) => {
-                setPlanningAreaColumn(value);
+                setPlanningAreaColumn(value === "none" ? "" : value);
                 setSelectedPlanningAreas([]);
               }} disabled={!selectedTable} data-testid="select-planning-area-column">
                 <SelectTrigger>
                   <SelectValue placeholder="Select planning area column" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {columns?.map((col) => (
                     <SelectItem key={col.name} value={col.name}>
                       {col.name}
@@ -354,14 +354,14 @@ export default function DemandForecasting() {
             <div className="space-y-2">
               <Label>Scenario Column (Optional)</Label>
               <Select value={scenarioColumn} onValueChange={(value) => {
-                setScenarioColumn(value);
+                setScenarioColumn(value === "none" ? "" : value);
                 setSelectedScenarios([]);
               }} disabled={!selectedTable} data-testid="select-scenario-column">
                 <SelectTrigger>
                   <SelectValue placeholder="Select scenario column" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="none">None</SelectItem>
                   {columns?.map((col) => (
                     <SelectItem key={col.name} value={col.name}>
                       {col.name}
