@@ -7,6 +7,7 @@ import jwt from 'jsonwebtoken';
 import { z } from 'zod';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import routes from "./routes";
+import forecastingRoutes from "./forecasting-routes";
 import { setupVite, serveStatic, log } from "./vite";
 import session from "express-session";
 import { storage as dbStorage, DatabaseStorage } from "./storage-new";
@@ -172,6 +173,7 @@ app.use((req, res, next) => {
   // IMPORTANT: Register API routes BEFORE Vite middleware
   // This ensures API routes are handled before Vite's catch-all
   app.use(routes);  // Note: No '/api' prefix here since routes already have /api prefix
+  app.use('/api/forecasting', forecastingRoutes);  // Forecasting API routes
 
   // Create HTTP server and WebSocket server
   const port = 5000;

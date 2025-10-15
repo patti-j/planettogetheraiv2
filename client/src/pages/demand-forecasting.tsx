@@ -1,12 +1,387 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { Loader2, Sparkles, Database, TrendingUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+interface Table {
+  schema: string;
+  name: string;
+}
+
+interface Column {
+  name: string;
+  type: string;
+}
+
+interface ForecastResult {
+  historical: Array<{ date: string; value: number }>;
+  forecast: Array<{ date: string; value: number; lower: number; upper: number }>;
+  metrics: {
+    mape?: number;
+    rmse?: number;
+  };
+}
+
 export default function DemandForecasting() {
+  const { toast } = useToast();
+  const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [dateColumn, setDateColumn] = useState<string>("");
+  const [itemColumn, setItemColumn] = useState<string>("");
+  const [quantityColumn, setQuantityColumn] = useState<string>("");
+  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [forecastDays, setForecastDays] = useState<number>(30);
+
+  // Fetch available tables
+  const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
+    queryKey: ["/api/forecasting/tables"],
+    queryFn: async () => {
+      const response = await fetch("/api/forecasting/tables");
+      if (!response.ok) throw new Error("Failed to fetch tables");
+      return response.json();
+    },
+  });
+
+  // Fetch columns for selected table
+  const { data: columns } = useQuery<Column[]>({
+    queryKey: ["/api/forecasting/columns", selectedTable?.schema, selectedTable?.name],
+    enabled: !!selectedTable,
+    queryFn: async () => {
+      if (!selectedTable) return [];
+      const response = await fetch(`/api/forecasting/columns/${selectedTable.schema}/${selectedTable.name}`);
+      if (!response.ok) throw new Error("Failed to fetch columns");
+      return response.json();
+    },
+  });
+
+  // Fetch items for selected item column
+  const { data: items } = useQuery<string[]>({
+    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, itemColumn],
+    enabled: !!selectedTable && !!itemColumn,
+    queryFn: async () => {
+      if (!selectedTable || !itemColumn) return [];
+      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}`);
+      if (!response.ok) throw new Error("Failed to fetch items");
+      return response.json();
+    },
+  });
+
+  // Forecast mutation
+  const forecastMutation = useMutation<ForecastResult, Error, void>({
+    mutationFn: async () => {
+      const response = await fetch("/api/forecasting/forecast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schema: selectedTable?.schema,
+          table: selectedTable?.name,
+          dateColumn,
+          itemColumn,
+          quantityColumn,
+          selectedItem,
+          forecastDays,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Forecast failed');
+      }
+      return await response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Forecast Complete",
+        description: `Generated ${forecastDays}-day forecast successfully`,
+      });
+      // Invalidate relevant queries
+      queryClient.invalidateQueries({ queryKey: ["/api/forecasting"] });
+    },
+    onError: (error) => {
+      toast({
+        title: "Forecast Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleForecast = () => {
+    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
+      toast({
+        title: "Missing Configuration",
+        description: "Please select all required fields",
+        variant: "destructive",
+      });
+      return;
+    }
+    forecastMutation.mutate();
+  };
+
+  // Auto-select columns based on heuristics
+  useEffect(() => {
+    if (columns && columns.length > 0) {
+      if (!dateColumn) {
+        const dateCol = columns.find(c => 
+          c.name.toLowerCase().includes('date') || 
+          c.name.toLowerCase().includes('time')
+        );
+        if (dateCol) setDateColumn(dateCol.name);
+      }
+      if (!itemColumn) {
+        const itemCol = columns.find(c => 
+          c.name.toLowerCase().includes('item') || 
+          c.name.toLowerCase().includes('product') ||
+          c.name.toLowerCase().includes('sku')
+        );
+        if (itemCol) setItemColumn(itemCol.name);
+      }
+      if (!quantityColumn) {
+        const qtyCol = columns.find(c => 
+          c.name.toLowerCase().includes('qty') || 
+          c.name.toLowerCase().includes('quantity') ||
+          c.name.toLowerCase().includes('amount')
+        );
+        if (qtyCol) setQuantityColumn(qtyCol.name);
+      }
+    }
+  }, [columns, dateColumn, itemColumn, quantityColumn]);
+
   return (
-    <div className="w-full h-full">
-      <iframe
-        src="/forecasting/"
-        className="w-full h-full border-0"
-        title="Demand Forecasting"
-        data-testid="iframe-forecasting"
-      />
+    <div className="flex flex-col h-full p-6 space-y-6 overflow-auto">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-2">
+            <Sparkles className="w-8 h-8 text-purple-600" />
+            Demand Forecasting
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            AI-powered demand forecasting with SQL Server integration
+          </p>
+        </div>
+      </div>
+
+      {/* Configuration Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Database className="w-5 h-5" />
+            Data Source Configuration
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Table Selection */}
+            <div className="space-y-2">
+              <Label>Table</Label>
+              <Select
+                value={selectedTable ? `${selectedTable.schema}.${selectedTable.name}` : ""}
+                onValueChange={(value) => {
+                  const [schema, name] = value.split('.');
+                  setSelectedTable({ schema, name });
+                  setDateColumn("");
+                  setItemColumn("");
+                  setQuantityColumn("");
+                  setSelectedItem("");
+                }}
+                data-testid="select-table"
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={tablesLoading ? "Loading..." : "Select table"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {tables?.map((table) => (
+                    <SelectItem key={`${table.schema}.${table.name}`} value={`${table.schema}.${table.name}`}>
+                      {table.schema}.{table.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Date Column */}
+            <div className="space-y-2">
+              <Label>Date Column</Label>
+              <Select value={dateColumn} onValueChange={setDateColumn} disabled={!selectedTable} data-testid="select-date-column">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select date column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {columns?.map((col) => (
+                    <SelectItem key={col.name} value={col.name}>
+                      {col.name} ({col.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Item Column */}
+            <div className="space-y-2">
+              <Label>Item Column</Label>
+              <Select value={itemColumn} onValueChange={setItemColumn} disabled={!selectedTable} data-testid="select-item-column">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select item column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {columns?.map((col) => (
+                    <SelectItem key={col.name} value={col.name}>
+                      {col.name} ({col.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Quantity Column */}
+            <div className="space-y-2">
+              <Label>Quantity Column</Label>
+              <Select value={quantityColumn} onValueChange={setQuantityColumn} disabled={!selectedTable} data-testid="select-quantity-column">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select quantity column" />
+                </SelectTrigger>
+                <SelectContent>
+                  {columns?.map((col) => (
+                    <SelectItem key={col.name} value={col.name}>
+                      {col.name} ({col.type})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Item Selection */}
+            <div className="space-y-2">
+              <Label>Select Item</Label>
+              <Select value={selectedItem} onValueChange={setSelectedItem} disabled={!itemColumn} data-testid="select-item">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select item to forecast" />
+                </SelectTrigger>
+                <SelectContent>
+                  {items?.map((item) => (
+                    <SelectItem key={item} value={item}>
+                      {item}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Forecast Days */}
+            <div className="space-y-2">
+              <Label>Forecast Days</Label>
+              <Input
+                type="number"
+                value={forecastDays}
+                onChange={(e) => setForecastDays(parseInt(e.target.value) || 30)}
+                min={1}
+                max={365}
+                data-testid="input-forecast-days"
+              />
+            </div>
+          </div>
+
+          <Button 
+            onClick={handleForecast} 
+            disabled={forecastMutation.isPending || !selectedItem}
+            className="w-full md:w-auto"
+            data-testid="button-generate-forecast"
+          >
+            {forecastMutation.isPending ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating Forecast...
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-4 h-4 mr-2" />
+                Generate Forecast
+              </>
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* Results Section */}
+      {forecastMutation.data && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Forecast Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {/* Metrics */}
+              {forecastMutation.data.metrics && (
+                <div className="flex gap-4">
+                  {forecastMutation.data.metrics.mape !== undefined && (
+                    <div className="bg-muted p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground">MAPE</div>
+                      <div className="text-2xl font-bold">{forecastMutation.data.metrics.mape.toFixed(2)}%</div>
+                    </div>
+                  )}
+                  {forecastMutation.data.metrics.rmse !== undefined && (
+                    <div className="bg-muted p-4 rounded-lg">
+                      <div className="text-sm text-muted-foreground">RMSE</div>
+                      <div className="text-2xl font-bold">{forecastMutation.data.metrics.rmse.toFixed(2)}</div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Chart */}
+              <div className="h-96">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={[...forecastMutation.data.historical, ...forecastMutation.data.forecast]}
+                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="date" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      stroke="#8884d8"
+                      strokeWidth={2}
+                      name="Actual/Forecast"
+                      dot={false}
+                    />
+                    {forecastMutation.data.forecast.length > 0 && (
+                      <>
+                        <Line
+                          type="monotone"
+                          dataKey="lower"
+                          stroke="#82ca9d"
+                          strokeWidth={1}
+                          strokeDasharray="5 5"
+                          name="Lower Bound"
+                          dot={false}
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="upper"
+                          stroke="#ffc658"
+                          strokeWidth={1}
+                          strokeDasharray="5 5"
+                          name="Upper Bound"
+                          dot={false}
+                        />
+                      </>
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
