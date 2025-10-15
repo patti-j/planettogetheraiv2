@@ -17,11 +17,18 @@ export default function ProductionScheduler() {
   const { resolvedTheme, theme } = useTheme();
 
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
-  // Initialize with theme from localStorage or default
-  const [iframeUrl, setIframeUrl] = useState(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    return `/api/production-scheduler?v=${Date.now()}&theme=${savedTheme}`;
-  });
+  // Initialize with empty URL to ensure we use the resolved theme
+  const [iframeUrl, setIframeUrl] = useState('');
+  const [initialUrlSet, setInitialUrlSet] = useState(false);
+
+  // Set initial URL with resolved theme
+  useEffect(() => {
+    if (resolvedTheme && !initialUrlSet) {
+      console.log('🚀 [Parent] Setting initial iframe URL with theme:', resolvedTheme);
+      setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
+      setInitialUrlSet(true);
+    }
+  }, [resolvedTheme, initialUrlSet]);
 
   useEffect(() => {
     // Set page title

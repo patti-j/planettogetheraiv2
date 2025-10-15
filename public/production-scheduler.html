@@ -10,8 +10,8 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS - Only ONE file as Bryntum requires -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
+    <!-- Bryntum Scheduler Pro CSS - Theme will be set dynamically -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme">
     
     <style>
         * {
@@ -335,16 +335,8 @@
             height: 40px !important;
         }
         
-        /* Dark theme for scheduler using CSS filter - THIS IS WHAT WAS WORKING! */
-        .dark-theme #scheduler {
-            filter: invert(0.9) hue-rotate(180deg);
-        }
-        
-        /* Re-invert images and icons in dark mode */
-        .dark-theme #scheduler img,
-        .dark-theme #scheduler .b-icon {
-            filter: invert(1) hue-rotate(-180deg);
-        }
+        /* Dark theme now handled by Bryntum's native Classic Dark theme */
+        /* No CSS filters needed - using proper theme switching */
         
         /* Dependency lines styling */
         .b-sch-dependency {
@@ -7286,12 +7278,9 @@
                 
                 // Reapply theme after scheduler is fully initialized  
                 const currentTheme = localStorage.getItem('theme') || new URLSearchParams(window.location.search).get('theme') || 'light';
-                console.log('🎨 [Scheduler] Applying theme after initialization:', currentTheme);
-                if (currentTheme === 'dark') {
-                    document.body.classList.add('dark-theme');
-                    document.documentElement.classList.add('dark-theme');
-                    console.log('🌙 [Scheduler] Dark theme applied to scheduler after data load');
-                }
+                console.log('🎨 [Scheduler] Reapplying theme after initialization:', currentTheme);
+                // Use the applyTheme function to ensure proper Bryntum theme is set
+                applyTheme(currentTheme);
                 console.log('📊 Event store has', scheduler.eventStore.count, 'events loaded from database');
                 
                 // Add welcome message to Max AI indicating schedule is ready
@@ -7545,19 +7534,31 @@
             console.log('🎨 [Production Scheduler] Applying theme:', theme);
             
             const isDark = theme === 'dark';
+            const themeLink = document.getElementById('bryntum-theme');
             
-            // Apply dark theme using CSS filter approach (which was working 2 days ago)
+            if (themeLink) {
+                // Switch between Bryntum's built-in light and dark themes
+                const newThemeUrl = isDark 
+                    ? '/schedulerpro.classic-dark.css' 
+                    : '/schedulerpro.classic-light.css';
+                
+                // Only update if the theme actually changed
+                if (!themeLink.href.includes(newThemeUrl)) {
+                    console.log(`🔄 [Production Scheduler] Switching Bryntum theme to: ${newThemeUrl}`);
+                    themeLink.href = newThemeUrl;
+                }
+            }
+            
+            // Also apply dark-theme class for custom styles (header, toolbar, etc.)
             if (isDark) {
                 document.body.classList.add('dark-theme');
                 document.documentElement.classList.add('dark-theme');
-                console.log('🌙 [Production Scheduler] Dark theme applied using CSS filters');
+                console.log('🌙 [Production Scheduler] Dark theme applied with Bryntum Classic Dark');
             } else {
                 document.body.classList.remove('dark-theme');
                 document.documentElement.classList.remove('dark-theme');
-                console.log('☀️ [Production Scheduler] Light theme applied');
+                console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
             }
-            
-            // No need to modify scheduler element - CSS filter handles the theme
         }
         
         // Get theme from URL parameter (most reliable)
