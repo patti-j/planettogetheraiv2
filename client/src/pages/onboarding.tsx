@@ -366,7 +366,7 @@ export default function OnboardingPage() {
       };
       
       console.log('Updating user preferences with company info:', companyInfo);
-      await apiRequest('PUT', '/api/user-preferences', updatedPrefs);
+      await apiRequest('PUT', `/api/user-preferences/${user.id}`, updatedPrefs);
     },
     onSuccess: () => {
       console.log('User preferences updated successfully');

@@ -48,7 +48,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const updateThemeMutation = useMutation({
     mutationFn: async (newTheme: Theme) => {
       if (!user) return;
-      const response = await apiRequest('PUT', '/api/user-preferences', {
+      const response = await apiRequest('PUT', `/api/user-preferences/${user.id}`, {
         theme: newTheme
       });
       return response.json();
@@ -60,16 +60,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   });
 
-  // Set theme from preferences or localStorage
+  // Set theme from preferences only on initial load
   useEffect(() => {
-    if (preferences?.theme) {
+    // Only set from preferences if we haven't explicitly set a theme yet
+    if (preferences?.theme && localStorage.getItem('theme') !== preferences.theme) {
       setThemeState(preferences.theme as Theme);
-    } else {
-      // Fallback to localStorage for non-authenticated users
-      const savedTheme = localStorage.getItem('theme') as Theme;
-      if (savedTheme) {
-        setThemeState(savedTheme);
-      }
+      localStorage.setItem('theme', preferences.theme);
     }
   }, [preferences]);
 
@@ -121,6 +117,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     
     // Save to localStorage for immediate effect
     localStorage.setItem('theme', newTheme);
+    
+    // Dispatch custom event for iframe communication
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
     
     // Update user preferences if authenticated
     if (user) {

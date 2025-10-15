@@ -87,6 +87,7 @@ export const navigationGroups: NavigationGroup[] = [
       { icon: BarChart3, label: "Analytics", href: "/analytics", feature: "analytics", action: "view", color: "bg-teal-500" },
       { icon: TrendingUp, label: "AI Insights", href: "/ai-insights", feature: "analytics", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: FileText, label: "Reports", href: "/reports", feature: "reports", action: "view", color: "bg-blue-600" },
+      { icon: Database, label: "Paginated Reports", href: "/paginated-reports", feature: "reports", action: "view", color: "bg-indigo-600" },
       { icon: Sparkles, label: "Optimization Studio", href: "/optimization-studio", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-indigo-600" },
       { icon: Sparkles, label: "UI Design Studio", href: "/design-studio", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600" },
       { icon: GitBranch, label: "AI Scenario Creator", href: "/ai-scenario-creator", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },

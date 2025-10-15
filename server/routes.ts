@@ -169,7 +169,17 @@ const uploadFiles = multer({
 
 // Serve Bryntum static assets
 router.get('/schedulerpro.classic-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/schedulerpro.classic-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-dark.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/schedulerpro.stockholm.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.stockholm.css');
   res.sendFile(cssPath);
 });
 
@@ -368,7 +378,7 @@ router.get("/api/auth/dev-token", async (req, res) => {
 
 router.get("/api/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
-  console.log(`Authorization header: ${req.headers.authorization}`);
+  console.log(`Authorization header: ${req.headers.authorization ? 'Bearer ***' : 'None'}`);
   console.log(`Session userId: ${req.session.userId}`);
   
   // Development bypass - automatically provide admin access
@@ -629,7 +639,7 @@ router.post("/onboarding", async (req, res) => {
 });
 
 // User preferences routes
-router.get("/user-preferences/:userId", async (req, res) => {
+router.get("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const preferences = await storage.getUserPreferences(userId);
@@ -663,7 +673,7 @@ router.get("/user-preferences/:userId", async (req, res) => {
   }
 });
 
-router.post("/user-preferences/:userId", async (req, res) => {
+router.post("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -682,7 +692,7 @@ router.post("/user-preferences/:userId", async (req, res) => {
 });
 
 // PUT route for updating user preferences (full update)
-router.put("/user-preferences", async (req, res) => {
+router.put("/api/user-preferences", async (req, res) => {
   try {
     const userId = (req.session as any)?.userId;
     if (!userId) {
@@ -705,7 +715,7 @@ router.put("/user-preferences", async (req, res) => {
 });
 
 // PUT route with userId in path
-router.put("/user-preferences/:userId", async (req, res) => {
+router.put("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -724,7 +734,7 @@ router.put("/user-preferences/:userId", async (req, res) => {
 });
 
 // PATCH route for partial updates to user preferences
-router.patch("/user-preferences/:userId", async (req, res) => {
+router.patch("/api/user-preferences/:userId", async (req, res) => {
   try {
     const userId = Number(req.params.userId);
     const existing = await storage.getUserPreferences(userId);
@@ -2053,7 +2063,7 @@ router.get("/api/inbox", requireAuth, async (req, res) => {
 });
 
 // Dashboard Configurations endpoint
-router.get("/dashboard-configs", requireAuth, async (req, res) => {
+router.get("/api/dashboard-configs", requireAuth, async (req, res) => {
   try {
     const userId = (req as any).user?.id;
     if (!userId) {
@@ -3487,6 +3497,98 @@ router.put("/api/operations/:id/constraint", async (req, res) => {
     res.status(500).json({ 
       success: false, 
       error: 'Failed to update operation constraint' 
+    });
+  }
+});
+
+// Update operation PERT estimates
+router.put("/api/operations/:id/pert", async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { timeOptimistic, timeMostLikely, timePessimistic } = req.body;
+    
+    // Validate that all three estimates are provided
+    if (timeOptimistic === undefined || timeMostLikely === undefined || timePessimistic === undefined) {
+      return res.status(400).json({ 
+        error: 'All three PERT estimates are required: timeOptimistic, timeMostLikely, timePessimistic' 
+      });
+    }
+    
+    // Validate that estimates are numbers
+    const optimistic = parseFloat(timeOptimistic);
+    const mostLikely = parseFloat(timeMostLikely);
+    const pessimistic = parseFloat(timePessimistic);
+    
+    if (isNaN(optimistic) || isNaN(mostLikely) || isNaN(pessimistic)) {
+      return res.status(400).json({ 
+        error: 'All PERT estimates must be valid numbers' 
+      });
+    }
+    
+    // Validate that optimistic <= most likely <= pessimistic
+    if (optimistic > mostLikely || mostLikely > pessimistic) {
+      return res.status(400).json({ 
+        error: 'Invalid PERT estimates: optimistic time must be <= most likely time <= pessimistic time' 
+      });
+    }
+    
+    // Calculate PERT metrics
+    const timeExpected = (optimistic + 4 * mostLikely + pessimistic) / 6;
+    const timeStdDev = (pessimistic - optimistic) / 6;
+    const timeVariance = Math.pow(timeStdDev, 2);
+    
+    console.log(`🎲 Updating PERT estimates for operation ${id}:`);
+    console.log(`   Optimistic: ${optimistic}, Most Likely: ${mostLikely}, Pessimistic: ${pessimistic}`);
+    console.log(`   Expected: ${timeExpected.toFixed(4)}, Std Dev: ${timeStdDev.toFixed(4)}, Variance: ${timeVariance.toFixed(6)}`);
+    
+    // Update the operation's PERT fields
+    await directSql`
+      UPDATE ptjoboperations 
+      SET 
+        time_optimistic = ${optimistic},
+        time_most_likely = ${mostLikely},
+        time_pessimistic = ${pessimistic},
+        time_expected = ${timeExpected},
+        time_variance = ${timeVariance},
+        time_std_dev = ${timeStdDev},
+        updated_at = NOW()
+      WHERE id = ${id}
+    `;
+    
+    // Fetch the updated operation to return
+    const [updatedOperation] = await directSql`
+      SELECT 
+        id,
+        name,
+        cycle_hrs as "cycleHrs",
+        time_optimistic as "timeOptimistic",
+        time_most_likely as "timeMostLikely",
+        time_pessimistic as "timePessimistic",
+        time_expected as "timeExpected",
+        time_variance as "timeVariance",
+        time_std_dev as "timeStdDev",
+        scheduled_start as "scheduledStart",
+        scheduled_end as "scheduledEnd"
+      FROM ptjoboperations 
+      WHERE id = ${id}
+    ` as any[];
+    
+    console.log(`✅ Successfully updated PERT estimates for operation ${id}`);
+    
+    res.json({ 
+      success: true, 
+      operation: updatedOperation,
+      calculations: {
+        timeExpected: parseFloat(timeExpected.toFixed(4)),
+        timeVariance: parseFloat(timeVariance.toFixed(6)),
+        timeStdDev: parseFloat(timeStdDev.toFixed(4))
+      }
+    });
+  } catch (error) {
+    console.error("Error updating operation PERT estimates:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to update PERT estimates'
     });
   }
 });
@@ -8111,6 +8213,78 @@ router.delete("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => 
   } catch (error) {
     console.error("Error deleting maintenance period:", error);
     res.status(500).json({ error: "Failed to delete maintenance period" });
+  }
+});
+
+// ============================================
+// Paginated Reports Routes - SQL Server Integration
+// ============================================
+
+import { sqlServerService } from "./services/sql-server-service";
+
+// List all tables in SQL Server database
+router.get("/api/sql-tables", enhancedAuth, async (req, res) => {
+  try {
+    const tables = await sqlServerService.listTables();
+    res.json(tables);
+  } catch (error) {
+    console.error("Error listing SQL tables:", error);
+    res.status(500).json({ error: "Failed to list SQL Server tables" });
+  }
+});
+
+// Get schema for a specific table
+router.get("/api/sql-tables/:schema/:table/schema", enhancedAuth, async (req, res) => {
+  try {
+    const { schema, table } = req.params;
+    const tableSchema = await sqlServerService.getTableSchema(schema, table);
+    res.json(tableSchema);
+  } catch (error) {
+    console.error("Error getting table schema:", error);
+    res.status(500).json({ error: "Failed to get table schema" });
+  }
+});
+
+// Get paginated data from a specific table
+router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
+  try {
+    const schema = (req.query.schema as string) || 'dbo';
+    const table = req.query.table as string;
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    // Validate schema and table exist by checking against known tables
+    const validTables = await sqlServerService.listTables();
+    const isValidTable = validTables.some(
+      t => t.schemaName === schema && t.tableName === table
+    );
+    
+    if (!isValidTable) {
+      return res.status(400).json({ error: "Invalid schema or table name" });
+    }
+
+    const page = parseInt(req.query.page as string) || 1;
+    const pageSize = parseInt(req.query.pageSize as string) || 10;
+    const searchTerm = (req.query.searchTerm as string) || "";
+    const sortBy = (req.query.sortBy as string) || "";
+    const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
+
+    const data = await sqlServerService.getTableData(
+      schema,
+      table,
+      page,
+      pageSize,
+      searchTerm,
+      sortBy,
+      sortOrder
+    );
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error fetching paginated reports:", error);
+    res.status(500).json({ error: "Failed to fetch paginated reports from SQL Server" });
   }
 });
 

@@ -675,7 +675,14 @@ export class DatabaseStorage implements IStorage {
             WHEN ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start) <= 6 THEN 'Medium'
             ELSE 'Low'
           END as priority,
-          true as "isActive"
+          true as "isActive",
+          -- PERT fields
+          jo.time_optimistic as "timeOptimistic",
+          jo.time_most_likely as "timeMostLikely",
+          jo.time_pessimistic as "timePessimistic",
+          jo.time_expected as "timeExpected",
+          jo.time_variance as "timeVariance",
+          jo.time_std_dev as "timeStdDev"
         FROM ptjoboperations jo
         ORDER BY jo.scheduled_start, jo.name
       `);

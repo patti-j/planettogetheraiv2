@@ -1,5 +1,26 @@
 # PlanetTogether - Manufacturing SCM + APS System
 
+## Recent Changes
+
+### October 15, 2025
+- **Added Dynamic Paginated Reports with SQL Server Integration**: New dedicated page at `/paginated-reports` for viewing data from any SQL Server table with pagination, filtering, sorting, and search capabilities
+  - **SQL Server Connection**: Created `sql-server-service.ts` with connection pooling using mssql package
+  - **Security**: Table/schema validation against INFORMATION_SCHEMA whitelist to prevent SQL injection
+  - **Performance**: Schema caching with 5-minute TTL to reduce redundant queries
+  - **Backend API Endpoints**:
+    - `/api/sql-tables`: Lists all tables in the SQL Server database
+    - `/api/sql-tables/:schema/:table/schema`: Gets column metadata for a specific table
+    - `/api/paginated-reports`: Fetches paginated data with search and sorting
+  - **Frontend Features**:
+    - Dynamic table selector from SQL Server database
+    - Dynamic column rendering based on table schema
+    - Search across all text columns
+    - Sortable columns with visual indicators
+    - Configurable page size (10, 25, 50, 100, 250 items)
+    - Proper loading states and error handling
+  - **Navigation**: Added "Paginated Reports" link in AI & Analytics menu section
+  - **Environment Variables**: Uses SQL_SERVER, SQL_DATABASE, SQL_USERNAME, SQL_PASSWORD for secure connection
+
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. Key capabilities include multi-agent support, modular federation, and advanced AI integration for scheduling and system intelligence.
 
@@ -47,7 +68,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Data Model**: Comprehensive database schema, including SAP-compliant production version architecture and migration to integer foreign keys. Exclusively uses PT (PlanetTogether) tables for manufacturing data.
 -   **Inventory Management**: Stock-centric system tracking specific records.
 -   **Master Data Management**: Unified interface with AI-powered modification and validation.
--   **Production Scheduling**: Visual Gantt chart, operation sequencer, scheduling algorithms (ASAP, limited ALAP, simplified Critical Path), and constraints management, including PT Resource Capabilities System for resource-operation matching. Auto zoom-to-fit on initial load only. **Auto-Save System**: Comprehensive auto-save for all manual changes (drag/drop, resize, edit) with `manually_scheduled` flag preservation - manual positions are protected from future algorithmic optimizations. **Calendar Management**: UI for working hours and maintenance periods configuration. See [Production Scheduler Documentation](./PRODUCTION_SCHEDULER_DOCUMENTATION.md) for complete implementation details.
+-   **Production Scheduling**: Visual Gantt chart, operation sequencer, scheduling algorithms (ASAP, ALAP, Critical Path, Resource Leveling, Theory of Constraints/DBR, PERT), and constraints management, including PT Resource Capabilities System for resource-operation matching. Auto zoom-to-fit on initial load only. **Auto-Save System**: Comprehensive auto-save for all manual changes (drag/drop, resize, edit) with `manually_scheduled` flag preservation - manual positions are protected from future algorithmic optimizations. **Calendar Management**: UI for working hours and maintenance periods configuration. **Theme System**: Bryntum native theme switching using DomHelper.setTheme() API for Classic Light and Classic Dark themes with proper iframe synchronization. See [Production Scheduler Documentation](./PRODUCTION_SCHEDULER_DOCUMENTATION.md) for complete implementation details.
 -   **Dashboarding & Analytics**: UI Design Studio for custom visualizations, AI-powered dashboard generation, and a drag-and-drop designer with widget library and professional templates.
 -   **Role-Based Access Control**: Unified permission system with feature-action permissions.
 -   **User Experience**: Session persistence for UI preferences, intelligent auto-fit, filter-specific layout persistence, and comprehensive error handling.

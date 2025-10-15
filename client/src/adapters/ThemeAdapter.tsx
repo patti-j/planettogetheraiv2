@@ -21,14 +21,22 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
   
   // Get initial theme from DOM or localStorage to prevent flash
   const getInitialTheme = (): Theme => {
+    // First check localStorage which should have the most recent theme
+    const saved = localStorage.getItem('theme') as Theme;
+    if (saved) {
+      console.log('[ThemeAdapter] Initial theme from localStorage:', saved);
+      return saved;
+    }
+    
+    // Then check if dark class is already set (from index.html)
     const root = window.document.documentElement;
-    // Check if dark class is already set (from index.html)
     if (root.classList.contains('dark')) {
+      console.log('[ThemeAdapter] Initial theme from DOM: dark');
       return 'dark';
     }
-    // Check localStorage
-    const saved = localStorage.getItem('theme') as Theme;
-    return saved || 'light';
+    
+    console.log('[ThemeAdapter] Initial theme defaulting to: light');
+    return 'light';
   };
   
   const initialTheme = getInitialTheme();
@@ -73,7 +81,7 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
       }
       
       // Fallback to existing API
-      const response = await apiRequest('PUT', '/api/user-preferences', {
+      const response = await apiRequest('PUT', `/api/user-preferences/${user.id}`, {
         theme: newTheme
       });
       return response.json();
@@ -88,14 +96,19 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
   // Set theme from preferences or localStorage
   useEffect(() => {
     if (preferences?.theme) {
+      console.log('[ThemeAdapter] Theme from preferences:', preferences.theme);
       setThemeState(preferences.theme as Theme);
-    } else {
+      // Also update localStorage to sync
+      localStorage.setItem('theme', preferences.theme);
+    } else if (!user) {
+      // Only use localStorage if not authenticated
       const savedTheme = localStorage.getItem('theme') as Theme;
       if (savedTheme) {
+        console.log('[ThemeAdapter] Theme from localStorage (no user):', savedTheme);
         setThemeState(savedTheme);
       }
     }
-  }, [preferences]);
+  }, [preferences, user]);
 
   // Apply theme to document and resolve system theme
   useEffect(() => {
@@ -105,8 +118,10 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
     if (theme === 'system') {
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
       effectiveTheme = systemTheme;
+      console.log('[ThemeAdapter] System theme resolved to:', systemTheme);
     } else {
       effectiveTheme = theme as 'light' | 'dark';
+      console.log('[ThemeAdapter] Direct theme set to:', effectiveTheme);
     }
 
     // Only modify classes if the theme actually changed to prevent flash
@@ -117,6 +132,7 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
     }
     
     setResolvedTheme(effectiveTheme);
+    console.log('[ThemeAdapter] Resolved theme updated to:', effectiveTheme);
   }, [theme]);
 
   // Listen for system theme changes
@@ -142,6 +158,23 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
+    
+    // Immediately apply theme classes
+    const root = window.document.documentElement;
+    let effectiveTheme: 'light' | 'dark' = 'light';
+    
+    if (newTheme === 'system') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      effectiveTheme = newTheme as 'light' | 'dark';
+    }
+    
+    root.classList.remove('light', 'dark');
+    root.classList.add(effectiveTheme);
+    setResolvedTheme(effectiveTheme);
+    
+    // Dispatch custom event for iframe communication
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
     
     if (user) {
       updateThemeMutation.mutate(newTheme);

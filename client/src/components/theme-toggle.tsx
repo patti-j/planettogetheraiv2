@@ -15,10 +15,10 @@ export function ThemeToggle() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="icon" className="w-9 h-9 border-2 border-gray-400 bg-white hover:bg-gray-100 shadow-sm dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-700 mt-[-4px] mb-[-4px]">
-          {resolvedTheme === 'dark' ? (
-            <Moon className="h-4 w-4 text-gray-700 dark:text-gray-300" />
-          ) : (
+          {resolvedTheme === 'light' ? (
             <Sun className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+          ) : (
+            <Moon className="h-4 w-4 text-gray-700 dark:text-gray-300" />
           )}
           <span className="sr-only">Toggle theme</span>
         </Button>
@@ -55,7 +55,7 @@ export function ThemeToggleSimple() {
       onClick={toggleTheme}
       className="w-9 h-9"
     >
-      {resolvedTheme === 'dark' ? (
+      {resolvedTheme === 'light' ? (
         <Sun className="h-4 w-4" />
       ) : (
         <Moon className="h-4 w-4" />

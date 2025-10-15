@@ -124,6 +124,7 @@ import MemoryBooks from "@/pages/memory-books";
 import DataImportClean from "@/pages/data-import-clean";
 import DataImportSimple from "@/pages/data-import-simple";
 import Help from "@/pages/help";
+import PaginatedReports from "@/pages/paginated-reports";
 
 // Import other application-specific components  
 import { useAuth, usePermissions } from "@/hooks/useAuth";
@@ -225,6 +226,11 @@ export default function ApplicationApp() {
               <Route path="/reports">
                 <ProtectedRoute feature="reports" action="view">
                   <Reports />
+                </ProtectedRoute>
+              </Route>
+              <Route path="/paginated-reports">
+                <ProtectedRoute feature="reports" action="view">
+                  <PaginatedReports />
                 </ProtectedRoute>
               </Route>
               <Route path="/business-goals">
