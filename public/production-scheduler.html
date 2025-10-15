@@ -324,14 +324,21 @@
             background: #1a1a1a;
         }
         
-        /* Fix time axis (date row) height */
+        /* Fix time axis (date row) height - needs more for two lines */
         .b-sch-timeaxis-cell {
-            height: 40px !important;
-            line-height: 40px !important;
+            height: 60px !important;
+            line-height: 20px !important; /* Smaller line height for multi-line */
+            padding: 4px !important;
         }
         
         .b-sch-header-row {
-            height: 40px !important;
+            height: 60px !important;
+        }
+        
+        /* Ensure header text doesn't get cut off */
+        .b-sch-header-timeaxis-cell {
+            height: 60px !important;
+            overflow: visible !important;
         }
         
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
