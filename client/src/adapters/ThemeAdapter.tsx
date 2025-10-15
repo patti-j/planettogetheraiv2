@@ -143,6 +143,23 @@ export function ThemeAdapterProvider({ children }: { children: ReactNode }) {
     setThemeState(newTheme);
     localStorage.setItem('theme', newTheme);
     
+    // Immediately apply theme classes
+    const root = window.document.documentElement;
+    let effectiveTheme: 'light' | 'dark' = 'light';
+    
+    if (newTheme === 'system') {
+      effectiveTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } else {
+      effectiveTheme = newTheme as 'light' | 'dark';
+    }
+    
+    root.classList.remove('light', 'dark');
+    root.classList.add(effectiveTheme);
+    setResolvedTheme(effectiveTheme);
+    
+    // Dispatch custom event for iframe communication
+    window.dispatchEvent(new CustomEvent('themechange', { detail: { theme: newTheme } }));
+    
     if (user) {
       updateThemeMutation.mutate(newTheme);
     }
