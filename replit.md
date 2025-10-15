@@ -3,10 +3,22 @@
 ## Recent Changes
 
 ### October 15, 2025
-- **Added Paginated Reports page**: New dedicated page at `/paginated-reports` for viewing agent activity reports with pagination, filtering, sorting, and search capabilities
-  - Backend API endpoint: `/api/paginated-reports` with full pagination support
-  - Features: status filtering, search, sortable columns, configurable page size (10, 25, 50, 100 items)
-  - Displays agent actions with response status badges, execution times, and timestamps
+- **Added Dynamic Paginated Reports with SQL Server Integration**: New dedicated page at `/paginated-reports` for viewing data from any SQL Server table with pagination, filtering, sorting, and search capabilities
+  - **SQL Server Connection**: Created `sql-server-service.ts` with connection pooling using mssql package
+  - **Security**: Table/schema validation against INFORMATION_SCHEMA whitelist to prevent SQL injection
+  - **Performance**: Schema caching with 5-minute TTL to reduce redundant queries
+  - **Backend API Endpoints**:
+    - `/api/sql-tables`: Lists all tables in the SQL Server database
+    - `/api/sql-tables/:schema/:table/schema`: Gets column metadata for a specific table
+    - `/api/paginated-reports`: Fetches paginated data with search and sorting
+  - **Frontend Features**:
+    - Dynamic table selector from SQL Server database
+    - Dynamic column rendering based on table schema
+    - Search across all text columns
+    - Sortable columns with visual indicators
+    - Configurable page size (10, 25, 50, 100, 250 items)
+    - Proper loading states and error handling
+  - **Environment Variables**: Uses SQL_SERVER, SQL_DATABASE, SQL_USERNAME, SQL_PASSWORD for secure connection
 
 ## Overview
 PlanetTogether is an AI-first Factory Optimization Platform, a full-stack manufacturing SCM + APS system. Its core purpose is to leverage AI for optimized production planning, dynamic resource allocation, and intelligent dashboarding, providing complete supply chain visibility through a visual Gantt chart interface. The system is designed for enterprise-grade production deployment in pharmaceutical, chemical, and industrial manufacturing, emphasizing real-time optimization, data integrity, and comprehensive reporting. Key capabilities include multi-agent support, modular federation, and advanced AI integration for scheduling and system intelligence.

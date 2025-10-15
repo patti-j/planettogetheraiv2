@@ -8199,106 +8199,74 @@ router.delete("/api/maintenance-periods/:id", enhancedAuth, async (req, res) => 
 });
 
 // ============================================
-// Paginated Reports Routes
+// Paginated Reports Routes - SQL Server Integration
 // ============================================
 
+import { sqlServerService } from "./services/sql-server-service";
+
+// List all tables in SQL Server database
+router.get("/api/sql-tables", enhancedAuth, async (req, res) => {
+  try {
+    const tables = await sqlServerService.listTables();
+    res.json(tables);
+  } catch (error) {
+    console.error("Error listing SQL tables:", error);
+    res.status(500).json({ error: "Failed to list SQL Server tables" });
+  }
+});
+
+// Get schema for a specific table
+router.get("/api/sql-tables/:schema/:table/schema", enhancedAuth, async (req, res) => {
+  try {
+    const { schema, table } = req.params;
+    const tableSchema = await sqlServerService.getTableSchema(schema, table);
+    res.json(tableSchema);
+  } catch (error) {
+    console.error("Error getting table schema:", error);
+    res.status(500).json({ error: "Failed to get table schema" });
+  }
+});
+
+// Get paginated data from a specific table
 router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
   try {
+    const schema = (req.query.schema as string) || 'dbo';
+    const table = req.query.table as string;
+    
+    if (!table || !schema) {
+      return res.status(400).json({ error: "Schema and table name are required" });
+    }
+
+    // Validate schema and table exist by checking against known tables
+    const validTables = await sqlServerService.listTables();
+    const isValidTable = validTables.some(
+      t => t.schemaName === schema && t.tableName === table
+    );
+    
+    if (!isValidTable) {
+      return res.status(400).json({ error: "Invalid schema or table name" });
+    }
+
     const page = parseInt(req.query.page as string) || 1;
     const pageSize = parseInt(req.query.pageSize as string) || 10;
     const searchTerm = (req.query.searchTerm as string) || "";
-    const statusFilter = (req.query.statusFilter as string) || "all";
-    const sortBy = (req.query.sortBy as string) || "timestamp";
-    const sortOrder = (req.query.sortOrder as string) || "desc";
+    const sortBy = (req.query.sortBy as string) || "";
+    const sortOrder = (req.query.sortOrder as string) === "asc" ? "asc" : "desc";
 
-    const offset = (page - 1) * pageSize;
-
-    // Import schema tables
-    const { agentActions, agentConnections } = await import("@shared/schema");
-    
-    // Build the query with filters
-    const conditions = [];
-    
-    // Search filter
-    if (searchTerm) {
-      conditions.push(
-        sql`(${agentActions.actionType} ILIKE ${`%${searchTerm}%`} OR 
-             ${agentActions.endpoint} ILIKE ${`%${searchTerm}%`})`
-      );
-    }
-    
-    // Status filter
-    if (statusFilter !== "all") {
-      if (statusFilter === "success") {
-        conditions.push(sql`${agentActions.responseStatus} >= 200 AND ${agentActions.responseStatus} < 300`);
-      } else if (statusFilter === "client-error") {
-        conditions.push(sql`${agentActions.responseStatus} >= 400 AND ${agentActions.responseStatus} < 500`);
-      } else if (statusFilter === "server-error") {
-        conditions.push(sql`${agentActions.responseStatus} >= 500`);
-      }
-    }
-
-    // Get total count
-    const countResult = await db
-      .select({ count: sql<number>`count(*)` })
-      .from(agentActions)
-      .where(conditions.length > 0 ? and(...conditions) : undefined);
-    
-    const total = Number(countResult[0]?.count || 0);
-
-    // Determine sort column
-    let orderByColumn;
-    switch (sortBy) {
-      case 'id':
-        orderByColumn = agentActions.id;
-        break;
-      case 'actionType':
-        orderByColumn = agentActions.actionType;
-        break;
-      case 'responseStatus':
-        orderByColumn = agentActions.responseStatus;
-        break;
-      case 'executionTimeMs':
-        orderByColumn = agentActions.executionTimeMs;
-        break;
-      case 'timestamp':
-      default:
-        orderByColumn = agentActions.timestamp;
-        break;
-    }
-
-    // Get paginated data with joins
-    const items = await db
-      .select({
-        id: agentActions.id,
-        agentConnectionId: agentActions.agentConnectionId,
-        agentName: agentConnections.name,
-        actionType: agentActions.actionType,
-        endpoint: agentActions.endpoint,
-        method: agentActions.method,
-        responseStatus: agentActions.responseStatus,
-        executionTimeMs: agentActions.executionTimeMs,
-        timestamp: agentActions.timestamp,
-      })
-      .from(agentActions)
-      .leftJoin(agentConnections, eq(agentActions.agentConnectionId, agentConnections.id))
-      .where(conditions.length > 0 ? and(...conditions) : undefined)
-      .orderBy(sortOrder === "asc" ? orderByColumn : desc(orderByColumn))
-      .limit(pageSize)
-      .offset(offset);
-
-    const totalPages = Math.ceil(total / pageSize);
-
-    res.json({
-      items,
-      total,
+    const data = await sqlServerService.getTableData(
+      schema,
+      table,
       page,
       pageSize,
-      totalPages,
-    });
+      searchTerm,
+      sortBy,
+      sortOrder
+    );
+
+    res.json(data);
   } catch (error) {
     console.error("Error fetching paginated reports:", error);
-    res.status(500).json({ error: "Failed to fetch paginated reports" });
+    res.status(500).json({ error: "Failed to fetch paginated reports from SQL Server" });
   }
 });
 
