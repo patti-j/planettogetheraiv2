@@ -18,6 +18,7 @@
     - Sortable columns with visual indicators
     - Configurable page size (10, 25, 50, 100, 250 items)
     - Proper loading states and error handling
+  - **Navigation**: Added "Paginated Reports" link in AI & Analytics menu section
   - **Environment Variables**: Uses SQL_SERVER, SQL_DATABASE, SQL_USERNAME, SQL_PASSWORD for secure connection
 
 ## Overview
