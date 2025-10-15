@@ -37,6 +37,13 @@ export default function DemandForecasting() {
   const [quantityColumn, setQuantityColumn] = useState<string>("");
   const [selectedItem, setSelectedItem] = useState<string>("");
   const [forecastDays, setForecastDays] = useState<number>(30);
+  
+  // New: Model and filter selections
+  const [modelType, setModelType] = useState<string>("Random Forest");
+  const [planningAreaColumn, setPlanningAreaColumn] = useState<string>("");
+  const [selectedPlanningAreas, setSelectedPlanningAreas] = useState<string[]>([]);
+  const [scenarioColumn, setScenarioColumn] = useState<string>("");
+  const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
 
   // Fetch available tables
   const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
@@ -56,6 +63,30 @@ export default function DemandForecasting() {
       if (!selectedTable) return [];
       const response = await fetch(`/api/forecasting/columns/${selectedTable.schema}/${selectedTable.name}`);
       if (!response.ok) throw new Error("Failed to fetch columns");
+      return response.json();
+    },
+  });
+
+  // Fetch planning area values
+  const { data: planningAreas } = useQuery<string[]>({
+    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, planningAreaColumn],
+    enabled: !!selectedTable && !!planningAreaColumn,
+    queryFn: async () => {
+      if (!selectedTable || !planningAreaColumn) return [];
+      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${planningAreaColumn}`);
+      if (!response.ok) throw new Error("Failed to fetch planning areas");
+      return response.json();
+    },
+  });
+
+  // Fetch scenario values
+  const { data: scenarios } = useQuery<string[]>({
+    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, scenarioColumn],
+    enabled: !!selectedTable && !!scenarioColumn,
+    queryFn: async () => {
+      if (!selectedTable || !scenarioColumn) return [];
+      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${scenarioColumn}`);
+      if (!response.ok) throw new Error("Failed to fetch scenarios");
       return response.json();
     },
   });
@@ -86,6 +117,11 @@ export default function DemandForecasting() {
           quantityColumn,
           selectedItem,
           forecastDays,
+          modelType,
+          planningAreaColumn: planningAreaColumn || null,
+          selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
+          scenarioColumn: scenarioColumn || null,
+          selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
         }),
       });
       if (!response.ok) {
@@ -149,8 +185,31 @@ export default function DemandForecasting() {
         );
         if (qtyCol) setQuantityColumn(qtyCol.name);
       }
+      if (!planningAreaColumn) {
+        const planningCol = columns.find(c => 
+          c.name.toLowerCase().includes('planning') || 
+          c.name.toLowerCase().includes('area') ||
+          c.name.toLowerCase().includes('region') ||
+          c.name.toLowerCase().includes('site') ||
+          c.name.toLowerCase().includes('location') ||
+          c.name.toLowerCase().includes('plant') ||
+          c.name.toLowerCase().includes('facility')
+        );
+        if (planningCol) setPlanningAreaColumn(planningCol.name);
+      }
+      if (!scenarioColumn) {
+        const scenarioCol = columns.find(c => 
+          c.name.toLowerCase().includes('scenario') || 
+          c.name.toLowerCase().includes('name') ||
+          c.name.toLowerCase().includes('version') ||
+          c.name.toLowerCase().includes('plan') ||
+          c.name.toLowerCase().includes('forecast') ||
+          c.name.toLowerCase().includes('type')
+        );
+        if (scenarioCol) setScenarioColumn(scenarioCol.name);
+      }
     }
-  }, [columns, dateColumn, itemColumn, quantityColumn]);
+  }, [columns, dateColumn, itemColumn, quantityColumn, planningAreaColumn, scenarioColumn]);
 
   return (
     <div className="flex flex-col h-full p-6 space-y-6 overflow-auto">
@@ -255,6 +314,123 @@ export default function DemandForecasting() {
               </Select>
             </div>
 
+            {/* Model Type Selection */}
+            <div className="space-y-2">
+              <Label>Model Type</Label>
+              <Select value={modelType} onValueChange={setModelType} data-testid="select-model-type">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select forecasting model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Random Forest">Random Forest</SelectItem>
+                  <SelectItem value="ARIMA">ARIMA</SelectItem>
+                  <SelectItem value="Prophet">Prophet</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Planning Area Column */}
+            <div className="space-y-2">
+              <Label>Planning Area Column (Optional)</Label>
+              <Select value={planningAreaColumn} onValueChange={(value) => {
+                setPlanningAreaColumn(value);
+                setSelectedPlanningAreas([]);
+              }} disabled={!selectedTable} data-testid="select-planning-area-column">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select planning area column" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {columns?.map((col) => (
+                    <SelectItem key={col.name} value={col.name}>
+                      {col.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Scenario Column */}
+            <div className="space-y-2">
+              <Label>Scenario Column (Optional)</Label>
+              <Select value={scenarioColumn} onValueChange={(value) => {
+                setScenarioColumn(value);
+                setSelectedScenarios([]);
+              }} disabled={!selectedTable} data-testid="select-scenario-column">
+                <SelectTrigger>
+                  <SelectValue placeholder="Select scenario column" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {columns?.map((col) => (
+                    <SelectItem key={col.name} value={col.name}>
+                      {col.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Planning Areas Multi-Select */}
+          {planningAreaColumn && planningAreas && planningAreas.length > 0 && (
+            <div className="space-y-2">
+              <Label>Select Planning Areas</Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
+                {planningAreas.slice(0, 10).map((area) => (
+                  <label key={area} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedPlanningAreas.includes(area)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedPlanningAreas([...selectedPlanningAreas, area]);
+                        } else {
+                          setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{area}</span>
+                  </label>
+                ))}
+                {planningAreas.length > 10 && (
+                  <p className="text-xs text-muted-foreground">Showing first 10 of {planningAreas.length} areas</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Scenarios Multi-Select */}
+          {scenarioColumn && scenarios && scenarios.length > 0 && (
+            <div className="space-y-2">
+              <Label>Select Scenarios</Label>
+              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
+                {scenarios.slice(0, 10).map((scenario) => (
+                  <label key={scenario} className="flex items-center space-x-2 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={selectedScenarios.includes(scenario)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedScenarios([...selectedScenarios, scenario]);
+                        } else {
+                          setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
+                        }
+                      }}
+                      className="rounded"
+                    />
+                    <span className="text-sm">{scenario}</span>
+                  </label>
+                ))}
+                {scenarios.length > 10 && (
+                  <p className="text-xs text-muted-foreground">Showing first 10 of {scenarios.length} scenarios</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Item Selection */}
             <div className="space-y-2">
               <Label>Select Item</Label>
