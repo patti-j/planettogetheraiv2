@@ -10,9 +10,8 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
-    <!-- Bryntum Scheduler Pro CSS - Load both themes for dynamic switching -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-light-theme">
-    <link rel="stylesheet" href="/schedulerpro.classic-dark.css" id="scheduler-dark-theme" disabled>
+    <!-- Bryntum Scheduler Pro CSS - Only ONE file as Bryntum requires -->
+    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="scheduler-theme">
     
     <style>
         * {
@@ -326,7 +325,16 @@
             background: #1a1a1a;
         }
         
-        /* Remove filter approach - now using proper Bryntum themes */
+        /* Dark theme for scheduler using CSS filter - THIS IS WHAT WAS WORKING! */
+        .dark-theme #scheduler {
+            filter: invert(0.9) hue-rotate(180deg);
+        }
+        
+        /* Re-invert images and icons in dark mode */
+        .dark-theme #scheduler img,
+        .dark-theme #scheduler .b-icon {
+            filter: invert(1) hue-rotate(-180deg);
+        }
         
         /* Dependency lines styling */
         .b-sch-dependency {
@@ -7518,38 +7526,16 @@
             console.log('🎨 [Production Scheduler] Applying theme:', theme);
             
             const isDark = theme === 'dark';
-            const lightTheme = document.getElementById('scheduler-light-theme');
-            const darkTheme = document.getElementById('scheduler-dark-theme');
             
-            // Switch between Bryntum Classic Light and Dark themes
+            // Apply dark theme using CSS filter approach (which was working 2 days ago)
             if (isDark) {
-                // Enable dark theme CSS, disable light theme CSS
-                if (lightTheme) lightTheme.disabled = true;
-                if (darkTheme) darkTheme.disabled = false;
-                
-                // Add dark theme class for custom styles
-                document.documentElement.classList.add('dark-theme');
                 document.body.classList.add('dark-theme');
-                
-                // Apply Bryntum dark theme class
-                document.body.classList.add('b-theme-classic-dark');
-                document.body.classList.remove('b-theme-classic-light');
-                
-                console.log('🌙 [Production Scheduler] Dark theme applied with Bryntum Classic Dark');
+                document.documentElement.classList.add('dark-theme');
+                console.log('🌙 [Production Scheduler] Dark theme applied using CSS filters');
             } else {
-                // Enable light theme CSS, disable dark theme CSS
-                if (lightTheme) lightTheme.disabled = false;
-                if (darkTheme) darkTheme.disabled = true;
-                
-                // Remove dark theme class for custom styles
-                document.documentElement.classList.remove('dark-theme');
                 document.body.classList.remove('dark-theme');
-                
-                // Apply Bryntum light theme class
-                document.body.classList.add('b-theme-classic-light');
-                document.body.classList.remove('b-theme-classic-dark');
-                
-                console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
+                document.documentElement.classList.remove('dark-theme');
+                console.log('☀️ [Production Scheduler] Light theme applied');
             }
             
             // If scheduler is already initialized, apply theme to it
