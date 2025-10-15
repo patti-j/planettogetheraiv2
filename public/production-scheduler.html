@@ -264,11 +264,11 @@
         
         /* Dark theme overrides */
         .dark-theme {
-            background: #1a1a1a;
+            background: #0f172a;
         }
         
         .dark-theme .header {
-            background: rgba(30, 30, 30, 0.95);
+            background: rgba(30, 41, 59, 0.95);
             color: white;
         }
         
@@ -277,12 +277,12 @@
         }
         
         .dark-theme .toolbar {
-            background: rgba(40, 40, 40, 0.9);
-            border-bottom-color: #444;
+            background: rgba(30, 41, 59, 0.9);
+            border-bottom-color: #334155;
         }
         
         .dark-theme .toolbar label {
-            color: #ccc;
+            color: #e2e8f0;
         }
         
         .dark-theme .toolbar button {
@@ -299,20 +299,20 @@
         }
         
         .dark-theme .toolbar select {
-            background: #2a2a2a;
-            color: #e0e0e0;
-            border-color: #444;
+            background: #1e293b;
+            color: #f1f5f9;
+            border-color: #475569;
         }
         
         .dark-theme .toolbar select:hover {
-            background: #333;
-            border-color: #666;
+            background: #334155;
+            border-color: #64748b;
         }
         
         .dark-theme .status-bar {
-            background: rgba(30, 30, 30, 0.95);
-            color: #ccc;
-            border-top-color: #444;
+            background: rgba(30, 41, 59, 0.95);
+            color: #e2e8f0;
+            border-top-color: #334155;
         }
         
         .dark-theme .scheduler-container {
@@ -1889,6 +1889,212 @@
         
         .b-schedulerpro .b-grid-row {
             flex: 0 0 45px !important; /* Fixed flex height */
+        }
+        
+        /* ===== COMPREHENSIVE BRYNTUM DARK THEME STYLES ===== */
+        .dark-theme .b-schedulerpro,
+        .dark-theme .b-scheduler,
+        .dark-theme .b-grid,
+        .dark-theme .b-grid-subgrid,
+        .dark-theme .b-grid-body,
+        .dark-theme .b-grid-body-container,
+        .dark-theme .b-timeline-subgrid {
+            background: #0f172a !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Grid rows and cells */
+        .dark-theme .b-grid-row {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-grid-row:hover {
+            background: #334155 !important;
+        }
+        
+        .dark-theme .b-grid-cell {
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Timeline area */
+        .dark-theme .b-sch-background-canvas,
+        .dark-theme .b-timeline-body-wrap,
+        .dark-theme .b-sch-timerange,
+        .dark-theme .b-sch-foreground-canvas {
+            background: #0f172a !important;
+        }
+        
+        .dark-theme .b-sch-timeaxis-cell,
+        .dark-theme .b-timeline-cell {
+            background: transparent !important;
+            border-color: #334155 !important;
+        }
+        
+        .dark-theme .b-sch-timeaxis-cell:nth-child(even) {
+            background: rgba(30, 41, 59, 0.2) !important;
+        }
+        
+        /* Headers */
+        .dark-theme .b-grid-headers,
+        .dark-theme .b-grid-header,
+        .dark-theme .b-sch-header-timeaxis,
+        .dark-theme .b-sch-timeaxiscolumn {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-sch-header-row {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-sch-header-timeaxis-cell {
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        /* Event/Task bars */
+        .dark-theme .b-sch-event,
+        .dark-theme .b-pro-event,
+        .dark-theme .b-sch-event-wrap {
+            filter: brightness(1.1);
+            color: #ffffff !important;
+        }
+        
+        .dark-theme .b-sch-event-selected {
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
+        }
+        
+        /* Dependencies */
+        .dark-theme .b-sch-dependency line,
+        .dark-theme .b-sch-dependency path {
+            stroke: #64748b !important;
+        }
+        
+        .dark-theme .b-sch-dependency-arrow {
+            fill: #64748b !important;
+        }
+        
+        /* Tooltips and popups */
+        .dark-theme .b-tooltip,
+        .dark-theme .b-popup {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border: 1px solid #334155 !important;
+        }
+        
+        /* Scrollbars */
+        .dark-theme ::-webkit-scrollbar {
+            background: #1e293b !important;
+        }
+        
+        .dark-theme ::-webkit-scrollbar-thumb {
+            background: #475569 !important;
+            border-radius: 6px;
+        }
+        
+        .dark-theme ::-webkit-scrollbar-thumb:hover {
+            background: #64748b !important;
+        }
+        
+        /* Non-working time */
+        .dark-theme .b-sch-nonworkingtime {
+            background: rgba(100, 116, 139, 0.08) !important;
+        }
+        
+        /* Splitter */
+        .dark-theme .b-grid-splitter {
+            background: #334155 !important;
+        }
+        
+        /* Menus and dropdowns */
+        .dark-theme .b-menu,
+        .dark-theme .b-list,
+        .dark-theme .b-combo-picker {
+            background: #1e293b !important;
+            border-color: #334155 !important;
+            color: #f1f5f9 !important;
+        }
+        
+        .dark-theme .b-menuitem:hover,
+        .dark-theme .b-list-item:hover {
+            background: #334155 !important;
+        }
+        
+        /* Buttons */
+        .dark-theme .b-button {
+            background: #334155 !important;
+            color: #f1f5f9 !important;
+            border-color: #475569 !important;
+        }
+        
+        .dark-theme .b-button:hover {
+            background: #475569 !important;
+        }
+        
+        /* Input fields */
+        .dark-theme .b-field input,
+        .dark-theme .b-field select,
+        .dark-theme .b-combo input {
+            background: #1e293b !important;
+            color: #f1f5f9 !important;
+            border-color: #334155 !important;
+        }
+        
+        /* Weekend highlighting */
+        .dark-theme .b-sch-dayheadercell-nonworking {
+            background: rgba(100, 116, 139, 0.05) !important;
+        }
+        
+        /* Scheduler container */
+        .dark-theme #scheduler {
+            background: #0f172a !important;
+        }
+        
+        /* Fix Date Header Formatting - Both Themes */
+        .b-sch-header-timeaxis {
+            height: auto !important;
+            min-height: 64px !important;
+        }
+        
+        .b-sch-header-row {
+            height: 32px !important;
+            line-height: 30px !important;
+            overflow: visible !important;
+        }
+        
+        /* Week row separator */
+        .b-sch-header-row-0 {
+            border-bottom: 2px solid #cbd5e1 !important;
+            font-weight: 500;
+        }
+        
+        .dark-theme .b-sch-header-row-0 {
+            border-bottom-color: #475569 !important;
+        }
+        
+        /* Day row */
+        .b-sch-header-row-1 {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        
+        .dark-theme .b-sch-header-row-1 {
+            border-bottom-color: #334155 !important;
+        }
+        
+        /* Cell padding to prevent text cutoff */
+        .b-sch-header-timeaxis-cell {
+            padding: 6px 8px !important;
+            overflow: visible !important;
+            line-height: normal !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
     </style>
 </head>
