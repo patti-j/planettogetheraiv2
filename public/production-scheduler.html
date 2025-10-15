@@ -320,15 +320,15 @@
             background: #2a2a2a;
         }
         
-        /* Dark theme for scheduler using filter */
+        /* Dark theme for scheduler - use Bryntum's Stockholm dark class */
         .dark-theme #scheduler {
-            filter: invert(0.9) hue-rotate(180deg);
+            /* Remove filter approach - it affects row heights */
+            /* Use Stockholm's built-in dark theme classes instead */
         }
         
-        /* Re-invert images and icons in dark mode */
-        .dark-theme #scheduler img,
-        .dark-theme #scheduler .b-icon {
-            filter: invert(1) hue-rotate(-180deg);
+        /* Apply dark theme class to Bryntum scheduler */
+        .dark-theme .b-schedulerpro {
+            /* Stockholm dark theme will handle the colors */
         }
         
         /* Dependency lines styling */
