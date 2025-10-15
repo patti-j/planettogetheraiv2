@@ -110,22 +110,14 @@ export default function ProductionScheduler() {
   
   // Update iframe when resolved theme changes
   useEffect(() => {
-    if (resolvedTheme && iframeRef.current) {
+    if (resolvedTheme && iframeRef.current && initialUrlSet) {
       console.log('📤 [Parent] Theme changed to:', resolvedTheme, '(raw theme:', theme, ')');
-      // Update iframe URL with new theme
+      // Force reload iframe with new theme - this ensures the CSS is properly loaded
+      setIsLoading(true);
       setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
-      // Also send via postMessage for instant update
-      setTimeout(() => {
-        if (iframeRef.current?.contentWindow) {
-          console.log('📤 [Parent] Sending theme via postMessage:', resolvedTheme);
-          iframeRef.current.contentWindow.postMessage({
-            type: 'SET_THEME',
-            theme: resolvedTheme
-          }, '*');
-        }
-      }, 100); // Small delay to ensure iframe is ready
+      // The postMessage will be sent when iframe loads in the handleLoad function
     }
-  }, [resolvedTheme, theme]);
+  }, [resolvedTheme, initialUrlSet]);
 
   return (
     <div className="h-full flex flex-col">

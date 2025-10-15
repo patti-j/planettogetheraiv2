@@ -324,21 +324,35 @@
             background: #1a1a1a;
         }
         
-        /* Fix time axis (date row) height - needs more for two lines */
+        /* Fix time axis (date row) height - needs even more for two lines */
         .b-sch-timeaxis-cell {
-            height: 60px !important;
-            line-height: 20px !important; /* Smaller line height for multi-line */
-            padding: 4px !important;
+            height: 80px !important;
+            min-height: 80px !important;
+            line-height: 24px !important; /* Better spacing for multi-line */
+            padding: 8px 4px !important;
         }
         
         .b-sch-header-row {
-            height: 60px !important;
+            height: 80px !important;
+            min-height: 80px !important;
         }
         
         /* Ensure header text doesn't get cut off */
         .b-sch-header-timeaxis-cell {
-            height: 60px !important;
+            height: 80px !important;
+            min-height: 80px !important;
             overflow: visible !important;
+        }
+        
+        /* Also fix the header container heights */
+        .b-schedulerpro .b-sch-header-container {
+            height: auto !important;
+            min-height: 80px !important;
+        }
+        
+        .b-schedulerpro .b-grid-headers {
+            height: auto !important;
+            min-height: 80px !important;
         }
         
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
@@ -2849,7 +2863,14 @@
                 // Mark first task as in progress
                 
                 // Initialize scheduler using global bryntum object
-                const { SchedulerPro } = bryntum.schedulerpro;
+                // Get SchedulerPro from the global bryntum object
+                const SchedulerPro = window.bryntum?.schedulerpro?.SchedulerPro;
+                
+                if (!SchedulerPro) {
+                    console.error('❌ Bryntum SchedulerPro not found! Library may not be loaded.');
+                    document.getElementById('scheduler').innerHTML = '<div style="padding: 20px; text-align: center; color: red;">Error: Scheduler library not loaded properly. Please refresh the page.</div>';
+                    return;
+                }
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
@@ -7609,6 +7630,29 @@
         console.log('🌐 [Scheduler iframe] URL params:', window.location.search);
         console.log('🎨 [Scheduler iframe] Theme from URL:', themeFromUrl);
         
+        // Apply theme based on URL immediately - before anything else loads
+        // This is critical for proper theme loading
+        const currentTheme = themeFromUrl || 'light';
+        
+        // Immediately set the correct theme CSS file
+        const themeLink = document.getElementById('bryntum-theme');
+        if (themeLink) {
+            const correctThemeUrl = currentTheme === 'dark' 
+                ? '/schedulerpro.classic-dark.css' 
+                : '/schedulerpro.classic-light.css';
+            
+            console.log('🚀 [Scheduler iframe] Setting initial theme CSS to:', correctThemeUrl);
+            themeLink.href = correctThemeUrl;
+            
+            // Also add body class immediately
+            if (currentTheme === 'dark') {
+                document.body.classList.add('dark-theme', 'b-theme-classic-dark');
+                document.documentElement.classList.add('dark-theme');
+            } else {
+                document.body.classList.add('b-theme-classic-light');
+            }
+        }
+        
         // Listen for theme messages from parent window (set up early)
         window.addEventListener('message', (event) => {
             if (event.data?.type === 'SET_THEME') {
@@ -7619,36 +7663,19 @@
             }
         });
         
-        // Apply theme immediately - priority: URL param > localStorage > default
-        // But first check if we're in an iframe and can get parent theme
-        let parentTheme = null;
-        if (window.parent !== window) {
-            try {
-                // Try to get theme from parent's localStorage
-                parentTheme = window.parent.localStorage.getItem('theme');
-                console.log('👆 [Production Scheduler] Parent theme detected:', parentTheme);
-            } catch (e) {
-                console.log('⚠️ [Production Scheduler] Could not access parent theme (cross-origin)');
-            }
-        }
-        
-        const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
-        console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : localStorage.getItem('theme') ? 'localStorage' : 'default', ')');
+        console.log('🔍 [Production Scheduler] Initial theme:', currentTheme);
         console.log('📱 [Production Scheduler] Document ready state:', document.readyState);
         
-        // Apply theme immediately (might use manual switching if Bryntum not loaded)
-        applyTheme(initialTheme);
-        
-        // Also apply theme after DOM is ready and scheduler is initialized
+        // Apply theme properly after DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            console.log('📄 [Production Scheduler] DOM ready, reapplying theme:', initialTheme);
-            applyTheme(initialTheme);
+            console.log('📄 [Production Scheduler] DOM ready, applying theme:', currentTheme);
+            applyTheme(currentTheme);
             
             // Try again after a short delay to ensure Bryntum is fully loaded
             setTimeout(() => {
-                console.log('⏱️ [Production Scheduler] Delayed theme application:', initialTheme);
-                applyTheme(initialTheme);
-            }, 500);
+                console.log('⏱️ [Production Scheduler] Delayed theme application with DomHelper:', currentTheme);
+                applyTheme(currentTheme);
+            }, 1000);
         });
         
         // Setup event listeners when DOM is ready
