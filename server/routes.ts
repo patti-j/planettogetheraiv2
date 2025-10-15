@@ -169,7 +169,12 @@ const uploadFiles = multer({
 
 // Serve Bryntum static assets
 router.get('/schedulerpro.classic-light.css', (req, res) => {
-  const cssPath = path.join(process.cwd(), 'attached_assets/build/thin/schedulerpro.classic-light.thin.css');
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-light.css');
+  res.sendFile(cssPath);
+});
+
+router.get('/schedulerpro.classic-dark.css', (req, res) => {
+  const cssPath = path.join(process.cwd(), 'node_modules/@bryntum/schedulerpro/schedulerpro.classic-dark.css');
   res.sendFile(cssPath);
 });
 
