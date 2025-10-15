@@ -302,7 +302,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           showHeaderText: showText
         }
       };
-      return apiRequest('PUT', '/api/user-preferences', updatedPreferences);
+      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
@@ -330,7 +330,7 @@ export function CustomizableHeader({ className }: CustomizableHeaderProps) {
           uiDensity: density
         }
       };
-      return apiRequest('PUT', '/api/user-preferences', updatedPreferences);
+      return apiRequest('PUT', `/api/user-preferences/${user?.id}`, updatedPreferences);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [`/api/user-preferences/${user?.id}`] });
