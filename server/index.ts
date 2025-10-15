@@ -5,7 +5,6 @@ import { createServer } from 'http';
 import { WebSocket, WebSocketServer } from 'ws';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import routes from "./routes";
 import forecastingRoutes from "./forecasting-routes";
 import { setupVite, serveStatic, log } from "./vite";
@@ -142,30 +141,6 @@ app.use((req, res, next) => {
     }
   });
 
-  // Streamlit forecasting app proxy - serve at /forecasting
-  // IMPORTANT: This must come BEFORE the static middleware to avoid path conflicts
-  const forecastingProxy = createProxyMiddleware({
-    target: 'http://localhost:8080',
-    changeOrigin: true,
-    ws: true, // Enable WebSocket proxying for Streamlit
-    pathRewrite: {
-      '^/forecasting': '', // Strip /forecasting prefix when forwarding to Streamlit
-    },
-    on: {
-      proxyRes: (proxyRes: any) => {
-        // Allow iframe embedding by modifying security headers
-        delete proxyRes.headers['x-frame-options'];
-        delete proxyRes.headers['content-security-policy'];
-        proxyRes.headers['x-frame-options'] = 'SAMEORIGIN';
-      },
-      error: (err: any, req: any, res: any) => {
-        console.log('[Forecasting Proxy] Error:', err.message);
-      },
-    },
-    logLevel: 'warn',
-  });
-  
-  app.use('/forecasting', forecastingProxy);
 
   // Serve Bryntum static assets from public directory
   app.use(express.static(path.resolve(import.meta.dirname, "public")));

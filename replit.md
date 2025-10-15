@@ -57,7 +57,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Global Control Tower**: Enhanced with KPI target management, weighted performance tracking, autonomous optimization, and real-time plant monitoring.
 -   **Production Scheduler Architecture**: Uses a hybrid iframe/React architecture where a React wrapper component loads a standalone HTML file containing the Bryntum Scheduler Pro via a backend API route.
 -   **Voice Chat**: Integrates real-time voice chat with OpenAI's gpt-realtime-mini model, featuring WebSocket architecture, SSE for audio/transcript streaming, and automatic pause detection.
--   **Demand Forecasting**: Python-based Streamlit application featuring multi-model forecasting (ARIMA, Prophet, NeuralProphet, DeepAR) with SQL Server integration. Accessible via dedicated landing page at `/demand-forecasting` with external browser launch on port 8080.
+-   **Demand Forecasting**: Native React-based forecasting application with SQL Server integration, featuring dynamic table/column selection, auto-detection of date/quantity columns, item-level filtering, and time-series forecasting with Recharts visualization. Fully embedded at `/demand-forecasting` with header and sidebar visible.
 
 ## External Dependencies
 
