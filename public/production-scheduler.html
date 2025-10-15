@@ -7383,12 +7383,25 @@
             });
         }
         
+        // Apply theme immediately (before DOMContentLoaded to prevent flash)
+        function applyTheme(theme) {
+            const isDark = theme === 'dark';
+            document.body.className = isDark ? 'dark-theme' : '';
+            
+            // Switch Bryntum CSS file
+            const themeLink = document.getElementById('scheduler-theme');
+            if (themeLink) {
+                const cssFile = isDark ? 'schedulerpro.classic-dark.css' : 'schedulerpro.classic-light.css';
+                themeLink.href = `/${cssFile}?v=3`;
+            }
+        }
+        
+        // Apply theme immediately
+        const initialTheme = localStorage.getItem('theme') || 'light';
+        applyTheme(initialTheme);
+        
         // Setup event listeners when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            // Apply theme from localStorage on page load
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
-            
             // Constraint settings button
             document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
             
@@ -7402,7 +7415,7 @@
             // Listen for theme changes from parent window
             window.addEventListener('message', (e) => {
                 if (e.data && e.data.type === 'SET_THEME') {
-                    document.body.className = e.data.theme === 'dark' ? 'dark-theme' : '';
+                    applyTheme(e.data.theme);
                     localStorage.setItem('theme', e.data.theme);
                 }
             });
@@ -7410,7 +7423,7 @@
             // Listen for storage changes (theme changes in main app)
             window.addEventListener('storage', (e) => {
                 if (e.key === 'theme') {
-                    document.body.className = e.newValue === 'dark' ? 'dark-theme' : '';
+                    applyTheme(e.newValue);
                 }
             });
             
