@@ -17,18 +17,11 @@ export default function ProductionScheduler() {
   const { resolvedTheme, theme } = useTheme();
 
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
-  // Initialize with empty URL to ensure we use the resolved theme
-  const [iframeUrl, setIframeUrl] = useState('');
-  const [initialUrlSet, setInitialUrlSet] = useState(false);
-
-  // Set initial URL with resolved theme
-  useEffect(() => {
-    if (resolvedTheme && !initialUrlSet) {
-      console.log('🚀 [Parent] Setting initial iframe URL with theme:', resolvedTheme);
-      setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
-      setInitialUrlSet(true);
-    }
-  }, [resolvedTheme, initialUrlSet]);
+  // Initialize with theme from localStorage or default
+  const [iframeUrl, setIframeUrl] = useState(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    return `/api/production-scheduler?v=${Date.now()}&theme=${savedTheme}`;
+  });
 
   useEffect(() => {
     // Set page title
@@ -110,14 +103,22 @@ export default function ProductionScheduler() {
   
   // Update iframe when resolved theme changes
   useEffect(() => {
-    if (resolvedTheme && iframeRef.current && initialUrlSet) {
+    if (resolvedTheme && iframeRef.current) {
       console.log('📤 [Parent] Theme changed to:', resolvedTheme, '(raw theme:', theme, ')');
-      // Force reload iframe with new theme - this ensures the CSS is properly loaded
-      setIsLoading(true);
+      // Update iframe URL with new theme
       setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}`);
-      // The postMessage will be sent when iframe loads in the handleLoad function
+      // Also send via postMessage for instant update
+      setTimeout(() => {
+        if (iframeRef.current?.contentWindow) {
+          console.log('📤 [Parent] Sending theme via postMessage:', resolvedTheme);
+          iframeRef.current.contentWindow.postMessage({
+            type: 'SET_THEME',
+            theme: resolvedTheme
+          }, '*');
+        }
+      }, 100); // Small delay to ensure iframe is ready
     }
-  }, [resolvedTheme, initialUrlSet]);
+  }, [resolvedTheme, theme]);
 
   return (
     <div className="h-full flex flex-col">
