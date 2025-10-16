@@ -326,42 +326,20 @@
         
         /* Fix time axis (date row) height - taller for better visibility */
         .b-sch-timeaxis-cell {
-            height: 50px !important;
-            min-height: 50px !important;
-            line-height: normal !important;
-            padding: 12px 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            height: auto !important;
+            min-height: 40px !important;
+            padding: 10px 8px !important;
         }
         
         .b-sch-header-row {
-            height: 50px !important;
-            min-height: 50px !important;
-            line-height: 50px !important;
-            overflow: visible !important;
+            height: auto !important;
+            min-height: 40px !important;
         }
         
         /* Ensure header text doesn't get cut off */
         .b-sch-header-timeaxis-cell {
-            height: 50px !important;
-            min-height: 50px !important;
+            padding: 10px 8px !important;
             overflow: visible !important;
-            padding: 12px 10px !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        
-        /* Also fix the header container heights */
-        .b-schedulerpro .b-sch-header-container {
-            height: auto !important;
-            min-height: 100px !important;
-        }
-        
-        .b-schedulerpro .b-grid-headers {
-            height: auto !important;
-            min-height: 100px !important;
         }
         
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
@@ -2068,13 +2046,11 @@
         /* Fix Date Header Formatting - Both Themes */
         .b-sch-header-timeaxis {
             height: auto !important;
-            min-height: 100px !important;
         }
         
         .b-sch-header-row {
-            height: 50px !important;
-            line-height: 50px !important;
-            overflow: visible !important;
+            height: auto !important;
+            min-height: 40px !important;
         }
         
         /* Week row separator */
@@ -2098,27 +2074,8 @@
         
         /* Cell padding to prevent text cutoff */
         .b-sch-header-timeaxis-cell {
-            padding: 12px 10px !important;
+            padding: 10px 8px !important;
             overflow: visible !important;
-            line-height: normal !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
-        }
-        
-        /* Ensure locked grid headers (Resource column) match timeline header height */
-        .b-grid-header-container,
-        .b-grid-headers {
-            height: 100px !important;
-            min-height: 100px !important;
-        }
-        
-        .b-grid-header {
-            height: 100px !important;
-            min-height: 100px !important;
-            display: flex !important;
-            align-items: center !important;
-            padding: 0 10px !important;
         }
     </style>
 </head>
