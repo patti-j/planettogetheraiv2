@@ -637,24 +637,74 @@ export default function DemandForecasting() {
             </div>
           </div>
 
-          <Button 
-            onClick={handleForecast} 
-            disabled={forecastMutation.isPending || selectedItems.length === 0}
-            className="w-full md:w-auto"
-            data-testid="button-generate-forecast"
-          >
-            {forecastMutation.isPending ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Generating Forecast...
-              </>
-            ) : (
-              <>
-                <TrendingUp className="w-4 h-4 mr-2" />
-                Generate Forecast
-              </>
-            )}
-          </Button>
+          {/* Training Metrics Display */}
+          {trainingMetrics && (
+            <div className="bg-muted p-4 rounded-lg">
+              <div className="text-sm font-medium mb-2">Training Results ({modelType})</div>
+              <div className="flex gap-4">
+                {trainingMetrics.mape !== undefined && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">MAPE</div>
+                    <div className="text-lg font-bold">{trainingMetrics.mape.toFixed(2)}%</div>
+                  </div>
+                )}
+                {trainingMetrics.rmse !== undefined && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">RMSE</div>
+                    <div className="text-lg font-bold">{trainingMetrics.rmse.toFixed(2)}</div>
+                  </div>
+                )}
+                {trainingMetrics.accuracy !== undefined && (
+                  <div>
+                    <div className="text-xs text-muted-foreground">Accuracy</div>
+                    <div className="text-lg font-bold">{trainingMetrics.accuracy.toFixed(2)}%</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3">
+            <Button 
+              onClick={handleTrain} 
+              disabled={trainMutation.isPending || selectedItems.length === 0}
+              variant={isModelTrained ? "outline" : "default"}
+              className="w-full md:w-auto"
+              data-testid="button-train-model"
+            >
+              {trainMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Training Model...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  {isModelTrained ? "Retrain Model" : "Train Model"}
+                </>
+              )}
+            </Button>
+
+            <Button 
+              onClick={handleForecast} 
+              disabled={forecastMutation.isPending || !isModelTrained}
+              className="w-full md:w-auto"
+              data-testid="button-generate-forecast"
+            >
+              {forecastMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Generating Forecast...
+                </>
+              ) : (
+                <>
+                  <TrendingUp className="w-4 h-4 mr-2" />
+                  Generate Forecast
+                </>
+              )}
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
