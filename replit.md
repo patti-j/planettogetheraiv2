@@ -2,6 +2,16 @@
 
 ## Recent Changes
 
+### October 16, 2025
+- **Fixed Operation Dependency Logic for Production Scheduler**: Corrected critical data integrity issue where dependencies were incorrectly generated based on scheduled times instead of brewing process sequence
+  - **Root Cause**: Dependencies were created using `ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start)` which caused incorrect sequences like "Packaging → Boiling" when operations were scheduled out of order
+  - **Solution Implemented**:
+    - Added `sequence_number` column to `ptjoboperations` table to represent logical brewing process order
+    - Updated all 41 operations with correct sequence numbers: Milling(1) → Mashing/Decoction(2) → Lautering(3) → Boiling(4) → Fermentation(5) → Conditioning(6) → Packaging(7)
+    - Modified `/api/pt-dependencies` endpoint to use `sequence_number` instead of `scheduled_start` for dependency generation
+  - **Impact**: Dependencies now correctly follow brewing process flow regardless of scheduled times, enabling accurate ASAP, ALAP, and other scheduling algorithm testing
+  - **UI Enhancement**: Moved constraint labels from event blocks to tooltips for cleaner Gantt chart visualization
+
 ### October 15, 2025
 - **Added Dynamic Paginated Reports with SQL Server Integration**: New dedicated page at `/paginated-reports` for viewing data from any SQL Server table with pagination, filtering, sorting, and search capabilities
   - **SQL Server Connection**: Created `sql-server-service.ts` with connection pooling using mssql package
