@@ -35,7 +35,8 @@ export default function DemandForecasting() {
   const [dateColumn, setDateColumn] = useState<string>("");
   const [itemColumn, setItemColumn] = useState<string>("");
   const [quantityColumn, setQuantityColumn] = useState<string>("");
-  const [selectedItem, setSelectedItem] = useState<string>("");
+  const [selectedItems, setSelectedItems] = useState<string[]>([]);
+  const [itemSearch, setItemSearch] = useState<string>("");
   const [forecastDays, setForecastDays] = useState<number>(30);
   
   // New: Model and filter selections
@@ -132,7 +133,7 @@ export default function DemandForecasting() {
           dateColumn,
           itemColumn,
           quantityColumn,
-          selectedItem,
+          selectedItem: selectedItems[0], // Use first selected item for now
           forecastDays,
           modelType,
           planningAreaColumn: planningAreaColumn || null,
@@ -165,7 +166,7 @@ export default function DemandForecasting() {
   });
 
   const handleForecast = () => {
-    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
+    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn || selectedItems.length === 0) {
       toast({
         title: "Missing Configuration",
         description: "Please select all required fields",
@@ -244,7 +245,7 @@ export default function DemandForecasting() {
                   setDateColumn("");
                   setItemColumn("");
                   setQuantityColumn("");
-                  setSelectedItem("");
+                  setSelectedItems([]);
                 }}
                 placeholder={tablesLoading ? "Loading..." : "Select table"}
                 searchPlaceholder="Search tables..."
@@ -475,24 +476,81 @@ export default function DemandForecasting() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Item Selection */}
+          {/* Items Multi-Select */}
+          {itemColumn && items && items.length > 0 && (
             <div className="space-y-2">
-              <Label>Select Item</Label>
-              <Combobox
-                options={items?.map((item) => ({
-                  value: item,
-                  label: item
-                })) || []}
-                value={selectedItem}
-                onValueChange={setSelectedItem}
-                disabled={!itemColumn}
-                placeholder="Select item to forecast"
-                searchPlaceholder="Search items..."
-                data-testid="select-item"
-              />
+              <div className="flex items-center justify-between">
+                <Label>Select Items</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const filtered = items.filter(item => 
+                        item.toLowerCase().includes(itemSearch.toLowerCase())
+                      );
+                      setSelectedItems(filtered);
+                    }}
+                    data-testid="button-select-all-items"
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedItems([])}
+                    data-testid="button-clear-all-items"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search items..."
+                  value={itemSearch}
+                  onChange={(e) => setItemSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-items"
+                />
+              </div>
+              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
+                {items
+                  .filter(item => item.toLowerCase().includes(itemSearch.toLowerCase()))
+                  .map((item) => (
+                    <label key={item} className="flex items-center space-x-2 cursor-pointer py-0.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedItems([...selectedItems, item]);
+                          } else {
+                            setSelectedItems(selectedItems.filter(i => i !== item));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{item}</span>
+                    </label>
+                  ))}
+                {items.filter(item => item.toLowerCase().includes(itemSearch.toLowerCase())).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">No items found</p>
+                )}
+              </div>
+              {selectedItems.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedItems.length} of {items.length} selected
+                </p>
+              )}
             </div>
+          )}
 
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Forecast Days */}
             <div className="space-y-2">
               <Label>Forecast Days</Label>
@@ -509,7 +567,7 @@ export default function DemandForecasting() {
 
           <Button 
             onClick={handleForecast} 
-            disabled={forecastMutation.isPending || !selectedItem}
+            disabled={forecastMutation.isPending || selectedItems.length === 0}
             className="w-full md:w-auto"
             data-testid="button-generate-forecast"
           >
