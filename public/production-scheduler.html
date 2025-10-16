@@ -382,16 +382,21 @@
             color: #60a5fa;
         }
         
-        /* Dependency line visibility fix for dark theme */
-        /* Bryntum's classic-dark theme doesn't provide enough contrast, so we enhance it */
+        /* Dependency line visibility fix */
+        /* Bryntum's classic-dark theme makes lines too dark, so we override with better contrast */
         
-        /* Standard dependency lines - make them visible in dark mode */
+        /* Check if we're in dark mode using multiple selectors for reliability */
+        /* Using attribute selector as Bryntum sets data-bryntum-theme on the HTML element */
+        [data-bryntum-theme*="dark"] .b-sch-dependency,
+        .dark-theme .b-sch-dependency,
         body.dark-theme .b-sch-dependency {
             stroke: #94a3b8 !important;  /* Slate-400 - visible on dark background */
             stroke-width: 2 !important;
-            opacity: 0.9 !important;
+            opacity: 1 !important;
         }
         
+        [data-bryntum-theme*="dark"] .b-sch-dependency-arrow,
+        .dark-theme .b-sch-dependency-arrow,
         body.dark-theme .b-sch-dependency-arrow {
             fill: #94a3b8 !important;
             stroke: #94a3b8 !important;
@@ -403,10 +408,14 @@
             opacity: 1 !important;
         }
         
+        [data-bryntum-theme*="dark"] .b-sch-dependency:hover,
+        .dark-theme .b-sch-dependency:hover,
         body.dark-theme .b-sch-dependency:hover {
             stroke: #cbd5e1 !important;  /* Slate-300 - brighter on hover */
         }
         
+        [data-bryntum-theme*="dark"] .b-sch-dependency-arrow:hover,
+        .dark-theme .b-sch-dependency-arrow:hover,
         body.dark-theme .b-sch-dependency-arrow:hover {
             fill: #cbd5e1 !important;
             stroke: #cbd5e1 !important;
