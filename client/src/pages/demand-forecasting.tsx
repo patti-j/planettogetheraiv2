@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -215,7 +215,11 @@ export default function DemandForecasting() {
             {/* Table Selection */}
             <div className="space-y-2">
               <Label>Table</Label>
-              <Select
+              <Combobox
+                options={tables?.map((table) => ({
+                  value: `${table.schema}.${table.name}`,
+                  label: `${table.schema}.${table.name}`
+                })) || []}
                 value={selectedTable ? `${selectedTable.schema}.${selectedTable.name}` : ""}
                 onValueChange={(value) => {
                   const [schema, name] = value.split('.');
@@ -225,85 +229,78 @@ export default function DemandForecasting() {
                   setQuantityColumn("");
                   setSelectedItem("");
                 }}
+                placeholder={tablesLoading ? "Loading..." : "Select table"}
+                searchPlaceholder="Search tables..."
                 data-testid="select-table"
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={tablesLoading ? "Loading..." : "Select table"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {tables?.map((table) => (
-                    <SelectItem key={`${table.schema}.${table.name}`} value={`${table.schema}.${table.name}`}>
-                      {table.schema}.{table.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
 
             {/* Date Column */}
             <div className="space-y-2">
               <Label>Date Column</Label>
-              <Select value={dateColumn} onValueChange={setDateColumn} disabled={!selectedTable} data-testid="select-date-column">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select date column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns?.map((col) => (
-                    <SelectItem key={col.name} value={col.name}>
-                      {col.name} ({col.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={columns?.map((col) => ({
+                  value: col.name,
+                  label: `${col.name} (${col.type})`
+                })) || []}
+                value={dateColumn}
+                onValueChange={setDateColumn}
+                disabled={!selectedTable}
+                placeholder="Select date column"
+                searchPlaceholder="Search columns..."
+                data-testid="select-date-column"
+              />
             </div>
 
             {/* Item Column */}
             <div className="space-y-2">
               <Label>Item Column</Label>
-              <Select value={itemColumn} onValueChange={setItemColumn} disabled={!selectedTable} data-testid="select-item-column">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select item column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns?.map((col) => (
-                    <SelectItem key={col.name} value={col.name}>
-                      {col.name} ({col.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={columns?.map((col) => ({
+                  value: col.name,
+                  label: `${col.name} (${col.type})`
+                })) || []}
+                value={itemColumn}
+                onValueChange={setItemColumn}
+                disabled={!selectedTable}
+                placeholder="Select item column"
+                searchPlaceholder="Search columns..."
+                data-testid="select-item-column"
+              />
             </div>
 
             {/* Quantity Column */}
             <div className="space-y-2">
               <Label>Quantity Column</Label>
-              <Select value={quantityColumn} onValueChange={setQuantityColumn} disabled={!selectedTable} data-testid="select-quantity-column">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select quantity column" />
-                </SelectTrigger>
-                <SelectContent>
-                  {columns?.map((col) => (
-                    <SelectItem key={col.name} value={col.name}>
-                      {col.name} ({col.type})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={columns?.map((col) => ({
+                  value: col.name,
+                  label: `${col.name} (${col.type})`
+                })) || []}
+                value={quantityColumn}
+                onValueChange={setQuantityColumn}
+                disabled={!selectedTable}
+                placeholder="Select quantity column"
+                searchPlaceholder="Search columns..."
+                data-testid="select-quantity-column"
+              />
             </div>
 
             {/* Model Type Selection */}
             <div className="space-y-2">
               <Label>Model Type</Label>
-              <Select value={modelType} onValueChange={setModelType} data-testid="select-model-type">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select forecasting model" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Random Forest">Random Forest</SelectItem>
-                  <SelectItem value="ARIMA">ARIMA</SelectItem>
-                  <SelectItem value="Prophet">Prophet</SelectItem>
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={[
+                  { value: "Random Forest", label: "Random Forest" },
+                  { value: "ARIMA", label: "ARIMA" },
+                  { value: "Prophet", label: "Prophet" }
+                ]}
+                value={modelType}
+                onValueChange={setModelType}
+                placeholder="Select forecasting model"
+                searchPlaceholder="Search models..."
+                data-testid="select-model-type"
+              />
             </div>
           </div>
 
@@ -369,18 +366,18 @@ export default function DemandForecasting() {
             {/* Item Selection */}
             <div className="space-y-2">
               <Label>Select Item</Label>
-              <Select value={selectedItem} onValueChange={setSelectedItem} disabled={!itemColumn} data-testid="select-item">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select item to forecast" />
-                </SelectTrigger>
-                <SelectContent>
-                  {items?.map((item) => (
-                    <SelectItem key={item} value={item}>
-                      {item}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Combobox
+                options={items?.map((item) => ({
+                  value: item,
+                  label: item
+                })) || []}
+                value={selectedItem}
+                onValueChange={setSelectedItem}
+                disabled={!itemColumn}
+                placeholder="Select item to forecast"
+                searchPlaceholder="Search items..."
+                data-testid="select-item"
+              />
             </div>
 
             {/* Forecast Days */}
