@@ -380,81 +380,108 @@
             color: #60a5fa;
         }
         
-        /* Dependency line visibility fix - following Bryntum documentation guidance */
-        /* Target all dependency line elements with maximum specificity */
+        /* AGGRESSIVE Dependency line visibility fix for dark mode */
+        /* Target ALL possible SVG elements and canvas layers that Bryntum uses */
         
-        /* Light mode dependency lines - standard styling */
-        .b-sch-dependency {
+        /* Light mode dependency lines - standard gray */
+        .b-sch-dependency,
+        path.b-sch-dependency,
+        .b-scheduler-foreground-canvas .b-sch-dependency,
+        .b-sch-foreground-canvas .b-sch-dependency,
+        svg .b-sch-dependency {
             stroke: #666 !important;
             stroke-width: 2 !important;
             opacity: 1 !important;
         }
         
-        .b-sch-dependency-arrow {
+        .b-sch-dependency-arrow,
+        polygon.b-sch-dependency-arrow {
             fill: #666 !important;
             stroke: #666 !important;
             opacity: 1 !important;
         }
         
-        /* Dark mode dependency lines - force bright color for visibility */
-        /* Using multiple selectors to ensure we catch all possible theme applications */
-        body.dark-theme .b-sch-dependency,
-        .dark-theme .b-sch-dependency,
-        .b-theme-classic-dark .b-sch-dependency,
+        /* DARK MODE - Force dependency lines to be bright blue */
+        /* Using extremely specific selectors to override Bryntum theme */
+        body.dark-theme svg path.b-sch-dependency,
         body.dark-theme svg .b-sch-dependency,
+        body.dark-theme .b-scheduler-foreground-canvas path.b-sch-dependency,
         body.dark-theme .b-scheduler-foreground-canvas .b-sch-dependency,
-        body.dark-theme .b-scheduler .b-sch-dependency {
-            stroke: #94a3b8 !important;  /* Slate-400 - good contrast on dark */
+        body.dark-theme .b-sch-foreground-canvas path.b-sch-dependency,
+        body.dark-theme .b-sch-foreground-canvas .b-sch-dependency,
+        body.dark-theme path.b-sch-dependency,
+        body.dark-theme .b-sch-dependency,
+        .dark-theme svg path.b-sch-dependency,
+        .dark-theme svg .b-sch-dependency,
+        .dark-theme .b-scheduler-foreground-canvas path.b-sch-dependency,
+        .dark-theme .b-scheduler-foreground-canvas .b-sch-dependency,
+        .dark-theme .b-sch-foreground-canvas path.b-sch-dependency,
+        .dark-theme .b-sch-foreground-canvas .b-sch-dependency,
+        .dark-theme path.b-sch-dependency,
+        .dark-theme .b-sch-dependency,
+        .b-theme-classic-dark svg path.b-sch-dependency,
+        .b-theme-classic-dark svg .b-sch-dependency,
+        .b-theme-classic-dark .b-sch-dependency {
+            stroke: #60a5fa !important;  /* Bright blue for visibility */
             stroke-width: 2 !important;
             opacity: 1 !important;
             visibility: visible !important;
         }
         
-        body.dark-theme .b-sch-dependency-arrow,
-        .dark-theme .b-sch-dependency-arrow,
-        .b-theme-classic-dark .b-sch-dependency-arrow,
-        body.dark-theme svg .b-sch-dependency-arrow,
-        body.dark-theme .b-scheduler-foreground-canvas .b-sch-dependency-arrow,
-        body.dark-theme .b-scheduler .b-sch-dependency-arrow {
-            fill: #94a3b8 !important;
-            stroke: #94a3b8 !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        
-        /* Target path elements specifically in dark mode */
-        body.dark-theme path.b-sch-dependency,
-        body.dark-theme svg path.b-sch-dependency,
-        body.dark-theme .b-scheduler-foreground-canvas path.b-sch-dependency {
-            stroke: #94a3b8 !important;
-            opacity: 1 !important;
-            visibility: visible !important;
-        }
-        
-        body.dark-theme polygon.b-sch-dependency-arrow,
         body.dark-theme svg polygon.b-sch-dependency-arrow,
-        body.dark-theme .b-scheduler-foreground-canvas polygon.b-sch-dependency-arrow {
-            fill: #94a3b8 !important;
-            stroke: #94a3b8 !important;
+        body.dark-theme svg .b-sch-dependency-arrow,
+        body.dark-theme .b-scheduler-foreground-canvas polygon.b-sch-dependency-arrow,
+        body.dark-theme .b-scheduler-foreground-canvas .b-sch-dependency-arrow,
+        body.dark-theme .b-sch-foreground-canvas polygon.b-sch-dependency-arrow,
+        body.dark-theme .b-sch-foreground-canvas .b-sch-dependency-arrow,
+        body.dark-theme polygon.b-sch-dependency-arrow,
+        body.dark-theme .b-sch-dependency-arrow,
+        .dark-theme svg polygon.b-sch-dependency-arrow,
+        .dark-theme svg .b-sch-dependency-arrow,
+        .dark-theme .b-scheduler-foreground-canvas polygon.b-sch-dependency-arrow,
+        .dark-theme .b-scheduler-foreground-canvas .b-sch-dependency-arrow,
+        .dark-theme .b-sch-foreground-canvas polygon.b-sch-dependency-arrow,
+        .dark-theme .b-sch-foreground-canvas .b-sch-dependency-arrow,
+        .dark-theme polygon.b-sch-dependency-arrow,
+        .dark-theme .b-sch-dependency-arrow,
+        .b-theme-classic-dark svg polygon.b-sch-dependency-arrow,
+        .b-theme-classic-dark svg .b-sch-dependency-arrow,
+        .b-theme-classic-dark .b-sch-dependency-arrow {
+            fill: #60a5fa !important;  /* Bright blue for visibility */
+            stroke: #60a5fa !important;
             opacity: 1 !important;
             visibility: visible !important;
         }
         
-        /* Hover state for better interaction */
-        .b-sch-dependency:hover {
-            stroke-width: 3 !important;
+        /* Target ALL SVG paths in dark mode inside scheduler */
+        body.dark-theme .b-scheduler svg path[class*="dependency"],
+        .dark-theme .b-scheduler svg path[class*="dependency"] {
+            stroke: #60a5fa !important;
             opacity: 1 !important;
         }
         
+        body.dark-theme .b-scheduler svg polygon[class*="dependency"],
+        .dark-theme .b-scheduler svg polygon[class*="dependency"] {
+            fill: #60a5fa !important;
+            stroke: #60a5fa !important;
+            opacity: 1 !important;
+        }
+        
+        /* Hover state - make even brighter */
         body.dark-theme .b-sch-dependency:hover,
-        .dark-theme .b-sch-dependency:hover {
-            stroke: #cbd5e1 !important;  /* Brighter on hover */
+        .dark-theme .b-sch-dependency:hover,
+        body.dark-theme svg path.b-sch-dependency:hover,
+        .dark-theme svg path.b-sch-dependency:hover {
+            stroke: #93c5fd !important;  /* Even brighter blue on hover */
+            stroke-width: 3 !important;
         }
         
         body.dark-theme .b-sch-dependency-arrow:hover,
-        .dark-theme .b-sch-dependency-arrow:hover {
-            fill: #cbd5e1 !important;
-            stroke: #cbd5e1 !important;
+        .dark-theme .b-sch-dependency-arrow:hover,
+        body.dark-theme svg polygon.b-sch-dependency-arrow:hover,
+        .dark-theme svg polygon.b-sch-dependency-arrow:hover {
+            fill: #93c5fd !important;
+            stroke: #93c5fd !important;
         }
         
         /* Critical path dependency styling - keep red for critical */
@@ -3970,26 +3997,8 @@
                     },
 
                     features: {
-                        // Dependencies feature for showing task relationships with custom styling
-                        dependencies: {
-                            // Ensure dependencies are visible in both light and dark modes
-                            // Use a renderer to dynamically apply styles based on theme
-                            renderer: ({ domConfig }) => {
-                                // Check if we're in dark mode
-                                const isDarkMode = document.body.classList.contains('dark-theme');
-                                
-                                if (isDarkMode) {
-                                    // Force visibility in dark mode with bright color
-                                    domConfig.style = {
-                                        stroke: '#94a3b8',
-                                        strokeWidth: 2,
-                                        opacity: 1
-                                    };
-                                }
-                                
-                                return domConfig;
-                            }
-                        },
+                        // Dependencies feature for showing task relationships
+                        dependencies: true,
                         
                         // Context menu for events
                         eventMenu: {
@@ -8025,6 +8034,78 @@
                 // Reset body background for light theme
                 document.body.style.backgroundColor = '';
                 console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
+            }
+            
+            // Force dependency lines to be visible after theme change
+            setTimeout(() => {
+                forceDependencyLineVisibility(isDark);
+            }, 200);
+        }
+        
+        // Function to forcefully update dependency line colors
+        function forceDependencyLineVisibility(isDark) {
+            console.log('🔧 Forcing dependency line visibility for', isDark ? 'dark' : 'light', 'mode');
+            
+            // Find all SVG dependency lines and arrows
+            const dependencies = document.querySelectorAll('path.b-sch-dependency, .b-sch-dependency');
+            const arrows = document.querySelectorAll('polygon.b-sch-dependency-arrow, .b-sch-dependency-arrow');
+            
+            if (dependencies.length > 0 || arrows.length > 0) {
+                console.log(`📍 Found ${dependencies.length} dependency lines and ${arrows.length} arrows`);
+                
+                // Force bright blue color in dark mode, gray in light mode
+                const color = isDark ? '#60a5fa' : '#666';
+                
+                dependencies.forEach(dep => {
+                    dep.style.stroke = color;
+                    dep.style.strokeWidth = '2px';
+                    dep.style.opacity = '1';
+                    dep.style.visibility = 'visible';
+                });
+                
+                arrows.forEach(arrow => {
+                    arrow.style.fill = color;
+                    arrow.style.stroke = color;
+                    arrow.style.opacity = '1';
+                    arrow.style.visibility = 'visible';
+                });
+            }
+            
+            // Also apply to any dynamically created dependencies
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach(mutation => {
+                    mutation.addedNodes.forEach(node => {
+                        if (node.nodeType === 1) {
+                            // Check if this is a dependency line or contains dependency lines
+                            const deps = node.classList?.contains('b-sch-dependency') ? [node] : 
+                                        node.querySelectorAll ? node.querySelectorAll('.b-sch-dependency, path.b-sch-dependency') : [];
+                            const arrs = node.classList?.contains('b-sch-dependency-arrow') ? [node] : 
+                                        node.querySelectorAll ? node.querySelectorAll('.b-sch-dependency-arrow, polygon.b-sch-dependency-arrow') : [];
+                            
+                            const color = document.body.classList.contains('dark-theme') ? '#60a5fa' : '#666';
+                            
+                            deps.forEach(dep => {
+                                dep.style.stroke = color;
+                                dep.style.strokeWidth = '2px';
+                                dep.style.opacity = '1';
+                                dep.style.visibility = 'visible';
+                            });
+                            
+                            arrs.forEach(arrow => {
+                                arrow.style.fill = color;
+                                arrow.style.stroke = color;
+                                arrow.style.opacity = '1';
+                                arrow.style.visibility = 'visible';
+                            });
+                        }
+                    });
+                });
+            });
+            
+            // Start observing the scheduler container for changes
+            const schedulerEl = document.querySelector('#scheduler');
+            if (schedulerEl) {
+                observer.observe(schedulerEl, { childList: true, subtree: true });
             }
         }
         
