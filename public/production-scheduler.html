@@ -3912,6 +3912,33 @@
                                     console.log('✅ Auto zoom-to-fit applied on first paint');
                                 }, 200); // Small delay to ensure everything is rendered
                             }
+                            
+                            // Force dependency line colors for visibility
+                            setTimeout(() => {
+                                const isDarkMode = document.body.classList.contains('dark-theme');
+                                if (isDarkMode) {
+                                    // Find all dependency lines in the SVG
+                                    const svgElements = document.querySelectorAll('.b-sch-dependency, path.b-sch-dependency');
+                                    const arrowElements = document.querySelectorAll('.b-sch-dependency-arrow, polygon.b-sch-dependency-arrow');
+                                    
+                                    // Apply bright blue color for visibility
+                                    svgElements.forEach(el => {
+                                        el.setAttribute('stroke', '#60a5fa');
+                                        el.style.stroke = '#60a5fa';
+                                    });
+                                    
+                                    arrowElements.forEach(el => {
+                                        el.setAttribute('fill', '#60a5fa');
+                                        el.setAttribute('stroke', '#60a5fa');
+                                        el.style.fill = '#60a5fa';
+                                        el.style.stroke = '#60a5fa';
+                                    });
+                                    
+                                    if (svgElements.length > 0 || arrowElements.length > 0) {
+                                        console.log(`🎨 Updated ${svgElements.length} dependency lines and ${arrowElements.length} arrows for dark mode`);
+                                    }
+                                }
+                            }, 100);
                         },
                         
                         // Auto-save when event is dropped (moved)
@@ -3997,8 +4024,30 @@
                     },
 
                     features: {
-                        // Dependencies feature for showing task relationships
-                        dependencies: true,
+                        // Dependencies feature with custom rendering for visibility in dark mode
+                        dependencies: {
+                            // Enable dependencies
+                            disabled: false,
+                            
+                            // Custom renderer to ensure visibility in dark mode
+                            dependencyRenderer({ domConfig, dependencyRecord }) {
+                                // Check if we're in dark mode
+                                const isDarkMode = document.body.classList.contains('dark-theme');
+                                
+                                // Apply bright color for dark mode
+                                if (isDarkMode) {
+                                    // Use inline styles to override theme
+                                    if (!domConfig.style) {
+                                        domConfig.style = {};
+                                    }
+                                    // Use bright blue for visibility
+                                    domConfig.style.stroke = '#60a5fa';
+                                    domConfig.style.fill = '#60a5fa';
+                                }
+                                
+                                return domConfig;
+                            }
+                        },
                         
                         // Context menu for events
                         eventMenu: {
