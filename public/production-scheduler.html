@@ -4380,6 +4380,31 @@
                                         </div>`;
                                 }
                                 
+                                // Add constraint section if present
+                                let constraintSection = '';
+                                if (eventRecord.data && eventRecord.data.constraintType && eventRecord.data.constraintType !== 'None') {
+                                    const constraintType = eventRecord.data.constraintType;
+                                    const constraintDate = eventRecord.data.constraintDate ? 
+                                        new Date(eventRecord.data.constraintDate).toLocaleString() : 'N/A';
+                                    const constraintColor = constraintType.toLowerCase() === 'muststarton' || constraintType.toLowerCase() === 'mustfinishon' ? '#dc2626' : '#f59e0b';
+                                    
+                                    constraintSection = `
+                                        <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #ddd;">
+                                            <div style="display: flex; align-items: center; gap: 8px;">
+                                                <span style="font-weight: bold; color: #333;">⚠️ Constraint:</span>
+                                                <span style="padding: 3px 8px; background: ${constraintColor}; color: white; border-radius: 4px; font-size: 0.85em; font-weight: bold;">
+                                                    ${constraintType}
+                                                </span>
+                                            </div>
+                                            ${eventRecord.data.constraintDate ? `
+                                                <div style="margin-top: 5px; font-size: 0.85em; color: #666;">
+                                                    Date: ${constraintDate}
+                                                </div>
+                                            ` : ''}
+                                        </div>
+                                    `;
+                                }
+                                
                                 return `
                                     <div style="padding: 10px; min-width: 250px; max-width: 350px;">
                                         ${jobDisplay}
@@ -4391,6 +4416,7 @@
                                             Progress: ${eventRecord.percentDone}%
                                         </div>
                                         ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                        ${constraintSection}
                                         ${cpmSection}
                                         ${pertSection}
                                     </div>
@@ -4793,17 +4819,11 @@
                             eventRecord.cls = (eventRecord.cls || '') + ' constraint-' + constraintType;
                         }
                         
-                        // Create constraint badge HTML
-                        let constraintBadge = '';
-                        if (eventRecord.data && eventRecord.data.constraintType && eventRecord.data.constraintType !== 'None') {
-                            const constraintType = eventRecord.data.constraintType.toLowerCase();
-                            constraintBadge = `<div class="constraint-badge ${constraintType}">${eventRecord.data.constraintType}</div>`;
-                        }
+                        // Constraint badge removed from event block - now shown in tooltip only
                         
                         return {
                             html: `
                                 <div style="padding: 4px; position: relative;">
-                                    ${constraintBadge}
                                     <div style="font-weight: 500; font-size: 12px;">${eventRecord.name}</div>
                                     <div style="font-size: 11px; opacity: 0.8;">
                                         ${eventRecord.percentDone}% complete
