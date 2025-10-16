@@ -6039,6 +6039,22 @@
                     const project = scheduler.project;
                     const baseDate = new Date(2025, 8, 3, 7, 0, 0); // September 3, 2025 at 7 AM
                     
+                    // CRITICAL: Clear all existing dependencies to prevent cycles
+                    console.log('🧹 Clearing all dependencies and reloading from database...');
+                    scheduler.dependencyStore.removeAll();
+                    
+                    // Reload fresh dependencies from database
+                    try {
+                        const depResponse = await fetch('/api/pt-dependencies');
+                        if (depResponse.ok) {
+                            const freshDependencies = await depResponse.json();
+                            scheduler.dependencyStore.add(freshDependencies);
+                            console.log(`✅ Loaded ${freshDependencies.length} fresh dependencies from database`);
+                        }
+                    } catch (error) {
+                        console.error('⚠️ Failed to reload dependencies:', error);
+                    }
+                    
                     // Set project start date for forward scheduling
                     project.startDate = baseDate;
                     
@@ -6100,6 +6116,22 @@
                     
                     const project = scheduler.project;
                     const dueDate = new Date(2025, 8, 17, 17, 0, 0); // September 17, 2025 at 5 PM
+                    
+                    // CRITICAL: Clear all existing dependencies to prevent cycles
+                    console.log('🧹 Clearing all dependencies and reloading from database...');
+                    scheduler.dependencyStore.removeAll();
+                    
+                    // Reload fresh dependencies from database
+                    try {
+                        const depResponse = await fetch('/api/pt-dependencies');
+                        if (depResponse.ok) {
+                            const freshDependencies = await depResponse.json();
+                            scheduler.dependencyStore.add(freshDependencies);
+                            console.log(`✅ Loaded ${freshDependencies.length} fresh dependencies from database`);
+                        }
+                    } catch (error) {
+                        console.error('⚠️ Failed to reload dependencies:', error);
+                    }
                     
                     // Get all scheduled events
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
