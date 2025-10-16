@@ -75,17 +75,17 @@ export function Combobox({
         </Button>
       </PopoverTrigger>
       <PopoverContent 
-        className="p-0 bg-white border border-border shadow-md"
+        className="p-0 bg-popover border border-border shadow-md"
         style={{ width: triggerWidth > 0 ? `${triggerWidth}px` : 'auto' }}
       >
-        <Command className="bg-white">
+        <Command className="bg-popover">
           <CommandInput 
             placeholder={searchPlaceholder} 
             className="border-none bg-transparent"
           />
-          <CommandList className="bg-white">
+          <CommandList className="bg-popover">
             <CommandEmpty className="py-2 text-sm text-muted-foreground">No option found.</CommandEmpty>
-            <CommandGroup className="bg-white">
+            <CommandGroup className="bg-popover">
               {options.map((option) => (
                 <CommandItem
                   key={option.value}
