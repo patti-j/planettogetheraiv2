@@ -6148,13 +6148,22 @@
                     const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
-                    // Configure project for backward scheduling using proper API
-                    await project.setDirection('Backward');
-                    project.setConstraint({ 
-                        type: 'finishnolaterthan', 
-                        date: dueDate 
+                    // Apply ALAP constraints to all events (except manually scheduled ones)
+                    events.forEach(event => {
+                        // Skip events that were manually positioned by the user
+                        if (event.manuallyScheduled) {
+                            console.log(`🔒 Preserving manual position for: ${event.name}`);
+                            return;
+                        }
+                        
+                        // Clear any existing constraints
+                        event.constraintType = null;
+                        event.constraintDate = null;
+                        
+                        // Apply Finish No Later Than constraint for ALAP behavior
+                        event.constraintType = 'finishnolaterthan';
+                        event.constraintDate = dueDate;
                     });
-                    await project.propagate();
                     
                     // First ensure dependencies exist between sequential operations on same resource
                     const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
@@ -6206,18 +6215,6 @@
                             }
                         }
                     }
-                    
-                    // Apply Finish No Later Than constraints to ALL events for ALAP (except manually scheduled)
-                    events.forEach(event => {
-                        // Skip events that were manually positioned by the user
-                        if (event.manuallyScheduled) {
-                            console.log(`🔒 Preserving manual position for: ${event.name}`);
-                            return;
-                        }
-                        
-                        event.constraintType = 'finishnolaterthan';
-                        event.constraintDate = dueDate;
-                    });
                     
                     // Let the Bryntum engine recalculate with backward scheduling
                     await project.commitAsync();
