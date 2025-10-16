@@ -382,30 +382,15 @@
             color: #60a5fa;
         }
         
-        /* Dependency lines styling */
-        .b-sch-dependency {
-            stroke: #666 !important;
-            stroke-width: 2 !important;
-            opacity: 0.8 !important;
-        }
-        
-        .b-sch-dependency-arrow {
-            fill: #666 !important;
-            stroke: #666 !important;
-        }
+        /* Let Bryntum theme handle dependency lines - only add subtle enhancements */
+        /* Removed forced colors that made lines invisible on dark background */
         
         .b-sch-dependency:hover {
-            stroke: #333 !important;
             stroke-width: 3 !important;
             opacity: 1 !important;
         }
         
-        .b-sch-dependency-arrow:hover {
-            fill: #333 !important;
-            stroke: #333 !important;
-        }
-        
-        /* Critical path dependency styling */
+        /* Critical path dependency styling - keep red for critical */
         .b-sch-dependency.b-critical {
             stroke: #ff4444 !important;
             stroke-width: 3 !important;
@@ -990,7 +975,7 @@
             animation: pulse-moved 1s ease-in-out 3;
         }
         
-        /* Critical path dependency lines */
+        /* Critical path dependency lines - only enhance, don't override base colors */
         .b-sch-dependency.critical-path {
             stroke: #dc2626 !important;
             stroke-width: 3px !important;
