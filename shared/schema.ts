@@ -313,6 +313,8 @@ export const ptJobOperations = pgTable("ptjoboperations", {
   scheduledEnd: timestamp("scheduled_end"),
   percentFinished: numeric("percent_finished").default('0'),
   manuallyScheduled: boolean("manually_scheduled").default(false),
+  // Sequence number for correct operation ordering (brewing process sequence)
+  sequenceNumber: integer("sequence_number"),
   // Constraint fields
   constraintType: varchar("constraint_type", { length: 10 }), // MSO, MFO, SNET, FNET, SNLT, FNLT
   constraintDate: timestamp("constraint_date"),
