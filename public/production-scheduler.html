@@ -265,18 +265,29 @@
             text-align: center;
         }
         
-        /* Dark theme overrides */
-        .dark-theme {
-            background: #0f172a;
+        /* Dark theme overrides - Only target custom wrapper elements */
+        body.dark-theme {
+            /* Page background - matches Bryntum dark theme */
+            background: #1e293b;
         }
         
         .dark-theme .header {
+            /* Header dark styling */
             background: rgba(30, 41, 59, 0.95);
-            color: white;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            color: #e2e8f0;
         }
         
         .dark-theme .header h1 {
             color: #60a5fa;
+        }
+        
+        .dark-theme .header-stats {
+            color: #cbd5e1;
+        }
+        
+        .dark-theme .header-stats .stat-value {
+            color: #f1f5f9;
         }
         
         .dark-theme .toolbar {
@@ -319,7 +330,16 @@
         }
         
         .dark-theme .scheduler-container {
-            background: #2a2a2a;
+            /* Container background - subtle dark */
+            background: #1e293b;
+            /* Ensure smooth transition */
+            transition: background 0.3s ease;
+        }
+        
+        /* Dark theme loading state */
+        .dark-theme .loading {
+            background: #1e293b;
+            color: #e2e8f0;
         }
         
         /* Dark theme specific adjustments */
@@ -7960,7 +7980,16 @@
         const initialTheme = themeFromUrl || parentTheme || localStorage.getItem('theme') || 'light';
         console.log('🔍 [Production Scheduler] Initial theme:', initialTheme, '(from:', themeFromUrl ? 'URL' : parentTheme ? 'parent' : localStorage.getItem('theme') ? 'localStorage' : 'default', ')');
         console.log('📱 [Production Scheduler] Document ready state:', document.readyState);
-        applyTheme(initialTheme);
+        
+        // Apply theme immediately - this ensures body gets the class before content renders
+        if (document.body) {
+            applyTheme(initialTheme);
+        } else {
+            // If body doesn't exist yet, apply as soon as it does
+            document.addEventListener('DOMContentLoaded', () => {
+                applyTheme(initialTheme);
+            });
+        }
         
         // Also apply theme after DOM is ready and scheduler is initialized
         document.addEventListener('DOMContentLoaded', () => {

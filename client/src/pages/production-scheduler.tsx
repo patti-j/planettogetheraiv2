@@ -19,8 +19,10 @@ export default function ProductionScheduler() {
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
   // Initialize with theme from localStorage or default
   const [iframeUrl, setIframeUrl] = useState(() => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    return `/api/production-scheduler?v=${Date.now()}&theme=${savedTheme}`;
+    // Get the actual resolved theme on initial load
+    const savedTheme = localStorage.getItem('theme');
+    const effectiveTheme = savedTheme === 'dark' ? 'dark' : 'light';
+    return `/api/production-scheduler?v=${Date.now()}&theme=${effectiveTheme}`;
   });
 
   useEffect(() => {
