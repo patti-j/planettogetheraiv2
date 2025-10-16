@@ -1873,9 +1873,9 @@
         .b-schedulerpro .b-sch-header-timeaxis-main,
         .b-schedulerpro .b-sch-header-row-main,
         .b-schedulerpro .b-sch-simple-timeaxis .b-sch-header-row {
-            height: 45px !important;
-            min-height: 45px !important;
-            max-height: 45px !important;
+            height: 50px !important;
+            min-height: 50px !important;
+            max-height: 50px !important;
         }
         
         /* Ensure event bars fit within row height */
@@ -2104,6 +2104,21 @@
             display: flex !important;
             align-items: center !important;
             justify-content: center !important;
+        }
+        
+        /* Ensure locked grid headers (Resource column) match timeline header height */
+        .b-grid-header-container,
+        .b-grid-headers {
+            height: 100px !important;
+            min-height: 100px !important;
+        }
+        
+        .b-grid-header {
+            height: 100px !important;
+            min-height: 100px !important;
+            display: flex !important;
+            align-items: center !important;
+            padding: 0 10px !important;
         }
     </style>
 </head>
