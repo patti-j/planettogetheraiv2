@@ -7,7 +7,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Loader2, Sparkles, Database, TrendingUp } from "lucide-react";
+import { Loader2, Sparkles, Database, TrendingUp, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Table {
@@ -42,8 +42,10 @@ export default function DemandForecasting() {
   const [modelType, setModelType] = useState<string>("Random Forest");
   const planningAreaColumn = "PlanningAreaName";
   const [selectedPlanningAreas, setSelectedPlanningAreas] = useState<string[]>([]);
+  const [planningAreaSearch, setPlanningAreaSearch] = useState<string>("");
   const scenarioColumn = "ScenarioName";
   const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
+  const [scenarioSearch, setScenarioSearch] = useState<string>("");
 
   // Fetch available tables
   const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
@@ -307,58 +309,148 @@ export default function DemandForecasting() {
           {/* Planning Areas Multi-Select */}
           {planningAreaColumn && planningAreas && planningAreas.length > 0 && (
             <div className="space-y-2">
-              <Label>Select Planning Areas</Label>
-              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
-                {planningAreas.slice(0, 10).map((area) => (
-                  <label key={area} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedPlanningAreas.includes(area)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedPlanningAreas([...selectedPlanningAreas, area]);
-                        } else {
-                          setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{area}</span>
-                  </label>
-                ))}
-                {planningAreas.length > 10 && (
-                  <p className="text-xs text-muted-foreground">Showing first 10 of {planningAreas.length} areas</p>
+              <div className="flex items-center justify-between">
+                <Label>Select Planning Areas</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const filtered = planningAreas.filter(area => 
+                        area.toLowerCase().includes(planningAreaSearch.toLowerCase())
+                      );
+                      setSelectedPlanningAreas(filtered);
+                    }}
+                    data-testid="button-select-all-planning-areas"
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedPlanningAreas([])}
+                    data-testid="button-clear-all-planning-areas"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search planning areas..."
+                  value={planningAreaSearch}
+                  onChange={(e) => setPlanningAreaSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-planning-areas"
+                />
+              </div>
+              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
+                {planningAreas
+                  .filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase()))
+                  .map((area) => (
+                    <label key={area} className="flex items-center space-x-2 cursor-pointer py-0.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedPlanningAreas.includes(area)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedPlanningAreas([...selectedPlanningAreas, area]);
+                          } else {
+                            setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{area}</span>
+                    </label>
+                  ))}
+                {planningAreas.filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase())).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">No planning areas found</p>
                 )}
               </div>
+              {selectedPlanningAreas.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedPlanningAreas.length} of {planningAreas.length} selected
+                </p>
+              )}
             </div>
           )}
 
           {/* Scenarios Multi-Select */}
           {scenarioColumn && scenarios && scenarios.length > 0 && (
             <div className="space-y-2">
-              <Label>Select Scenarios</Label>
-              <div className="border rounded-md p-3 max-h-40 overflow-y-auto space-y-2">
-                {scenarios.slice(0, 10).map((scenario) => (
-                  <label key={scenario} className="flex items-center space-x-2 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedScenarios.includes(scenario)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          setSelectedScenarios([...selectedScenarios, scenario]);
-                        } else {
-                          setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
-                        }
-                      }}
-                      className="rounded"
-                    />
-                    <span className="text-sm">{scenario}</span>
-                  </label>
-                ))}
-                {scenarios.length > 10 && (
-                  <p className="text-xs text-muted-foreground">Showing first 10 of {scenarios.length} scenarios</p>
+              <div className="flex items-center justify-between">
+                <Label>Select Scenarios</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const filtered = scenarios.filter(scenario => 
+                        scenario.toLowerCase().includes(scenarioSearch.toLowerCase())
+                      );
+                      setSelectedScenarios(filtered);
+                    }}
+                    data-testid="button-select-all-scenarios"
+                  >
+                    Select All
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedScenarios([])}
+                    data-testid="button-clear-all-scenarios"
+                  >
+                    Clear All
+                  </Button>
+                </div>
+              </div>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search scenarios..."
+                  value={scenarioSearch}
+                  onChange={(e) => setScenarioSearch(e.target.value)}
+                  className="pl-9"
+                  data-testid="input-search-scenarios"
+                />
+              </div>
+              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
+                {scenarios
+                  .filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase()))
+                  .map((scenario) => (
+                    <label key={scenario} className="flex items-center space-x-2 cursor-pointer py-0.5">
+                      <input
+                        type="checkbox"
+                        checked={selectedScenarios.includes(scenario)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setSelectedScenarios([...selectedScenarios, scenario]);
+                          } else {
+                            setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
+                          }
+                        }}
+                        className="rounded"
+                      />
+                      <span className="text-sm">{scenario}</span>
+                    </label>
+                  ))}
+                {scenarios.filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase())).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-2">No scenarios found</p>
                 )}
               </div>
+              {selectedScenarios.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  {selectedScenarios.length} of {scenarios.length} selected
+                </p>
+              )}
             </div>
           )}
 
