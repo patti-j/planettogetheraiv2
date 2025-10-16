@@ -676,7 +676,7 @@ const ChartWidget: React.FC<{ data: any; configuration?: any; title?: string }> 
     if (Array.isArray(data) && data.length > 0) {
       const colors = ['#8884d8', '#82ca9d', '#ffc658', '#ff7300', '#d084d0', '#a4de6c', '#8dd1e1', '#d084d0', '#ffb347'];
       return data.map((item, index) => ({
-        name: item.name || `Item ${index + 1}`,
+        name: item.name || item.label || `Item ${index + 1}`,
         value: Number(item.value) || 0,
         color: item.color || colors[index % colors.length],
         priority: item.priority
