@@ -2104,6 +2104,7 @@
             }
             
             // Create and insert the theme link with the correct theme
+            // IMPORTANT: Must append to body, not head (per Bryntum documentation)
             const link = document.createElement('link');
             link.rel = 'stylesheet';
             link.id = 'bryntum-theme';
@@ -2111,7 +2112,24 @@
             link.href = theme === 'dark' 
                 ? '/schedulerpro.classic-dark.css'
                 : '/schedulerpro.classic-light.css';
-            document.head.appendChild(link);
+            
+            // Wait for body to be available, then append theme link to body (not head!)
+            // Also apply dark-theme class immediately if dark theme is detected
+            if (document.body) {
+                document.body.appendChild(link);
+                if (theme === 'dark') {
+                    document.body.classList.add('dark-theme');
+                    document.body.style.backgroundColor = '#1e293b';
+                }
+            } else {
+                document.addEventListener('DOMContentLoaded', () => {
+                    document.body.appendChild(link);
+                    if (theme === 'dark') {
+                        document.body.classList.add('dark-theme');
+                        document.body.style.backgroundColor = '#1e293b';
+                    }
+                });
+            }
             
             console.log('🎨 [Bryntum Theme] Initial theme loaded:', theme);
         })();
@@ -7939,10 +7957,14 @@
             if (isDark) {
                 document.body.classList.add('dark-theme');
                 document.documentElement.classList.add('dark-theme');
+                // Force body background color for dark theme
+                document.body.style.backgroundColor = '#1e293b';
                 console.log('🌙 [Production Scheduler] Dark theme applied with Bryntum Classic Dark');
             } else {
                 document.body.classList.remove('dark-theme');
                 document.documentElement.classList.remove('dark-theme');
+                // Reset body background for light theme
+                document.body.style.backgroundColor = '';
                 console.log('☀️ [Production Scheduler] Light theme applied with Bryntum Classic Light');
             }
         }
