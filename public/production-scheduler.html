@@ -328,6 +328,47 @@
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
         /* No CSS filters needed - using proper theme switching */
         
+        /* Extend header border across entire scheduler */
+        /* Apply border to both locked and normal grid headers */
+        .b-grid-subgrid-locked .b-grid-header-container,
+        .b-grid-subgrid-normal .b-grid-header-container {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        
+        .dark-theme .b-grid-subgrid-locked .b-grid-header-container,
+        .dark-theme .b-grid-subgrid-normal .b-grid-header-container {
+            border-bottom-color: #475569 !important;
+        }
+        
+        /* Alternative: Apply to the row containing Resource header */
+        .b-grid-headers .b-grid-row {
+            border-bottom: 1px solid #e2e8f0 !important;
+        }
+        
+        .dark-theme .b-grid-headers .b-grid-row {
+            border-bottom-color: #475569 !important;
+        }
+        
+        /* Ensure continuity across the entire scheduler width */
+        .b-grid-header-container {
+            position: relative;
+        }
+        
+        .b-grid-header-container::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: -9999px; /* Extend far to the right */
+            height: 1px;
+            background-color: #e2e8f0;
+            pointer-events: none;
+        }
+        
+        .dark-theme .b-grid-header-container::after {
+            background-color: #475569;
+        }
+        
         /* Current time line - extend through entire grid */
         .b-sch-current-time-indicator {
             height: 100% !important;
