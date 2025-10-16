@@ -382,12 +382,34 @@
             color: #60a5fa;
         }
         
-        /* Let Bryntum theme handle dependency lines - only add subtle enhancements */
-        /* Removed forced colors that made lines invisible on dark background */
+        /* Dependency line visibility fix for dark theme */
+        /* Bryntum's classic-dark theme doesn't provide enough contrast, so we enhance it */
         
+        /* Standard dependency lines - make them visible in dark mode */
+        body.dark-theme .b-sch-dependency {
+            stroke: #94a3b8 !important;  /* Slate-400 - visible on dark background */
+            stroke-width: 2 !important;
+            opacity: 0.9 !important;
+        }
+        
+        body.dark-theme .b-sch-dependency-arrow {
+            fill: #94a3b8 !important;
+            stroke: #94a3b8 !important;
+        }
+        
+        /* Hover state for better interaction */
         .b-sch-dependency:hover {
             stroke-width: 3 !important;
             opacity: 1 !important;
+        }
+        
+        body.dark-theme .b-sch-dependency:hover {
+            stroke: #cbd5e1 !important;  /* Slate-300 - brighter on hover */
+        }
+        
+        body.dark-theme .b-sch-dependency-arrow:hover {
+            fill: #cbd5e1 !important;
+            stroke: #cbd5e1 !important;
         }
         
         /* Critical path dependency styling - keep red for critical */
