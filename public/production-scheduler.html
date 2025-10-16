@@ -3351,6 +3351,9 @@
                 
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
+                console.log('🔍 DEBUG: PT Operations count:', ptOperations.length);
+                console.log('🔍 DEBUG: First PT Operation:', ptOperations[0]);
+                
                 let events = ptOperations.map((operation, index) => {
                     // Log job names for debugging
                     if (index < 5 || operation.jobName) {
@@ -3359,6 +3362,12 @@
                     
                     // First try to find a matching resource based on capability
                     let resourceId = findResourceId(operation, resourceMap, resourceByName, resources, originalIdMap);
+                    
+                    // CRITICAL FIX: Ensure resourceId matches the numeric ID from the resource store
+                    // The operation has resourceId which is the numeric ID from the database
+                    if (!resourceId && operation.resourceId) {
+                        resourceId = operation.resourceId; // Use the numeric ID directly
+                    }
                     
                     // Check if operation is truly unscheduled (no valid resource assignment)
                     const isUnscheduled = !resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId && r.id !== 'unscheduled');
@@ -3875,6 +3884,47 @@
                 
                 // Category column removed as per requirement
                 
+                // Debug data before scheduler creation
+                console.log('🚀 BEFORE SCHEDULER CREATION:');
+                console.log('📦 Resources count:', resources.length);
+                console.log('📅 Events count:', events.length);
+                console.log('📊 Dependencies count:', dependencies.length);
+                console.log('First resource:', resources[0]);
+                console.log('First event:', events[0]);
+                
+                // Debug resourceId matching
+                if (events.length > 0 && resources.length > 0) {
+                    const firstEvent = events[0];
+                    const matchingResource = resources.find(r => r.id === firstEvent.resourceId);
+                    console.log('🔍 First event resourceId:', firstEvent.resourceId, 'Type:', typeof firstEvent.resourceId);
+                    console.log('🔍 Resource IDs:', resources.map(r => ({ id: r.id, type: typeof r.id, name: r.name })));
+                    console.log('🔍 Matching resource for first event:', matchingResource);
+                    
+                    // Check for type mismatch
+                    const resourceIdTypes = new Set(resources.map(r => typeof r.id));
+                    const eventResourceIdTypes = new Set(events.map(e => typeof e.resourceId));
+                    console.log('⚠️ Resource ID types:', Array.from(resourceIdTypes));
+                    console.log('⚠️ Event resourceId types:', Array.from(eventResourceIdTypes));
+                    
+                    // Add visible warning if type mismatch
+                    if (resourceIdTypes.size === 1 && eventResourceIdTypes.size === 1) {
+                        const resType = Array.from(resourceIdTypes)[0];
+                        const evtType = Array.from(eventResourceIdTypes)[0];
+                        if (resType !== evtType) {
+                            console.error('❌ TYPE MISMATCH: Resource IDs are', resType, 'but event resourceIds are', evtType);
+                            // Fix the type mismatch
+                            events.forEach(event => {
+                                if (resType === 'number' && typeof event.resourceId === 'string') {
+                                    event.resourceId = parseInt(event.resourceId, 10);
+                                } else if (resType === 'string' && typeof event.resourceId === 'number') {
+                                    event.resourceId = String(event.resourceId);
+                                }
+                            });
+                            console.log('✅ Fixed resource ID types');
+                        }
+                    }
+                }
+                
                 // Create scheduler instance with proper Bryntum project engine configuration
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
@@ -3912,33 +3962,6 @@
                                     console.log('✅ Auto zoom-to-fit applied on first paint');
                                 }, 200); // Small delay to ensure everything is rendered
                             }
-                            
-                            // Force dependency line colors for visibility
-                            setTimeout(() => {
-                                const isDarkMode = document.body.classList.contains('dark-theme');
-                                if (isDarkMode) {
-                                    // Find all dependency lines in the SVG
-                                    const svgElements = document.querySelectorAll('.b-sch-dependency, path.b-sch-dependency');
-                                    const arrowElements = document.querySelectorAll('.b-sch-dependency-arrow, polygon.b-sch-dependency-arrow');
-                                    
-                                    // Apply bright blue color for visibility
-                                    svgElements.forEach(el => {
-                                        el.setAttribute('stroke', '#60a5fa');
-                                        el.style.stroke = '#60a5fa';
-                                    });
-                                    
-                                    arrowElements.forEach(el => {
-                                        el.setAttribute('fill', '#60a5fa');
-                                        el.setAttribute('stroke', '#60a5fa');
-                                        el.style.fill = '#60a5fa';
-                                        el.style.stroke = '#60a5fa';
-                                    });
-                                    
-                                    if (svgElements.length > 0 || arrowElements.length > 0) {
-                                        console.log(`🎨 Updated ${svgElements.length} dependency lines and ${arrowElements.length} arrows for dark mode`);
-                                    }
-                                }
-                            }, 100);
                         },
                         
                         // Auto-save when event is dropped (moved)
@@ -4024,29 +4047,14 @@
                     },
 
                     features: {
-                        // Dependencies feature with custom rendering for visibility in dark mode
+                        // Dependencies feature with proper color configuration for visibility
                         dependencies: {
-                            // Enable dependencies
-                            disabled: false,
-                            
-                            // Custom renderer to ensure visibility in dark mode
-                            dependencyRenderer({ domConfig, dependencyRecord }) {
-                                // Check if we're in dark mode
-                                const isDarkMode = document.body.classList.contains('dark-theme');
-                                
-                                // Apply bright color for dark mode
-                                if (isDarkMode) {
-                                    // Use inline styles to override theme
-                                    if (!domConfig.style) {
-                                        domConfig.style = {};
-                                    }
-                                    // Use bright blue for visibility
-                                    domConfig.style.stroke = '#60a5fa';
-                                    domConfig.style.fill = '#60a5fa';
-                                }
-                                
-                                return domConfig;
-                            }
+                            // Use bright blue color for visibility in both themes
+                            color: '#60a5fa',
+                            strokeWidth: 2,
+                            radius: 6,
+                            // Ensure dependencies are always visible
+                            disabled: false
                         },
                         
                         // Context menu for events
