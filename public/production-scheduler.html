@@ -2059,7 +2059,47 @@
 </head>
 <body>
     <!-- Bryntum theme link in body for dynamic switching - must follow {product}.{theme}.css pattern -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme" data-bryntum-theme />
+    <!-- Theme will be set dynamically based on parent theme -->
+    <script>
+        // Immediately determine and load the correct theme before rendering
+        (function() {
+            let theme = 'light';
+            
+            // Check URL parameter first
+            const urlParams = new URLSearchParams(window.location.search);
+            const themeFromUrl = urlParams.get('theme');
+            
+            if (themeFromUrl) {
+                theme = themeFromUrl;
+            } else {
+                // Try to get parent's theme
+                try {
+                    const parentTheme = window.parent.localStorage.getItem('theme');
+                    if (parentTheme) {
+                        theme = parentTheme;
+                    }
+                } catch (e) {
+                    // Cross-origin access denied, fall back to localStorage
+                    const localTheme = localStorage.getItem('theme');
+                    if (localTheme) {
+                        theme = localTheme;
+                    }
+                }
+            }
+            
+            // Create and insert the theme link with the correct theme
+            const link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.id = 'bryntum-theme';
+            link.setAttribute('data-bryntum-theme', '');
+            link.href = theme === 'dark' 
+                ? '/schedulerpro.classic-dark.css'
+                : '/schedulerpro.classic-light.css';
+            document.head.appendChild(link);
+            
+            console.log('🎨 [Bryntum Theme] Initial theme loaded:', theme);
+        })();
+    </script>
     
     <div class="header">
         <h1>Production Schedule</h1>
@@ -7864,9 +7904,18 @@
                     : '/schedulerpro.classic-light.css';
                 
                 // Only update if the theme actually changed
-                if (!themeLink.href.includes(newThemeUrl)) {
+                if (!themeLink.href.includes(isDark ? 'dark' : 'light')) {
                     console.log(`🔄 [Production Scheduler] Switching Bryntum theme to: ${newThemeUrl}`);
+                    // Ensure data-bryntum-theme attribute is preserved (required by Bryntum)
+                    themeLink.setAttribute('data-bryntum-theme', '');
                     themeLink.href = newThemeUrl;
+                    
+                    // Force Bryntum components to recognize the theme change
+                    if (window.bryntum?.schedulerpro?.DomHelper) {
+                        const themeName = isDark ? 'classic-dark' : 'classic-light';
+                        console.log(`🎨 [Production Scheduler] Setting Bryntum DomHelper theme to: ${themeName}`);
+                        window.bryntum.schedulerpro.DomHelper.setTheme(themeName);
+                    }
                 }
             }
             
