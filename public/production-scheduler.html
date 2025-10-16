@@ -324,35 +324,44 @@
             background: #1a1a1a;
         }
         
-        /* Fix time axis (date row) height - needs even more for two lines */
+        /* Fix time axis (date row) height - taller for better visibility */
         .b-sch-timeaxis-cell {
-            height: 80px !important;
-            min-height: 80px !important;
-            line-height: 24px !important; /* Better spacing for multi-line */
-            padding: 8px 4px !important;
+            height: 50px !important;
+            min-height: 50px !important;
+            line-height: normal !important;
+            padding: 12px 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         
         .b-sch-header-row {
-            height: 80px !important;
-            min-height: 80px !important;
+            height: 50px !important;
+            min-height: 50px !important;
+            line-height: 50px !important;
+            overflow: visible !important;
         }
         
         /* Ensure header text doesn't get cut off */
         .b-sch-header-timeaxis-cell {
-            height: 80px !important;
-            min-height: 80px !important;
+            height: 50px !important;
+            min-height: 50px !important;
             overflow: visible !important;
+            padding: 12px 10px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
         }
         
         /* Also fix the header container heights */
         .b-schedulerpro .b-sch-header-container {
             height: auto !important;
-            min-height: 80px !important;
+            min-height: 100px !important;
         }
         
         .b-schedulerpro .b-grid-headers {
             height: auto !important;
-            min-height: 80px !important;
+            min-height: 100px !important;
         }
         
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
@@ -2059,12 +2068,12 @@
         /* Fix Date Header Formatting - Both Themes */
         .b-sch-header-timeaxis {
             height: auto !important;
-            min-height: 90px !important;
+            min-height: 100px !important;
         }
         
         .b-sch-header-row {
-            height: 45px !important;
-            line-height: 45px !important;
+            height: 50px !important;
+            line-height: 50px !important;
             overflow: visible !important;
         }
         

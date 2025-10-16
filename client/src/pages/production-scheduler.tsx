@@ -20,7 +20,7 @@ export default function ProductionScheduler() {
   // Initialize with theme from localStorage or default
   const [iframeUrl, setIframeUrl] = useState(() => {
     const savedTheme = localStorage.getItem('theme') || 'light';
-    return `/api/production-scheduler?v=${Date.now()}&theme=${savedTheme}&cb=1760633900`;
+    return `/api/production-scheduler?v=${Date.now()}&theme=${savedTheme}&cb=1760634200`;
   });
 
   useEffect(() => {
@@ -71,7 +71,7 @@ export default function ProductionScheduler() {
         // Reload the scheduler iframe with cache busting
         if (iframeRef.current) {
           setIsLoading(true);
-          iframeRef.current.src = `/api/production-scheduler?v=${Date.now()}&cb=1760633900`;
+          iframeRef.current.src = `/api/production-scheduler?v=${Date.now()}&cb=1760634200`;
         }
       }
     };
@@ -106,7 +106,7 @@ export default function ProductionScheduler() {
     if (resolvedTheme && iframeRef.current) {
       console.log('📤 [Parent] Theme changed to:', resolvedTheme, '(raw theme:', theme, ')');
       // Update iframe URL with new theme
-      setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}&cb=1760633900`);
+      setIframeUrl(`/api/production-scheduler?v=${Date.now()}&theme=${resolvedTheme}&cb=1760634200`);
       // Also send via postMessage for instant update
       setTimeout(() => {
         if (iframeRef.current?.contentWindow) {
