@@ -1973,26 +1973,10 @@
             color: #f1f5f9 !important;
         }
         
-        /* Event/Task bars */
-        .dark-theme .b-sch-event,
-        .dark-theme .b-pro-event,
-        .dark-theme .b-sch-event-wrap {
-            filter: brightness(1.1);
-            color: #ffffff !important;
-        }
-        
+        /* Let Bryntum's dark theme handle event colors and dependencies */
+        /* Only add subtle enhancements without overriding core colors */
         .dark-theme .b-sch-event-selected {
             box-shadow: 0 0 10px rgba(59, 130, 246, 0.5) !important;
-        }
-        
-        /* Dependencies */
-        .dark-theme .b-sch-dependency line,
-        .dark-theme .b-sch-dependency path {
-            stroke: #64748b !important;
-        }
-        
-        .dark-theme .b-sch-dependency-arrow {
-            fill: #64748b !important;
         }
         
         /* Tooltips and popups */
@@ -4714,7 +4698,8 @@
                     },
 
                     eventRenderer({ eventRecord, renderData }) {
-                        renderData.eventColor = eventRecord.eventColor;
+                        // Let Bryntum theme handle colors, don't override
+                        // renderData.eventColor = eventRecord.eventColor;
                         
                         // Add constraint class to event if present
                         if (eventRecord.data && eventRecord.data.constraintType) {
@@ -4893,7 +4878,8 @@
                                     if (isCritical) {
                                         // Add critical path styling
                                         event.cls = (event.cls || '') + ' critical-path-task';
-                                        event.eventColor = '#dc2626';
+                                        // Let Bryntum theme handle colors
+                                        // event.eventColor = '#dc2626';
                                         console.log(`🎯 Critical: ${event.name}`);
                                     }
                                 });
@@ -6378,18 +6364,21 @@
                         }
                         
                         // Apply visual styling based on criticality
+                        // Use CSS classes only, let Bryntum theme handle the colors
                         if (event.cpmData.isCritical) {
                             event.cls = 'critical-path-task';
-                            event.eventColor = '#dc2626'; // Red for critical
+                            // Don't override theme colors
+                            // event.eventColor = '#dc2626'; 
                         } else if (event.cpmData.isNearCritical) {
                             event.cls = 'near-critical-task';
-                            event.eventColor = '#f59e0b'; // Orange for near-critical
+                            // Don't override theme colors
+                            // event.eventColor = '#f59e0b';
                         } else {
                             event.cls = 'high-slack-task';
-                            // Use green gradient based on slack amount
-                            const slackRatio = Math.min(event.cpmData.totalSlack / 10, 1); // Normalize to 0-1
-                            const greenIntensity = Math.round(100 + slackRatio * 155); // 100-255
-                            event.eventColor = `rgb(34, ${greenIntensity}, 94)`;
+                            // Don't override theme colors
+                            // const slackRatio = Math.min(event.cpmData.totalSlack / 10, 1);
+                            // const greenIntensity = Math.round(100 + slackRatio * 155);
+                            // event.eventColor = `rgb(34, ${greenIntensity}, 94)`;
                         }
                     });
                     
@@ -8161,7 +8150,8 @@
                                     
                                     if (isCritical) {
                                         event.cls = (event.cls || '') + ' critical-path-task';
-                                        event.eventColor = '#dc2626';
+                                        // Let Bryntum theme handle colors
+                                        // event.eventColor = '#dc2626';
                                         console.log(`🎯 Critical: ${event.name}`);
                                     }
                                 });
