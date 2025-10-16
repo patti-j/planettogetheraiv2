@@ -6063,50 +6063,7 @@
                         event.constraintDate = baseDate;
                     });
                     
-                    // Create dependencies between sequential operations on the same resource
-                    // This prevents overlaps automatically
-                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
-                    
-                    for (const resource of resources) {
-                        // Get all events assigned to this resource
-                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
-                        
-                        if (resourceEvents.length < 2) continue;
-                        
-                        // Sort by current start date or ID
-                        resourceEvents.sort((a, b) => {
-                            if (a.startDate && b.startDate) {
-                                return a.startDate.getTime() - b.startDate.getTime();
-                            }
-                            return a.id - b.id;
-                        });
-                        
-                        // Create Finish-to-Start dependencies between sequential operations
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const fromEvent = resourceEvents[i];
-                            const toEvent = resourceEvents[i + 1];
-                            
-                            // Check if dependency already exists
-                            const existingDep = scheduler.dependencyStore.find(d =>
-                                d.from === fromEvent.id && d.to === toEvent.id
-                            );
-                            
-                            if (!existingDep) {
-                                // Add dependency to prevent overlaps
-                                scheduler.dependencyStore.add({
-                                    id: `asap_dep_${fromEvent.id}_${toEvent.id}`,
-                                    from: fromEvent.id,
-                                    to: toEvent.id,
-                                    type: 2, // Finish-to-Start
-                                    lag: 0.5, // 30 minute buffer
-                                    lagUnit: 'hour'
-                                });
-                                console.log(`    Added dependency: ${fromEvent.name} → ${toEvent.name}`);
-                            }
-                        }
-                    }
-                    
-                    // Let the Bryntum engine recalculate all dates
+                    // Let the Bryntum engine recalculate all dates using existing dependencies
                     await project.commitAsync();
                     
                     console.log('✅ ASAP scheduling completed by Bryntum engine');
@@ -6165,58 +6122,7 @@
                         event.constraintDate = dueDate;
                     });
                     
-                    // First ensure dependencies exist between sequential operations on same resource
-                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
-                    
-                    for (const resource of resources) {
-                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
-                        
-                        if (resourceEvents.length < 2) continue;
-                        
-                        // Sort by job and operation sequence for logical order
-                        resourceEvents.sort((a, b) => {
-                            // Parse job number and operation sequence from names
-                            const aMatch = a.name.match(/Job (\d+).*Op (\d+)/);
-                            const bMatch = b.name.match(/Job (\d+).*Op (\d+)/);
-                            
-                            if (aMatch && bMatch) {
-                                const aJob = parseInt(aMatch[1]);
-                                const bJob = parseInt(bMatch[1]);
-                                const aOp = parseInt(aMatch[2]);
-                                const bOp = parseInt(bMatch[2]);
-                                
-                                // Sort by job first, then by operation
-                                if (aJob !== bJob) return aJob - bJob;
-                                return aOp - bOp;
-                            }
-                            
-                            // Fallback to ID if name parsing fails
-                            return a.id - b.id;
-                        });
-                        
-                        // Ensure dependencies exist
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const fromEvent = resourceEvents[i];
-                            const toEvent = resourceEvents[i + 1];
-                            
-                            const existingDep = scheduler.dependencyStore.find(d =>
-                                d.from === fromEvent.id && d.to === toEvent.id
-                            );
-                            
-                            if (!existingDep) {
-                                scheduler.dependencyStore.add({
-                                    id: `alap_dep_${fromEvent.id}_${toEvent.id}`,
-                                    from: fromEvent.id,
-                                    to: toEvent.id,
-                                    type: 2, // Finish-to-Start
-                                    lag: 0.5, // 30 minute buffer
-                                    lagUnit: 'hour'
-                                });
-                            }
-                        }
-                    }
-                    
-                    // Let the Bryntum engine recalculate with backward scheduling
+                    // Let the Bryntum engine recalculate with backward scheduling using existing dependencies
                     await project.commitAsync();
                     
                     // After initial scheduling, adjust constraints to maintain relationships
