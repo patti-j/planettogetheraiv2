@@ -177,9 +177,7 @@
                 min-height: 30px !important;
             }
             
-            .b-grid-cell {
-                padding: 4px !important;
-            }
+            /* Removed extra padding that was causing spacing issues */
         }
         
         @media (max-width: 480px) {
@@ -382,24 +380,36 @@
             color: #60a5fa;
         }
         
-        /* Dependency line visibility fix */
-        /* Bryntum's classic-dark theme makes lines too dark, so we override with better contrast */
+        /* Dependency line visibility fix for dark theme */
+        /* Force dependency lines to be visible in dark mode using a brighter color */
         
-        /* Check if we're in dark mode using multiple selectors for reliability */
-        /* Using attribute selector as Bryntum sets data-bryntum-theme on the HTML element */
-        [data-bryntum-theme*="dark"] .b-sch-dependency,
+        /* Dark mode dependency lines - use very specific selectors with high specificity */
         .dark-theme .b-sch-dependency,
-        body.dark-theme .b-sch-dependency {
+        body.dark-theme .b-sch-dependency,
+        .dark-theme svg .b-sch-dependency,
+        body.dark-theme svg .b-sch-dependency,
+        .b-theme-classic-dark .b-sch-dependency {
             stroke: #94a3b8 !important;  /* Slate-400 - visible on dark background */
             stroke-width: 2 !important;
             opacity: 1 !important;
         }
         
-        [data-bryntum-theme*="dark"] .b-sch-dependency-arrow,
         .dark-theme .b-sch-dependency-arrow,
-        body.dark-theme .b-sch-dependency-arrow {
+        body.dark-theme .b-sch-dependency-arrow,
+        .dark-theme svg .b-sch-dependency-arrow,
+        body.dark-theme svg .b-sch-dependency-arrow,
+        .b-theme-classic-dark .b-sch-dependency-arrow {
             fill: #94a3b8 !important;
             stroke: #94a3b8 !important;
+            opacity: 1 !important;
+        }
+        
+        /* Dark mode dependency line paths inside SVG */
+        .dark-theme path.b-sch-dependency,
+        body.dark-theme path.b-sch-dependency,
+        .b-theme-classic-dark path.b-sch-dependency {
+            stroke: #94a3b8 !important;
+            opacity: 1 !important;
         }
         
         /* Hover state for better interaction */
@@ -408,15 +418,15 @@
             opacity: 1 !important;
         }
         
-        [data-bryntum-theme*="dark"] .b-sch-dependency:hover,
         .dark-theme .b-sch-dependency:hover,
-        body.dark-theme .b-sch-dependency:hover {
+        body.dark-theme .b-sch-dependency:hover,
+        .b-theme-classic-dark .b-sch-dependency:hover {
             stroke: #cbd5e1 !important;  /* Slate-300 - brighter on hover */
         }
         
-        [data-bryntum-theme*="dark"] .b-sch-dependency-arrow:hover,
         .dark-theme .b-sch-dependency-arrow:hover,
-        body.dark-theme .b-sch-dependency-arrow:hover {
+        body.dark-theme .b-sch-dependency-arrow:hover,
+        .b-theme-classic-dark .b-sch-dependency-arrow:hover {
             fill: #cbd5e1 !important;
             stroke: #cbd5e1 !important;
         }
