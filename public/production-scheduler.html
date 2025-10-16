@@ -3662,37 +3662,45 @@
                         htmlEncode: false,
                         // Renderer that returns a DOM config object with icon + text
                         renderer: ({ record }) => {
-                            // Map resource names to appropriate icons
+                            // Map resource names to emoji icons for better visual distinction
                             const iconMap = {
-                                'Grain Mill': 'fas fa-wheat',
-                                'Mash Tun': 'fas fa-fire',
-                                'Brew Kettle': 'fas fa-temperature-high',
-                                'Fermenter': 'fas fa-flask',
-                                'Bright Tank': 'fas fa-tint',
-                                'Packaging Line': 'fas fa-box',
-                                'CIP System': 'fas fa-shower',
-                                'Keg Washer': 'fas fa-soap',
-                                'Canning Line': 'fas fa-industry',
-                                'Bottling Line': 'fas fa-wine-bottle',
-                                'Filter': 'fas fa-filter',
-                                'Centrifuge': 'fas fa-circle-notch',
-                                'Heat Exchanger': 'fas fa-exchange-alt',
-                                'Yeast Propagator': 'fas fa-bacteria'
+                                'Grain Mill': '🌾',
+                                'Mash Tun': '🔥',
+                                'Brew Kettle': '♨️',
+                                'Fermenter': '⚗️',
+                                'Bright Tank': '✨',
+                                'Packaging Line': '📦',
+                                'CIP System': '🚿',
+                                'Keg Washer': '🧼',
+                                'Canning Line': '🏭',
+                                'Bottling Line': '🍾',
+                                'Filter': '🔽',
+                                'Centrifuge': '🌀',
+                                'Heat Exchanger': '🔄',
+                                'Yeast Propagator': '🦠',
+                                'Pasteurizer': '🌡️',
+                                'Whirlpool': '🌊',
+                                'Grain Silo': '🏗️',
+                                'HLT': '💧',
+                                'CLT': '❄️'
                             };
                             
-                            // Get icon class or use a default
-                            const iconClass = iconMap[record.name] || 'fas fa-cogs';
+                            // Get emoji icon or use a default
+                            const icon = iconMap[record.name] || '⚙️';
                             
                             return {
                                 children: [
-                                    // Icon element
+                                    // Emoji icon
                                     {
-                                        tag: 'i',
-                                        className: iconClass + ' resource-icon',
+                                        tag: 'span',
+                                        className: 'resource-icon',
+                                        text: icon,
                                         style: {
                                             marginRight: '8px',
-                                            color: '#6b7280',
-                                            fontSize: '16px'
+                                            fontSize: '18px',
+                                            display: 'inline-block',
+                                            width: '24px',
+                                            textAlign: 'center'
                                         }
                                     },
                                     // Resource name text
