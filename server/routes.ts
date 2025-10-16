@@ -1397,23 +1397,23 @@ router.get("/pt-dependencies", async (req, res) => {
     console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
     
     // Query PT dependencies - create dependencies between operations in the same job
+    // Using sequence_number to ensure correct brewing process order
     const ptDependenciesQuery = `
       WITH job_operations AS (
-        -- Get all operations grouped by job
+        -- Get all operations grouped by job, ordered by brewing process sequence
         SELECT 
           jo.id as op_id,
           jo.job_id,
           jo.external_id,
           jo.name,
+          jo.sequence_number,
           jo.scheduled_start,
-          jo.scheduled_end,
-          -- Rank operations within each job by scheduled start time
-          ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start, jo.id) as sequence_num
+          jo.scheduled_end
         FROM ptjoboperations jo
         WHERE jo.job_id IS NOT NULL 
-          AND jo.scheduled_start IS NOT NULL
+          AND jo.sequence_number IS NOT NULL
       )
-      -- Create dependencies between consecutive operations in the same job
+      -- Create dependencies between consecutive operations based on sequence_number
       SELECT 
         ROW_NUMBER() OVER () as dependency_id,
         curr.op_id as from_operation_id,
@@ -1425,8 +1425,8 @@ router.get("/pt-dependencies", async (req, res) => {
       FROM job_operations curr
       INNER JOIN job_operations next 
         ON curr.job_id = next.job_id 
-        AND curr.sequence_num = next.sequence_num - 1
-      ORDER BY curr.job_id, curr.sequence_num
+        AND curr.sequence_number = next.sequence_number - 1
+      ORDER BY curr.job_id, curr.sequence_number
     `;
 
     const rawDependencies = await db.execute(sql.raw(ptDependenciesQuery));
