@@ -40,9 +40,9 @@ export default function DemandForecasting() {
   
   // New: Model and filter selections
   const [modelType, setModelType] = useState<string>("Random Forest");
-  const [planningAreaColumn, setPlanningAreaColumn] = useState<string>("");
+  const planningAreaColumn = "PlanningAreaName";
   const [selectedPlanningAreas, setSelectedPlanningAreas] = useState<string[]>([]);
-  const [scenarioColumn, setScenarioColumn] = useState<string>("");
+  const scenarioColumn = "ScenarioName";
   const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
 
   // Fetch available tables
@@ -185,31 +185,8 @@ export default function DemandForecasting() {
         );
         if (qtyCol) setQuantityColumn(qtyCol.name);
       }
-      if (!planningAreaColumn) {
-        const planningCol = columns.find(c => 
-          c.name.toLowerCase().includes('planning') || 
-          c.name.toLowerCase().includes('area') ||
-          c.name.toLowerCase().includes('region') ||
-          c.name.toLowerCase().includes('site') ||
-          c.name.toLowerCase().includes('location') ||
-          c.name.toLowerCase().includes('plant') ||
-          c.name.toLowerCase().includes('facility')
-        );
-        if (planningCol) setPlanningAreaColumn(planningCol.name);
-      }
-      if (!scenarioColumn) {
-        const scenarioCol = columns.find(c => 
-          c.name.toLowerCase().includes('scenario') || 
-          c.name.toLowerCase().includes('name') ||
-          c.name.toLowerCase().includes('version') ||
-          c.name.toLowerCase().includes('plan') ||
-          c.name.toLowerCase().includes('forecast') ||
-          c.name.toLowerCase().includes('type')
-        );
-        if (scenarioCol) setScenarioColumn(scenarioCol.name);
-      }
     }
-  }, [columns, dateColumn, itemColumn, quantityColumn, planningAreaColumn, scenarioColumn]);
+  }, [columns, dateColumn, itemColumn, quantityColumn]);
 
   return (
     <div className="flex flex-col h-full p-6 space-y-6 overflow-auto">
@@ -325,48 +302,6 @@ export default function DemandForecasting() {
                   <SelectItem value="Random Forest">Random Forest</SelectItem>
                   <SelectItem value="ARIMA">ARIMA</SelectItem>
                   <SelectItem value="Prophet">Prophet</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Planning Area Column */}
-            <div className="space-y-2">
-              <Label>Planning Area Column (Optional)</Label>
-              <Select value={planningAreaColumn} onValueChange={(value) => {
-                setPlanningAreaColumn(value === "none" ? "" : value);
-                setSelectedPlanningAreas([]);
-              }} disabled={!selectedTable} data-testid="select-planning-area-column">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select planning area column" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {columns?.map((col) => (
-                    <SelectItem key={col.name} value={col.name}>
-                      {col.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Scenario Column */}
-            <div className="space-y-2">
-              <Label>Scenario Column (Optional)</Label>
-              <Select value={scenarioColumn} onValueChange={(value) => {
-                setScenarioColumn(value === "none" ? "" : value);
-                setSelectedScenarios([]);
-              }} disabled={!selectedTable} data-testid="select-scenario-column">
-                <SelectTrigger>
-                  <SelectValue placeholder="Select scenario column" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">None</SelectItem>
-                  {columns?.map((col) => (
-                    <SelectItem key={col.name} value={col.name}>
-                      {col.name}
-                    </SelectItem>
-                  ))}
                 </SelectContent>
               </Select>
             </div>
