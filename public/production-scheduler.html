@@ -10,6 +10,9 @@
     <title>Production Schedule - PlanetTogether</title>
     <link rel="icon" type="image/png" href="/favicon.png">
     
+    <!-- Font Awesome for resource icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <!-- Bryntum theme CSS will be in body for dynamic switching -->
     
     <style>
@@ -338,6 +341,29 @@
         .dark-theme .production-scheduler .b-grid-headers,
         .dark-theme .production-scheduler .b-horizontaltimeaxis {
             border-bottom-color: var(--grid-header-border-color, #475569);
+        }
+        
+        /* Resource icon styling */
+        .resource-icon {
+            display: inline-block;
+            width: 20px;
+            text-align: center;
+            margin-right: 8px;
+            color: #6b7280;
+            transition: color 0.2s;
+        }
+        
+        .dark-theme .resource-icon {
+            color: #9ca3af;
+        }
+        
+        /* Add hover effect for resource cells */
+        .b-grid-cell:hover .resource-icon {
+            color: #3b82f6;
+        }
+        
+        .dark-theme .b-grid-cell:hover .resource-icon {
+            color: #60a5fa;
         }
         
         /* Dependency lines styling */
@@ -3627,7 +3653,57 @@
                 
                 // Configure columns based on device
                 const schedulerColumns = [
-                    { text: 'Resource', field: 'name', width: resourceColumnWidth, locked: isMobile }
+                    { 
+                        text: 'Resource', 
+                        field: 'name', 
+                        width: resourceColumnWidth, 
+                        locked: isMobile,
+                        // Custom markup for icons
+                        htmlEncode: false,
+                        // Renderer that returns a DOM config object with icon + text
+                        renderer: ({ record }) => {
+                            // Map resource names to appropriate icons
+                            const iconMap = {
+                                'Grain Mill': 'fas fa-wheat',
+                                'Mash Tun': 'fas fa-fire',
+                                'Brew Kettle': 'fas fa-temperature-high',
+                                'Fermenter': 'fas fa-flask',
+                                'Bright Tank': 'fas fa-tint',
+                                'Packaging Line': 'fas fa-box',
+                                'CIP System': 'fas fa-shower',
+                                'Keg Washer': 'fas fa-soap',
+                                'Canning Line': 'fas fa-industry',
+                                'Bottling Line': 'fas fa-wine-bottle',
+                                'Filter': 'fas fa-filter',
+                                'Centrifuge': 'fas fa-circle-notch',
+                                'Heat Exchanger': 'fas fa-exchange-alt',
+                                'Yeast Propagator': 'fas fa-bacteria'
+                            };
+                            
+                            // Get icon class or use a default
+                            const iconClass = iconMap[record.name] || 'fas fa-cogs';
+                            
+                            return {
+                                children: [
+                                    // Icon element
+                                    {
+                                        tag: 'i',
+                                        className: iconClass + ' resource-icon',
+                                        style: {
+                                            marginRight: '8px',
+                                            color: '#6b7280',
+                                            fontSize: '16px'
+                                        }
+                                    },
+                                    // Resource name text
+                                    {
+                                        tag: 'span',
+                                        text: record.name
+                                    }
+                                ]
+                            };
+                        }
+                    }
                 ];
                 
                 // Category column removed as per requirement
