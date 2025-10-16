@@ -3662,31 +3662,53 @@
                         htmlEncode: false,
                         // Renderer that returns a DOM config object with icon + text
                         renderer: ({ record }) => {
-                            // Map resource names to emoji icons for better visual distinction
-                            const iconMap = {
-                                'Grain Mill': '🌾',
-                                'Mash Tun': '🔥',
-                                'Brew Kettle': '♨️',
-                                'Fermenter': '⚗️',
-                                'Bright Tank': '✨',
-                                'Packaging Line': '📦',
-                                'CIP System': '🚿',
-                                'Keg Washer': '🧼',
-                                'Canning Line': '🏭',
-                                'Bottling Line': '🍾',
-                                'Filter': '🔽',
-                                'Centrifuge': '🌀',
-                                'Heat Exchanger': '🔄',
-                                'Yeast Propagator': '🦠',
-                                'Pasteurizer': '🌡️',
-                                'Whirlpool': '🌊',
-                                'Grain Silo': '🏗️',
-                                'HLT': '💧',
-                                'CLT': '❄️'
-                            };
+                            // Get emoji icon based on resource type (handles numbered resources)
+                            let icon = '⚙️'; // Default icon
                             
-                            // Get emoji icon or use a default
-                            const icon = iconMap[record.name] || '⚙️';
+                            // Check for resource types (case insensitive, handles numbers)
+                            const resourceName = record.name.toLowerCase();
+                            
+                            if (resourceName.includes('grain') && resourceName.includes('mill')) {
+                                icon = '🌾';
+                            } else if (resourceName.includes('mash') && resourceName.includes('tun')) {
+                                icon = '🔥';
+                            } else if (resourceName.includes('brew') && resourceName.includes('kettle')) {
+                                icon = '♨️';
+                            } else if (resourceName.includes('lauter')) {
+                                icon = '🍺';
+                            } else if (resourceName.includes('fermenter') || resourceName.includes('fermentation')) {
+                                icon = '⚗️';
+                            } else if (resourceName.includes('bright') && resourceName.includes('tank')) {
+                                icon = '✨';
+                            } else if (resourceName.includes('packaging')) {
+                                icon = '📦';
+                            } else if (resourceName.includes('cip')) {
+                                icon = '🚿';
+                            } else if (resourceName.includes('keg')) {
+                                icon = '🍺';
+                            } else if (resourceName.includes('can') && resourceName.includes('filler')) {
+                                icon = '🥫';
+                            } else if (resourceName.includes('bottle') && resourceName.includes('filler')) {
+                                icon = '🍾';
+                            } else if (resourceName.includes('filter')) {
+                                icon = '🔽';
+                            } else if (resourceName.includes('centrifuge')) {
+                                icon = '🌀';
+                            } else if (resourceName.includes('heat') && resourceName.includes('exchanger')) {
+                                icon = '🔄';
+                            } else if (resourceName.includes('yeast')) {
+                                icon = '🦠';
+                            } else if (resourceName.includes('pasteurizer')) {
+                                icon = '🌡️';
+                            } else if (resourceName.includes('whirlpool')) {
+                                icon = '🌊';
+                            } else if (resourceName.includes('silo')) {
+                                icon = '🏗️';
+                            } else if (resourceName.includes('hlt')) {
+                                icon = '💧';
+                            } else if (resourceName.includes('clt')) {
+                                icon = '❄️';
+                            }
                             
                             return {
                                 children: [
