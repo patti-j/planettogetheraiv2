@@ -324,23 +324,6 @@
             background: #1a1a1a;
         }
         
-        /* Fix time axis (date row) height - taller for better visibility */
-        .b-sch-timeaxis-cell {
-            height: auto !important;
-            min-height: 40px !important;
-            padding: 10px 8px !important;
-        }
-        
-        .b-sch-header-row {
-            height: auto !important;
-            min-height: 40px !important;
-        }
-        
-        /* Ensure header text doesn't get cut off */
-        .b-sch-header-timeaxis-cell {
-            padding: 10px 8px !important;
-            overflow: visible !important;
-        }
         
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
         /* No CSS filters needed - using proper theme switching */
@@ -1846,15 +1829,6 @@
             align-items: center !important;
         } */
         
-        /* Fix time axis header heights */
-        .b-schedulerpro .b-sch-header-row,
-        .b-schedulerpro .b-sch-header-timeaxis-main,
-        .b-schedulerpro .b-sch-header-row-main,
-        .b-schedulerpro .b-sch-simple-timeaxis .b-sch-header-row {
-            height: 50px !important;
-            min-height: 50px !important;
-            max-height: 50px !important;
-        }
         
         /* Ensure event bars fit within row height */
         .b-schedulerpro .b-sch-event-wrap,
@@ -2043,40 +2017,6 @@
             background: #0f172a !important;
         }
         
-        /* Fix Date Header Formatting - Both Themes */
-        .b-sch-header-timeaxis {
-            height: auto !important;
-        }
-        
-        .b-sch-header-row {
-            height: auto !important;
-            min-height: 40px !important;
-        }
-        
-        /* Week row separator */
-        .b-sch-header-row-0 {
-            border-bottom: 2px solid #cbd5e1 !important;
-            font-weight: 500;
-        }
-        
-        .dark-theme .b-sch-header-row-0 {
-            border-bottom-color: #475569 !important;
-        }
-        
-        /* Day row */
-        .b-sch-header-row-1 {
-            border-bottom: 1px solid #e2e8f0 !important;
-        }
-        
-        .dark-theme .b-sch-header-row-1 {
-            border-bottom-color: #334155 !important;
-        }
-        
-        /* Cell padding to prevent text cutoff */
-        .b-sch-header-timeaxis-cell {
-            padding: 10px 8px !important;
-            overflow: visible !important;
-        }
     </style>
 </head>
 <body>
@@ -3617,17 +3557,58 @@
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
                 const isTablet = window.innerWidth > 768 && window.innerWidth <= 1024;
                 
-                // Choose appropriate view preset based on device
-                let viewPreset = 'dayAndWeek';
+                // Configure custom view preset with properly sized headers
+                // Using Bryntum's standard approach for header configuration
+                let viewPreset = {
+                    base: 'dayAndWeek',
+                    tickWidth: 100, // Width of each time tick
+                    headers: [
+                        {
+                            unit: 'week',
+                            dateFormat: 'YYYY MMMM DD'
+                        },
+                        {
+                            unit: 'day',
+                            dateFormat: 'DD ddd' // Day number and abbreviated weekday
+                        }
+                    ]
+                };
+                
                 let resourceColumnWidth = 200;
                 let categoryColumnWidth = 150;
                 
                 if (isMobile) {
-                    viewPreset = 'weekAndDay';  // Wider view for mobile
+                    viewPreset = {
+                        base: 'weekAndDay',
+                        tickWidth: 80,
+                        headers: [
+                            {
+                                unit: 'week',
+                                dateFormat: 'MMM DD'
+                            },
+                            {
+                                unit: 'day',
+                                dateFormat: 'DD'
+                            }
+                        ]
+                    };
                     resourceColumnWidth = 120;
                     categoryColumnWidth = 0; // Hide category on mobile
                 } else if (isTablet) {
-                    viewPreset = 'weekAndDay';
+                    viewPreset = {
+                        base: 'weekAndDay',
+                        tickWidth: 90,
+                        headers: [
+                            {
+                                unit: 'week',
+                                dateFormat: 'MMM DD'
+                            },
+                            {
+                                unit: 'day',
+                                dateFormat: 'DD ddd'
+                            }
+                        ]
+                    };
                     resourceColumnWidth = 150;
                     categoryColumnWidth = 100;
                 }
