@@ -79,13 +79,58 @@ router.get('/items/:schema/:table/:column', async (req, res) => {
       SELECT DISTINCT TOP 1000 ${columnName} as item
       FROM ${tableName}
       WHERE ${columnName} IS NOT NULL
-      ORDER BY ${columnName}
+      ORDER BY item
     `);
     
     const items = result.recordset.map(r => r.item);
     res.json(items);
   } catch (error: any) {
     console.error('Error fetching items:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get planning area and scenario combinations
+router.get('/planning-scenario-combinations/:schema/:table', async (req, res) => {
+  try {
+    const { schema, table } = req.params;
+    const pool = await sql.connect(getSqlConfig());
+    
+    // Check if columns exist first
+    const columnsCheck = await pool.request()
+      .input('schema', sql.VarChar, schema)
+      .input('table', sql.VarChar, table)
+      .query(`
+        SELECT COLUMN_NAME
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = @schema 
+          AND TABLE_NAME = @table
+          AND COLUMN_NAME IN ('PlanningAreaName', 'ScenarioName')
+      `);
+    
+    const existingColumns = columnsCheck.recordset.map(r => r.COLUMN_NAME);
+    
+    // If both columns don't exist, return empty array
+    if (!existingColumns.includes('PlanningAreaName') || !existingColumns.includes('ScenarioName')) {
+      return res.json([]);
+    }
+    
+    // Safely escape identifiers
+    const tableName = `[${schema}].[${table}]`;
+    
+    const result = await pool.request().query(`
+      SELECT DISTINCT 
+        [PlanningAreaName] as planningArea,
+        [ScenarioName] as scenario
+      FROM ${tableName}
+      WHERE [PlanningAreaName] IS NOT NULL 
+        AND [ScenarioName] IS NOT NULL
+      ORDER BY [PlanningAreaName], [ScenarioName]
+    `);
+    
+    res.json(result.recordset);
+  } catch (error: any) {
+    console.error('Error fetching planning-scenario combinations:', error);
     res.status(500).json({ error: error.message });
   }
 });

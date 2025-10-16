@@ -69,29 +69,44 @@ export default function DemandForecasting() {
     },
   });
 
-  // Fetch planning area values
-  const { data: planningAreas } = useQuery<string[]>({
-    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, planningAreaColumn],
-    enabled: !!selectedTable && !!planningAreaColumn,
+  // Fetch planning area and scenario combinations
+  const { data: planningScenarioCombinations } = useQuery<Array<{ planningArea: string; scenario: string }>>({
+    queryKey: ["/api/forecasting/planning-scenario-combinations", selectedTable?.schema, selectedTable?.name],
+    enabled: !!selectedTable,
     queryFn: async () => {
-      if (!selectedTable || !planningAreaColumn) return [];
-      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${planningAreaColumn}`);
-      if (!response.ok) throw new Error("Failed to fetch planning areas");
+      if (!selectedTable) return [];
+      const response = await fetch(`/api/forecasting/planning-scenario-combinations/${selectedTable.schema}/${selectedTable.name}`);
+      if (!response.ok) throw new Error("Failed to fetch planning-scenario combinations");
       return response.json();
     },
   });
 
-  // Fetch scenario values
-  const { data: scenarios } = useQuery<string[]>({
-    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, scenarioColumn],
-    enabled: !!selectedTable && !!scenarioColumn,
-    queryFn: async () => {
-      if (!selectedTable || !scenarioColumn) return [];
-      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${scenarioColumn}`);
-      if (!response.ok) throw new Error("Failed to fetch scenarios");
-      return response.json();
-    },
-  });
+  // Extract unique planning areas and scenarios from combinations
+  const planningAreas = planningScenarioCombinations 
+    ? Array.from(new Set(planningScenarioCombinations.map(c => c.planningArea))).sort()
+    : [];
+  
+  const scenarios = planningScenarioCombinations
+    ? Array.from(new Set(planningScenarioCombinations.map(c => c.scenario))).sort()
+    : [];
+
+  // Filter scenarios based on selected planning areas
+  const filteredScenarios = selectedPlanningAreas.length > 0
+    ? Array.from(new Set(
+        planningScenarioCombinations
+          ?.filter(c => selectedPlanningAreas.includes(c.planningArea))
+          .map(c => c.scenario)
+      )).sort()
+    : scenarios;
+
+  // Filter planning areas based on selected scenarios
+  const filteredPlanningAreas = selectedScenarios.length > 0
+    ? Array.from(new Set(
+        planningScenarioCombinations
+          ?.filter(c => selectedScenarios.includes(c.scenario))
+          .map(c => c.planningArea)
+      )).sort()
+    : planningAreas;
 
   // Fetch items for selected item column
   const { data: items } = useQuery<string[]>({
@@ -307,7 +322,7 @@ export default function DemandForecasting() {
           </div>
 
           {/* Planning Areas Multi-Select */}
-          {planningAreaColumn && planningAreas && planningAreas.length > 0 && (
+          {planningAreaColumn && filteredPlanningAreas && filteredPlanningAreas.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Select Planning Areas</Label>
@@ -317,7 +332,7 @@ export default function DemandForecasting() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const filtered = planningAreas.filter(area => 
+                      const filtered = filteredPlanningAreas.filter(area => 
                         area.toLowerCase().includes(planningAreaSearch.toLowerCase())
                       );
                       setSelectedPlanningAreas(filtered);
@@ -330,7 +345,10 @@ export default function DemandForecasting() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedPlanningAreas([])}
+                    onClick={() => {
+                      setSelectedPlanningAreas([]);
+                      setSelectedScenarios([]);
+                    }}
                     data-testid="button-clear-all-planning-areas"
                   >
                     Clear All
@@ -349,7 +367,7 @@ export default function DemandForecasting() {
                 />
               </div>
               <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
-                {planningAreas
+                {filteredPlanningAreas
                   .filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase()))
                   .map((area) => (
                     <label key={area} className="flex items-center space-x-2 cursor-pointer py-0.5">
@@ -368,20 +386,20 @@ export default function DemandForecasting() {
                       <span className="text-sm">{area}</span>
                     </label>
                   ))}
-                {planningAreas.filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase())).length === 0 && (
+                {filteredPlanningAreas.filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase())).length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-2">No planning areas found</p>
                 )}
               </div>
               {selectedPlanningAreas.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {selectedPlanningAreas.length} of {planningAreas.length} selected
+                  {selectedPlanningAreas.length} of {filteredPlanningAreas.length} selected
                 </p>
               )}
             </div>
           )}
 
           {/* Scenarios Multi-Select */}
-          {scenarioColumn && scenarios && scenarios.length > 0 && (
+          {scenarioColumn && filteredScenarios && filteredScenarios.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label>Select Scenarios</Label>
@@ -391,7 +409,7 @@ export default function DemandForecasting() {
                     variant="outline"
                     size="sm"
                     onClick={() => {
-                      const filtered = scenarios.filter(scenario => 
+                      const filtered = filteredScenarios.filter(scenario => 
                         scenario.toLowerCase().includes(scenarioSearch.toLowerCase())
                       );
                       setSelectedScenarios(filtered);
@@ -404,7 +422,10 @@ export default function DemandForecasting() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setSelectedScenarios([])}
+                    onClick={() => {
+                      setSelectedScenarios([]);
+                      setSelectedPlanningAreas([]);
+                    }}
                     data-testid="button-clear-all-scenarios"
                   >
                     Clear All
@@ -423,7 +444,7 @@ export default function DemandForecasting() {
                 />
               </div>
               <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
-                {scenarios
+                {filteredScenarios
                   .filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase()))
                   .map((scenario) => (
                     <label key={scenario} className="flex items-center space-x-2 cursor-pointer py-0.5">
@@ -442,13 +463,13 @@ export default function DemandForecasting() {
                       <span className="text-sm">{scenario}</span>
                     </label>
                   ))}
-                {scenarios.filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase())).length === 0 && (
+                {filteredScenarios.filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase())).length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-2">No scenarios found</p>
                 )}
               </div>
               {selectedScenarios.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {selectedScenarios.length} of {scenarios.length} selected
+                  {selectedScenarios.length} of {filteredScenarios.length} selected
                 </p>
               )}
             </div>
