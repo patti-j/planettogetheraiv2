@@ -380,36 +380,64 @@
             color: #60a5fa;
         }
         
-        /* Dependency line visibility fix for dark theme */
-        /* Force dependency lines to be visible in dark mode using a brighter color */
+        /* Dependency line visibility fix - following Bryntum documentation guidance */
+        /* Target all dependency line elements with maximum specificity */
         
-        /* Dark mode dependency lines - use very specific selectors with high specificity */
-        .dark-theme .b-sch-dependency,
-        body.dark-theme .b-sch-dependency,
-        .dark-theme svg .b-sch-dependency,
-        body.dark-theme svg .b-sch-dependency,
-        .b-theme-classic-dark .b-sch-dependency {
-            stroke: #94a3b8 !important;  /* Slate-400 - visible on dark background */
+        /* Light mode dependency lines - standard styling */
+        .b-sch-dependency {
+            stroke: #666 !important;
             stroke-width: 2 !important;
             opacity: 1 !important;
         }
         
-        .dark-theme .b-sch-dependency-arrow,
-        body.dark-theme .b-sch-dependency-arrow,
-        .dark-theme svg .b-sch-dependency-arrow,
-        body.dark-theme svg .b-sch-dependency-arrow,
-        .b-theme-classic-dark .b-sch-dependency-arrow {
-            fill: #94a3b8 !important;
-            stroke: #94a3b8 !important;
+        .b-sch-dependency-arrow {
+            fill: #666 !important;
+            stroke: #666 !important;
             opacity: 1 !important;
         }
         
-        /* Dark mode dependency line paths inside SVG */
-        .dark-theme path.b-sch-dependency,
-        body.dark-theme path.b-sch-dependency,
-        .b-theme-classic-dark path.b-sch-dependency {
+        /* Dark mode dependency lines - force bright color for visibility */
+        /* Using multiple selectors to ensure we catch all possible theme applications */
+        body.dark-theme .b-sch-dependency,
+        .dark-theme .b-sch-dependency,
+        .b-theme-classic-dark .b-sch-dependency,
+        body.dark-theme svg .b-sch-dependency,
+        body.dark-theme .b-scheduler-foreground-canvas .b-sch-dependency,
+        body.dark-theme .b-scheduler .b-sch-dependency {
+            stroke: #94a3b8 !important;  /* Slate-400 - good contrast on dark */
+            stroke-width: 2 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        body.dark-theme .b-sch-dependency-arrow,
+        .dark-theme .b-sch-dependency-arrow,
+        .b-theme-classic-dark .b-sch-dependency-arrow,
+        body.dark-theme svg .b-sch-dependency-arrow,
+        body.dark-theme .b-scheduler-foreground-canvas .b-sch-dependency-arrow,
+        body.dark-theme .b-scheduler .b-sch-dependency-arrow {
+            fill: #94a3b8 !important;
             stroke: #94a3b8 !important;
             opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        /* Target path elements specifically in dark mode */
+        body.dark-theme path.b-sch-dependency,
+        body.dark-theme svg path.b-sch-dependency,
+        body.dark-theme .b-scheduler-foreground-canvas path.b-sch-dependency {
+            stroke: #94a3b8 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        
+        body.dark-theme polygon.b-sch-dependency-arrow,
+        body.dark-theme svg polygon.b-sch-dependency-arrow,
+        body.dark-theme .b-scheduler-foreground-canvas polygon.b-sch-dependency-arrow {
+            fill: #94a3b8 !important;
+            stroke: #94a3b8 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
         }
         
         /* Hover state for better interaction */
@@ -418,15 +446,13 @@
             opacity: 1 !important;
         }
         
-        .dark-theme .b-sch-dependency:hover,
         body.dark-theme .b-sch-dependency:hover,
-        .b-theme-classic-dark .b-sch-dependency:hover {
-            stroke: #cbd5e1 !important;  /* Slate-300 - brighter on hover */
+        .dark-theme .b-sch-dependency:hover {
+            stroke: #cbd5e1 !important;  /* Brighter on hover */
         }
         
-        .dark-theme .b-sch-dependency-arrow:hover,
         body.dark-theme .b-sch-dependency-arrow:hover,
-        .b-theme-classic-dark .b-sch-dependency-arrow:hover {
+        .dark-theme .b-sch-dependency-arrow:hover {
             fill: #cbd5e1 !important;
             stroke: #cbd5e1 !important;
         }
@@ -3944,8 +3970,26 @@
                     },
 
                     features: {
-                        // Dependencies feature for showing task relationships
-                        dependencies: true,
+                        // Dependencies feature for showing task relationships with custom styling
+                        dependencies: {
+                            // Ensure dependencies are visible in both light and dark modes
+                            // Use a renderer to dynamically apply styles based on theme
+                            renderer: ({ domConfig }) => {
+                                // Check if we're in dark mode
+                                const isDarkMode = document.body.classList.contains('dark-theme');
+                                
+                                if (isDarkMode) {
+                                    // Force visibility in dark mode with bright color
+                                    domConfig.style = {
+                                        stroke: '#94a3b8',
+                                        strokeWidth: 2,
+                                        opacity: 1
+                                    };
+                                }
+                                
+                                return domConfig;
+                            }
+                        },
                         
                         // Context menu for events
                         eventMenu: {
