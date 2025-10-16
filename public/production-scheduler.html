@@ -328,6 +328,31 @@
         /* Dark theme now handled by Bryntum's native Classic Dark theme */
         /* No CSS filters needed - using proper theme switching */
         
+        /* Current time line - extend through entire grid */
+        .b-sch-current-time-indicator {
+            height: 100% !important;
+            z-index: 10;
+        }
+        
+        /* Ensure the line extends through the full scheduler height */
+        .b-grid-subgrid-normal .b-sch-current-time-indicator,
+        .b-sch-timeaxiscolumn .b-sch-current-time-indicator {
+            height: 100% !important;
+            top: 0 !important;
+            bottom: auto !important;
+        }
+        
+        /* Make sure the current time line is visible in both themes */
+        .b-sch-current-time-indicator::before {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background-color: #ef4444; /* Red color for visibility */
+            left: -1px;
+            top: 0;
+        }
+        
         /* Dependency lines styling */
         .b-sch-dependency {
             stroke: #666 !important;
