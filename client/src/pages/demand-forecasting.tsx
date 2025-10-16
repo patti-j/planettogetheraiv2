@@ -47,6 +47,10 @@ export default function DemandForecasting() {
   const scenarioColumn = "ScenarioName";
   const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
   const [scenarioSearch, setScenarioSearch] = useState<string>("");
+  
+  // Training state
+  const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
+  const [trainingMetrics, setTrainingMetrics] = useState<{ accuracy?: number; mape?: number; rmse?: number } | null>(null);
 
   // Fetch available tables
   const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
@@ -121,6 +125,51 @@ export default function DemandForecasting() {
     },
   });
 
+  // Train model mutation
+  const trainMutation = useMutation<{ metrics: { accuracy?: number; mape?: number; rmse?: number } }, Error, void>({
+    mutationFn: async () => {
+      const response = await fetch("/api/forecasting/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          schema: selectedTable?.schema,
+          table: selectedTable?.name,
+          dateColumn,
+          itemColumn,
+          quantityColumn,
+          selectedItem: selectedItems[0],
+          modelType,
+          planningAreaColumn: planningAreaColumn || null,
+          selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
+          scenarioColumn: scenarioColumn || null,
+          selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Training failed');
+      }
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setIsModelTrained(true);
+      setTrainingMetrics(data.metrics);
+      toast({
+        title: "Model Trained Successfully",
+        description: `${modelType} model trained with MAPE: ${data.metrics.mape?.toFixed(2)}%`,
+      });
+    },
+    onError: (error) => {
+      setIsModelTrained(false);
+      setTrainingMetrics(null);
+      toast({
+        title: "Training Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   // Forecast mutation
   const forecastMutation = useMutation<ForecastResult, Error, void>({
     mutationFn: async () => {
@@ -165,7 +214,7 @@ export default function DemandForecasting() {
     },
   });
 
-  const handleForecast = () => {
+  const handleTrain = () => {
     if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn || selectedItems.length === 0) {
       toast({
         title: "Missing Configuration",
@@ -174,8 +223,31 @@ export default function DemandForecasting() {
       });
       return;
     }
+    trainMutation.mutate();
+  };
+
+  const handleForecast = () => {
+    if (!isModelTrained) {
+      toast({
+        title: "Model Not Trained",
+        description: "Please train the model first before generating forecast",
+        variant: "destructive",
+      });
+      return;
+    }
     forecastMutation.mutate();
   };
+
+  // Reset training state when configuration changes
+  const resetTraining = () => {
+    setIsModelTrained(false);
+    setTrainingMetrics(null);
+  };
+
+  // Reset training when configuration changes
+  useEffect(() => {
+    resetTraining();
+  }, [selectedTable, dateColumn, itemColumn, quantityColumn, selectedItems, modelType, selectedPlanningAreas, selectedScenarios]);
 
   // Auto-select columns based on heuristics
   useEffect(() => {
