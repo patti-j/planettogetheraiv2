@@ -6015,9 +6015,17 @@
                         
                         const result = await response.json();
                         console.log(`✅ Schedule saved: ${result.updated}/${result.total} operations updated`);
+                        
+                        // Show success notification
+                        showNotification(`✅ Schedule saved successfully! ${result.updated} operations updated`, 'success');
+                        
                         return true;
                     } catch (error) {
                         console.error('❌ Failed to save schedule:', error);
+                        
+                        // Show error notification
+                        showNotification(`❌ Failed to save schedule: ${error.message}`, 'error');
+                        
                         return false;
                     }
                 }
