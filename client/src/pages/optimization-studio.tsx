@@ -3749,7 +3749,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               {/* AI Input */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-t-lg">
-                  <Edit className="w-4 h-4" />
+                  <Edit3 className="w-4 h-4" />
                   <span className="font-semibold text-sm">Your Modification Request</span>
                 </div>
                 <div className="flex gap-2">
