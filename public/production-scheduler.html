@@ -3508,6 +3508,53 @@
                 
                 console.log(`📊 Transformed ${events.length} PT operations into Bryntum events`);
                 
+                // AUTOMATIC OVERLAP PREVENTION ON INITIAL LOAD
+                console.log('🔧 Checking for overlaps in initial data...');
+                const resourceGroups = {};
+                
+                // Group events by resource (excluding unscheduled)
+                events.filter(e => e.resourceId !== 'unscheduled').forEach(event => {
+                    if (!resourceGroups[event.resourceId]) {
+                        resourceGroups[event.resourceId] = [];
+                    }
+                    resourceGroups[event.resourceId].push(event);
+                });
+                
+                // Fix overlaps for each resource
+                let overlapCount = 0;
+                Object.keys(resourceGroups).forEach(resourceId => {
+                    const resourceEvents = resourceGroups[resourceId];
+                    if (resourceEvents.length < 2) return;
+                    
+                    // Sort by start date
+                    resourceEvents.sort((a, b) => a.startDate - b.startDate);
+                    
+                    // Check and fix overlaps
+                    for (let i = 0; i < resourceEvents.length - 1; i++) {
+                        const current = resourceEvents[i];
+                        const next = resourceEvents[i + 1];
+                        
+                        const currentEnd = new Date(current.startDate.getTime() + (current.duration * 60 * 60 * 1000));
+                        
+                        if (currentEnd > next.startDate) {
+                            overlapCount++;
+                            const resourceName = resources.find(r => r.id === resourceId)?.name || resourceId;
+                            console.warn(`⚠️ Overlap detected on ${resourceName}: ${current.name} overlaps with ${next.name}`);
+                            
+                            // Fix the overlap by moving the next operation
+                            next.startDate = new Date(currentEnd.getTime() + (30 * 60 * 1000)); // Add 30 min buffer
+                            next.constraintDate = next.startDate;
+                            console.log(`  ✅ Fixed: ${next.name} now starts at ${next.startDate.toLocaleString()}`);
+                        }
+                    }
+                });
+                
+                if (overlapCount > 0) {
+                    console.log(`✅ Fixed ${overlapCount} overlapping operations on initial load`);
+                } else {
+                    console.log('✅ No overlaps detected in initial data');
+                }
+                
                 // If we have no PT operations, don't create fake demo data
                 if (events.length === 0) {
                     console.log('📊 No PT operations found - scheduler will be empty until operations are added');
