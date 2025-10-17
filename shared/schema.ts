@@ -1425,3 +1425,237 @@ export type ReportFilters = {
   salesChannel?: string;
   currency?: string;
 };
+
+// ============================================
+// Optimization Studio Tables
+// ============================================
+
+export const optimizationAlgorithms = pgTable("optimization_algorithms", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 100 }).notNull(),
+  displayName: varchar("display_name", { length: 200 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 50 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  baseAlgorithmId: integer("base_algorithm_id").references(() => optimizationAlgorithms.id),
+  version: varchar("version", { length: 20 }).default("1.0"),
+  status: varchar("status", { length: 20 }).default("draft"),
+  isStandard: boolean("is_standard").default(false),
+  configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  algorithmCode: text("algorithm_code"),
+  uiComponents: jsonb("ui_components").default(sql`'{}'::jsonb`),
+  performance: jsonb("performance").default(sql`'{}'::jsonb`),
+  approvals: jsonb("approvals").default(sql`'{}'::jsonb`),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const algorithmTests = pgTable("algorithm_tests", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  testType: varchar("test_type", { length: 50 }).notNull(),
+  configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  results: jsonb("results"),
+  status: varchar("status", { length: 20 }).default("pending"),
+  executionTime: integer("execution_time_ms"),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const algorithmDeployments = pgTable("algorithm_deployments", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  targetModule: varchar("target_module", { length: 100 }).notNull(),
+  environment: varchar("environment", { length: 50 }).notNull(),
+  version: varchar("version", { length: 20 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending"),
+  configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  deployedBy: integer("deployed_by").references(() => users.id),
+  deployedAt: timestamp("deployed_at"),
+  metrics: jsonb("metrics").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const algorithmFeedback = pgTable("algorithm_feedback", {
+  id: serial("id").primaryKey(),
+  algorithmName: varchar("algorithm_name", { length: 100 }).notNull(),
+  algorithmVersion: varchar("algorithm_version", { length: 20 }),
+  title: varchar("title", { length: 200 }).notNull(),
+  description: text("description"),
+  feedbackType: varchar("feedback_type", { length: 50 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  severity: varchar("severity", { length: 20 }),
+  priority: varchar("priority", { length: 20 }),
+  plantId: integer("plant_id"),
+  notes: text("notes"),
+  executionContext: jsonb("execution_context").default(sql`'{}'::jsonb`),
+  expectedResult: text("expected_result"),
+  actualResult: text("actual_result"),
+  suggestedImprovement: text("suggested_improvement"),
+  reproducible: boolean("reproducible").default(false),
+  reproductionSteps: jsonb("reproduction_steps").default(sql`'[]'::jsonb`),
+  tags: jsonb("tags").default(sql`'[]'::jsonb`),
+  status: varchar("status", { length: 20 }).default("new"),
+  resolutionNotes: text("resolution_notes"),
+  submittedBy: integer("submitted_by").references(() => users.id),
+  resolvedBy: integer("resolved_by").references(() => users.id),
+  resolvedAt: timestamp("resolved_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const algorithmFeedbackComments = pgTable("algorithm_feedback_comments", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => algorithmFeedback.id).notNull(),
+  comment: text("comment").notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const algorithmFeedbackVotes = pgTable("algorithm_feedback_votes", {
+  id: serial("id").primaryKey(),
+  feedbackId: integer("feedback_id").references(() => algorithmFeedback.id).notNull(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  voteType: varchar("vote_type", { length: 10 }).notNull(), // 'up' or 'down'
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const optimizationProfiles = pgTable("optimization_profiles", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id),
+  scope: jsonb("scope").default(sql`'{}'::jsonb`),
+  objectives: jsonb("objectives").default(sql`'{}'::jsonb`),
+  runtimeOptions: jsonb("runtime_options").default(sql`'{}'::jsonb`),
+  constraints: jsonb("constraints").default(sql`'{}'::jsonb`),
+  validationRules: jsonb("validation_rules").default(sql`'{}'::jsonb`),
+  outputSettings: jsonb("output_settings").default(sql`'{}'::jsonb`),
+  isDefault: boolean("is_default").default(false),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const optimizationRuns = pgTable("optimization_runs", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  profileId: integer("profile_id").references(() => optimizationProfiles.id),
+  status: varchar("status", { length: 20 }).default("pending"),
+  startTime: timestamp("start_time"),
+  endTime: timestamp("end_time"),
+  executionTime: integer("execution_time_ms"),
+  inputData: jsonb("input_data").default(sql`'{}'::jsonb`),
+  outputData: jsonb("output_data").default(sql`'{}'::jsonb`),
+  metrics: jsonb("metrics").default(sql`'{}'::jsonb`),
+  errors: jsonb("errors").default(sql`'[]'::jsonb`),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow()
+});
+
+export const optimizationScopeConfigs = pgTable("optimization_scope_configs", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  category: varchar("category", { length: 50 }).notNull(),
+  description: text("description"),
+  configuration: jsonb("configuration").default(sql`'{}'::jsonb`),
+  isDefault: boolean("is_default").default(false),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const extensionData = pgTable("extension_data", {
+  id: serial("id").primaryKey(),
+  algorithmId: integer("algorithm_id").references(() => optimizationAlgorithms.id).notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(),
+  entityId: integer("entity_id").notNull(),
+  fieldName: varchar("field_name", { length: 100 }).notNull(),
+  fieldValue: jsonb("field_value").notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const algorithmGovernanceApprovals = pgTable("algorithm_governance_approvals", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").notNull(),
+  algorithmVersionId: integer("algorithm_version_id").references(() => optimizationAlgorithms.id).notNull(),
+  status: varchar("status", { length: 20 }).default("pending"),
+  approvalLevel: varchar("approval_level", { length: 20 }).notNull(),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+  approvalNotes: text("approval_notes"),
+  effectiveDate: timestamp("effective_date"),
+  expirationDate: timestamp("expiration_date"),
+  priority: integer("priority").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+export const governanceDeployments = pgTable("governance_deployments", {
+  id: serial("id").primaryKey(),
+  plantApprovalId: integer("plant_approval_id").references(() => algorithmGovernanceApprovals.id).notNull(),
+  deploymentName: varchar("deployment_name", { length: 200 }).notNull(),
+  deploymentType: varchar("deployment_type", { length: 50 }).notNull(),
+  status: varchar("status", { length: 20 }).default("pending"),
+  deployedAt: timestamp("deployed_at"),
+  lastRunAt: timestamp("last_run_at"),
+  healthStatus: varchar("health_status", { length: 20 }).default("unknown"),
+  runStatistics: jsonb("run_statistics").default(sql`'{}'::jsonb`),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// Schema validation for Optimization Studio tables
+export const insertOptimizationAlgorithmSchema = createInsertSchema(optimizationAlgorithms)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOptimizationAlgorithm = z.infer<typeof insertOptimizationAlgorithmSchema>;
+export type OptimizationAlgorithm = typeof optimizationAlgorithms.$inferSelect;
+
+export const insertAlgorithmTestSchema = createInsertSchema(algorithmTests)
+  .omit({ id: true, createdAt: true });
+export type InsertAlgorithmTest = z.infer<typeof insertAlgorithmTestSchema>;
+export type AlgorithmTest = typeof algorithmTests.$inferSelect;
+
+export const insertAlgorithmDeploymentSchema = createInsertSchema(algorithmDeployments)
+  .omit({ id: true, createdAt: true });
+export type InsertAlgorithmDeployment = z.infer<typeof insertAlgorithmDeploymentSchema>;
+export type AlgorithmDeployment = typeof algorithmDeployments.$inferSelect;
+
+export const insertAlgorithmFeedbackSchema = createInsertSchema(algorithmFeedback)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAlgorithmFeedback = z.infer<typeof insertAlgorithmFeedbackSchema>;
+export type AlgorithmFeedback = typeof algorithmFeedback.$inferSelect;
+
+export const insertOptimizationProfileSchema = createInsertSchema(optimizationProfiles)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOptimizationProfile = z.infer<typeof insertOptimizationProfileSchema>;
+export type OptimizationProfile = typeof optimizationProfiles.$inferSelect;
+
+export const insertOptimizationRunSchema = createInsertSchema(optimizationRuns)
+  .omit({ id: true, createdAt: true });
+export type InsertOptimizationRun = z.infer<typeof insertOptimizationRunSchema>;
+export type OptimizationRun = typeof optimizationRuns.$inferSelect;
+
+export const insertOptimizationScopeConfigSchema = createInsertSchema(optimizationScopeConfigs)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertOptimizationScopeConfig = z.infer<typeof insertOptimizationScopeConfigSchema>;
+export type OptimizationScopeConfig = typeof optimizationScopeConfigs.$inferSelect;
+
+export const insertExtensionDataSchema = createInsertSchema(extensionData)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertExtensionData = z.infer<typeof insertExtensionDataSchema>;
+export type ExtensionData = typeof extensionData.$inferSelect;
+
+export const insertAlgorithmGovernanceApprovalSchema = createInsertSchema(algorithmGovernanceApprovals)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertAlgorithmGovernanceApproval = z.infer<typeof insertAlgorithmGovernanceApprovalSchema>;
+export type AlgorithmGovernanceApproval = typeof algorithmGovernanceApprovals.$inferSelect;
+
+export const insertGovernanceDeploymentSchema = createInsertSchema(governanceDeployments)
+  .omit({ id: true, createdAt: true, updatedAt: true });
+export type InsertGovernanceDeployment = z.infer<typeof insertGovernanceDeploymentSchema>;
+export type GovernanceDeployment = typeof governanceDeployments.$inferSelect;

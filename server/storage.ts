@@ -7,6 +7,11 @@ import {
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
   ptProductWheels, ptProductWheelSegments, ptProductWheelSchedule, ptProductWheelPerformance,
   calendars, maintenancePeriods,
+  // Optimization Studio tables
+  optimizationAlgorithms, optimizationProfiles,
+  algorithmTests, algorithmDeployments, algorithmFeedback,
+  algorithmFeedbackComments, algorithmFeedbackVotes,
+  algorithmGovernanceApprovals,
   type User, type InsertUser, type Role, type Permission, type UserRole, type RolePermission,
   type CompanyOnboarding, type InsertCompanyOnboarding,
   type UserPreferences, type InsertUserPreferences,
@@ -21,7 +26,16 @@ import {
   type PtProductWheelSchedule, type InsertPtProductWheelSchedule,
   type PtProductWheelPerformance, type InsertPtProductWheelPerformance,
   type Calendar, type InsertCalendar,
-  type MaintenancePeriod, type InsertMaintenancePeriod
+  type MaintenancePeriod, type InsertMaintenancePeriod,
+  // Optimization Studio types
+  type OptimizationAlgorithm, type InsertOptimizationAlgorithm,
+  type OptimizationProfile, type InsertOptimizationProfile,
+  type AlgorithmTest, type InsertAlgorithmTest,
+  type AlgorithmDeployment, type InsertAlgorithmDeployment,
+  type AlgorithmFeedback, type InsertAlgorithmFeedback,
+  type AlgorithmFeedbackComment, type InsertAlgorithmFeedbackComment,
+  type AlgorithmFeedbackVote, type InsertAlgorithmFeedbackVote,
+  type AlgorithmGovernanceApproval, type InsertAlgorithmGovernanceApproval
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -1561,6 +1575,168 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting maintenance period:', error);
       return false;
+    }
+  }
+
+  // ============================================
+  // Optimization Studio Methods
+  // ============================================
+
+  async getOptimizationAlgorithms(category?: string, status?: string): Promise<OptimizationAlgorithm[]> {
+    try {
+      let query = db.select().from(optimizationAlgorithms);
+      
+      const conditions = [];
+      if (category) conditions.push(eq(optimizationAlgorithms.category, category));
+      if (status) conditions.push(eq(optimizationAlgorithms.status, status));
+      
+      if (conditions.length > 0) {
+        query = query.where(and(...conditions));
+      }
+      
+      return await query.orderBy(desc(optimizationAlgorithms.createdAt));
+    } catch (error) {
+      console.error('Error fetching optimization algorithms:', error);
+      return [];
+    }
+  }
+
+  async getStandardAlgorithms(): Promise<OptimizationAlgorithm[]> {
+    try {
+      return await db.select()
+        .from(optimizationAlgorithms)
+        .where(eq(optimizationAlgorithms.isStandard, true))
+        .orderBy(desc(optimizationAlgorithms.createdAt));
+    } catch (error) {
+      console.error('Error fetching standard algorithms:', error);
+      return [];
+    }
+  }
+
+  async getAlgorithmTests(): Promise<AlgorithmTest[]> {
+    try {
+      return await db.select()
+        .from(algorithmTests)
+        .orderBy(desc(algorithmTests.createdAt));
+    } catch (error) {
+      console.error('Error fetching algorithm tests:', error);
+      return [];
+    }
+  }
+
+  async getAlgorithmDeployments(): Promise<AlgorithmDeployment[]> {
+    try {
+      return await db.select()
+        .from(algorithmDeployments)
+        .orderBy(desc(algorithmDeployments.deployedAt));
+    } catch (error) {
+      console.error('Error fetching deployments:', error);
+      return [];
+    }
+  }
+
+  async getAlgorithmFeedback(): Promise<AlgorithmFeedback[]> {
+    try {
+      return await db.select()
+        .from(algorithmFeedback)
+        .orderBy(desc(algorithmFeedback.createdAt));
+    } catch (error) {
+      console.error('Error fetching feedback:', error);
+      return [];
+    }
+  }
+
+  async getAlgorithmVersions(): Promise<any[]> {
+    // Version tracking not implemented yet
+    return [];
+  }
+
+  async getGovernanceApprovals(): Promise<AlgorithmGovernanceApproval[]> {
+    try {
+      return await db.select()
+        .from(algorithmGovernanceApprovals)
+        .orderBy(desc(algorithmGovernanceApprovals.approvedAt));
+    } catch (error) {
+      console.error('Error fetching approvals:', error);
+      return [];
+    }
+  }
+
+  async getGovernanceDeployments(): Promise<any[]> {
+    // Governance deployments not implemented yet
+    return [];
+  }
+
+  async createOptimizationAlgorithm(algorithm: InsertOptimizationAlgorithm): Promise<OptimizationAlgorithm> {
+    try {
+      const [created] = await db.insert(optimizationAlgorithms)
+        .values(algorithm)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating algorithm:', error);
+      throw error;
+    }
+  }
+
+  async updateOptimizationAlgorithm(id: number, data: Partial<InsertOptimizationAlgorithm>): Promise<OptimizationAlgorithm | undefined> {
+    try {
+      const [updated] = await db.update(optimizationAlgorithms)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(optimizationAlgorithms.id, id))
+        .returning();
+      return updated;
+    } catch (error) {
+      console.error('Error updating algorithm:', error);
+      return undefined;
+    }
+  }
+
+  async createAlgorithmDeployment(deployment: InsertAlgorithmDeployment): Promise<AlgorithmDeployment> {
+    try {
+      const [created] = await db.insert(algorithmDeployments)
+        .values(deployment)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating deployment:', error);
+      throw error;
+    }
+  }
+
+  async createAlgorithmTest(test: InsertAlgorithmTest): Promise<AlgorithmTest> {
+    try {
+      const [created] = await db.insert(algorithmTests)
+        .values(test)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating test:', error);
+      throw error;
+    }
+  }
+
+  async createAlgorithmFeedback(feedback: InsertAlgorithmFeedback): Promise<AlgorithmFeedback> {
+    try {
+      const [created] = await db.insert(algorithmFeedback)
+        .values(feedback)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating feedback:', error);
+      throw error;
+    }
+  }
+
+  async createGovernanceApproval(approval: InsertAlgorithmGovernanceApproval): Promise<AlgorithmGovernanceApproval> {
+    try {
+      const [created] = await db.insert(algorithmGovernanceApprovals)
+        .values(approval)
+        .returning();
+      return created;
+    } catch (error) {
+      console.error('Error creating approval:', error);
+      throw error;
     }
   }
 }

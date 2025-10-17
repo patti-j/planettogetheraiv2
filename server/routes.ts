@@ -8288,5 +8288,166 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
   }
 });
 
+// ============================================
+// Optimization Studio Routes
+// ============================================
+
+// Get all optimization algorithms
+router.get("/api/optimization/algorithms", async (req, res) => {
+  try {
+    const algorithms = await storage.getOptimizationAlgorithms();
+    res.json(algorithms);
+  } catch (error) {
+    console.error("Error fetching optimization algorithms:", error);
+    res.status(500).json({ error: "Failed to fetch optimization algorithms" });
+  }
+});
+
+// Get standard algorithm library
+router.get("/api/optimization/standard-algorithms", async (req, res) => {
+  try {
+    const algorithms = await storage.getStandardAlgorithms();
+    res.json(algorithms);
+  } catch (error) {
+    console.error("Error fetching standard algorithms:", error);
+    res.status(500).json({ error: "Failed to fetch standard algorithms" });
+  }
+});
+
+// Get all algorithm tests
+router.get("/api/optimization/tests", async (req, res) => {
+  try {
+    const tests = await storage.getAlgorithmTests();
+    res.json(tests);
+  } catch (error) {
+    console.error("Error fetching algorithm tests:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm tests" });
+  }
+});
+
+// Get all deployments
+router.get("/api/optimization/deployments", async (req, res) => {
+  try {
+    const deployments = await storage.getAlgorithmDeployments();
+    res.json(deployments);
+  } catch (error) {
+    console.error("Error fetching deployments:", error);
+    res.status(500).json({ error: "Failed to fetch deployments" });
+  }
+});
+
+// Get algorithm feedback
+router.get("/api/algorithm-feedback", async (req, res) => {
+  try {
+    const feedback = await storage.getAlgorithmFeedback();
+    res.json(feedback);
+  } catch (error) {
+    console.error("Error fetching algorithm feedback:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm feedback" });
+  }
+});
+
+// Get algorithm versions
+router.get("/api/algorithm-versions", async (req, res) => {
+  try {
+    const versions = await storage.getAlgorithmVersions();
+    res.json(versions);
+  } catch (error) {
+    console.error("Error fetching algorithm versions:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm versions" });
+  }
+});
+
+// Get governance approvals
+router.get("/api/algorithm-governance/approvals", async (req, res) => {
+  try {
+    const approvals = await storage.getGovernanceApprovals();
+    res.json(approvals);
+  } catch (error) {
+    console.error("Error fetching governance approvals:", error);
+    res.status(500).json({ error: "Failed to fetch governance approvals" });
+  }
+});
+
+// Get governance deployments
+router.get("/api/algorithm-governance/deployments", async (req, res) => {
+  try {
+    const deployments = await storage.getGovernanceDeployments();
+    res.json(deployments);
+  } catch (error) {
+    console.error("Error fetching governance deployments:", error);
+    res.status(500).json({ error: "Failed to fetch governance deployments" });
+  }
+});
+
+// Create new algorithm
+router.post("/api/optimization/algorithms", enhancedAuth, async (req, res) => {
+  try {
+    const algorithm = await storage.createOptimizationAlgorithm(req.body);
+    res.json(algorithm);
+  } catch (error) {
+    console.error("Error creating algorithm:", error);
+    res.status(500).json({ error: "Failed to create algorithm" });
+  }
+});
+
+// Update algorithm
+router.patch("/api/optimization/algorithms/:id", enhancedAuth, async (req, res) => {
+  try {
+    const algorithm = await storage.updateOptimizationAlgorithm(parseInt(req.params.id), req.body);
+    res.json(algorithm);
+  } catch (error) {
+    console.error("Error updating algorithm:", error);
+    res.status(500).json({ error: "Failed to update algorithm" });
+  }
+});
+
+// Deploy algorithm
+router.post("/api/optimization/algorithms/:id/deploy", enhancedAuth, async (req, res) => {
+  try {
+    const deployment = await storage.createAlgorithmDeployment({
+      algorithmId: parseInt(req.params.id),
+      ...req.body
+    });
+    res.json(deployment);
+  } catch (error) {
+    console.error("Error deploying algorithm:", error);
+    res.status(500).json({ error: "Failed to deploy algorithm" });
+  }
+});
+
+// Run algorithm test
+router.post("/api/optimization/tests", enhancedAuth, async (req, res) => {
+  try {
+    const test = await storage.createAlgorithmTest(req.body);
+    res.json(test);
+  } catch (error) {
+    console.error("Error creating test:", error);
+    res.status(500).json({ error: "Failed to create test" });
+  }
+});
+
+// Create algorithm feedback
+router.post("/api/algorithm-feedback", enhancedAuth, async (req, res) => {
+  try {
+    const feedback = await storage.createAlgorithmFeedback(req.body);
+    res.json(feedback);
+  } catch (error) {
+    console.error("Error creating feedback:", error);
+    res.status(500).json({ error: "Failed to create feedback" });
+  }
+});
+
+// Approve algorithm
+router.post("/api/algorithm-governance/approvals", enhancedAuth, async (req, res) => {
+  try {
+    const approval = await storage.createGovernanceApproval(req.body);
+    res.json(approval);
+  } catch (error) {
+    console.error("Error creating approval:", error);
+    res.status(500).json({ error: "Failed to create approval" });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
