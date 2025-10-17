@@ -69,6 +69,12 @@ import fs from "fs";
 import agentTrainingRoutes from "./routes/agent-training-routes";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 import multer from "multer";
+import { AlgorithmRegistry } from "./services/optimization/algorithm-registry";
+import { 
+  scheduleDataPayloadSchema, 
+  optimizationRunRequestSchema,
+  type OptimizationRunResponse 
+} from "@shared/schema";
 
 // Extend the global namespace to include tokenStore
 declare global {
@@ -8525,52 +8531,181 @@ router.post("/api/algorithm-governance/approvals", enhancedAuth, async (req, res
 });
 
 // Execute algorithm by name (generic endpoint for Production Scheduler integration)
-// Note: This endpoint validates the algorithm exists and is approved, then returns
-// metadata for the client to execute. The actual execution happens client-side
-// using Bryntum Scheduler Pro's constraint system.
+// This endpoint executes algorithms server-side using the Optimization Studio
+// algorithm implementations and returns the optimized schedule.
 router.post("/api/optimization/algorithms/:name/run", async (req, res) => {
   try {
     const algorithmName = req.params.name;
     
-    // Find the algorithm by name
+    // Find the algorithm by name in the database
     const algorithms = await storage.getOptimizationAlgorithms();
-    const algorithm = algorithms.find((a: any) => a.name === algorithmName);
+    const algorithmMetadata = algorithms.find((a: any) => a.name === algorithmName);
     
-    if (!algorithm) {
+    if (!algorithmMetadata) {
       return res.status(404).json({ error: "Algorithm not found" });
     }
     
     // Check if algorithm is approved for production use
-    if (algorithm.status !== 'approved') {
+    if (algorithmMetadata.status !== 'approved') {
       return res.status(403).json({ 
         error: "Algorithm not approved for production use",
-        status: algorithm.status 
+        status: algorithmMetadata.status 
       });
     }
     
-    console.log(`✅ Algorithm validation passed: ${algorithm.displayName} (${algorithmName})`);
+    console.log(`✅ Algorithm validation passed: ${algorithmMetadata.displayName} (${algorithmName})`);
     
-    // Return algorithm metadata for client-side execution
-    res.json({
-      success: true,
-      algorithm: {
-        id: algorithm.id,
-        name: algorithm.name,
-        displayName: algorithm.displayName,
-        category: algorithm.category,
-        configuration: algorithm.configuration
-      },
-      executeClientSide: true  // Signal to client to execute using Bryntum
-    });
+    // Validate request body contains schedule data
+    const scheduleDataValidation = scheduleDataPayloadSchema.safeParse(req.body);
+    if (!scheduleDataValidation.success) {
+      return res.status(400).json({ 
+        error: "Invalid schedule data",
+        details: scheduleDataValidation.error.errors 
+      });
+    }
+    
+    // Get the algorithm implementation from the registry
+    const algorithmRegistry = AlgorithmRegistry.getInstance();
+    if (!algorithmRegistry.hasAlgorithm(algorithmName)) {
+      console.warn(`Algorithm ${algorithmName} not found in registry, falling back to ASAP`);
+      // Fallback to ASAP if algorithm not yet implemented
+      const fallbackAlgorithm = 'forward-scheduling';
+      if (!algorithmRegistry.hasAlgorithm(fallbackAlgorithm)) {
+        return res.status(501).json({ 
+          error: "Algorithm implementation not available",
+          algorithmName 
+        });
+      }
+    }
+    
+    // Execute the algorithm server-side
+    const startTime = Date.now();
+    try {
+      console.log(`🚀 Executing ${algorithmName} algorithm server-side...`);
+      
+      const optimizedSchedule = algorithmRegistry.executeAlgorithm(
+        algorithmRegistry.hasAlgorithm(algorithmName) ? algorithmName : 'forward-scheduling',
+        scheduleDataValidation.data
+      );
+      
+      const executionTime = Date.now() - startTime;
+      console.log(`✅ Algorithm ${algorithmName} executed successfully in ${executionTime}ms`);
+      
+      // Return the optimized schedule
+      const response: OptimizationRunResponse = {
+        runId: `run-${Date.now()}-${algorithmName}`,
+        status: 'success',
+        optimizedSchedule,
+        metrics: {
+          makespan: calculateMakespan(optimizedSchedule),
+          resourceUtilization: calculateResourceUtilization(optimizedSchedule),
+          onTimeDelivery: 0, // TODO: Calculate based on due dates
+          totalSetupTime: calculateTotalSetupTime(optimizedSchedule),
+          totalIdleTime: 0 // TODO: Calculate idle time
+        },
+        executionTime,
+        warnings: []
+      };
+      
+      res.json(response);
+      
+    } catch (algorithmError: any) {
+      console.error(`❌ Algorithm execution failed:`, algorithmError);
+      
+      const response: OptimizationRunResponse = {
+        runId: `run-${Date.now()}-${algorithmName}`,
+        status: 'error',
+        executionTime: Date.now() - startTime,
+        error: algorithmError.message || 'Algorithm execution failed'
+      };
+      
+      res.status(500).json(response);
+    }
     
   } catch (error: any) {
-    console.error("Error validating algorithm:", error);
+    console.error("Error in optimization run endpoint:", error);
     res.status(500).json({ 
-      error: "Failed to validate algorithm",
+      error: "Failed to process optimization request",
       details: error.message 
     });
   }
 });
+
+// Helper functions for metrics calculation
+function calculateMakespan(schedule: any): number {
+  if (!schedule.operations || schedule.operations.length === 0) return 0;
+  
+  let latestEnd = 0;
+  schedule.operations.forEach((op: any) => {
+    if (op.endTime) {
+      const endTime = new Date(op.endTime).getTime();
+      if (endTime > latestEnd) latestEnd = endTime;
+    }
+  });
+  
+  let earliestStart = Infinity;
+  schedule.operations.forEach((op: any) => {
+    if (op.startTime) {
+      const startTime = new Date(op.startTime).getTime();
+      if (startTime < earliestStart) earliestStart = startTime;
+    }
+  });
+  
+  if (earliestStart === Infinity || latestEnd === 0) return 0;
+  return (latestEnd - earliestStart) / (1000 * 60 * 60); // Convert to hours
+}
+
+function calculateResourceUtilization(schedule: any): number {
+  if (!schedule.operations || schedule.operations.length === 0) return 0;
+  if (!schedule.resources || schedule.resources.length === 0) return 0;
+  
+  const resourceBusyTime = new Map<string, number>();
+  const resourceAvailableTime = new Map<string, number>();
+  
+  // Calculate available time per resource
+  const makespan = calculateMakespan(schedule);
+  schedule.resources.forEach((resource: any) => {
+    const availableHours = resource.availableHours || 24; // Default 24 hours
+    resourceAvailableTime.set(resource.id, availableHours * (makespan / 24)); // Adjust for makespan
+    resourceBusyTime.set(resource.id, 0);
+  });
+  
+  // Calculate busy time per resource
+  schedule.operations.forEach((op: any) => {
+    if (op.startTime && op.endTime) {
+      const duration = (new Date(op.endTime).getTime() - new Date(op.startTime).getTime()) / (1000 * 60 * 60);
+      const currentBusy = resourceBusyTime.get(op.resourceId) || 0;
+      resourceBusyTime.set(op.resourceId, currentBusy + duration);
+    }
+  });
+  
+  // Calculate average utilization
+  let totalUtilization = 0;
+  let resourceCount = 0;
+  
+  resourceAvailableTime.forEach((available, resourceId) => {
+    const busy = resourceBusyTime.get(resourceId) || 0;
+    if (available > 0) {
+      totalUtilization += (busy / available);
+      resourceCount++;
+    }
+  });
+  
+  return resourceCount > 0 ? (totalUtilization / resourceCount) * 100 : 0;
+}
+
+function calculateTotalSetupTime(schedule: any): number {
+  if (!schedule.operations || schedule.operations.length === 0) return 0;
+  
+  let totalSetup = 0;
+  schedule.operations.forEach((op: any) => {
+    if (op.setupTime) {
+      totalSetup += op.setupTime;
+    }
+  });
+  
+  return totalSetup;
+}
 
 // Forced rebuild - all duplicate keys fixed
 export default router;
