@@ -1,5 +1,40 @@
 # Production Scheduler Documentation
 
+## ⚠️ CRITICAL: ALWAYS FOLLOW BRYNTUM DOCUMENTATION - NO CUSTOM WORKAROUNDS ⚠️
+
+### **THIS IS THE #1 RULE - IGNORE AT YOUR PERIL**
+
+**NEVER CREATE CUSTOM WORKAROUNDS FOR BRYNTUM SCHEDULER PRO**
+
+Every single time we've tried to "fix" or "improve" Bryntum with custom code, we've broken the scheduler. Bryntum is a sophisticated, enterprise-grade scheduling engine with years of development. Trust their documentation, not your instincts.
+
+### Why Custom Workarounds Always Fail
+
+1. **Bryntum's engine is complex** - It manages constraints, dependencies, calendars, and resources in ways you cannot predict
+2. **Fighting the engine breaks everything** - Custom overlap prevention conflicts with the constraint engine
+3. **The documentation is always right** - If something seems wrong, you're misunderstanding the docs
+4. **There's always a Bryntum way** - Use their constraint engine, not manual date manipulation
+
+### Examples of Failed Custom Workarounds
+
+❌ **Custom overlap prevention** - Broke the constraint engine
+❌ **Manual date manipulation** - Caused cascading scheduling failures  
+❌ **Custom conflict resolution** - Duplicated built-in functionality poorly
+❌ **Assuming `allowOverlap` works everywhere** - It's UI-only, not engine-level
+
+### The Golden Rule
+
+> **If you're writing code to manually move events or prevent overlaps, STOP. You're doing it wrong. Read Bryntum's documentation again.**
+
+### Essential Bryntum Documentation
+
+Before writing ANY scheduling code, read these:
+- [Event Scheduling Guide](https://bryntum.com/docs/scheduler-pro/guide/engine/schedulerpro_events_scheduling)
+- [Constraints Example](https://bryntum.com/products/schedulerpro/examples/constraints/)
+- [API Reference](https://bryntum.com/products/schedulerpro/docs/api/SchedulerPro/model/EventModel)
+
+---
+
 ## Overview
 The Production Scheduler is a visual planning tool built on Bryntum Scheduler Pro that provides real-time production scheduling with drag-and-drop functionality, AI-powered optimization, and automatic persistence of all changes.
 
@@ -296,6 +331,99 @@ scheduler.on('paint', () => {
 2. Check retry logic in refresh function
 3. Ensure scheduler page route is correct
 4. Check Max AI service triggers refresh action
+
+## Correct Bryntum Approach for Resource Conflicts (October 17, 2025)
+
+### The Problem: Resource Overlaps
+
+When multiple operations are scheduled on the same resource (e.g., Fermenter Tank 1), they may overlap in time. This is a common scheduling problem.
+
+### ❌ WRONG: Custom Overlap Prevention
+
+**DO NOT DO THIS:**
+```javascript
+// WRONG - Custom overlap detection and fixing
+function fixResourceOverlaps(events) {
+    // Manually checking for overlaps
+    if (event1.endDate > event2.startDate) {
+        // Manually moving events - THIS BREAKS EVERYTHING
+        event2.startDate = event1.endDate;
+    }
+}
+```
+
+**Why it's wrong:**
+- Fights against Bryntum's constraint engine
+- Causes cascading scheduling failures
+- Ignores dependencies and constraints
+- Creates inconsistent state
+
+### ✅ CORRECT: Use Bryntum's Constraint Engine
+
+#### For Resource Leveling (Preventing Overlaps)
+
+Since Bryntum Scheduler Pro doesn't have built-in resource leveling yet, use SNET constraints to chain events on the same resource:
+
+```javascript
+// CORRECT - Use constraints to prevent overlaps
+const resourceGroups = {};
+events.forEach(event => {
+    if (!event.manuallyScheduled && event.resourceId) {
+        if (!resourceGroups[event.resourceId]) {
+            resourceGroups[event.resourceId] = [];
+        }
+        resourceGroups[event.resourceId].push(event);
+    }
+});
+
+// Chain events on same resource using constraints
+for (const resourceId of Object.keys(resourceGroups)) {
+    const resourceEvents = resourceGroups[resourceId];
+    resourceEvents.sort((a, b) => a.startDate - b.startDate);
+    
+    for (let i = 1; i < resourceEvents.length; i++) {
+        const prevEvent = resourceEvents[i - 1];
+        const currentEvent = resourceEvents[i];
+        
+        // Use SNET constraint to prevent overlap
+        currentEvent.constraintType = 'startnoearlierthan';
+        currentEvent.constraintDate = new Date(prevEvent.endDate.getTime() + buffer);
+    }
+}
+
+// Let Bryntum's engine handle the scheduling
+await scheduler.project.propagate();
+```
+
+### Key Lessons Learned
+
+1. **`allowOverlap: false` is UI-only**
+   - Works for manual drag/drop
+   - Does NOT work for engine calculations
+   - Does NOT work for initial data loading
+   - Does NOT work for algorithm-based scheduling
+
+2. **Always use constraints, never manual date setting**
+   - Set `constraintType` and `constraintDate`
+   - Call `scheduler.project.propagate()`
+   - Let the engine calculate positions
+
+3. **Resource leveling is not built-in**
+   - It's a requested feature for Scheduler Pro
+   - Use SNET constraints as a workaround
+   - Don't try to build custom overlap prevention
+
+4. **Trust the engine**
+   - Bryntum's engine manages complex interactions
+   - It considers constraints, dependencies, and calendars
+   - Custom code cannot replicate this complexity
+
+### Documentation References
+
+Always refer to official Bryntum documentation:
+- [Constraints Guide](https://bryntum.com/products/schedulerpro/docs/guide/engine/schedulerpro_events_scheduling#constraints)
+- [allowOverlap Config](https://bryntum.com/products/schedulerpro/docs/api/Scheduler/view/SchedulerBase#config-allowOverlap)
+- [Scheduler Pro Examples](https://bryntum.com/products/schedulerpro/examples/)
 
 ## Algorithm Implementation Status
 
