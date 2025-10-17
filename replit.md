@@ -2,6 +2,22 @@
 
 ## Recent Changes
 
+### October 17, 2025
+- **Integrated Optimization Studio with Production Scheduler**: Centralized algorithm management through dynamic loading
+  - **Architecture**: Backend validates algorithm approval status; client-side maps approved algorithms to Bryntum-based implementations
+  - **Algorithm Dropdown**: Dynamically populated from `/api/optimization/algorithms?status=approved` instead of hardcoded options
+  - **Algorithm Execution**: Hybrid approach where backend validates approval and client executes via existing Bryntum constraint system
+  - **Algorithm Mapping**: Maps Optimization Studio slugs to client implementations:
+    - `forward-scheduling` → asapScheduling (ASAP Forward)
+    - `backward-scheduling` → alapScheduling (ALAP Backward)
+    - `bottleneck-optimizer` → drumScheduling (Drum TOC)
+    - `critical-path` → criticalPathScheduling
+    - `resource-leveling` → levelResourcesScheduling
+    - `dbr-scheduling` → dbrScheduling (Theory of Constraints DBR)
+  - **API Endpoint**: `/api/optimization/algorithms/:name/run` validates algorithm exists and is approved
+  - **Bryntum Constraints**: Preserved native constraint system functionality (SNET, FNLT, etc.)
+  - **Future Migration Path**: Architecture supports future server-side algorithm execution by replacing function map with actual Optimization Studio service calls
+
 ### October 16, 2025
 - **Fixed Operation Dependency Logic for Production Scheduler**: Corrected critical data integrity issue where dependencies were incorrectly generated based on scheduled times instead of brewing process sequence
   - **Root Cause**: Dependencies were created using `ROW_NUMBER() OVER (PARTITION BY jo.job_id ORDER BY jo.scheduled_start)` which caused incorrect sequences like "Packaging → Boiling" when operations were scheduled out of order
