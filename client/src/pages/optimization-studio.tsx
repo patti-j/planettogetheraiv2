@@ -2583,8 +2583,48 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </Card>
             </div>
 
-            {/* Featured Algorithm - First from filtered results */}
-            {filteredAlgorithms.length > 0 && (
+            {/* Filtered Algorithm Results */}
+            {(searchQuery || selectedCategory !== "all") && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Search className="w-5 h-5 text-blue-500" />
+                  <h2 className="text-lg font-semibold">Search Results</h2>
+                  <Badge variant="outline">{filteredAlgorithms.length} found</Badge>
+                </div>
+                {filteredAlgorithms.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                    {filteredAlgorithms.map((algorithm: OptimizationAlgorithm) => (
+                      <AlgorithmCard key={algorithm.id} algorithm={algorithm} />
+                    ))}
+                  </div>
+                ) : (
+                  <Card className="p-8 text-center border-dashed">
+                    <Search className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-lg text-gray-600 dark:text-gray-400 mb-2">No algorithms found</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-500">
+                      {searchQuery && selectedCategory !== "all" 
+                        ? `No algorithms matching "${searchQuery}" in "${categories.find(c => c.value === selectedCategory)?.label}"`
+                        : searchQuery 
+                        ? `No algorithms matching "${searchQuery}"`
+                        : `No algorithms in "${categories.find(c => c.value === selectedCategory)?.label}"`
+                      }
+                    </p>
+                    {selectedCategory !== "all" && (
+                      <Button 
+                        variant="outline" 
+                        className="mt-4"
+                        onClick={() => setSelectedCategory("all")}
+                      >
+                        Clear Category Filter
+                      </Button>
+                    )}
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Featured Algorithm - Show when no search/filter is active */}
+            {!searchQuery && selectedCategory === "all" && filteredAlgorithms.length > 0 && (
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <Clock className="w-5 h-5 text-blue-500" />
