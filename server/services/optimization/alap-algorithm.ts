@@ -1,4 +1,4 @@
-import type { ScheduleDataPayload, ScheduleOperation } from '@/shared/schema';
+import type { ScheduleDataPayload, ScheduleOperation, ScheduleResource } from '../../../shared/schema';
 
 /**
  * ALAP (As Late As Possible) Scheduling Algorithm
@@ -9,11 +9,15 @@ export class ALAPAlgorithm {
   private operations: Map<string, ScheduleOperation>;
   private reverseDependencies: Map<string, string[]>; // operation ID -> operations that depend on it
   private resourceSchedules: Map<string, Array<{start: Date, end: Date}>>; // resource ID -> busy periods
+  private resources: Map<string, ScheduleResource>;
+  private resourcesByType: Map<string, ScheduleResource[]>;
   
   constructor() {
     this.operations = new Map();
     this.reverseDependencies = new Map();
     this.resourceSchedules = new Map();
+    this.resources = new Map();
+    this.resourcesByType = new Map();
   }
 
   /**
@@ -52,10 +56,66 @@ export class ALAPAlgorithm {
       this.reverseDependencies.get(dep.fromOperationId)!.push(dep.toOperationId);
     });
     
-    // Initialize resource schedules
+    // Initialize resource maps and schedules
     scheduleData.resources.forEach(resource => {
       this.resourceSchedules.set(resource.id, []);
+      this.resources.set(resource.id, resource);
+      
+      // Group resources by type for easier assignment
+      const resourceType = this.getResourceType(resource.name);
+      if (!this.resourcesByType.has(resourceType)) {
+        this.resourcesByType.set(resourceType, []);
+      }
+      this.resourcesByType.get(resourceType)!.push(resource);
     });
+  }
+
+  /**
+   * Determine resource type from resource name
+   */
+  private getResourceType(resourceName: string): string {
+    const nameLower = resourceName.toLowerCase();
+    if (nameLower.includes('fermenter') || nameLower.includes('fermentation')) {
+      return 'fermenter';
+    } else if (nameLower.includes('bright') || nameLower.includes('conditioning')) {
+      return 'bright_tank';
+    } else if (nameLower.includes('mill') || nameLower.includes('grain')) {
+      return 'mill';
+    } else if (nameLower.includes('mash')) {
+      return 'mash_tun';
+    } else if (nameLower.includes('lauter')) {
+      return 'lauter_tun';
+    } else if (nameLower.includes('kettle') || nameLower.includes('boil')) {
+      return 'brew_kettle';
+    } else if (nameLower.includes('filler') || nameLower.includes('bottle') || nameLower.includes('can')) {
+      return 'packaging';
+    } else if (nameLower.includes('pasteur')) {
+      return 'pasteurizer';
+    }
+    return 'general';
+  }
+
+  /**
+   * Determine appropriate resource type for an operation
+   */
+  private getRequiredResourceType(operationName: string): string {
+    const nameLower = operationName.toLowerCase();
+    if (nameLower.includes('fermentation')) {
+      return 'fermenter';
+    } else if (nameLower.includes('conditioning')) {
+      return 'bright_tank';
+    } else if (nameLower.includes('milling')) {
+      return 'mill';
+    } else if (nameLower.includes('mashing') || nameLower.includes('decoction')) {
+      return 'mash_tun';
+    } else if (nameLower.includes('lautering')) {
+      return 'lauter_tun';
+    } else if (nameLower.includes('boiling')) {
+      return 'brew_kettle';
+    } else if (nameLower.includes('packaging')) {
+      return 'packaging';
+    }
+    return 'general';
   }
 
   private reverseTopologicalSort(operations: ScheduleOperation[]): ScheduleOperation[] {
@@ -102,6 +162,14 @@ export class ALAPAlgorithm {
           operation.id,
           new Date(operation.startTime)
         );
+        // Also update resource schedule for manually scheduled operations
+        const resourceId = this.assignResourceToOperation(operation);
+        const resourceSchedule = this.resourceSchedules.get(resourceId) || [];
+        resourceSchedule.push({ 
+          start: new Date(operation.startTime), 
+          end: new Date(operation.endTime || operation.startTime) 
+        });
+        this.resourceSchedules.set(resourceId, resourceSchedule);
         continue;
       }
       
@@ -119,8 +187,11 @@ export class ALAPAlgorithm {
       // Calculate duration
       const duration = (operation.duration + (operation.setupTime || 0)) * 60 * 60 * 1000; // convert hours to ms
       
-      // Find latest available slot on the resource
-      const resourceSchedule = this.resourceSchedules.get(operation.resourceId) || [];
+      // Find appropriate resource for this operation type
+      const assignedResourceId = this.assignResourceToOperation(operation);
+      
+      // Find latest available slot on the assigned resource
+      const resourceSchedule = this.resourceSchedules.get(assignedResourceId) || [];
       const { start: scheduledStart, end: scheduledEnd } = this.findLatestResourceSlot(
         latestFinish,
         duration,
@@ -135,9 +206,10 @@ export class ALAPAlgorithm {
       // Store operation start time for successor calculation
       operationStartTimes.set(operation.id, scheduledStart);
       
-      // Create scheduled operation
+      // Create scheduled operation with assigned resource
       scheduledOps.push({
         ...operation,
+        resourceId: assignedResourceId,
         startTime: scheduledStart.toISOString(),
         endTime: scheduledEnd.toISOString()
       });
@@ -192,6 +264,58 @@ export class ALAPAlgorithm {
     const start = new Date(end.getTime() - duration);
     
     return { start, end };
+  }
+
+  /**
+   * Assign the most appropriate available resource to an operation
+   */
+  private assignResourceToOperation(operation: ScheduleOperation): string {
+    // If operation already has a valid resource, validate it
+    if (operation.resourceId) {
+      const resource = this.resources.get(operation.resourceId);
+      if (resource) {
+        // Check if this resource type matches the operation requirement
+        const requiredType = this.getRequiredResourceType(operation.name);
+        const resourceType = this.getResourceType(resource.name);
+        if (requiredType === 'general' || resourceType === requiredType) {
+          return operation.resourceId;
+        }
+      }
+    }
+    
+    // Find appropriate resource type for this operation
+    const requiredResourceType = this.getRequiredResourceType(operation.name);
+    const availableResources = this.resourcesByType.get(requiredResourceType) || [];
+    
+    if (availableResources.length === 0) {
+      console.warn(`No resources of type '${requiredResourceType}' available for operation '${operation.name}'`);
+      // Fall back to any available resource
+      const allResources = Array.from(this.resources.values());
+      return allResources.length > 0 ? allResources[0].id : 'unscheduled';
+    }
+    
+    // For ALAP, find the resource with the earliest scheduled work (most available)
+    let bestResource = availableResources[0];
+    let minStartTime = this.getResourceEarliestStartTime(bestResource.id);
+    
+    for (const resource of availableResources.slice(1)) {
+      const startTime = this.getResourceEarliestStartTime(resource.id);
+      if (startTime > minStartTime) {
+        minStartTime = startTime;
+        bestResource = resource;
+      }
+    }
+    
+    return bestResource.id;
+  }
+
+  /**
+   * Get the earliest scheduled start time for a resource (for ALAP)
+   */
+  private getResourceEarliestStartTime(resourceId: string): number {
+    const schedule = this.resourceSchedules.get(resourceId) || [];
+    if (schedule.length === 0) return Number.MAX_SAFE_INTEGER;
+    return schedule[0].start.getTime();
   }
 
   private calculateHorizonEnd(scheduleData: ScheduleDataPayload): Date {
