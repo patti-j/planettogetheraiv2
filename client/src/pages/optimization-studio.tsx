@@ -2500,17 +2500,9 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             {selectedTab === "algorithms" && (
               <div className="flex flex-col sm:flex-row gap-2 flex-1">
                 <div className="relative flex-1">
-                  <button
-                    onClick={() => {
-                      // Trigger search - the search is already reactive, so this just focuses the input
-                      const input = document.querySelector('input[placeholder="Search algorithms..."]') as HTMLInputElement;
-                      input?.focus();
-                    }}
-                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 w-4 h-4 z-10 cursor-pointer"
-                    aria-label="Search"
-                  >
-                    <Search className="w-4 h-4" />
-                  </button>
+                  <Search 
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" 
+                  />
                   <Input
                     placeholder="Search algorithms..."
                     value={searchQuery}
@@ -2591,123 +2583,103 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </Card>
             </div>
 
-            {/* Featured Algorithm - Backwards Scheduling */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-500" />
-                <h2 className="text-lg font-semibold">Featured Algorithm</h2>
-                <Badge variant="outline">Production Scheduling</Badge>
-              </div>
-              <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-800 hover:shadow-lg transition-shadow cursor-pointer"
-                    onClick={() => setShowBackwardsScheduling(true)}>
-                <CardHeader className="pb-3">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
-                    <div className="flex-1">
-                      <CardTitle className="text-base sm:text-lg text-blue-900 dark:text-blue-100">Backwards Scheduling Algorithm</CardTitle>
-                      <CardDescription className="mt-1 text-sm text-blue-700 dark:text-blue-300">
-                        Advanced backwards scheduling that starts from job due dates and works backwards to optimize start times, 
-                        reducing WIP inventory and improving cash flow while ensuring due date compliance.
-                      </CardDescription>
-                    </div>
-                    <div className="flex flex-row sm:flex-col gap-2 sm:ml-4">
-                      <Badge className="bg-green-500 dark:bg-green-600 text-white">
-                        approved
-                      </Badge>
-                      <Badge variant="outline" className="text-xs border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
-                        <Sparkles className="w-3 h-3 mr-1" />
-                        Standard
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-blue-700 dark:text-blue-300 mb-3">
-                    <span>Production Scheduling</span>
-                    <span>v1.0.0</span>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-blue-700 dark:text-blue-200 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Target className="w-3 h-3" />
-                      <span>Due Date Focus</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <TrendingUp className="w-3 h-3" />
-                      <span>Optimized Timing</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      <span>Backwards Logic</span>
-                    </div>
-                  </div>
-
-                  {/* Constraint Settings */}
-                  <div className="border-t border-blue-200 dark:border-blue-700 pt-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-100">
-                      <Settings className="w-4 h-4" />
-                      <span>Constraint Settings</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* Physical Constraints */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Physical Constraints</p>
-                        <div className="space-y-1">
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Resource Capacity</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Setup Times</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Material Availability</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Storage Capacity</span>
-                          </label>
-                        </div>
+            {/* Featured Algorithm - First from filtered results */}
+            {filteredAlgorithms.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <h2 className="text-lg font-semibold">Featured Algorithm</h2>
+                  <Badge variant="outline">{filteredAlgorithms[0]?.category?.replace(/_/g, ' ').split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</Badge>
+                </div>
+                <Card className="border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-gray-800 hover:shadow-lg transition-shadow cursor-pointer"
+                      onClick={() => {
+                        if (filteredAlgorithms[0]?.name === 'backwards-scheduling') {
+                          setShowBackwardsScheduling(true);
+                        }
+                      }}>
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
+                      <div className="flex-1">
+                        <CardTitle className="text-base sm:text-lg text-blue-900 dark:text-blue-100">{filteredAlgorithms[0]?.displayName}</CardTitle>
+                        <CardDescription className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+                          {filteredAlgorithms[0]?.description}
+                        </CardDescription>
                       </div>
+                      <div className="flex flex-row sm:flex-col gap-2 sm:ml-4">
+                        <Badge className={`${getStatusColor(filteredAlgorithms[0]?.status)} text-white`}>
+                          {filteredAlgorithms[0]?.status}
+                        </Badge>
+                        {filteredAlgorithms[0]?.isStandard && (
+                          <Badge variant="outline" className="text-xs border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            Standard
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      <span>{filteredAlgorithms[0]?.category?.replace(/_/g, ' ').split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}</span>
+                      <span>v{filteredAlgorithms[0]?.version}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-4 text-xs text-blue-700 dark:text-blue-200 mb-4">
+                      <div className="flex items-center gap-1">
+                        <Target className="w-3 h-3" />
+                        <span>Optimized</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <TrendingUp className="w-3 h-3" />
+                        <span>Performance</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        <span>Efficient</span>
+                      </div>
+                    </div>
 
-                      {/* Policy Constraints */}
-                      <div className="space-y-2">
-                        <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Policy Constraints</p>
-                        <div className="space-y-1">
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" defaultChecked className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Due Date Compliance</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Batch Processing Rules</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Safety Stock Levels</span>
-                          </label>
-                          <label className="flex items-center gap-2 text-xs text-blue-700 dark:text-blue-300 cursor-pointer hover:text-blue-900 dark:hover:text-blue-100">
-                            <input type="checkbox" className="w-3 h-3 rounded border-blue-300 text-blue-600 focus:ring-blue-500" />
-                            <span>Customer Priority</span>
-                          </label>
+                    {/* Algorithm Details */}
+                    <div className="border-t border-blue-200 dark:border-blue-700 pt-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold text-blue-900 dark:text-blue-100">
+                        <Settings className="w-4 h-4" />
+                        <span>Algorithm Details</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Algorithm Type */}
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Type</p>
+                          <p className="text-xs text-blue-700 dark:text-blue-300">{filteredAlgorithms[0]?.type?.replace(/_/g, ' ').split(' ').map((word: string) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ') || 'Optimization'}</p>
+                        </div>
+
+                        {/* Performance Metrics */}
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-blue-800 dark:text-blue-200">Performance</p>
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1 bg-blue-200 dark:bg-blue-700 rounded-full h-2">
+                              <div className="bg-blue-600 dark:bg-blue-400 h-2 rounded-full" style={{ width: `${filteredAlgorithms[0]?.performance?.score || 85}%` }} />
+                            </div>
+                            <span className="text-xs text-blue-700 dark:text-blue-300">{filteredAlgorithms[0]?.performance?.score || 85}%</span>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
 
-                  <Button 
-                    className="w-full mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setShowBackwardsScheduling(true);
-                    }}
-                  >
-                    Configure & Run Algorithm
-                  </Button>
+                    <Button 
+                      className="w-full mt-4 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (filteredAlgorithms[0]?.name === 'backwards-scheduling') {
+                          setShowBackwardsScheduling(true);
+                        }
+                      }}
+                    >
+                      Configure & Run Algorithm
+                    </Button>
                 </CardContent>
               </Card>
             </div>
+            )}
 
             {/* Standard Algorithms Section */}
             {standardAlgorithms.length > 0 && (
