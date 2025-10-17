@@ -76,13 +76,7 @@ export class DrumTOCAlgorithm {
     
     return {
       ...scheduleData,
-      operations: finalOperations,
-      metadata: {
-        ...scheduleData.metadata,
-        bottleneckResource: bottleneck.resourceId,
-        bottleneckUtilization: bottleneck.utilization,
-        schedulingMethod: 'DRUM-TOC'
-      }
+      operations: finalOperations
     };
   }
 
@@ -322,21 +316,8 @@ export class DrumTOCAlgorithm {
     operations: ScheduleOperation[], 
     bottleneck: ResourceUtilization
   ): ScheduleOperation[] {
-    return operations.map(op => {
-      const metadata: any = {
-        ...(op.metadata || {}),
-        schedulingMethod: 'DRUM-TOC'
-      };
-      
-      if (op.resourceId === bottleneck.resourceId) {
-        metadata.isBottleneck = true;
-        metadata.bottleneckUtilization = bottleneck.utilization;
-      }
-      
-      return {
-        ...op,
-        metadata
-      };
-    });
+    // Simply return operations as-is since ScheduleOperation doesn't have metadata field
+    // The TOC information is conveyed through the constraints array instead
+    return operations;
   }
 }

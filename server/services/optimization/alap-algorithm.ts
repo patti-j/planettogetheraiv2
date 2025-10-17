@@ -98,22 +98,29 @@ export class ALAPAlgorithm {
       ? new Date(scheduleData.metadata.horizonEnd)
       : this.calculateHorizonEnd(scheduleData);
     
-    for (const operation of sortedOperations) {
-      // Skip manually scheduled operations
-      if (operation.manuallyScheduled && operation.startTime) {
-        scheduledOps.push(operation);
-        operationStartTimes.set(
-          operation.id,
-          new Date(operation.startTime)
-        );
-        // Also update resource schedule for manually scheduled operations
+    // PASS 1: Pre-populate resource schedules with ALL manually scheduled operations
+    // This ensures we have full visibility of resource availability
+    for (const operation of scheduleData.operations) {
+      if (operation.manuallyScheduled && operation.startTime && operation.endTime) {
         const resourceId = operation.resourceId;
         const resourceSchedule = this.resourceSchedules.get(resourceId) || [];
         resourceSchedule.push({ 
           start: new Date(operation.startTime), 
-          end: new Date(operation.endTime || operation.startTime) 
+          end: new Date(operation.endTime)
         });
+        resourceSchedule.sort((a, b) => a.start.getTime() - b.start.getTime());
         this.resourceSchedules.set(resourceId, resourceSchedule);
+        
+        // Also track start times for dependency calculations
+        operationStartTimes.set(operation.id, new Date(operation.startTime));
+      }
+    }
+    
+    // PASS 2: Schedule operations in reverse dependency order
+    for (const operation of sortedOperations) {
+      // Skip manually scheduled operations (already handled)
+      if (operation.manuallyScheduled && operation.startTime) {
+        scheduledOps.push(operation);
         continue;
       }
       
