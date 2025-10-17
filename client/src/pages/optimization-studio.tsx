@@ -990,6 +990,12 @@ export default function OptimizationStudio() {
         { role: 'assistant', content: data.response }
       ]);
       
+      // Always show a toast when AI responds
+      toast({ 
+        title: "AI Response Received", 
+        description: "The AI has analyzed your request and provided recommendations." 
+      });
+      
       if (data.modifiedAlgorithm) {
         // Update the algorithm in the cache
         queryClient.setQueryData(['/api/optimization/algorithms'], (oldData: OptimizationAlgorithm[] | undefined) => {
