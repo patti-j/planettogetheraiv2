@@ -3665,9 +3665,36 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                   <Copy className="w-4 h-4 mr-2" />
                   Duplicate
                 </Button>
-                <Button size="sm" className="w-full sm:w-auto order-3">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="w-full sm:w-auto order-3"
+                  onClick={() => {
+                    toast({
+                      title: "Running Test",
+                      description: `Testing ${selectedAlgorithm.displayName} with sample data...`
+                    });
+                    // TODO: Implement actual test logic
+                  }}
+                >
                   <TestTube className="w-4 h-4 mr-2" />
                   Test Algorithm
+                </Button>
+                <Button 
+                  size="sm" 
+                  className="w-full sm:w-auto order-4"
+                  onClick={() => {
+                    // Open production scheduler in new window with algorithm parameter
+                    const schedulerUrl = `/production-scheduler?algorithm=${encodeURIComponent(selectedAlgorithm.name)}`;
+                    window.open(schedulerUrl, '_blank');
+                    toast({
+                      title: "Opening Production Scheduler",
+                      description: `Generating schedule using ${selectedAlgorithm.displayName}...`
+                    });
+                  }}
+                >
+                  <Play className="w-4 h-4 mr-2" />
+                  Generate Schedule
                 </Button>
               </div>
             </div>
@@ -3753,19 +3780,19 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </div>
 
               {/* AI Input */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-t-lg">
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2">
                   <Edit3 className="w-4 h-4" />
                   <span className="font-semibold text-sm">Your Modification Request</span>
                 </div>
-                <div className="flex gap-2">
+                <div className="p-3 bg-gray-50 dark:bg-gray-900">
                   <Textarea
                     id="ai-modify-prompt"
                     data-testid="textarea-ai-modify-prompt"
                     placeholder="Example: Increase the optimization speed by 20% and add a constraint for minimum resource utilization of 80%..."
                     value={aiModifyPrompt}
                     onChange={(e) => setAiModifyPrompt(e.target.value)}
-                    className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-b-lg text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500 dark:focus:border-purple-400"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:border-purple-500 dark:focus:border-purple-400 focus:ring-1 focus:ring-purple-500 dark:focus:ring-purple-400 mb-2"
                     rows={3}
                   />
                   <Button
@@ -3779,7 +3806,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                       }
                     }}
                     disabled={!aiModifyPrompt.trim() || aiModifyAlgorithmMutation.isPending}
-                    className="self-end"
+                    className="w-full"
                   >
                     {aiModifyAlgorithmMutation.isPending ? (
                       <>

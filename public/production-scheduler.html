@@ -7885,6 +7885,30 @@
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
                 
+                // Check for algorithm parameter from Optimization Studio
+                const urlParams = new URLSearchParams(window.location.search);
+                const algorithmParam = urlParams.get('algorithm');
+                if (algorithmParam) {
+                    console.log(`🎯 Algorithm parameter detected: ${algorithmParam}`);
+                    setTimeout(() => {
+                        // Trigger the algorithm execution
+                        window.postMessage({
+                            type: 'RUN_SCHEDULER_ALGORITHM',
+                            algorithm: algorithmParam
+                        }, '*');
+                        
+                        // Show notification in Max AI
+                        const maxMessages = document.getElementById('maxMessages');
+                        if (maxMessages) {
+                            const algoMsg = document.createElement('div');
+                            algoMsg.className = 'max-ai-message assistant';
+                            algoMsg.innerHTML = `🚀 <strong>Running ${algorithmParam} algorithm from Optimization Studio...</strong>`;
+                            maxMessages.appendChild(algoMsg);
+                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                        }
+                    }, 1000); // Wait 1 second for scheduler to be fully ready
+                }
+                
                 // Check for pending scheduler commands from Max AI (after navigation)
                 const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
                 if (pendingCommand) {
