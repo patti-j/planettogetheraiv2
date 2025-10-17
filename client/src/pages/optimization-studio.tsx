@@ -3727,11 +3727,11 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
               {/* AI Conversation */}
               <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2">
+                <h4 className="font-semibold mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
                   <MessageSquare className="w-4 h-4" />
                   AI Conversation
                 </h4>
-                <div className="bg-gray-50 border rounded-lg p-4 max-h-60 overflow-y-auto space-y-3">
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-60 overflow-y-auto space-y-3">
                   {aiModifyMessages.map((message, index) => (
                     <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
@@ -3748,7 +3748,9 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
               {/* AI Input */}
               <div className="space-y-2">
-                <Label htmlFor="ai-modify-prompt">Describe your modification request:</Label>
+                <Label htmlFor="ai-modify-prompt" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+                  Describe your modification request:
+                </Label>
                 <div className="flex gap-2">
                   <Textarea
                     id="ai-modify-prompt"
@@ -3756,7 +3758,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     placeholder="Example: Increase the optimization speed by 20% and add a constraint for minimum resource utilization of 80%..."
                     value={aiModifyPrompt}
                     onChange={(e) => setAiModifyPrompt(e.target.value)}
-                    className="flex-1 bg-white dark:bg-gray-900"
+                    className="flex-1 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
                     rows={3}
                   />
                   <Button
