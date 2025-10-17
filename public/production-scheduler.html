@@ -2243,7 +2243,12 @@
         <div class="toolbar-group">
             <label for="schedulingAlgorithm">Algorithm:</label>
             <select id="schedulingAlgorithm">
-                <option value="">Loading algorithms...</option>
+                <option value="forward-scheduling" selected>Forward Scheduling (ASAP)</option>
+                <option value="backward-scheduling">Backward Scheduling (ALAP)</option>
+                <option value="bottleneck-optimizer">Bottleneck Optimizer (TOC)</option>
+                <option value="critical-path">Critical Path Method</option>
+                <option value="resource-leveling">Resource Leveling</option>
+                <option value="dbr-scheduling">DBR Scheduling (TOC)</option>
             </select>
             <button id="applyScheduling">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5522,13 +5527,17 @@
                             return;
                         }
                         
-                        // Populate with approved algorithms
+                        // Populate with approved algorithms with ASAP as default
                         algorithms.forEach(algo => {
                             const option = document.createElement('option');
                             option.value = algo.name;  // Use algorithm name as value
                             option.textContent = `${algo.displayName} (${algo.category})`;
                             option.dataset.algorithmId = algo.id;  // Store ID for future use
                             option.dataset.description = algo.description || '';
+                            // Select ASAP (forward-scheduling) by default
+                            if (algo.name === 'forward-scheduling') {
+                                option.selected = true;
+                            }
                             algorithmSelect.appendChild(option);
                         });
                         
@@ -5553,17 +5562,17 @@
                             { name: 'dbr-scheduling', displayName: 'DBR Scheduling (TOC)' }
                         ];
                         
-                        // Add default option
-                        const defaultOption = document.createElement('option');
-                        defaultOption.value = '';
-                        defaultOption.textContent = 'Select an algorithm...';
-                        algorithmSelect.appendChild(defaultOption);
+                        // Don't add empty default option - start with ASAP selected
                         
-                        // Add algorithm options
-                        defaultAlgorithms.forEach(algo => {
+                        // Add algorithm options with ASAP as default
+                        defaultAlgorithms.forEach((algo, index) => {
                             const option = document.createElement('option');
                             option.value = algo.name;
                             option.textContent = algo.displayName;
+                            // Select ASAP (forward-scheduling) by default
+                            if (algo.name === 'forward-scheduling') {
+                                option.selected = true;
+                            }
                             algorithmSelect.appendChild(option);
                         });
                         
