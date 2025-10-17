@@ -3361,15 +3361,17 @@
                     let resourceId = null;
                     const opName = (operation.name || '').toLowerCase();
                     
-                    // BREWERY-SPECIFIC RESOURCE ASSIGNMENT RULES (SIMPLIFIED)
+                    // BREWERY-SPECIFIC RESOURCE ASSIGNMENT RULES (JOB-BASED DISTRIBUTION)
                     if (opName.includes('ferment')) {
                         // Fermentation MUST go to Fermenter tanks only
                         const fermenterTanks = resources.filter(r => r.name && r.name.toLowerCase().includes('fermenter'));
                         if (fermenterTanks.length > 0) {
-                            // Simple round-robin distribution across fermenter tanks
-                            const tankIndex = index % fermenterTanks.length;
+                            // Use job ID (or operation ID as fallback) to distribute across tanks
+                            // This ensures operations from the same job stay on the same tank
+                            const jobIdNum = parseInt(operation.jobId) || parseInt(operation.jobExternalId) || operation.id;
+                            const tankIndex = Math.abs(jobIdNum) % fermenterTanks.length;
                             resourceId = fermenterTanks[tankIndex].id;
-                            console.log(`🍺 Assigned ${operation.name} to ${fermenterTanks[tankIndex].name}`);
+                            console.log(`🍺 Assigned ${operation.name} (Job ${operation.jobId || operation.id}) to ${fermenterTanks[tankIndex].name}`);
                         } else {
                             console.warn(`⚠️ No fermenter tanks available for ${operation.name}`);
                         }
@@ -3377,10 +3379,12 @@
                         // Conditioning MUST go to Bright/Conditioning tanks only
                         const brightTanks = resources.filter(r => r.name && (r.name.toLowerCase().includes('bright') || r.name.toLowerCase().includes('condition')));
                         if (brightTanks.length > 0) {
-                            // Simple round-robin distribution across bright tanks
-                            const tankIndex = index % brightTanks.length;
+                            // Use job ID (or operation ID as fallback) to distribute across tanks
+                            // This ensures operations from the same job stay on the same tank
+                            const jobIdNum = parseInt(operation.jobId) || parseInt(operation.jobExternalId) || operation.id;
+                            const tankIndex = Math.abs(jobIdNum) % brightTanks.length;
                             resourceId = brightTanks[tankIndex].id;
-                            console.log(`🍺 Assigned ${operation.name} to ${brightTanks[tankIndex].name}`);
+                            console.log(`🍺 Assigned ${operation.name} (Job ${operation.jobId || operation.id}) to ${brightTanks[tankIndex].name}`);
                         } else {
                             console.warn(`⚠️ No bright tanks available for ${operation.name}`);
                         }
