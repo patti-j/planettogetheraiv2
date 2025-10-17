@@ -1435,7 +1435,7 @@ export default function OptimizationStudio() {
             <Eye className="w-4 h-4 mr-2" />
             View Details & Performance
           </Button>
-          {algorithm.name === 'backwards-scheduling' && (
+          {algorithm.isStandard && (
             <Button 
               size="sm" 
               className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"

@@ -31,8 +31,24 @@ interface AlgorithmArchitectureViewProps {
 export default function AlgorithmArchitectureView({ algorithmName, onClose }: AlgorithmArchitectureViewProps) {
   const [selectedStep, setSelectedStep] = useState<number | null>(null);
 
+  // Get algorithm-specific architecture based on algorithm name
+  const getAlgorithmArchitecture = (name: string) => {
+    const normalizedName = name.toLowerCase();
+    
+    if (normalizedName.includes('backward') || normalizedName.includes('backwards')) {
+      return getBackwardsSchedulingSteps();
+    } else if (normalizedName.includes('forward')) {
+      return getForwardSchedulingSteps();
+    } else if (normalizedName.includes('bottleneck')) {
+      return getBottleneckOptimizationSteps();
+    } else {
+      // Default generic architecture for unknown algorithms
+      return getGenericAlgorithmSteps(name);
+    }
+  };
+
   // Backwards Scheduling Algorithm Architecture
-  const algorithmSteps = [
+  const getBackwardsSchedulingSteps = () => [
     {
       id: 1,
       title: "Data Collection & Validation",
@@ -182,6 +198,315 @@ export default function AlgorithmArchitectureView({ algorithmName, onClose }: Al
       }
     }
   ];
+
+  // Forward Scheduling Algorithm Architecture  
+  const getForwardSchedulingSteps = () => [
+    {
+      id: 1,
+      title: "Data Collection & Validation",
+      description: "Gather all jobs, operations, resources, and constraints from the database",
+      status: "completed",
+      estimatedTime: { simple: "50-100ms", complex: "200-500ms" },
+      complexity: "O(n) where n = total operations",
+      details: [
+        "Fetch active jobs with start dates",
+        "Load operation sequences and dependencies",
+        "Retrieve resource capabilities and availability",
+        "Validate data integrity and constraints"
+      ],
+      inputs: ["Jobs", "Operations", "Resources", "Capabilities"],
+      outputs: ["Validated Dataset"],
+      performance: {
+        simple: "< 10 jobs, < 50 operations",
+        medium: "10-100 jobs, 50-500 operations",
+        complex: "> 100 jobs, > 500 operations"
+      }
+    },
+    {
+      id: 2,
+      title: "Job Prioritization & Sorting",
+      description: "Sort jobs by start date and priority to determine scheduling order",
+      status: "completed",
+      estimatedTime: { simple: "10-20ms", complex: "50-150ms" },
+      complexity: "O(n log n) where n = number of jobs",
+      details: [
+        "Sort jobs by earliest start date",
+        "Apply priority weights from job configuration",
+        "Handle rush orders and special constraints",
+        "Create processing queue with sorted jobs"
+      ],
+      inputs: ["Validated Dataset"],
+      outputs: ["Prioritized Job Queue"],
+      performance: {
+        simple: "< 10 jobs: 10-20ms",
+        medium: "10-100 jobs: 20-50ms",
+        complex: "> 100 jobs: 50-150ms"
+      }
+    },
+    {
+      id: 3,
+      title: "Forward Time Calculation",
+      description: "Calculate earliest start times working forward from start dates",
+      status: "completed",
+      estimatedTime: { simple: "100-200ms", complex: "500ms-2s" },
+      complexity: "O(m × d) where m = operations, d = dependencies",
+      details: [
+        "Start from job release dates as anchor points",
+        "Work forward through operation sequences",
+        "Calculate earliest start times for each operation",
+        "Account for operation durations and dependencies"
+      ],
+      inputs: ["Prioritized Job Queue"],
+      outputs: ["Earliest Start Times"],
+      performance: {
+        simple: "< 50 operations: 100-200ms",
+        medium: "50-200 operations: 200-500ms",
+        complex: "> 200 operations: 500ms-2s"
+      }
+    },
+    {
+      id: 4,
+      title: "Resource Allocation",
+      description: "Assign operations to available resources based on capabilities",
+      status: "in-progress",
+      estimatedTime: { simple: "50-100ms", complex: "300-800ms" },
+      complexity: "O(o × r × c) where o = operations, r = resources, c = capabilities",
+      details: [
+        "Match operations with compatible resources",
+        "Prioritize resource efficiency and utilization",
+        "Handle resource availability windows",
+        "Create resource assignment plan"
+      ],
+      inputs: ["Earliest Start Times", "Resource Capabilities"],
+      outputs: ["Resource Assignments"],
+      performance: {
+        simple: "< 20 resources: 50-100ms",
+        medium: "20-50 resources: 100-300ms",
+        complex: "> 50 resources: 300-800ms"
+      }
+    },
+    {
+      id: 5,
+      title: "Schedule Generation & Validation",
+      description: "Generate final schedule and validate all constraints",
+      status: "pending",
+      estimatedTime: { simple: "50-100ms", complex: "200-400ms" },
+      complexity: "O(n) for final validation pass",
+      details: [
+        "Generate complete schedule timeline",
+        "Validate all constraints are satisfied",
+        "Calculate performance metrics",
+        "Prepare output for persistence"
+      ],
+      inputs: ["Resource Assignments"],
+      outputs: ["Final Schedule", "Performance Metrics"],
+      performance: {
+        simple: "< 100 operations: 50-100ms",
+        medium: "100-300 operations: 100-200ms",
+        complex: "> 300 operations: 200-400ms"
+      }
+    }
+  ];
+
+  // Bottleneck Optimization Algorithm Architecture
+  const getBottleneckOptimizationSteps = () => [
+    {
+      id: 1,
+      title: "System Analysis & Data Collection",
+      description: "Analyze production system and collect comprehensive operational data",
+      status: "completed",
+      estimatedTime: { simple: "100-200ms", complex: "400-800ms" },
+      complexity: "O(n) where n = total operations + resources",
+      details: [
+        "Collect historical throughput data",
+        "Map production flow and dependencies",
+        "Identify resource capacities and constraints",
+        "Analyze operation sequences and durations"
+      ],
+      inputs: ["Jobs", "Operations", "Resources", "Historical Data"],
+      outputs: ["System Model"],
+      performance: {
+        simple: "< 20 resources, < 100 operations",
+        medium: "20-50 resources, 100-500 operations",
+        complex: "> 50 resources, > 500 operations"
+      }
+    },
+    {
+      id: 2,
+      title: "Bottleneck Identification",
+      description: "Identify system bottleneck using Theory of Constraints methodology",
+      status: "completed",
+      estimatedTime: { simple: "50-100ms", complex: "200-500ms" },
+      complexity: "O(r × o) where r = resources, o = operations",
+      details: [
+        "Calculate resource utilization rates",
+        "Identify resources with highest demand",
+        "Analyze queue times and wait patterns",
+        "Determine system-wide constraint (drum)"
+      ],
+      inputs: ["System Model"],
+      outputs: ["Bottleneck Resource (Drum)"],
+      performance: {
+        simple: "< 20 resources: 50-100ms",
+        medium: "20-50 resources: 100-200ms",
+        complex: "> 50 resources: 200-500ms"
+      }
+    },
+    {
+      id: 3,
+      title: "Drum Scheduling",
+      description: "Create optimized schedule for the bottleneck resource",
+      status: "in-progress",
+      estimatedTime: { simple: "200-400ms", complex: "1-3s" },
+      complexity: "O(n log n × m) where n = drum operations, m = constraints",
+      details: [
+        "Maximize bottleneck resource utilization",
+        "Sequence operations for maximum throughput",
+        "Minimize setup times and changeovers",
+        "Create drum schedule timeline"
+      ],
+      inputs: ["Bottleneck Resource (Drum)"],
+      outputs: ["Drum Schedule"],
+      performance: {
+        simple: "< 50 drum operations: 200-400ms",
+        medium: "50-150 drum operations: 400ms-1s",
+        complex: "> 150 drum operations: 1-3s"
+      }
+    },
+    {
+      id: 4,
+      title: "Buffer Management",
+      description: "Establish time buffers to protect throughput and ensure flow",
+      status: "in-progress",
+      estimatedTime: { simple: "100-200ms", complex: "400-800ms" },
+      complexity: "O(o × b) where o = operations, b = buffer points",
+      details: [
+        "Calculate drum buffer size and placement",
+        "Determine shipping buffer requirements",
+        "Establish assembly buffers for convergence points",
+        "Size buffers based on system variability"
+      ],
+      inputs: ["Drum Schedule"],
+      outputs: ["Buffer Configuration"],
+      performance: {
+        simple: "< 5 buffer points: 100-200ms",
+        medium: "5-15 buffer points: 200-400ms",
+        complex: "> 15 buffer points: 400-800ms"
+      }
+    },
+    {
+      id: 5,
+      title: "Subordination & Rope Scheduling",
+      description: "Schedule all non-bottleneck resources to support the drum",
+      status: "pending",
+      estimatedTime: { simple: "300-600ms", complex: "1.5-4s" },
+      complexity: "O(n × r) where n = non-drum operations, r = resources",
+      details: [
+        "Synchronize upstream resources with drum",
+        "Implement rope mechanism for material release",
+        "Ensure non-bottleneck resources never starve the drum",
+        "Create subordinated schedule for all resources"
+      ],
+      inputs: ["Drum Schedule", "Buffer Configuration"],
+      outputs: ["Complete DBR Schedule"],
+      performance: {
+        simple: "< 100 non-drum operations: 300-600ms",
+        medium: "100-300 non-drum operations: 600ms-2s",
+        complex: "> 300 non-drum operations: 1.5-4s"
+      }
+    },
+    {
+      id: 6,
+      title: "Validation & Continuous Improvement",
+      description: "Validate schedule and identify opportunities for constraint elevation",
+      status: "pending",
+      estimatedTime: { simple: "100-200ms", complex: "300-600ms" },
+      complexity: "O(n) for validation and metrics calculation",
+      details: [
+        "Validate schedule feasibility",
+        "Calculate throughput and inventory metrics",
+        "Identify constraint elevation opportunities",
+        "Generate performance reports and recommendations"
+      ],
+      inputs: ["Complete DBR Schedule"],
+      outputs: ["Final Schedule", "Performance Metrics", "Improvement Recommendations"],
+      performance: {
+        simple: "< 100 operations: 100-200ms",
+        medium: "100-300 operations: 200-300ms",
+        complex: "> 300 operations: 300-600ms"
+      }
+    }
+  ];
+
+  // Generic algorithm architecture for unknown algorithms
+  const getGenericAlgorithmSteps = (name: string) => [
+    {
+      id: 1,
+      title: "Data Collection & Preparation",
+      description: "Collect and prepare input data for algorithm execution",
+      status: "completed",
+      estimatedTime: { simple: "50-100ms", complex: "200-500ms" },
+      complexity: "O(n) where n = input size",
+      details: [
+        "Fetch required data from database",
+        "Validate data integrity",
+        "Prepare data structures for processing",
+        "Initialize algorithm parameters"
+      ],
+      inputs: ["Raw Data"],
+      outputs: ["Prepared Dataset"],
+      performance: {
+        simple: "Small datasets",
+        medium: "Medium datasets",
+        complex: "Large datasets"
+      }
+    },
+    {
+      id: 2,
+      title: "Algorithm Execution",
+      description: "Execute the core optimization algorithm logic",
+      status: "in-progress",
+      estimatedTime: { simple: "100-500ms", complex: "1-10s" },
+      complexity: "Varies by algorithm",
+      details: [
+        "Apply optimization logic",
+        "Process constraints and objectives",
+        "Generate candidate solutions",
+        "Evaluate solution quality"
+      ],
+      inputs: ["Prepared Dataset"],
+      outputs: ["Optimized Solution"],
+      performance: {
+        simple: "Simple scenarios",
+        medium: "Moderate complexity",
+        complex: "High complexity"
+      }
+    },
+    {
+      id: 3,
+      title: "Results Generation & Validation",
+      description: "Generate final results and validate output quality",
+      status: "pending",
+      estimatedTime: { simple: "50-100ms", complex: "200-400ms" },
+      complexity: "O(n) for output generation",
+      details: [
+        "Generate final output",
+        "Validate solution feasibility",
+        "Calculate performance metrics",
+        "Prepare results for persistence"
+      ],
+      inputs: ["Optimized Solution"],
+      outputs: ["Final Results", "Metrics"],
+      performance: {
+        simple: "Quick validation",
+        medium: "Standard validation",
+        complex: "Comprehensive validation"
+      }
+    }
+  ];
+
+  // Get the appropriate algorithm steps based on the algorithm name
+  const algorithmSteps = getAlgorithmArchitecture(algorithmName);
 
   const totalPerformance = {
     simple: "760ms - 1.97s",
