@@ -2,6 +2,18 @@
 
 ## Recent Changes
 
+### October 17, 2025 - Late Evening
+- **Fixed Resource Constraint Violations in Scheduling Algorithms**: 
+  - Updated ASAP, ALAP algorithms to only handle timing, delegating resource assignment to Bryntum's constraint engine
+  - Removed resource assignment logic from server-side algorithms to prevent conflicts with Bryntum Scheduler Pro
+  - Bryntum's built-in constraint engine now handles `allowOverlap: false` and resource capacity constraints
+- **Replaced Critical Path Algorithm with DRUM (Theory of Constraints)**:
+  - Removed Critical Path Method implementation
+  - Added new DrumTOCAlgorithm implementing Drum-Buffer-Rope scheduling
+  - DRUM identifies bottleneck resources and optimizes schedule around them
+  - Implements TOC principles: Drum (bottleneck), Buffer (time protection), Rope (material release)
+  - Updated algorithm registry to map all TOC-related algorithms to DrumTOCAlgorithm
+
 ### October 17, 2025
 - **Integrated Optimization Studio with Production Scheduler**: Centralized algorithm management through dynamic loading
   - **Architecture**: Backend validates algorithm approval status; client-side maps approved algorithms to Bryntum-based implementations
