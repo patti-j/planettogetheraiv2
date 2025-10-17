@@ -8524,5 +8524,53 @@ router.post("/api/algorithm-governance/approvals", enhancedAuth, async (req, res
   }
 });
 
+// Execute algorithm by name (generic endpoint for Production Scheduler integration)
+// Note: This endpoint validates the algorithm exists and is approved, then returns
+// metadata for the client to execute. The actual execution happens client-side
+// using Bryntum Scheduler Pro's constraint system.
+router.post("/api/optimization/algorithms/:name/run", async (req, res) => {
+  try {
+    const algorithmName = req.params.name;
+    
+    // Find the algorithm by name
+    const algorithms = await storage.getOptimizationAlgorithms();
+    const algorithm = algorithms.find((a: any) => a.name === algorithmName);
+    
+    if (!algorithm) {
+      return res.status(404).json({ error: "Algorithm not found" });
+    }
+    
+    // Check if algorithm is approved for production use
+    if (algorithm.status !== 'approved') {
+      return res.status(403).json({ 
+        error: "Algorithm not approved for production use",
+        status: algorithm.status 
+      });
+    }
+    
+    console.log(`✅ Algorithm validation passed: ${algorithm.displayName} (${algorithmName})`);
+    
+    // Return algorithm metadata for client-side execution
+    res.json({
+      success: true,
+      algorithm: {
+        id: algorithm.id,
+        name: algorithm.name,
+        displayName: algorithm.displayName,
+        category: algorithm.category,
+        configuration: algorithm.configuration
+      },
+      executeClientSide: true  // Signal to client to execute using Bryntum
+    });
+    
+  } catch (error: any) {
+    console.error("Error validating algorithm:", error);
+    res.status(500).json({ 
+      error: "Failed to validate algorithm",
+      details: error.message 
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

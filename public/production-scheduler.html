@@ -5539,6 +5539,52 @@
                     }
                 }
                 
+                // Execute algorithm from Optimization Studio
+                async function executeOptimizationAlgorithm(algorithm) {
+                    console.log(`🚀 Executing algorithm: ${algorithm.displayName} (${algorithm.name})`);
+                    
+                    // First, validate the algorithm with the backend
+                    const response = await fetch(`/api/optimization/algorithms/${algorithm.name}/run`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({})
+                    });
+                    
+                    if (!response.ok) {
+                        const error = await response.json();
+                        throw new Error(error.error || 'Algorithm validation failed');
+                    }
+                    
+                    const result = await response.json();
+                    console.log('✅ Algorithm validated:', result.algorithm.displayName);
+                    
+                    // Map algorithm names to their client-side implementation functions
+                    // This maps Optimization Studio algorithms to existing Bryntum-based implementations
+                    const algorithmMap = {
+                        'forward-scheduling': asapScheduling,
+                        'backward-scheduling': alapScheduling,
+                        'bottleneck-optimizer': drumScheduling,
+                        'critical-path': criticalPathScheduling,
+                        'resource-leveling': levelResourcesScheduling,
+                        'dbr-scheduling': dbrScheduling
+                    };
+                    
+                    // Get the corresponding implementation function
+                    const implementationFn = algorithmMap[algorithm.name];
+                    
+                    if (!implementationFn) {
+                        throw new Error(`No client-side implementation found for algorithm: ${algorithm.name}`);
+                    }
+                    
+                    // Execute the algorithm using its Bryntum-based implementation
+                    console.log(`⚙️ Running client-side implementation for ${algorithm.name}...`);
+                    await implementationFn();
+                    
+                    console.log(`✅ ${algorithm.displayName} execution completed`);
+                }
+                
                 // Enhanced status update function using real PT data
                 function updateStatus() {
                     const operationCount = scheduler.eventStore.count || 0;
@@ -5963,7 +6009,21 @@
                 
                 // Apply Scheduling Algorithm button
                 document.getElementById('applyScheduling').addEventListener('click', () => {
-                    const algorithm = document.getElementById('schedulingAlgorithm').value;
+                    const algorithmName = document.getElementById('schedulingAlgorithm').value;
+                    
+                    if (!algorithmName) {
+                        alert('Please select an algorithm');
+                        return;
+                    }
+                    
+                    // Find the algorithm details from the loaded algorithms
+                    const algorithm = window.optimizationAlgorithms?.find(a => a.name === algorithmName);
+                    
+                    if (!algorithm) {
+                        alert('Algorithm not found');
+                        return;
+                    }
+                    
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
                     // Store current view settings to maintain consistent timeline
@@ -5972,17 +6032,7 @@
                     const currentEndDate = scheduler.endDate;
                     
                     // Save a version before applying algorithm
-                    const algorithmNames = {
-                        'asap': 'ASAP Forward',
-                        'alap': 'ALAP Backward',
-                        'criticalPath': 'Critical Path',
-                        'levelResources': 'Resource Leveling',
-                        'drum': 'Drum TOC',
-                        'dbr': 'Theory of Constraints (DBR)',
-                        'pert': 'PERT (Probabilistic)'
-                    };
-                    
-                    createVersion(`Before ${algorithmNames[algorithm]} Algorithm`);
+                    createVersion(`Before ${algorithm.displayName} Algorithm`);
                     
                     requestAnimationFrame(() => {
                         setTimeout(async () => {
@@ -5991,48 +6041,10 @@
                                 let message = '';
                                 let color = 'green';
                                 
-                                switch(algorithm) {
-                                    case 'asap':
-                                        // ASAP - As Soon As Possible (Forward Scheduling)
-                                        await asapScheduling();
-                                        message = 'ASAP scheduling applied - operations scheduled as early as possible!';
-                                        break;
-                                        
-                                    case 'alap':
-                                        // ALAP - As Late As Possible (Backward Scheduling)
-                                        await alapScheduling();
-                                        message = 'ALAP scheduling applied - operations scheduled as late as possible!';
-                                        color = 'blue';
-                                        break;
-                                        
-                                    case 'criticalPath':
-                                        // Critical Path Method
-                                        await criticalPathScheduling();
-                                        message = 'Critical Path identified and optimized!';
-                                        color = 'orange';
-                                        break;
-                                        
-                                    case 'levelResources':
-                                        // Resource Leveling
-                                        await levelResourcesScheduling();
-                                        message = 'Resources leveled - workload balanced across resources!';
-                                        color = 'purple';
-                                        break;
-                                        
-                                    case 'drum':
-                                        // Drum (Theory of Constraints)
-                                        await drumScheduling();
-                                        message = 'Drum scheduling applied - optimized around bottleneck!';
-                                        color = 'brown';
-                                        break;
-                                        
-                                    case 'dbr':
-                                        // Theory of Constraints DBR (Drum-Buffer-Rope)
-                                        await dbrScheduling();
-                                        message = 'Theory of Constraints (DBR) applied - Bottleneck optimized with buffers!';
-                                        color = '#8b5cf6';
-                                        break;
-                                }
+                                // Execute the algorithm from Optimization Studio
+                                await executeOptimizationAlgorithm(algorithm);
+                                
+                                message = `${algorithm.displayName} algorithm applied successfully!`;
                                 
                                 // Refresh the scheduler
                                 scheduler.refresh();
