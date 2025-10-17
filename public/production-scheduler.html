@@ -3357,8 +3357,37 @@
                         console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
                     }
                     
-                    // First try to find a matching resource based on capability
-                    let resourceId = findResourceId(operation, resourceMap, resourceByName, resources, originalIdMap);
+                    // CRITICAL: Ensure correct resource assignment based on operation type
+                    let resourceId = null;
+                    const opName = (operation.name || '').toLowerCase();
+                    
+                    // BREWERY-SPECIFIC RESOURCE ASSIGNMENT RULES
+                    if (opName.includes('ferment')) {
+                        // Fermentation MUST go to Fermenter tanks only
+                        const fermenterTanks = resources.filter(r => r.name && r.name.toLowerCase().includes('fermenter'));
+                        if (fermenterTanks.length > 0) {
+                            // Load balance across fermenter tanks - use job ID to consistently assign same job to same tank
+                            const tankIndex = (operation.jobId || operation.id) % fermenterTanks.length;
+                            resourceId = fermenterTanks[tankIndex].id;
+                            console.log(`🍺 Assigned ${operation.name} to ${fermenterTanks[tankIndex].name}`);
+                        } else {
+                            console.warn(`⚠️ No fermenter tanks available for ${operation.name}`);
+                        }
+                    } else if (opName.includes('condition')) {
+                        // Conditioning MUST go to Bright/Conditioning tanks only
+                        const brightTanks = resources.filter(r => r.name && (r.name.toLowerCase().includes('bright') || r.name.toLowerCase().includes('condition')));
+                        if (brightTanks.length > 0) {
+                            // Load balance across bright tanks - use job ID to consistently assign same job to same tank
+                            const tankIndex = (operation.jobId || operation.id) % brightTanks.length;
+                            resourceId = brightTanks[tankIndex].id;
+                            console.log(`🍺 Assigned ${operation.name} to ${brightTanks[tankIndex].name}`);
+                        } else {
+                            console.warn(`⚠️ No bright tanks available for ${operation.name}`);
+                        }
+                    } else {
+                        // For all other operations, use the existing logic
+                        resourceId = findResourceId(operation, resourceMap, resourceByName, resources, originalIdMap);
+                    }
                     
                     // Check if operation is truly unscheduled (no valid resource assignment)
                     const isUnscheduled = !resourceId || resourceId === 'unscheduled' || !resources.find(r => r.id === resourceId && r.id !== 'unscheduled');
