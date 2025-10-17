@@ -5772,30 +5772,9 @@
                     return constraints;
                 }
                 
-                // Legacy algorithm mapping - NO LONGER USED
-                // All algorithms now execute server-side in Optimization Studio
-                const algorithmMap = {
-                    'forward-scheduling': null, // Server-side ASAP
-                    'backward-scheduling': null, // Server-side ALAP
-                    'bottleneck-optimizer': null, // Server-side Bottleneck
-                    'critical-path': null, // Server-side Critical Path
-                        'resource-leveling': levelResourcesScheduling,
-                        'dbr-scheduling': dbrScheduling
-                    };
-                    
-                    // Get the corresponding implementation function
-                    const implementationFn = algorithmMap[algorithm.name];
-                    
-                    if (!implementationFn) {
-                        throw new Error(`No client-side implementation found for algorithm: ${algorithm.name}`);
-                    }
-                    
-                    // Execute the algorithm using its Bryntum-based implementation
-                    console.log(`⚙️ Running client-side implementation for ${algorithm.name}...`);
-                    await implementationFn();
-                    
-                    console.log(`✅ ${algorithm.displayName} execution completed`);
-                }
+                // ALL ALGORITHMS NOW EXECUTE SERVER-SIDE IN OPTIMIZATION STUDIO
+                // Production Scheduler only provides constraints and visualization
+                // No algorithm-specific logic exists in the client anymore
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
@@ -6374,7 +6353,22 @@
                     }
                 }
                 
-                // Scheduling Algorithm Implementations using Bryntum's constraint system
+                // ===================================================================
+                // ALGORITHM IMPLEMENTATIONS REMOVED - NOW IN OPTIMIZATION STUDIO
+                // ===================================================================
+                // All scheduling algorithms now execute server-side in the Optimization Studio.
+                // The Production Scheduler only provides:
+                // 1. Constraint definitions (ASAP, ALAP, SNET, FNLT, etc.)
+                // 2. Schedule visualization via Bryntum Gantt chart
+                // 3. Manual drag-and-drop scheduling with constraint validation
+                // 
+                // The following algorithm implementations have been moved to:
+                // - server/services/optimization/asap-algorithm.ts
+                // - server/services/optimization/alap-algorithm.ts
+                // - server/services/optimization/critical-path-algorithm.ts
+                // - server/services/optimization/algorithm-registry.ts
+                
+                /* REMOVED: Client-side algorithm implementations
                 async function asapScheduling() {
                     // ASAP - Use Bryntum's constraint system for forward scheduling
                     console.log('🚀 Applying ASAP scheduling using Bryntum engine...');
@@ -8099,6 +8093,7 @@
                         console.log(`❌ Drum FAILED: ${overlapsFound} overlaps`);
                     }
                 }
+                */ // END REMOVED: Client-side algorithm implementations
                 
                 // Initialize status updates
                 updateStatus();
