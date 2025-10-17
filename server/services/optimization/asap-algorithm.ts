@@ -126,13 +126,14 @@ export class ASAPAlgorithm {
         }
       }
       
-      // Keep the original resource assignment from client - Bryntum handles resource constraints
+      // Keep the original resource assignment from client
       const assignedResourceId = operation.resourceId;
       
-      // Track resource schedules for dependency timing only (not for resource assignment)
+      // Get the schedule for this specific resource to prevent overlaps
       const resourceSchedule = this.resourceSchedules.get(assignedResourceId) || [];
       const duration = (operation.duration + (operation.setupTime || 0)) * 60 * 60 * 1000; // convert hours to ms
       
+      // Find earliest slot that avoids overlaps on this resource
       let scheduledStart = this.findEarliestResourceSlot(
         earliestStart, 
         duration, 
