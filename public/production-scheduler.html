@@ -7977,12 +7977,23 @@
                         }
                     } else if (event.data?.type === 'RUN_SCHEDULER_ALGORITHM') {
                         const algorithm = event.data.algorithm;
+                        
+                        // Algorithm mapping - supports both Max AI names and Optimization Studio names
                         const algorithmMap = {
+                            // Max AI format (uppercase)
                             'ASAP': 'asap',
                             'ALAP': 'alap',
                             'CRITICAL_PATH': 'criticalPath',
                             'LEVEL_RESOURCES': 'levelResources',
-                            'DRUM_TOC': 'drum'
+                            'DRUM_TOC': 'drum',
+                            // Optimization Studio format (lowercase with hyphens)
+                            'forward-scheduling': 'asap',
+                            'backward-scheduling': 'alap',
+                            'backwards-scheduling': 'alap',
+                            'bottleneck-optimizer': 'drum',
+                            'bottleneck-optimization': 'drum',
+                            'critical-path': 'criticalPath',
+                            'resource-leveling': 'levelResources'
                         };
                         
                         const algorithmValue = algorithmMap[algorithm];
@@ -7993,7 +8004,29 @@
                             if (algorithmSelect && applyButton) {
                                 algorithmSelect.value = algorithmValue;
                                 applyButton.click();
-                                console.log(`Applied scheduling algorithm: ${algorithm}`);
+                                console.log(`✅ Applied scheduling algorithm: ${algorithm} → ${algorithmValue}`);
+                                
+                                // Show success message in Max AI
+                                const maxMessages = document.getElementById('maxMessages');
+                                if (maxMessages) {
+                                    const successMsg = document.createElement('div');
+                                    successMsg.className = 'max-ai-message assistant';
+                                    successMsg.innerHTML = `✅ <strong>Schedule updated using ${algorithm}!</strong> The Gantt chart now shows the optimized schedule.`;
+                                    maxMessages.appendChild(successMsg);
+                                    maxMessages.scrollTop = maxMessages.scrollHeight;
+                                }
+                            }
+                        } else {
+                            console.warn(`⚠️ Unknown algorithm: ${algorithm}. Available algorithms:`, Object.keys(algorithmMap));
+                            
+                            // Show error message in Max AI
+                            const maxMessages = document.getElementById('maxMessages');
+                            if (maxMessages) {
+                                const errorMsg = document.createElement('div');
+                                errorMsg.className = 'max-ai-message assistant';
+                                errorMsg.innerHTML = `⚠️ <strong>Algorithm "${algorithm}" not recognized.</strong> Please use one of the built-in scheduling algorithms.`;
+                                maxMessages.appendChild(errorMsg);
+                                maxMessages.scrollTop = maxMessages.scrollHeight;
                             }
                         }
                     } else if (event.data?.type === 'SET_THEME') {
