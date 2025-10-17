@@ -6103,17 +6103,24 @@
                         });
                         
                         // Stagger start times to prevent overlaps
-                        let currentStartTime = baseDate;
-                        for (const event of resourceEvents) {
-                            // Update constraint date to stagger this operation
+                        let currentStartTime = new Date(baseDate);
+                        for (let i = 0; i < resourceEvents.length; i++) {
+                            const event = resourceEvents[i];
+                            
+                            // Update constraint to force sequential execution
+                            event.constraintType = 'startnoearlierthan';
                             event.constraintDate = new Date(currentStartTime);
                             
-                            // Calculate next start time based on this event's duration
-                            const duration = event.duration || event.durationUnit === 'hour' ? event.duration : 1;
-                            currentStartTime = new Date(currentStartTime.getTime() + (duration * 60 * 60 * 1000) + (30 * 60 * 1000)); // Add duration + 30 min buffer
+                            // Calculate duration (in minutes) - use existing duration or default to 2 hours
+                            const durationMinutes = event.duration || 120; // duration is already in minutes
+                            
+                            // Calculate next start time: current start + duration + 30 min buffer
+                            currentStartTime = new Date(currentStartTime.getTime() + (durationMinutes * 60 * 1000) + (30 * 60 * 1000));
+                            
+                            console.log(`    ${i+1}. ${event.name} starts at ${event.constraintDate.toLocaleString()} (${durationMinutes} min duration)`);
                         }
                         
-                        console.log(`  Staggered ${resourceEvents.length} operations on ${resource.name}`);
+                        console.log(`  ✅ Staggered ${resourceEvents.length} operations on ${resource.name}`);
                     }
                     
                     // Let the Bryntum engine recalculate all dates using existing dependencies
