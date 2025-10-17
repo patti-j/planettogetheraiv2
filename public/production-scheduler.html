@@ -6124,9 +6124,36 @@
                     }
                     
                     // Let the Bryntum engine recalculate all dates using existing dependencies
+                    console.log('🔄 Applying constraints and propagating changes...');
                     await project.commitAsync();
                     
-                    console.log('✅ ASAP scheduling completed by Bryntum engine');
+                    // Force propagate to ensure all constraints are applied
+                    await scheduler.project.propagate();
+                    
+                    // Double-check and fix any remaining overlaps
+                    console.log('✔️ Final overlap check and correction...');
+                    for (const resource of resources) {
+                        const resourceEvents = events
+                            .filter(e => e.resourceId === resource.id && !e.manuallyScheduled)
+                            .sort((a, b) => a.startDate - b.startDate);
+                        
+                        for (let i = 0; i < resourceEvents.length - 1; i++) {
+                            const current = resourceEvents[i];
+                            const next = resourceEvents[i + 1];
+                            
+                            if (current.endDate > next.startDate) {
+                                console.warn(`⚠️ Fixing overlap on ${resource.name}: ${current.name} overlaps with ${next.name}`);
+                                // Force the next event to start after current ends
+                                next.startDate = new Date(current.endDate.getTime() + (30 * 60 * 1000)); // Add 30 min buffer
+                                next.endDate = new Date(next.startDate.getTime() + (next.duration * 60 * 1000));
+                            }
+                        }
+                    }
+                    
+                    // Final commit after overlap fixes
+                    await project.commitAsync();
+                    
+                    console.log('✅ ASAP scheduling completed with overlap prevention');
                     
                     // Verify results
                     let totalScheduled = 0;
