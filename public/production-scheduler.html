@@ -2243,12 +2243,7 @@
         <div class="toolbar-group">
             <label for="schedulingAlgorithm">Algorithm:</label>
             <select id="schedulingAlgorithm">
-                <option value="asap">ASAP (Forward)</option>
-                <option value="alap">ALAP (Limited Support)</option>
-                <option value="criticalPath">Critical Path (Simplified)</option>
-                <option value="levelResources">Resource Leveling</option>
-                <option value="dbr">Theory of Constraints (DBR)</option>
-                <option value="pert">PERT (Probabilistic)</option>
+                <option value="">Loading algorithms...</option>
             </select>
             <button id="applyScheduling">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -5499,6 +5494,51 @@
                     }
                 });
                 
+                // Load approved algorithms from Optimization Studio
+                async function loadApprovedAlgorithms() {
+                    try {
+                        console.log('🔄 Loading approved algorithms from Optimization Studio...');
+                        const response = await fetch('/api/optimization/algorithms?status=approved');
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const algorithms = await response.json();
+                        console.log(`✅ Loaded ${algorithms.length} approved algorithms`);
+                        
+                        const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                        
+                        // Clear existing options
+                        algorithmSelect.innerHTML = '';
+                        
+                        // Add default option if no algorithms found
+                        if (algorithms.length === 0) {
+                            algorithmSelect.innerHTML = '<option value="">No approved algorithms available</option>';
+                            return;
+                        }
+                        
+                        // Populate with approved algorithms
+                        algorithms.forEach(algo => {
+                            const option = document.createElement('option');
+                            option.value = algo.name;  // Use algorithm name as value
+                            option.textContent = `${algo.displayName} (${algo.category})`;
+                            option.dataset.algorithmId = algo.id;  // Store ID for future use
+                            option.dataset.description = algo.description || '';
+                            algorithmSelect.appendChild(option);
+                        });
+                        
+                        // Store algorithms globally for reference
+                        window.optimizationAlgorithms = algorithms;
+                        
+                        console.log('✅ Algorithm dropdown populated with approved algorithms');
+                    } catch (error) {
+                        console.error('❌ Error loading algorithms:', error);
+                        const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                        algorithmSelect.innerHTML = '<option value="">Error loading algorithms</option>';
+                    }
+                }
+                
                 // Enhanced status update function using real PT data
                 function updateStatus() {
                     const operationCount = scheduler.eventStore.count || 0;
@@ -7884,6 +7924,9 @@
                 
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
+                
+                // Load approved algorithms from Optimization Studio
+                await loadApprovedAlgorithms();
                 
                 // Check for algorithm parameter from Optimization Studio
                 const urlParams = new URLSearchParams(window.location.search);
