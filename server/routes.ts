@@ -8298,11 +8298,32 @@ router.get("/api/paginated-reports", enhancedAuth, async (req, res) => {
 // Optimization Studio Routes
 // ============================================
 
-// Get all optimization algorithms
+// Get all optimization algorithms (with optional status filter for Production Scheduler)
 router.get("/api/optimization/algorithms", async (req, res) => {
   try {
     const algorithms = await storage.getOptimizationAlgorithms();
-    res.json(algorithms);
+    
+    // Filter by status if provided (for Production Scheduler integration)
+    const statusFilter = req.query.status as string;
+    if (statusFilter) {
+      const filteredAlgorithms = algorithms.filter(algo => 
+        algo.status?.toLowerCase() === statusFilter.toLowerCase()
+      );
+      
+      // Map to the format expected by Production Scheduler
+      // Note: Database column is display_name (underscore), not displayName (camelCase)
+      const formattedAlgorithms = filteredAlgorithms.map(algo => ({
+        id: algo.id,
+        name: algo.name,
+        displayName: algo.display_name || algo.name,  // Fixed: use display_name from DB
+        description: algo.description,
+        status: algo.status
+      }));
+      
+      res.json(formattedAlgorithms);
+    } else {
+      res.json(algorithms);
+    }
   } catch (error) {
     console.error("Error fetching optimization algorithms:", error);
     res.status(500).json({ error: "Failed to fetch optimization algorithms" });

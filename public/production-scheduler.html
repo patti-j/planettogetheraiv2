@@ -5498,16 +5498,20 @@
                 async function loadApprovedAlgorithms() {
                     try {
                         console.log('🔄 Loading approved algorithms from Optimization Studio...');
+                        console.log('Making fetch request to /api/optimization/algorithms?status=approved');
                         const response = await fetch('/api/optimization/algorithms?status=approved');
                         
+                        console.log('Response received:', response.status, response.statusText);
                         if (!response.ok) {
                             throw new Error(`HTTP error! status: ${response.status}`);
                         }
                         
                         const algorithms = await response.json();
+                        console.log('Algorithms data:', algorithms);
                         console.log(`✅ Loaded ${algorithms.length} approved algorithms`);
                         
                         const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                        console.log('Algorithm select element found:', algorithmSelect);
                         
                         // Clear existing options
                         algorithmSelect.innerHTML = '';
@@ -5535,7 +5539,35 @@
                     } catch (error) {
                         console.error('❌ Error loading algorithms:', error);
                         const algorithmSelect = document.getElementById('schedulingAlgorithm');
-                        algorithmSelect.innerHTML = '<option value="">Error loading algorithms</option>';
+                        
+                        // Fallback: Load default algorithms if fetch fails
+                        algorithmSelect.innerHTML = '';
+                        
+                        // Add default algorithms as fallback
+                        const defaultAlgorithms = [
+                            { name: 'forward-scheduling', displayName: 'Forward Scheduling (ASAP)' },
+                            { name: 'backward-scheduling', displayName: 'Backward Scheduling (ALAP)' },
+                            { name: 'bottleneck-optimizer', displayName: 'Bottleneck Optimizer (TOC)' },
+                            { name: 'critical-path', displayName: 'Critical Path Method' },
+                            { name: 'resource-leveling', displayName: 'Resource Leveling' },
+                            { name: 'dbr-scheduling', displayName: 'DBR Scheduling (TOC)' }
+                        ];
+                        
+                        // Add default option
+                        const defaultOption = document.createElement('option');
+                        defaultOption.value = '';
+                        defaultOption.textContent = 'Select an algorithm...';
+                        algorithmSelect.appendChild(defaultOption);
+                        
+                        // Add algorithm options
+                        defaultAlgorithms.forEach(algo => {
+                            const option = document.createElement('option');
+                            option.value = algo.name;
+                            option.textContent = algo.displayName;
+                            algorithmSelect.appendChild(option);
+                        });
+                        
+                        console.log('⚠️ Using fallback algorithms due to fetch error');
                     }
                 }
                 
@@ -5775,6 +5807,18 @@
                 // ALL ALGORITHMS NOW EXECUTE SERVER-SIDE IN OPTIMIZATION STUDIO
                 // Production Scheduler only provides constraints and visualization
                 // No algorithm-specific logic exists in the client anymore
+                
+                // Placeholder functions for algorithms that are not yet migrated to server
+                // These will be removed once all algorithms are server-side
+                async function levelResourcesScheduling() {
+                    console.log('⚠️ Resource Leveling not yet migrated to server-side');
+                    alert('Resource Leveling algorithm is being migrated to server-side execution. Please try again later.');
+                }
+                
+                async function dbrScheduling() {
+                    console.log('⚠️ DBR Scheduling not yet migrated to server-side');
+                    alert('DBR Scheduling algorithm is being migrated to server-side execution. Please try again later.');
+                }
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
@@ -8145,7 +8189,19 @@
                 document.getElementById('loadingOverlay').style.display = 'none';
                 
                 // Load approved algorithms from Optimization Studio
-                await loadApprovedAlgorithms();
+                // Add try-catch to ensure algorithms load even if there's an error
+                try {
+                    console.log('📋 Starting to load algorithms...');
+                    await loadApprovedAlgorithms();
+                    console.log('📋 Algorithm loading completed');
+                } catch (error) {
+                    console.error('❌ Failed to load algorithms:', error);
+                    // Set dropdown to show error state
+                    const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                    if (algorithmSelect) {
+                        algorithmSelect.innerHTML = '<option value="">Failed to load algorithms</option>';
+                    }
+                }
                 
                 // Check for algorithm parameter from Optimization Studio
                 const urlParams = new URLSearchParams(window.location.search);
