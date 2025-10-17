@@ -834,14 +834,16 @@ export default function OptimizationStudio() {
   });
 
   // Fetch algorithm versions for governance
-  const { data: algorithmVersions = [] } = useQuery({
-    queryKey: ['/api/algorithm-versions'],
-    queryFn: async () => {
-      const response = await fetch('/api/algorithm-versions');
-      if (!response.ok) throw new Error('Failed to fetch algorithm versions');
-      return response.json();
-    }
-  });
+  // Comment out algorithmVersions query - endpoint doesn't exist yet
+  // const { data: algorithmVersions = [] } = useQuery({
+  //   queryKey: ['/api/algorithm-versions'],
+  //   queryFn: async () => {
+  //     const response = await fetch('/api/algorithm-versions');
+  //     if (!response.ok) throw new Error('Failed to fetch algorithm versions');
+  //     return response.json();
+  //   }
+  // });
+  const algorithmVersions: any[] = [];
 
   // Fetch algorithm approvals for governance
   const { data: algorithmApprovals = [] } = useQuery({
@@ -856,18 +858,19 @@ export default function OptimizationStudio() {
     }
   });
 
-  // Fetch governance deployments
-  const { data: governanceDeployments = [] } = useQuery({
-    queryKey: ['/api/algorithm-governance/deployments', selectedPlantId],
-    queryFn: async () => {
-      const url = selectedPlantId 
-        ? `/api/algorithm-governance/deployments?plantId=${selectedPlantId}`
-        : '/api/algorithm-governance/deployments';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch governance deployments');
-      return response.json();
-    }
-  });
+  // Comment out governanceDeployments query - endpoint doesn't exist yet
+  // const { data: governanceDeployments = [] } = useQuery({
+  //   queryKey: ['/api/algorithm-governance/deployments', selectedPlantId],
+  //   queryFn: async () => {
+  //     const url = selectedPlantId 
+  //       ? `/api/algorithm-governance/deployments?plantId=${selectedPlantId}`
+  //       : '/api/algorithm-governance/deployments';
+  //     const response = await fetch(url);
+  //     if (!response.ok) throw new Error('Failed to fetch governance deployments');
+  //     return response.json();
+  //   }
+  // });
+  const governanceDeployments: any[] = [];
 
   // Fetch plants for governance
   const { data: plants = [] } = useQuery({
@@ -3919,7 +3922,12 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               </Button>
               <Button 
                 className="flex-1"
-                onClick={() => createApprovalMutation.mutate(newApprovalData)}
+                onClick={() => createApprovalMutation.mutate({
+                  ...newApprovalData,
+                  algorithmVersionId: newApprovalData.algorithmVersionId!,
+                  plantId: newApprovalData.plantId!,
+                  priority: newApprovalData.priority!
+                })}
                 disabled={createApprovalMutation.isPending || !newApprovalData.algorithmVersionId || !newApprovalData.plantId || !newApprovalData.approvalLevel}
               >
                 <Plus className="w-4 h-4 mr-2" />
