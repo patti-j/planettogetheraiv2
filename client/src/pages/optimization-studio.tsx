@@ -785,52 +785,27 @@ export default function OptimizationStudio() {
 
   // Fetch optimization algorithms
   const { data: algorithms = [], isLoading: algorithmsLoading } = useQuery({
-    queryKey: ['/api/optimization/algorithms'],
-    queryFn: async () => {
-      const response = await fetch('/api/optimization/algorithms');
-      if (!response.ok) throw new Error('Failed to fetch algorithms');
-      return response.json();
-    }
+    queryKey: ['/api/optimization/algorithms']
   });
 
   // Fetch standard algorithms
   const { data: standardAlgorithms = [] } = useQuery({
-    queryKey: ['/api/optimization/standard-algorithms'],
-    queryFn: async () => {
-      const response = await fetch('/api/optimization/standard-algorithms');
-      if (!response.ok) throw new Error('Failed to fetch standard algorithms');
-      return response.json();
-    }
+    queryKey: ['/api/optimization/standard-algorithms']
   });
 
   // Fetch algorithm tests
   const { data: tests = [] } = useQuery({
-    queryKey: ['/api/optimization/tests'],
-    queryFn: async () => {
-      const response = await fetch('/api/optimization/tests');
-      if (!response.ok) throw new Error('Failed to fetch tests');
-      return response.json();
-    }
+    queryKey: ['/api/optimization/tests']
   });
 
   // Fetch deployments
   const { data: deployments = [] } = useQuery({
-    queryKey: ['/api/optimization/deployments'],
-    queryFn: async () => {
-      const response = await fetch('/api/optimization/deployments');
-      if (!response.ok) throw new Error('Failed to fetch deployments');
-      return response.json();
-    }
+    queryKey: ['/api/optimization/deployments']
   });
 
   // Fetch algorithm feedback for development purposes
   const { data: algorithmFeedback = [] } = useQuery({
-    queryKey: ['/api/algorithm-feedback'],
-    queryFn: async () => {
-      const response = await fetch('/api/algorithm-feedback');
-      if (!response.ok) throw new Error('Failed to fetch algorithm feedback');
-      return response.json();
-    }
+    queryKey: ['/api/algorithm-feedback']
   });
 
   // Fetch algorithm versions for governance
@@ -847,15 +822,9 @@ export default function OptimizationStudio() {
 
   // Fetch algorithm approvals for governance
   const { data: algorithmApprovals = [] } = useQuery({
-    queryKey: ['/api/algorithm-governance/approvals', selectedPlantId],
-    queryFn: async () => {
-      const url = selectedPlantId 
-        ? `/api/algorithm-governance/approvals?plantId=${selectedPlantId}`
-        : '/api/algorithm-governance/approvals';
-      const response = await fetch(url);
-      if (!response.ok) throw new Error('Failed to fetch algorithm approvals');
-      return response.json();
-    }
+    queryKey: selectedPlantId 
+      ? [`/api/algorithm-governance/approvals?plantId=${selectedPlantId}`] 
+      : ['/api/algorithm-governance/approvals']
   });
 
   // Comment out governanceDeployments query - endpoint doesn't exist yet
@@ -2531,12 +2500,12 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             {selectedTab === "algorithms" && (
               <div className="flex flex-col sm:flex-row gap-2 flex-1">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
                   <Input
                     placeholder="Search algorithms..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
+                    className="pl-9"
                   />
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -2565,7 +2534,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <Code className="w-4 h-4 text-blue-500" />
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Algorithms</p>
-                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.length}</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{filteredAlgorithms.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -2576,7 +2545,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <Sparkles className="w-4 h-4 text-yellow-500" />
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Standard</p>
-                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.isStandard).length}</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{filteredAlgorithms.filter((a: OptimizationAlgorithm) => a.isStandard).length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -2587,7 +2556,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <CheckCircle className="w-4 h-4 text-green-500" />
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Deployed</p>
-                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'deployed').length}</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{filteredAlgorithms.filter((a: OptimizationAlgorithm) => a.status === 'deployed').length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -2598,7 +2567,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <TestTube className="w-4 h-4 text-purple-500" />
                     <div>
                       <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">In Testing</p>
-                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{algorithms.filter((a: OptimizationAlgorithm) => a.status === 'testing').length}</p>
+                      <p className="text-lg sm:text-xl font-bold text-gray-900 dark:text-gray-100">{filteredAlgorithms.filter((a: OptimizationAlgorithm) => a.status === 'testing').length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -2817,7 +2786,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                         <p className="text-xs text-gray-500 dark:text-gray-500">Create your first algorithm to get started</p>
                       </div>
                     ) : (
-                      algorithms.map((algorithm: OptimizationAlgorithm) => (
+                      filteredAlgorithms.map((algorithm: OptimizationAlgorithm) => (
                         <div
                           key={algorithm.id}
                           onClick={() => setSelectedAlgorithmForDev(algorithm)}
