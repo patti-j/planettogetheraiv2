@@ -6079,6 +6079,43 @@
                         event.constraintDate = baseDate;
                     });
                     
+                    // CRITICAL: Stagger operations on the same resource to prevent overlaps
+                    console.log('🔧 Staggering operations on same resources to prevent overlaps...');
+                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
+                    
+                    for (const resource of resources) {
+                        const resourceEvents = events.filter(e => e.resourceId === resource.id && !e.manuallyScheduled);
+                        
+                        if (resourceEvents.length < 2) continue;
+                        
+                        // Sort by sequence number (brewing process order) and job priority
+                        resourceEvents.sort((a, b) => {
+                            // Parse job number from event name
+                            const aMatch = a.name.match(/Job (\d+)/);
+                            const bMatch = b.name.match(/Job (\d+)/);
+                            
+                            if (aMatch && bMatch) {
+                                const aJob = parseInt(aMatch[1]);
+                                const bJob = parseInt(bMatch[1]);
+                                return aJob - bJob; // Schedule lower job numbers first
+                            }
+                            return a.id - b.id;
+                        });
+                        
+                        // Stagger start times to prevent overlaps
+                        let currentStartTime = baseDate;
+                        for (const event of resourceEvents) {
+                            // Update constraint date to stagger this operation
+                            event.constraintDate = new Date(currentStartTime);
+                            
+                            // Calculate next start time based on this event's duration
+                            const duration = event.duration || event.durationUnit === 'hour' ? event.duration : 1;
+                            currentStartTime = new Date(currentStartTime.getTime() + (duration * 60 * 60 * 1000) + (30 * 60 * 1000)); // Add duration + 30 min buffer
+                        }
+                        
+                        console.log(`  Staggered ${resourceEvents.length} operations on ${resource.name}`);
+                    }
+                    
                     // Let the Bryntum engine recalculate all dates using existing dependencies
                     await project.commitAsync();
                     
