@@ -14,6 +14,15 @@
   - Implements TOC principles: Drum (bottleneck), Buffer (time protection), Rope (material release)
   - Updated algorithm registry to map all TOC-related algorithms to DrumTOCAlgorithm
 
+### October 17, 2025 - Night
+- **Implemented Proper Bryntum Constraint Engine Usage for Resource Conflict Prevention**:
+  - **Key Finding**: `allowOverlap: false` only works for UI drag/drop, NOT for scheduling engine calculations
+  - **Removed**: All custom overlap prevention code (`fixResourceOverlaps` function)
+  - **Implemented**: Proper Bryntum approach using constraint engine with SNET, FNET, SNLT, FNLT constraints
+  - **Resource Leveling**: Since Bryntum doesn't have built-in resource leveling yet, implemented workaround using SNET (Start No Earlier Than) constraints to chain events on same resource
+  - **Algorithm Updates**: All scheduling algorithms (ASAP, ALAP, Critical Path, Resource Leveling, Drum/TOC, PERT) now use Bryntum's constraint engine properly
+  - **Manual Scheduling**: Preserved `manuallyScheduled` property to protect manually positioned events from algorithm changes
+
 ### October 17, 2025
 - **Integrated Optimization Studio with Production Scheduler**: Centralized algorithm management through dynamic loading
   - **Architecture**: Backend validates algorithm approval status; client-side maps approved algorithms to Bryntum-based implementations
