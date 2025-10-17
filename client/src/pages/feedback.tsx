@@ -51,6 +51,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useMaxDock } from '@/contexts/MaxDockContext';
+import { useLocation } from "wouter";
 
 interface FeedbackItem {
   id: number;
@@ -125,6 +126,7 @@ interface AlgorithmFeedback {
 
 export default function Feedback() {
   const { isMaxOpen } = useMaxDock();
+  const [, setLocation] = useLocation();
   const [isMaximized, setIsMaximized] = useState(false);
   const [activeTab, setActiveTab] = useState("submit");
   const [searchTerm, setSearchTerm] = useState("");
@@ -980,6 +982,27 @@ export default function Feedback() {
       {/* View Feedback Tab */}
       {activeTab === "view" && (
         <div className="space-y-4">
+          {/* Header with Exit Button */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2">
+                  <Eye className="w-5 h-5" />
+                  General Feedback and Suggestions
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setLocation("/")}
+                  data-testid="button-close-view"
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+          </Card>
+
           {/* Filters */}
           <div className="flex flex-wrap items-center gap-4">
             <div className="relative flex-1 min-w-64">
