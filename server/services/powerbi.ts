@@ -87,6 +87,7 @@ export class PowerBIService {
     "HistoricalKPIs": "Direct Query",
     "CapacityPlan": "Direct Query",  
     "Finance": "Direct Query",
+    "PurchaseOrders": "Direct Query",
     
     // Mixed/Composite datasets
     "AuditLog": "Composite",  // Partially Direct Query = Mixed/Composite
