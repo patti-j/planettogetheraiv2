@@ -3378,10 +3378,10 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="text-lg">
-                          {approval.algorithmVersion.displayName}
+                          {approval.algorithmVersion?.displayName || `Algorithm Version ${approval.algorithmVersionId}`}
                         </CardTitle>
                         <CardDescription>
-                          {approval.plant.name} • v{approval.algorithmVersion.version} • Priority {approval.priority}
+                          {approval.plant?.name || 'Unknown Plant'} • v{approval.algorithmVersion?.version || 'N/A'} • Priority {approval.priority}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
