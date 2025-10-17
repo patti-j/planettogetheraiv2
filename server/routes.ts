@@ -1288,7 +1288,7 @@ router.post("/api/generate-brewery-data", async (req, res) => {
 });
 
 // PT Operations endpoint - reads from PT tables
-router.get("/pt-operations", async (req, res) => {
+router.get("/api/pt-operations", async (req, res) => {
   try {
     console.log('Fetching PT operations from ptjoboperations table...');
     
@@ -1391,8 +1391,8 @@ router.get("/pt-operations", async (req, res) => {
   }
 });
 
-// PT Dependencies endpoint - reads from ptjobsuccessormanufacturingorders table
-router.get("/pt-dependencies", async (req, res) => {
+// PT Dependencies endpoint - generates dependencies from ptjoboperations sequence_number
+router.get("/api/pt-dependencies", async (req, res) => {
   try {
     console.log('Fetching PT dependencies from ptjobsuccessormanufacturingorders table...');
     
@@ -1457,7 +1457,7 @@ router.get("/pt-dependencies", async (req, res) => {
 });
 
 // PT Resources endpoint - reads from PT tables
-router.get("/pt-resources", async (req, res) => {
+router.get("/api/pt-resources", async (req, res) => {
   try {
     console.log('Fetching PT resources from ptresources table...');
     
