@@ -1430,6 +1430,7 @@ export default function OptimizationStudio() {
               e.stopPropagation();
               setSelectedAlgorithm(algorithm);
             }}
+            data-testid={`button-view-details-${algorithm.name}`}
           >
             <Eye className="w-4 h-4 mr-2" />
             View Details & Performance
@@ -1437,13 +1438,13 @@ export default function OptimizationStudio() {
           {algorithm.name === 'backwards-scheduling' && (
             <Button 
               size="sm" 
-              variant="outline" 
-              className="w-full sm:flex-1"
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700 text-white whitespace-nowrap"
               onClick={(e) => {
                 e.stopPropagation();
                 setArchitectureAlgorithmName(algorithm.displayName);
                 setShowArchitectureView(true);
               }}
+              data-testid="button-architecture"
             >
               <Cpu className="w-4 h-4 mr-2" />
               Architecture
