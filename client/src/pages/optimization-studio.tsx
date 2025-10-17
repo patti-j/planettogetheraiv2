@@ -2500,18 +2500,35 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
             {selectedTab === "algorithms" && (
               <div className="flex flex-col sm:flex-row gap-2 flex-1">
                 <div className="relative flex-1">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4 pointer-events-none z-10" />
+                  <button
+                    onClick={() => {
+                      // Trigger search - the search is already reactive, so this just focuses the input
+                      const input = document.querySelector('input[placeholder="Search algorithms..."]') as HTMLInputElement;
+                      input?.focus();
+                    }}
+                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 w-4 h-4 z-10 cursor-pointer"
+                    aria-label="Search"
+                  >
+                    <Search className="w-4 h-4" />
+                  </button>
                   <Input
                     placeholder="Search algorithms..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        // Search is already reactive, so just blur to remove focus
+                        e.currentTarget.blur();
+                      }
+                    }}
                     className="pl-9"
                   />
                 </div>
                 <Select value={selectedCategory} onValueChange={setSelectedCategory}>
                   <SelectTrigger className="w-full sm:w-auto">
                     <Filter className="w-4 h-4 mr-2" />
-                    <SelectValue />
+                    <SelectValue placeholder="All Categories" />
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
