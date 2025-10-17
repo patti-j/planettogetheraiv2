@@ -3349,6 +3349,9 @@
                     return null; // No specific capability required
                 }
                 
+                // Track resource schedules as we build events to avoid overlaps
+                const resourceSchedules = new Map(); // resourceId -> array of {start, end, operationName}
+                
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
                 let events = ptOperations.map((operation, index) => {
@@ -3361,15 +3364,60 @@
                     let resourceId = null;
                     const opName = (operation.name || '').toLowerCase();
                     
-                    // BREWERY-SPECIFIC RESOURCE ASSIGNMENT RULES
+                    // Calculate operation timing
+                    const operationStart = operation.scheduledStart ? new Date(operation.scheduledStart) : new Date(2025, 8, 3, 7, 0, 0);
+                    const duration = operation.scheduledEnd && operation.scheduledStart ? 
+                        (new Date(operation.scheduledEnd).getTime() - new Date(operation.scheduledStart).getTime()) / (1000 * 60 * 60) :
+                        (operation.duration || 120) / 60; // Convert minutes to hours
+                    const operationEnd = new Date(operationStart.getTime() + duration * 60 * 60 * 1000);
+                    
+                    // BREWERY-SPECIFIC RESOURCE ASSIGNMENT RULES WITH OVERLAP AVOIDANCE
                     if (opName.includes('ferment')) {
                         // Fermentation MUST go to Fermenter tanks only
                         const fermenterTanks = resources.filter(r => r.name && r.name.toLowerCase().includes('fermenter'));
                         if (fermenterTanks.length > 0) {
-                            // Load balance across fermenter tanks - use job ID to consistently assign same job to same tank
-                            const tankIndex = (operation.jobId || operation.id) % fermenterTanks.length;
-                            resourceId = fermenterTanks[tankIndex].id;
-                            console.log(`🍺 Assigned ${operation.name} to ${fermenterTanks[tankIndex].name}`);
+                            // Smart assignment: Try to find a tank without overlapping operations
+                            let assignedTank = null;
+                            
+                            // Try each tank to find one without conflicts
+                            for (const tank of fermenterTanks) {
+                                const tankSchedule = resourceSchedules.get(tank.id) || [];
+                                let hasConflict = false;
+                                
+                                // Check if this operation would overlap with existing ones on this tank
+                                for (const scheduled of tankSchedule) {
+                                    if ((operationStart < scheduled.end && operationEnd > scheduled.start)) {
+                                        hasConflict = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!hasConflict) {
+                                    assignedTank = tank;
+                                    break;
+                                }
+                            }
+                            
+                            // If no tank without conflicts, use round-robin and let overlap prevention fix it
+                            if (!assignedTank) {
+                                const tankIndex = index % fermenterTanks.length;
+                                assignedTank = fermenterTanks[tankIndex];
+                                console.warn(`⚠️ All fermenter tanks have conflicts for ${operation.name}, using ${assignedTank.name} (will be fixed by overlap prevention)`);
+                            }
+                            
+                            resourceId = assignedTank.id;
+                            
+                            // Track this operation on the resource schedule
+                            if (!resourceSchedules.has(resourceId)) {
+                                resourceSchedules.set(resourceId, []);
+                            }
+                            resourceSchedules.get(resourceId).push({
+                                start: operationStart,
+                                end: operationEnd,
+                                operationName: operation.name
+                            });
+                            
+                            console.log(`🍺 Assigned ${operation.name} to ${assignedTank.name}`);
                         } else {
                             console.warn(`⚠️ No fermenter tanks available for ${operation.name}`);
                         }
@@ -3377,10 +3425,48 @@
                         // Conditioning MUST go to Bright/Conditioning tanks only
                         const brightTanks = resources.filter(r => r.name && (r.name.toLowerCase().includes('bright') || r.name.toLowerCase().includes('condition')));
                         if (brightTanks.length > 0) {
-                            // Load balance across bright tanks - use job ID to consistently assign same job to same tank
-                            const tankIndex = (operation.jobId || operation.id) % brightTanks.length;
-                            resourceId = brightTanks[tankIndex].id;
-                            console.log(`🍺 Assigned ${operation.name} to ${brightTanks[tankIndex].name}`);
+                            // Smart assignment: Try to find a tank without overlapping operations
+                            let assignedTank = null;
+                            
+                            // Try each tank to find one without conflicts
+                            for (const tank of brightTanks) {
+                                const tankSchedule = resourceSchedules.get(tank.id) || [];
+                                let hasConflict = false;
+                                
+                                // Check if this operation would overlap with existing ones on this tank
+                                for (const scheduled of tankSchedule) {
+                                    if ((operationStart < scheduled.end && operationEnd > scheduled.start)) {
+                                        hasConflict = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (!hasConflict) {
+                                    assignedTank = tank;
+                                    break;
+                                }
+                            }
+                            
+                            // If no tank without conflicts, use round-robin and let overlap prevention fix it
+                            if (!assignedTank) {
+                                const tankIndex = index % brightTanks.length;
+                                assignedTank = brightTanks[tankIndex];
+                                console.warn(`⚠️ All bright tanks have conflicts for ${operation.name}, using ${assignedTank.name} (will be fixed by overlap prevention)`);
+                            }
+                            
+                            resourceId = assignedTank.id;
+                            
+                            // Track this operation on the resource schedule
+                            if (!resourceSchedules.has(resourceId)) {
+                                resourceSchedules.set(resourceId, []);
+                            }
+                            resourceSchedules.get(resourceId).push({
+                                start: operationStart,
+                                end: operationEnd,
+                                operationName: operation.name
+                            });
+                            
+                            console.log(`🍺 Assigned ${operation.name} to ${assignedTank.name}`);
                         } else {
                             console.warn(`⚠️ No bright tanks available for ${operation.name}`);
                         }
