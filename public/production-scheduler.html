@@ -5539,34 +5539,246 @@
                     }
                 }
                 
-                // Execute algorithm from Optimization Studio
+                // Execute algorithm from Optimization Studio (server-side execution)
                 async function executeOptimizationAlgorithm(algorithm) {
-                    console.log(`🚀 Executing algorithm: ${algorithm.displayName} (${algorithm.name})`);
+                    console.log(`🚀 Executing algorithm server-side: ${algorithm.displayName} (${algorithm.name})`);
                     
-                    // First, validate the algorithm with the backend
+                    // Prepare schedule data from current Bryntum scheduler state
+                    const scheduleData = prepareScheduleData();
+                    
+                    console.log(`📤 Sending schedule data to Optimization Studio:`, {
+                        operations: scheduleData.operations.length,
+                        resources: scheduleData.resources.length,
+                        dependencies: scheduleData.dependencies.length
+                    });
+                    
+                    // Send schedule data to Optimization Studio for server-side execution
                     const response = await fetch(`/api/optimization/algorithms/${algorithm.name}/run`, {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json'
                         },
-                        body: JSON.stringify({})
+                        body: JSON.stringify(scheduleData)
                     });
                     
                     if (!response.ok) {
                         const error = await response.json();
-                        throw new Error(error.error || 'Algorithm validation failed');
+                        throw new Error(error.error || 'Algorithm execution failed');
                     }
                     
                     const result = await response.json();
-                    console.log('✅ Algorithm validated:', result.algorithm.displayName);
+                    console.log('✅ Algorithm executed successfully:', result);
                     
-                    // Map algorithm names to their client-side implementation functions
-                    // This maps Optimization Studio algorithms to existing Bryntum-based implementations
-                    const algorithmMap = {
-                        'forward-scheduling': asapScheduling,
-                        'backward-scheduling': alapScheduling,
-                        'bottleneck-optimizer': drumScheduling,
-                        'critical-path': criticalPathScheduling,
+                    // Apply the optimized schedule returned from server
+                    if (result.optimizedSchedule) {
+                        await applyOptimizedSchedule(result.optimizedSchedule);
+                        console.log('✅ Optimized schedule applied to Gantt chart');
+                    }
+                    
+                    // Display metrics if available
+                    if (result.metrics) {
+                        displayOptimizationMetrics(result.metrics);
+                    }
+                    
+                    return result;
+                }
+                
+                // Prepare schedule data from Bryntum scheduler for server-side optimization
+                function prepareScheduleData() {
+                    const scheduler = window.scheduler;
+                    const operations = [];
+                    const resources = [];
+                    const dependencies = [];
+                    
+                    // Extract operations from event store
+                    scheduler.eventStore.records.forEach(event => {
+                        if (event.id && !event.isUnscheduled) {
+                            operations.push({
+                                id: String(event.id),
+                                name: event.name || '',
+                                jobId: String(event.jobId || event.id),
+                                jobName: event.jobName || event.name || '',
+                                resourceId: String(event.resourceId),
+                                duration: event.duration || 0,
+                                setupTime: event.setupTime || 0,
+                                startTime: event.startDate ? event.startDate.toISOString() : undefined,
+                                endTime: event.endDate ? event.endDate.toISOString() : undefined,
+                                priority: event.priority || 0,
+                                sequenceNumber: event.sequenceNumber,
+                                manuallyScheduled: event.manuallyScheduled === true,
+                                constraints: event.constraintType ? [{
+                                    type: event.constraintType.toUpperCase(),
+                                    value: event.constraintDate
+                                }] : []
+                            });
+                        }
+                    });
+                    
+                    // Extract resources
+                    scheduler.resourceStore.records.forEach(resource => {
+                        if (resource.id && resource.id !== 'unscheduled') {
+                            resources.push({
+                                id: String(resource.id),
+                                name: resource.name || '',
+                                type: resource.resourceType || 'equipment',
+                                capacity: resource.capacity || 100,
+                                availableHours: resource.availableHours || 24,
+                                efficiency: resource.efficiency || 1,
+                                capabilities: resource.capabilities || []
+                            });
+                        }
+                    });
+                    
+                    // Extract dependencies
+                    scheduler.dependencyStore.records.forEach(dep => {
+                        dependencies.push({
+                            id: String(dep.id),
+                            fromOperationId: String(dep.from),
+                            toOperationId: String(dep.to),
+                            type: dep.type === 2 ? 'FS' : 'FS', // Default to Finish-Start
+                            lag: dep.lag || 0
+                        });
+                    });
+                    
+                    // Calculate horizon
+                    let horizonStart = new Date();
+                    let horizonEnd = new Date();
+                    horizonEnd.setMonth(horizonEnd.getMonth() + 3); // 3 month horizon
+                    
+                    operations.forEach(op => {
+                        if (op.startTime) {
+                            const start = new Date(op.startTime);
+                            const end = new Date(op.endTime || op.startTime);
+                            if (start < horizonStart) horizonStart = start;
+                            if (end > horizonEnd) horizonEnd = end;
+                        }
+                    });
+                    
+                    return {
+                        operations,
+                        resources,
+                        dependencies,
+                        constraints: getActiveConstraints(),
+                        metadata: {
+                            horizonStart: horizonStart.toISOString(),
+                            horizonEnd: horizonEnd.toISOString(),
+                            plantId: 'plant-1',
+                            version: '1.0.0'
+                        }
+                    };
+                }
+                
+                // Apply optimized schedule from server to Bryntum scheduler
+                async function applyOptimizedSchedule(optimizedSchedule) {
+                    const scheduler = window.scheduler;
+                    
+                    // Suspend events during batch updates
+                    scheduler.eventStore.suspendEvents();
+                    scheduler.dependencyStore.suspendEvents();
+                    
+                    try {
+                        // Update operations with optimized times
+                        optimizedSchedule.operations.forEach(op => {
+                            const event = scheduler.eventStore.getById(op.id);
+                            if (event && op.startTime && op.endTime) {
+                                event.startDate = new Date(op.startTime);
+                                event.endDate = new Date(op.endTime);
+                                
+                                // Update constraints if present
+                                if (op.constraints && op.constraints.length > 0) {
+                                    const constraint = op.constraints[0];
+                                    if (constraint.type === 'CRITICAL_PATH' && constraint.value) {
+                                        // Mark critical path operations
+                                        event.eventColor = '#ff0000'; // Red for critical path
+                                        event.isCritical = true;
+                                    }
+                                }
+                            }
+                        });
+                        
+                        // Resume events and refresh
+                        scheduler.eventStore.resumeEvents();
+                        scheduler.dependencyStore.resumeEvents();
+                        
+                        // Propagate changes
+                        await scheduler.project.propagate();
+                        scheduler.refresh();
+                        
+                    } catch (error) {
+                        console.error('Error applying optimized schedule:', error);
+                        // Resume events even on error
+                        scheduler.eventStore.resumeEvents();
+                        scheduler.dependencyStore.resumeEvents();
+                        throw error;
+                    }
+                }
+                
+                // Display optimization metrics
+                function displayOptimizationMetrics(metrics) {
+                    if (!metrics) return;
+                    
+                    console.log('📊 Optimization Metrics:', {
+                        makespan: metrics.makespan ? `${metrics.makespan.toFixed(1)} hours` : 'N/A',
+                        resourceUtilization: metrics.resourceUtilization ? `${metrics.resourceUtilization.toFixed(1)}%` : 'N/A',
+                        totalSetupTime: metrics.totalSetupTime ? `${metrics.totalSetupTime.toFixed(1)} hours` : 'N/A'
+                    });
+                    
+                    // Update status bar with metrics
+                    const statusElement = document.getElementById('operationCount');
+                    if (statusElement && metrics.makespan) {
+                        const originalText = statusElement.textContent;
+                        statusElement.textContent = `✅ Optimized: ${metrics.makespan.toFixed(0)}hr makespan, ${(metrics.resourceUtilization || 0).toFixed(0)}% utilization`;
+                        setTimeout(() => {
+                            statusElement.textContent = originalText;
+                        }, 5000);
+                    }
+                }
+                
+                // Get active constraints from UI
+                function getActiveConstraints() {
+                    const constraints = [];
+                    const savedConstraints = localStorage.getItem('schedulerConstraints');
+                    
+                    if (savedConstraints) {
+                        const constraintSettings = JSON.parse(savedConstraints);
+                        
+                        // Map UI constraints to optimization constraints
+                        if (constraintSettings.asap) {
+                            constraints.push({ type: 'ASAP', enabled: true });
+                        }
+                        if (constraintSettings.alap) {
+                            constraints.push({ type: 'ALAP', enabled: true });
+                        }
+                        if (constraintSettings.snet) {
+                            constraints.push({ type: 'SNET', enabled: true });
+                        }
+                        if (constraintSettings.snlt) {
+                            constraints.push({ type: 'SNLT', enabled: true });
+                        }
+                        if (constraintSettings.fnlt) {
+                            constraints.push({ type: 'FNLT', enabled: true });
+                        }
+                        if (constraintSettings.fnet) {
+                            constraints.push({ type: 'FNET', enabled: true });
+                        }
+                        if (constraintSettings.mso) {
+                            constraints.push({ type: 'MSO', enabled: true });
+                        }
+                        if (constraintSettings.mfe) {
+                            constraints.push({ type: 'MFE', enabled: true });
+                        }
+                    }
+                    
+                    return constraints;
+                }
+                
+                // Legacy algorithm mapping - NO LONGER USED
+                // All algorithms now execute server-side in Optimization Studio
+                const algorithmMap = {
+                    'forward-scheduling': null, // Server-side ASAP
+                    'backward-scheduling': null, // Server-side ALAP
+                    'bottleneck-optimizer': null, // Server-side Bottleneck
+                    'critical-path': null, // Server-side Critical Path
                         'resource-leveling': levelResourcesScheduling,
                         'dbr-scheduling': dbrScheduling
                     };
