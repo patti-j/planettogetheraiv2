@@ -1659,3 +1659,114 @@ export const insertGovernanceDeploymentSchema = createInsertSchema(governanceDep
   .omit({ id: true, createdAt: true, updatedAt: true });
 export type InsertGovernanceDeployment = z.infer<typeof insertGovernanceDeploymentSchema>;
 export type GovernanceDeployment = typeof governanceDeployments.$inferSelect;
+
+// ============================================================================
+// Schedule Data Exchange Schemas for Production Scheduler ↔ Optimization Studio
+// ============================================================================
+
+// Schedule Operation - represents a single operation to be scheduled
+export const scheduleOperationSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  jobId: z.string(),
+  jobName: z.string(),
+  resourceId: z.string(),
+  duration: z.number(), // in hours
+  setupTime: z.number().optional(),
+  startTime: z.string().optional(), // ISO string
+  endTime: z.string().optional(), // ISO string
+  priority: z.number().optional(),
+  sequenceNumber: z.number().optional(),
+  manuallyScheduled: z.boolean().optional(),
+  constraints: z.array(z.object({
+    type: z.string(),
+    value: z.any()
+  })).optional()
+});
+export type ScheduleOperation = z.infer<typeof scheduleOperationSchema>;
+
+// Schedule Resource - represents a production resource
+export const scheduleResourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.string().optional(),
+  capacity: z.number().optional(),
+  availableHours: z.number().optional(),
+  efficiency: z.number().optional(),
+  capabilities: z.array(z.string()).optional(),
+  calendar: z.object({
+    workingHours: z.array(z.object({
+      dayOfWeek: z.number(),
+      startTime: z.string(),
+      endTime: z.string()
+    })).optional(),
+    maintenancePeriods: z.array(z.object({
+      startDate: z.string(),
+      endDate: z.string(),
+      reason: z.string().optional()
+    })).optional()
+  }).optional()
+});
+export type ScheduleResource = z.infer<typeof scheduleResourceSchema>;
+
+// Schedule Dependency - represents dependencies between operations
+export const scheduleDependencySchema = z.object({
+  id: z.string(),
+  fromOperationId: z.string(),
+  toOperationId: z.string(),
+  type: z.enum(['FS', 'FF', 'SS', 'SF']), // Finish-Start, Finish-Finish, Start-Start, Start-Finish
+  lag: z.number().optional() // time lag in hours
+});
+export type ScheduleDependency = z.infer<typeof scheduleDependencySchema>;
+
+// Schedule Constraint - represents global scheduling constraints
+export const scheduleConstraintSchema = z.object({
+  type: z.enum(['ASAP', 'ALAP', 'SNET', 'SNLT', 'FNLT', 'FNET', 'MFE', 'MSO']),
+  enabled: z.boolean(),
+  value: z.any().optional()
+});
+export type ScheduleConstraint = z.infer<typeof scheduleConstraintSchema>;
+
+// Schedule Data Payload - complete schedule data sent to Optimization Studio
+export const scheduleDataPayloadSchema = z.object({
+  operations: z.array(scheduleOperationSchema),
+  resources: z.array(scheduleResourceSchema),
+  dependencies: z.array(scheduleDependencySchema),
+  constraints: z.array(scheduleConstraintSchema).optional(),
+  metadata: z.object({
+    horizonStart: z.string(), // ISO string
+    horizonEnd: z.string(), // ISO string
+    plantId: z.string().optional(),
+    scenarioId: z.string().optional(),
+    version: z.string().optional()
+  }).optional()
+});
+export type ScheduleDataPayload = z.infer<typeof scheduleDataPayloadSchema>;
+
+// Optimization Run Request - request to run an optimization algorithm
+export const optimizationRunRequestSchema = z.object({
+  algorithmId: z.string(),
+  scheduleData: scheduleDataPayloadSchema,
+  parameters: z.record(z.any()).optional(), // algorithm-specific parameters
+  runMode: z.enum(['sync', 'async']).default('sync'),
+  maxDuration: z.number().optional() // max execution time in seconds
+});
+export type OptimizationRunRequest = z.infer<typeof optimizationRunRequestSchema>;
+
+// Optimization Run Response - result from running an optimization
+export const optimizationRunResponseSchema = z.object({
+  runId: z.string(),
+  status: z.enum(['success', 'error', 'timeout', 'cancelled']),
+  optimizedSchedule: scheduleDataPayloadSchema.optional(),
+  metrics: z.object({
+    makespan: z.number().optional(),
+    resourceUtilization: z.number().optional(),
+    onTimeDelivery: z.number().optional(),
+    totalSetupTime: z.number().optional(),
+    totalIdleTime: z.number().optional()
+  }).optional(),
+  executionTime: z.number(), // in milliseconds
+  warnings: z.array(z.string()).optional(),
+  error: z.string().optional()
+});
+export type OptimizationRunResponse = z.infer<typeof optimizationRunResponseSchema>;
