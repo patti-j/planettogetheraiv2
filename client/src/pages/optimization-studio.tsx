@@ -3752,13 +3752,15 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                 <div className="flex gap-2">
                   <Textarea
                     id="ai-modify-prompt"
+                    data-testid="textarea-ai-modify-prompt"
                     placeholder="Example: Increase the optimization speed by 20% and add a constraint for minimum resource utilization of 80%..."
                     value={aiModifyPrompt}
                     onChange={(e) => setAiModifyPrompt(e.target.value)}
-                    className="flex-1"
+                    className="flex-1 bg-white dark:bg-gray-900"
                     rows={3}
                   />
                   <Button
+                    data-testid="button-submit-ai-modify"
                     onClick={() => {
                       if (aiModifyPrompt.trim()) {
                         aiModifyAlgorithmMutation.mutate({
