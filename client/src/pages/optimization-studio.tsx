@@ -3726,18 +3726,18 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
               )}
 
               {/* AI Conversation */}
-              <div>
-                <h4 className="font-semibold mb-2 flex items-center gap-2 text-gray-900 dark:text-gray-100">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-t-lg">
                   <MessageSquare className="w-4 h-4" />
-                  AI Conversation
-                </h4>
-                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 max-h-60 overflow-y-auto space-y-3">
+                  <span className="font-semibold text-sm">AI Conversation</span>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-b-lg p-4 min-h-[200px] max-h-60 overflow-y-auto space-y-3">
                   {aiModifyMessages.map((message, index) => (
                     <div key={index} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg text-sm ${
                         message.role === 'user' 
                           ? 'bg-blue-500 text-white' 
-                          : 'bg-white border border-gray-200'
+                          : 'bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-900 dark:text-gray-100'
                       }`}>
                         <div className="whitespace-pre-wrap">{message.content}</div>
                       </div>
@@ -3748,9 +3748,10 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
 
               {/* AI Input */}
               <div className="space-y-2">
-                <Label htmlFor="ai-modify-prompt" className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-                  Describe your modification request:
-                </Label>
+                <div className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-3 py-2 rounded-t-lg">
+                  <Edit className="w-4 h-4" />
+                  <span className="font-semibold text-sm">Your Modification Request</span>
+                </div>
                 <div className="flex gap-2">
                   <Textarea
                     id="ai-modify-prompt"
@@ -3758,7 +3759,7 @@ class ${currentAlgorithmDraft.name?.replace(/-/g, '_')}Algorithm {
                     placeholder="Example: Increase the optimization speed by 20% and add a constraint for minimum resource utilization of 80%..."
                     value={aiModifyPrompt}
                     onChange={(e) => setAiModifyPrompt(e.target.value)}
-                    className="flex-1 bg-white dark:bg-gray-900 border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400"
+                    className="flex-1 bg-white dark:bg-gray-800 border-2 border-gray-300 dark:border-gray-600 rounded-b-lg text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:border-purple-500 dark:focus:border-purple-400"
                     rows={3}
                   />
                   <Button
