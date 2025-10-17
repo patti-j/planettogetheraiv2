@@ -8427,6 +8427,81 @@ router.post("/api/optimization/tests", enhancedAuth, async (req, res) => {
   }
 });
 
+// AI-powered algorithm modification
+router.post("/api/algorithm-modify", enhancedAuth, async (req, res) => {
+  try {
+    const { algorithmId, modificationRequest } = req.body;
+    
+    if (!algorithmId || !modificationRequest) {
+      return res.status(400).json({ error: "Algorithm ID and modification request are required" });
+    }
+
+    // Get the algorithm
+    const algorithms = await storage.getOptimizationAlgorithms();
+    const algorithm = algorithms.find((a: any) => a.id === algorithmId);
+    
+    if (!algorithm) {
+      return res.status(404).json({ error: "Algorithm not found" });
+    }
+
+    // Use OpenAI to modify the algorithm
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      return res.status(500).json({ error: "OpenAI API key not configured" });
+    }
+
+    const OpenAI = (await import('openai')).default;
+    const openai = new OpenAI({ apiKey: openaiApiKey });
+
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert in manufacturing optimization algorithms. You help modify and improve scheduling algorithms based on user requirements. 
+
+Current Algorithm Details:
+- Name: ${algorithm.displayName}
+- Type: ${algorithm.type}
+- Category: ${algorithm.category}
+- Description: ${algorithm.description}
+${algorithm.algorithmCode ? `- Current Code: ${algorithm.algorithmCode}` : ''}
+${algorithm.configuration ? `- Configuration: ${JSON.stringify(algorithm.configuration)}` : ''}
+
+Provide a detailed response explaining:
+1. What modifications you would make
+2. Why these changes would improve the algorithm
+3. Any potential trade-offs or considerations
+
+Be specific and actionable.`
+        },
+        {
+          role: 'user',
+          content: modificationRequest
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 1500
+    });
+
+    const aiResponse = completion.choices[0]?.message?.content || "No response generated";
+
+    res.json({
+      success: true,
+      response: aiResponse,
+      algorithmId,
+      modificationRequest
+    });
+
+  } catch (error: any) {
+    console.error("Error in AI algorithm modification:", error);
+    res.status(500).json({ 
+      error: "Failed to modify algorithm",
+      details: error.message 
+    });
+  }
+});
+
 // Create algorithm feedback
 router.post("/api/algorithm-feedback", enhancedAuth, async (req, res) => {
   try {
