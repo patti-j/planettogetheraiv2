@@ -4971,11 +4971,8 @@
                                     event.constraintDate = null;
                                 });
                                 
-                                // Trigger recalculation
+                                // Trigger recalculation with Bryntum's constraint engine
                                 await scheduler.project.propagate();
-                                
-                                // CRITICAL: Fix any overlaps that resulted from the propagation
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
                                 
                                 // Auto-save only non-manual events
                                 const modifiedEvents = events.filter(e => e.isModified && !e.manuallyScheduled);
@@ -5009,11 +5006,8 @@
                                     event.constraintDate = projectEnd;
                                 });
                                 
-                                // Trigger recalculation
+                                // Trigger recalculation with Bryntum's constraint engine
                                 await scheduler.project.propagate();
-                                
-                                // CRITICAL: Fix any overlaps that resulted from the propagation
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
                                 
                                 // Auto-save only non-manual events
                                 const modifiedEvents = events.filter(e => e.isModified && !e.manuallyScheduled);
@@ -5078,9 +5072,6 @@
                                 
                                 scheduler.refresh();
                                 
-                                // CRITICAL: Fix any overlaps that resulted from the scheduling
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
-                                
                                 // Auto-save all changes
                                 const modifiedEvents = events.filter(e => e.isModified && !e.manuallyScheduled);
                                 if (modifiedEvents.length > 0) {
@@ -5091,14 +5082,44 @@
                                 console.warn('Note: Full Critical Path support requires Bryntum Gantt. Using simplified calculation.');
                                 
                             } else if (algorithm.includes('Resource Leveling')) {
-                                // Apply Resource Leveling
+                                // Apply Resource Leveling using Bryntum's constraint engine
                                 console.log('⚖️ Applying Resource Leveling');
                                 
                                 // Get all non-unscheduled events
                                 const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                                 
-                                // CRITICAL: Resource leveling is exactly what we need - prevent overlaps
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
+                                // NOTE: Bryntum Scheduler Pro doesn't have built-in resource leveling yet
+                                // This is a simplified approach using constraints to prevent overlaps
+                                // Group events by resource and apply SNET constraints to prevent overlaps
+                                const resourceGroups = {};
+                                events.forEach(event => {
+                                    if (!event.manuallyScheduled && event.resourceId) {
+                                        if (!resourceGroups[event.resourceId]) {
+                                            resourceGroups[event.resourceId] = [];
+                                        }
+                                        resourceGroups[event.resourceId].push(event);
+                                    }
+                                });
+                                
+                                // For each resource, apply SNET constraints to chain events
+                                for (const resourceId of Object.keys(resourceGroups)) {
+                                    const resourceEvents = resourceGroups[resourceId];
+                                    // Sort by current start date
+                                    resourceEvents.sort((a, b) => a.startDate - b.startDate);
+                                    
+                                    // Apply SNET constraints to chain events on the same resource
+                                    for (let i = 1; i < resourceEvents.length; i++) {
+                                        const prevEvent = resourceEvents[i - 1];
+                                        const currentEvent = resourceEvents[i];
+                                        
+                                        // Set constraint to start no earlier than previous event's end
+                                        currentEvent.constraintType = 'startnoearlierthan';
+                                        currentEvent.constraintDate = new Date(prevEvent.endDate.getTime() + (30 * 60 * 1000)); // 30 min buffer
+                                    }
+                                }
+                                
+                                // Let Bryntum's constraint engine handle the scheduling
+                                await scheduler.project.propagate();
                                 
                                 // Auto-save changes
                                 const modifiedEvents = events.filter(e => e.isModified && !e.manuallyScheduled);
@@ -5106,18 +5127,28 @@
                                     await saveOperationChanges(modifiedEvents);
                                 }
                                 
-                                showNotification('Resource Leveling applied - all overlaps resolved', 'success');
+                                showNotification('⚠️ Resource Leveling applied (using SNET constraints)', 'warning');
+                                console.warn('Note: Full resource leveling is not yet available in Scheduler Pro');
                                 
                             } else if (algorithm.includes('Drum') || algorithm.includes('TOC')) {
-                                // Apply Theory of Constraints
+                                // Apply Theory of Constraints using Bryntum's constraint engine
                                 console.log('🥁 Applying Drum/TOC optimization');
                                 
                                 // Get all events for TOC processing
                                 const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                                 
-                                // TOC logic would identify bottlenecks and optimize around them
-                                // For now, we'll at least prevent overlaps
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
+                                // Simplified TOC implementation using constraints
+                                // In a full implementation, this would identify bottleneck resources and optimize around them
+                                events.forEach(event => {
+                                    if (!event.manuallyScheduled) {
+                                        // Remove constraints to let the engine schedule based on dependencies
+                                        event.constraintType = null;
+                                        event.constraintDate = null;
+                                    }
+                                });
+                                
+                                // Let Bryntum's constraint engine handle the scheduling
+                                await scheduler.project.propagate();
                                 
                                 // Auto-save changes
                                 const modifiedEvents = events.filter(e => e.isModified && !e.manuallyScheduled);
@@ -5125,7 +5156,8 @@
                                     await saveOperationChanges(modifiedEvents);
                                 }
                                 
-                                showNotification('Drum/TOC optimization applied', 'success');
+                                showNotification('⚠️ Drum/TOC optimization applied (simplified)', 'warning');
+                                console.warn('Note: Full TOC implementation would identify and optimize around bottleneck resources');
                                 
                             } else if (algorithm.includes('PERT') || algorithm.includes('pert')) {
                                 // Apply PERT algorithm
@@ -5161,11 +5193,8 @@
                                 document.getElementById('pertMetricsPanel').classList.add('active');
                                 updatePertMetrics();
                                 
-                                // Trigger recalculation
+                                // Trigger recalculation with Bryntum's constraint engine
                                 await scheduler.project.propagate();
-                                
-                                // CRITICAL: Fix any overlaps that resulted from the PERT duration changes
-                                await fixResourceOverlaps(events.filter(e => !e.manuallyScheduled));
                                 
                                 scheduler.refresh();
                                 
@@ -5191,93 +5220,6 @@
                 });
                 
                 console.log('✅ PostMessage listener added for AI agent algorithm execution');
-                
-                // Function to fix resource overlaps after algorithm execution
-                async function fixResourceOverlaps(modifiedEvents = null) {
-                    console.log('🔧 Checking and fixing resource overlaps...');
-                    let overlapCount = 0;
-                    
-                    // Get ALL events from the scheduler, not just modified ones
-                    const allEvents = scheduler.eventStore.records.filter(e => e.resourceId && e.resourceId !== 'unscheduled');
-                    
-                    // Create a set of modified event IDs for reference
-                    const modifiedEventIds = modifiedEvents ? new Set(modifiedEvents.map(e => e.id)) : null;
-                    
-                    // Group ALL events by resource to check for overlaps comprehensively
-                    const resourceGroups = {};
-                    allEvents.forEach(event => {
-                        if (!resourceGroups[event.resourceId]) {
-                            resourceGroups[event.resourceId] = [];
-                        }
-                        resourceGroups[event.resourceId].push(event);
-                    });
-                    
-                    // Check and fix overlaps for each resource
-                    for (const resourceId of Object.keys(resourceGroups)) {
-                        const resourceEvents = resourceGroups[resourceId];
-                        if (resourceEvents.length < 2) continue;
-                        
-                        // Sort by start date
-                        resourceEvents.sort((a, b) => a.startDate - b.startDate);
-                        
-                        // Fix overlaps sequentially
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const current = resourceEvents[i];
-                            const next = resourceEvents[i + 1];
-                            
-                            // Check if current event overlaps with next
-                            if (current.endDate > next.startDate) {
-                                // Only move the event if it was modified by the algorithm (or if we're checking all)
-                                // This prevents moving events that were manually scheduled or from previous runs
-                                const canMoveNext = !next.manuallyScheduled && (!modifiedEventIds || modifiedEventIds.has(next.id));
-                                
-                                if (canMoveNext) {
-                                    overlapCount++;
-                                    const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
-                                    console.warn(`⚠️ Overlap detected on ${resourceName}: "${current.name}" overlaps with "${next.name}"`);
-                                    
-                                    // Fix the overlap by moving the next operation
-                                    const newStartDate = new Date(current.endDate.getTime() + (30 * 60 * 1000)); // Add 30 min buffer
-                                    next.startDate = newStartDate;
-                                    
-                                    // Update constraint date if needed
-                                    if (next.constraintType === 'startnoearlierthan') {
-                                        next.constraintDate = newStartDate;
-                                    }
-                                    
-                                    console.log(`  ✅ Fixed: "${next.name}" now starts at ${next.startDate.toLocaleString()}`);
-                                } else {
-                                    // If we can't move the next event, we might need to move the current one instead
-                                    const canMoveCurrent = !current.manuallyScheduled && (!modifiedEventIds || modifiedEventIds.has(current.id));
-                                    if (canMoveCurrent && next.startDate.getTime() > 0) {
-                                        overlapCount++;
-                                        const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
-                                        console.warn(`⚠️ Overlap detected on ${resourceName}: "${current.name}" overlaps with "${next.name}" (adjusting current)`);
-                                        
-                                        // Move current to end before next
-                                        const newEndDate = new Date(next.startDate.getTime() - (30 * 60 * 1000)); // 30 min buffer before next
-                                        const duration = current.endDate - current.startDate;
-                                        current.startDate = new Date(newEndDate.getTime() - duration);
-                                        
-                                        console.log(`  ✅ Fixed: "${current.name}" adjusted to end before "${next.name}"`);
-                                    } else {
-                                        console.error(`❌ Cannot fix overlap on ${scheduler.resourceStore.getById(resourceId)?.name}: Both "${current.name}" and "${next.name}" are locked`);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (overlapCount > 0) {
-                        console.log(`✅ Fixed ${overlapCount} overlapping operations`);
-                        // Trigger one more propagate to ensure dependencies are respected
-                        await scheduler.project.propagate();
-                    } else {
-                        console.log('✅ No overlaps detected after algorithm execution');
-                    }
-                    
-                    return overlapCount;
-                }
                 
                 // Version Management Functions
                 function createVersion(description = 'Manual snapshot') {
