@@ -10,7 +10,6 @@ export class CriticalPathAlgorithm {
   private predecessors: Map<string, string[]>;
   private successors: Map<string, string[]>;
   private resources: Map<string, ScheduleResource>;
-  private resourcesByType: Map<string, ScheduleResource[]>;
   private resourceSchedules: Map<string, Array<{start: Date, end: Date}>>;
   
   constructor() {
@@ -19,7 +18,6 @@ export class CriticalPathAlgorithm {
     this.predecessors = new Map();
     this.successors = new Map();
     this.resources = new Map();
-    this.resourcesByType = new Map();
     this.resourceSchedules = new Map();
   }
 
@@ -82,17 +80,10 @@ export class CriticalPathAlgorithm {
       this.successors.get(dep.fromOperationId)!.push(dep.toOperationId);
     });
     
-    // Initialize resource maps and schedules
+    // Initialize resource schedules for timing calculations
     scheduleData.resources.forEach(resource => {
       this.resourceSchedules.set(resource.id, []);
       this.resources.set(resource.id, resource);
-      
-      // Group resources by type for easier assignment
-      const resourceType = this.getResourceType(resource.name);
-      if (!this.resourcesByType.has(resourceType)) {
-        this.resourcesByType.set(resourceType, []);
-      }
-      this.resourcesByType.get(resourceType)!.push(resource);
     });
   }
 

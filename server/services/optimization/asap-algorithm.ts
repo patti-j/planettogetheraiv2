@@ -10,14 +10,12 @@ export class ASAPAlgorithm {
   private dependencies: Map<string, string[]>; // operation ID -> dependent operation IDs
   private resourceSchedules: Map<string, Array<{start: Date, end: Date}>>; // resource ID -> busy periods
   private resources: Map<string, ScheduleResource>;
-  private resourcesByType: Map<string, ScheduleResource[]>;
   
   constructor() {
     this.operations = new Map();
     this.dependencies = new Map();
     this.resourceSchedules = new Map();
     this.resources = new Map();
-    this.resourcesByType = new Map();
   }
 
   /**
@@ -56,67 +54,13 @@ export class ASAPAlgorithm {
       this.dependencies.get(dep.toOperationId)!.push(dep.fromOperationId);
     });
     
-    // Initialize resource maps and schedules
+    // Initialize resource schedules for timing calculations
     scheduleData.resources.forEach(resource => {
       this.resourceSchedules.set(resource.id, []);
       this.resources.set(resource.id, resource);
-      
-      // Group resources by type for easier assignment
-      const resourceType = this.getResourceType(resource.name);
-      if (!this.resourcesByType.has(resourceType)) {
-        this.resourcesByType.set(resourceType, []);
-      }
-      this.resourcesByType.get(resourceType)!.push(resource);
     });
   }
 
-  /**
-   * Determine resource type from resource name
-   */
-  private getResourceType(resourceName: string): string {
-    const nameLower = resourceName.toLowerCase();
-    if (nameLower.includes('fermenter') || nameLower.includes('fermentation')) {
-      return 'fermenter';
-    } else if (nameLower.includes('bright') || nameLower.includes('conditioning')) {
-      return 'bright_tank';
-    } else if (nameLower.includes('mill') || nameLower.includes('grain')) {
-      return 'mill';
-    } else if (nameLower.includes('mash')) {
-      return 'mash_tun';
-    } else if (nameLower.includes('lauter')) {
-      return 'lauter_tun';
-    } else if (nameLower.includes('kettle') || nameLower.includes('boil')) {
-      return 'brew_kettle';
-    } else if (nameLower.includes('filler') || nameLower.includes('bottle') || nameLower.includes('can')) {
-      return 'packaging';
-    } else if (nameLower.includes('pasteur')) {
-      return 'pasteurizer';
-    }
-    return 'general';
-  }
-
-  /**
-   * Determine appropriate resource type for an operation
-   */
-  private getRequiredResourceType(operationName: string): string {
-    const nameLower = operationName.toLowerCase();
-    if (nameLower.includes('fermentation')) {
-      return 'fermenter';
-    } else if (nameLower.includes('conditioning')) {
-      return 'bright_tank';
-    } else if (nameLower.includes('milling')) {
-      return 'mill';
-    } else if (nameLower.includes('mashing') || nameLower.includes('decoction')) {
-      return 'mash_tun';
-    } else if (nameLower.includes('lautering')) {
-      return 'lauter_tun';
-    } else if (nameLower.includes('boiling')) {
-      return 'brew_kettle';
-    } else if (nameLower.includes('packaging')) {
-      return 'packaging';
-    }
-    return 'general';
-  }
 
   private topologicalSort(operations: ScheduleOperation[]): ScheduleOperation[] {
     const visited = new Set<string>();
@@ -161,7 +105,7 @@ export class ASAPAlgorithm {
           new Date(operation.endTime || operation.startTime)
         );
         // Also update resource schedule for manually scheduled operations
-        const resourceId = this.assignResourceToOperation(operation);
+        const resourceId = operation.resourceId;
         const resourceSchedule = this.resourceSchedules.get(resourceId) || [];
         resourceSchedule.push({ 
           start: new Date(operation.startTime), 
@@ -182,10 +126,10 @@ export class ASAPAlgorithm {
         }
       }
       
-      // Find appropriate resource for this operation type
-      const assignedResourceId = this.assignResourceToOperation(operation);
+      // Keep the original resource assignment from client - Bryntum handles resource constraints
+      const assignedResourceId = operation.resourceId;
       
-      // Find next available slot on the assigned resource
+      // Track resource schedules for dependency timing only (not for resource assignment)
       const resourceSchedule = this.resourceSchedules.get(assignedResourceId) || [];
       const duration = (operation.duration + (operation.setupTime || 0)) * 60 * 60 * 1000; // convert hours to ms
       
@@ -218,57 +162,6 @@ export class ASAPAlgorithm {
     return scheduledOps;
   }
 
-  /**
-   * Assign the most appropriate available resource to an operation
-   */
-  private assignResourceToOperation(operation: ScheduleOperation): string {
-    // If operation already has a valid resource, validate it
-    if (operation.resourceId) {
-      const resource = this.resources.get(operation.resourceId);
-      if (resource) {
-        // Check if this resource type matches the operation requirement
-        const requiredType = this.getRequiredResourceType(operation.name);
-        const resourceType = this.getResourceType(resource.name);
-        if (requiredType === 'general' || resourceType === requiredType) {
-          return operation.resourceId;
-        }
-      }
-    }
-    
-    // Find appropriate resource type for this operation
-    const requiredResourceType = this.getRequiredResourceType(operation.name);
-    const availableResources = this.resourcesByType.get(requiredResourceType) || [];
-    
-    if (availableResources.length === 0) {
-      console.warn(`No resources of type '${requiredResourceType}' available for operation '${operation.name}'`);
-      // Fall back to any available resource
-      const allResources = Array.from(this.resources.values());
-      return allResources.length > 0 ? allResources[0].id : 'unscheduled';
-    }
-    
-    // Find the resource with the least scheduled work
-    let bestResource = availableResources[0];
-    let minEndTime = this.getResourceLastEndTime(bestResource.id);
-    
-    for (const resource of availableResources.slice(1)) {
-      const endTime = this.getResourceLastEndTime(resource.id);
-      if (endTime < minEndTime) {
-        minEndTime = endTime;
-        bestResource = resource;
-      }
-    }
-    
-    return bestResource.id;
-  }
-
-  /**
-   * Get the last scheduled end time for a resource
-   */
-  private getResourceLastEndTime(resourceId: string): number {
-    const schedule = this.resourceSchedules.get(resourceId) || [];
-    if (schedule.length === 0) return 0;
-    return schedule[schedule.length - 1].end.getTime();
-  }
 
   private findEarliestResourceSlot(
     earliestStart: Date, 
