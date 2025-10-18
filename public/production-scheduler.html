@@ -3349,9 +3349,36 @@
                     return null; // No specific capability required
                 }
                 
+                // Sort operations by job and sequence to ensure proper fallback ordering
+                const sortedOperations = [...ptOperations].sort((a, b) => {
+                    // First sort by job
+                    const jobA = a.jobId || a.jobExternalId || 0;
+                    const jobB = b.jobId || b.jobExternalId || 0;
+                    if (jobA !== jobB) return jobA - jobB;
+                    
+                    // Then sort by sequence within job (based on brewing process)
+                    const seqA = getOperationSequence(a.name);
+                    const seqB = getOperationSequence(b.name);
+                    return seqA - seqB;
+                });
+                
+                // Helper function to get operation sequence in brewing process
+                function getOperationSequence(name) {
+                    if (!name) return 999;
+                    const n = name.toLowerCase();
+                    if (n.includes('milling') || n.includes('mill')) return 1;
+                    if (n.includes('mashing') || n.includes('mash')) return 2;
+                    if (n.includes('lautering') || n.includes('lauter')) return 3;
+                    if (n.includes('boiling') || n.includes('boil')) return 4;
+                    if (n.includes('fermentation') || n.includes('ferment')) return 5;
+                    if (n.includes('conditioning') || n.includes('condition') || n.includes('dry hop')) return 6;
+                    if (n.includes('packaging') || n.includes('packag')) return 7;
+                    return 8; // Other operations
+                }
+                
                 // Transform PT operations into Bryntum events format
                 // CRITICAL: Load operations but DON'T use overlapping scheduled times
-                let events = ptOperations.map((operation, index) => {
+                let events = sortedOperations.map((operation, index) => {
                     // Log job names for debugging
                     if (index < 5 || operation.jobName) {
                         console.log(`Operation ${operation.name}: Job = ${operation.jobName || 'NO JOB NAME'}`);
@@ -3403,10 +3430,25 @@
                         startDate = new Date(operation.scheduledStart);
                         console.log(`📅 Using DB scheduled time for ${operation.name}: ${startDate.toISOString()}`);
                     } else {
-                        // Fallback: Use base date if no scheduled time exists
+                        // IMPROVED FALLBACK: Space operations by resource to prevent overlaps
                         const baseDate = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 7 AM
-                        startDate = new Date(baseDate.getTime() + index * 30 * 60 * 1000);
-                        console.log(`⚠️ No scheduled time for ${operation.name}, using fallback: ${startDate.toISOString()}`);
+                        
+                        // Track last end time for each resource to prevent overlaps
+                        if (!window.resourceLastEndTime) {
+                            window.resourceLastEndTime = {};
+                        }
+                        
+                        // Get the last end time for this resource
+                        const lastEndTime = window.resourceLastEndTime[resourceId] || baseDate.getTime();
+                        
+                        // Start this operation after the last one on this resource (with 30 min buffer)
+                        startDate = new Date(lastEndTime + (30 * 60 * 1000)); // 30 min buffer between operations
+                        
+                        // Update the last end time for this resource (assume 2 hour duration for fallback)
+                        const estimatedDuration = (operation.duration || 120) / 60; // Convert to hours
+                        window.resourceLastEndTime[resourceId] = startDate.getTime() + (estimatedDuration * 60 * 60 * 1000);
+                        
+                        console.log(`⚠️ No scheduled time for ${operation.name}, placing on ${resourceId} at: ${startDate.toISOString()}`);
                     }
                     
                     // If no valid resource found, assign to unscheduled resource
@@ -4934,6 +4976,64 @@
 
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
+                
+                // CRITICAL FIX: Load data into the scheduler using CrudManager
+                // SchedulerPro REQUIRES an AssignmentStore - cannot use resourceId directly on events
+                console.log('📊 Loading schedule data...');
+                
+                // Create assignments array from events (SchedulerPro requirement)
+                const assignments = [];
+                const cleanedEvents = events.map((event, index) => {
+                    // If event has a resourceId, create an assignment for it
+                    if (event.resourceId && event.resourceId !== 'unscheduled') {
+                        assignments.push({
+                            id: `assignment_${event.id}`,
+                            event: event.id,
+                            resource: event.resourceId
+                        });
+                    }
+                    
+                    // Remove resourceId from event (must use assignments instead)
+                    const { resourceId, ...cleanEvent } = event;
+                    return cleanEvent;
+                });
+                
+                console.log(`✅ Created ${assignments.length} assignments to link events to resources`);
+                console.log('Sample assignments:', assignments.slice(0, 3));
+                
+                // Load the data into the scheduler using CrudManager
+                try {
+                    await scheduler.crudManager.loadCrudManagerData({
+                        resources: { rows: resources },
+                        events: { rows: cleanedEvents },
+                        dependencies: { rows: dependencies },
+                        assignments: { rows: assignments }
+                    });
+                    
+                    console.log('✅ Schedule data loaded successfully');
+                    console.log(`  - ${resources.length} resources`);
+                    console.log(`  - ${cleanedEvents.length} events`);
+                    console.log(`  - ${dependencies.length} dependencies`);
+                    console.log(`  - ${assignments.length} assignments`);
+                    
+                    // Update status display
+                    document.getElementById('statusText').textContent = `${cleanedEvents.length} operations scheduled`;
+                    document.getElementById('lastUpdate').textContent = new Date().toLocaleTimeString();
+                    
+                    // Auto zoom to fit after data loads
+                    if (cleanedEvents.length > 0) {
+                        setTimeout(() => {
+                            scheduler.zoomToFit({
+                                leftMargin: 50,
+                                rightMargin: 50
+                            });
+                            console.log('✅ Auto zoom-to-fit applied after data load');
+                        }, 500);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading schedule data:', error);
+                    showNotification('Failed to load schedule data', 'error');
+                }
                 
                 // Add PostMessage listener for AI agent algorithm execution
                 window.addEventListener('message', async (event) => {

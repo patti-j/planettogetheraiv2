@@ -14,6 +14,15 @@
   - Implements TOC principles: Drum (bottleneck), Buffer (time protection), Rope (material release)
   - Updated algorithm registry to map all TOC-related algorithms to DrumTOCAlgorithm
 
+### October 17, 2025 - Late Night
+- **Production Scheduler Overlap Prevention - In Progress**: 
+  - Improved fallback logic to consider resource assignments when operations have null scheduled dates
+  - Added resource-specific time tracking to prevent overlaps during initialization
+  - Implemented job and sequence-based sorting to ensure proper operation ordering
+  - Status: Scheduler APIs working correctly, returning operations/dependencies/resources
+  - Issue: Gantt chart UI stuck loading, showing "0 operations scheduled" despite data being available
+  - Next steps: Debug why Bryntum SchedulerPro isn't rendering the operations
+
 ### October 17, 2025 - Night
 - **Implemented Proper Bryntum Constraint Engine Usage for Resource Conflict Prevention**:
   - **Key Finding**: `allowOverlap: false` only works for UI drag/drop, NOT for scheduling engine calculations
