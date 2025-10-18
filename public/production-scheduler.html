@@ -4977,7 +4977,7 @@
                 // Setup toolbar handlers
                 const scheduler = window.scheduler;
                 
-                // CRITICAL FIX: Load data into the scheduler using CrudManager
+                // CRITICAL FIX: Load data into the scheduler using Project's inline data loader
                 // SchedulerPro REQUIRES an AssignmentStore - cannot use resourceId directly on events
                 console.log('📊 Loading schedule data...');
                 
@@ -5001,13 +5001,13 @@
                 console.log(`✅ Created ${assignments.length} assignments to link events to resources`);
                 console.log('Sample assignments:', assignments.slice(0, 3));
                 
-                // Load the data into the scheduler using CrudManager
+                // Load the data into the scheduler using Project's inline data loader
                 try {
-                    await scheduler.crudManager.loadCrudManagerData({
-                        resources: { rows: resources },
-                        events: { rows: cleanedEvents },
-                        dependencies: { rows: dependencies },
-                        assignments: { rows: assignments }
+                    await scheduler.project.loadInlineData({
+                        resourcesData: resources,
+                        eventsData: cleanedEvents,
+                        dependenciesData: dependencies,
+                        assignmentsData: assignments
                     });
                     
                     console.log('✅ Schedule data loaded successfully');
