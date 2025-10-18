@@ -5001,14 +5001,26 @@
                 console.log(`✅ Created ${assignments.length} assignments to link events to resources`);
                 console.log('Sample assignments:', assignments.slice(0, 3));
                 
-                // Load the data into the scheduler using Project's inline data loader
+                // Load the data into the scheduler using direct store loading
                 try {
-                    await scheduler.project.loadInlineData({
-                        resourcesData: resources,
-                        eventsData: cleanedEvents,
-                        dependenciesData: dependencies,
-                        assignmentsData: assignments
-                    });
+                    // Load data directly into the stores
+                    console.log('📊 Loading data into scheduler stores...');
+                    
+                    // Load resources first
+                    scheduler.resourceStore.data = resources;
+                    console.log(`✅ Loaded ${resources.length} resources`);
+                    
+                    // Load events (without resourceId)
+                    scheduler.eventStore.data = cleanedEvents;
+                    console.log(`✅ Loaded ${cleanedEvents.length} events`);
+                    
+                    // Load dependencies
+                    scheduler.dependencyStore.data = dependencies;
+                    console.log(`✅ Loaded ${dependencies.length} dependencies`);
+                    
+                    // Load assignments (this links events to resources)
+                    scheduler.assignmentStore.data = assignments;
+                    console.log(`✅ Loaded ${assignments.length} assignments`);
                     
                     console.log('✅ Schedule data loaded successfully');
                     console.log(`  - ${resources.length} resources`);
@@ -5032,6 +5044,10 @@
                     }
                 } catch (error) {
                     console.error('❌ Error loading schedule data:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack
+                    });
                     showNotification('Failed to load schedule data', 'error');
                 }
                 
