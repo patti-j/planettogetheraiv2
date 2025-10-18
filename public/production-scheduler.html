@@ -5681,18 +5681,45 @@
                 // Load approved algorithms from Optimization Studio
                 async function loadApprovedAlgorithms() {
                     try {
-                        console.log('🔄 Loading approved algorithms from Optimization Studio...');
-                        console.log('Making fetch request to /api/optimization/algorithms?status=approved');
-                        const response = await fetch('/api/optimization/algorithms?status=approved');
+                        // For now, use client-side algorithms directly since API endpoints are not yet implemented
+                        console.log('🔄 Loading client-side scheduling algorithms...');
                         
-                        console.log('Response received:', response.status, response.statusText);
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
+                        // Define default algorithms that are available client-side
+                        const algorithms = [
+                            { 
+                                name: 'Forward Scheduling (ASAP)',
+                                slug: 'forward-scheduling',
+                                description: 'Schedule operations as soon as possible'
+                            },
+                            { 
+                                name: 'Backward Scheduling (ALAP)',
+                                slug: 'backward-scheduling', 
+                                description: 'Schedule operations as late as possible'
+                            },
+                            { 
+                                name: 'Critical Path',
+                                slug: 'critical-path',
+                                description: 'Identify critical path operations'
+                            },
+                            { 
+                                name: 'Resource Leveling',
+                                slug: 'resource-leveling',
+                                description: 'Balance resource utilization'
+                            },
+                            { 
+                                name: 'Drum (TOC)',
+                                slug: 'drum-toc',
+                                description: 'Theory of Constraints scheduling'
+                            },
+                            { 
+                                name: 'PERT',
+                                slug: 'pert',
+                                description: 'PERT network scheduling'
+                            }
+                        ];
                         
-                        const algorithms = await response.json();
                         console.log('Algorithms data:', algorithms);
-                        console.log(`✅ Loaded ${algorithms.length} approved algorithms`);
+                        console.log(`✅ Loaded ${algorithms.length} scheduling algorithms`);
                         
                         const algorithmSelect = document.getElementById('schedulingAlgorithm');
                         console.log('Algorithm select element found:', algorithmSelect);
@@ -5772,35 +5799,38 @@
                         dependencies: scheduleData.dependencies.length
                     });
                     
-                    // Send schedule data to Optimization Studio for server-side execution
-                    const response = await fetch(`/api/optimization/algorithms/${algorithm.name}/run`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(scheduleData)
-                    });
+                    // Execute algorithm client-side using Bryntum scheduling engine
+                    console.log(`🎯 Executing ${algorithm.name} client-side...`);
                     
-                    if (!response.ok) {
-                        const error = await response.json();
-                        throw new Error(error.error || 'Algorithm execution failed');
+                    // Map algorithm slugs to directions for the PostMessage handler
+                    const algorithmDirectionMap = {
+                        'forward-scheduling': 'Forward',
+                        'backward-scheduling': 'Backward',
+                        'critical-path': 'Critical Path',
+                        'resource-leveling': 'Resource Leveling',
+                        'drum-toc': 'Drum',
+                        'pert': 'PERT'
+                    };
+                    
+                    const direction = algorithmDirectionMap[algorithm.slug];
+                    if (!direction) {
+                        throw new Error(`Algorithm ${algorithm.name} not mapped to implementation`);
                     }
                     
-                    const result = await response.json();
-                    console.log('✅ Algorithm executed successfully:', result);
+                    // Send PostMessage to trigger the algorithm execution
+                    window.postMessage({
+                        type: 'applyAlgorithm',
+                        algorithm: algorithm.name,
+                        direction: direction
+                    }, '*');
                     
-                    // Apply the optimized schedule returned from server
-                    if (result.optimizedSchedule) {
-                        await applyOptimizedSchedule(result.optimizedSchedule);
-                        console.log('✅ Optimized schedule applied to Gantt chart');
-                    }
+                    console.log('✅ Algorithm execution triggered successfully');
                     
-                    // Display metrics if available
-                    if (result.metrics) {
-                        displayOptimizationMetrics(result.metrics);
-                    }
+                    // Algorithm will be executed via PostMessage handler
+                    // The handler will update the schedule and show notification
+                    console.log('📊 Algorithm processing via client-side handler...');
                     
-                    return result;
+                    return { success: true, algorithm: algorithm.name };
                 }
                 
                 // Prepare schedule data from Bryntum scheduler for server-side optimization
