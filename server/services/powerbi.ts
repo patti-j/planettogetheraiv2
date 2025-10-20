@@ -492,20 +492,26 @@ export class PowerBIService {
     const recentRefreshes = refreshHistory.slice(0, 5);
     const recentFailures = recentRefreshes.filter((r: any) => r.status === 'Failed').length > 1;
 
+    // Add 5 seconds to compensate for polling interval (4s) + API response time + Power BI status propagation lag
+    const DETECTION_LAG_SECONDS = 5;
+    const adjustedMedian = median + DETECTION_LAG_SECONDS;
+    const adjustedMin = min + DETECTION_LAG_SECONDS;
+    const adjustedMax = p80 + DETECTION_LAG_SECONDS;
+
     // Generate base contextual message (peak hours shown dynamically on frontend when remaining = 0)
-    let message = `Estimated ${Math.round(median)} seconds based on historical refreshes`;
+    let message = `Estimated ${Math.round(adjustedMedian)} seconds based on historical refreshes`;
     if (isLargeDataset) message += " (large dataset)";
     if (recentFailures) message += " (recent failures detected)";
 
     return {
       estimateRangeSeconds: {
-        min: Math.round(min),
-        max: Math.round(max),
-        median: Math.round(median)
+        min: Math.round(adjustedMin),
+        max: Math.round(adjustedMax),
+        median: Math.round(adjustedMedian)
       },
       confidenceLevel,
       historicalDataPoints: count,
-      averageDurationSeconds: Math.round(median), // Use median instead of average - more resistant to outliers
+      averageDurationSeconds: Math.round(adjustedMedian), // Use median instead of average - more resistant to outliers
       contextualFactors: {
         storageMode: datasetInfo?.storageMode || "Unknown",
         isLargeDataset,
