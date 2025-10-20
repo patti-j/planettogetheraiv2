@@ -3985,7 +3985,7 @@
                 }
             });
             
-            // Add functionality for Save button using Bryntum's built-in methods
+            // Add functionality for Save button to update main database
             document.getElementById('saveSchedule').addEventListener('click', async () => {
                 try {
                     // Show saving status
@@ -3994,84 +3994,94 @@
                     saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin"><path d="M21 12a9 9 0 1 1-6-8.485"></path></svg><span>Saving...</span>';
                     saveBtn.disabled = true;
                     
-                    // Use Bryntum's built-in project serialization
-                    if (window.scheduler && window.scheduler.project) {
-                        // Get the project's complete state using Bryntum's toJSON method
-                        let projectData;
-                        try {
-                            projectData = window.scheduler.project.toJSON();
-                        } catch (serializeError) {
-                            console.error('Failed to serialize project data:', serializeError);
-                            // Try alternative: get events, resources, and dependencies separately
-                            projectData = {
-                                events: window.scheduler.eventStore.toJSON(),
-                                resources: window.scheduler.resourceStore.toJSON(),
-                                dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : [],
-                                project: {
-                                    startDate: window.scheduler.project.startDate,
-                                    endDate: window.scheduler.project.endDate
-                                }
-                            };
-                        }
+                    // Collect all events with their scheduled times
+                    if (window.scheduler && window.scheduler.eventStore) {
+                        const events = window.scheduler.eventStore.records;
                         
-                        // Prompt for save name
-                        const scheduleName = prompt('Enter a name for this schedule:', `Schedule - ${new Date().toLocaleDateString()}`);
+                        // Prepare operations update data
+                        const operations = events.map(event => ({
+                            id: event.operationId || event.id, // Use operationId if available
+                            start: event.startDate ? event.startDate.toISOString() : null,
+                            end: event.endDate ? event.endDate.toISOString() : null,
+                            manuallyScheduled: event.manually_scheduled || false
+                        }));
                         
-                        if (!scheduleName) {
-                            saveBtn.innerHTML = originalHTML;
-                            saveBtn.disabled = false;
-                            return;
-                        }
-                        
-                        // Prepare save data
-                        const saveData = {
-                            name: scheduleName,
-                            description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
-                            scheduleData: projectData,
-                            metadata: {
-                                algorithm: document.getElementById('schedulingAlgorithm').value,
-                                savedAt: new Date().toISOString(),
-                                constraints: window.activeConstraints || {},
-                                stats: window.currentStats || {}
-                            }
-                        };
+                        console.log(`📝 Updating ${operations.length} operations in main database...`);
                         
                         // Get auth token from parent window or localStorage
                         const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
                         
-                        // Save to database
-                        const response = await fetch('/api/saved-schedules', {
-                            method: 'POST',
+                        // Update main database with new schedule times
+                        const response = await fetch('/api/pt-operations/schedule', {
+                            method: 'PATCH',
                             headers: {
                                 'Content-Type': 'application/json',
                                 'Authorization': authToken ? `Bearer ${authToken}` : ''
                             },
-                            body: JSON.stringify(saveData)
+                            body: JSON.stringify({ operations })
                         });
                         
                         if (response.ok) {
-                            const savedSchedule = await response.json();
-                            
-                            // Also save to localStorage as backup
-                            localStorage.setItem('lastSavedSchedule', JSON.stringify(saveData));
+                            const result = await response.json();
                             
                             // Update last update time
-                            document.getElementById('lastUpdate').textContent = `Last saved: ${new Date().toLocaleTimeString()}`;
+                            document.getElementById('lastUpdate').textContent = `Last updated: ${new Date().toLocaleTimeString()}`;
                             
-                            console.log('✅ Schedule saved to database:', savedSchedule.id);
+                            console.log(`✅ Updated ${result.updated}/${result.total} operations in database`);
                             
                             // Show success message
-                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Saved!</span>';
+                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span>Schedule Updated!</span>';
                             
-                            // Store the saved schedule ID for future updates
-                            window.currentScheduleId = savedSchedule.id;
+                            // Optional: Also save a version/snapshot for history
+                            // This happens automatically with the existing saved-schedules system
+                            try {
+                                const scheduleData = {
+                                    name: `Auto-save - ${new Date().toLocaleString()}`,
+                                    description: `Algorithm: ${document.getElementById('schedulingAlgorithm').options[document.getElementById('schedulingAlgorithm').selectedIndex].text}`,
+                                    scheduleData: {
+                                        events: window.scheduler.eventStore.toJSON(),
+                                        resources: window.scheduler.resourceStore.toJSON(),
+                                        dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : []
+                                    },
+                                    metadata: {
+                                        algorithm: document.getElementById('schedulingAlgorithm').value,
+                                        savedAt: new Date().toISOString(),
+                                        stats: {
+                                            operations: result.updated,
+                                            utilization: window.currentResourceUtilization || 0,
+                                            totalHours: window.currentTotalHours || 0,
+                                            resources: window.scheduler.resourceStore.count
+                                        }
+                                    }
+                                };
+                                
+                                // Save version in background (don't wait for response)
+                                fetch('/api/saved-schedules', {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': authToken ? `Bearer ${authToken}` : ''
+                                    },
+                                    body: JSON.stringify(scheduleData)
+                                }).then(res => {
+                                    if (res.ok) {
+                                        console.log('📚 Schedule version saved for history');
+                                    }
+                                }).catch(err => {
+                                    console.warn('Failed to save schedule version:', err);
+                                });
+                            } catch (versionError) {
+                                // Silently fail version save - main update already succeeded
+                                console.warn('Could not save schedule version:', versionError);
+                            }
                         } else {
-                            // Fallback to localStorage if API fails
-                            localStorage.setItem('savedSchedule_' + Date.now(), JSON.stringify(saveData));
-                            console.warn('⚠️ Saved to local storage (database save failed)');
+                            const error = await response.text();
+                            console.error('Failed to update schedule:', error);
                             
-                            // Show warning
-                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Saved Locally</span>';
+                            // Show error
+                            saveBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg><span>Update Failed</span>';
+                            
+                            alert('Failed to update schedule in database. Please try again.');
                         }
                         
                         // Reset button after delay
@@ -4081,37 +4091,8 @@
                         }, 2000);
                     }
                 } catch (error) {
-                    console.error('❌ Error saving schedule:', error);
-                    
-                    // Try to save to localStorage as fallback
-                    try {
-                        let projectData;
-                        try {
-                            projectData = window.scheduler.project.toJSON();
-                        } catch (serializeError) {
-                            // Try alternative: get events, resources, and dependencies separately
-                            projectData = {
-                                events: window.scheduler.eventStore.toJSON(),
-                                resources: window.scheduler.resourceStore.toJSON(),
-                                dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : [],
-                                project: {
-                                    startDate: window.scheduler.project.startDate,
-                                    endDate: window.scheduler.project.endDate
-                                }
-                            };
-                        }
-                        
-                        const fallbackData = {
-                            name: `Backup - ${new Date().toLocaleTimeString()}`,
-                            timestamp: new Date().toISOString(),
-                            data: projectData
-                        };
-                        localStorage.setItem('scheduleBackup_' + Date.now(), JSON.stringify(fallbackData));
-                        alert('Schedule saved to local storage as backup');
-                    } catch (e) {
-                        console.error('Failed to save even as backup:', e);
-                        alert('Failed to save schedule. The schedule data may be too large or contain invalid data.');
-                    }
+                    console.error('❌ Error updating schedule:', error);
+                    alert('Failed to update schedule. Please check console for details.');
                     
                     // Properly reset the save button
                     const saveBtn = document.getElementById('saveSchedule');
