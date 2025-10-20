@@ -442,15 +442,16 @@ export class PowerBIService {
       duration: (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / 1000
     }));
 
-    // Use on-demand refreshes if we have at least 3, otherwise fall back to all
-    const refreshesToUse = onDemandRefreshes.length >= 3 ? onDemandRefreshes : last10Refreshes;
+    // Use on-demand refreshes if we have ANY, otherwise fall back to all
+    // On-demand refreshes give us net processing time without queue wait
+    const refreshesToUse = onDemandRefreshes.length > 0 ? onDemandRefreshes : last10Refreshes;
 
     // Debug logging to understand refresh types
     console.log(`📊 Refresh Type Analysis:`, {
       total: last10Refreshes.length,
       onDemand: onDemandRefreshes.length,
       scheduled: last10Refreshes.filter((r: any) => r.refreshType === 'Scheduled').length,
-      usingOnDemandOnly: onDemandRefreshes.length >= 3,
+      usingOnDemandOnly: onDemandRefreshes.length > 0,
       onDemandDurations: onDemandDurations.map(d => `${d.type}: ${d.duration}s`).join(', '),
       allTypes: allRefreshesWithDurations.map(r => `${r.refreshType || 'Unknown'}: ${r.duration}s`).join(' | ')
     });
