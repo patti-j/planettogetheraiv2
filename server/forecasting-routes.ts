@@ -69,16 +69,42 @@ router.get('/columns/:schema/:table', async (req, res) => {
 router.get('/items/:schema/:table/:column', async (req, res) => {
   try {
     const { schema, table, column } = req.params;
+    const { planningAreas, scenarios } = req.query;
     const pool = await sql.connect(getSqlConfig());
     
     // Safely escape identifiers
     const tableName = `[${schema}].[${table}]`;
     const columnName = `[${column}]`;
     
+    // Build WHERE clause with filters
+    let whereConditions = [`${columnName} IS NOT NULL`];
+    
+    // Add planning area filter if provided
+    if (planningAreas && typeof planningAreas === 'string') {
+      const planningAreaList = planningAreas.split(',');
+      if (planningAreaList.length > 0) {
+        const planningAreaCol = `[PlanningAreaName]`;
+        const escapedAreas = planningAreaList.map(area => `'${area.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${planningAreaCol} IN (${escapedAreas})`);
+      }
+    }
+    
+    // Add scenario filter if provided
+    if (scenarios && typeof scenarios === 'string') {
+      const scenarioList = scenarios.split(',');
+      if (scenarioList.length > 0) {
+        const scenarioCol = `[ScenarioName]`;
+        const escapedScenarios = scenarioList.map(scenario => `'${scenario.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${scenarioCol} IN (${escapedScenarios})`);
+      }
+    }
+    
+    const whereClause = whereConditions.join(' AND ');
+    
     const result = await pool.request().query(`
       SELECT DISTINCT TOP 1000 ${columnName} as item
       FROM ${tableName}
-      WHERE ${columnName} IS NOT NULL
+      WHERE ${whereClause}
       ORDER BY item
     `);
     

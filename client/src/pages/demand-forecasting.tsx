@@ -113,13 +113,26 @@ export default function DemandForecasting() {
       )).sort()
     : planningAreas;
 
-  // Fetch items for selected item column
+  // Fetch items for selected item column (filtered by planning areas and scenarios)
   const { data: items } = useQuery<string[]>({
-    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, itemColumn],
+    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, itemColumn, selectedPlanningAreas, selectedScenarios],
     enabled: !!selectedTable && !!itemColumn,
     queryFn: async () => {
       if (!selectedTable || !itemColumn) return [];
-      const response = await fetch(`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}`);
+      
+      // Build query parameters for filtering
+      const params = new URLSearchParams();
+      if (selectedPlanningAreas.length > 0) {
+        params.set('planningAreas', selectedPlanningAreas.join(','));
+      }
+      if (selectedScenarios.length > 0) {
+        params.set('scenarios', selectedScenarios.join(','));
+      }
+      
+      const queryString = params.toString();
+      const url = `/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}${queryString ? `?${queryString}` : ''}`;
+      
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch items");
       return response.json();
     },
