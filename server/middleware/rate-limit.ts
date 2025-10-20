@@ -6,24 +6,32 @@
 import rateLimit from 'express-rate-limit';
 
 // Standard rate limiter for general API endpoints
-export const standardLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per window
-  message: 'Too many requests from this IP, please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+export const standardLimiter = process.env.NODE_ENV === 'development'
+  ? (req: any, res: any, next: any) => next() // Bypass rate limiting in development
+  : rateLimit({
+      windowMs: 15 * 60 * 1000, // 15 minutes
+      max: 100, // Limit each IP to 100 requests per window
+      message: 'Too many requests from this IP, please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
+    });
 
 // Strict rate limiter for optimization endpoints
-export const optimizationLimiter = rateLimit({
-  windowMs: 5 * 60 * 1000, // 5 minutes
-  max: 10, // Limit each IP to 10 optimization requests per 5 minutes
-  message: 'Too many optimization requests. Please wait before submitting another job.',
-  standardHeaders: true,
-  legacyHeaders: false,
-  skipSuccessfulRequests: false,
-  skipFailedRequests: false,
-});
+export const optimizationLimiter = process.env.NODE_ENV === 'development'
+  ? (req: any, res: any, next: any) => next() // Bypass rate limiting in development
+  : rateLimit({
+      windowMs: 5 * 60 * 1000, // 5 minutes
+      max: 10, // Limit each IP to 10 optimization requests per 5 minutes
+      message: 'Too many optimization requests. Please wait before submitting another job.',
+      standardHeaders: true,
+      legacyHeaders: false,
+      skipSuccessfulRequests: false,
+      skipFailedRequests: false,
+      skip: (req: any) => {
+        // Skip rate limiting in development mode
+        return process.env.NODE_ENV === 'development';
+      }
+    });
 
 // Very strict limiter for file upload endpoints
 export const uploadLimiter = rateLimit({
@@ -45,10 +53,12 @@ export const authLimiter = rateLimit({
 });
 
 // SSE connection limiter (prevent resource exhaustion)
-export const sseLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 5, // Limit each IP to 5 SSE connections per minute
-  message: 'Too many event stream connections. Please try again later.',
-  standardHeaders: true,
-  legacyHeaders: false,
-});
+export const sseLimiter = process.env.NODE_ENV === 'development'
+  ? (req: any, res: any, next: any) => next() // Bypass rate limiting in development
+  : rateLimit({
+      windowMs: 60 * 1000, // 1 minute
+      max: 5, // Limit each IP to 5 SSE connections per minute
+      message: 'Too many event stream connections. Please try again later.',
+      standardHeaders: true,
+      legacyHeaders: false,
+    });

@@ -548,6 +548,132 @@ export const savedSchedules = pgTable("saved_schedules", {
 });
 
 // ============================================
+// Schedule Versioning and Concurrency Control
+// ============================================
+
+// Schedule version tracking - stores immutable snapshots
+export const scheduleVersions = pgTable("schedule_versions", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull(), // Links to master schedule (ptjobs or savedSchedules)
+  versionNumber: integer("version_number").notNull(), // Sequential version number
+  versionTag: varchar("version_tag", { length: 50 }), // Optional tag like "v1.0", "baseline", "optimized"
+  
+  // Version metadata
+  createdBy: integer("created_by").references(() => users.id).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  source: varchar("source", { length: 50 }).notNull(), // 'manual', 'optimization', 'import', 'auto-save'
+  comment: text("comment"), // User comment about this version
+  
+  // Snapshot data
+  snapshotData: jsonb("snapshot_data").notNull(), // Complete schedule state at this version
+  operationSnapshots: jsonb("operation_snapshots").notNull(), // All operation states
+  resourceAllocations: jsonb("resource_allocations"), // Resource assignments at this version
+  
+  // Version relationships
+  parentVersionId: integer("parent_version_id"), // Previous version this was based on
+  branchName: varchar("branch_name", { length: 100 }).default("main"), // Support for branching
+  isMerged: boolean("is_merged").default(false),
+  mergedIntoVersionId: integer("merged_into_version_id"),
+  
+  // Optimistic concurrency control
+  checksum: varchar("checksum", { length: 64 }).notNull(), // SHA-256 hash of critical data
+  conflictResolution: jsonb("conflict_resolution"), // How conflicts were resolved if any
+  
+  // Performance metrics at this version
+  metrics: jsonb("metrics"), // Makespan, utilization, etc.
+  
+  // Status
+  status: varchar("status", { length: 20 }).default("active"), // active, archived, superseded
+  isBaseline: boolean("is_baseline").default(false), // Mark important versions
+});
+
+// Operation version history - tracks changes to individual operations
+export const operationVersions = pgTable("operation_versions", {
+  id: serial("id").primaryKey(),
+  operationId: integer("operation_id").references(() => ptJobOperations.id).notNull(),
+  versionId: integer("version_id").references(() => scheduleVersions.id).notNull(),
+  
+  // Operation state at this version
+  scheduledStart: timestamp("scheduled_start"),
+  scheduledEnd: timestamp("scheduled_end"),
+  resourceId: integer("resource_id"),
+  sequenceNumber: integer("sequence_number"),
+  
+  // What changed
+  changeType: varchar("change_type", { length: 50 }), // 'created', 'updated', 'deleted', 'rescheduled'
+  changedFields: jsonb("changed_fields"), // List of fields that changed
+  previousValues: jsonb("previous_values"), // Previous field values
+  newValues: jsonb("new_values"), // New field values
+  
+  // Manual scheduling preservation
+  manuallyScheduled: boolean("manually_scheduled").default(false),
+  lockReason: text("lock_reason"), // Why this was locked
+  
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Version comparison metadata
+export const versionComparisons = pgTable("version_comparisons", {
+  id: serial("id").primaryKey(),
+  versionId1: integer("version_id_1").references(() => scheduleVersions.id).notNull(),
+  versionId2: integer("version_id_2").references(() => scheduleVersions.id).notNull(),
+  
+  // Comparison results
+  comparisonType: varchar("comparison_type", { length: 50 }), // 'diff', 'merge', 'conflict'
+  differences: jsonb("differences").notNull(), // Detailed diff between versions
+  conflictCount: integer("conflict_count").default(0),
+  
+  // Performance comparison
+  metricsDelta: jsonb("metrics_delta"), // Change in metrics between versions
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Concurrency control locks
+export const scheduleLocks = pgTable("schedule_locks", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull(),
+  versionId: integer("version_id").references(() => scheduleVersions.id).notNull(),
+  
+  // Lock information
+  lockType: varchar("lock_type", { length: 20 }).notNull(), // 'read', 'write', 'exclusive'
+  lockedBy: integer("locked_by").references(() => users.id).notNull(),
+  lockedAt: timestamp("locked_at").defaultNow().notNull(),
+  expiresAt: timestamp("expires_at").notNull(), // Auto-release after timeout
+  
+  // Lock context
+  sessionId: varchar("session_id", { length: 100 }), // Track which session holds the lock
+  purpose: text("purpose"), // Why the lock was acquired
+  
+  // Optimistic control
+  expectedVersion: integer("expected_version").notNull(), // Version expected when acquiring lock
+  actualVersion: integer("actual_version"), // Actual version at lock time
+  
+  isActive: boolean("is_active").default(true),
+});
+
+// Version rollback history
+export const versionRollbacks = pgTable("version_rollbacks", {
+  id: serial("id").primaryKey(),
+  scheduleId: integer("schedule_id").notNull(),
+  fromVersionId: integer("from_version_id").references(() => scheduleVersions.id).notNull(),
+  toVersionId: integer("to_version_id").references(() => scheduleVersions.id).notNull(),
+  
+  // Rollback details
+  rollbackReason: text("rollback_reason").notNull(),
+  rollbackType: varchar("rollback_type", { length: 50 }), // 'full', 'partial', 'selective'
+  affectedOperations: jsonb("affected_operations"), // Which operations were rolled back
+  
+  // Audit
+  performedBy: integer("performed_by").references(() => users.id).notNull(),
+  performedAt: timestamp("performed_at").defaultNow().notNull(),
+  approved: boolean("approved").default(false),
+  approvedBy: integer("approved_by").references(() => users.id),
+  approvedAt: timestamp("approved_at"),
+});
+
+// ============================================
 // Product Wheel Scheduling System
 // ============================================
 
