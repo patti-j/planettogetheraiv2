@@ -3722,69 +3722,180 @@
                         switch(algorithm) {
                             case 'asap':
                                 // ASAP scheduling - schedule as soon as possible
-                                if (window.scheduler.project.scheduleByConstraints) {
-                                    // First, enable strict resource constraint checking
-                                    window.scheduler.project.schedulingEngine.allowOverlap = false;
-                                    window.scheduler.project.schedulingEngine.multiplePerResource = false;
-                                    window.scheduler.project.schedulingEngine.scheduleOverlapEvents = false;
-                                    
-                                    // Apply ASAP with strict resource constraints
-                                    window.scheduler.project.scheduleByConstraints('asap');
-                                    
-                                    // After scheduling, check for and fix any overlaps
-                                    const eventStore = window.scheduler.eventStore;
-                                    const resourceStore = window.scheduler.resourceStore;
-                                    
-                                    // Group events by resource
-                                    const eventsByResource = {};
-                                    eventStore.records.forEach(event => {
-                                        const resourceId = event.resourceId;
-                                        if (!eventsByResource[resourceId]) {
-                                            eventsByResource[resourceId] = [];
+                                console.log('🚀 Applying ASAP scheduling...');
+                                
+                                // Get the event store
+                                const eventStore = window.scheduler.eventStore;
+                                const dependencyStore = window.scheduler.dependencyStore;
+                                
+                                // First, collect all events and their resource assignments
+                                const eventsByResource = {};
+                                eventStore.records.forEach(event => {
+                                    const resourceId = event.resourceId;
+                                    if (!eventsByResource[resourceId]) {
+                                        eventsByResource[resourceId] = [];
+                                    }
+                                    eventsByResource[resourceId].push(event);
+                                });
+                                
+                                // Build a dependency graph
+                                const dependencyGraph = {};
+                                const dependentEvents = new Set();
+                                dependencyStore.records.forEach(dep => {
+                                    if (!dependencyGraph[dep.from]) {
+                                        dependencyGraph[dep.from] = [];
+                                    }
+                                    dependencyGraph[dep.from].push(dep.to);
+                                    dependentEvents.add(dep.to);
+                                });
+                                
+                                // Find starting events (no incoming dependencies)
+                                const startingEvents = eventStore.records.filter(event => 
+                                    !dependentEvents.has(event.id)
+                                );
+                                
+                                // Schedule starting events at project start
+                                const projectStart = new Date();
+                                projectStart.setHours(8, 0, 0, 0); // Start at 8 AM
+                                
+                                // Process each resource's events separately to avoid overlaps
+                                Object.entries(eventsByResource).forEach(([resourceId, resourceEvents]) => {
+                                    // Sort events by their current start date (or by ID if no start date)
+                                    resourceEvents.sort((a, b) => {
+                                        if (a.startDate && b.startDate) {
+                                            return a.startDate.getTime() - b.startDate.getTime();
                                         }
-                                        eventsByResource[resourceId].push(event);
+                                        return a.id - b.id;
                                     });
                                     
-                                    // Check and fix overlaps for each resource
-                                    Object.entries(eventsByResource).forEach(([resourceId, events]) => {
-                                        // Sort events by start time
-                                        events.sort((a, b) => a.startDate - b.startDate);
+                                    // Track the earliest available time for this resource
+                                    let resourceAvailableTime = projectStart.getTime();
+                                    
+                                    // Schedule each event on this resource
+                                    resourceEvents.forEach((event, index) => {
+                                        // Calculate duration in milliseconds
+                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
                                         
-                                        // Fix overlaps by shifting later events
-                                        for (let i = 1; i < events.length; i++) {
-                                            const prevEvent = events[i - 1];
-                                            const currEvent = events[i];
-                                            
-                                            // If current event starts before previous ends, shift it
-                                            if (currEvent.startDate < prevEvent.endDate) {
-                                                const overlap = prevEvent.endDate - currEvent.startDate;
-                                                currEvent.startDate = new Date(prevEvent.endDate.getTime());
-                                                currEvent.endDate = new Date(currEvent.startDate.getTime() + currEvent.duration * 60 * 60 * 1000);
-                                                console.log(`⚠️ Fixed overlap: Shifted "${currEvent.name}" to start after "${prevEvent.name}"`);
+                                        // Check for dependencies - if this event has a predecessor, wait for it
+                                        let earliestStart = resourceAvailableTime;
+                                        
+                                        // Check all dependencies where this event is the successor
+                                        dependencyStore.records.forEach(dep => {
+                                            if (dep.to === event.id) {
+                                                const predecessor = eventStore.getById(dep.from);
+                                                if (predecessor && predecessor.endDate) {
+                                                    const depEndTime = predecessor.endDate.getTime();
+                                                    // Add lag if specified
+                                                    const lagMs = (dep.lag || 0) * 60 * 60 * 1000;
+                                                    earliestStart = Math.max(earliestStart, depEndTime + lagMs);
+                                                }
                                             }
-                                        }
+                                        });
+                                        
+                                        // Set the event start time (ASAP = earliest possible)
+                                        event.startDate = new Date(earliestStart);
+                                        event.endDate = new Date(earliestStart + durationMs);
+                                        
+                                        // Update resource availability for next event
+                                        resourceAvailableTime = event.endDate.getTime();
+                                        
+                                        console.log(`✅ Scheduled "${event.name}" on ${resourceId}: ${event.startDate.toLocaleString()} - ${event.endDate.toLocaleString()}`);
                                     });
-                                    
-                                    console.log('✅ ASAP scheduling applied with overlap prevention');
-                                } else {
-                                    console.warn('ASAP scheduling not available in this version');
-                                }
+                                });
+                                
+                                // Force a refresh of the scheduler view
+                                window.scheduler.refresh();
+                                
+                                console.log('✅ ASAP scheduling completed - no overlaps!');
                                 break;
                             case 'alap':
                                 // ALAP scheduling - schedule as late as possible
-                                if (window.scheduler.project.scheduleByConstraints) {
-                                    // Enable strict resource constraint checking for consistency
-                                    window.scheduler.project.schedulingEngine.allowOverlap = false;
-                                    window.scheduler.project.schedulingEngine.multiplePerResource = false;
-                                    window.scheduler.project.schedulingEngine.scheduleOverlapEvents = false;
+                                console.log('🚀 Applying ALAP scheduling...');
+                                
+                                // Get the event store and dependency store
+                                const eventStoreALAP = window.scheduler.eventStore;
+                                const dependencyStoreALAP = window.scheduler.dependencyStore;
+                                
+                                // First, collect all events and their resource assignments
+                                const eventsByResourceALAP = {};
+                                eventStoreALAP.records.forEach(event => {
+                                    const resourceId = event.resourceId;
+                                    if (!eventsByResourceALAP[resourceId]) {
+                                        eventsByResourceALAP[resourceId] = [];
+                                    }
+                                    eventsByResourceALAP[resourceId].push(event);
+                                });
+                                
+                                // Build a reverse dependency graph (successors for each event)
+                                const successorGraph = {};
+                                const hasSuccessor = new Set();
+                                dependencyStoreALAP.records.forEach(dep => {
+                                    if (!successorGraph[dep.to]) {
+                                        successorGraph[dep.to] = [];
+                                    }
+                                    successorGraph[dep.to].push(dep.from);
+                                    hasSuccessor.add(dep.from);
+                                });
+                                
+                                // Find ending events (no outgoing dependencies)
+                                const endingEvents = eventStoreALAP.records.filter(event => 
+                                    !hasSuccessor.has(event.id)
+                                );
+                                
+                                // Set project end date (e.g., 30 days from now)
+                                const projectEnd = new Date();
+                                projectEnd.setDate(projectEnd.getDate() + 30);
+                                projectEnd.setHours(17, 0, 0, 0); // End at 5 PM
+                                
+                                // Process each resource's events separately to avoid overlaps
+                                Object.entries(eventsByResourceALAP).forEach(([resourceId, resourceEvents]) => {
+                                    // Sort events by their current end date in reverse (or by ID if no end date)
+                                    resourceEvents.sort((a, b) => {
+                                        if (b.endDate && a.endDate) {
+                                            return b.endDate.getTime() - a.endDate.getTime();
+                                        }
+                                        return b.id - a.id;
+                                    });
                                     
-                                    // Apply ALAP with strict resource constraints
-                                    window.scheduler.project.scheduleByConstraints('alap');
+                                    // Track the latest available time for this resource (working backwards)
+                                    let resourceLatestTime = projectEnd.getTime();
                                     
-                                    console.log('✅ ALAP scheduling applied with overlap prevention');
-                                } else {
-                                    console.warn('ALAP scheduling not available in this version');
-                                }
+                                    // Schedule each event on this resource (working backwards)
+                                    resourceEvents.forEach((event, index) => {
+                                        // Calculate duration in milliseconds
+                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
+                                        
+                                        // Check for dependencies - if this event has a successor, must finish before it starts
+                                        let latestEnd = resourceLatestTime;
+                                        
+                                        // Check all dependencies where this event is the predecessor
+                                        dependencyStoreALAP.records.forEach(dep => {
+                                            if (dep.from === event.id) {
+                                                const successor = eventStoreALAP.getById(dep.to);
+                                                if (successor && successor.startDate) {
+                                                    const successorStartTime = successor.startDate.getTime();
+                                                    // Subtract lag if specified
+                                                    const lagMs = (dep.lag || 0) * 60 * 60 * 1000;
+                                                    latestEnd = Math.min(latestEnd, successorStartTime - lagMs);
+                                                }
+                                            }
+                                        });
+                                        
+                                        // Set the event end time (ALAP = latest possible)
+                                        event.endDate = new Date(latestEnd);
+                                        event.startDate = new Date(latestEnd - durationMs);
+                                        
+                                        // Update resource availability for previous event (working backwards)
+                                        resourceLatestTime = event.startDate.getTime();
+                                        
+                                        console.log(`✅ Scheduled "${event.name}" on ${resourceId}: ${event.startDate.toLocaleString()} - ${event.endDate.toLocaleString()}`);
+                                    });
+                                });
+                                
+                                // Force a refresh of the scheduler view
+                                window.scheduler.refresh();
+                                
+                                console.log('✅ ALAP scheduling completed - no overlaps!');
                                 break;
                             case 'criticalPath':
                                 // Critical path method
