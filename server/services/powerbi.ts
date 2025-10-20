@@ -492,11 +492,11 @@ export class PowerBIService {
     const recentRefreshes = refreshHistory.slice(0, 5);
     const recentFailures = recentRefreshes.filter((r: any) => r.status === 'Failed').length > 1;
 
-    // Add 5 seconds to compensate for polling interval (4s) + API response time + Power BI status propagation lag
-    const DETECTION_LAG_SECONDS = 5;
-    const adjustedMedian = median + DETECTION_LAG_SECONDS;
-    const adjustedMin = min + DETECTION_LAG_SECONDS;
-    const adjustedMax = p80 + DETECTION_LAG_SECONDS;
+    // Add 20% to compensate for polling interval (4s) + API response time + Power BI status propagation lag
+    const DETECTION_LAG_MULTIPLIER = 1.20;
+    const adjustedMedian = median * DETECTION_LAG_MULTIPLIER;
+    const adjustedMin = min * DETECTION_LAG_MULTIPLIER;
+    const adjustedMax = p80 * DETECTION_LAG_MULTIPLIER;
 
     // Generate base contextual message (peak hours shown dynamically on frontend when remaining = 0)
     let message = `Estimated ${Math.round(adjustedMedian)} seconds based on historical refreshes`;
