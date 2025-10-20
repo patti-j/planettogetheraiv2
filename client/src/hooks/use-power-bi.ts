@@ -890,6 +890,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
       
       // Find our specific refresh by refreshId or by timing
       let targetRefresh = latestRefresh;
+      let matchedById = false;
       
       // Try to match by refreshId first (most reliable)
       if (refreshInfo.refreshId) {
@@ -898,6 +899,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
         );
         if (matchById) {
           targetRefresh = matchById;
+          matchedById = true;
           console.log('🎯 Found refresh by ID match:', {
             refreshId: refreshInfo.refreshId,
             foundRefresh: {
@@ -907,25 +909,36 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
             }
           });
         } else {
-          console.warn('⚠️ Could not find refresh by ID, using latest refresh by timing');
+          console.warn('⚠️ Could not find refresh by ID, will check timing match');
         }
       }
       
       // Check if this is our current refresh (started after our start time with buffer)
       const ourStartTime = refreshInfo.startTime;
       const refreshStartTime = new Date(targetRefresh.startTime);
-      const timingMatch = ourStartTime && refreshStartTime >= new Date(ourStartTime.getTime() - 5000); // 5 second buffer
+      
+      // More lenient timing match: 30 second buffer before our start time
+      const timingMatch = ourStartTime && refreshStartTime >= new Date(ourStartTime.getTime() - 30000); // 30 second buffer
       
       console.log('🕐 Timing check:', {
         ourStartTime: ourStartTime?.toISOString(),
         refreshStartTime: refreshStartTime.toISOString(),
         timingMatch,
+        matchedById,
         timeDifference: ourStartTime ? refreshStartTime.getTime() - ourStartTime.getTime() : 'N/A'
       });
       
-      if (timingMatch) {
-        // Check for completion (case-insensitive)
+      // Check status if we matched by ID OR timing is close
+      if (matchedById || timingMatch) {
+        // Check for completion (case-insensitive and handle all Power BI status values)
         const status = targetRefresh.status?.toLowerCase();
+        
+        console.log('🎯 Checking status for matched refresh:', {
+          status,
+          matchedById,
+          timingMatch,
+          endTime: targetRefresh.endTime
+        });
         
         if (status === 'completed') {
           console.log('✅ Dataset refresh completed successfully');
@@ -940,11 +953,60 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
             status: 'failed',
             error: targetRefresh.serviceExceptionJson || 'Dataset refresh failed'
           }));
+        } else if (status === 'disabled') {
+          console.log('🚫 Dataset refresh disabled');
+          setRefreshInfo(prev => ({
+            ...prev,
+            status: 'failed',
+            error: 'Dataset refresh is disabled'
+          }));
+        } else if (status === 'unknown') {
+          // Unknown status with an endTime means it completed but status wasn't reported
+          if (targetRefresh.endTime) {
+            console.log('⚠️ Refresh has unknown status but has endTime - treating as completed');
+            setRefreshInfo(prev => ({
+              ...prev,
+              status: 'completed'
+            }));
+          } else {
+            console.log('❓ Refresh has unknown status without endTime - still in progress');
+          }
         } else {
+          // In progress or other status
           console.log('🔄 Refresh still in progress, status:', targetRefresh.status);
         }
       } else {
-        console.log('⏭️ Latest refresh is not our current refresh (timing mismatch)');
+        console.log('⏭️ Latest refresh is not our current refresh (no match by ID or timing)');
+        
+        // Fallback: If we've been polling for a while and the latest refresh has a completed status
+        // and an endTime that's recent, it's likely our refresh completed
+        if (ourStartTime && latestRefresh.endTime) {
+          const refreshEndTime = new Date(latestRefresh.endTime);
+          const timeSinceOurStart = (Date.now() - ourStartTime.getTime()) / 1000; // seconds
+          const refreshDuration = (refreshEndTime.getTime() - refreshStartTime.getTime()) / 1000; // seconds
+          
+          // If we've been waiting long enough and latest refresh is complete, assume it's ours
+          if (timeSinceOurStart > 10 && (latestRefresh.status?.toLowerCase() === 'completed' || latestRefresh.status?.toLowerCase() === 'failed')) {
+            console.log('🔍 FALLBACK: Our refresh has been running for a while and latest refresh is complete - assuming it\'s ours', {
+              timeSinceOurStart: `${timeSinceOurStart}s`,
+              latestRefreshStatus: latestRefresh.status,
+              latestRefreshDuration: `${refreshDuration}s`
+            });
+            
+            if (latestRefresh.status?.toLowerCase() === 'completed') {
+              setRefreshInfo(prev => ({
+                ...prev,
+                status: 'completed'
+              }));
+            } else {
+              setRefreshInfo(prev => ({
+                ...prev,
+                status: 'failed',
+                error: latestRefresh.serviceExceptionJson || 'Dataset refresh failed'
+              }));
+            }
+          }
+        }
       }
     }
   }, [refreshHistory, refreshInfo.status, refreshInfo.startTime, refreshInfo.refreshId]);
