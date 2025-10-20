@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test ASAP Algorithm</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test ASAP Algorithm</h1>
+    <button id="loadScheduler">Load Production Scheduler</button>
+    <button id="applyASAP" disabled>Apply ASAP Algorithm</button>
+    <button id="checkOverlaps" disabled>Check for Overlaps</button>
+    
+    <div id="output">Click "Load Production Scheduler" to begin...</div>
+    
+    <iframe id="scheduler" src="/api/production-scheduler" style="display:none;"></iframe>
+
+    <script>
+        const output = document.getElementById('output');
+        const iframe = document.getElementById('scheduler');
+        const loadBtn = document.getElementById('loadScheduler');
+        const asapBtn = document.getElementById('applyASAP');
+        const checkBtn = document.getElementById('checkOverlaps');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        loadBtn.addEventListener('click', () => {
+            log('Loading Production Scheduler...');
+            iframe.style.display = 'block';
+            
+            // Wait for iframe to load
+            iframe.onload = () => {
+                log('✅ Scheduler loaded!');
+                log('Waiting for Bryntum to initialize...');
+                
+                // Check if scheduler is available
+                setTimeout(() => {
+                    const schedulerWindow = iframe.contentWindow;
+                    if (schedulerWindow && schedulerWindow.scheduler) {
+                        log('✅ Bryntum scheduler detected!');
+                        asapBtn.disabled = false;
+                        checkBtn.disabled = false;
+                        
+                        // Log initial state
+                        const eventCount = schedulerWindow.scheduler.eventStore.count;
+                        const resourceCount = schedulerWindow.scheduler.resourceStore.count;
+                        log(`📊 Initial state: ${eventCount} events, ${resourceCount} resources`);
+                    } else {
+                        log('❌ Scheduler not found in iframe');
+                    }
+                }, 3000);
+            };
+        });
+        
+        asapBtn.addEventListener('click', () => {
+            const schedulerWindow = iframe.contentWindow;
+            
+            if (!schedulerWindow || !schedulerWindow.scheduler) {
+                log('❌ Scheduler not available');
+                return;
+            }
+            
+            log('🚀 Applying ASAP algorithm...');
+            log('Check browser console for detailed debug output');
+            
+            // Apply ASAP by clicking the button in the iframe
+            const applyBtn = schedulerWindow.document.getElementById('applyScheduling');
+            const algorithmSelect = schedulerWindow.document.getElementById('schedulingAlgorithm');
+            
+            if (algorithmSelect && applyBtn) {
+                algorithmSelect.value = 'asap';
+                log('✅ Selected ASAP in dropdown');
+                
+                // Click apply button
+                applyBtn.click();
+                log('✅ Clicked Apply button');
+                
+                // Check results after a delay
+                setTimeout(() => {
+                    checkForOverlaps();
+                }, 2000);
+            } else {
+                log('❌ Could not find algorithm controls in scheduler');
+            }
+        });
+        
+        checkBtn.addEventListener('click', checkForOverlaps);
+        
+        function checkForOverlaps() {
+            const schedulerWindow = iframe.contentWindow;
+            
+            if (!schedulerWindow || !schedulerWindow.scheduler) {
+                log('❌ Scheduler not available');
+                return;
+            }
+            
+            log('\n🔍 Checking for overlaps...');
+            
+            const eventStore = schedulerWindow.scheduler.eventStore;
+            const resources = {};
+            
+            // Group events by resource
+            eventStore.records.forEach(event => {
+                const resourceId = event.resourceId;
+                if (!resources[resourceId]) {
+                    resources[resourceId] = [];
+                }
+                resources[resourceId].push({
+                    id: event.id,
+                    name: event.name,
+                    start: event.startDate,
+                    end: event.endDate
+                });
+            });
+            
+            // Check for overlaps on each resource
+            let overlapCount = 0;
+            Object.entries(resources).forEach(([resourceId, events]) => {
+                // Sort events by start time
+                events.sort((a, b) => a.start - b.start);
+                
+                log(`\nResource ${resourceId}: ${events.length} events`);
+                
+                for (let i = 0; i < events.length - 1; i++) {
+                    const current = events[i];
+                    const next = events[i + 1];
+                    
+                    if (current.end > next.start) {
+                        overlapCount++;
+                        log(`  ❌ OVERLAP: "${current.name}" ends at ${current.end.toLocaleString()}`);
+                        log(`             "${next.name}" starts at ${next.start.toLocaleString()}`);
+                    }
+                }
+            });
+            
+            if (overlapCount === 0) {
+                log('\n✅ No overlaps detected!');
+            } else {
+                log(`\n❌ Found ${overlapCount} overlaps!`);
+            }
+        }
+    </script>
+</body>
+</html>
