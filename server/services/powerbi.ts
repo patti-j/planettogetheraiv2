@@ -416,23 +416,25 @@ export class PowerBIService {
       };
     }
 
-    // Only use the last 10 completed refreshes for more accurate, recent-based estimation
-    // Sort by startTime (most recent first) and take the first 10
-    const last10Refreshes = completedRefreshes
+    // Only use refreshes from the last 30 days for more accurate, recent-based estimation
+    const currentTime = new Date();
+    const thirtyDaysAgo = new Date(currentTime.getTime() - (30 * 24 * 60 * 60 * 1000));
+    
+    const last30DaysRefreshes = completedRefreshes
+      .filter((r: any) => new Date(r.startTime) >= thirtyDaysAgo)
       .sort((a: any, b: any) => 
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
-      )
-      .slice(0, 10);
+      );
 
     // Filter by refreshType to exclude scheduled refreshes with queue time
     // Only use OnDemand, ViaApi, ViaEnhancedApi for net processing time
     const onDemandTypes = ['OnDemand', 'ViaApi', 'ViaEnhancedApi'];
-    const onDemandRefreshes = last10Refreshes.filter((r: any) => 
+    const onDemandRefreshes = last30DaysRefreshes.filter((r: any) => 
       r.refreshType && onDemandTypes.includes(r.refreshType)
     );
 
     // Calculate durations for each refresh type
-    const allRefreshesWithDurations = last10Refreshes.map((r: any) => ({
+    const allRefreshesWithDurations = last30DaysRefreshes.map((r: any) => ({
       ...r,
       duration: (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / 1000
     }));
@@ -444,13 +446,13 @@ export class PowerBIService {
 
     // Use on-demand refreshes if we have ANY, otherwise fall back to all
     // On-demand refreshes give us net processing time without queue wait
-    const refreshesToUse = onDemandRefreshes.length > 0 ? onDemandRefreshes : last10Refreshes;
+    const refreshesToUse = onDemandRefreshes.length > 0 ? onDemandRefreshes : last30DaysRefreshes;
 
     // Debug logging to understand refresh types
-    console.log(`📊 Refresh Type Analysis:`, {
-      total: last10Refreshes.length,
+    console.log(`📊 Refresh Type Analysis (Last 30 Days):`, {
+      total: last30DaysRefreshes.length,
       onDemand: onDemandRefreshes.length,
-      scheduled: last10Refreshes.filter((r: any) => r.refreshType === 'Scheduled').length,
+      scheduled: last30DaysRefreshes.filter((r: any) => r.refreshType === 'Scheduled').length,
       usingOnDemandOnly: onDemandRefreshes.length > 0,
       onDemandDurations: onDemandDurations.map(d => `${d.type}: ${d.duration}s`).join(', '),
       allTypes: allRefreshesWithDurations.map(r => `${r.refreshType || 'Unknown'}: ${r.duration}s`).join(' | ')
