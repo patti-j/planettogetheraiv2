@@ -1036,7 +1036,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
           // Use sophisticated progress calculation based on refresh type and context
           const refreshType = 'Manual'; // Default to Manual since refreshType not available in contextualFactors
           const { median, max: p80 } = estimateRangeSeconds;
-          const { storageMode, isLargeDataset, isPeakHour, recentFailures } = contextualFactors;
+          const { storageMode, isLargeDataset, recentFailures } = contextualFactors;
           
           // Alpha scaling factors for different refresh types
           const alpha = refreshType === 'Manual' ? 0.85 : 0.75; // Manual refreshes have smoother curves
@@ -1072,7 +1072,11 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
             }
             
             // Add specific contextual information for overruns
-            if (isPeakHour) {
+            // Only show peak hours indicator when refresh exceeds estimate (remaining time = 0)
+            const currentHour = new Date().getHours();
+            const isPeakHourNow = (currentHour >= 9 && currentHour <= 17);
+            
+            if (isPeakHourNow) {
               contextualMessage += " (peak hours may cause delays)";
             } else if (recentFailures) {
               contextualMessage += " (previous issues detected)";

@@ -264,12 +264,7 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
                     <span>Est. remaining: {estimatedRemaining}</span>
                   </div>
                 )}
-                {estimation.contextualFactors.isPeakHour && (
-                  <div className="flex items-center space-x-1">
-                    <Zap className="w-3 h-3" />
-                    <span>Peak hours</span>
-                  </div>
-                )}
+                {/* Peak hours indicator removed - now shown dynamically in contextualMessage when exceeding estimate */}
               </div>
             )}
             

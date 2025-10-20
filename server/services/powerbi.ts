@@ -487,18 +487,13 @@ export class PowerBIService {
     else confidenceLevel = "low";
 
     // Check for contextual factors
-    const now = new Date();
-    const hour = now.getHours();
-    const isPeakHour = (hour >= 9 && hour <= 17); // Business hours
-    
     const isLargeDataset = datasetInfo?.storageMode === "Import" && average > 120; // >2 min suggests large
     
     const recentRefreshes = refreshHistory.slice(0, 5);
     const recentFailures = recentRefreshes.filter((r: any) => r.status === 'Failed').length > 1;
 
-    // Generate contextual message
-    let message = `Estimated ${Math.round(median)} seconds based on ${count} historical refresh${count > 1 ? 'es' : ''}`;
-    if (isPeakHour) message += " (peak hours)";
+    // Generate base contextual message (peak hours shown dynamically on frontend when remaining = 0)
+    let message = `Estimated ${Math.round(median)} seconds based on historical refreshes`;
     if (isLargeDataset) message += " (large dataset)";
     if (recentFailures) message += " (recent failures detected)";
 
@@ -514,7 +509,6 @@ export class PowerBIService {
       contextualFactors: {
         storageMode: datasetInfo?.storageMode || "Unknown",
         isLargeDataset,
-        isPeakHour,
         recentFailures
       },
       message
