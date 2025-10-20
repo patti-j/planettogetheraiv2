@@ -167,7 +167,7 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
   });
 
   const { data: operations = [] } = useQuery<Operation[]>({
-    queryKey: ['/api/operations'],
+    queryKey: ['/api/pt-operations'],
     refetchOnWindowFocus: false
   });
 
@@ -262,12 +262,12 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
               capacity: Number(r.capacity) || 1
             })),
             events: (operations || []).map((op: any) => ({
-              id: String(op.id || op.operation_id),
-              name: op.name || op.operation_name || 'Operation',
-              resourceId: String(op.resourceId || op.resource_id || 'R1'),
-              startDate: op.startDate || op.scheduled_start || new Date().toISOString(),
-              endDate: op.endDate || op.scheduled_end || new Date(Date.now() + 7200000).toISOString(),
-              duration: Number(op.duration) || 7200000
+              id: String(op.id),
+              name: op.name || 'Operation',
+              resourceId: String(op.resourceId || 'R1'), 
+              startDate: op.scheduledStart || new Date().toISOString(),
+              endDate: op.scheduledEnd || new Date(Date.now() + 7200000).toISOString(),
+              duration: op.duration || 7200000
             })),
             dependencies: [], // Empty for now - can be populated from operations data if available
             constraints: []
