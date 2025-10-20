@@ -1,8 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ExternalLink } from 'lucide-react';
+import { Loader2, ExternalLink, History, GitBranch } from 'lucide-react';
 import { useTheme } from '@/hooks/useThemeFederated';
+import { VersionHistory } from '@/components/version-history';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Badge } from '@/components/ui/badge';
 
 /**
  * Production Schedule Page - Integrated Bryntum Scheduler Pro
@@ -14,6 +24,8 @@ export default function ProductionScheduler() {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [currentVersionId, setCurrentVersionId] = useState<number | undefined>(undefined);
   const { resolvedTheme, theme } = useTheme();
 
   // Use resolved theme (light/dark) instead of raw theme (light/dark/system)
@@ -124,6 +136,36 @@ export default function ProductionScheduler() {
 
   return (
     <div className="h-full flex flex-col">
+      {/* Version Control Bar */}
+      <div className="border-b bg-white dark:bg-gray-800 px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <h1 className="text-lg font-semibold">Production Scheduler</h1>
+          <Badge variant="outline" className="flex items-center gap-1">
+            <GitBranch className="h-3 w-3" />
+            Version Control Active
+          </Badge>
+        </div>
+        <Sheet open={showVersionHistory} onOpenChange={setShowVersionHistory}>
+          <SheetTrigger asChild>
+            <Button variant="outline" size="sm" data-testid="button-version-history">
+              <History className="h-4 w-4 mr-2" />
+              Version History
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-[600px] sm:w-[540px]">
+            <SheetHeader>
+              <SheetTitle>Schedule Version History</SheetTitle>
+              <SheetDescription>
+                View schedule changes, compare versions, and rollback when needed
+              </SheetDescription>
+            </SheetHeader>
+            <div className="mt-6">
+              <VersionHistory scheduleId={1} currentVersionId={currentVersionId} />
+            </div>
+          </SheetContent>
+        </Sheet>
+      </div>
+
       {/* Main Content - Uses available height instead of h-screen */}
       <div className="flex-1 relative overflow-hidden bg-gray-50 dark:bg-gray-900">
         {/* Loading Overlay */}
