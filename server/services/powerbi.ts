@@ -418,14 +418,14 @@ export class PowerBIService {
 
     // Only use the last 10 completed refreshes for more accurate, recent-based estimation
     // Sort by startTime (most recent first) and take the first 10
-    const recentRefreshes = completedRefreshes
+    const last10Refreshes = completedRefreshes
       .sort((a: any, b: any) => 
         new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
       )
       .slice(0, 10);
 
     // Calculate durations from recent historical data
-    const durations = recentRefreshes.map((r: any) => {
+    const durations = last10Refreshes.map((r: any) => {
       const start = new Date(r.startTime).getTime();
       const end = new Date(r.endTime).getTime();
       return (end - start) / 1000; // seconds
