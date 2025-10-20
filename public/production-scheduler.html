@@ -1051,6 +1051,12 @@
                 </svg>
                 <span>Apply</span>
             </button>
+            <button id="optimizeSchedule" title="Optimize with AI">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                </svg>
+                <span>Optimize</span>
+            </button>
             <button id="constraintSettings" title="Configure Constraints">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
@@ -3689,6 +3695,215 @@
                     document.body.className = e.newValue === 'dark' ? 'dark-theme' : '';
                 }
             });
+            
+            // Add optimization button handler
+            document.getElementById('optimizeSchedule').addEventListener('click', async () => {
+                try {
+                    console.log('🚀 Starting schedule optimization...');
+                    
+                    // Show loading state
+                    const optimizeBtn = document.getElementById('optimizeSchedule');
+                    const originalHTML = optimizeBtn.innerHTML;
+                    optimizeBtn.disabled = true;
+                    optimizeBtn.innerHTML = `
+                        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21 12a9 9 0 11-6-8.49"></path>
+                        </svg>
+                        <span>Optimizing...</span>
+                    `;
+                    
+                    // Collect current schedule data
+                    const scheduleData = collectScheduleData();
+                    
+                    // Prepare optimization request
+                    const request = {
+                        scheduleData: scheduleData,
+                        algorithmId: 1, // Default to standard optimization algorithm
+                        options: {
+                            objective: 'minimize_makespan',
+                            timeLimit: 30,
+                            incrementalMode: false,
+                            warmStart: false
+                        },
+                        locks: {
+                            events: scheduler.eventStore.records
+                                .filter(e => e.manuallyScheduled || e.locked)
+                                .map(e => e.id),
+                            resourceIntervals: []
+                        }
+                    };
+                    
+                    // Submit optimization job
+                    const response = await fetch('/api/schedules/optimize', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(request)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to submit optimization job');
+                    }
+                    
+                    const job = await response.json();
+                    console.log('✅ Optimization job submitted:', job.runId);
+                    
+                    // Poll for job completion
+                    const result = await pollForOptimizationResult(job.runId);
+                    
+                    if (result.status === 'completed' && result.result) {
+                        // Apply optimized schedule
+                        await applyOptimizationResults(result.result);
+                        
+                        // Show success message
+                        showNotification('✅ Schedule optimized successfully!', 'success');
+                        
+                        // Display metrics
+                        if (result.result.metrics) {
+                            const metrics = result.result.metrics;
+                            showNotification(
+                                `Optimization Results:\n` +
+                                `• Makespan: ${metrics.makespan.toFixed(1)} hours\n` +
+                                `• Resource Utilization: ${metrics.resourceUtilization.toFixed(1)}%\n` +
+                                `• Improvement: ${metrics.improvementPercentage.toFixed(1)}%`,
+                                'info'
+                            );
+                        }
+                    } else {
+                        throw new Error(result.error?.message || 'Optimization failed');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Optimization error:', error);
+                    showNotification(`Optimization failed: ${error.message}`, 'error');
+                } finally {
+                    // Restore button state
+                    const optimizeBtn = document.getElementById('optimizeSchedule');
+                    optimizeBtn.disabled = false;
+                    optimizeBtn.innerHTML = originalHTML || `
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
+                        </svg>
+                        <span>Optimize</span>
+                    `;
+                }
+            });
+            
+            // Helper function to collect schedule data
+            function collectScheduleData() {
+                const resources = scheduler.resourceStore.records.map(r => ({
+                    id: r.id,
+                    name: r.name,
+                    type: r.type || 'default',
+                    capacity: r.capacity || 1
+                }));
+                
+                const events = scheduler.eventStore.records
+                    .filter(e => e.resourceId !== 'unscheduled')
+                    .map(e => ({
+                        id: e.id,
+                        name: e.name,
+                        resourceId: e.resourceId,
+                        startDate: e.startDate?.toISOString() || '',
+                        endDate: e.endDate?.toISOString() || '',
+                        duration: e.durationMS || 0,
+                        manuallyScheduled: e.manuallyScheduled || false,
+                        locked: e.locked || false,
+                        priority: e.priority || 0
+                    }));
+                
+                const dependencies = scheduler.dependencyStore.records.map(d => ({
+                    id: d.id,
+                    fromEvent: d.fromEvent,
+                    toEvent: d.toEvent,
+                    type: d.type || 2,
+                    lag: d.lag || 0,
+                    lagUnit: d.lagUnit || 'hour'
+                }));
+                
+                return {
+                    version: `v_${Date.now()}`,
+                    snapshot: {
+                        resources,
+                        events,
+                        dependencies,
+                        constraints: []
+                    },
+                    metadata: {
+                        plantId: 'plant_1',
+                        timestamp: new Date().toISOString(),
+                        userId: 'current_user'
+                    }
+                };
+            }
+            
+            // Helper function to poll for optimization result
+            async function pollForOptimizationResult(runId, maxAttempts = 60) {
+                for (let i = 0; i < maxAttempts; i++) {
+                    const response = await fetch(`/api/schedules/optimize/${runId}`);
+                    if (!response.ok) throw new Error('Failed to check job status');
+                    
+                    const status = await response.json();
+                    
+                    if (status.status === 'completed' || status.status === 'failed') {
+                        return status;
+                    }
+                    
+                    // Update progress if available
+                    if (status.progress) {
+                        console.log(`Optimization progress: ${status.progress.percentage}% - ${status.progress.currentStep}`);
+                    }
+                    
+                    // Wait before next poll
+                    await new Promise(resolve => setTimeout(resolve, 1000));
+                }
+                
+                throw new Error('Optimization timeout');
+            }
+            
+            // Helper function to apply optimization results
+            async function applyOptimizationResults(result) {
+                scheduler.project.suspendAutoCommit();
+                
+                try {
+                    for (const optEvent of result.events) {
+                        const event = scheduler.eventStore.getById(optEvent.id);
+                        if (event && optEvent.changed) {
+                            event.set({
+                                startDate: new Date(optEvent.startDate),
+                                endDate: new Date(optEvent.endDate),
+                                resourceId: optEvent.resourceId
+                            });
+                            event.manuallyScheduled = true;
+                            event.cls = (event.cls || '') + ' optimized-event';
+                        }
+                    }
+                    
+                    scheduler.project.resumeAutoCommit();
+                    await scheduler.project.commitAsync();
+                } catch (error) {
+                    scheduler.project.resumeAutoCommit();
+                    throw error;
+                }
+            }
+            
+            // Helper function to show notifications
+            function showNotification(message, type = 'info') {
+                const colors = {
+                    success: '#4CAF50',
+                    error: '#f44336',
+                    info: '#2196F3'
+                };
+                
+                if (scheduler.features.toast) {
+                    scheduler.toast({
+                        html: message,
+                        timeout: 5000,
+                        style: `background-color: ${colors[type]}`
+                    });
+                } else {
+                    console.log(`[${type.toUpperCase()}] ${message}`);
+                }
+            }
             
             // Modify the apply scheduling button to use constraints
             const originalApplyHandler = document.getElementById('applyScheduling').onclick;

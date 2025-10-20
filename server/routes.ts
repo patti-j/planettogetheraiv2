@@ -70,11 +70,17 @@ import agentTrainingRoutes from "./routes/agent-training-routes";
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from "./config/ai-model";
 import multer from "multer";
 import { AlgorithmRegistry } from "./services/optimization/algorithm-registry";
+import { optimizationJobService } from "./services/optimization-job-service";
 import { 
   scheduleDataPayloadSchema, 
   optimizationRunRequestSchema,
   type OptimizationRunResponse 
 } from "@shared/schema";
+import {
+  OptimizationRequestDTO,
+  OptimizationResponseDTO,
+  ScheduleDataDTO
+} from "@shared/optimization-types";
 
 // Extend the global namespace to include tokenStore
 declare global {
@@ -8727,6 +8733,142 @@ function calculateTotalSetupTime(schedule: any): number {
   
   return totalSetup;
 }
+
+// ============================================
+// Schedule Optimization Job Management Routes
+// ============================================
+
+// Submit a new optimization job
+router.post("/api/schedules/optimize", async (req, res) => {
+  try {
+    const request = req.body as OptimizationRequestDTO;
+    
+    // Add user ID to metadata
+    if (!request.scheduleData.metadata.userId) {
+      request.scheduleData.metadata.userId = 'anonymous';
+    }
+    
+    const response = await optimizationJobService.submitJob(request);
+    
+    // Return 202 Accepted for async processing
+    res.status(202).json(response);
+  } catch (error: any) {
+    console.error("Error submitting optimization job:", error);
+    res.status(500).json({ 
+      error: "Failed to submit optimization job",
+      message: error.message 
+    });
+  }
+});
+
+// Get optimization job status
+router.get("/api/schedules/optimize/:runId", async (req, res) => {
+  try {
+    const { runId } = req.params;
+    const response = await optimizationJobService.getJobStatus(runId);
+    
+    if (!response) {
+      return res.status(404).json({ error: "Job not found" });
+    }
+    
+    res.json(response);
+  } catch (error: any) {
+    console.error("Error fetching job status:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch job status",
+      message: error.message 
+    });
+  }
+});
+
+// Cancel optimization job
+router.delete("/api/schedules/optimize/:runId", async (req, res) => {
+  try {
+    const { runId } = req.params;
+    const cancelled = await optimizationJobService.cancelJob(runId);
+    
+    if (!cancelled) {
+      return res.status(400).json({ error: "Unable to cancel job" });
+    }
+    
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error cancelling job:", error);
+    res.status(500).json({ 
+      error: "Failed to cancel job",
+      message: error.message 
+    });
+  }
+});
+
+// Apply optimization results
+router.post("/api/schedules/:scheduleId/versions/:versionId/apply", async (req, res) => {
+  try {
+    const { scheduleId, versionId } = req.params;
+    const newVersionId = await optimizationJobService.applyResults(scheduleId, versionId);
+    
+    res.json({
+      scheduleId,
+      newVersionId,
+      appliedAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error("Error applying optimization results:", error);
+    res.status(500).json({ 
+      error: "Failed to apply optimization results",
+      message: error.message 
+    });
+  }
+});
+
+// Server-Sent Events for real-time progress
+router.get("/api/schedules/optimize/:runId/progress", (req, res) => {
+  const { runId } = req.params;
+  
+  // Set headers for SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  
+  // Send initial connection event
+  res.write('data: {"type": "connected"}\n\n');
+  
+  // Listen for job progress events
+  const progressHandler = (event: any) => {
+    if (event.runId === runId) {
+      res.write(`data: ${JSON.stringify(event)}\n\n`);
+    }
+  };
+  
+  const completeHandler = (jobId: string) => {
+    if (jobId === runId) {
+      res.write('data: {"type": "complete"}\n\n');
+      cleanup();
+    }
+  };
+  
+  const errorHandler = ({ jobId, error }: any) => {
+    if (jobId === runId) {
+      res.write(`data: ${JSON.stringify({ type: 'error', error })}\n\n`);
+      cleanup();
+    }
+  };
+  
+  // Register event listeners
+  optimizationJobService.on('job:progress', progressHandler);
+  optimizationJobService.on('job:completed', completeHandler);
+  optimizationJobService.on('job:failed', errorHandler);
+  
+  // Cleanup on client disconnect
+  const cleanup = () => {
+    optimizationJobService.removeListener('job:progress', progressHandler);
+    optimizationJobService.removeListener('job:completed', completeHandler);
+    optimizationJobService.removeListener('job:failed', errorHandler);
+  };
+  
+  req.on('close', cleanup);
+});
 
 // Forced rebuild - all duplicate keys fixed
 export default router;
