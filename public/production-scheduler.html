@@ -3721,53 +3721,42 @@
                         // Apply the algorithm
                         switch(algorithm) {
                             case 'asap':
-                                // ASAP scheduling - schedule as soon as possible
-                                console.log('🚀 Applying ASAP scheduling with proper overlap prevention...');
-                                
-                                // Utility function: Find the next available slot for a resource
-                                function findNextFreeSlot(scheduler, resourceId, desiredStart, durationMS, ignoreEvent) {
-                                    // Get all events for this resource, sorted by start date
-                                    const assigned = scheduler.eventStore.query(evt => 
-                                        evt.resourceId === resourceId && evt !== ignoreEvent
-                                    ).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
-                                    
-                                    let candidateStart = new Date(desiredStart);
-                                    
-                                    // Check each existing event on this resource
-                                    for (const evt of assigned) {
-                                        if (!evt.startDate || !evt.endDate) continue;
-                                        
-                                        const evtStart = evt.startDate;
-                                        const evtEnd = evt.endDate;
-                                        
-                                        // If our candidate overlaps this event, push start to its end
-                                        const candidateEnd = new Date(candidateStart.getTime() + durationMS);
-                                        if (candidateStart < evtEnd && candidateEnd > evtStart) {
-                                            candidateStart = new Date(evtEnd.getTime());
-                                            console.log(`   ↳ Conflict with "${evt.name}", moving to ${candidateStart.toLocaleString()}`);
-                                        }
-                                    }
-                                    
-                                    const candidateEnd = new Date(candidateStart.getTime() + durationMS);
-                                    return { start: candidateStart, end: candidateEnd };
-                                }
+                                // ASAP scheduling - schedule as soon as possible (using ALAP's reliable approach)
+                                console.log('🚀 Applying ASAP scheduling with resource-based timeline tracking...');
                                 
                                 // Get stores
                                 const eventStore = window.scheduler.eventStore;
                                 const dependencyStore = window.scheduler.dependencyStore;
                                 
-                                // Build dependency map (predecessor -> successors)
-                                const successors = {};
-                                const predecessors = {};
-                                dependencyStore.records.forEach(dep => {
-                                    if (!successors[dep.from]) successors[dep.from] = [];
-                                    successors[dep.from].push(dep.to);
-                                    
-                                    if (!predecessors[dep.to]) predecessors[dep.to] = [];
-                                    predecessors[dep.to].push(dep.from);
+                                // First, group all events by resource (like ALAP does)
+                                const eventsByResourceASAP = {};
+                                eventStore.records.forEach(event => {
+                                    const resourceId = event.resourceId;
+                                    if (!eventsByResourceASAP[resourceId]) {
+                                        eventsByResourceASAP[resourceId] = [];
+                                    }
+                                    eventsByResourceASAP[resourceId].push(event);
                                 });
                                 
-                                // Topological sort to process events in dependency order
+                                // Build dependency maps
+                                const predecessors = {};
+                                const successors = {};
+                                dependencyStore.records.forEach(dep => {
+                                    if (!predecessors[dep.to]) predecessors[dep.to] = [];
+                                    predecessors[dep.to].push(dep.from);
+                                    
+                                    if (!successors[dep.from]) successors[dep.from] = [];
+                                    successors[dep.from].push(dep.to);
+                                });
+                                
+                                // Project start time
+                                const projectStart = new Date();
+                                projectStart.setHours(8, 0, 0, 0);
+                                
+                                // Create a map to track when each event can start based on dependencies
+                                const dependencyBasedStarts = {};
+                                
+                                // Topological sort to determine dependency-based start times
                                 const visited = new Set();
                                 const sorted = [];
                                 
@@ -3775,7 +3764,6 @@
                                     if (visited.has(eventId)) return;
                                     visited.add(eventId);
                                     
-                                    // Visit all predecessors first
                                     const preds = predecessors[eventId] || [];
                                     for (const predId of preds) {
                                         visit(predId);
@@ -3784,57 +3772,72 @@
                                     sorted.push(eventId);
                                 }
                                 
-                                // Visit all events
                                 eventStore.records.forEach(event => {
                                     visit(event.id);
                                 });
                                 
-                                // Project start time
-                                const projectStart = new Date();
-                                projectStart.setHours(8, 0, 0, 0);
-                                
-                                // Schedule each event in dependency order
+                                // Calculate dependency-based earliest starts
                                 sorted.forEach(eventId => {
-                                    const event = eventStore.getById(eventId);
-                                    if (!event) return;
-                                    
-                                    const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
-                                    const resourceId = event.resourceId;
-                                    
-                                    // Find earliest start based on dependencies
                                     let earliestStart = projectStart.getTime();
                                     
-                                    const preds = predecessors[event.id] || [];
+                                    const preds = predecessors[eventId] || [];
                                     for (const predId of preds) {
-                                        const pred = eventStore.getById(predId);
-                                        if (pred && pred.endDate) {
-                                            earliestStart = Math.max(earliestStart, pred.endDate.getTime());
+                                        const predEndTime = dependencyBasedStarts[predId]?.endTime;
+                                        if (predEndTime) {
+                                            earliestStart = Math.max(earliestStart, predEndTime);
                                         }
                                     }
                                     
-                                    console.log(`📅 Scheduling "${event.name}" on Resource ${resourceId}`);
-                                    console.log(`   Earliest by dependency: ${new Date(earliestStart).toLocaleString()}`);
+                                    const event = eventStore.getById(eventId);
+                                    if (event) {
+                                        const duration = event.duration * 60 * 60 * 1000;
+                                        dependencyBasedStarts[eventId] = {
+                                            earliestStart,
+                                            endTime: earliestStart + duration
+                                        };
+                                    }
+                                });
+                                
+                                // Process each resource separately (like ALAP does)
+                                Object.entries(eventsByResourceASAP).forEach(([resourceId, resourceEvents]) => {
+                                    // Sort events by their dependency-based earliest start
+                                    resourceEvents.sort((a, b) => {
+                                        const aStart = dependencyBasedStarts[a.id]?.earliestStart || 0;
+                                        const bStart = dependencyBasedStarts[b.id]?.earliestStart || 0;
+                                        return aStart - bStart;
+                                    });
                                     
-                                    // Find next available slot on this resource
-                                    const slot = findNextFreeSlot(
-                                        window.scheduler,
-                                        resourceId,
-                                        earliestStart,
-                                        durationMs,
-                                        event
-                                    );
+                                    // Track the earliest available time for this resource
+                                    let resourceEarliestTime = projectStart.getTime();
                                     
-                                    // Update event dates
-                                    event.startDate = slot.start;
-                                    event.endDate = slot.end;
-                                    
-                                    console.log(`   ✅ Scheduled: ${slot.start.toLocaleString()} - ${slot.end.toLocaleString()}`);
+                                    // Schedule each event on this resource
+                                    resourceEvents.forEach(event => {
+                                        const durationMs = event.duration * 60 * 60 * 1000;
+                                        
+                                        // Get the dependency-based earliest start
+                                        const depStart = dependencyBasedStarts[event.id]?.earliestStart || projectStart.getTime();
+                                        
+                                        // The actual start is the later of dependency constraint and resource availability
+                                        const actualStart = Math.max(depStart, resourceEarliestTime);
+                                        
+                                        // Set the event times
+                                        event.startDate = new Date(actualStart);
+                                        event.endDate = new Date(actualStart + durationMs);
+                                        
+                                        // Update the dependency-based end time for successors
+                                        dependencyBasedStarts[event.id].endTime = actualStart + durationMs;
+                                        
+                                        // Update resource availability for next event on this resource
+                                        resourceEarliestTime = event.endDate.getTime();
+                                        
+                                        console.log(`✅ Scheduled "${event.name}" on ${resourceId}: ${event.startDate.toLocaleString()} - ${event.endDate.toLocaleString()}`);
+                                    });
                                 });
                                 
                                 // Force a refresh of the scheduler view
                                 window.scheduler.refresh();
                                 
-                                console.log('✅ ASAP scheduling completed - no overlaps guaranteed!');
+                                console.log('✅ ASAP scheduling completed - using resource timeline tracking like ALAP!');
                                 break;
                             case 'alap':
                                 // ALAP scheduling - schedule as late as possible
