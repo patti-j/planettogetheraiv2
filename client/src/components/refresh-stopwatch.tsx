@@ -146,11 +146,6 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
   const formattedTime = formatElapsedTime(elapsedTime);
   const canCancel = status === 'refreshing' && onCancel;
   const isCancelling = status === 'cancelling';
-  
-  // Dynamic description for completed status
-  const displayDescription = status === 'completed' 
-    ? `Successfully refreshed in ${formattedTime}`
-    : (contextualMessage || statusProps.description);
 
   // Get estimation display info
   const getEstimatedTimeRemaining = () => {
@@ -194,11 +189,12 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
           </div>
         )}
         
-        <span className="text-sm text-muted-foreground hidden sm:inline">
-          {status === 'completed' ? `Successfully refreshed in ${formattedTime}` :
-           contextualMessage || (status === 'refreshing' ? 'Refreshing...' : 
-           status === 'cancelling' ? 'Cancelling...' : statusProps.title)}
-        </span>
+        {status !== 'completed' && (
+          <span className="text-sm text-muted-foreground hidden sm:inline">
+            {contextualMessage || (status === 'refreshing' ? 'Refreshing...' : 
+             status === 'cancelling' ? 'Cancelling...' : statusProps.title)}
+          </span>
+        )}
         
         {/* Estimation info */}
         {estimation && status === 'refreshing' && confidence && (
@@ -249,10 +245,12 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
               </Badge>
             </div>
             
-            {/* Contextual description with estimation message */}
-            <p className="text-sm text-muted-foreground">
-              {displayDescription}
-            </p>
+            {/* Contextual description with estimation message (hide for completed status) */}
+            {status !== 'completed' && (
+              <p className="text-sm text-muted-foreground">
+                {contextualMessage || statusProps.description}
+              </p>
+            )}
             
             {/* Progress text for refreshing status */}
             {status === 'refreshing' && progressPercentage !== undefined && (
@@ -329,7 +327,7 @@ export function useRefreshNotifications(refreshInfo: RefreshInfo) {
     if (status === 'completed') {
       return {
         title: "Dataset Refresh Completed",
-        description: `Successfully refreshed in ${formatElapsedTime(elapsedTime)}`,
+        description: "", // Elapsed time shown in badge, no need to repeat
         variant: "default" as const
       };
     } else if (status === 'failed') {
