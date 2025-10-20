@@ -110,8 +110,11 @@ class JobStore {
   }
 
   private hashInput(data: ScheduleDataDTO): string {
-    // Simple hash for demo - use proper hashing in production
-    return Buffer.from(JSON.stringify(data)).toString('base64').substring(0, 16);
+    // Use SHA-256 for secure hashing
+    const crypto = require('crypto');
+    const hash = crypto.createHash('sha256');
+    hash.update(JSON.stringify(data));
+    return hash.digest('hex').substring(0, 16);
   }
 }
 

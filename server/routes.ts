@@ -81,6 +81,16 @@ import {
   OptimizationResponseDTO,
   ScheduleDataDTO
 } from "@shared/optimization-types";
+import { 
+  optimizationLimiter, 
+  sseLimiter, 
+  standardLimiter 
+} from './middleware/rate-limit';
+import { 
+  validateOptimizationRequest,
+  sanitizeScheduleData,
+  MAX_REQUEST_SIZE
+} from './validation/optimization-schemas';
 
 // Extend the global namespace to include tokenStore
 declare global {
@@ -8739,67 +8749,114 @@ function calculateTotalSetupTime(schedule: any): number {
 // ============================================
 
 // Submit a new optimization job
-router.post("/api/schedules/optimize", async (req, res) => {
-  try {
-    const request = req.body as OptimizationRequestDTO;
-    
-    // Add user ID to metadata
-    if (!request.scheduleData.metadata.userId) {
-      request.scheduleData.metadata.userId = 'anonymous';
+router.post("/api/schedules/optimize", 
+  optimizationLimiter, // Apply rate limiting
+  express.json({ limit: MAX_REQUEST_SIZE }), // Limit request body size
+  requireAuth, // Require authentication
+  async (req, res) => {
+    try {
+      // Validate request body with Zod
+      const validatedRequest = validateOptimizationRequest(req.body);
+      
+      // Sanitize the schedule data to prevent XSS/injection
+      validatedRequest.scheduleData = sanitizeScheduleData(validatedRequest.scheduleData);
+      
+      // Add user ID from authenticated session
+      const userId = (req as any).user?.id || 'anonymous';
+      validatedRequest.scheduleData.metadata.userId = String(userId);
+      
+      // Check if user has permission to submit optimization jobs
+      const userPermissions = (req as any).user?.permissions || [];
+      if (process.env.NODE_ENV !== 'development' && !userPermissions.includes('optimization:submit')) {
+        return res.status(403).json({
+          error: "Insufficient permissions",
+          message: "You do not have permission to submit optimization jobs"
+        });
+      }
+      
+      const response = await optimizationJobService.submitJob(validatedRequest as OptimizationRequestDTO);
+      
+      // Return 202 Accepted for async processing
+      res.status(202).json(response);
+    } catch (error: any) {
+      // Handle Zod validation errors
+      if (error.name === 'ZodError') {
+        console.error("Validation error:", error.errors);
+        return res.status(400).json({ 
+          error: "Invalid request format",
+          message: "Request validation failed",
+          details: error.errors
+        });
+      }
+      
+      console.error("Error submitting optimization job:", error);
+      res.status(500).json({ 
+        error: "Failed to submit optimization job",
+        message: process.env.NODE_ENV === 'development' ? error.message : "Internal server error"
+      });
     }
-    
-    const response = await optimizationJobService.submitJob(request);
-    
-    // Return 202 Accepted for async processing
-    res.status(202).json(response);
-  } catch (error: any) {
-    console.error("Error submitting optimization job:", error);
-    res.status(500).json({ 
-      error: "Failed to submit optimization job",
-      message: error.message 
-    });
   }
-});
+);
 
 // Get optimization job status
-router.get("/api/schedules/optimize/:runId", async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const response = await optimizationJobService.getJobStatus(runId);
-    
-    if (!response) {
-      return res.status(404).json({ error: "Job not found" });
+router.get("/api/schedules/optimize/:runId", 
+  standardLimiter, // Apply standard rate limiting
+  requireAuth, // Require authentication
+  async (req, res) => {
+    try {
+      const { runId } = req.params;
+      
+      // Validate runId format
+      if (!/^opt_run_[\w-]+$/.test(runId)) {
+        return res.status(400).json({ error: "Invalid job ID format" });
+      }
+      
+      const response = await optimizationJobService.getJobStatus(runId);
+      
+      if (!response) {
+        return res.status(404).json({ error: "Job not found" });
+      }
+      
+      res.json(response);
+    } catch (error: any) {
+      console.error("Error fetching job status:", error);
+      res.status(500).json({ 
+        error: "Failed to fetch job status",
+        message: process.env.NODE_ENV === 'development' ? error.message : "Internal server error"
+      });
     }
-    
-    res.json(response);
-  } catch (error: any) {
-    console.error("Error fetching job status:", error);
-    res.status(500).json({ 
-      error: "Failed to fetch job status",
-      message: error.message 
-    });
   }
-});
+);
 
 // Cancel optimization job
-router.delete("/api/schedules/optimize/:runId", async (req, res) => {
-  try {
-    const { runId } = req.params;
-    const cancelled = await optimizationJobService.cancelJob(runId);
-    
-    if (!cancelled) {
-      return res.status(400).json({ error: "Unable to cancel job" });
+router.delete("/api/schedules/optimize/:runId", 
+  standardLimiter, // Apply standard rate limiting
+  requireAuth, // Require authentication
+  async (req, res) => {
+    try {
+      const { runId } = req.params;
+      
+      // Validate runId format
+      if (!/^opt_run_[\w-]+$/.test(runId)) {
+        return res.status(400).json({ error: "Invalid job ID format" });
+      }
+      
+      const cancelled = await optimizationJobService.cancelJob(runId);
+      
+      if (!cancelled) {
+        return res.status(400).json({ error: "Unable to cancel job" });
+      }
+      
+      res.status(204).send();
+    } catch (error: any) {
+      console.error("Error cancelling job:", error);
+      res.status(500).json({ 
+        error: "Failed to cancel job",
+        message: process.env.NODE_ENV === 'development' ? error.message : "Internal server error"
+      });
     }
-    
-    res.status(204).send();
-  } catch (error: any) {
-    console.error("Error cancelling job:", error);
-    res.status(500).json({ 
-      error: "Failed to cancel job",
-      message: error.message 
-    });
   }
-});
+);
 
 // Apply optimization results
 router.post("/api/schedules/:scheduleId/versions/:versionId/apply", async (req, res) => {
@@ -8822,7 +8879,10 @@ router.post("/api/schedules/:scheduleId/versions/:versionId/apply", async (req, 
 });
 
 // Server-Sent Events for real-time progress
-router.get("/api/schedules/optimize/:runId/progress", (req, res) => {
+router.get("/api/schedules/optimize/:runId/progress", 
+  sseLimiter, // Apply SSE rate limiting
+  requireAuth, // Require authentication
+  (req, res) => {
   const { runId } = req.params;
   
   // Set headers for SSE

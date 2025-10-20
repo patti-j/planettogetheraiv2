@@ -3836,28 +3836,102 @@
                 };
             }
             
-            // Helper function to poll for optimization result
+            // Helper function to listen for optimization progress via SSE
             async function pollForOptimizationResult(runId, maxAttempts = 60) {
-                for (let i = 0; i < maxAttempts; i++) {
-                    const response = await fetch(`/api/schedules/optimize/${runId}`);
-                    if (!response.ok) throw new Error('Failed to check job status');
+                return new Promise((resolve, reject) => {
+                    let timeoutId;
+                    let eventSource;
                     
-                    const status = await response.json();
+                    // Set up SSE connection for progress updates
+                    eventSource = new EventSource(`/api/schedules/optimize/${runId}/progress`);
                     
-                    if (status.status === 'completed' || status.status === 'failed') {
-                        return status;
+                    // Progress handler
+                    eventSource.onmessage = (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            
+                            if (data.type === 'progress' && data.data) {
+                                const progress = data.data;
+                                console.log(`Optimization progress: ${progress.percentage}% - ${progress.currentStep}`);
+                                
+                                // Update UI with progress
+                                const optimizeBtn = document.getElementById('optimizeSchedule');
+                                if (optimizeBtn && optimizeBtn.disabled) {
+                                    optimizeBtn.innerHTML = `
+                                        <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M21 12a9 9 0 11-6-8.49"></path>
+                                        </svg>
+                                        <span>${progress.percentage}%</span>
+                                    `;
+                                }
+                            } else if (data.type === 'complete') {
+                                // Job completed, fetch final status
+                                fetch(`/api/schedules/optimize/${runId}`)
+                                    .then(res => res.json())
+                                    .then(status => {
+                                        eventSource.close();
+                                        clearTimeout(timeoutId);
+                                        resolve(status);
+                                    })
+                                    .catch(err => {
+                                        eventSource.close();
+                                        clearTimeout(timeoutId);
+                                        reject(err);
+                                    });
+                            } else if (data.type === 'error') {
+                                eventSource.close();
+                                clearTimeout(timeoutId);
+                                reject(new Error(data.error?.message || 'Optimization failed'));
+                            }
+                        } catch (error) {
+                            console.error('Error parsing SSE data:', error);
+                        }
+                    };
+                    
+                    eventSource.onerror = (error) => {
+                        console.error('SSE error:', error);
+                        eventSource.close();
+                        
+                        // Fallback to polling if SSE fails
+                        pollWithFetch();
+                    };
+                    
+                    // Timeout after maxAttempts seconds
+                    timeoutId = setTimeout(() => {
+                        eventSource.close();
+                        reject(new Error('Optimization timeout'));
+                    }, maxAttempts * 1000);
+                    
+                    // Fallback polling function if SSE fails
+                    async function pollWithFetch() {
+                        clearTimeout(timeoutId);
+                        for (let i = 0; i < maxAttempts; i++) {
+                            try {
+                                const response = await fetch(`/api/schedules/optimize/${runId}`);
+                                if (!response.ok) throw new Error('Failed to check job status');
+                                
+                                const status = await response.json();
+                                
+                                if (status.status === 'completed' || status.status === 'failed') {
+                                    resolve(status);
+                                    return;
+                                }
+                                
+                                // Update progress if available
+                                if (status.progress) {
+                                    console.log(`Optimization progress: ${status.progress.percentage}% - ${status.progress.currentStep}`);
+                                }
+                                
+                                // Wait before next poll
+                                await new Promise(r => setTimeout(r, 1000));
+                            } catch (error) {
+                                reject(error);
+                                return;
+                            }
+                        }
+                        reject(new Error('Optimization timeout'));
                     }
-                    
-                    // Update progress if available
-                    if (status.progress) {
-                        console.log(`Optimization progress: ${status.progress.percentage}% - ${status.progress.currentStep}`);
-                    }
-                    
-                    // Wait before next poll
-                    await new Promise(resolve => setTimeout(resolve, 1000));
-                }
-                
-                throw new Error('Optimization timeout');
+                });
             }
             
             // Helper function to apply optimization results
