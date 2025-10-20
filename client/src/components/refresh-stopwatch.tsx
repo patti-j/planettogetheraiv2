@@ -91,8 +91,8 @@ function getStatusProps(status: RefreshStatus) {
         iconClass: "w-4 h-4 text-green-500",
         badgeVariant: "secondary" as const,
         badgeClass: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300",
-        title: "Refresh Completed",
-        description: "Dataset has been refreshed successfully!"
+        title: "Dataset Refresh Completed",
+        description: "" // Will be set dynamically with elapsed time
       };
     case 'failed':
       return {
@@ -146,6 +146,11 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
   const formattedTime = formatElapsedTime(elapsedTime);
   const canCancel = status === 'refreshing' && onCancel;
   const isCancelling = status === 'cancelling';
+  
+  // Dynamic description for completed status
+  const displayDescription = status === 'completed' 
+    ? `Successfully refreshed in ${formattedTime}`
+    : (contextualMessage || statusProps.description);
 
   // Get estimation display info
   const getEstimatedTimeRemaining = () => {
@@ -190,7 +195,8 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
         )}
         
         <span className="text-sm text-muted-foreground hidden sm:inline">
-          {contextualMessage || (status === 'refreshing' ? 'Refreshing...' : 
+          {status === 'completed' ? `Successfully refreshed in ${formattedTime}` :
+           contextualMessage || (status === 'refreshing' ? 'Refreshing...' : 
            status === 'cancelling' ? 'Cancelling...' : statusProps.title)}
         </span>
         
@@ -245,7 +251,7 @@ export function RefreshStopwatch({ refreshInfo, onDismiss, onCancel, className =
             
             {/* Contextual description with estimation message */}
             <p className="text-sm text-muted-foreground">
-              {contextualMessage || statusProps.description}
+              {displayDescription}
             </p>
             
             {/* Progress text for refreshing status */}
