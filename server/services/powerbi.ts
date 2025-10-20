@@ -424,8 +424,31 @@ export class PowerBIService {
       )
       .slice(0, 10);
 
+    // Classify each refresh as Manual or Scheduled to exclude queue time
+    const classifiedRefreshes = last10Refreshes.map((r: any) => ({
+      ...r,
+      classifiedType: this.classifyRefreshType(r, new Date(r.startTime)),
+      duration: (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / 1000
+    }));
+
+    // Prefer manual refreshes to get net processing time (exclude queue wait time from scheduled refreshes)
+    const manualRefreshes = classifiedRefreshes.filter(r => r.classifiedType === 'Manual');
+    const scheduledRefreshes = classifiedRefreshes.filter(r => r.classifiedType === 'Scheduled');
+    const refreshesToUse = manualRefreshes.length >= 3 ? manualRefreshes : classifiedRefreshes;
+
+    // Debug logging to understand refresh classification
+    console.log(`📊 Refresh Classification for Dataset:`, {
+      total: classifiedRefreshes.length,
+      manual: manualRefreshes.length,
+      scheduled: scheduledRefreshes.length,
+      usingManualOnly: manualRefreshes.length >= 3,
+      manualDurations: manualRefreshes.map(r => `${r.duration}s`).join(', '),
+      scheduledDurations: scheduledRefreshes.map(r => `${r.duration}s`).join(', '),
+      allDurations: classifiedRefreshes.map(r => `${r.classifiedType}: ${r.duration}s`).join(', ')
+    });
+
     // Calculate durations from recent historical data
-    const durations = last10Refreshes.map((r: any) => {
+    const durations = refreshesToUse.map((r: any) => {
       const start = new Date(r.startTime).getTime();
       const end = new Date(r.endTime).getTime();
       return (end - start) / 1000; // seconds
