@@ -23,6 +23,14 @@
   - Issue: Gantt chart UI stuck loading, showing "0 operations scheduled" despite data being available
   - Next steps: Debug why Bryntum SchedulerPro isn't rendering the operations
 
+### October 20, 2025
+- **Fixed ASAP Algorithm Resource Overlap Issue**: 
+  - ASAP scheduling was not properly preventing resource overlaps while ALAP was working correctly
+  - Added explicit resource constraint settings before ASAP execution (allowOverlap: false, multiplePerResource: false)
+  - Implemented post-scheduling overlap detection and correction for ASAP algorithm
+  - Operations on same resource are now automatically shifted to prevent time conflicts
+  - Both ASAP and ALAP now consistently apply strict resource constraints
+
 ### October 17, 2025 - Night
 - **Implemented Proper Bryntum Constraint Engine Usage for Resource Conflict Prevention**:
   - **Key Finding**: `allowOverlap: false` only works for UI drag/drop, NOT for scheduling engine calculations

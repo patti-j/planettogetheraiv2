@@ -3723,7 +3723,49 @@
                             case 'asap':
                                 // ASAP scheduling - schedule as soon as possible
                                 if (window.scheduler.project.scheduleByConstraints) {
+                                    // First, enable strict resource constraint checking
+                                    window.scheduler.project.schedulingEngine.allowOverlap = false;
+                                    window.scheduler.project.schedulingEngine.multiplePerResource = false;
+                                    window.scheduler.project.schedulingEngine.scheduleOverlapEvents = false;
+                                    
+                                    // Apply ASAP with strict resource constraints
                                     window.scheduler.project.scheduleByConstraints('asap');
+                                    
+                                    // After scheduling, check for and fix any overlaps
+                                    const eventStore = window.scheduler.eventStore;
+                                    const resourceStore = window.scheduler.resourceStore;
+                                    
+                                    // Group events by resource
+                                    const eventsByResource = {};
+                                    eventStore.records.forEach(event => {
+                                        const resourceId = event.resourceId;
+                                        if (!eventsByResource[resourceId]) {
+                                            eventsByResource[resourceId] = [];
+                                        }
+                                        eventsByResource[resourceId].push(event);
+                                    });
+                                    
+                                    // Check and fix overlaps for each resource
+                                    Object.entries(eventsByResource).forEach(([resourceId, events]) => {
+                                        // Sort events by start time
+                                        events.sort((a, b) => a.startDate - b.startDate);
+                                        
+                                        // Fix overlaps by shifting later events
+                                        for (let i = 1; i < events.length; i++) {
+                                            const prevEvent = events[i - 1];
+                                            const currEvent = events[i];
+                                            
+                                            // If current event starts before previous ends, shift it
+                                            if (currEvent.startDate < prevEvent.endDate) {
+                                                const overlap = prevEvent.endDate - currEvent.startDate;
+                                                currEvent.startDate = new Date(prevEvent.endDate.getTime());
+                                                currEvent.endDate = new Date(currEvent.startDate.getTime() + currEvent.duration * 60 * 60 * 1000);
+                                                console.log(`⚠️ Fixed overlap: Shifted "${currEvent.name}" to start after "${prevEvent.name}"`);
+                                            }
+                                        }
+                                    });
+                                    
+                                    console.log('✅ ASAP scheduling applied with overlap prevention');
                                 } else {
                                     console.warn('ASAP scheduling not available in this version');
                                 }
@@ -3731,7 +3773,15 @@
                             case 'alap':
                                 // ALAP scheduling - schedule as late as possible
                                 if (window.scheduler.project.scheduleByConstraints) {
+                                    // Enable strict resource constraint checking for consistency
+                                    window.scheduler.project.schedulingEngine.allowOverlap = false;
+                                    window.scheduler.project.schedulingEngine.multiplePerResource = false;
+                                    window.scheduler.project.schedulingEngine.scheduleOverlapEvents = false;
+                                    
+                                    // Apply ALAP with strict resource constraints
                                     window.scheduler.project.scheduleByConstraints('alap');
+                                    
+                                    console.log('✅ ALAP scheduling applied with overlap prevention');
                                 } else {
                                     console.warn('ALAP scheduling not available in this version');
                                 }
