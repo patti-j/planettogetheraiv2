@@ -2,6 +2,18 @@
 
 ## Recent Changes
 
+### October 20, 2025
+- **Power BI Dataset Refresh Duration Estimation Improvements**:
+  - **Root Cause**: Scheduled refreshes include queue wait time (3-4 minutes) plus processing time (5 seconds), skewing average duration estimates
+  - **Solution**: Modified `calculateRefreshEstimation()` to exclude scheduled refreshes with queue time
+  - **Implementation**:
+    - Limited estimation to last 10 completed refreshes (down from all historical data) for better recency and adaptability
+    - Filter by `refreshType` field: Only use OnDemand, ViaApi, ViaEnhancedApi refreshes for duration calculation
+    - Exclude Scheduled refreshes which include queue wait time
+    - Fallback to all refreshes if fewer than 3 on-demand refreshes available
+  - **Impact**: Refresh duration estimates now reflect net processing time (~5 seconds) instead of total time including queue wait (~4 minutes)
+  - **Debug Logging**: Added detailed logging showing refresh type breakdown and individual durations for troubleshooting
+
 ### October 17, 2025 - Late Evening
 - **Fixed Resource Constraint Violations in Scheduling Algorithms**: 
   - Updated ASAP, ALAP algorithms to only handle timing, delegating resource assignment to Bryntum's constraint engine

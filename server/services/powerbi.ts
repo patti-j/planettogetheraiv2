@@ -424,27 +424,35 @@ export class PowerBIService {
       )
       .slice(0, 10);
 
-    // Classify each refresh as Manual or Scheduled to exclude queue time
-    const classifiedRefreshes = last10Refreshes.map((r: any) => ({
+    // Filter by refreshType to exclude scheduled refreshes with queue time
+    // Only use OnDemand, ViaApi, ViaEnhancedApi for net processing time
+    const onDemandTypes = ['OnDemand', 'ViaApi', 'ViaEnhancedApi'];
+    const onDemandRefreshes = last10Refreshes.filter((r: any) => 
+      r.refreshType && onDemandTypes.includes(r.refreshType)
+    );
+
+    // Calculate durations for each refresh type
+    const allRefreshesWithDurations = last10Refreshes.map((r: any) => ({
       ...r,
-      classifiedType: this.classifyRefreshType(r, new Date(r.startTime)),
       duration: (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / 1000
     }));
 
-    // Prefer manual refreshes to get net processing time (exclude queue wait time from scheduled refreshes)
-    const manualRefreshes = classifiedRefreshes.filter(r => r.classifiedType === 'Manual');
-    const scheduledRefreshes = classifiedRefreshes.filter(r => r.classifiedType === 'Scheduled');
-    const refreshesToUse = manualRefreshes.length >= 3 ? manualRefreshes : classifiedRefreshes;
+    const onDemandDurations = onDemandRefreshes.map((r: any) => ({
+      type: r.refreshType,
+      duration: (new Date(r.endTime).getTime() - new Date(r.startTime).getTime()) / 1000
+    }));
 
-    // Debug logging to understand refresh classification
-    console.log(`📊 Refresh Classification for Dataset:`, {
-      total: classifiedRefreshes.length,
-      manual: manualRefreshes.length,
-      scheduled: scheduledRefreshes.length,
-      usingManualOnly: manualRefreshes.length >= 3,
-      manualDurations: manualRefreshes.map(r => `${r.duration}s`).join(', '),
-      scheduledDurations: scheduledRefreshes.map(r => `${r.duration}s`).join(', '),
-      allDurations: classifiedRefreshes.map(r => `${r.classifiedType}: ${r.duration}s`).join(', ')
+    // Use on-demand refreshes if we have at least 3, otherwise fall back to all
+    const refreshesToUse = onDemandRefreshes.length >= 3 ? onDemandRefreshes : last10Refreshes;
+
+    // Debug logging to understand refresh types
+    console.log(`📊 Refresh Type Analysis:`, {
+      total: last10Refreshes.length,
+      onDemand: onDemandRefreshes.length,
+      scheduled: last10Refreshes.filter((r: any) => r.refreshType === 'Scheduled').length,
+      usingOnDemandOnly: onDemandRefreshes.length >= 3,
+      onDemandDurations: onDemandDurations.map(d => `${d.type}: ${d.duration}s`).join(', '),
+      allTypes: allRefreshesWithDurations.map(r => `${r.refreshType || 'Unknown'}: ${r.duration}s`).join(' | ')
     });
 
     // Calculate durations from recent historical data
