@@ -416,8 +416,16 @@ export class PowerBIService {
       };
     }
 
-    // Calculate durations from historical data
-    const durations = completedRefreshes.map((r: any) => {
+    // Only use the last 10 completed refreshes for more accurate, recent-based estimation
+    // Sort by startTime (most recent first) and take the first 10
+    const recentRefreshes = completedRefreshes
+      .sort((a: any, b: any) => 
+        new Date(b.startTime).getTime() - new Date(a.startTime).getTime()
+      )
+      .slice(0, 10);
+
+    // Calculate durations from recent historical data
+    const durations = recentRefreshes.map((r: any) => {
       const start = new Date(r.startTime).getTime();
       const end = new Date(r.endTime).getTime();
       return (end - start) / 1000; // seconds
