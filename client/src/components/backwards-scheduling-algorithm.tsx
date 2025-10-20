@@ -248,16 +248,43 @@ export default function BackwardsSchedulingAlgorithm({ onNavigateBack }: Backwar
   const runSchedulingMutation = useMutation({
     mutationFn: async (params: BackwardsSchedulingParams) => {
       const startTime = Date.now();
+      
+      // Transform the data to match API requirements (similar to Production Scheduler)
+      const transformedData = {
+        algorithmId: 'backwards-scheduling',
+        profileId: selectedProfileId?.toString() || '1',
+        scheduleData: {
+          snapshot: {
+            resources: (resources || []).map((r: any) => ({
+              id: String(r.id || r.resource_id),
+              name: r.name || r.resource_name || 'Resource',
+              type: r.resource_type || r.resourceType || 'equipment',
+              capacity: Number(r.capacity) || 1
+            })),
+            events: (operations || []).map((op: any) => ({
+              id: String(op.id || op.operation_id),
+              name: op.name || op.operation_name || 'Operation',
+              resourceId: String(op.resourceId || op.resource_id || 'R1'),
+              startDate: op.startDate || op.scheduled_start || new Date().toISOString(),
+              endDate: op.endDate || op.scheduled_end || new Date(Date.now() + 7200000).toISOString(),
+              duration: Number(op.duration) || 7200000
+            })),
+            dependencies: [], // Empty for now - can be populated from operations data if available
+            constraints: []
+          }
+        },
+        parameters: {
+          ...params,
+          objectives: params.objectives || ['minimize_makespan'],
+          timeLimit: params.timeLimit || 30
+        }
+      };
+      
+      // Use the standard optimization API endpoint
       const response = await apiRequest(
         'POST',
-        '/api/optimization/algorithms/backwards-scheduling/run',
-        {
-          parameters: params,
-          productionOrders,
-          plannedOrders,
-          resources,
-          operations
-        }
+        '/api/schedules/optimize',
+        transformedData
       );
       const result = await response.json();
       const executionTime = (Date.now() - startTime) / 1000;
