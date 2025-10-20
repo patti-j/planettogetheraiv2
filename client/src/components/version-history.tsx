@@ -97,24 +97,12 @@ export function VersionHistory({ scheduleId, currentVersionId }: VersionHistoryP
   // Fetch version history
   const { data: versions, isLoading } = useQuery({
     queryKey: ['/api/schedules', scheduleId, 'versions'],
-    queryFn: async () => {
-      const response = await fetch(`/api/schedules/${scheduleId}/versions`);
-      if (!response.ok) throw new Error('Failed to fetch version history');
-      return response.json();
-    },
     enabled: !!scheduleId
   });
 
   // Fetch version comparison
   const { data: comparison, isLoading: isLoadingComparison } = useQuery({
     queryKey: ['/api/schedules', scheduleId, 'versions', compareVersions.base, 'compare', compareVersions.compare],
-    queryFn: async () => {
-      const response = await fetch(
-        `/api/schedules/${scheduleId}/versions/${compareVersions.base}/compare/${compareVersions.compare}`
-      );
-      if (!response.ok) throw new Error('Failed to compare versions');
-      return response.json();
-    },
     enabled: !!compareVersions.base && !!compareVersions.compare
   });
 

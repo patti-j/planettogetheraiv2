@@ -62,11 +62,11 @@ export class ScheduleVersionService {
     tag?: string
   ): Promise<number> {
     try {
-      // Get current operations state
+      // Get current operations state - filter by scheduleId
       const operations = await db
         .select()
         .from(ptJobOperations)
-        .where(sql`job_id IN (SELECT id FROM ptjobs)`);
+        .where(sql`job_id IN (SELECT id FROM ptjobs WHERE schedule_id = ${scheduleId})`);
 
       // Calculate next version number
       const lastVersion = await db
@@ -92,8 +92,8 @@ export class ScheduleVersionService {
           constraintDate: op.constraintDate,
           sequenceNumber: op.sequenceNumber
         })),
-        resources: [], // Will be populated from resource assignments
-        dependencies: [], // Will be populated from operation dependencies
+        resources: [], // TODO: Fetch from ptresources when available
+        dependencies: [], // TODO: Fetch from ptjobdependencies when available
         metadata: {
           operationCount: operations.length,
           timestamp: new Date().toISOString(),
