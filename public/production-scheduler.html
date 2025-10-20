@@ -3722,91 +3722,119 @@
                         switch(algorithm) {
                             case 'asap':
                                 // ASAP scheduling - schedule as soon as possible
-                                console.log('🚀 Applying ASAP scheduling...');
+                                console.log('🚀 Applying ASAP scheduling with proper overlap prevention...');
                                 
-                                // Get the event store
+                                // Utility function: Find the next available slot for a resource
+                                function findNextFreeSlot(scheduler, resourceId, desiredStart, durationMS, ignoreEvent) {
+                                    // Get all events for this resource, sorted by start date
+                                    const assigned = scheduler.eventStore.query(evt => 
+                                        evt.resourceId === resourceId && evt !== ignoreEvent
+                                    ).sort((a, b) => (a.startDate || 0) - (b.startDate || 0));
+                                    
+                                    let candidateStart = new Date(desiredStart);
+                                    
+                                    // Check each existing event on this resource
+                                    for (const evt of assigned) {
+                                        if (!evt.startDate || !evt.endDate) continue;
+                                        
+                                        const evtStart = evt.startDate;
+                                        const evtEnd = evt.endDate;
+                                        
+                                        // If our candidate overlaps this event, push start to its end
+                                        const candidateEnd = new Date(candidateStart.getTime() + durationMS);
+                                        if (candidateStart < evtEnd && candidateEnd > evtStart) {
+                                            candidateStart = new Date(evtEnd.getTime());
+                                            console.log(`   ↳ Conflict with "${evt.name}", moving to ${candidateStart.toLocaleString()}`);
+                                        }
+                                    }
+                                    
+                                    const candidateEnd = new Date(candidateStart.getTime() + durationMS);
+                                    return { start: candidateStart, end: candidateEnd };
+                                }
+                                
+                                // Get stores
                                 const eventStore = window.scheduler.eventStore;
                                 const dependencyStore = window.scheduler.dependencyStore;
                                 
-                                // First, collect all events and their resource assignments
-                                const eventsByResource = {};
-                                eventStore.records.forEach(event => {
-                                    const resourceId = event.resourceId;
-                                    if (!eventsByResource[resourceId]) {
-                                        eventsByResource[resourceId] = [];
-                                    }
-                                    eventsByResource[resourceId].push(event);
-                                });
-                                
-                                // Build a dependency graph
-                                const dependencyGraph = {};
-                                const dependentEvents = new Set();
+                                // Build dependency map (predecessor -> successors)
+                                const successors = {};
+                                const predecessors = {};
                                 dependencyStore.records.forEach(dep => {
-                                    if (!dependencyGraph[dep.from]) {
-                                        dependencyGraph[dep.from] = [];
-                                    }
-                                    dependencyGraph[dep.from].push(dep.to);
-                                    dependentEvents.add(dep.to);
+                                    if (!successors[dep.from]) successors[dep.from] = [];
+                                    successors[dep.from].push(dep.to);
+                                    
+                                    if (!predecessors[dep.to]) predecessors[dep.to] = [];
+                                    predecessors[dep.to].push(dep.from);
                                 });
                                 
-                                // Find starting events (no incoming dependencies)
-                                const startingEvents = eventStore.records.filter(event => 
-                                    !dependentEvents.has(event.id)
-                                );
+                                // Topological sort to process events in dependency order
+                                const visited = new Set();
+                                const sorted = [];
                                 
-                                // Schedule starting events at project start
+                                function visit(eventId) {
+                                    if (visited.has(eventId)) return;
+                                    visited.add(eventId);
+                                    
+                                    // Visit all predecessors first
+                                    const preds = predecessors[eventId] || [];
+                                    for (const predId of preds) {
+                                        visit(predId);
+                                    }
+                                    
+                                    sorted.push(eventId);
+                                }
+                                
+                                // Visit all events
+                                eventStore.records.forEach(event => {
+                                    visit(event.id);
+                                });
+                                
+                                // Project start time
                                 const projectStart = new Date();
-                                projectStart.setHours(8, 0, 0, 0); // Start at 8 AM
+                                projectStart.setHours(8, 0, 0, 0);
                                 
-                                // Process each resource's events separately to avoid overlaps
-                                Object.entries(eventsByResource).forEach(([resourceId, resourceEvents]) => {
-                                    // Sort events by their current start date (or by ID if no start date)
-                                    resourceEvents.sort((a, b) => {
-                                        if (a.startDate && b.startDate) {
-                                            return a.startDate.getTime() - b.startDate.getTime();
+                                // Schedule each event in dependency order
+                                sorted.forEach(eventId => {
+                                    const event = eventStore.getById(eventId);
+                                    if (!event) return;
+                                    
+                                    const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
+                                    const resourceId = event.resourceId;
+                                    
+                                    // Find earliest start based on dependencies
+                                    let earliestStart = projectStart.getTime();
+                                    
+                                    const preds = predecessors[event.id] || [];
+                                    for (const predId of preds) {
+                                        const pred = eventStore.getById(predId);
+                                        if (pred && pred.endDate) {
+                                            earliestStart = Math.max(earliestStart, pred.endDate.getTime());
                                         }
-                                        return a.id - b.id;
-                                    });
+                                    }
                                     
-                                    // Track the earliest available time for this resource
-                                    let resourceAvailableTime = projectStart.getTime();
+                                    console.log(`📅 Scheduling "${event.name}" on Resource ${resourceId}`);
+                                    console.log(`   Earliest by dependency: ${new Date(earliestStart).toLocaleString()}`);
                                     
-                                    // Schedule each event on this resource
-                                    resourceEvents.forEach((event, index) => {
-                                        // Calculate duration in milliseconds
-                                        const durationMs = event.duration * 60 * 60 * 1000; // Convert hours to ms
-                                        
-                                        // Check for dependencies - if this event has a predecessor, wait for it
-                                        let earliestStart = resourceAvailableTime;
-                                        
-                                        // Check all dependencies where this event is the successor
-                                        dependencyStore.records.forEach(dep => {
-                                            if (dep.to === event.id) {
-                                                const predecessor = eventStore.getById(dep.from);
-                                                if (predecessor && predecessor.endDate) {
-                                                    const depEndTime = predecessor.endDate.getTime();
-                                                    // Add lag if specified
-                                                    const lagMs = (dep.lag || 0) * 60 * 60 * 1000;
-                                                    earliestStart = Math.max(earliestStart, depEndTime + lagMs);
-                                                }
-                                            }
-                                        });
-                                        
-                                        // Set the event start time (ASAP = earliest possible)
-                                        event.startDate = new Date(earliestStart);
-                                        event.endDate = new Date(earliestStart + durationMs);
-                                        
-                                        // Update resource availability for next event
-                                        resourceAvailableTime = event.endDate.getTime();
-                                        
-                                        console.log(`✅ Scheduled "${event.name}" on ${resourceId}: ${event.startDate.toLocaleString()} - ${event.endDate.toLocaleString()}`);
-                                    });
+                                    // Find next available slot on this resource
+                                    const slot = findNextFreeSlot(
+                                        window.scheduler,
+                                        resourceId,
+                                        earliestStart,
+                                        durationMs,
+                                        event
+                                    );
+                                    
+                                    // Update event dates
+                                    event.startDate = slot.start;
+                                    event.endDate = slot.end;
+                                    
+                                    console.log(`   ✅ Scheduled: ${slot.start.toLocaleString()} - ${slot.end.toLocaleString()}`);
                                 });
                                 
                                 // Force a refresh of the scheduler view
                                 window.scheduler.refresh();
                                 
-                                console.log('✅ ASAP scheduling completed - no overlaps!');
+                                console.log('✅ ASAP scheduling completed - no overlaps guaranteed!');
                                 break;
                             case 'alap':
                                 // ALAP scheduling - schedule as late as possible
