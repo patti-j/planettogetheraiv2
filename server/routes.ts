@@ -8755,6 +8755,9 @@ router.post("/api/schedules/optimize",
   requireAuth, // Require authentication
   async (req, res) => {
     try {
+      // Import version service dynamically
+      const { scheduleVersionService } = await import('./services/schedule-version-service');
+      
       // Validate request body with Zod
       const validatedRequest = validateOptimizationRequest(req.body);
       
@@ -8774,10 +8777,26 @@ router.post("/api/schedules/optimize",
         });
       }
       
+      // Create version snapshot before optimization
+      const scheduleId = validatedRequest.scheduleData.metadata.scheduleId || 1;
+      const versionId = await scheduleVersionService.createVersionSnapshot(
+        scheduleId,
+        parseInt(String(userId)),
+        'OPTIMIZATION_STARTED',
+        `Optimization requested: ${validatedRequest.algorithm}`
+      );
+      
+      // Add version ID to the request for tracking
+      validatedRequest.scheduleData.metadata.versionId = versionId;
+      
       const response = await optimizationJobService.submitJob(validatedRequest as OptimizationRequestDTO);
       
-      // Return 202 Accepted for async processing
-      res.status(202).json(response);
+      // Return 202 Accepted for async processing with version info
+      res.status(202).json({
+        ...response,
+        versionId,
+        message: "Optimization job submitted. Version snapshot created for rollback if needed."
+      });
     } catch (error: any) {
       // Handle Zod validation errors
       if (error.name === 'ZodError') {
@@ -8928,6 +8947,173 @@ router.get("/api/schedules/optimize/:runId/progress",
   };
   
   req.on('close', cleanup);
+});
+
+// ============================================
+// Version Management Routes
+// ============================================
+
+// Get version history for a schedule
+router.get("/api/schedules/:scheduleId/versions", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const versions = await scheduleVersionService.getVersionHistory(parseInt(scheduleId));
+    res.json(versions);
+  } catch (error: any) {
+    console.error("Error fetching version history:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch version history",
+      message: error.message 
+    });
+  }
+});
+
+// Get specific version details
+router.get("/api/schedules/:scheduleId/versions/:versionId", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId, versionId } = req.params;
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const version = await scheduleVersionService.getVersion(parseInt(versionId));
+    if (!version) {
+      return res.status(404).json({ error: "Version not found" });
+    }
+    res.json(version);
+  } catch (error: any) {
+    console.error("Error fetching version:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch version",
+      message: error.message 
+    });
+  }
+});
+
+// Compare two versions
+router.get("/api/schedules/:scheduleId/versions/:versionId/compare/:compareToId", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId, versionId, compareToId } = req.params;
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const comparison = await scheduleVersionService.compareVersions(
+      parseInt(versionId), 
+      parseInt(compareToId)
+    );
+    res.json(comparison);
+  } catch (error: any) {
+    console.error("Error comparing versions:", error);
+    res.status(500).json({ 
+      error: "Failed to compare versions",
+      message: error.message 
+    });
+  }
+});
+
+// Rollback to a previous version
+router.post("/api/schedules/:scheduleId/versions/:versionId/rollback", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId, versionId } = req.params;
+    const { reason } = req.body;
+    const userId = (req as any).user?.id || 1;
+    
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const newVersionId = await scheduleVersionService.rollbackToVersion(
+      parseInt(versionId),
+      parseInt(userId),
+      reason || "Manual rollback requested"
+    );
+    
+    res.json({
+      success: true,
+      newVersionId,
+      rolledBackFrom: versionId,
+      message: "Successfully rolled back to previous version"
+    });
+  } catch (error: any) {
+    console.error("Error during rollback:", error);
+    res.status(500).json({ 
+      error: "Failed to rollback",
+      message: error.message 
+    });
+  }
+});
+
+// Acquire lock for editing
+router.post("/api/schedules/:scheduleId/lock", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const { versionChecksum } = req.body;
+    const userId = (req as any).user?.id || 1;
+    
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const lockResult = await scheduleVersionService.acquireLock(
+      parseInt(scheduleId),
+      parseInt(userId),
+      versionChecksum
+    );
+    
+    if (!lockResult.success) {
+      return res.status(409).json(lockResult);
+    }
+    
+    res.json(lockResult);
+  } catch (error: any) {
+    console.error("Error acquiring lock:", error);
+    res.status(500).json({ 
+      error: "Failed to acquire lock",
+      message: error.message 
+    });
+  }
+});
+
+// Release lock
+router.delete("/api/schedules/:scheduleId/lock", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const userId = (req as any).user?.id || 1;
+    
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    await scheduleVersionService.releaseLock(
+      parseInt(scheduleId),
+      parseInt(userId)
+    );
+    
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error("Error releasing lock:", error);
+    res.status(500).json({ 
+      error: "Failed to release lock",
+      message: error.message 
+    });
+  }
+});
+
+// Check for conflicts before saving
+router.post("/api/schedules/:scheduleId/check-conflicts", requireAuth, async (req, res) => {
+  try {
+    const { scheduleId } = req.params;
+    const { currentChecksum, operations } = req.body;
+    
+    const { scheduleVersionService } = await import('./services/schedule-version-service');
+    
+    const conflictResult = await scheduleVersionService.checkForConflicts(
+      parseInt(scheduleId),
+      currentChecksum,
+      operations
+    );
+    
+    res.json(conflictResult);
+  } catch (error: any) {
+    console.error("Error checking conflicts:", error);
+    res.status(500).json({ 
+      error: "Failed to check conflicts",
+      message: error.message 
+    });
+  }
 });
 
 // Forced rebuild - all duplicate keys fixed
