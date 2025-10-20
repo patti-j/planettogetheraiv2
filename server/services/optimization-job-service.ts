@@ -5,6 +5,7 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import EventEmitter from 'events';
+import crypto from 'crypto';
 import {
   OptimizationRequestDTO,
   OptimizationResponseDTO,
@@ -111,7 +112,6 @@ class JobStore {
 
   private hashInput(data: ScheduleDataDTO): string {
     // Use SHA-256 for secure hashing
-    const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
     hash.update(JSON.stringify(data));
     return hash.digest('hex').substring(0, 16);

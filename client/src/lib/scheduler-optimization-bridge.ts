@@ -20,11 +20,11 @@ import {
  */
 export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
   const resources = scheduler.resourceStore.records.map((resource: any): ResourceDTO => ({
-    id: resource.id,
+    id: String(resource.id),
     name: resource.name,
     type: resource.type || 'default',
     calendar: resource.calendar?.id,
-    capacity: resource.capacity || 1,
+    capacity: Number(resource.capacity) || 1,
     attributes: {
       efficiency: resource.efficiency,
       skills: resource.skills,
@@ -33,9 +33,9 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
   }));
 
   const events = scheduler.eventStore.records.map((event: any): EventDTO => ({
-    id: event.id,
+    id: String(event.id),
     name: event.name,
-    resourceId: event.resourceId,
+    resourceId: String(event.resourceId),
     startDate: event.startDate?.toISOString() || '',
     endDate: event.endDate?.toISOString() || '',
     duration: event.durationMS || 0,
@@ -53,9 +53,9 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
   }));
 
   const dependencies = scheduler.dependencyStore.records.map((dep: any): DependencyDTO => ({
-    id: dep.id,
-    fromEvent: dep.fromEvent,
-    toEvent: dep.toEvent,
+    id: String(dep.id),
+    fromEvent: String(dep.fromEvent?.id || dep.fromEvent),
+    toEvent: String(dep.toEvent?.id || dep.toEvent),
     type: dep.type || 2, // Default to Finish-to-Start
     lag: dep.lag,
     lagUnit: dep.lagUnit
@@ -178,35 +178,29 @@ export async function applyOptimizationResults(
  */
 export function createOptimizationRequest(
   scheduler: any,
-  algorithmId: number,
+  algorithmId: string,
   options: {
     profileId?: number;
-    objective?: string;
+    objectives?: string[];
     timeLimit?: number;
     lockedEvents?: string[];
   } = {}
-): OptimizationRequestDTO {
+): any {
   const scheduleData = collectSchedulerData(scheduler);
 
   // Identify locked events
   const lockedEvents = options.lockedEvents || 
     scheduler.eventStore.records
       .filter((event: any) => event.locked || event.manuallyScheduled)
-      .map((event: any) => event.id);
+      .map((event: any) => String(event.id));
 
   return {
     scheduleData,
-    algorithmId,
-    profileId: options.profileId,
-    options: {
-      objective: (options.objective || 'minimize_makespan') as any,
-      timeLimit: options.timeLimit || 60,
-      incrementalMode: false,
-      warmStart: false
-    },
-    locks: {
-      events: lockedEvents,
-      resourceIntervals: []
+    algorithmId: algorithmId, // Keep as string for API
+    profileId: String(options.profileId || 1), // Convert to string for API
+    parameters: {
+      objectives: options.objectives || ['minimize_makespan'],
+      timeLimit: options.timeLimit || 60
     }
   };
 }

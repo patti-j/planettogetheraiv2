@@ -51,17 +51,18 @@ const ScheduleSnapshotSchema = z.object({
 
 // Schedule metadata schema
 const ScheduleMetadataSchema = z.object({
-  plantId: z.string().min(1).max(100),
-  timestamp: z.string().datetime(),
-  userId: z.string().min(1).max(100),
+  plantId: z.string().min(1).max(100).optional().default('default'),
+  timestamp: z.string().datetime().optional().default(() => new Date().toISOString()),
+  userId: z.string().min(1).max(100).optional().default('system'),
+  scheduleId: z.string().max(100).optional(),
   description: z.string().max(500).optional()
 });
 
 // Schedule data payload schema
 export const scheduleDataPayloadSchema = z.object({
-  version: z.string().regex(/^v_[\w-]+$/).optional(),
+  version: z.string().optional().default(() => `v_${Date.now()}`),
   snapshot: ScheduleSnapshotSchema,
-  metadata: ScheduleMetadataSchema
+  metadata: ScheduleMetadataSchema.optional().default({})
 });
 
 // Lock set schema
@@ -92,13 +93,17 @@ const OptimizationOptionsSchema = z.object({
 // Main optimization request schema
 export const optimizationRunRequestSchema = z.object({
   scheduleData: scheduleDataPayloadSchema,
-  algorithmId: z.number().int().positive().max(100),
-  profileId: z.string().max(100).optional(),
-  options: OptimizationOptionsSchema.default({}),
-  locks: LockSetSchema.default({
-    events: [],
-    resourceIntervals: []
-  })
+  algorithmId: z.union([
+    z.string().min(1).max(100),
+    z.number().int().positive().max(100)
+  ]),
+  profileId: z.string().max(100).optional().default('1'),
+  parameters: z.object({
+    objectives: z.array(z.string()).optional().default(['minimize_makespan']),
+    timeLimit: z.number().positive().max(300).optional().default(30)
+  }).optional().default({}),
+  options: OptimizationOptionsSchema.optional(),
+  locks: LockSetSchema.optional()
 });
 
 // Body size validation (to be used as middleware)
