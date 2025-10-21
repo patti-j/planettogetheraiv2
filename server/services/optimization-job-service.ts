@@ -333,7 +333,8 @@ export class OptimizationJobService extends EventEmitter {
       { progress: 30, step: 'Building optimization model', delay: 700 },
       { progress: 50, step: 'Running solver', delay: 1500 },
       { progress: 70, step: 'Validating solution', delay: 800 },
-      { progress: 90, step: 'Generating schedule', delay: 600 }
+      { progress: 90, step: 'Generating schedule', delay: 600 },
+      { progress: 95, step: 'Finalizing optimization', delay: 400 }
     ];
 
     for (const { progress, step, delay } of steps) {
