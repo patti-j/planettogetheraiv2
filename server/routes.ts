@@ -1478,6 +1478,154 @@ router.get("/api/pt-dependencies", async (req, res) => {
   }
 });
 
+// Populate manufacturing tables from PT tables
+router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) => {
+  try {
+    console.log('Starting population of manufacturing tables from PT tables...');
+    
+    let totalPopulated = 0;
+    const results: any = {};
+    
+    // 1. Populate resources from ptresources
+    const ptResourcesQuery = `
+      SELECT 
+        resource_id,
+        name,
+        description,
+        external_id,
+        notes,
+        bottleneck,
+        capacity_type,
+        hourly_cost,
+        setup_cost,
+        active,
+        plant_id,
+        department_id,
+        plant_name,
+        department_name
+      FROM ptresources
+      WHERE active = true
+    `;
+    
+    const ptResources = await db.execute(sql.raw(ptResourcesQuery));
+    const resourcesData = Array.isArray(ptResources) ? ptResources : ptResources.rows || [];
+    results.resources = resourcesData.length;
+    
+    // 2. Populate operations from ptjoboperations
+    const ptOperationsQuery = `
+      SELECT 
+        jo.id,
+        jo.name,
+        jo.description,
+        jo.operation_id,
+        jo.job_id,
+        jo.external_id,
+        jo.cycle_hrs,
+        jo.setup_hours,
+        jo.post_processing_hours,
+        jo.scheduled_start,
+        jo.scheduled_end,
+        jo.sequence_number,
+        jo.constraint_type,
+        jo.constraint_date,
+        j.name as job_name
+      FROM ptjoboperations jo
+      LEFT JOIN ptjobs j ON jo.job_id = j.id
+    `;
+    
+    const ptOperations = await db.execute(sql.raw(ptOperationsQuery));
+    const operationsData = Array.isArray(ptOperations) ? ptOperations : ptOperations.rows || [];
+    results.operations = operationsData.length;
+    
+    // 3. Populate jobs from ptjobs
+    const ptJobsQuery = `
+      SELECT 
+        id,
+        name,
+        description,
+        external_id,
+        priority,
+        need_date_time,
+        scheduled_status,
+        firm,
+        plan_type,
+        planning_detail,
+        order_qty,
+        plant_id
+      FROM ptjobs
+    `;
+    
+    const ptJobs = await db.execute(sql.raw(ptJobsQuery));
+    const jobsData = Array.isArray(ptJobs) ? ptJobs : ptJobs.rows || [];
+    results.jobs = jobsData.length;
+    
+    // 4. Populate plants from ptplants
+    const ptPlantsQuery = `
+      SELECT 
+        id,
+        plant_id,
+        name,
+        description,
+        notes,
+        external_id,
+        address,
+        active,
+        plant_type,
+        use_changeover_groups
+      FROM ptplants
+      WHERE active = true
+    `;
+    
+    const ptPlants = await db.execute(sql.raw(ptPlantsQuery));
+    const plantsData = Array.isArray(ptPlants) ? ptPlants : ptPlants.rows || [];
+    results.plants = plantsData.length;
+    
+    // 5. Populate manufacturing orders from pt_manufacturing_orders
+    const ptManufacturingOrdersQuery = `
+      SELECT 
+        id,
+        job_id,
+        manufacturing_order_id,
+        mo_id,
+        external_id,
+        name,
+        description,
+        planned_quantity,
+        completed_quantity,
+        scheduled_start,
+        scheduled_end,
+        status,
+        priority,
+        plant_id
+      FROM pt_manufacturing_orders
+    `;
+    
+    const ptManufacturingOrders = await db.execute(sql.raw(ptManufacturingOrdersQuery));
+    const manufacturingOrdersData = Array.isArray(ptManufacturingOrders) ? ptManufacturingOrders : ptManufacturingOrders.rows || [];
+    results.manufacturingOrders = manufacturingOrdersData.length;
+    
+    // Calculate total
+    totalPopulated = results.resources + results.operations + results.jobs + results.plants + results.manufacturingOrders;
+    
+    console.log('Population summary:', results);
+    
+    res.json({
+      success: true,
+      message: `Successfully populated ${totalPopulated} records from PT tables`,
+      details: results,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error("Error populating manufacturing tables from PT tables:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to populate manufacturing tables from PT tables",
+      error: (error as Error).message
+    });
+  }
+});
+
 // PT Resources endpoint - reads from PT tables
 router.get("/api/pt-resources", async (req, res) => {
   try {
