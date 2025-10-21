@@ -2751,8 +2751,25 @@
                     document.getElementById('loadingOverlay').style.display = 'flex';
                     
                     try {
+                        // Make sure scheduler is initialized
+                        if (!scheduler || !scheduler.assignmentStore || !scheduler.eventStore || !scheduler.resourceStore) {
+                            console.error('Scheduler not properly initialized');
+                            alert('Scheduler is not ready. Please wait for the page to fully load and try again.');
+                            document.getElementById('loadingOverlay').style.display = 'none';
+                            return;
+                        }
+                        
                         // Get unscheduled operations (those assigned to the "unscheduled" resource)
-                        const unscheduledAssignments = scheduler.assignmentStore.filter(a => a.resourceId === 'unscheduled');
+                        // Use query instead of filter which might not exist
+                        const allAssignments = scheduler.assignmentStore.records || [];
+                        const unscheduledAssignments = [];
+                        
+                        for (const assignment of allAssignments) {
+                            if (assignment && assignment.resourceId === 'unscheduled') {
+                                unscheduledAssignments.push(assignment);
+                            }
+                        }
+                        
                         console.log(`Found ${unscheduledAssignments.length} unscheduled operations`);
                         
                         if (unscheduledAssignments.length === 0) {
@@ -2765,7 +2782,13 @@
                         scheduler.beginBatch();
                         
                         // Get production resources (exclude unscheduled)
-                        const productionResources = scheduler.resourceStore.filter(r => r.id !== 'unscheduled');
+                        const allResources = scheduler.resourceStore.records || [];
+                        const productionResources = [];
+                        for (const resource of allResources) {
+                            if (resource && resource.id !== 'unscheduled') {
+                                productionResources.push(resource);
+                            }
+                        }
                         
                         // Try to place each unscheduled operation
                         for (const assignment of unscheduledAssignments) {
@@ -2775,10 +2798,29 @@
                             // Try each resource
                             for (const resource of productionResources) {
                                 // Find the earliest available slot
-                                const existingEvents = scheduler.eventStore.filter(e => {
-                                    const a = scheduler.assignmentStore.find(a => a.eventId === e.id && a.resourceId === resource.id);
-                                    return a && e.id !== event.id;
-                                }).sort((a, b) => a.startDate - b.startDate);
+                                const allEvents = scheduler.eventStore.records || [];
+                                const existingEvents = [];
+                                
+                                // Manually filter events for this resource
+                                for (const e of allEvents) {
+                                    if (e && e.id !== event.id) {
+                                        // Check if this event is assigned to the current resource
+                                        const assignments = scheduler.assignmentStore.records || [];
+                                        for (const a of assignments) {
+                                            if (a && a.eventId === e.id && a.resourceId === resource.id) {
+                                                existingEvents.push(e);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                                
+                                // Sort by start date
+                                existingEvents.sort((a, b) => {
+                                    const aStart = a.startDate ? new Date(a.startDate).getTime() : 0;
+                                    const bStart = b.startDate ? new Date(b.startDate).getTime() : 0;
+                                    return aStart - bStart;
+                                });
                                 
                                 let candidateStart = new Date();
                                 candidateStart.setHours(8, 0, 0, 0);
