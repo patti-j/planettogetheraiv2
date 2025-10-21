@@ -790,6 +790,28 @@ Ask me to:
     setCanvasItems([tableContext]);
   };
 
+  // Mutation for populating data from PT tables
+  const populateFromPTMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest('POST', `/api/master-data/populate-from-pt`, {});
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: [`/api/master-data`] });
+      refetch(); // Refresh current table data
+      toast({
+        title: "Success",
+        description: data.message || "Successfully populated data from PT tables",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: "Error",
+        description: "Failed to populate data from PT tables",
+        variant: "destructive"
+      });
+    }
+  });
+
   // Export data as CSV
   const exportData = () => {
     if (!tableData || tableData.length === 0) {
@@ -1116,6 +1138,16 @@ Ask me to:
                   >
                     <Download className="h-4 w-4" />
                     <span className="hidden sm:inline ml-1">Export</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => populateFromPTMutation.mutate()}
+                    disabled={populateFromPTMutation.isPending}
+                    className="px-2 sm:px-3"
+                  >
+                    <Upload className={`h-4 w-4 ${populateFromPTMutation.isPending ? 'animate-pulse' : ''}`} />
+                    <span className="hidden sm:inline ml-1">Populate from PT</span>
                   </Button>
                   <Button
                     variant="default"
