@@ -20,6 +20,7 @@ import {
 } from '@shared/optimization-types';
 import { storage } from '../storage';
 import { AlgorithmRegistry } from './optimization/algorithm-registry';
+import { ScheduleVersionService } from './schedule-version-service';
 
 // Job state machine
 export class OptimizationJobStateMachine {
@@ -280,34 +281,63 @@ export class OptimizationJobService extends EventEmitter {
       // Simulate optimization steps
       await this.simulateOptimization(jobId, request);
 
-      // Transition to completed
-      stateMachine.transition('completed');
-      const resultVersionId = await this.jobStore.createScheduleVersion(
-        request.scheduleData,
-        'optimization'
-      );
+      // Create schedule version in the actual database
+      const versionService = ScheduleVersionService.getInstance();
+      const scheduleId = parseInt(request.scheduleData.metadata?.plantId || '1', 10);
+      const userId = parseInt(request.scheduleData.metadata?.userId || '1', 10);
+      
+      let versionId: number;
+      try {
+        // Create the version in the database
+        versionId = await versionService.createVersion(
+          scheduleId,
+          userId,
+          'optimization',
+          `Optimization requested: ${request.algorithmId || 'default'}`,
+          undefined // no tag
+        );
+        
+        // Create version ID for the in-memory store
+        const resultVersionId = `v_${versionId}`;
+        
+        // Update in-memory version store
+        await this.jobStore.createScheduleVersion(
+          request.scheduleData,
+          'optimization'
+        );
 
-      await this.jobStore.updateJob(jobId, {
-        status: 'completed',
-        completedAt: new Date().toISOString(),
-        progressPercentage: 100,
-        resultVersionId,
-        metrics: {
-          makespan: 120,
-          resourceUtilization: 85,
-          totalSetupTime: 10,
-          totalChangeovers: 5,
-          constraintViolations: 0,
-          improvementPercentage: 15,
-          objectiveValue: 0.85,
-          computationTime: 5.2
-        }
-      });
+        // Transition to completed
+        stateMachine.transition('completed');
+        
+        // Update job with completion
+        await this.jobStore.updateJob(jobId, {
+          status: 'completed',
+          completedAt: new Date().toISOString(),
+          progressPercentage: 100,
+          resultVersionId,
+          metrics: {
+            makespan: 120,
+            resourceUtilization: 85,
+            totalSetupTime: 10,
+            totalChangeovers: 5,
+            constraintViolations: 0,
+            improvementPercentage: 15,
+            objectiveValue: 0.85,
+            computationTime: 5.2
+          }
+        });
 
-      this.emit('job:completed', jobId);
-      this.emitProgress(jobId, 100, 'Optimization complete');
+        // Emit completion events
+        this.emit('job:completed', jobId);
+        this.emitProgress(jobId, 100, 'Optimization complete');
+        
+      } catch (versionError) {
+        console.error('Failed to create schedule version:', versionError);
+        throw new Error('Failed to save optimization results');
+      }
 
     } catch (error) {
+      console.error('Optimization job failed:', error);
       stateMachine.transition('failed');
       await this.jobStore.updateJob(jobId, {
         status: 'failed',
