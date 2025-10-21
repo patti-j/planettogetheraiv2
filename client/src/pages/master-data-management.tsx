@@ -89,6 +89,30 @@ const masterDataTables = [
     ]
   },
   {
+    id: 'operations',
+    name: 'Operations',
+    description: 'Production operations and tasks',
+    icon: Settings,
+    category: 'Core',
+    columns: [
+      { key: 'id', header: 'ID', type: 'number' as const, editable: false },
+      { key: 'name', header: 'Name', type: 'text' as const, required: true },
+      { key: 'description', header: 'Description', type: 'text' as const },
+      { key: 'operationType', header: 'Type', type: 'select' as const,
+        options: [
+          { value: 'setup', label: 'Setup' },
+          { value: 'production', label: 'Production' },
+          { value: 'teardown', label: 'Teardown' },
+          { value: 'quality', label: 'Quality Check' }
+        ]
+      },
+      { key: 'standardTime', header: 'Standard Time (min)', type: 'number' as const },
+      { key: 'setupTime', header: 'Setup Time (min)', type: 'number' as const },
+      { key: 'resourceRequired', header: 'Resource Required', type: 'text' as const },
+      { key: 'isActive', header: 'Active', type: 'boolean' as const },
+    ]
+  },
+  {
     id: 'workCenters',
     name: 'Work Centers',
     description: 'Production work centers and stations',
