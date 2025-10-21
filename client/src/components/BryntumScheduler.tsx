@@ -86,6 +86,72 @@ const ToastContainer: React.FC<{ toasts: string[] }> = ({ toasts }) => {
   );
 };
 
+// Global scheduler instance for testing
+let globalSchedulerInstance: any = null;
+
+// Global function to schedule ASAP - accessible from console
+(window as any).scheduleASAP = async () => {
+  if (!globalSchedulerInstance) {
+    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    return;
+  }
+  
+  console.log('[Direct Scheduling] Starting ASAP (forward) scheduling...');
+  
+  // Set to forward scheduling
+  globalSchedulerInstance.project.schedulingDirection = 'forward';
+  globalSchedulerInstance.project.constraintsMode = 'honor';
+  
+  // Trigger the scheduling engine
+  await globalSchedulerInstance.project.propagate();
+  await globalSchedulerInstance.project.commitAsync();
+  
+  console.log('[Direct Scheduling] ASAP scheduling complete');
+};
+
+// Global function to schedule ALAP - accessible from console
+(window as any).scheduleALAP = async () => {
+  if (!globalSchedulerInstance) {
+    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    return;
+  }
+  
+  console.log('[Direct Scheduling] Starting ALAP (backward) scheduling...');
+  
+  // Set to backward scheduling
+  globalSchedulerInstance.project.schedulingDirection = 'backward';
+  globalSchedulerInstance.project.constraintsMode = 'honor';
+  
+  // Trigger the scheduling engine
+  await globalSchedulerInstance.project.propagate();
+  await globalSchedulerInstance.project.commitAsync();
+  
+  console.log('[Direct Scheduling] ALAP scheduling complete');
+};
+
+// Global function to optimize schedule with different algorithms
+(window as any).optimizeSchedule = async (algorithmId?: string) => {
+  if (!globalSchedulerInstance) {
+    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    return;
+  }
+  
+  const algorithm = algorithmId || 'forward-scheduling';
+  console.log(`[Scheduler Optimization] Starting optimization with algorithm: ${algorithm}`);
+  
+  // For now, map algorithms to ASAP/ALAP
+  if (algorithm === 'forward-scheduling') {
+    await (window as any).scheduleASAP();
+  } else if (algorithm === 'backward-scheduling') {
+    await (window as any).scheduleALAP();
+  } else {
+    console.log(`[Scheduler Optimization] Algorithm ${algorithm} not yet implemented, using ASAP`);
+    await (window as any).scheduleASAP();
+  }
+};
+
+console.log('[Scheduler] Global test functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
+
 const BryntumScheduler: React.FC = () => {
   const schedulerRef = useRef<any>(null);
   const [loading, setLoading] = useState(true);
@@ -537,45 +603,6 @@ const BryntumScheduler: React.FC = () => {
     }
   };
 
-  // Direct ASAP scheduling (forward) - no server optimization
-  const scheduleASAP = async () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (!scheduler) return;
-    
-    console.log('[Direct Scheduling] Starting ASAP (forward) scheduling...');
-    showToast('Running ASAP scheduling...');
-    
-    // Set to forward scheduling
-    scheduler.project.schedulingDirection = 'forward';
-    scheduler.project.constraintsMode = 'honor';
-    
-    // Trigger the scheduling engine
-    await scheduler.project.propagate();
-    await scheduler.project.commitAsync();
-    
-    showToast('✅ ASAP scheduling complete!');
-    console.log('[Direct Scheduling] ASAP scheduling complete');
-  };
-  
-  // Direct ALAP scheduling (backward) - no server optimization  
-  const scheduleALAP = async () => {
-    const scheduler = schedulerRef.current?.instance;
-    if (!scheduler) return;
-    
-    console.log('[Direct Scheduling] Starting ALAP (backward) scheduling...');
-    showToast('Running ALAP scheduling...');
-    
-    // Set to backward scheduling
-    scheduler.project.schedulingDirection = 'backward';
-    scheduler.project.constraintsMode = 'honor';
-    
-    // Trigger the scheduling engine
-    await scheduler.project.propagate();
-    await scheduler.project.commitAsync();
-    
-    showToast('✅ ALAP scheduling complete!');
-    console.log('[Direct Scheduling] ALAP scheduling complete');
-  };
 
   const packUnscheduled = async () => {
     const scheduler = schedulerRef.current?.instance;
@@ -1029,13 +1056,17 @@ const BryntumScheduler: React.FC = () => {
       conflict: ({ conflicts }: any) => {
         console.warn('[Scheduling Engine] Conflicts detected:', conflicts);
         if (conflicts && conflicts.length > 0) {
-          showToast(`⚠️ Scheduling conflicts detected: ${conflicts.length} conflict(s)`, 'warning');
+          showToast(`⚠️ Scheduling conflicts detected: ${conflicts.length} conflict(s)`);
         }
       },
       
       paint: ({ source }: any) => {
         // Setup event handlers after scheduler is painted
         const scheduler = source;
+        
+        // Set the global scheduler instance for testing
+        globalSchedulerInstance = scheduler;
+        console.log('[Scheduler] Global scheduler instance set - test functions now available');
 
         // Cleanup overlaps after initial load
         setTimeout(async () => {
@@ -1206,10 +1237,7 @@ const BryntumScheduler: React.FC = () => {
         console.log('STM enabled:', scheduler.project.stm.enabled);
         console.log('Overlap prevention and capability validation enabled for all operations');
         
-        // Expose scheduling functions for testing
-        (window as any).scheduleASAP = scheduleASAP;
-        (window as any).scheduleALAP = scheduleALAP;
-        (window as any).optimizeSchedule = optimizeSchedule;
+        // optimizeSchedule is already exposed globally as a window function
         console.log('[Scheduler] Test functions available: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
       },
     },
