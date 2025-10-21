@@ -520,13 +520,18 @@ const BryntumScheduler: React.FC = () => {
             showToast('Error checking optimization status');
           }
         }, 1000); // Poll every second
-      } else if (response.status === 'failed') {
-        showToast(`Optimization failed: ${response.error?.message || 'Unknown error'}`);
+      } else if (response.status === 'failed' || response.error) {
+        showToast(`Optimization failed: ${response.error?.message || response.error || 'Unknown error'}`);
       }
       
-    } catch (error) {
+    } catch (error: any) {
       console.error('Optimization error:', error);
-      showToast(`Failed to start optimization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      // Check if it's a validation error from the server
+      if (error.message?.includes('validation') || error.message?.includes('Invalid')) {
+        showToast('Optimization failed due to data validation errors. Please try packing operations first.');
+      } else {
+        showToast(`Failed to start optimization: ${error.message || 'Unknown error'}`);
+      }
     }
   };
 
