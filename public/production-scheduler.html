@@ -3952,18 +3952,18 @@
             // Helper function to collect schedule data
             function collectScheduleData() {
                 const resources = scheduler.resourceStore.records.map(r => ({
-                    id: r.id,
+                    id: String(r.id), // Convert to string for API
                     name: r.name,
                     type: r.type || 'default',
-                    capacity: r.capacity || 1
+                    capacity: Number(r.capacity) || 1 // Ensure it's a number
                 }));
                 
                 const events = scheduler.eventStore.records
                     .filter(e => e.resourceId !== 'unscheduled')
                     .map(e => ({
-                        id: e.id,
+                        id: String(e.id), // Convert to string for API
                         name: e.name,
-                        resourceId: e.resourceId,
+                        resourceId: String(e.resourceId), // Ensure string
                         startDate: e.startDate?.toISOString() || '',
                         endDate: e.endDate?.toISOString() || '',
                         duration: e.durationMS || 0,
@@ -3973,9 +3973,9 @@
                     }));
                 
                 const dependencies = scheduler.dependencyStore.records.map(d => ({
-                    id: d.id,
-                    fromEvent: d.fromEvent,
-                    toEvent: d.toEvent,
+                    id: String(d.id), // Convert to string
+                    fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
+                    toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
                     type: d.type || 2,
                     lag: d.lag || 0,
                     lagUnit: d.lagUnit || 'hour'
