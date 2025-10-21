@@ -3878,11 +3878,19 @@
                         body: JSON.stringify(request)
                     });
                     
+                    // Parse response even if not ok to get error details
+                    const responseData = await response.json();
+                    
                     if (!response.ok) {
-                        throw new Error('Failed to submit optimization job');
+                        // Check for validation errors
+                        if (response.status === 400) {
+                            console.error('Validation error:', responseData);
+                            throw new Error('Optimization failed due to data format issues. Please use Pack Unscheduled first to ensure all operations are scheduled.');
+                        }
+                        throw new Error(responseData.error || responseData.message || 'Failed to submit optimization job');
                     }
                     
-                    const job = await response.json();
+                    const job = responseData;
                     console.log('✅ Optimization job submitted:', job.runId);
                     
                     // Poll for job completion
@@ -3980,6 +3988,14 @@
                     let timeoutId;
                     let eventSource;
                     
+                    // Set a timeout to prevent infinite waiting (30 seconds)
+                    const maxTimeout = setTimeout(() => {
+                        if (eventSource) {
+                            eventSource.close();
+                        }
+                        reject(new Error('Optimization timed out after 30 seconds. Please try again.'));
+                    }, 30000);
+                    
                     // Set up SSE connection for progress updates
                     eventSource = new EventSource(`/api/schedules/optimize/${runId}/progress`);
                     
@@ -4009,16 +4025,19 @@
                                     .then(status => {
                                         eventSource.close();
                                         clearTimeout(timeoutId);
+                                        clearTimeout(maxTimeout);
                                         resolve(status);
                                     })
                                     .catch(err => {
                                         eventSource.close();
                                         clearTimeout(timeoutId);
+                                        clearTimeout(maxTimeout);
                                         reject(err);
                                     });
                             } else if (data.type === 'error') {
                                 eventSource.close();
                                 clearTimeout(timeoutId);
+                                clearTimeout(maxTimeout);
                                 reject(new Error(data.error?.message || 'Optimization failed'));
                             }
                         } catch (error) {
@@ -4043,6 +4062,7 @@
                     // Fallback polling function if SSE fails
                     async function pollWithFetch() {
                         clearTimeout(timeoutId);
+                        clearTimeout(maxTimeout);
                         for (let i = 0; i < maxAttempts; i++) {
                             try {
                                 const response = await fetch(`/api/schedules/optimize/${runId}`);
@@ -4051,6 +4071,7 @@
                                 const status = await response.json();
                                 
                                 if (status.status === 'completed' || status.status === 'failed') {
+                                    clearTimeout(maxTimeout);
                                     resolve(status);
                                     return;
                                 }
