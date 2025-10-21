@@ -1051,6 +1051,13 @@
                 </svg>
                 <span>Apply</span>
             </button>
+            <button id="packUnscheduled" title="Pack Unscheduled Operations">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                    <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+                <span>Pack Unscheduled</span>
+            </button>
             <button id="optimizeSchedule" title="Optimize with AI">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path>
@@ -2736,6 +2743,95 @@
                         rightMargin: 50   // Margin in pixels between last event end and last visible date
                     });
                     console.log('Zoom to fit applied with 50px margins');
+                });
+                
+                // Pack Unscheduled button
+                document.getElementById('packUnscheduled').addEventListener('click', async () => {
+                    console.log('Pack Unscheduled clicked');
+                    document.getElementById('loadingOverlay').style.display = 'flex';
+                    
+                    try {
+                        // Get unscheduled operations (those assigned to the "unscheduled" resource)
+                        const unscheduledAssignments = scheduler.assignmentStore.filter(a => a.resourceId === 'unscheduled');
+                        console.log(`Found ${unscheduledAssignments.length} unscheduled operations`);
+                        
+                        if (unscheduledAssignments.length === 0) {
+                            alert('No unscheduled operations to pack');
+                            document.getElementById('loadingOverlay').style.display = 'none';
+                            return;
+                        }
+                        
+                        let placed = 0;
+                        scheduler.beginBatch();
+                        
+                        // Get production resources (exclude unscheduled)
+                        const productionResources = scheduler.resourceStore.filter(r => r.id !== 'unscheduled');
+                        
+                        // Try to place each unscheduled operation
+                        for (const assignment of unscheduledAssignments) {
+                            const event = scheduler.eventStore.getById(assignment.eventId);
+                            if (!event) continue;
+                            
+                            // Try each resource
+                            for (const resource of productionResources) {
+                                // Find the earliest available slot
+                                const existingEvents = scheduler.eventStore.filter(e => {
+                                    const a = scheduler.assignmentStore.find(a => a.eventId === e.id && a.resourceId === resource.id);
+                                    return a && e.id !== event.id;
+                                }).sort((a, b) => a.startDate - b.startDate);
+                                
+                                let candidateStart = new Date();
+                                candidateStart.setHours(8, 0, 0, 0);
+                                
+                                // Check for conflicts and find first available slot
+                                let canPlace = true;
+                                for (const existing of existingEvents) {
+                                    const eventEnd = new Date(candidateStart.getTime() + event.duration * 60 * 60 * 1000);
+                                    if (candidateStart < existing.endDate && eventEnd > existing.startDate) {
+                                        // Conflict, move to after this event
+                                        candidateStart = new Date(existing.endDate);
+                                        candidateStart.setMinutes(candidateStart.getMinutes() + 15); // Add buffer
+                                    }
+                                }
+                                
+                                // Place the event
+                                const eventEnd = new Date(candidateStart.getTime() + event.duration * 60 * 60 * 1000);
+                                
+                                // Remove old assignment
+                                scheduler.assignmentStore.remove(assignment);
+                                
+                                // Create new assignment
+                                scheduler.assignmentStore.add({
+                                    id: `a_${event.id}_${resource.id}`,
+                                    eventId: event.id,
+                                    resourceId: resource.id
+                                });
+                                
+                                // Update event properties
+                                event.set({
+                                    startDate: candidateStart,
+                                    endDate: eventEnd,
+                                    eventColor: null // Remove gray color
+                                });
+                                
+                                placed++;
+                                console.log(`Placed ${event.name} on ${resource.name}`);
+                                break; // Move to next event
+                            }
+                        }
+                        
+                        scheduler.endBatch();
+                        await scheduler.project.commitAsync();
+                        
+                        alert(`Successfully packed ${placed} operations`);
+                        updateStatusBar();
+                        
+                    } catch (error) {
+                        console.error('Pack Unscheduled error:', error);
+                        alert('Error packing operations: ' + error.message);
+                    } finally {
+                        document.getElementById('loadingOverlay').style.display = 'none';
+                    }
                 });
                 
                 // Apply Scheduling Algorithm button
