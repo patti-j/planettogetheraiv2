@@ -8779,10 +8779,10 @@ router.post("/api/schedules/optimize",
       
       // Create version snapshot before optimization
       const scheduleId = validatedRequest.scheduleData.metadata.scheduleId || 1;
-      const versionId = await scheduleVersionService.createVersionSnapshot(
+      const versionId = await scheduleVersionService.createVersion(
         scheduleId,
         parseInt(String(userId)),
-        'OPTIMIZATION_STARTED',
+        'optimization',
         `Optimization requested: ${validatedRequest.algorithm}`
       );
       
