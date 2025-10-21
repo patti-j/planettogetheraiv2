@@ -63,7 +63,7 @@ class JobStore {
     const jobId = `opt_run_${uuidv4()}`;
     const job: OptimizationJob = {
       id: jobId,
-      scheduleId: request.scheduleData.metadata.plantId,
+      scheduleId: request.scheduleData.metadata?.plantId || '1',
       algorithmId: request.algorithmId,
       profileId: request.profileId,
       status: 'queued',
@@ -94,11 +94,11 @@ class JobStore {
     const versionId = `v_${uuidv4()}`;
     const version: ScheduleVersion = {
       id: versionId,
-      scheduleId: scheduleData.metadata.plantId,
+      scheduleId: scheduleData.metadata?.plantId || '1',
       parentVersionId: scheduleData.version,
       data: scheduleData,
       createdAt: new Date().toISOString(),
-      createdBy: scheduleData.metadata.userId,
+      createdBy: scheduleData.metadata?.userId || 'system',
       source
     };
 
