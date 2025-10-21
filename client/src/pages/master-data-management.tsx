@@ -815,9 +815,9 @@ Ask me to:
   };
 
   // Mutation for populating data from PT tables
-  const populateFromPTMutation = useMutation<{message: string}>({
+  const populateFromPTMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest('POST', `/api/master-data/populate-from-pt`, {});
+      return await apiRequest('POST', `/api/master-data/populate-from-pt`, {}) as Promise<{message: string}>;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: [`/api/master-data`] });
