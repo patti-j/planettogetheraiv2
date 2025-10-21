@@ -706,7 +706,7 @@ export default function MasterDataManagement() {
 
   // Fetch data for the selected table
   const { data: tableData = [], isLoading, refetch } = useQuery({
-    queryKey: [`/api/master-data/${selectedTable}`],
+    queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`],
     enabled: !!selectedTable,
   });
 
@@ -716,7 +716,7 @@ export default function MasterDataManagement() {
       return await apiRequest('PUT', `/api/master-data/${selectedTable}`, { data: updatedData });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`] });
       toast({
         title: "Success",
         description: "Data saved successfully"
@@ -737,7 +737,7 @@ export default function MasterDataManagement() {
       return await apiRequest('PATCH', `/api/master-data/${selectedTable}/${row.id}`, row);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`] });
     },
     onError: (error) => {
       toast({
@@ -754,7 +754,7 @@ export default function MasterDataManagement() {
       return await apiRequest('DELETE', `/api/master-data/${selectedTable}/${rowId}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`] });
     },
     onError: (error) => {
       toast({
@@ -771,7 +771,7 @@ export default function MasterDataManagement() {
       return await apiRequest('POST', `/api/master-data/${selectedTable}`, newRow);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/master-data/${selectedTable}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`] });
     },
     onError: (error) => {
       toast({

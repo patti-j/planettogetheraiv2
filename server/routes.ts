@@ -1478,7 +1478,36 @@ router.get("/api/pt-dependencies", async (req, res) => {
   }
 });
 
-// Master data operations endpoint
+// Operations endpoint - follows pattern of resources endpoint
+router.get("/api/operations", requireAuth, async (req, res) => {
+  try {
+    // Fetch operations from PT job operations
+    const operations = await db
+      .select({
+        id: ptJobOperations.id,
+        name: ptJobOperations.name,
+        description: ptJobOperations.description,
+        operationType: sql<string>`'production'`,
+        standardTime: sql<number>`COALESCE(ROUND(${ptJobOperations.cycleHrs} * 60), 60)`,
+        setupTime: sql<number>`COALESCE(ROUND(${ptJobOperations.setupHours} * 60), 0)`,
+        resourceRequired: sql<string>`''`,
+        isActive: sql<boolean>`true`
+      })
+      .from(ptJobOperations)
+      .orderBy(ptJobOperations.name)
+      .limit(100);
+
+    res.json(operations);
+  } catch (error) {
+    console.error("Error fetching operations:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch operations",
+      details: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Also keep the master-data endpoint for backward compatibility
 router.get("/api/master-data/operations", requireAuth, async (req, res) => {
   try {
     // Fetch operations from PT job operations
