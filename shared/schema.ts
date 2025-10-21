@@ -483,6 +483,39 @@ export const ptManufacturingOrders = pgTable("pt_manufacturing_orders", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+// ============================================
+// Master Data Tables
+// ============================================
+
+// Items table for inventory management
+export const items = pgTable("items", {
+  id: serial("id").primaryKey(),
+  itemNumber: varchar("item_number", { length: 100 }).notNull().unique(),
+  itemName: varchar("item_name", { length: 255 }).notNull(),
+  description: text("description"),
+  itemType: varchar("item_type", { length: 50 }).default("finished_good"),
+  unitOfMeasure: varchar("unit_of_measure", { length: 20 }),
+  standardCost: numeric("standard_cost"),
+  status: varchar("status", { length: 50 }).default("active"),
+  plantId: integer("plant_id"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Capabilities table for resource and work center capabilities
+export const capabilities = pgTable("capabilities", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  type: varchar("type", { length: 50 }).default("skill"), // skill, certification, equipment, process
+  level: integer("level"),
+  validFrom: timestamp("valid_from"),
+  validTo: timestamp("valid_to"),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Add a dedicated production orders table for frontend compatibility
 export const productionOrders = pgTable("production_orders", {
   id: serial("id").primaryKey(),
@@ -1079,7 +1112,6 @@ export const insertResourceSchema = insertPtResourceSchema;
 export const insertPlantSchema = insertPtPlantSchema;
 export const insertJobOperationSchema = insertPtJobOperationSchema;
 export const insertManufacturingOrderSchema = insertPtManufacturingOrderSchema;
-export const insertCapabilitySchema = createInsertSchema(ptPlants); // Placeholder
 export const insertDepartmentSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertCapacityPlanningScenarioSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertMrpRunSchema = createInsertSchema(ptPlants); // Placeholder
@@ -1088,7 +1120,6 @@ export const insertCustomerSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertVendorSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertSalesOrderSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertInventorySchema = createInsertSchema(ptPlants); // Placeholder
-export const insertItemSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertBomSchema = createInsertSchema(ptPlants); // Placeholder
 export const insertRoutingSchema = createInsertSchema(ptPlants); // Placeholder
 
@@ -1896,3 +1927,25 @@ export const optimizationRunResponseSchema = z.object({
   error: z.string().optional()
 });
 export type OptimizationRunResponse = z.infer<typeof optimizationRunResponseSchema>;
+
+// ============================================
+// Master Data Types
+// ============================================
+
+// Items types
+export const insertItemSchema = createInsertSchema(items).omit({ 
+  id: true,
+  createdAt: true,
+  updatedAt: true 
+});
+export type InsertItem = z.infer<typeof insertItemSchema>;
+export type Item = typeof items.$inferSelect;
+
+// Capabilities types  
+export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
+export type Capability = typeof capabilities.$inferSelect;

@@ -941,6 +941,126 @@ router.get("/manufacturing-orders", async (req, res) => {
   }
 });
 
+// Items endpoints
+router.get("/api/items", async (req, res) => {
+  try {
+    const itemsList = await storage.getItems();
+    res.json(itemsList);
+  } catch (error) {
+    console.error("Error fetching items:", error);
+    res.status(500).json({ message: "Failed to fetch items" });
+  }
+});
+
+router.get("/api/items/:id", async (req, res) => {
+  try {
+    const item = await storage.getItem(parseInt(req.params.id));
+    if (!item) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(item);
+  } catch (error) {
+    console.error("Error fetching item:", error);
+    res.status(500).json({ message: "Failed to fetch item" });
+  }
+});
+
+router.post("/api/items", async (req, res) => {
+  try {
+    const newItem = await storage.createItem(req.body);
+    res.json(newItem);
+  } catch (error) {
+    console.error("Error creating item:", error);
+    res.status(500).json({ message: "Failed to create item" });
+  }
+});
+
+router.patch("/api/items/:id", async (req, res) => {
+  try {
+    const updatedItem = await storage.updateItem(parseInt(req.params.id), req.body);
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json(updatedItem);
+  } catch (error) {
+    console.error("Error updating item:", error);
+    res.status(500).json({ message: "Failed to update item" });
+  }
+});
+
+router.delete("/api/items/:id", async (req, res) => {
+  try {
+    const deleted = await storage.deleteItem(parseInt(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Item not found" });
+    }
+    res.json({ message: "Item deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting item:", error);
+    res.status(500).json({ message: "Failed to delete item" });
+  }
+});
+
+// Capabilities endpoints
+router.get("/api/capabilities", async (req, res) => {
+  try {
+    const capabilitiesList = await storage.getCapabilities();
+    res.json(capabilitiesList);
+  } catch (error) {
+    console.error("Error fetching capabilities:", error);
+    res.status(500).json({ message: "Failed to fetch capabilities" });
+  }
+});
+
+router.get("/api/capabilities/:id", async (req, res) => {
+  try {
+    const capability = await storage.getCapability(parseInt(req.params.id));
+    if (!capability) {
+      return res.status(404).json({ message: "Capability not found" });
+    }
+    res.json(capability);
+  } catch (error) {
+    console.error("Error fetching capability:", error);
+    res.status(500).json({ message: "Failed to fetch capability" });
+  }
+});
+
+router.post("/api/capabilities", async (req, res) => {
+  try {
+    const newCapability = await storage.createCapability(req.body);
+    res.json(newCapability);
+  } catch (error) {
+    console.error("Error creating capability:", error);
+    res.status(500).json({ message: "Failed to create capability" });
+  }
+});
+
+router.patch("/api/capabilities/:id", async (req, res) => {
+  try {
+    const updatedCapability = await storage.updateCapability(parseInt(req.params.id), req.body);
+    if (!updatedCapability) {
+      return res.status(404).json({ message: "Capability not found" });
+    }
+    res.json(updatedCapability);
+  } catch (error) {
+    console.error("Error updating capability:", error);
+    res.status(500).json({ message: "Failed to update capability" });
+  }
+});
+
+router.delete("/api/capabilities/:id", async (req, res) => {
+  try {
+    const deleted = await storage.deleteCapability(parseInt(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Capability not found" });
+    }
+    res.json({ message: "Capability deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting capability:", error);
+    res.status(500).json({ message: "Failed to delete capability" });
+  }
+});
+
 // User role endpoints for workspace switcher
 router.get("/users/:userId/assigned-roles", async (req, res) => {
   try {

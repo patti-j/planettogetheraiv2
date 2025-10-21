@@ -33,9 +33,11 @@ import {
   type AlgorithmTest, type InsertAlgorithmTest,
   type AlgorithmDeployment, type InsertAlgorithmDeployment,
   type AlgorithmFeedback, type InsertAlgorithmFeedback,
-  type AlgorithmFeedbackComment, type InsertAlgorithmFeedbackComment,
-  type AlgorithmFeedbackVote, type InsertAlgorithmFeedbackVote,
-  type AlgorithmGovernanceApproval, type InsertAlgorithmGovernanceApproval
+  type AlgorithmGovernanceApproval, type InsertAlgorithmGovernanceApproval,
+  // Master Data types
+  items, capabilities,
+  type Item, type InsertItem,
+  type Capability, type InsertCapability
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
@@ -98,6 +100,19 @@ export interface IStorage {
   getJobs(): Promise<any[]>;
   getJobOperations(): Promise<PtJobOperation[]>;
   getManufacturingOrders(): Promise<PtManufacturingOrder[]>;
+  
+  // Master Data Management
+  getItems(): Promise<Item[]>;
+  getItem(id: number): Promise<Item | undefined>;
+  createItem(item: InsertItem): Promise<Item>;
+  updateItem(id: number, item: Partial<InsertItem>): Promise<Item | undefined>;
+  deleteItem(id: number): Promise<boolean>;
+  
+  getCapabilities(): Promise<Capability[]>;
+  getCapability(id: number): Promise<Capability | undefined>;
+  createCapability(capability: InsertCapability): Promise<Capability>;
+  updateCapability(id: number, capability: Partial<InsertCapability>): Promise<Capability | undefined>;
+  deleteCapability(id: number): Promise<boolean>;
   
   // Advanced PT Data Access  
   getPtResourcesWithDetails(): Promise<any[]>;
@@ -1737,6 +1752,112 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating approval:', error);
       throw error;
+    }
+  }
+
+  // Items Management
+  async getItems(): Promise<Item[]> {
+    try {
+      return await db.select().from(items).orderBy(items.itemName);
+    } catch (error) {
+      console.error('Error fetching items:', error);
+      return [];
+    }
+  }
+
+  async getItem(id: number): Promise<Item | undefined> {
+    try {
+      const [item] = await db.select().from(items).where(eq(items.id, id));
+      return item || undefined;
+    } catch (error) {
+      console.error('Error fetching item:', error);
+      return undefined;
+    }
+  }
+
+  async createItem(item: InsertItem): Promise<Item> {
+    try {
+      const [newItem] = await db.insert(items).values(item).returning();
+      return newItem;
+    } catch (error) {
+      console.error('Error creating item:', error);
+      throw error;
+    }
+  }
+
+  async updateItem(id: number, item: Partial<InsertItem>): Promise<Item | undefined> {
+    try {
+      const [updated] = await db.update(items)
+        .set({ ...item, updatedAt: new Date() })
+        .where(eq(items.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating item:', error);
+      return undefined;
+    }
+  }
+
+  async deleteItem(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(items).where(eq(items.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting item:', error);
+      return false;
+    }
+  }
+
+  // Capabilities Management
+  async getCapabilities(): Promise<Capability[]> {
+    try {
+      return await db.select().from(capabilities).orderBy(capabilities.name);
+    } catch (error) {
+      console.error('Error fetching capabilities:', error);
+      return [];
+    }
+  }
+
+  async getCapability(id: number): Promise<Capability | undefined> {
+    try {
+      const [capability] = await db.select().from(capabilities).where(eq(capabilities.id, id));
+      return capability || undefined;
+    } catch (error) {
+      console.error('Error fetching capability:', error);
+      return undefined;
+    }
+  }
+
+  async createCapability(capability: InsertCapability): Promise<Capability> {
+    try {
+      const [newCapability] = await db.insert(capabilities).values(capability).returning();
+      return newCapability;
+    } catch (error) {
+      console.error('Error creating capability:', error);
+      throw error;
+    }
+  }
+
+  async updateCapability(id: number, capability: Partial<InsertCapability>): Promise<Capability | undefined> {
+    try {
+      const [updated] = await db.update(capabilities)
+        .set({ ...capability, updatedAt: new Date() })
+        .where(eq(capabilities.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating capability:', error);
+      return undefined;
+    }
+  }
+
+  async deleteCapability(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(capabilities).where(eq(capabilities.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting capability:', error);
+      return false;
     }
   }
 }
