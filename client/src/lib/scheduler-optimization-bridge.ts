@@ -120,8 +120,7 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
     metadata: {
       plantId: scheduler.project?.id || 'default',
       timestamp: new Date().toISOString(),
-      userId: 'current-user', // Replace with actual user ID
-      scheduleId: '1' // Default schedule ID as string
+      userId: 'current-user' // Replace with actual user ID
     }
   };
 }
@@ -133,13 +132,15 @@ export async function applyOptimizationResults(
   scheduler: any,
   optimizedData: OptimizationResponseDTO,
   options: {
+    algorithmId?: string;
     markAsManuallyScheduled?: boolean;
     showMetrics?: boolean;
     animateChanges?: boolean;
   } = {}
 ): Promise<void> {
   const {
-    markAsManuallyScheduled = true,
+    algorithmId = 'forward-scheduling',
+    markAsManuallyScheduled = false, // Changed default to false - programmatic scheduling should NOT be marked as manual
     showMetrics = true,
     animateChanges = false
   } = options;
@@ -155,7 +156,8 @@ export async function applyOptimizationResults(
     // Track changes for animation
     const changedEvents: string[] = [];
 
-    // Apply optimized dates to events
+    // First, clear any manually scheduled flags from programmatically scheduled events
+    // This allows Bryntum's constraint engine to properly schedule them
     for (const optEvent of optimizedData.result.events) {
       const event = scheduler.eventStore.getById(optEvent.id);
       if (event && optEvent.changed) {
@@ -171,13 +173,10 @@ export async function applyOptimizationResults(
         event.set({
           startDate: new Date(optEvent.startDate),
           endDate: new Date(optEvent.endDate),
-          resourceId: optEvent.resourceId
+          resourceId: optEvent.resourceId,
+          // IMPORTANT: Set manuallyScheduled to false for programmatic scheduling
+          manuallyScheduled: false
         });
-
-        // Mark as manually scheduled to prevent engine override
-        if (markAsManuallyScheduled) {
-          event.manuallyScheduled = true;
-        }
 
         // Add visual indicator
         event.cls = (event.cls || '') + ' optimized-event';
@@ -185,9 +184,56 @@ export async function applyOptimizationResults(
       }
     }
 
-    // Resume and propagate changes
+    // Resume auto-commit to let Bryntum process the changes
     scheduler.project.resumeAutoCommit();
+    
+    // Now trigger Bryntum's scheduling engine with the appropriate direction
+    // This will resolve constraints properly
+    console.log(`[Optimization] Triggering Bryntum scheduling engine with algorithm: ${algorithmId}`);
+    
+    // Determine scheduling direction based on algorithm
+    let schedulingDirection = 'Forward'; // Default to forward (ASAP)
+    if (algorithmId === 'backward-scheduling' || algorithmId.toLowerCase().includes('alap')) {
+      schedulingDirection = 'Backward';
+    } else if (algorithmId === 'critical-path' || algorithmId.includes('toc') || algorithmId.includes('drum')) {
+      schedulingDirection = 'None'; // Let TOC algorithm handle its own logic
+    }
+    
+    // Apply Bryntum's constraint engine to resolve overlaps and dependencies
+    if (scheduler.project.schedule) {
+      console.log(`[Optimization] Running Bryntum schedule() with direction: ${schedulingDirection}`);
+      await scheduler.project.schedule({
+        direction: schedulingDirection,
+        // Respect resource constraints
+        respectResourceCalendar: true,
+        // Apply dependency constraints
+        skipNonWorkingTime: true
+      });
+    } else if (scheduler.project.propagate) {
+      // Fallback to propagate if schedule method doesn't exist
+      console.log('[Optimization] Running Bryntum propagate() to apply constraints');
+      await scheduler.project.propagate();
+    }
+    
+    // Commit all changes after constraint resolution
     await scheduler.project.commitAsync();
+
+    // Only NOW mark events as manually scheduled if explicitly requested
+    // This is for when user wants to lock the optimized schedule
+    if (markAsManuallyScheduled) {
+      console.log('[Optimization] Marking events as manually scheduled (locked)');
+      scheduler.project.suspendAutoCommit();
+      
+      for (const eventId of changedEvents) {
+        const event = scheduler.eventStore.getById(eventId);
+        if (event) {
+          event.manuallyScheduled = true;
+        }
+      }
+      
+      scheduler.project.resumeAutoCommit();
+      await scheduler.project.commitAsync();
+    }
 
     // Animate changes if requested
     if (animateChanges && changedEvents.length > 0) {
@@ -209,6 +255,7 @@ export async function applyOptimizationResults(
 
   } catch (error) {
     scheduler.project.resumeAutoCommit();
+    console.error('[Optimization] Error applying optimization results:', error);
     throw error;
   }
 }

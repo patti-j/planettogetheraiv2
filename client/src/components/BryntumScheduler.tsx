@@ -443,7 +443,7 @@ const BryntumScheduler: React.FC = () => {
       const { createOptimizationRequest, submitOptimizationJob, checkJobStatus, applyOptimizationResults } = await import('@/lib/scheduler-optimization-bridge');
       
       // Create optimization request with forward-scheduling algorithm
-      const request = createOptimizationRequest(scheduler, 'forward-scheduling', {
+      let request = createOptimizationRequest(scheduler, 'forward-scheduling', {
         profileId: 1,
         objectives: ['minimize_makespan', 'maximize_utilization'],
         timeLimit: 60
@@ -499,9 +499,10 @@ const BryntumScheduler: React.FC = () => {
             if (status.status === 'completed' && status.result) {
               clearInterval(pollInterval);
               
-              // Apply optimization results
+              // Apply optimization results with proper algorithm and constraint handling
               await applyOptimizationResults(scheduler, status, {
-                markAsManuallyScheduled: true,
+                algorithmId: 'forward-scheduling', // Pass the algorithm for proper constraint resolution
+                markAsManuallyScheduled: false, // Don't mark as manual - let Bryntum handle constraints
                 showMetrics: true,
                 animateChanges: true
               });
@@ -1096,6 +1097,28 @@ const BryntumScheduler: React.FC = () => {
             if (!resourceCapabilities.includes(operationType)) {
               context.external.invalid = true;
             }
+          }
+        });
+
+        // Mark events as manually scheduled after user drag/drop
+        scheduler.on('afterEventDrop', ({ eventRecords, valid }: any) => {
+          if (valid) {
+            // User manually moved events, mark them as manually scheduled
+            eventRecords.forEach((event: any) => {
+              if (event && !event.isUnscheduled) {
+                event.manuallyScheduled = true;
+                console.log(`[Manual Scheduling] Event "${event.name}" marked as manually scheduled after drag/drop`);
+              }
+            });
+          }
+        });
+
+        // Mark events as manually scheduled after user resize
+        scheduler.on('afterEventResize', ({ eventRecord, valid }: any) => {
+          if (valid && eventRecord && !eventRecord.isUnscheduled) {
+            // User manually resized event, mark it as manually scheduled
+            eventRecord.manuallyScheduled = true;
+            console.log(`[Manual Scheduling] Event "${eventRecord.name}" marked as manually scheduled after resize`);
           }
         });
 
