@@ -705,7 +705,7 @@ export default function MasterDataManagement() {
   const currentTableConfig = masterDataTables.find(t => t.id === selectedTable);
 
   // Fetch data for the selected table
-  const { data: tableData = [], isLoading, refetch } = useQuery({
+  const { data: tableData = [], isLoading, refetch } = useQuery<any[]>({
     queryKey: [`/api/${selectedTable === 'stockItems' ? 'stock-items' : selectedTable}`],
     enabled: !!selectedTable,
   });
@@ -815,7 +815,7 @@ Ask me to:
   };
 
   // Mutation for populating data from PT tables
-  const populateFromPTMutation = useMutation({
+  const populateFromPTMutation = useMutation<{message: string}>({
     mutationFn: async () => {
       return await apiRequest('POST', `/api/master-data/populate-from-pt`, {});
     },
@@ -824,7 +824,7 @@ Ask me to:
       refetch(); // Refresh current table data
       toast({
         title: "Success",
-        description: data.message || "Successfully populated data from PT tables",
+        description: data?.message || "Successfully populated data from PT tables",
       });
     },
     onError: (error) => {
@@ -1195,14 +1195,20 @@ Ask me to:
                   <div className="overflow-x-auto">
                     <EditableDataGrid
                       columns={currentTableConfig.columns}
-                      data={tableData}
-                      onSave={(data) => saveMutation.mutate(data)}
-                      onRowUpdate={(index, row) => updateRowMutation.mutate({ index, row })}
-                      onRowDelete={(index) => {
-                        const row = tableData[index];
-                        if (row?.id) deleteRowMutation.mutate(row.id);
+                      data={tableData as any[]}
+                      onSave={async (data) => {
+                        await saveMutation.mutateAsync(data);
                       }}
-                      onRowAdd={(row) => addRowMutation.mutate(row)}
+                      onRowUpdate={async (index, row) => {
+                        await updateRowMutation.mutateAsync({ index, row });
+                      }}
+                      onRowDelete={async (index) => {
+                        const row = tableData[index];
+                        if (row?.id) await deleteRowMutation.mutateAsync(row.id);
+                      }}
+                      onRowAdd={async (row) => {
+                        await addRowMutation.mutateAsync(row);
+                      }}
                       allowAdd={true}
                       allowDelete={true}
                       allowBulkEdit={true}
