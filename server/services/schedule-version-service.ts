@@ -62,11 +62,11 @@ export class ScheduleVersionService {
     tag?: string
   ): Promise<number> {
     try {
-      // Get current operations state - filter by scheduleId
+      // Get current operations state - all operations are part of the global schedule
       const operations = await db
         .select()
         .from(ptJobOperations)
-        .where(sql`job_id IN (SELECT id FROM ptjobs WHERE schedule_id = ${scheduleId})`);
+        .where(sql`job_id IN (SELECT id FROM ptjobs)`);
 
       // Calculate next version number
       const lastVersion = await db
