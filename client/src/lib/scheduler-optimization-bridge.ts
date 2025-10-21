@@ -19,54 +19,72 @@ import {
  * Collect current schedule data from Bryntum Scheduler
  */
 export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
-  const resources = scheduler.resourceStore.records.map((resource: any): ResourceDTO => ({
-    id: String(resource.id),
-    name: resource.name,
-    type: resource.type || 'default',
-    calendar: resource.calendar?.id,
-    capacity: Number(resource.capacity) || 1,
-    attributes: {
-      efficiency: resource.efficiency,
-      skills: resource.skills,
-      costPerHour: resource.costPerHour
-    }
-  }));
+  const resources = scheduler.resourceStore.records
+    .filter((resource: any) => resource.id !== 'unscheduled') // Exclude unscheduled resource
+    .map((resource: any): ResourceDTO => ({
+      id: String(resource.id),
+      name: resource.name,
+      type: resource.type || 'default',
+      calendar: resource.calendar?.id,
+      capacity: Number(resource.capacity) || 1,
+      attributes: {
+        efficiency: resource.efficiency,
+        skills: resource.skills,
+        costPerHour: resource.costPerHour
+      }
+    }));
 
-  const events = scheduler.eventStore.records.map((event: any): EventDTO => ({
-    id: String(event.id),
-    name: event.name,
-    resourceId: String(event.resourceId),
-    startDate: event.startDate?.toISOString() || '',
-    endDate: event.endDate?.toISOString() || '',
-    duration: event.durationMS || 0,
-    manuallyScheduled: event.manuallyScheduled || false,
-    locked: event.locked || false,
-    priority: event.priority,
-    attributes: {
-      jobId: event.jobId,
-      operationId: event.operationId,
-      productId: event.productId,
-      quantity: event.quantity,
-      setupTime: event.setupTime,
-      processingTime: event.processingTime
-    }
-  }));
+  // Collect PT operations as events/operations
+  const operations = scheduler.eventStore.records
+    .filter((event: any) => {
+      // Only include scheduled operations (exclude unscheduled)
+      const assignment = scheduler.assignmentStore.find((a: any) => a.eventId === event.id);
+      return assignment && assignment.resourceId !== 'unscheduled';
+    })
+    .map((event: any): EventDTO => {
+      // Find the actual assigned resource
+      const assignment = scheduler.assignmentStore.find((a: any) => a.eventId === event.id);
+      const resourceId = assignment ? String(assignment.resourceId) : String(event.resourceId);
+      
+      return {
+        id: String(event.id),
+        name: event.name,
+        resourceId: resourceId,
+        startDate: event.startDate?.toISOString() || '',
+        endDate: event.endDate?.toISOString() || '',
+        duration: event.duration || 0,
+        durationUnit: event.durationUnit || 'hour',
+        manuallyScheduled: event.manuallyScheduled || false,
+        locked: event.locked || false,
+        priority: event.priority,
+        attributes: {
+          jobId: event.jobId,
+          jobName: event.jobName,
+          operationId: event.operationId,
+          productId: event.productId,
+          quantity: event.quantity,
+          setupTime: event.setupTime,
+          processingTime: event.processingTime,
+          percentDone: event.percentDone
+        }
+      } as any;
+    });
 
   const dependencies = scheduler.dependencyStore.records.map((dep: any): DependencyDTO => ({
     id: String(dep.id),
-    fromEvent: String(dep.fromEvent?.id || dep.fromEvent),
-    toEvent: String(dep.toEvent?.id || dep.toEvent),
+    fromEvent: String(dep.from || dep.fromEvent?.id || dep.fromEvent),
+    toEvent: String(dep.to || dep.toEvent?.id || dep.toEvent),
     type: dep.type || 2, // Default to Finish-to-Start
-    lag: dep.lag,
-    lagUnit: dep.lagUnit
+    lag: dep.lag || 0,
+    lagUnit: dep.lagUnit || 'hour'
   }));
 
-  const constraints: ConstraintDTO[] = events
+  const constraints: ConstraintDTO[] = operations
     .filter((event: any) => event.constraintType && event.constraintDate)
     .map((event: any) => ({
       id: `constraint-${event.id}`,
       type: event.constraintType,
-      date: event.constraintDate.toISOString(),
+      date: event.constraintDate,
       eventId: event.id
     }));
 
@@ -74,14 +92,15 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
     version: `v_${Date.now()}`,
     snapshot: {
       resources,
-      events,
+      events: operations, // Map operations to events for the DTO
       dependencies,
       constraints
     },
     metadata: {
       plantId: scheduler.project?.id || 'default',
       timestamp: new Date().toISOString(),
-      userId: 'current-user' // Replace with actual user ID
+      userId: 'current-user', // Replace with actual user ID
+      scheduleId: '1' // Default schedule ID as string
     }
   };
 }
@@ -194,13 +213,32 @@ export function createOptimizationRequest(
       .filter((event: any) => event.locked || event.manuallyScheduled)
       .map((event: any) => String(event.id));
 
+  // Create properly formatted request matching the server schema
   return {
-    scheduleData,
+    scheduleData: {
+      ...scheduleData,
+      // Ensure we have operations in the data
+      operations: scheduleData.snapshot.events.map((e: any) => ({
+        ...e,
+        type: 'operation' // Mark as operation type
+      }))
+    },
     algorithmId: algorithmId, // Keep as string for API
+    algorithm: algorithmId, // Also include as 'algorithm' for backwards compatibility
     profileId: String(options.profileId || 1), // Convert to string for API
     parameters: {
       objectives: options.objectives || ['minimize_makespan'],
       timeLimit: options.timeLimit || 60
+    },
+    options: {
+      objective: 'minimize_makespan',
+      timeLimit: options.timeLimit || 30,
+      incrementalMode: false,
+      warmStart: false
+    },
+    locks: {
+      events: lockedEvents,
+      resourceIntervals: []
     }
   };
 }

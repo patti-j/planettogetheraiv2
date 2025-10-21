@@ -432,6 +432,82 @@ const BryntumScheduler: React.FC = () => {
     return true;
   };
 
+  const optimizeSchedule = async () => {
+    const scheduler = schedulerRef.current?.instance;
+    if (!scheduler) return;
+
+    try {
+      showToast('Starting optimization...');
+      
+      // Import optimization functions
+      const { createOptimizationRequest, submitOptimizationJob, checkJobStatus, applyOptimizationResults } = await import('@/lib/scheduler-optimization-bridge');
+      
+      // Create optimization request with forward-scheduling algorithm
+      const request = createOptimizationRequest(scheduler, 'forward-scheduling', {
+        profileId: 1,
+        objectives: ['minimize_makespan', 'maximize_utilization'],
+        timeLimit: 60
+      });
+      
+      console.log('Optimization request:', request);
+      
+      // Verify we have operations to optimize
+      if (!request.scheduleData.snapshot.events || request.scheduleData.snapshot.events.length === 0) {
+        showToast('No scheduled operations to optimize. Please schedule some operations first.');
+        return;
+      }
+      
+      // Submit optimization job
+      const response = await submitOptimizationJob(request);
+      console.log('Optimization response:', response);
+      
+      if (response.status === 'queued' || response.status === 'running') {
+        showToast(`Optimization job ${response.runId} submitted. Processing...`);
+        
+        // Poll for job completion
+        let attempts = 0;
+        const maxAttempts = 60; // 60 seconds timeout
+        const pollInterval = setInterval(async () => {
+          attempts++;
+          
+          try {
+            const status = await checkJobStatus(response.runId);
+            console.log('Job status:', status);
+            
+            if (status.status === 'completed' && status.result) {
+              clearInterval(pollInterval);
+              
+              // Apply optimization results
+              await applyOptimizationResults(scheduler, status, {
+                markAsManuallyScheduled: true,
+                showMetrics: true,
+                animateChanges: true
+              });
+              
+              showToast('✅ Optimization completed successfully!');
+            } else if (status.status === 'failed') {
+              clearInterval(pollInterval);
+              showToast(`❌ Optimization failed: ${status.error?.message || 'Unknown error'}`);
+            } else if (attempts >= maxAttempts) {
+              clearInterval(pollInterval);
+              showToast('⏱️ Optimization timed out. Please try again.');
+            }
+          } catch (error) {
+            clearInterval(pollInterval);
+            console.error('Error checking job status:', error);
+            showToast('Error checking optimization status');
+          }
+        }, 1000); // Poll every second
+      } else if (response.status === 'failed') {
+        showToast(`Optimization failed: ${response.error?.message || 'Unknown error'}`);
+      }
+      
+    } catch (error) {
+      console.error('Optimization error:', error);
+      showToast(`Failed to start optimization: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  };
+
   const packUnscheduled = async () => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
@@ -813,6 +889,15 @@ const BryntumScheduler: React.FC = () => {
           cls: 'b-raised',
           onClick: async () => {
             await packUnscheduled();
+          },
+        },
+        {
+          type: 'button' as const,
+          text: 'Optimize Schedule',
+          cls: 'b-raised b-green',
+          icon: 'b-fa b-fa-magic',
+          onClick: async () => {
+            await optimizeSchedule();
           },
         },
         {
