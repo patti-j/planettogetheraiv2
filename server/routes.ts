@@ -1575,12 +1575,7 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
         external_id,
         priority,
         need_date_time,
-        scheduled_status,
-        firm,
-        plan_type,
-        planning_detail,
-        order_qty,
-        plant_id
+        scheduled_status
       FROM ptjobs
     `;
     
@@ -1596,13 +1591,8 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
         name,
         description,
         notes,
-        external_id,
-        address,
-        active,
-        plant_type,
-        use_changeover_groups
+        external_id
       FROM ptplants
-      WHERE active = true
     `;
     
     const ptPlants = await db.execute(sql.raw(ptPlantsQuery));
