@@ -26,7 +26,7 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
       name: resource.name,
       type: resource.type || 'default',
       calendar: resource.calendar?.id,
-      capacity: Number(resource.capacity) || 1,
+      capacity: Number(resource.capacity || 1), // Ensure it's a number
       attributes: {
         efficiency: resource.efficiency,
         skills: resource.skills,
@@ -47,13 +47,12 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
       const resourceId = assignment ? String(assignment.resourceId) : String(event.resourceId);
       
       return {
-        id: String(event.id),
-        name: event.name,
+        id: String(event.id), // Ensure ID is string
+        name: event.name || '',
         resourceId: resourceId,
-        startDate: event.startDate?.toISOString() || '',
-        endDate: event.endDate?.toISOString() || '',
-        duration: event.duration || 0,
-        durationUnit: event.durationUnit || 'hour',
+        startDate: event.startDate?.toISOString() || new Date().toISOString(),
+        endDate: event.endDate?.toISOString() || new Date().toISOString(),
+        duration: Number(event.duration || 0), // Ensure duration is number
         manuallyScheduled: event.manuallyScheduled || false,
         locked: event.locked || false,
         priority: event.priority,
@@ -70,14 +69,36 @@ export function collectSchedulerData(scheduler: any): ScheduleDataDTO {
       } as any;
     });
 
-  const dependencies = scheduler.dependencyStore.records.map((dep: any): DependencyDTO => ({
-    id: String(dep.id),
-    fromEvent: String(dep.from || dep.fromEvent?.id || dep.fromEvent),
-    toEvent: String(dep.to || dep.toEvent?.id || dep.toEvent),
-    type: dep.type || 2, // Default to Finish-to-Start
-    lag: dep.lag || 0,
-    lagUnit: dep.lagUnit || 'hour'
-  }));
+  const dependencies = scheduler.dependencyStore.records.map((dep: any): DependencyDTO => {
+    // Extract the IDs properly from Bryntum dependency records
+    let fromId = dep.from;
+    let toId = dep.to;
+    
+    // If they are objects with id property, extract the id
+    if (typeof fromId === 'object' && fromId?.id) {
+      fromId = fromId.id;
+    }
+    if (typeof toId === 'object' && toId?.id) {
+      toId = toId.id;
+    }
+    
+    // Also check fromEvent/toEvent properties
+    if (!fromId && dep.fromEvent) {
+      fromId = typeof dep.fromEvent === 'object' ? dep.fromEvent.id : dep.fromEvent;
+    }
+    if (!toId && dep.toEvent) {
+      toId = typeof dep.toEvent === 'object' ? dep.toEvent.id : dep.toEvent;
+    }
+    
+    return {
+      id: String(dep.id),
+      fromEvent: String(fromId || ''),
+      toEvent: String(toId || ''),
+      type: dep.type || 2, // Default to Finish-to-Start
+      lag: dep.lag || 0,
+      lagUnit: dep.lagUnit || 'hour'
+    };
+  });
 
   const constraints: ConstraintDTO[] = operations
     .filter((event: any) => event.constraintType && event.constraintDate)

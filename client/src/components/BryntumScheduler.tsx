@@ -451,10 +451,32 @@ const BryntumScheduler: React.FC = () => {
       
       console.log('Optimization request:', request);
       
-      // Verify we have operations to optimize
-      if (!request.scheduleData.snapshot.events || request.scheduleData.snapshot.events.length === 0) {
-        showToast('No scheduled operations to optimize. Please schedule some operations first.');
+      // Check if we have any operations (scheduled or unscheduled)
+      const allOperations = scheduler.eventStore.records;
+      const scheduledOps = request.scheduleData.snapshot.events;
+      
+      if (allOperations.length === 0) {
+        showToast('No operations available to optimize.');
         return;
+      }
+      
+      // If no scheduled operations, try to pack unscheduled first
+      if (scheduledOps.length === 0) {
+        showToast('No operations scheduled. Running Pack Unscheduled first...');
+        await packUnscheduled();
+        
+        // Recreate the request with the newly scheduled operations
+        request = createOptimizationRequest(scheduler, 'forward-scheduling', {
+          profileId: 1,
+          objectives: ['minimize_makespan', 'maximize_utilization'],
+          timeLimit: 60
+        });
+        
+        // Check again after packing
+        if (!request.scheduleData.snapshot.events || request.scheduleData.snapshot.events.length === 0) {
+          showToast('Could not schedule any operations. Please check resource capabilities.');
+          return;
+        }
       }
       
       // Submit optimization job
