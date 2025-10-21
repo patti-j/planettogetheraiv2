@@ -3856,7 +3856,7 @@
                     // Prepare optimization request
                     const request = {
                         scheduleData: scheduleData,
-                        algorithmId: 1, // Default to standard optimization algorithm
+                        algorithmId: 'forward-scheduling', // Use algorithm name instead of numeric ID
                         options: {
                             objective: 'minimize_makespan',
                             timeLimit: 30,
