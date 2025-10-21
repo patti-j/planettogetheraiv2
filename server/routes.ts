@@ -1599,32 +1599,12 @@ router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) =
     const plantsData = Array.isArray(ptPlants) ? ptPlants : ptPlants.rows || [];
     results.plants = plantsData.length;
     
-    // 5. Populate manufacturing orders from pt_manufacturing_orders
-    const ptManufacturingOrdersQuery = `
-      SELECT 
-        id,
-        job_id,
-        manufacturing_order_id,
-        mo_id,
-        external_id,
-        name,
-        description,
-        planned_quantity,
-        completed_quantity,
-        scheduled_start,
-        scheduled_end,
-        status,
-        priority,
-        plant_id
-      FROM pt_manufacturing_orders
-    `;
-    
-    const ptManufacturingOrders = await db.execute(sql.raw(ptManufacturingOrdersQuery));
-    const manufacturingOrdersData = Array.isArray(ptManufacturingOrders) ? ptManufacturingOrders : ptManufacturingOrders.rows || [];
-    results.manufacturingOrders = manufacturingOrdersData.length;
+    // 5. Note: pt_manufacturing_orders table doesn't exist in current schema
+    // Skipping manufacturing orders population
+    results.manufacturingOrders = 0;
     
     // Calculate total
-    totalPopulated = results.resources + results.operations + results.jobs + results.plants + results.manufacturingOrders;
+    totalPopulated = results.resources + results.operations + results.jobs + results.plants;
     
     console.log('Population summary:', results);
     
