@@ -432,18 +432,19 @@ const BryntumScheduler: React.FC = () => {
     return true;
   };
 
-  const optimizeSchedule = async () => {
+  const optimizeSchedule = async (algorithmId: string = 'forward-scheduling') => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
 
     try {
-      showToast('Starting optimization...');
+      const algorithmName = algorithmId === 'backward-scheduling' ? 'ALAP' : 'ASAP';
+      showToast(`Starting ${algorithmName} optimization...`);
       
       // Import optimization functions
       const { createOptimizationRequest, submitOptimizationJob, checkJobStatus, applyOptimizationResults } = await import('@/lib/scheduler-optimization-bridge');
       
-      // Create optimization request with forward-scheduling algorithm
-      let request = createOptimizationRequest(scheduler, 'forward-scheduling', {
+      // Create optimization request with the specified algorithm
+      let request = createOptimizationRequest(scheduler, algorithmId, {
         profileId: 1,
         objectives: ['minimize_makespan', 'maximize_utilization'],
         timeLimit: 60
@@ -466,7 +467,7 @@ const BryntumScheduler: React.FC = () => {
         await packUnscheduled();
         
         // Recreate the request with the newly scheduled operations
-        request = createOptimizationRequest(scheduler, 'forward-scheduling', {
+        request = createOptimizationRequest(scheduler, algorithmId, {
           profileId: 1,
           objectives: ['minimize_makespan', 'maximize_utilization'],
           timeLimit: 60
@@ -501,7 +502,7 @@ const BryntumScheduler: React.FC = () => {
               
               // Apply optimization results with proper algorithm and constraint handling
               await applyOptimizationResults(scheduler, status, {
-                algorithmId: 'forward-scheduling', // Pass the algorithm for proper constraint resolution
+                algorithmId: algorithmId, // Pass the actual algorithm for proper constraint resolution
                 markAsManuallyScheduled: false, // Don't mark as manual - let Bryntum handle constraints
                 showMetrics: true,
                 animateChanges: true

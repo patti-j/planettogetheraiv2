@@ -199,21 +199,18 @@ export async function applyOptimizationResults(
       schedulingDirection = 'None'; // Let TOC algorithm handle its own logic
     }
     
-    // Apply Bryntum's constraint engine to resolve overlaps and dependencies
-    if (scheduler.project.schedule) {
-      console.log(`[Optimization] Running Bryntum schedule() with direction: ${schedulingDirection}`);
-      await scheduler.project.schedule({
-        direction: schedulingDirection,
-        // Respect resource constraints
-        respectResourceCalendar: true,
-        // Apply dependency constraints
-        skipNonWorkingTime: true
-      });
-    } else if (scheduler.project.propagate) {
-      // Fallback to propagate if schedule method doesn't exist
-      console.log('[Optimization] Running Bryntum propagate() to apply constraints');
-      await scheduler.project.propagate();
+    // CORRECT API: Set the scheduling direction on the project, then propagate
+    // Bryntum doesn't have project.schedule(), but uses direction property + propagate()
+    console.log(`[Optimization] Setting Bryntum project.direction to: ${schedulingDirection}`);
+    
+    // Set the scheduling direction property
+    if (scheduler.project.direction !== undefined) {
+      scheduler.project.direction = schedulingDirection;
     }
+    
+    // Now trigger constraint resolution with the set direction
+    console.log('[Optimization] Running Bryntum propagate() to apply constraints with direction');
+    await scheduler.project.propagate();
     
     // Commit all changes after constraint resolution
     await scheduler.project.commitAsync();
