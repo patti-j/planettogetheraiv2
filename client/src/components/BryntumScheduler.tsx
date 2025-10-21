@@ -537,6 +537,46 @@ const BryntumScheduler: React.FC = () => {
     }
   };
 
+  // Direct ASAP scheduling (forward) - no server optimization
+  const scheduleASAP = async () => {
+    const scheduler = schedulerRef.current?.instance;
+    if (!scheduler) return;
+    
+    console.log('[Direct Scheduling] Starting ASAP (forward) scheduling...');
+    showToast('Running ASAP scheduling...');
+    
+    // Set to forward scheduling
+    scheduler.project.schedulingDirection = 'forward';
+    scheduler.project.constraintsMode = 'honor';
+    
+    // Trigger the scheduling engine
+    await scheduler.project.propagate();
+    await scheduler.project.commitAsync();
+    
+    showToast('✅ ASAP scheduling complete!');
+    console.log('[Direct Scheduling] ASAP scheduling complete');
+  };
+  
+  // Direct ALAP scheduling (backward) - no server optimization  
+  const scheduleALAP = async () => {
+    const scheduler = schedulerRef.current?.instance;
+    if (!scheduler) return;
+    
+    console.log('[Direct Scheduling] Starting ALAP (backward) scheduling...');
+    showToast('Running ALAP scheduling...');
+    
+    // Set to backward scheduling
+    scheduler.project.schedulingDirection = 'backward';
+    scheduler.project.constraintsMode = 'honor';
+    
+    // Trigger the scheduling engine
+    await scheduler.project.propagate();
+    await scheduler.project.commitAsync();
+    
+    showToast('✅ ALAP scheduling complete!');
+    console.log('[Direct Scheduling] ALAP scheduling complete');
+  };
+
   const packUnscheduled = async () => {
     const scheduler = schedulerRef.current?.instance;
     if (!scheduler) return;
@@ -711,6 +751,15 @@ const BryntumScheduler: React.FC = () => {
       eventStore: { data: events },
       assignmentStore: { data: assignments },
       dependencyStore: { data: dependencies },
+      
+      // ASAP/ALAP Scheduling Configuration
+      autoCalculate: true,           // Auto-calculate after changes
+      recalculateAfterLoad: true,    // Recalculate after loading data
+      constraintsMode: 'honor',      // Honor all dependency constraints
+      schedulingDirection: 'forward', // Default to ASAP (can be changed to 'backward' for ALAP)
+      calculateCriticalPath: true,   // Enable critical path calculation
+      allowDependencyLag: true,       // Allow lag/lead times on dependencies
+      
       stm: {
         autoRecord: true,
         disabled: false,
@@ -970,6 +1019,20 @@ const BryntumScheduler: React.FC = () => {
       ],
     },
     listeners: {
+      // Scheduling engine listeners for ASAP/ALAP
+      beforeCalculate: () => {
+        console.log('[Scheduling Engine] Starting calculation...');
+      },
+      calculate: () => {
+        console.log('[Scheduling Engine] Calculation complete');
+      },
+      conflict: ({ conflicts }: any) => {
+        console.warn('[Scheduling Engine] Conflicts detected:', conflicts);
+        if (conflicts && conflicts.length > 0) {
+          showToast(`⚠️ Scheduling conflicts detected: ${conflicts.length} conflict(s)`, 'warning');
+        }
+      },
+      
       paint: ({ source }: any) => {
         // Setup event handlers after scheduler is painted
         const scheduler = source;
@@ -1142,6 +1205,12 @@ const BryntumScheduler: React.FC = () => {
         }
         console.log('STM enabled:', scheduler.project.stm.enabled);
         console.log('Overlap prevention and capability validation enabled for all operations');
+        
+        // Expose scheduling functions for testing
+        (window as any).scheduleASAP = scheduleASAP;
+        (window as any).scheduleALAP = scheduleALAP;
+        (window as any).optimizeSchedule = optimizeSchedule;
+        console.log('[Scheduler] Test functions available: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
       },
     },
   };

@@ -192,24 +192,25 @@ export async function applyOptimizationResults(
     console.log(`[Optimization] Triggering Bryntum scheduling engine with algorithm: ${algorithmId}`);
     
     // Determine scheduling direction based on algorithm
-    let schedulingDirection = 'Forward'; // Default to forward (ASAP)
+    let schedulingDirection = 'forward'; // Default to forward (ASAP) - lowercase per Bryntum API
     if (algorithmId === 'backward-scheduling' || algorithmId.toLowerCase().includes('alap')) {
-      schedulingDirection = 'Backward';
-    } else if (algorithmId === 'critical-path' || algorithmId.includes('toc') || algorithmId.includes('drum')) {
-      schedulingDirection = 'None'; // Let TOC algorithm handle its own logic
+      schedulingDirection = 'backward';
     }
     
-    // CORRECT API: Set the scheduling direction on the project, then propagate
-    // Bryntum doesn't have project.schedule(), but uses direction property + propagate()
-    console.log(`[Optimization] Setting Bryntum project.direction to: ${schedulingDirection}`);
+    // CORRECT BRYNTUM API: Set schedulingDirection property, then propagate
+    console.log(`[Optimization] Setting scheduler.project.schedulingDirection to: ${schedulingDirection}`);
     
-    // Set the scheduling direction property
-    if (scheduler.project.direction !== undefined) {
-      scheduler.project.direction = schedulingDirection;
+    // Set the scheduling direction on the project
+    scheduler.project.schedulingDirection = schedulingDirection;
+    
+    // Ensure constraints are honored
+    if (scheduler.project.constraintsMode !== 'honor') {
+      console.log('[Optimization] Setting constraintsMode to honor dependencies');
+      scheduler.project.constraintsMode = 'honor';
     }
     
-    // Now trigger constraint resolution with the set direction
-    console.log('[Optimization] Running Bryntum propagate() to apply constraints with direction');
+    // Now trigger the scheduling engine to apply constraints with the set direction
+    console.log(`[Optimization] Running Bryntum propagate() for ${schedulingDirection} scheduling`);
     await scheduler.project.propagate();
     
     // Commit all changes after constraint resolution
