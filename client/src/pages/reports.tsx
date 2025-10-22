@@ -399,9 +399,14 @@ export default function Dashboard() {
           }
 
           try {
+            // Get the report type to pass to embedReport
+            const selectedReport = allReports?.find(r => r.id === reportId);
+            const reportType = selectedReport?.reportType;
+            
             const config = await embedReport({ 
               workspaceId: selectedWorkspaceId, 
-              reportId 
+              reportId,
+              reportType
             } as any);
             
             // Final check before setting config

@@ -264,10 +264,11 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
 
   // Function to embed report with simple parameters - supports both client-side and server-side auth
-  const embed = useCallback(async ({ accessToken, workspaceId, reportId }: { 
+  const embed = useCallback(async ({ accessToken, workspaceId, reportId, reportType }: { 
     accessToken?: string; 
     workspaceId: string; 
-    reportId: string; 
+    reportId: string;
+    reportType?: string;
   }) => {
     try {
       setIsLoading(true);
@@ -299,8 +300,8 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
 
       const embedConfig: ReportEmbedConfig = await response.json();
       
-      // Now call the internal embed function
-      const report = await embedReportInternal(embedConfig);
+      // Now call the internal embed function, passing reportType
+      const report = await embedReportInternal(embedConfig, reportType);
       return embedConfig; // Return config for Dashboard compatibility
     } catch (error) {
       setIsLoading(false);
@@ -309,7 +310,7 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
   }, []);
 
   // Internal function to embed with full config
-  const embedReportInternal = useCallback(async (embedConfig: ReportEmbedConfig) => {
+  const embedReportInternal = useCallback(async (embedConfig: ReportEmbedConfig, reportType?: string) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -432,44 +433,51 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
         // Apply initial responsive settings
         applyResponsive(embeddedReport, embedConfig);
         
-        // Load pages for custom navigation and debug info
-        try {
-          (embeddedReport as any).getPages().then((reportPages: any[]) => {
-            console.log(`📄 Report has ${reportPages.length} pages:`, reportPages.map((p: any) => p.displayName));
-            console.log(`📄 Loaded ${reportPages.length} pages for custom navigation:`, reportPages.map((p: any) => p.displayName));
-            
-            // Store pages for custom navigation, filtering out hidden pages
-            const pageInfo = reportPages
-              .filter((p: any) => p.visibility !== 1) // Filter out hidden pages (visibility: 1 = hidden)
-              .map((p: any) => ({
-                id: p.name,
-                displayName: p.displayName,
-                isActive: p.isActive || false
-              }));
-            setPages(pageInfo);
-            
-            // Set current page
-            const activePage = reportPages.find((p: any) => p.isActive);
-            if (activePage) {
-              setCurrentPageId(activePage.name);
-              console.log(`📄 Active page set to: ${activePage.name}`);
-            }
-            
-            // Check if any page has a phone layout
-            const pagesWithPhoneLayout = reportPages.filter((p: any) => p.mobileLayout);
-            console.log(`📱 Pages with phone layout: ${pagesWithPhoneLayout.length}`, pagesWithPhoneLayout.map((p: any) => p.displayName));
-            
-            if (reportPages.length <= 1) {
-              console.warn("⚠️ Report has only one page - page navigation may be hidden");
-            }
-            
-            if (pagesWithPhoneLayout.length === 0) {
-              console.warn("⚠️ No phone layouts found - MobilePortrait will fall back to Master layout");
-              console.log("💡 To fix: Open Power BI Desktop → View → Phone layout → Arrange visuals → Republish");
-            }
-          }).catch((e: any) => console.warn("Failed to get pages:", e));
-        } catch (e: any) {
-          console.warn("Failed to check pages:", e);
+        // Load pages for custom navigation and debug info - but NOT for paginated reports
+        if (reportType !== "PaginatedReport") {
+          try {
+            (embeddedReport as any).getPages().then((reportPages: any[]) => {
+              console.log(`📄 Report has ${reportPages.length} pages:`, reportPages.map((p: any) => p.displayName));
+              console.log(`📄 Loaded ${reportPages.length} pages for custom navigation:`, reportPages.map((p: any) => p.displayName));
+              
+              // Store pages for custom navigation, filtering out hidden pages
+              const pageInfo = reportPages
+                .filter((p: any) => p.visibility !== 1) // Filter out hidden pages (visibility: 1 = hidden)
+                .map((p: any) => ({
+                  id: p.name,
+                  displayName: p.displayName,
+                  isActive: p.isActive || false
+                }));
+              setPages(pageInfo);
+              
+              // Set current page
+              const activePage = reportPages.find((p: any) => p.isActive);
+              if (activePage) {
+                setCurrentPageId(activePage.name);
+                console.log(`📄 Active page set to: ${activePage.name}`);
+              }
+              
+              // Check if any page has a phone layout
+              const pagesWithPhoneLayout = reportPages.filter((p: any) => p.mobileLayout);
+              console.log(`📱 Pages with phone layout: ${pagesWithPhoneLayout.length}`, pagesWithPhoneLayout.map((p: any) => p.displayName));
+              
+              if (reportPages.length <= 1) {
+                console.warn("⚠️ Report has only one page - page navigation may be hidden");
+              }
+              
+              if (pagesWithPhoneLayout.length === 0) {
+                console.warn("⚠️ No phone layouts found - MobilePortrait will fall back to Master layout");
+                console.log("💡 To fix: Open Power BI Desktop → View → Phone layout → Arrange visuals → Republish");
+              }
+            }).catch((e: any) => console.warn("Failed to get pages:", e));
+          } catch (e: any) {
+            console.warn("Failed to check pages:", e);
+          }
+        } else {
+          // For paginated reports, clear the pages array to prevent showing stale pages
+          console.log(`📄 Paginated report detected - clearing page navigation`);
+          setPages([]);
+          setCurrentPageId(null);
         }
         
         // Robust layout switching with updateSettings + re-embed fallback
