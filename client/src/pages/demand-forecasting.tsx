@@ -51,6 +51,11 @@ export default function DemandForecasting() {
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
   const [trainingMetrics, setTrainingMetrics] = useState<{ accuracy?: number; mape?: number; rmse?: number } | null>(null);
+  
+  // Validation errors
+  const [planningAreaError, setPlanningAreaError] = useState<boolean>(false);
+  const [scenarioError, setScenarioError] = useState<boolean>(false);
+  const [itemError, setItemError] = useState<boolean>(false);
 
   // Fetch available tables
   const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
@@ -228,7 +233,7 @@ export default function DemandForecasting() {
   });
 
   const handleTrain = () => {
-    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn || selectedItems.length === 0) {
+    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn) {
       toast({
         title: "Missing Configuration",
         description: "Please select all required fields",
@@ -236,6 +241,39 @@ export default function DemandForecasting() {
       });
       return;
     }
+    
+    // Clear all errors first
+    setPlanningAreaError(false);
+    setScenarioError(false);
+    setItemError(false);
+    
+    // Validate required fields
+    let hasError = false;
+    
+    if (selectedPlanningAreas.length === 0) {
+      setPlanningAreaError(true);
+      hasError = true;
+    }
+    
+    if (selectedScenarios.length === 0) {
+      setScenarioError(true);
+      hasError = true;
+    }
+    
+    if (selectedItems.length === 0) {
+      setItemError(true);
+      hasError = true;
+    }
+    
+    if (hasError) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please select at least one planning area, scenario, and item",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     trainMutation.mutate();
   };
 
@@ -248,6 +286,39 @@ export default function DemandForecasting() {
       });
       return;
     }
+    
+    // Clear all errors first
+    setPlanningAreaError(false);
+    setScenarioError(false);
+    setItemError(false);
+    
+    // Validate required fields
+    let hasError = false;
+    
+    if (selectedPlanningAreas.length === 0) {
+      setPlanningAreaError(true);
+      hasError = true;
+    }
+    
+    if (selectedScenarios.length === 0) {
+      setScenarioError(true);
+      hasError = true;
+    }
+    
+    if (selectedItems.length === 0) {
+      setItemError(true);
+      hasError = true;
+    }
+    
+    if (hasError) {
+      toast({
+        title: "Required Fields Missing",
+        description: "Please select at least one planning area, scenario, and item",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     forecastMutation.mutate();
   };
 
@@ -261,6 +332,25 @@ export default function DemandForecasting() {
   useEffect(() => {
     resetTraining();
   }, [selectedTable, dateColumn, itemColumn, quantityColumn, selectedItems, modelType, selectedPlanningAreas, selectedScenarios]);
+
+  // Clear validation errors when selections change
+  useEffect(() => {
+    if (selectedPlanningAreas.length > 0) {
+      setPlanningAreaError(false);
+    }
+  }, [selectedPlanningAreas]);
+
+  useEffect(() => {
+    if (selectedScenarios.length > 0) {
+      setScenarioError(false);
+    }
+  }, [selectedScenarios]);
+
+  useEffect(() => {
+    if (selectedItems.length > 0) {
+      setItemError(false);
+    }
+  }, [selectedItems]);
 
   // Auto-select columns based on heuristics
   useEffect(() => {
@@ -411,7 +501,7 @@ export default function DemandForecasting() {
           {planningAreaColumn && filteredPlanningAreas && filteredPlanningAreas.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Select Planning Areas</Label>
+                <Label>Select Planning Areas <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -481,6 +571,11 @@ export default function DemandForecasting() {
                   {selectedPlanningAreas.length} of {filteredPlanningAreas.length} selected
                 </p>
               )}
+              {planningAreaError && (
+                <p className="text-sm text-red-500" data-testid="error-planning-area">
+                  Please select at least one planning area
+                </p>
+              )}
             </div>
           )}
 
@@ -488,7 +583,7 @@ export default function DemandForecasting() {
           {scenarioColumn && filteredScenarios && filteredScenarios.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Select Scenarios</Label>
+                <Label>Select Scenarios <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -558,6 +653,11 @@ export default function DemandForecasting() {
                   {selectedScenarios.length} of {filteredScenarios.length} selected
                 </p>
               )}
+              {scenarioError && (
+                <p className="text-sm text-red-500" data-testid="error-scenario">
+                  Please select at least one scenario
+                </p>
+              )}
             </div>
           )}
 
@@ -565,7 +665,7 @@ export default function DemandForecasting() {
           {itemColumn && items && items.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label>Select Items</Label>
+                <Label>Select Items <span className="text-red-500">*</span></Label>
                 <div className="flex gap-2">
                   <Button
                     type="button"
@@ -630,6 +730,11 @@ export default function DemandForecasting() {
               {selectedItems.length > 0 && (
                 <p className="text-xs text-muted-foreground">
                   {selectedItems.length} of {items.length} selected
+                </p>
+              )}
+              {itemError && (
+                <p className="text-sm text-red-500" data-testid="error-item">
+                  Please select at least one item
                 </p>
               )}
             </div>
