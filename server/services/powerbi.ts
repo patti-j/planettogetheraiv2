@@ -1173,21 +1173,11 @@ export class PowerBIService {
     const reportType = report.type || report.reportType || 'Report';
     console.log(`📊 Report type detected: ${reportType} for report ${report.name} (from API field: ${report.type ? 'type' : 'reportType'})`);
     
-    // For paginated reports, try to resolve datasetId if not present
+    // For paginated reports, use the report's datasetId if available
+    // If not, paginated reports will use external data sources (empty datasets array)
     let datasetId = report.datasetId;
     if (reportType === 'PaginatedReport' && !datasetId) {
-      console.log(`📊 Paginated report missing datasetId, checking datasources...`);
-      try {
-        const datasources = await this.getReportDataSources(accessToken, workspaceId, reportId);
-        // Look for a Power BI dataset datasource
-        const datasetSource = datasources.find(ds => ds.datasourceType === 'PowerBIDataset' || ds.connectionDetails?.database);
-        if (datasetSource && datasetSource.datasourceId) {
-          datasetId = datasetSource.datasourceId;
-          console.log(`📊 Found dataset ${datasetId} from datasources`);
-        }
-      } catch (error) {
-        console.warn(`⚠️ Could not fetch datasources for paginated report: ${error}`);
-      }
+      console.log(`📊 Paginated report "${report.name}" has no datasetId - will use empty datasets array for external data sources`);
     }
     
     const embedToken = await this.getEmbedToken(
