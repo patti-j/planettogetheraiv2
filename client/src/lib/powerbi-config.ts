@@ -2,7 +2,7 @@ import * as models from "powerbi-models";
 import { type ReportEmbedConfig } from "@shared/schema";
 
 export interface PowerBIConfig {
-  type: "report";
+  type: "report" | "paginatedReport";
   tokenType: number;
   accessToken: string;
   embedUrl: string;
@@ -41,10 +41,15 @@ export function createPowerBIConfig(
   accessLevel: "View" | "Edit" = "View"
 ): PowerBIConfig {
   const mobile = isMobileLike();
-  console.log(`🔧 Creating Power BI config: mobile=${mobile}, accessLevel=${accessLevel}`);
+  const isPaginatedReport = embedConfig.reportType === 'PaginatedReport';
+  
+  console.log(`🔧 Creating Power BI config: type=${embedConfig.reportType || 'Report'}, mobile=${mobile}, accessLevel=${accessLevel}`);
+
+  // Determine embed type based on report type
+  const embedType: "report" | "paginatedReport" = isPaginatedReport ? "paginatedReport" : "report";
 
   return {
-    type: "report",
+    type: embedType,
     tokenType: 1,
     accessToken: embedConfig.accessToken,
     embedUrl: embedConfig.embedUrl,

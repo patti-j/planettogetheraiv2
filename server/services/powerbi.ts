@@ -121,24 +121,32 @@ export class PowerBIService {
     }
   }
 
-  // Get embed token for a report
-  async getEmbedToken(accessToken: string, workspaceId: string, reportId: string, datasetId?: string, accessLevel: string = "View", allowSaveAs?: boolean): Promise<PowerBIEmbedToken> {
+  // Get embed token for a report (supports both regular and paginated reports)
+  async getEmbedToken(
+    accessToken: string, 
+    workspaceId: string, 
+    reportId: string, 
+    datasetId?: string, 
+    accessLevel: string = "View", 
+    allowSaveAs?: boolean,
+    reportType?: string
+  ): Promise<PowerBIEmbedToken> {
     const embedUrl = `https://api.powerbi.com/v1.0/myorg/GenerateToken`;
     
+    // Build reports array entry
+    const reportEntry: any = {
+      id: reportId,
+      allowEdit: accessLevel === "Edit", // Critical for edit mode support!
+      allowSaveAs: accessLevel === "Edit" || allowSaveAs || false,
+    };
+    
+    // For paginated reports, include reportType field per Microsoft's app-owns-data guide
+    if (reportType === 'PaginatedReport') {
+      reportEntry.reportType = 'PaginatedReport';
+    }
+    
     const requestBody: any = {
-      reports: [
-        {
-          id: reportId,
-          allowEdit: accessLevel === "Edit", // Critical for edit mode support!
-          allowSaveAs: accessLevel === "Edit" || allowSaveAs || false,
-        },
-      ],
-      datasets: [
-        {
-          id: datasetId,
-          permissions: accessLevel === "Edit" ? ["ReadWrite"] : ["Read"], // Dataset ReadWrite permissions for Save As functionality
-        },
-      ],
+      reports: [reportEntry],
       targetWorkspaces: [
         {
           id: workspaceId, // Critical for Save As functionality - must include target workspace
@@ -146,6 +154,39 @@ export class PowerBIService {
       ],
       accessLevel: accessLevel,
     };
+
+    // Handle datasets for both regular and paginated reports
+    if (reportType === 'PaginatedReport') {
+      // Paginated reports: always include datasets array per Power BI GenerateToken requirements
+      if (datasetId) {
+        // Paginated report using a Power BI semantic model - include datasets with xmlaPermissions
+        console.log(`📊 Paginated report uses semantic model ${datasetId} - adding xmlaPermissions`);
+        requestBody.datasets = [
+          {
+            id: datasetId,
+            xmlaPermissions: "ReadOnly",
+            allowEdit: false,
+          },
+        ];
+      } else {
+        // Paginated report with external data sources - include empty datasets array
+        // Power BI API may require this even when no semantic model is used
+        console.log(`📊 Paginated report uses external data sources - including empty datasets array`);
+        requestBody.datasets = [];
+      }
+    } else {
+      // Regular PBIX reports always need dataset permissions
+      if (datasetId) {
+        requestBody.datasets = [
+          {
+            id: datasetId,
+            permissions: accessLevel === "Edit" ? ["ReadWrite"] : ["Read"],
+          },
+        ];
+      } else {
+        console.warn(`⚠️ Regular report ${reportId} missing datasetId - token generation may fail`);
+      }
+    }
 
     try {
       const response = await fetch(embedUrl, {
@@ -591,6 +632,29 @@ export class PowerBIService {
       return data.value || [];
     } catch (error) {
       throw new Error(`Failed to fetch dataset refresh history: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  // Get report data sources (for paginated reports)
+  async getReportDataSources(accessToken: string, workspaceId: string, reportId: string): Promise<any[]> {
+    const dataSourcesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/datasources`;
+
+    try {
+      const response = await fetch(dataSourcesUrl, {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.text();
+        throw new Error(`Failed to get report datasources: ${error}`);
+      }
+
+      const data = await response.json();
+      return data.value || [];
+    } catch (error) {
+      throw new Error(`Failed to fetch report datasources: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -1094,7 +1158,7 @@ export class PowerBIService {
   }
 
 
-  // Create embed configuration
+  // Create embed configuration (supports both regular and paginated reports)
   async createEmbedConfig(
     accessToken: string,
     workspaceId: string,
@@ -1103,12 +1167,44 @@ export class PowerBIService {
     allowSaveAs?: boolean
   ): Promise<ReportEmbedConfig> {
     const report = await this.getReport(accessToken, workspaceId, reportId);
-    const embedToken = await this.getEmbedToken(accessToken, workspaceId, reportId, report.datasetId, accessLevel, allowSaveAs);
+    
+    // Detect report type - Power BI API returns it as "type" not "reportType"
+    // Can be "Report" (PBIX) or "PaginatedReport" (.rdl)
+    const reportType = report.type || report.reportType || 'Report';
+    console.log(`📊 Report type detected: ${reportType} for report ${report.name} (from API field: ${report.type ? 'type' : 'reportType'})`);
+    
+    // For paginated reports, try to resolve datasetId if not present
+    let datasetId = report.datasetId;
+    if (reportType === 'PaginatedReport' && !datasetId) {
+      console.log(`📊 Paginated report missing datasetId, checking datasources...`);
+      try {
+        const datasources = await this.getReportDataSources(accessToken, workspaceId, reportId);
+        // Look for a Power BI dataset datasource
+        const datasetSource = datasources.find(ds => ds.datasourceType === 'PowerBIDataset' || ds.connectionDetails?.database);
+        if (datasetSource && datasetSource.datasourceId) {
+          datasetId = datasetSource.datasourceId;
+          console.log(`📊 Found dataset ${datasetId} from datasources`);
+        }
+      } catch (error) {
+        console.warn(`⚠️ Could not fetch datasources for paginated report: ${error}`);
+      }
+    }
+    
+    const embedToken = await this.getEmbedToken(
+      accessToken, 
+      workspaceId, 
+      reportId, 
+      datasetId, 
+      accessLevel, 
+      allowSaveAs,
+      reportType
+    );
 
     return {
       reportId,
       embedUrl: report.embedUrl,
       accessToken: embedToken.accessToken,
+      reportType, // Include report type for client-side embedding
       workspaceId, // Include workspaceId for token refresh
       datasetId: report.datasetId, // Include datasetId for dataset refresh
       expiration: embedToken.expiration,

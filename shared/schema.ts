@@ -1545,6 +1545,7 @@ export type ReportEmbedConfig = {
   reportId: string;
   embedUrl: string;
   accessToken: string;
+  reportType?: 'Report' | 'PaginatedReport'; // Report type for proper embedding
   workspaceId?: string; // Workspace ID for token refresh
   datasetId?: string; // Dataset ID for dataset refresh
   expiration?: string; // ISO string indicating when embed token expires
