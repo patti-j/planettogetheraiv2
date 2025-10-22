@@ -3691,19 +3691,68 @@
                 // The events array was created but never actually loaded into the scheduler
                 console.log('📊 Loading data into scheduler - resources:', resources.length, 'events:', events.length, 'dependencies:', dependencies.length);
                 
-                // Load the inline data into the scheduler project
-                // CRITICAL: Bryntum requires specific property names ending with 'Data'
-                await scheduler.project.loadInlineData({
-                    resourcesData: resources,
-                    eventsData: events,
-                    assignmentsData: [],
-                    dependenciesData: dependencies
+                // Create assignments to link events to resources
+                // This is REQUIRED for resource constraint enforcement in Bryntum
+                const assignments = events.map((event, index) => ({
+                    id: `assignment_${event.id}`,
+                    eventId: event.id,
+                    resourceId: event.resourceId,
+                    // Units indicate how much of the resource is consumed (1 = 100%)
+                    units: 100
+                }));
+                
+                console.log('📊 Created assignments:', assignments.length);
+                console.log('📊 First 3 assignments:', assignments.slice(0, 3));
+                
+                // Remove resourceId from events when using assignments
+                // (Bryntum uses assignments to link events to resources)
+                const eventsForScheduler = events.map(event => {
+                    const { resourceId, ...eventWithoutResource } = event;
+                    return eventWithoutResource;
                 });
                 
-                // Commit the data to finalize the loading
-                await scheduler.project.commitAsync();
+                // Load the inline data into the scheduler project
+                // CRITICAL: Bryntum requires specific property names ending with 'Data'
+                try {
+                    console.log('⏳ Loading inline data into scheduler...');
+                    console.log('Resources count:', resources.length);
+                    console.log('Events count:', eventsForScheduler.length);
+                    console.log('Assignments count:', assignments.length);
+                    console.log('Dependencies count:', dependencies.length);
+                    
+                    await scheduler.project.loadInlineData({
+                        resourcesData: resources,
+                        eventsData: eventsForScheduler, // Use events without resourceId
+                        assignmentsData: assignments, // Assignments link events to resources
+                        dependenciesData: dependencies
+                    });
+                    
+                    console.log('✅ Inline data loaded successfully');
+                    
+                    // Commit the data to finalize the loading
+                    await scheduler.project.commitAsync();
+                    
+                    console.log('✅ Data committed successfully');
+                } catch (error) {
+                    console.error('❌ Error loading data into scheduler:', error);
+                    console.error('Error details:', error.message, error.stack);
+                }
                 
                 console.log('✅ Data loaded into scheduler event store:', scheduler.eventStore.count, 'events');
+                
+                // Show alert to debug data loading
+                const eventCount = scheduler.eventStore.count || 0;
+                const resourceCount = scheduler.resourceStore.count || 0;
+                const assignmentCount = scheduler.assignmentStore.count || 0;
+                
+                console.warn(`📊 Final counts - Resources: ${resourceCount}, Events: ${eventCount}, Assignments: ${assignmentCount}`);
+                
+                if (eventCount === 0) {
+                    console.error('❌ NO EVENTS LOADED! Debugging info:');
+                    console.error('Resources loaded:', resources.length);
+                    console.error('Events to load:', events.length);
+                    console.error('First event:', events[0]);
+                }
                 
                 // Database times are now fixed with no overlaps, so we don't need to run ASAP automatically
                 console.log('✅ Database scheduled times loaded (already optimized with no overlaps)');
