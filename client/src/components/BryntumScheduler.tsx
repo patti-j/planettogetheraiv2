@@ -195,6 +195,8 @@ const BryntumScheduler: React.FC = () => {
   const [capabilities, setCapabilities] = useState<Capabilities>({});
   const [selectedPlanningArea, setSelectedPlanningArea] = useState<string>('all');
   const [planningAreas, setPlanningAreas] = useState<string[]>([]);
+  const [lastScheduledArea, setLastScheduledArea] = useState<string>('');
+  const [isLoadingResources, setIsLoadingResources] = useState(false);
 
   // Helper functions
   const A = (p: any): any[] => {
@@ -243,9 +245,34 @@ const BryntumScheduler: React.FC = () => {
     return 'Other';
   };
 
+  // Load ALL planning areas on initial mount (for dropdown)
+  useEffect(() => {
+    const loadAllPlanningAreas = async () => {
+      try {
+        const r = await fetch('/api/resources');
+        const allResources = r.ok ? await r.json() : [];
+        
+        const areas = new Set<string>();
+        if (Array.isArray(allResources)) {
+          allResources.forEach((resource: any) => {
+            if (resource.planning_area) {
+              areas.add(resource.planning_area);
+            }
+          });
+        }
+        setPlanningAreas(Array.from(areas).sort());
+      } catch (error) {
+        console.error('Error loading planning areas:', error);
+      }
+    };
+    
+    loadAllPlanningAreas();
+  }, []);
+
   // Load data on mount or when planning area changes
   useEffect(() => {
     const loadData = async () => {
+      setIsLoadingResources(true);
       try {
         // Build resource URL with planning area filter
         const resourceUrl = selectedPlanningArea !== 'all' 
@@ -261,17 +288,6 @@ const BryntumScheduler: React.FC = () => {
         const resourcesData = r.ok ? await r.json() : [];
         const operationsData = o.ok ? await o.json() : [];
         const capabilitiesData = c.ok ? await c.json() : {};
-        
-        // Extract unique planning areas for the filter dropdown
-        const areas = new Set<string>();
-        if (Array.isArray(resourcesData)) {
-          resourcesData.forEach((resource: any) => {
-            if (resource.planning_area) {
-              areas.add(resource.planning_area);
-            }
-          });
-        }
-        setPlanningAreas(Array.from(areas).sort());
 
         const rawResources = A(resourcesData);
         const rawOperations = A(operationsData);
@@ -406,6 +422,7 @@ const BryntumScheduler: React.FC = () => {
         setDependencies(dependenciesData);
         setCapabilities(capabilitiesData);
         setLoading(false);
+        setIsLoadingResources(false);
 
         // Commit initial data after it's loaded into stores
         setTimeout(() => {
@@ -432,17 +449,31 @@ const BryntumScheduler: React.FC = () => {
         console.error('Error loading scheduler data:', error);
         showToast('Failed to load scheduler data');
         setLoading(false);
+      } finally {
+        setIsLoadingResources(false);
       }
     };
 
     loadData();
   }, [selectedPlanningArea]);
   
-  // Automatically run ASAP scheduling when planning area changes
+  // Automatically run ASAP scheduling when planning area changes (after data loads)
   useEffect(() => {
     const scheduler = schedulerRef.current?.instance;
-    if (scheduler && selectedPlanningArea !== 'all' && resources.length > 0) {
+    
+    // Only trigger if:
+    // 1. Resources have finished loading
+    // 2. Selected area is not 'all'
+    // 3. This is a different area than we last scheduled
+    // 4. We have resources to schedule
+    const shouldSchedule = !isLoadingResources && 
+                          selectedPlanningArea !== 'all' && 
+                          selectedPlanningArea !== lastScheduledArea &&
+                          resources.length > 0;
+    
+    if (scheduler && shouldSchedule) {
       console.log(`[Planning Area Filter] Running ASAP scheduling for: ${selectedPlanningArea}`);
+      setLastScheduledArea(selectedPlanningArea);
       
       // Set to forward scheduling (ASAP)
       scheduler.project.schedulingDirection = 'forward';
@@ -461,8 +492,11 @@ const BryntumScheduler: React.FC = () => {
       }).catch((err: any) => {
         console.error('[Planning Area Filter] Scheduling error:', err);
       });
+    } else if (!isLoadingResources && selectedPlanningArea === 'all' && lastScheduledArea !== '') {
+      // Reset last scheduled area when returning to "all"
+      setLastScheduledArea('');
     }
-  }, [selectedPlanningArea, resources]);
+  }, [selectedPlanningArea, resources, isLoadingResources, lastScheduledArea]);
 
   // Helper functions for scheduler operations
   const cleanupOverlaps = async () => {
