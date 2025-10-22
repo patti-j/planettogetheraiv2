@@ -3701,32 +3701,76 @@
                 // Initialize status updates
                 updateStatus();
                 
+                // CRITICAL FIX: Define global scheduling functions that were missing
+                // These functions are called from elsewhere but weren't defined
+                window.scheduleASAP = async function() {
+                    console.log('📅 Running ASAP scheduling...');
+                    const project = scheduler.project;
+                    project.schedulingDirection = 'forward';
+                    await project.propagate();
+                    console.log('✅ ASAP scheduling complete');
+                    updateSchedulerStatus();
+                };
+                
+                window.scheduleALAP = async function() {
+                    console.log('📅 Running ALAP scheduling...');
+                    const project = scheduler.project;
+                    project.schedulingDirection = 'backward';
+                    await project.propagate();
+                    console.log('✅ ALAP scheduling complete');
+                    updateSchedulerStatus();
+                };
+                
+                window.optimizeSchedule = async function(algorithmId) {
+                    console.log(`📅 Running optimization algorithm: ${algorithmId}...`);
+                    // Apply the selected algorithm
+                    await applyAlgorithm(scheduler, algorithmId);
+                    console.log(`✅ ${algorithmId} optimization complete`);
+                    updateSchedulerStatus();
+                };
+                
+                console.log('[Scheduler] Global scheduling functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
+                
                 // CRITICAL DATA LOADING FIX: Load the events into the scheduler's event store
                 // The events array was created but never actually loaded into the scheduler
                 console.log('📊 Loading data into scheduler - resources:', resources.length, 'events:', events.length, 'dependencies:', dependencies.length);
                 
-                // Create assignments to link events to resources
-                // This is REQUIRED for resource constraint enforcement in Bryntum
-                const assignments = events.map((event, index) => ({
+                // CRITICAL FIX: First preserve the resource mapping, then remove resourceId from events
+                // Step 1: Create assignments using the original events with resourceId
+                const assignments = events.map((event) => ({
                     id: `assignment_${event.id}`,
                     eventId: event.id,
-                    resourceId: event.resourceId,
-                    // Units indicate how much of the resource is consumed (1 = 100%)
-                    units: 100
+                    resourceId: event.resourceId, // Capture resourceId before removing it
+                    units: 100 // Units indicate how much of the resource is consumed (100 = 100%)
                 }));
                 
                 console.log('📊 Created assignments:', assignments.length);
                 console.log('📊 First 3 assignments:', assignments.slice(0, 3));
                 
-                // CRITICAL FIX: Create clean events without resourceId for the scheduler
-                // Keep the original events array intact for internal processing
+                // Step 2: NOW create clean events without resourceId for the scheduler
+                // This prevents the "multi-assignment mode" error
                 const eventsForScheduler = events.map(event => {
-                    // Extract resourceId before passing to scheduler
-                    const { resourceId, ...eventWithoutResource } = event;
-                    return {
-                        ...eventWithoutResource,
-                        // Ensure no resourceId property exists to avoid assignment mode conflicts
+                    // Create new object without resourceId property
+                    const cleanEvent = {
+                        id: event.id,
+                        name: event.name,
+                        startDate: event.startDate,
+                        endDate: event.endDate,
+                        duration: event.duration,
+                        durationUnit: event.durationUnit,
+                        percentDone: event.percentDone,
+                        constraintType: event.constraintType,
+                        constraintDate: event.constraintDate,
+                        eventColor: event.eventColor,
+                        jobName: event.jobName,
+                        jobId: event.jobId,
+                        operationId: event.operationId,
+                        manually_scheduled: event.manually_scheduled,
+                        isUnscheduled: event.isUnscheduled
                     };
+                    // Explicitly ensure no resourceId exists
+                    delete cleanEvent.resourceId;
+                    return cleanEvent;
                 });
                 
                 // Load the inline data into the scheduler project
