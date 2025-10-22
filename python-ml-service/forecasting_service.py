@@ -6,6 +6,8 @@ from flask_cors import CORS
 import pandas as pd
 import numpy as np
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from statsmodels.tsa.arima.model import ARIMA
 from prophet import Prophet
@@ -82,7 +84,9 @@ def train_model():
         df['value'] = df['value'].astype(float)
         
         # Train based on model type
-        if model_type == 'Random Forest':
+        if model_type == 'Linear Regression':
+            metrics = train_linear_regression(df, model_id)
+        elif model_type == 'Random Forest':
             metrics = train_random_forest(df, model_id)
         elif model_type == 'ARIMA':
             metrics = train_arima(df, model_id)
@@ -135,6 +139,52 @@ def train_random_forest(df, model_id):
         'model': model,
         'type': 'Random Forest',
         'feature_cols': feature_cols,
+        'last_data': df.tail(30).copy()  # Keep last 30 days for forecasting
+    }
+    
+    return {
+        "mape": mape,
+        "rmse": rmse,
+        "accuracy": max(0, 100 - mape)
+    }
+
+def train_linear_regression(df, model_id):
+    """Train Linear Regression model"""
+    # Create features (simpler than Random Forest)
+    df_features = create_features(df.copy())
+    
+    # Check if we have enough data after feature engineering
+    if len(df_features) < 2:
+        raise ValueError(f"Linear Regression requires at least 2 data points after feature engineering. Found only {len(df_features)} row(s). Please select a different item or date range with more historical data.")
+    
+    # Split features and target
+    feature_cols = [col for col in df_features.columns if col not in ['date', 'value']]
+    X = df_features[feature_cols]
+    y = df_features['value']
+    
+    # Scale features for better performance
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+    
+    # Train model
+    model = LinearRegression()
+    model.fit(X_scaled, y)
+    
+    # Calculate training metrics
+    y_pred = model.predict(X_scaled)
+    mape, rmse = calculate_metrics(y.values, y_pred)
+    
+    # Compute residual standard deviation for confidence intervals
+    residuals = y - y_pred
+    residual_std = np.std(residuals)
+    
+    # Store model and feature info
+    trained_models[model_id] = {
+        'model': model,
+        'scaler': scaler,
+        'type': 'Linear Regression',
+        'feature_cols': feature_cols,
+        'residual_std': residual_std,
         'last_data': df.tail(30).copy()  # Keep last 30 days for forecasting
     }
     
@@ -268,7 +318,9 @@ def forecast():
         df['value'] = df['value'].astype(float)
         
         # Generate forecast based on model type
-        if model_type == 'Random Forest':
+        if model_type == 'Linear Regression':
+            forecast_data = forecast_linear_regression(model_info, df, forecast_days)
+        elif model_type == 'Random Forest':
             forecast_data = forecast_random_forest(model_info, df, forecast_days)
         elif model_type == 'ARIMA':
             forecast_data = forecast_arima(model_info, df, forecast_days)
@@ -290,6 +342,72 @@ def forecast():
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+def forecast_linear_regression(model_info, df, forecast_days):
+    """Generate forecast using Linear Regression"""
+    model = model_info['model']
+    scaler = model_info['scaler']
+    feature_cols = model_info['feature_cols']
+    residual_std = model_info.get('residual_std', 0.1)
+    
+    # Use last data for iterative forecasting
+    forecast_df = df.tail(30).copy()
+    predictions = []
+    
+    last_date = df['date'].max()
+    
+    for i in range(forecast_days):
+        # Create features for next prediction
+        temp_df = forecast_df.copy()
+        temp_df = create_features(temp_df)
+        
+        if len(temp_df) == 0:
+            break
+            
+        # Get last row features
+        X_next = temp_df[feature_cols].tail(1)
+        X_next_scaled = scaler.transform(X_next)
+        
+        # Predict
+        pred_value = model.predict(X_next_scaled)[0]
+        pred_value = max(0, pred_value)  # Ensure non-negative
+        
+        # Calculate confidence intervals using residual std
+        margin = 1.96 * residual_std
+        lower = max(0, pred_value - margin)
+        upper = pred_value + margin
+        
+        # Add to forecast
+        next_date = last_date + pd.Timedelta(days=i+1)
+        predictions.append({
+            "date": next_date.strftime('%Y-%m-%d'),
+            "value": float(pred_value),
+            "lower": float(lower),
+            "upper": float(upper)
+        })
+        
+        # Add predicted value to dataframe for next iteration
+        new_row = pd.DataFrame({
+            'date': [next_date],
+            'value': [pred_value]
+        })
+        forecast_df = pd.concat([forecast_df, new_row], ignore_index=True)
+    
+    # Calculate metrics on training data
+    train_features = create_features(df.copy())
+    if len(train_features) > 0:
+        X_train = train_features[feature_cols]
+        X_train_scaled = scaler.transform(X_train)
+        y_train = train_features['value'].values
+        y_pred_train = model.predict(X_train_scaled)
+        mape, rmse = calculate_metrics(y_train, y_pred_train)
+    else:
+        mape, rmse = 0.0, 0.0
+    
+    return {
+        "predictions": predictions,
+        "metrics": {"mape": mape, "rmse": rmse}
+    }
 
 def forecast_random_forest(model_info, df, forecast_days):
     """Generate forecast using Random Forest"""
