@@ -635,8 +635,8 @@ export class PowerBIService {
     }
   }
 
-  // Get report data sources (for paginated reports)
-  async getReportDataSources(accessToken: string, workspaceId: string, reportId: string): Promise<any[]> {
+  // Get report data sources (for paginated reports) and extract dataset ID
+  async getReportDataSources(accessToken: string, workspaceId: string, reportId: string): Promise<string | null> {
     const dataSourcesUrl = `https://api.powerbi.com/v1.0/myorg/groups/${workspaceId}/reports/${reportId}/datasources`;
 
     try {
@@ -648,13 +648,45 @@ export class PowerBIService {
 
       if (!response.ok) {
         const error = await response.text();
-        throw new Error(`Failed to get report datasources: ${error}`);
+        console.warn(`⚠️ Could not fetch report datasources: ${error}`);
+        return null;
       }
 
       const data = await response.json();
-      return data.value || [];
+      const datasources = data.value || [];
+      
+      console.log(`📊 Found ${datasources.length} datasources for report ${reportId}:`, JSON.stringify(datasources, null, 2));
+      
+      // Look for a Power BI dataset datasource
+      // The datasource might have datasourceType: 'PowerBIDataset' or contain dataset info
+      for (const ds of datasources) {
+        // Check if this is a PowerBIDataset type
+        if (ds.datasourceType === 'PowerBIDataset' && ds.datasourceId) {
+          console.log(`✅ Found Power BI dataset ID from datasourceType: ${ds.datasourceId}`);
+          return ds.datasourceId;
+        }
+        
+        // Check connectionDetails for dataset reference
+        if (ds.connectionDetails) {
+          // Sometimes the dataset info is in the connection string or details
+          const details = typeof ds.connectionDetails === 'string' 
+            ? ds.connectionDetails 
+            : JSON.stringify(ds.connectionDetails);
+          
+          // Look for dataset GUID pattern in connection details
+          const datasetMatch = details.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+          if (datasetMatch) {
+            console.log(`✅ Found potential dataset ID in connectionDetails: ${datasetMatch[0]}`);
+            return datasetMatch[0];
+          }
+        }
+      }
+      
+      console.log(`ℹ️ No Power BI dataset found in datasources - report uses external data sources`);
+      return null;
     } catch (error) {
-      throw new Error(`Failed to fetch report datasources: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(`⚠️ Error fetching report datasources: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      return null;
     }
   }
 
@@ -1173,11 +1205,18 @@ export class PowerBIService {
     const reportType = report.type || report.reportType || 'Report';
     console.log(`📊 Report type detected: ${reportType} for report ${report.name} (from API field: ${report.type ? 'type' : 'reportType'})`);
     
-    // For paginated reports, use the report's datasetId if available
-    // If not, paginated reports will use external data sources (empty datasets array)
+    // For paginated reports, try to resolve datasetId
     let datasetId = report.datasetId;
     if (reportType === 'PaginatedReport' && !datasetId) {
-      console.log(`📊 Paginated report "${report.name}" has no datasetId - will use empty datasets array for external data sources`);
+      console.log(`📊 Paginated report "${report.name}" has no datasetId - checking datasources...`);
+      // Try to fetch the dataset ID from the report's datasources
+      const fetchedDatasetId = await this.getReportDataSources(accessToken, workspaceId, reportId);
+      if (fetchedDatasetId) {
+        datasetId = fetchedDatasetId;
+        console.log(`✅ Resolved dataset ID for paginated report: ${datasetId}`);
+      } else {
+        console.log(`ℹ️ Paginated report "${report.name}" uses external data sources (no Power BI dataset found)`);
+      }
     }
     
     const embedToken = await this.getEmbedToken(
