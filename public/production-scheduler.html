@@ -1013,6 +1013,13 @@
             </select>
         </div>
 
+        <div class="toolbar-group">
+            <label for="planningAreaFilter">Planning Area:</label>
+            <select id="planningAreaFilter" data-testid="select-planning-area">
+                <option value="all">All Areas</option>
+            </select>
+        </div>
+
         <div class="toolbar-group" style="display: flex; gap: 0.25rem;">
             <button id="zoomIn" class="icon-only" title="Zoom In">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1456,6 +1463,45 @@
                     date.setHours(8 + hoursFromNow, 0, 0, 0); // Start at 8 AM
                     return date;
                 }
+                
+                // Planning area filter state
+                let selectedPlanningArea = 'all';
+                let lastScheduledArea = '';
+                let allPlanningAreas = [];
+                
+                // Load all planning areas for the dropdown (once on startup)
+                async function loadPlanningAreas() {
+                    try {
+                        const response = await fetch('/api/resources');
+                        if (response.ok) {
+                            const allResources = await response.json();
+                            const areas = new Set();
+                            allResources.forEach(resource => {
+                                if (resource.planning_area) {
+                                    areas.add(resource.planning_area);
+                                }
+                            });
+                            allPlanningAreas = Array.from(areas).sort();
+                            
+                            // Populate dropdown
+                            const dropdown = document.getElementById('planningAreaFilter');
+                            allPlanningAreas.forEach(area => {
+                                const option = document.createElement('option');
+                                option.value = area;
+                                option.textContent = area;
+                                option.setAttribute('data-testid', `option-planning-area-${area}`);
+                                dropdown.appendChild(option);
+                            });
+                            
+                            console.log('✅ Planning areas loaded:', allPlanningAreas);
+                        }
+                    } catch (error) {
+                        console.error('Error loading planning areas:', error);
+                    }
+                }
+                
+                // Load planning areas first
+                await loadPlanningAreas();
                 
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
@@ -3669,6 +3715,104 @@
                         console.log('Theme toggle disabled - using consistent light theme');
                     }
                 });
+                
+                // Add event listener for planning area filter with race condition protection
+                const planningAreaFilter = document.getElementById('planningAreaFilter');
+                let currentFetchController = null; // AbortController for fetch cancellation
+                let requestToken = 0; // Monotonic token to identify latest request
+                
+                if (planningAreaFilter) {
+                    planningAreaFilter.addEventListener('change', async (e) => {
+                        selectedPlanningArea = e.target.value;
+                        console.log(`[Planning Area Filter] Selected: ${selectedPlanningArea}`);
+                        
+                        // Cancel any in-flight requests
+                        if (currentFetchController) {
+                            currentFetchController.abort();
+                            console.log('[Planning Area Filter] Cancelled previous request');
+                        }
+                        
+                        // Create new AbortController for this request
+                        currentFetchController = new AbortController();
+                        const thisRequestToken = ++requestToken;
+                        
+                        try {
+                            // Build resource URL with planning area filter
+                            const resourceUrl = selectedPlanningArea !== 'all' 
+                                ? `/api/resources?planningArea=${encodeURIComponent(selectedPlanningArea)}`
+                                : '/api/resources';
+                            
+                            // Fetch filtered resources with abort signal
+                            const response = await fetch(resourceUrl, {
+                                signal: currentFetchController.signal
+                            });
+                            
+                            if (!response.ok) {
+                                throw new Error(`Failed to fetch resources: ${response.status}`);
+                            }
+                            
+                            const filteredResources = await response.json();
+                            
+                            // Only apply results if this is still the latest request
+                            if (thisRequestToken !== requestToken) {
+                                console.log('[Planning Area Filter] Ignoring stale response');
+                                return;
+                            }
+                            
+                            console.log(`[Planning Area Filter] Loaded ${filteredResources.length} resources for: ${selectedPlanningArea}`);
+                            
+                            // Clear and reload resources in scheduler
+                            window.scheduler.resourceStore.removeAll();
+                            window.scheduler.resourceStore.add(filteredResources.map((r, i) => ({
+                                id: `resource_${i + 1}_${r.id}`,
+                                name: r.name,
+                                category: r.category || r.plantName || 'Default',
+                                sortOrder: i + 1
+                            })));
+                            
+                            // Trigger ASAP scheduling if specific area selected
+                            if (selectedPlanningArea !== 'all' && selectedPlanningArea !== lastScheduledArea) {
+                                console.log(`[Planning Area Filter] Running ASAP scheduling for: ${selectedPlanningArea}`);
+                                
+                                // Set to forward scheduling (ASAP)
+                                window.scheduler.project.schedulingDirection = 'forward';
+                                window.scheduler.project.constraintsMode = 'honor';
+                                
+                                // Trigger the scheduling engine
+                                await window.scheduler.project.propagate();
+                                await window.scheduler.project.commitAsync();
+                                
+                                // Zoom to fit after scheduling
+                                window.scheduler.zoomToFit({
+                                    leftMargin: 50,
+                                    rightMargin: 50
+                                });
+                                
+                                // Only update lastScheduledArea after successful completion
+                                lastScheduledArea = selectedPlanningArea;
+                                console.log('[Planning Area Filter] ASAP scheduling completed');
+                            } else if (selectedPlanningArea === 'all') {
+                                lastScheduledArea = '';
+                            }
+                        } catch (error) {
+                            // Ignore abort errors (expected when user changes filter quickly)
+                            if (error.name === 'AbortError') {
+                                console.log('[Planning Area Filter] Request cancelled (user changed filter)');
+                                return;
+                            }
+                            console.error('[Planning Area Filter] Error:', error);
+                            // Show error feedback to user
+                            const statusBar = document.getElementById('operationCount');
+                            if (statusBar) {
+                                const originalText = statusBar.textContent;
+                                statusBar.textContent = '❌ Failed to load resources';
+                                setTimeout(() => {
+                                    statusBar.textContent = originalText;
+                                }, 3000);
+                            }
+                        }
+                    });
+                }
                 
             } catch (error) {
                 console.error('Failed to initialize scheduler:', error);
