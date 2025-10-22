@@ -3720,15 +3720,25 @@
                 });
                 
                 // Add event listener for planning area filter with race condition protection
-                console.log('🔍 [DEBUG] Attempting to attach planning area filter button...');
-                const planningAreaFilter = document.getElementById('planningAreaFilter');
-                const applyPlanningAreaButton = document.getElementById('applyPlanningAreaFilter');
-                console.log('🔍 [DEBUG] Planning area filter element:', planningAreaFilter);
-                console.log('🔍 [DEBUG] Apply button element:', applyPlanningAreaButton);
-                let currentFetchController = null; // AbortController for fetch cancellation
-                let requestToken = 0; // Monotonic token to identify latest request
-                
-                if (planningAreaFilter && applyPlanningAreaButton) {
+                setTimeout(() => {
+                    console.log('🔍 [DEBUG] Attempting to attach planning area filter button...');
+                    const planningAreaFilter = document.getElementById('planningAreaFilter');
+                    const applyPlanningAreaButton = document.getElementById('applyPlanningAreaFilter');
+                    console.log('🔍 [DEBUG] Planning area filter element:', planningAreaFilter);
+                    console.log('🔍 [DEBUG] Apply button element:', applyPlanningAreaButton);
+                    
+                    if (!planningAreaFilter) {
+                        console.error('❌ [DEBUG] Planning area filter dropdown not found!');
+                        return;
+                    }
+                    if (!applyPlanningAreaButton) {
+                        console.error('❌ [DEBUG] Apply filter button not found!');
+                        return;
+                    }
+                    
+                    let currentFetchController = null; // AbortController for fetch cancellation
+                    let requestToken = 0; // Monotonic token to identify latest request
+                    
                     console.log('✅ [DEBUG] Planning area filter found, attaching button click listener');
                     applyPlanningAreaButton.addEventListener('click', async () => {
                         selectedPlanningArea = planningAreaFilter.value;
@@ -3821,7 +3831,7 @@
                             }
                         }
                     });
-                }
+                }, 1000); // Wait 1 second for DOM to be ready
                 
             } catch (error) {
                 console.error('Failed to initialize scheduler:', error);
