@@ -68,8 +68,8 @@ def train_model():
         historical_data = data.get('historicalData', [])
         model_id = data.get('modelId', 'default')
         
-        if not historical_data or len(historical_data) < 10:
-            return jsonify({"error": "Insufficient data. Need at least 10 data points."}), 400
+        if not historical_data:
+            return jsonify({"error": "No historical data provided."}), 400
         
         # Convert to DataFrame
         df = pd.DataFrame(historical_data)
