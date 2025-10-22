@@ -735,12 +735,14 @@ export default function Dashboard() {
                             <div className="font-medium">
                               {reportTypeFilter === "all" ? "No reports found" :
                                reportTypeFilter === "standard" ? "No standard reports found" :
-                               "No custom reports found"}
+                               reportTypeFilter === "custom" ? "No custom reports found" :
+                               "No paginated reports found"}
                             </div>
                             <div>
                               {reportTypeFilter === "all" ? "This workspace doesn't contain any reports yet." :
                                reportTypeFilter === "standard" ? "No reports match the dataset name in this workspace." :
-                               "No reports with different names from their datasets found."}
+                               reportTypeFilter === "custom" ? "No reports with different names from their datasets found." :
+                               "No RDL paginated reports found in this workspace."}
                             </div>
                           </div>
                         )}
