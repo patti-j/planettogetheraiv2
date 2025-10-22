@@ -22,6 +22,7 @@ interface PowerBIReportSummary {
   workspaceId: string;
   datasetId: string;
   datasetName: string;
+  reportType?: string; // "Report" for standard PBIX, "PaginatedReport" for RDL
 }
 
 export interface PowerBIDataset {

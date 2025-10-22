@@ -300,7 +300,8 @@ export class PowerBIService {
             embedUrl: report.embedUrl,
             workspaceId: workspaceId,
             datasetId: report.datasetId,
-            datasetName: datasetName
+            datasetName: datasetName,
+            reportType: report.reportType || report.type || 'Report' // Include report type (Report or PaginatedReport)
           };
         })
       );

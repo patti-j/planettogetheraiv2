@@ -52,7 +52,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import * as models from "powerbi-models";
 
 // Report Type Helper Component
-function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom', showLabel?: boolean }) {
+function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom' | 'paginated', showLabel?: boolean }) {
   const getIcon = () => {
     switch (type) {
       case 'all':
@@ -61,6 +61,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return BadgeCheck;
       case 'custom':
         return Wand2;
+      case 'paginated':
+        return FileDown;
     }
   };
 
@@ -72,6 +74,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return "text-green-600 dark:text-green-300";
       case 'custom':
         return "text-yellow-600 dark:text-yellow-300";
+      case 'paginated':
+        return "text-blue-600 dark:text-blue-300";
     }
   };
 
@@ -83,6 +87,8 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
         return "Standard";
       case 'custom':
         return "Custom";
+      case 'paginated':
+        return "Paginated";
     }
   };
 
@@ -103,7 +109,7 @@ export default function Dashboard() {
   const [embedConfig, setEmbedConfig] = useState<ReportEmbedConfig | null>(null);
   const [showEmbed, setShowEmbed] = useState(false);
   const [sidebarMinimized, setSidebarMinimized] = useState(false);
-  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "standard" | "custom">("all");
+  const [reportTypeFilter, setReportTypeFilter] = useState<"all" | "standard" | "custom" | "paginated">("all");
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [filterPaneVisible, setFilterPaneVisible] = useState(false);
   const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
@@ -200,6 +206,14 @@ export default function Dashboard() {
   const reports = allReports?.filter(report => {
     if (reportTypeFilter === "all") return true;
     
+    // Check if this is a paginated report
+    const isPaginatedReport = report.reportType === "PaginatedReport";
+    
+    if (reportTypeFilter === "paginated") return isPaginatedReport;
+    
+    // For standard/custom filtering, only apply to non-paginated reports
+    if (isPaginatedReport) return false;
+    
     const isStandardReport = report.name.trim().toLowerCase() === report.datasetName?.trim().toLowerCase();
     
     if (reportTypeFilter === "standard") return isStandardReport;
@@ -213,11 +227,14 @@ export default function Dashboard() {
     if (selectedReportId && allReports && allReports.length > 0) {
       const selectedReport = allReports.find(r => r.id === selectedReportId);
       if (selectedReport) {
-        const isStandardReport = selectedReport.name.trim().toLowerCase() === selectedReport.datasetName?.trim().toLowerCase();
+        const isPaginatedReport = selectedReport.reportType === "PaginatedReport";
+        const isStandardReport = !isPaginatedReport && selectedReport.name.trim().toLowerCase() === selectedReport.datasetName?.trim().toLowerCase();
         
         const shouldClearSelection = 
           (reportTypeFilter === "standard" && !isStandardReport) ||
-          (reportTypeFilter === "custom" && isStandardReport);
+          (reportTypeFilter === "custom" && isStandardReport) ||
+          (reportTypeFilter === "custom" && isPaginatedReport) ||
+          (reportTypeFilter === "paginated" && !isPaginatedReport);
           
         if (shouldClearSelection) {
           setSelectedReportId("");
@@ -582,7 +599,7 @@ export default function Dashboard() {
                           value={reportTypeFilter}
                           onValueChange={(value) => {
                             // Ensure we always have a valid filter value
-                            const newValue = (value as "all" | "standard" | "custom") || "all";
+                            const newValue = (value as "all" | "standard" | "custom" | "paginated") || "all";
                             if (newValue !== reportTypeFilter) {
                               setReportTypeFilter(newValue);
                               // Reset selected report when filter changes
@@ -595,7 +612,7 @@ export default function Dashboard() {
                           }}
                           className="w-full"
                         >
-                          <TabsList className="grid w-full grid-cols-3 h-auto p-0 bg-transparent">
+                          <TabsList className="grid w-full grid-cols-4 h-auto p-0 bg-transparent">
                             <Tooltip>
                               <TooltipTrigger asChild>
                                 <TabsTrigger
@@ -629,7 +646,7 @@ export default function Dashboard() {
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
-                                <p>{allReports.filter(r => r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase()).length}</p>
+                                <p>{allReports.filter(r => r.reportType !== "PaginatedReport" && r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase()).length}</p>
                               </TooltipContent>
                             </Tooltip>
                             <Tooltip>
@@ -647,7 +664,25 @@ export default function Dashboard() {
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
-                                <p>{allReports.filter(r => r.name.trim().toLowerCase() !== r.datasetName?.trim().toLowerCase()).length}</p>
+                                <p>{allReports.filter(r => r.name.trim().toLowerCase() !== r.datasetName?.trim().toLowerCase() && r.reportType !== "PaginatedReport").length}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <TabsTrigger
+                                  value="paginated"
+                                  className="flex items-center gap-1.5 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  style={{
+                                    borderBottom: reportTypeFilter === "paginated" ? "2px solid black" : "2px solid transparent"
+                                  }}
+                                  data-testid="button-filter-paginated"
+                                >
+                                  <ReportTypeMark type="paginated" showLabel={false} />
+                                  <span>Paginated</span>
+                                </TabsTrigger>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
+                                <p>{allReports.filter(r => r.reportType === "PaginatedReport").length}</p>
                               </TooltipContent>
                             </Tooltip>
                           </TabsList>
@@ -661,8 +696,11 @@ export default function Dashboard() {
                         <Label className="text-sm">Report</Label>
                         <Combobox
                           options={reports?.map(r => {
-                            const isStandardReport = r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase();
-                            const reportType = isStandardReport ? 'standard' : 'custom';
+                            const isPaginatedReport = r.reportType === "PaginatedReport";
+                            const isStandardReport = !isPaginatedReport && r.name.trim().toLowerCase() === r.datasetName?.trim().toLowerCase();
+                            const reportType: 'standard' | 'custom' | 'paginated' = 
+                              isPaginatedReport ? 'paginated' : 
+                              isStandardReport ? 'standard' : 'custom';
                             return {
                               value: r.id,
                               label: r.name,
@@ -677,7 +715,8 @@ export default function Dashboard() {
                             reports?.length === 0 ? 
                               (reportTypeFilter === "all" ? "No reports found in this workspace" :
                                reportTypeFilter === "standard" ? "No standard reports found" :
-                               "No custom reports found") :
+                               reportTypeFilter === "custom" ? "No custom reports found" :
+                               "No paginated reports found") :
                             "Search reports..."
                           }
                           searchPlaceholder="Type to search reports..."
