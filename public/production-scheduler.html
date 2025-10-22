@@ -3717,12 +3717,16 @@
                 });
                 
                 // Add event listener for planning area filter with race condition protection
+                console.log('🔍 [DEBUG] Attempting to attach planning area filter event listener...');
                 const planningAreaFilter = document.getElementById('planningAreaFilter');
+                console.log('🔍 [DEBUG] Planning area filter element:', planningAreaFilter);
                 let currentFetchController = null; // AbortController for fetch cancellation
                 let requestToken = 0; // Monotonic token to identify latest request
                 
                 if (planningAreaFilter) {
+                    console.log('✅ [DEBUG] Planning area filter element found, attaching event listener');
                     planningAreaFilter.addEventListener('change', async (e) => {
+                        console.log('🔥 [DEBUG] Planning area dropdown changed! New value:', e.target.value);
                         selectedPlanningArea = e.target.value;
                         console.log(`[Planning Area Filter] Selected: ${selectedPlanningArea}`);
                         

@@ -2386,7 +2386,8 @@ Rules:
   // Resources
   app.get("/api/resources", async (req, res) => {
     try {
-      const resources = await storage.getResources();
+      const planningArea = req.query.planningArea as string | undefined;
+      const resources = await storage.getResources(planningArea);
       res.json(resources);
     } catch (error) {
       res.status(500).json({ message: "Failed to fetch resources" });
