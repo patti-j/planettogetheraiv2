@@ -1,12 +1,20 @@
-import React, { useRef, useMemo } from 'react';
+import React, { useRef, useMemo, useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.stockholm.css';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { ArrowLeft, RefreshCw, Maximize } from 'lucide-react';
 
 export default function ProductionSchedulerReact() {
   const schedulerRef = useRef<any>(null);
+  const [selectedPlanningArea, setSelectedPlanningArea] = useState<string>('all');
 
   // Fetch operations data
   const { data: operationsData = [], isLoading: isLoadingOps, refetch: refetchOps } = useQuery({
@@ -14,9 +22,17 @@ export default function ProductionSchedulerReact() {
     refetchInterval: 60000,
   });
 
-  // Fetch resources data  
+  // Fetch resources data with planning area filter
   const { data: resourcesData = [], isLoading: isLoadingRes, refetch: refetchRes } = useQuery({
-    queryKey: ['/pt-resources'],
+    queryKey: ['/api/resources', selectedPlanningArea],
+    queryFn: async () => {
+      const params = selectedPlanningArea !== 'all' 
+        ? `?planningArea=${encodeURIComponent(selectedPlanningArea)}`
+        : '';
+      const response = await fetch(`/api/resources${params}`);
+      if (!response.ok) throw new Error('Failed to fetch resources');
+      return response.json();
+    },
   });
 
   // Fetch dependencies data
@@ -271,6 +287,45 @@ export default function ProductionSchedulerReact() {
     refetchDeps();
   };
 
+  // Get unique planning areas from resources
+  const planningAreas = useMemo(() => {
+    const areas = new Set<string>();
+    if (Array.isArray(resourcesData)) {
+      resourcesData.forEach((resource: any) => {
+        if (resource.planning_area) {
+          areas.add(resource.planning_area);
+        }
+      });
+    }
+    return Array.from(areas).sort();
+  }, [resourcesData]);
+
+  // Automatically run ASAP scheduling when planning area changes
+  useEffect(() => {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler && selectedPlanningArea !== 'all') {
+      console.log(`[Planning Area Filter] Running ASAP scheduling for: ${selectedPlanningArea}`);
+      
+      // Set to forward scheduling (ASAP)
+      scheduler.project.schedulingDirection = 'forward';
+      scheduler.project.constraintsMode = 'honor';
+      
+      // Trigger the scheduling engine
+      scheduler.project.propagate().then(() => {
+        return scheduler.project.commitAsync();
+      }).then(() => {
+        // Zoom to fit after scheduling
+        scheduler.zoomToFit({
+          leftMargin: 50,
+          rightMargin: 50
+        });
+        console.log('[Planning Area Filter] ASAP scheduling completed');
+      }).catch((err: any) => {
+        console.error('[Planning Area Filter] Scheduling error:', err);
+      });
+    }
+  }, [selectedPlanningArea, resources, events]);
+
   const isLoading = isLoadingOps || isLoadingRes;
 
   if (isLoading) {
@@ -291,13 +346,46 @@ export default function ProductionSchedulerReact() {
         <h1 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
           Production Scheduler
         </h1>
-        <div className="flex gap-2">
+        <div className="flex gap-3 items-center">
+          {/* Planning Area Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Planning Area:
+            </label>
+            <Select
+              value={selectedPlanningArea}
+              onValueChange={setSelectedPlanningArea}
+            >
+              <SelectTrigger 
+                className="w-[180px]"
+                data-testid="select-planning-area"
+              >
+                <SelectValue placeholder="Select area" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all" data-testid="option-planning-area-all">
+                  All Areas
+                </SelectItem>
+                {planningAreas.map((area) => (
+                  <SelectItem 
+                    key={area} 
+                    value={area}
+                    data-testid={`option-planning-area-${area}`}
+                  >
+                    {area}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <Button
             variant="outline"
             size="sm"
             onClick={handleZoomToFit}
             className="gap-2"
             title="Fit to View"
+            data-testid="button-zoom-fit"
           >
             <Maximize className="h-4 w-4" />
             Fit View
@@ -307,6 +395,7 @@ export default function ProductionSchedulerReact() {
             size="sm"
             onClick={handleRefresh}
             className="gap-2"
+            data-testid="button-refresh"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh

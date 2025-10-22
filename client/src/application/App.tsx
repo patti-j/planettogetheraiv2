@@ -75,6 +75,7 @@ import OnboardingAssistant from "@/pages/onboarding-assistant";
 import ImplementationProjects from "@/pages/implementation-projects";
 import IndustryTemplates from "@/pages/industry-templates";
 import MasterDataManagement from "@/pages/master-data-management";
+import PlanningAreaManagement from "@/pages/planning-area-management";
 import DatabaseExplorer from "@/pages/database-explorer";
 import PresentationSystem from "@/pages/presentation-system";
 import SystemsManagementDashboard from "@/pages/systems-management-dashboard";
@@ -397,6 +398,7 @@ export default function ApplicationApp() {
               <Route path="/data-import-simple" component={DataImportSimple} />
               <Route path="/erp-import" component={ERPImport} />
               <Route path="/master-data" component={MasterDataManagement} />
+              <Route path="/planning-area-management" component={PlanningAreaManagement} />
               <Route path="/database-explorer" component={DatabaseExplorer} />
               <Route path="/data-schema" component={DataSchema} />
               <Route path="/table-field-viewer" component={TableFieldViewer} />

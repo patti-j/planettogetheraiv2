@@ -3657,11 +3657,50 @@ router.get("/api/forecasting-service-url", (req, res) => {
 // API endpoints for the Bryntum scheduler
 router.get("/api/resources", async (req, res) => {
   try {
-    const resources = await storage.getResources();
+    const planningArea = req.query.planningArea as string | undefined;
+    const resources = await storage.getResources(planningArea);
     res.json(resources);
   } catch (error) {
     console.error("Error fetching resources:", error);
     res.status(500).json({ message: "Failed to fetch resources" });
+  }
+});
+
+// Update planning areas for resources
+router.patch("/api/resources/planning-areas", async (req, res) => {
+  try {
+    const { updates } = req.body;
+    
+    if (!Array.isArray(updates)) {
+      return res.status(400).json({ error: 'Invalid request: updates array required' });
+    }
+    
+    console.log(`📍 Updating planning areas for ${updates.length} resources...`);
+    
+    let updated = 0;
+    for (const { resourceId, planningArea } of updates) {
+      try {
+        await directSql`
+          UPDATE ptresources 
+          SET planning_area = ${planningArea || null}, updated_at = NOW()
+          WHERE id = ${resourceId}
+        `;
+        updated++;
+      } catch (err) {
+        console.error(`Failed to update resource ${resourceId}:`, err);
+      }
+    }
+    
+    console.log(`✅ Successfully updated ${updated}/${updates.length} planning areas`);
+    
+    res.json({ 
+      success: true, 
+      updated,
+      total: updates.length
+    });
+  } catch (error) {
+    console.error("Error updating planning areas:", error);
+    res.status(500).json({ success: false, error: 'Failed to update planning areas' });
   }
 });
 

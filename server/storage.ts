@@ -96,7 +96,7 @@ export interface IStorage {
 
   // Basic PT Table Access
   getPlants(): Promise<PtPlant[]>;
-  getResources(): Promise<PtResource[]>;
+  getResources(planningArea?: string): Promise<PtResource[]>;
   getJobs(): Promise<any[]>;
   getJobOperations(): Promise<PtJobOperation[]>;
   getManufacturingOrders(): Promise<PtManufacturingOrder[]>;
@@ -538,9 +538,147 @@ export class DatabaseStorage implements IStorage {
     }
   }
 
-  async getResources(): Promise<PtResource[]> {
+  async getResources(planningArea?: string): Promise<PtResource[]> {
     try {
-      // Use raw SQL to select only columns that actually exist in the database
+      // Use parameterized query to prevent SQL injection
+      let query;
+      if (planningArea && planningArea !== 'all') {
+        // Use sql template literal with proper parameter binding
+        query = sql`
+          SELECT 
+            id,
+            publish_date,
+            instance_id,
+            plant_id,
+            department_id,
+            resource_id,
+            name,
+            description,
+            notes,
+            external_id,
+            plant_name,
+            department_name,
+            planning_area,
+            active as is_active,
+            bottleneck,
+            buffer_hours,
+            capacity_type,
+            hourly_cost as standard_hourly_cost,
+            setup_cost as overtime_hourly_cost,
+            tank as drum,
+            -- Set defaults for missing schema fields
+            'equipment' as resource_type,
+            100.0 as capacity,
+            24.0 as available_hours,
+            '1.0' as efficiency,
+            now() as created_at,
+            now() as updated_at
+          FROM ptresources 
+          WHERE active = true AND planning_area = ${planningArea}
+          ORDER BY CASE 
+            -- Order resources by brewery operational sequence with grouping
+            -- 1. MILLING (top)
+            WHEN LOWER(name) LIKE '%mill%' THEN 1
+            -- 2. MASHING
+            WHEN LOWER(name) LIKE '%mash%' THEN 2  
+            -- 3. LAUTERING
+            WHEN LOWER(name) LIKE '%lauter%' THEN 3
+            -- 4. BOILING/KETTLE
+            WHEN LOWER(name) LIKE '%boil%' OR LOWER(name) LIKE '%kettle%' THEN 4
+            -- 5. WHIRLPOOL
+            WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
+            -- 6. COOLING
+            WHEN LOWER(name) LIKE '%cool%' THEN 6
+            -- 7. ALL FERMENTATION TANKS (grouped together)
+            WHEN LOWER(name) LIKE '%ferment%' THEN 7
+            -- 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
+            WHEN LOWER(name) LIKE '%bright%' OR LOWER(name) LIKE '%condition%' THEN 8
+            -- 9. PASTEURIZATION
+            WHEN LOWER(name) LIKE '%pasteur%' THEN 9
+            -- 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
+            WHEN LOWER(name) LIKE '%bottle%' OR LOWER(name) LIKE '%can%' OR LOWER(name) LIKE '%filler%' OR LOWER(name) LIKE '%packag%' THEN 10
+            -- 11. Any other resources
+            ELSE 11
+          END, 
+          -- Secondary sort by name to ensure consistent ordering within each group
+          name
+          LIMIT 12
+        `;
+      } else {
+        // No planning area filter - show all active resources
+        query = sql`
+          SELECT 
+            id,
+            publish_date,
+            instance_id,
+            plant_id,
+            department_id,
+            resource_id,
+            name,
+            description,
+            notes,
+            external_id,
+            plant_name,
+            department_name,
+            planning_area,
+            active as is_active,
+            bottleneck,
+            buffer_hours,
+            capacity_type,
+            hourly_cost as standard_hourly_cost,
+            setup_cost as overtime_hourly_cost,
+            tank as drum,
+            -- Set defaults for missing schema fields
+            'equipment' as resource_type,
+            100.0 as capacity,
+            24.0 as available_hours,
+            '1.0' as efficiency,
+            now() as created_at,
+            now() as updated_at
+          FROM ptresources 
+          WHERE active = true
+          ORDER BY CASE 
+            -- Order resources by brewery operational sequence with grouping
+            -- 1. MILLING (top)
+            WHEN LOWER(name) LIKE '%mill%' THEN 1
+            -- 2. MASHING
+            WHEN LOWER(name) LIKE '%mash%' THEN 2  
+            -- 3. LAUTERING
+            WHEN LOWER(name) LIKE '%lauter%' THEN 3
+            -- 4. BOILING/KETTLE
+            WHEN LOWER(name) LIKE '%boil%' OR LOWER(name) LIKE '%kettle%' THEN 4
+            -- 5. WHIRLPOOL
+            WHEN LOWER(name) LIKE '%whirlpool%' THEN 5
+            -- 6. COOLING
+            WHEN LOWER(name) LIKE '%cool%' THEN 6
+            -- 7. ALL FERMENTATION TANKS (grouped together)
+            WHEN LOWER(name) LIKE '%ferment%' THEN 7
+            -- 8. ALL BRIGHT/CONDITIONING TANKS (grouped together)
+            WHEN LOWER(name) LIKE '%bright%' OR LOWER(name) LIKE '%condition%' THEN 8
+            -- 9. PASTEURIZATION
+            WHEN LOWER(name) LIKE '%pasteur%' THEN 9
+            -- 10. ALL PACKAGING/FILLING (bottling and canning grouped together)
+            WHEN LOWER(name) LIKE '%bottle%' OR LOWER(name) LIKE '%can%' OR LOWER(name) LIKE '%filler%' OR LOWER(name) LIKE '%packag%' THEN 10
+            -- 11. Any other resources
+            ELSE 11
+          END, 
+          -- Secondary sort by name to ensure consistent ordering within each group
+          name
+          LIMIT 12
+        `;
+      }
+      
+      const result = await db.execute(query);
+      return result.rows as any[];
+    } catch (error) {
+      console.error('Error fetching resources:', error);
+      return [];
+    }
+  }
+
+  // Legacy method without planning area filter (for backwards compatibility)
+  async _getResourcesLegacy(): Promise<PtResource[]> {
+    try {
       const result = await db.execute(sql`
         SELECT 
           id,
@@ -555,6 +693,7 @@ export class DatabaseStorage implements IStorage {
           external_id,
           plant_name,
           department_name,
+          planning_area,
           active as is_active,
           bottleneck,
           buffer_hours,
