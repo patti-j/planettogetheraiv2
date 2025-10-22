@@ -1457,87 +1457,43 @@
             const scheduler = window.scheduler;
             
             try {
-                // Build resource URL with planning area filter
-                const resourceUrl = selectedPlanningArea !== 'all' 
-                    ? `/api/resources?planningArea=${encodeURIComponent(selectedPlanningArea)}`
-                    : '/api/resources';
+                // Clear any existing filters first
+                scheduler.assignmentStore.clearFilters();
+                scheduler.resourceStore.clearFilters();
+                scheduler.eventStore.clearFilters();
                 
-                console.log(`📡 [Planning Area Filter] Fetching: ${resourceUrl}`);
-                
-                // Fetch filtered resources
-                const response = await fetch(resourceUrl);
-                
-                if (!response.ok) {
-                    throw new Error(`Failed to fetch resources: ${response.status}`);
-                }
-                
-                const filteredResources = await response.json();
-                console.log(`✅ [Planning Area Filter] Received ${filteredResources.length} resources`);
-                
-                // Update scheduler resources - using proper Bryntum API
-                scheduler.suspendRefresh();
-                scheduler.resourceStore.removeAll();
-                scheduler.resourceStore.add(filteredResources);
-                scheduler.resumeRefresh();
-                console.log(`📊 [Planning Area Filter] Updated scheduler with ${filteredResources.length} resources`);
-                
-                // Reload operations when filtering (critical for visibility)
-                console.log(`📡 [Planning Area Filter] Reloading operations...`);
-                const opsResponse = await fetch('/api/pt-operations');
-                if (opsResponse.ok) {
-                    const operations = await opsResponse.json();
-                    
-                    // Map operations to Bryntum event format
-                    const events = operations.map(op => ({
-                        id: op.id,
-                        name: op.name,
-                        resourceId: op.resourceId,
-                        startDate: op.scheduledStart,
-                        endDate: op.scheduledEnd,
-                        duration: op.duration,
-                        percentDone: op.percentFinished || 0,
-                        manually_scheduled: op.manually_scheduled || false,
-                        // Additional fields
-                        jobName: op.jobName,
-                        jobPriority: op.jobPriority,
-                        operationExternalId: op.operationExternalId,
-                        actualResourceId: op.actualResourceId
-                    }));
-                    
-                    // If filtering, only show events for filtered resources
-                    if (selectedPlanningArea !== 'all') {
-                        // Use resource_id (string like "FERM_003") not id (numeric like 7)
-                        const filteredResourceIds = new Set(filteredResources.map(r => r.resource_id));
-                        const filteredEvents = events.filter(e => filteredResourceIds.has(e.resourceId));
-                        console.log(`📊 [Planning Area Filter] Filtered resource IDs:`, Array.from(filteredResourceIds));
-                        console.log(`📊 [Planning Area Filter] Showing ${filteredEvents.length} operations for ${filteredResources.length} resources`);
-                        
-                        // Use proper Bryntum API to update events
-                        scheduler.suspendRefresh();
-                        scheduler.eventStore.removeAll();
-                        scheduler.eventStore.add(filteredEvents);
-                        scheduler.resumeRefresh();
-                    } else {
-                        console.log(`📊 [Planning Area Filter] Showing all ${events.length} operations`);
-                        scheduler.suspendRefresh();
-                        scheduler.eventStore.removeAll();
-                        scheduler.eventStore.add(events);
-                        scheduler.resumeRefresh();
-                    }
-                }
-                
-                // Run ASAP scheduling if filtering to specific area
                 if (selectedPlanningArea !== 'all') {
+                    console.log(`🎯 [Planning Area Filter] Applying filter for: ${selectedPlanningArea}`);
+                    
+                    // Filter resources by planning area
+                    scheduler.resourceStore.filter(resource => {
+                        return resource.planning_area === selectedPlanningArea;
+                    });
+                    
+                    // Get filtered resource IDs
+                    const filteredResourceIds = new Set(
+                        scheduler.resourceStore.records.map(r => r.id)
+                    );
+                    
+                    // Filter events to only show those assigned to filtered resources
+                    scheduler.eventStore.filter(event => {
+                        return filteredResourceIds.has(event.resourceId);
+                    });
+                    
+                    // Alternative: Use assignmentStore filtering (commented out for now)
+                    // scheduler.assignmentStore.filter(assignment => {
+                    //     const resource = scheduler.resourceStore.getById(assignment.resourceId);
+                    //     return resource && resource.planning_area === selectedPlanningArea;
+                    // });
+                    
+                    const visibleResources = scheduler.resourceStore.records.length;
+                    const visibleEvents = scheduler.eventStore.records.length;
+                    console.log(`✅ [Planning Area Filter] Showing ${visibleEvents} operations for ${visibleResources} resources`);
+                    
+                    // Run ASAP scheduling on filtered events
                     console.log(`🚀 [Planning Area Filter] Running ASAP scheduling`);
                     
-                    // Get all events
                     const events = scheduler.eventStore.records;
-                    // Use resource_id (string like "FERM_003") not id (numeric like 7)
-                    const filteredResourceIds = new Set(filteredResources.map(r => r.resource_id));
-                    
-                    // Filter events to those assigned to filtered resources
-                    const eventsToSchedule = events.filter(e => filteredResourceIds.has(e.resourceId));
-                    console.log(`📊 Scheduling ${eventsToSchedule.length} operations for ${filteredResources.length} resources`);
                     
                     // Simple ASAP: start each event as early as possible
                     const baseDate = new Date();
@@ -1553,7 +1509,7 @@
                     });
                     
                     // Schedule each event
-                    eventsToSchedule.forEach(event => {
+                    events.forEach(event => {
                         let earliestStart = new Date(baseDate);
                         
                         // Check dependencies
@@ -1572,6 +1528,10 @@
                     
                     scheduler.eventStore.commit();
                     console.log('✅ [Planning Area Filter] ASAP scheduling completed');
+                    
+                } else {
+                    console.log('📊 [Planning Area Filter] Showing all resources and operations');
+                    // Filters are already cleared above
                 }
                 
             } catch (error) {
