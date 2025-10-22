@@ -1018,7 +1018,7 @@
             <select id="planningAreaFilter" data-testid="select-planning-area">
                 <option value="all">All Areas</option>
             </select>
-            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;">
+            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;" onclick="applyPlanningAreaFilter()">
                 Apply Filter
             </button>
         </div>
@@ -3719,119 +3719,90 @@
                     }
                 });
                 
-                // Add event listener for planning area filter with race condition protection
-                setTimeout(() => {
-                    console.log('🔍 [DEBUG] Attempting to attach planning area filter button...');
+                // Global function for planning area filter (called by onclick attribute)
+                window.applyPlanningAreaFilter = async function() {
+                    console.log('🔥 [Planning Area Filter] Apply button clicked!');
                     const planningAreaFilter = document.getElementById('planningAreaFilter');
-                    const applyPlanningAreaButton = document.getElementById('applyPlanningAreaFilter');
-                    console.log('🔍 [DEBUG] Planning area filter element:', planningAreaFilter);
-                    console.log('🔍 [DEBUG] Apply button element:', applyPlanningAreaButton);
-                    
                     if (!planningAreaFilter) {
-                        console.error('❌ [DEBUG] Planning area filter dropdown not found!');
+                        console.error('❌ Planning area filter dropdown not found!');
                         return;
                     }
-                    if (!applyPlanningAreaButton) {
-                        console.error('❌ [DEBUG] Apply filter button not found!');
-                        return;
-                    }
+                    const selectedPlanningArea = planningAreaFilter.value;
+                    console.log(`📋 [Planning Area Filter] Selected: ${selectedPlanningArea}`);
                     
-                    let currentFetchController = null; // AbortController for fetch cancellation
-                    let requestToken = 0; // Monotonic token to identify latest request
-                    
-                    console.log('✅ [DEBUG] Planning area filter found, attaching button click listener');
-                    applyPlanningAreaButton.addEventListener('click', async () => {
-                        selectedPlanningArea = planningAreaFilter.value;
-                        console.log('🔥 [DEBUG] Apply Filter clicked! Planning Area:', selectedPlanningArea);
-                        console.log(`[Planning Area Filter] Selected: ${selectedPlanningArea}`);
+                    try {
+                        // Build resource URL with planning area filter
+                        const resourceUrl = selectedPlanningArea !== 'all' 
+                            ? `/api/resources?planningArea=${encodeURIComponent(selectedPlanningArea)}`
+                            : '/api/resources';
                         
-                        // Cancel any in-flight requests
-                        if (currentFetchController) {
-                            currentFetchController.abort();
-                            console.log('[Planning Area Filter] Cancelled previous request');
+                        console.log(`📡 [Planning Area Filter] Fetching: ${resourceUrl}`);
+                        
+                        // Fetch filtered resources
+                        const response = await fetch(resourceUrl);
+                        
+                        if (!response.ok) {
+                            throw new Error(`Failed to fetch resources: ${response.status}`);
                         }
                         
-                        // Create new AbortController for this request
-                        currentFetchController = new AbortController();
-                        const thisRequestToken = ++requestToken;
+                        const filteredResources = await response.json();
+                        console.log(`✅ [Planning Area Filter] Received ${filteredResources.length} resources`);
                         
-                        try {
-                            // Build resource URL with planning area filter
-                            const resourceUrl = selectedPlanningArea !== 'all' 
-                                ? `/api/resources?planningArea=${encodeURIComponent(selectedPlanningArea)}`
-                                : '/api/resources';
+                        // Update scheduler resources
+                        scheduler.resourceStore.data = filteredResources;
+                        console.log(`📊 [Planning Area Filter] Updated scheduler with ${filteredResources.length} resources`);
+                        
+                        // Run ASAP scheduling if filtering to specific area
+                        if (selectedPlanningArea !== 'all') {
+                            console.log(`🚀 [Planning Area Filter] Running ASAP scheduling`);
                             
-                            // Fetch filtered resources with abort signal
-                            const response = await fetch(resourceUrl, {
-                                signal: currentFetchController.signal
+                            // Get all events
+                            const events = scheduler.eventStore.records;
+                            const filteredResourceIds = new Set(filteredResources.map(r => r.id));
+                            
+                            // Filter events to those assigned to filtered resources
+                            const eventsToSchedule = events.filter(e => filteredResourceIds.has(e.resourceId));
+                            console.log(`📊 Scheduling ${eventsToSchedule.length} operations for ${filteredResources.length} resources`);
+                            
+                            // Simple ASAP: start each event as early as possible
+                            const baseDate = new Date();
+                            baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
+                            
+                            // Build dependency map
+                            const dependencyMap = new Map();
+                            scheduler.dependencyStore.records.forEach(dep => {
+                                if (!dependencyMap.has(dep.toEvent)) {
+                                    dependencyMap.set(dep.toEvent, []);
+                                }
+                                dependencyMap.get(dep.toEvent).push(dep.fromEvent);
                             });
                             
-                            if (!response.ok) {
-                                throw new Error(`Failed to fetch resources: ${response.status}`);
-                            }
-                            
-                            const filteredResources = await response.json();
-                            
-                            // Only apply results if this is still the latest request
-                            if (thisRequestToken !== requestToken) {
-                                console.log('[Planning Area Filter] Ignoring stale response');
-                                return;
-                            }
-                            
-                            console.log(`[Planning Area Filter] Loaded ${filteredResources.length} resources for: ${selectedPlanningArea}`);
-                            
-                            // Clear and reload resources in scheduler
-                            window.scheduler.resourceStore.removeAll();
-                            window.scheduler.resourceStore.add(filteredResources.map((r, i) => ({
-                                id: `resource_${i + 1}_${r.id}`,
-                                name: r.name,
-                                category: r.category || r.plantName || 'Default',
-                                sortOrder: i + 1
-                            })));
-                            
-                            // Trigger ASAP scheduling if specific area selected
-                            if (selectedPlanningArea !== 'all' && selectedPlanningArea !== lastScheduledArea) {
-                                console.log(`[Planning Area Filter] Running ASAP scheduling for: ${selectedPlanningArea}`);
+                            // Schedule each event
+                            eventsToSchedule.forEach(event => {
+                                let earliestStart = new Date(baseDate);
                                 
-                                // Set to forward scheduling (ASAP)
-                                window.scheduler.project.schedulingDirection = 'forward';
-                                window.scheduler.project.constraintsMode = 'honor';
-                                
-                                // Trigger the scheduling engine
-                                await window.scheduler.project.propagate();
-                                await window.scheduler.project.commitAsync();
-                                
-                                // Zoom to fit after scheduling
-                                window.scheduler.zoomToFit({
-                                    leftMargin: 50,
-                                    rightMargin: 50
+                                // Check dependencies
+                                const predecessors = dependencyMap.get(event.id) || [];
+                                predecessors.forEach(predId => {
+                                    const predEvent = scheduler.eventStore.getById(predId);
+                                    if (predEvent && predEvent.endDate > earliestStart) {
+                                        earliestStart = new Date(predEvent.endDate);
+                                    }
                                 });
                                 
-                                // Only update lastScheduledArea after successful completion
-                                lastScheduledArea = selectedPlanningArea;
-                                console.log('[Planning Area Filter] ASAP scheduling completed');
-                            } else if (selectedPlanningArea === 'all') {
-                                lastScheduledArea = '';
-                            }
-                        } catch (error) {
-                            // Ignore abort errors (expected when user changes filter quickly)
-                            if (error.name === 'AbortError') {
-                                console.log('[Planning Area Filter] Request cancelled (user changed filter)');
-                                return;
-                            }
-                            console.error('[Planning Area Filter] Error:', error);
-                            // Show error feedback to user
-                            const statusBar = document.getElementById('operationCount');
-                            if (statusBar) {
-                                const originalText = statusBar.textContent;
-                                statusBar.textContent = '❌ Failed to load resources';
-                                setTimeout(() => {
-                                    statusBar.textContent = originalText;
-                                }, 3000);
-                            }
+                                event.startDate = earliestStart;
+                                const durationMs = event.duration * 60 * 60 * 1000;
+                                event.endDate = new Date(earliestStart.getTime() + durationMs);
+                            });
+                            
+                            scheduler.eventStore.commit();
+                            console.log('✅ [Planning Area Filter] ASAP scheduling completed');
                         }
-                    });
-                }, 1000); // Wait 1 second for DOM to be ready
+                        
+                    } catch (error) {
+                        console.error('❌ [Planning Area Filter] Error:', error);
+                    }
+                }
                 
             } catch (error) {
                 console.error('Failed to initialize scheduler:', error);
