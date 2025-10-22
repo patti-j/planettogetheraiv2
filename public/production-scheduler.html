@@ -3781,11 +3781,9 @@
                     console.log('Assignments count:', assignments.length);
                     console.log('Dependencies count:', dependencies.length);
                     
-                    // Create a visible alert to show what's happening
-                    const debugDiv = document.createElement('div');
-                    debugDiv.style.cssText = 'position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 10000;';
-                    debugDiv.textContent = `Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`;
-                    document.body.appendChild(debugDiv);
+                    // Debug overlay removed - was obstructing the view
+                    // Keep console logging for debugging if needed
+                    console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
@@ -3794,10 +3792,7 @@
                         dependenciesData: dependencies
                     });
                     
-                    // Update debug message
-                    debugDiv.textContent = `✅ Loaded! Store has: ${scheduler.eventStore.count} events`;
-                    setTimeout(() => debugDiv.remove(), 5000);
-                    
+                    console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
                     
                     // Commit the data to finalize the loading
@@ -3805,11 +3800,8 @@
                     
                     console.log('✅ Data committed successfully');
                     
-                    // Update debug message to show success
-                    if (debugDiv) {
-                        debugDiv.textContent = `✅ Loaded ${scheduler.eventStore.count} operations on ${scheduler.resourceStore.count} resources`;
-                        setTimeout(() => debugDiv.remove(), 5000);
-                    }
+                    // Log success to console
+                    console.log(`✅ Loaded ${scheduler.eventStore.count} operations on ${scheduler.resourceStore.count} resources`);
                     
                     // Update status bar
                     updateStatus();
