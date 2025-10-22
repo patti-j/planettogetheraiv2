@@ -488,6 +488,7 @@ export default function DemandForecasting() {
               <Label>Model Type</Label>
               <Combobox
                 options={[
+                  { value: "Linear Regression", label: "Linear Regression" },
                   { value: "Random Forest", label: "Random Forest" },
                   { value: "ARIMA", label: "ARIMA" },
                   { value: "Prophet", label: "Prophet" }
