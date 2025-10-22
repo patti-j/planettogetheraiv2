@@ -3709,7 +3709,7 @@
                     project.schedulingDirection = 'forward';
                     await project.propagate();
                     console.log('✅ ASAP scheduling complete');
-                    updateSchedulerStatus();
+                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
                 window.scheduleALAP = async function() {
@@ -3718,7 +3718,7 @@
                     project.schedulingDirection = 'backward';
                     await project.propagate();
                     console.log('✅ ALAP scheduling complete');
-                    updateSchedulerStatus();
+                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
                 window.optimizeSchedule = async function(algorithmId) {
@@ -3726,7 +3726,7 @@
                     // Apply the selected algorithm
                     await applyAlgorithm(scheduler, algorithmId);
                     console.log(`✅ ${algorithmId} optimization complete`);
-                    updateSchedulerStatus();
+                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
                 console.log('[Scheduler] Global scheduling functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
@@ -3813,7 +3813,7 @@
                     }
                     
                     // Update status bar
-                    updateSchedulerStatus();
+                    updateStatus();
                     
                     // Zoom to fit after loading
                     if (scheduler.zoomToFit) {
