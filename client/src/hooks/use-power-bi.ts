@@ -433,6 +433,9 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
         // Apply initial responsive settings
         applyResponsive(embeddedReport, embedConfig);
         
+        // DEBUG: Log reportType to verify it's being passed correctly
+        console.log(`🔍 Report loaded - reportType: "${reportType}" (type: ${typeof reportType})`);
+        
         // Load pages for custom navigation and debug info - but NOT for paginated reports
         if (reportType !== "PaginatedReport") {
           try {
