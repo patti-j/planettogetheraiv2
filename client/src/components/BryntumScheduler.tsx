@@ -88,11 +88,28 @@ const ToastContainer: React.FC<{ toasts: string[] }> = ({ toasts }) => {
 
 // Global scheduler instance for testing
 let globalSchedulerInstance: any = null;
+let schedulerInitPromise: Promise<void> | null = null;
+let schedulerInitResolver: (() => void) | null = null;
+
+// Create a promise that resolves when scheduler is ready
+schedulerInitPromise = new Promise((resolve) => {
+  schedulerInitResolver = resolve;
+});
+
+// Wait for scheduler to be initialized
+const waitForScheduler = async () => {
+  if (globalSchedulerInstance) return true;
+  console.log('[Scheduler] Waiting for scheduler to initialize...');
+  await schedulerInitPromise;
+  return true;
+};
 
 // Global function to schedule ASAP - accessible from console
 (window as any).scheduleASAP = async () => {
+  await waitForScheduler();
+  
   if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    console.error('[Scheduler] Scheduler initialization failed');
     return;
   }
   
@@ -107,12 +124,15 @@ let globalSchedulerInstance: any = null;
   await globalSchedulerInstance.project.commitAsync();
   
   console.log('[Direct Scheduling] ASAP scheduling complete');
+  return true;
 };
 
 // Global function to schedule ALAP - accessible from console
 (window as any).scheduleALAP = async () => {
+  await waitForScheduler();
+  
   if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    console.error('[Scheduler] Scheduler initialization failed');
     return;
   }
   
@@ -127,12 +147,15 @@ let globalSchedulerInstance: any = null;
   await globalSchedulerInstance.project.commitAsync();
   
   console.log('[Direct Scheduling] ALAP scheduling complete');
+  return true;
 };
 
 // Global function to optimize schedule with different algorithms
 (window as any).optimizeSchedule = async (algorithmId?: string) => {
+  await waitForScheduler();
+  
   if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler not initialized yet. Please wait for the scheduler to load.');
+    console.error('[Scheduler] Scheduler initialization failed');
     return;
   }
   
@@ -148,6 +171,8 @@ let globalSchedulerInstance: any = null;
     console.log(`[Scheduler Optimization] Algorithm ${algorithm} not yet implemented, using ASAP`);
     await (window as any).scheduleASAP();
   }
+  
+  return true;
 };
 
 console.log('[Scheduler] Global test functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
@@ -1066,7 +1091,17 @@ const BryntumScheduler: React.FC = () => {
         
         // Set the global scheduler instance for testing
         globalSchedulerInstance = scheduler;
-        console.log('[Scheduler] Global scheduler instance set - test functions now available');
+        
+        // Resolve the initialization promise so functions can proceed
+        if (schedulerInitResolver) {
+          schedulerInitResolver();
+          schedulerInitResolver = null; // Clear the resolver
+        }
+        
+        console.log('[Scheduler] ✅ Scheduler initialized! Test functions now available:');
+        console.log('  • window.scheduleASAP() - Forward scheduling');
+        console.log('  • window.scheduleALAP() - Backward scheduling');
+        console.log('  • window.optimizeSchedule(algorithmId) - Run optimization');
 
         // Cleanup overlaps after initial load
         setTimeout(async () => {
