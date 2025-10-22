@@ -453,7 +453,7 @@ export default function Dashboard() {
         currentOperationRef.current = null;
       }
     }
-  }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast]);
+  }, [isAuthenticated, selectedWorkspaceId, embedReport, showMobileSidebar, toast, allReports]);
 
   // Handle orientation changes to switch between mobile/desktop layouts with proper debouncing
   useEffect(() => {
