@@ -103,6 +103,10 @@ def train_random_forest(df, model_id):
     # Create features
     df_features = create_features(df.copy())
     
+    # Check if we have enough data after feature engineering
+    if len(df_features) < 2:
+        raise ValueError(f"Random Forest requires at least 2 data points after feature engineering. Found only {len(df_features)} row(s). Please select a different item or date range with more historical data.")
+    
     # Split features and target
     feature_cols = [col for col in df_features.columns if col not in ['date', 'value']]
     X = df_features[feature_cols]
@@ -139,6 +143,10 @@ def train_random_forest(df, model_id):
 def train_arima(df, model_id):
     """Train ARIMA model"""
     values = df['value'].values
+    
+    # ARIMA requires at least 2 data points
+    if len(values) < 2:
+        raise ValueError(f"ARIMA requires at least 2 data points. Found only {len(values)} row(s). Please select a different item or date range with more historical data.")
     
     # Auto-select ARIMA parameters (p,d,q)
     # For simplicity, using common parameters. In production, use auto_arima
@@ -198,6 +206,13 @@ def train_prophet(df, model_id):
     # Prepare data for Prophet (requires 'ds' and 'y' columns)
     prophet_df = df[['date', 'value']].copy()
     prophet_df.columns = ['ds', 'y']
+    
+    # Remove any NaN values
+    prophet_df = prophet_df.dropna()
+    
+    # Prophet requires at least 2 data points
+    if len(prophet_df) < 2:
+        raise ValueError(f"Prophet requires at least 2 data points. Found only {len(prophet_df)} row(s). Please select a different item or date range with more historical data.")
     
     # Train Prophet model
     model = Prophet(
