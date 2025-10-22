@@ -402,6 +402,12 @@ export default function Dashboard() {
             // Get the report type to pass to embedReport
             const selectedReport = allReports?.find(r => r.id === reportId);
             const reportType = selectedReport?.reportType;
+            console.log(`🔍 [Reports.tsx] Embedding report:`, {
+              reportId,
+              selectedReport: selectedReport ? { id: selectedReport.id, name: selectedReport.name, reportType: selectedReport.reportType } : null,
+              reportType,
+              allReportsCount: allReports?.length
+            });
             
             const config = await embedReport({ 
               workspaceId: selectedWorkspaceId, 
