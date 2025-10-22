@@ -1545,13 +1545,18 @@ export type ReportEmbedConfig = {
   reportId: string;
   embedUrl: string;
   accessToken: string;
-  reportType?: 'Report' | 'PaginatedReport'; // Report type for proper embedding
+  reportType?: 'Report' | 'PaginatedReport'; // Report type for backend token generation (frontend always uses type: 'report')
   workspaceId?: string; // Workspace ID for token refresh
   datasetId?: string; // Dataset ID for dataset refresh
   expiration?: string; // ISO string indicating when embed token expires
   tokenId?: string; // Token ID for tracking
+  parameterValues?: Array<{ name: string; value: string }>; // For paginated report parameters (rp: prefix)
   settings: {
     filterPaneEnabled: boolean;
+    parameterPanel?: { // For paginated reports
+      expanded?: boolean;
+      visible?: boolean;
+    };
     navContentPaneEnabled: boolean;
     background: number;
     zoomLevel?: number;

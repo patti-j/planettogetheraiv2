@@ -2,7 +2,7 @@ import * as models from "powerbi-models";
 import { type ReportEmbedConfig } from "@shared/schema";
 
 export interface PowerBIConfig {
-  type: "report" | "paginatedReport";
+  type: "report"; // Power BI SDK uses 'report' for both standard and paginated reports
   tokenType: number;
   accessToken: string;
   embedUrl: string;
@@ -45,38 +45,55 @@ export function createPowerBIConfig(
   
   console.log(`🔧 Creating Power BI config: type=${embedConfig.reportType || 'Report'}, mobile=${mobile}, accessLevel=${accessLevel}`);
 
-  // Determine embed type based on report type
-  const embedType: "report" | "paginatedReport" = isPaginatedReport ? "paginatedReport" : "report";
+  // IMPORTANT: Power BI JavaScript SDK uses type: 'report' for BOTH standard and paginated reports
+  // There is no separate 'paginatedReport' type in the SDK
+  // Build settings object with optional parameter panel for paginated reports
+  const settings: any = {
+    // IMPORTANT: do NOT set navContentPaneEnabled at all
+    // (it forces the legacy left pane and ignores Bottom)
+    filterPaneEnabled: !mobile && !!embedConfig.settings.filterPaneEnabled,
+    background: 1,
+    layoutType: mobile
+      ? models.LayoutType.MobilePortrait
+      : models.LayoutType.Master,
+    bars: {
+      statusBar: { visible: !mobile },
+      actionBar: { visible: true },
+    },
+    panes: {
+      pageNavigation: {
+        visible: true,
+        position: models.PageNavigationPosition.Bottom, // Bottom for desktop + mobile
+      },
+      filters: { visible: !mobile && !!embedConfig.settings.filterPaneEnabled },
+    },
+  };
 
-  return {
-    type: embedType,
+  // Add parameter panel settings for paginated reports
+  if (isPaginatedReport && embedConfig.settings.parameterPanel) {
+    settings.parameterPanel = embedConfig.settings.parameterPanel;
+    console.log(`📊 Adding parameter panel settings for paginated report:`, embedConfig.settings.parameterPanel);
+  }
+
+  // Build the final config
+  const config: any = {
+    type: "report",
     tokenType: 1,
     accessToken: embedConfig.accessToken,
     embedUrl: embedConfig.embedUrl,
     id: embedConfig.reportId,
     permissions: 7,
     viewMode: accessLevel === "Edit" ? 1 : 0,
-    settings: {
-      // IMPORTANT: do NOT set navContentPaneEnabled at all
-      // (it forces the legacy left pane and ignores Bottom)
-      filterPaneEnabled: !mobile && !!embedConfig.settings.filterPaneEnabled,
-      background: 1,
-      layoutType: mobile
-        ? models.LayoutType.MobilePortrait
-        : models.LayoutType.Master,
-      bars: {
-        statusBar: { visible: !mobile },
-        actionBar: { visible: true },
-      },
-      panes: {
-        pageNavigation: {
-          visible: true,
-          position: models.PageNavigationPosition.Bottom, // Bottom for desktop + mobile
-        },
-        filters: { visible: !mobile && !!embedConfig.settings.filterPaneEnabled },
-      },
-    },
+    settings,
   };
+
+  // Add parameter values for paginated reports
+  if (isPaginatedReport && embedConfig.parameterValues) {
+    config.parameterValues = embedConfig.parameterValues;
+    console.log(`📊 Adding parameter values for paginated report:`, embedConfig.parameterValues);
+  }
+
+  return config;
 }
 
 export function loadPowerBIScript(): Promise<any> {
