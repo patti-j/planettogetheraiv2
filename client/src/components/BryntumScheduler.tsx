@@ -378,7 +378,22 @@ const BryntumScheduler: React.FC = () => {
         // Commit initial data after it's loaded into stores
         setTimeout(() => {
           if (schedulerRef.current?.instance) {
-            schedulerRef.current.instance.project.commitAsync();
+            const scheduler = schedulerRef.current.instance;
+            scheduler.project.commitAsync();
+            
+            // Fallback initialization if paint event hasn't fired
+            if (!globalSchedulerInstance) {
+              console.log('[Scheduler] Fallback initialization after data load');
+              globalSchedulerInstance = scheduler;
+              if (schedulerInitResolver) {
+                schedulerInitResolver();
+                schedulerInitResolver = null;
+              }
+              console.log('[Scheduler] ✅ Scheduler initialized via data load fallback! Test functions available.');
+              console.log('  • window.scheduleASAP() - Forward scheduling');
+              console.log('  • window.scheduleALAP() - Backward scheduling');
+              console.log('  • window.optimizeSchedule(algorithmId) - Run optimization');
+            }
           }
         }, 100);
       } catch (error) {
