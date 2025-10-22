@@ -3625,8 +3625,11 @@
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0);
                     
-                    // Schedule drum resource optimally
-                    const drumEvents = events.filter(e => e.resourceId === drumResourceId);
+                    // Schedule drum resource optimally - use assignments to find resource
+                    const drumEvents = events.filter(e => {
+                        const assignment = scheduler.assignmentStore.find(a => a.eventId === e.id);
+                        return assignment && assignment.resourceId === drumResourceId;
+                    });
                     let drumTime = new Date(baseDate);
                     
                     drumEvents.sort((a, b) => b.duration - a.duration); // Longest first
@@ -3638,34 +3641,45 @@
                         drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000); // 15 min buffer for drum
                     });
                     
-                    // Schedule feeding resources
-                    const feedingEvents = events.filter(e => e.resourceId !== drumResourceId);
+                    // Schedule feeding resources - use assignments to find resource
+                    const feedingEvents = events.filter(e => {
+                        const assignment = scheduler.assignmentStore.find(a => a.eventId === e.id);
+                        return assignment && assignment.resourceId !== drumResourceId;
+                    });
                     const resourceSchedules = {};
                     
                     feedingEvents.forEach(event => {
-                        if (!resourceSchedules[event.resourceId]) {
+                        const assignment = scheduler.assignmentStore.find(a => a.eventId === event.id);
+                        const resourceId = assignment ? assignment.resourceId : null;
+                        if (!resourceId) return;
+                        
+                        if (!resourceSchedules[resourceId]) {
                             const feedTime = new Date(baseDate);
                             feedTime.setHours(7, 0, 0, 0); // Same start time
-                            resourceSchedules[event.resourceId] = feedTime;
+                            resourceSchedules[resourceId] = feedTime;
                         }
                         
-                        event.startDate = new Date(resourceSchedules[event.resourceId]);
+                        event.startDate = new Date(resourceSchedules[resourceId]);
                         const durationMs = event.duration * 60 * 60 * 1000;
                         event.endDate = new Date(event.startDate.getTime() + durationMs);
-                        resourceSchedules[event.resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
+                        resourceSchedules[resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                     });
                     
                     scheduler.eventStore.commit();
                     console.log('✅ Drum (TOC) scheduling completed');
                     
-                    // VERIFY no overlaps
+                    // VERIFY no overlaps - use assignments to track resources
                     let overlapsFound = 0;
                     const allResourceEvents = {};
                     events.forEach(event => {
-                        if (!allResourceEvents[event.resourceId]) {
-                            allResourceEvents[event.resourceId] = [];
+                        const assignment = scheduler.assignmentStore.find(a => a.eventId === event.id);
+                        const resourceId = assignment ? assignment.resourceId : null;
+                        if (!resourceId) return;
+                        
+                        if (!allResourceEvents[resourceId]) {
+                            allResourceEvents[resourceId] = [];
                         }
-                        allResourceEvents[event.resourceId].push(event);
+                        allResourceEvents[resourceId].push(event);
                     });
                     
                     Object.keys(allResourceEvents).forEach(resourceId => {
@@ -3704,11 +3718,15 @@
                 console.log('📊 Created assignments:', assignments.length);
                 console.log('📊 First 3 assignments:', assignments.slice(0, 3));
                 
-                // Remove resourceId from events when using assignments
-                // (Bryntum uses assignments to link events to resources)
+                // CRITICAL FIX: Create clean events without resourceId for the scheduler
+                // Keep the original events array intact for internal processing
                 const eventsForScheduler = events.map(event => {
+                    // Extract resourceId before passing to scheduler
                     const { resourceId, ...eventWithoutResource } = event;
-                    return eventWithoutResource;
+                    return {
+                        ...eventWithoutResource,
+                        // Ensure no resourceId property exists to avoid assignment mode conflicts
+                    };
                 });
                 
                 // Load the inline data into the scheduler project
@@ -3728,7 +3746,7 @@
                     
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
-                        eventsData: eventsForScheduler, // Use events without resourceId
+                        eventsData: eventsForScheduler, // Events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
                         dependenciesData: dependencies
                     });
