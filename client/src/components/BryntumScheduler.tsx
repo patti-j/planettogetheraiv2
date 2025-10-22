@@ -263,7 +263,7 @@ const BryntumScheduler: React.FC = () => {
           })),
         ];
 
-        // Build events
+        // Build events - IMPORTANT: Do NOT include resourceId to avoid single-assignment mode conflict
         const eventsData: any[] = [];
         const seen = new Set<string>();
         for (let i = 0; i < rawOperations.length; i++) {
@@ -288,7 +288,8 @@ const BryntumScheduler: React.FC = () => {
             end.setHours(end.getHours() + hrs);
           }
 
-          eventsData.push({
+          // Create event WITHOUT resourceId for multi-assignment mode
+          const eventData: any = {
             id,
             name: op.name ?? op.operationName ?? `Op ${i + 1}`,
             startDate: start || null,
@@ -302,7 +303,13 @@ const BryntumScheduler: React.FC = () => {
             resizable: true,
             jobName: op.jobName || op.job_name || '',
             jobId: op.jobId || op.job_id || '',
-          });
+          };
+          
+          // Explicitly delete any resourceId that might have snuck in
+          delete eventData.resourceId;
+          delete eventData.resource_id;
+          
+          eventsData.push(eventData);
         }
 
         // Build assignments
