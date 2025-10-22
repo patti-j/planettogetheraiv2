@@ -3,6 +3,9 @@ import sql from 'mssql';
 
 const router = Router();
 
+// Python ML service URL
+const ML_SERVICE_URL = 'http://localhost:8000';
+
 // SQL Server connection config from environment variables
 const getSqlConfig = () => ({
   server: process.env.SQL_SERVER || '',
@@ -254,29 +257,38 @@ router.post('/train', async (req, res) => {
     }
 
     // Format training data
-    const trainingData = result.recordset.map((r: any) => ({
+    const historicalData = result.recordset.map((r: any) => ({
       date: new Date(r.date).toISOString().split('T')[0],
       value: r.value
     }));
 
-    // Apply simple moving average for smoothing
-    const values = trainingData.map((d: any) => d.value);
-    const smoothed = simpleMovingAverage(values, Math.min(7, values.length));
-    
-    // Calculate training metrics
-    const mape = calculateMAPE(values, smoothed);
-    const rmse = calculateRMSE(values, smoothed);
-    const accuracy = Math.max(0, 100 - mape); // Simple accuracy calculation
+    // Create unique model ID based on item, filters, and timestamp
+    const modelId = `${selectedItem}_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
+
+    // Call Python ML service to train the model
+    const mlResponse = await fetch(`${ML_SERVICE_URL}/train`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        modelType: modelType || 'Random Forest',
+        historicalData,
+        modelId
+      })
+    });
+
+    if (!mlResponse.ok) {
+      const error = await mlResponse.json();
+      return res.status(mlResponse.status).json({ error: error.error || 'ML service error' });
+    }
+
+    const mlResult = await mlResponse.json();
 
     res.json({
       success: true,
-      modelType: modelType || 'Random Forest',
-      metrics: {
-        mape,
-        rmse,
-        accuracy
-      },
-      trainingDataPoints: trainingData.length,
+      modelType: mlResult.modelType,
+      metrics: mlResult.metrics,
+      trainingDataPoints: historicalData.length,
+      modelId,
       filters: {
         planningAreas: selectedPlanningAreas || [],
         scenarios: selectedScenarios || []
@@ -346,54 +358,37 @@ router.post('/forecast', async (req, res) => {
     }
 
     // Format historical data
-    const historical = result.recordset.map((r: any) => ({
+    const historicalData = result.recordset.map((r: any) => ({
       date: new Date(r.date).toISOString().split('T')[0],
       value: r.value
     }));
 
-    // Apply simple moving average for smoothing
-    const values = historical.map((h: any) => h.value);
-    const smoothed = simpleMovingAverage(values, Math.min(7, values.length));
-    
-    // Calculate metrics on historical data
-    const mape = calculateMAPE(values, smoothed);
-    const rmse = calculateRMSE(values, smoothed);
+    // Create unique model ID (must match training)
+    const modelId = `${selectedItem}_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
 
-    // Generate forecast using last trend
-    const lastDate = new Date(historical[historical.length - 1].date);
-    const lastValue = smoothed[smoothed.length - 1];
-    
-    // Calculate simple trend from last 30 days or available data
-    const trendWindow = Math.min(30, values.length);
-    const trendValues = values.slice(-trendWindow);
-    const avgChange = trendValues.length > 1 
-      ? (trendValues[trendValues.length - 1] - trendValues[0]) / trendValues.length
-      : 0;
+    // Call Python ML service to generate forecast
+    const mlResponse = await fetch(`${ML_SERVICE_URL}/forecast`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        modelId,
+        forecastDays: forecastDays || 30,
+        historicalData
+      })
+    });
 
-    const forecast = [];
-    for (let i = 1; i <= forecastDays; i++) {
-      const forecastDate = new Date(lastDate);
-      forecastDate.setDate(forecastDate.getDate() + i);
-      
-      const forecastValue = Math.max(0, lastValue + (avgChange * i));
-      const stdDev = Math.sqrt(rmse);
-      
-      forecast.push({
-        date: forecastDate.toISOString().split('T')[0],
-        value: forecastValue,
-        lower: Math.max(0, forecastValue - (1.96 * stdDev)),
-        upper: forecastValue + (1.96 * stdDev)
-      });
+    if (!mlResponse.ok) {
+      const error = await mlResponse.json();
+      return res.status(mlResponse.status).json({ error: error.error || 'ML service error' });
     }
 
+    const mlResult = await mlResponse.json();
+
     res.json({
-      historical,
-      forecast,
-      metrics: {
-        mape,
-        rmse
-      },
-      modelType: modelType || 'random_forest',
+      historical: mlResult.historical,
+      forecast: mlResult.forecast,
+      metrics: mlResult.metrics,
+      modelType: mlResult.modelType,
       filters: {
         planningAreas: selectedPlanningAreas || [],
         scenarios: selectedScenarios || []

@@ -51,6 +51,7 @@ export default function DemandForecasting() {
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
   const [trainingMetrics, setTrainingMetrics] = useState<{ accuracy?: number; mape?: number; rmse?: number } | null>(null);
+  const [modelId, setModelId] = useState<string | null>(null);
   
   // Validation errors
   const [planningAreaError, setPlanningAreaError] = useState<boolean>(false);
@@ -144,7 +145,7 @@ export default function DemandForecasting() {
   });
 
   // Train model mutation
-  const trainMutation = useMutation<{ metrics: { accuracy?: number; mape?: number; rmse?: number } }, Error, void>({
+  const trainMutation = useMutation<{ metrics: { accuracy?: number; mape?: number; rmse?: number }; modelId?: string; modelType?: string }, Error, void>({
     mutationFn: async () => {
       const response = await fetch("/api/forecasting/train", {
         method: "POST",
@@ -172,14 +173,18 @@ export default function DemandForecasting() {
     onSuccess: (data) => {
       setIsModelTrained(true);
       setTrainingMetrics(data.metrics);
+      if (data.modelId) {
+        setModelId(data.modelId);
+      }
       toast({
         title: "Model Trained Successfully",
-        description: `${modelType} model trained with MAPE: ${data.metrics.mape?.toFixed(2)}%`,
+        description: `${data.modelType || modelType} model trained with MAPE: ${data.metrics.mape?.toFixed(2)}%`,
       });
     },
     onError: (error) => {
       setIsModelTrained(false);
       setTrainingMetrics(null);
+      setModelId(null);
       toast({
         title: "Training Failed",
         description: error.message,
