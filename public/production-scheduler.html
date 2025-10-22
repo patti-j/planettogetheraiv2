@@ -1503,8 +1503,10 @@
                     
                     // If filtering, only show events for filtered resources
                     if (selectedPlanningArea !== 'all') {
-                        const filteredResourceIds = new Set(filteredResources.map(r => r.id));
+                        // Use resource_id (string like "FERM_003") not id (numeric like 7)
+                        const filteredResourceIds = new Set(filteredResources.map(r => r.resource_id));
                         const filteredEvents = events.filter(e => filteredResourceIds.has(e.resourceId));
+                        console.log(`📊 [Planning Area Filter] Filtered resource IDs:`, Array.from(filteredResourceIds));
                         console.log(`📊 [Planning Area Filter] Showing ${filteredEvents.length} operations for ${filteredResources.length} resources`);
                         scheduler.eventStore.data = filteredEvents;
                     } else {
@@ -1519,7 +1521,8 @@
                     
                     // Get all events
                     const events = scheduler.eventStore.records;
-                    const filteredResourceIds = new Set(filteredResources.map(r => r.id));
+                    // Use resource_id (string like "FERM_003") not id (numeric like 7)
+                    const filteredResourceIds = new Set(filteredResources.map(r => r.resource_id));
                     
                     // Filter events to those assigned to filtered resources
                     const eventsToSchedule = events.filter(e => filteredResourceIds.has(e.resourceId));
