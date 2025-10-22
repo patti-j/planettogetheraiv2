@@ -1474,8 +1474,11 @@
                 const filteredResources = await response.json();
                 console.log(`✅ [Planning Area Filter] Received ${filteredResources.length} resources`);
                 
-                // Update scheduler resources
-                scheduler.resourceStore.data = filteredResources;
+                // Update scheduler resources - using proper Bryntum API
+                scheduler.suspendRefresh();
+                scheduler.resourceStore.removeAll();
+                scheduler.resourceStore.add(filteredResources);
+                scheduler.resumeRefresh();
                 console.log(`📊 [Planning Area Filter] Updated scheduler with ${filteredResources.length} resources`);
                 
                 // Reload operations when filtering (critical for visibility)
@@ -1508,10 +1511,18 @@
                         const filteredEvents = events.filter(e => filteredResourceIds.has(e.resourceId));
                         console.log(`📊 [Planning Area Filter] Filtered resource IDs:`, Array.from(filteredResourceIds));
                         console.log(`📊 [Planning Area Filter] Showing ${filteredEvents.length} operations for ${filteredResources.length} resources`);
-                        scheduler.eventStore.data = filteredEvents;
+                        
+                        // Use proper Bryntum API to update events
+                        scheduler.suspendRefresh();
+                        scheduler.eventStore.removeAll();
+                        scheduler.eventStore.add(filteredEvents);
+                        scheduler.resumeRefresh();
                     } else {
                         console.log(`📊 [Planning Area Filter] Showing all ${events.length} operations`);
-                        scheduler.eventStore.data = events;
+                        scheduler.suspendRefresh();
+                        scheduler.eventStore.removeAll();
+                        scheduler.eventStore.add(events);
+                        scheduler.resumeRefresh();
                     }
                 }
                 
