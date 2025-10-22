@@ -41,7 +41,7 @@ export default function PlanningAreaManager() {
 
   const updateMutation = useMutation({
     mutationFn: async (updates: { resourceId: number; planningArea: string }[]) => {
-      return apiRequest('/api/resources/planning-areas', 'PATCH', { updates });
+      return apiRequest('PATCH', '/api/resources/planning-areas', { updates });
     },
     onSuccess: () => {
       toast({

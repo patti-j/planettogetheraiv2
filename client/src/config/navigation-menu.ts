@@ -6,7 +6,7 @@ import {
   Package, User, LogOut, Code, Layers, Presentation, Sparkles, Grid3X3, 
   Eye, FileX, Clock, Monitor, History, X, Upload, Pin, PinOff, PlayCircle, Search, 
   Network, ArrowRightLeft, Puzzle, Layout, Home, AlertCircle, FileSearch, Globe, Calendar, GitBranch,
-  Workflow, Users, ArrowUpDown, FolderKanban, Disc
+  Workflow, Users, ArrowUpDown, FolderKanban, Disc, MapPin
 } from "lucide-react";
 
 // Unified navigation menu structure for both desktop and mobile
@@ -105,6 +105,7 @@ export const navigationGroups: NavigationGroup[] = [
     features: [
       { icon: Upload, label: "Master Data Setup", href: "/data-import", feature: "systems-management", action: "view", color: "bg-green-600" },
       { icon: FileText, label: "Master Data Editor", href: "/master-data", feature: "systems-management", action: "view", color: "bg-emerald-600" },
+      { icon: MapPin, label: "Planning Area Management", href: "/planning-area-management", feature: "systems-management", action: "view", color: "bg-teal-600" },
       { icon: Search, label: "Database Explorer", href: "/database-explorer", feature: "systems-management", action: "view", color: "bg-blue-600" },
       { icon: Database, label: "Data Schema View", href: "/data-schema", feature: "systems-management", action: "view", color: "bg-indigo-600" },
       { icon: FileText, label: "Table Field Documentation", href: "/table-field-viewer", feature: "systems-management", action: "view", color: "bg-slate-600" },
