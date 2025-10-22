@@ -617,13 +617,14 @@ export default function Dashboard() {
                               <TooltipTrigger asChild>
                                 <TabsTrigger
                                   value="all"
-                                  className="flex items-center justify-center text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  className="flex flex-col items-center justify-center gap-1 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 pt-1 min-h-12 transition-all duration-200"
                                   style={{
                                     borderBottom: reportTypeFilter === "all" ? "2px solid black" : "2px solid transparent"
                                   }}
                                   data-testid="button-filter-all"
                                 >
-                                  All
+                                  <ReportTypeMark type="all" showLabel={false} />
+                                  <span className="text-[10px]">All</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
@@ -634,13 +635,14 @@ export default function Dashboard() {
                               <TooltipTrigger asChild>
                                 <TabsTrigger
                                   value="standard"
-                                  className="flex items-center justify-center text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  className="flex flex-col items-center justify-center gap-1 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 pt-1 min-h-12 transition-all duration-200"
                                   style={{
                                     borderBottom: reportTypeFilter === "standard" ? "2px solid black" : "2px solid transparent"
                                   }}
                                   data-testid="button-filter-standard"
                                 >
-                                  Standard
+                                  <ReportTypeMark type="standard" showLabel={false} />
+                                  <span className="text-[10px]">Standard</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
@@ -651,13 +653,14 @@ export default function Dashboard() {
                               <TooltipTrigger asChild>
                                 <TabsTrigger
                                   value="custom"
-                                  className="flex items-center justify-center text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  className="flex flex-col items-center justify-center gap-1 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 pt-1 min-h-12 transition-all duration-200"
                                   style={{
                                     borderBottom: reportTypeFilter === "custom" ? "2px solid black" : "2px solid transparent"
                                   }}
                                   data-testid="button-filter-custom"
                                 >
-                                  Custom
+                                  <ReportTypeMark type="custom" showLabel={false} />
+                                  <span className="text-[10px]">Custom</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
@@ -668,13 +671,14 @@ export default function Dashboard() {
                               <TooltipTrigger asChild>
                                 <TabsTrigger
                                   value="paginated"
-                                  className="flex items-center justify-center text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 min-h-10 transition-all duration-200"
+                                  className="flex flex-col items-center justify-center gap-1 text-xs font-medium data-[state=active]:bg-transparent data-[state=active]:shadow-none rounded-none pb-2 pt-1 min-h-12 transition-all duration-200"
                                   style={{
                                     borderBottom: reportTypeFilter === "paginated" ? "2px solid black" : "2px solid transparent"
                                   }}
                                   data-testid="button-filter-paginated"
                                 >
-                                  Paginated
+                                  <ReportTypeMark type="paginated" showLabel={false} />
+                                  <span className="text-[10px]">Paginated</span>
                                 </TabsTrigger>
                               </TooltipTrigger>
                               <TooltipContent className="bg-white border border-gray-200 text-black shadow-md">
