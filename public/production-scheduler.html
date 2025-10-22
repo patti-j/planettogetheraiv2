@@ -1611,6 +1611,7 @@
                 let resources = [];
                 let ptOperations = [];
                 let resourceCapabilities = {};
+                let fetchedDependencies = []; // Store dependencies at a higher scope
                 
                 try {
                     // Fetch resources, PT operations, and dependencies from the backend APIs
@@ -1707,6 +1708,25 @@
                         }
                     } else {
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
+                    }
+                    
+                    // Process dependencies
+                    if (dependenciesResponse && dependenciesResponse.ok) {
+                        const deps = await dependenciesResponse.json();
+                        fetchedDependencies = deps.map(dep => ({
+                            id: dep.id,
+                            from: dep.fromEvent,  // Correct backend field name
+                            to: dep.toEvent,      // Correct backend field name  
+                            type: dep.type || 2, // Default to Finish-to-Start
+                            lag: dep.lag || 0,
+                            lagUnit: dep.lagUnit || 'hour'
+                        }));
+                        console.log('✅ Dependencies fetched from database:', fetchedDependencies.length);
+                        if (fetchedDependencies.length > 0) {
+                            console.log('Sample dependency:', fetchedDependencies[0]);
+                        }
+                    } else {
+                        console.warn('Failed to fetch dependencies, using empty array');
                     }
                     
                     // Process resource capabilities
@@ -1928,29 +1948,8 @@
                     // Keep events array empty - better to show an empty scheduler than wrong data
                 }
 
-                // Load dependencies from database instead of generating them
-                let dependencies = [];
-                try {
-                    if (dependenciesResponse && dependenciesResponse.ok) {
-                        const fetchedDeps = await dependenciesResponse.json();
-                        dependencies = fetchedDeps.map(dep => ({
-                            id: dep.id,
-                            from: dep.fromEvent,  // Correct backend field name
-                            to: dep.toEvent,      // Correct backend field name  
-                            type: dep.type || 2, // Default to Finish-to-Start
-                            lag: dep.lag || 0,
-                            lagUnit: dep.lagUnit || 'hour'
-                        }));
-                        console.log('✅ Dependencies fetched from database:', dependencies.length);
-                        if (dependencies.length > 0) {
-                            console.log('Sample dependency:', dependencies[0]);
-                        }
-                    } else {
-                        console.warn('Failed to fetch dependencies, using empty array');
-                    }
-                } catch (depError) {
-                    console.error('Error processing dependencies:', depError);
-                }
+                // Use the dependencies that were fetched earlier
+                let dependencies = fetchedDependencies || [];
                 
                 console.log('===== DEPENDENCY DATA FROM DATABASE =====');
                 console.log('Total events:', events.length);
