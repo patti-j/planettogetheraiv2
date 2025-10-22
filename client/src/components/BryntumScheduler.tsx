@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { BryntumSchedulerPro } from '@bryntum/schedulerpro-react';
 import '@bryntum/schedulerpro/schedulerpro.classic-light.css';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Type definitions
 interface Resource {
@@ -186,6 +193,8 @@ const BryntumScheduler: React.FC = () => {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [dependencies, setDependencies] = useState<any[]>([]);
   const [capabilities, setCapabilities] = useState<Capabilities>({});
+  const [selectedPlanningArea, setSelectedPlanningArea] = useState<string>('all');
+  const [planningAreas, setPlanningAreas] = useState<string[]>([]);
 
   // Helper functions
   const A = (p: any): any[] => {
@@ -234,12 +243,17 @@ const BryntumScheduler: React.FC = () => {
     return 'Other';
   };
 
-  // Load data on mount
+  // Load data on mount or when planning area changes
   useEffect(() => {
     const loadData = async () => {
       try {
+        // Build resource URL with planning area filter
+        const resourceUrl = selectedPlanningArea !== 'all' 
+          ? `/api/resources?planningArea=${encodeURIComponent(selectedPlanningArea)}`
+          : '/api/resources';
+        
         const [r, o, c] = await Promise.all([
-          fetch('/api/resources'),
+          fetch(resourceUrl),
           fetch('/api/pt-operations'),
           fetch('/api/resource-capabilities'),
         ]);
@@ -247,6 +261,17 @@ const BryntumScheduler: React.FC = () => {
         const resourcesData = r.ok ? await r.json() : [];
         const operationsData = o.ok ? await o.json() : [];
         const capabilitiesData = c.ok ? await c.json() : {};
+        
+        // Extract unique planning areas for the filter dropdown
+        const areas = new Set<string>();
+        if (Array.isArray(resourcesData)) {
+          resourcesData.forEach((resource: any) => {
+            if (resource.planning_area) {
+              areas.add(resource.planning_area);
+            }
+          });
+        }
+        setPlanningAreas(Array.from(areas).sort());
 
         const rawResources = A(resourcesData);
         const rawOperations = A(operationsData);
@@ -411,7 +436,33 @@ const BryntumScheduler: React.FC = () => {
     };
 
     loadData();
-  }, []);
+  }, [selectedPlanningArea]);
+  
+  // Automatically run ASAP scheduling when planning area changes
+  useEffect(() => {
+    const scheduler = schedulerRef.current?.instance;
+    if (scheduler && selectedPlanningArea !== 'all' && resources.length > 0) {
+      console.log(`[Planning Area Filter] Running ASAP scheduling for: ${selectedPlanningArea}`);
+      
+      // Set to forward scheduling (ASAP)
+      scheduler.project.schedulingDirection = 'forward';
+      scheduler.project.constraintsMode = 'honor';
+      
+      // Trigger the scheduling engine
+      scheduler.project.propagate().then(() => {
+        return scheduler.project.commitAsync();
+      }).then(() => {
+        // Zoom to fit after scheduling
+        scheduler.zoomToFit({
+          leftMargin: 50,
+          rightMargin: 50
+        });
+        console.log('[Planning Area Filter] ASAP scheduling completed');
+      }).catch((err: any) => {
+        console.error('[Planning Area Filter] Scheduling error:', err);
+      });
+    }
+  }, [selectedPlanningArea, resources]);
 
   // Helper functions for scheduler operations
   const cleanupOverlaps = async () => {
@@ -1037,14 +1088,6 @@ const BryntumScheduler: React.FC = () => {
         '|' as const,
         {
           type: 'button' as const,
-          text: 'Pack Unscheduled',
-          cls: 'b-raised',
-          onClick: async () => {
-            await packUnscheduled();
-          },
-        },
-        {
-          type: 'button' as const,
           text: 'Optimize Schedule',
           cls: 'b-raised b-green',
           icon: 'b-fa b-fa-magic',
@@ -1314,6 +1357,48 @@ const BryntumScheduler: React.FC = () => {
   return (
     <div style={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
       <ToastContainer toasts={toasts} />
+      {/* Planning Area Filter Bar */}
+      <div style={{ 
+        padding: '12px 16px', 
+        backgroundColor: 'var(--bg-primary, #f9fafb)', 
+        borderBottom: '1px solid var(--border-color, #e5e7eb)',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px'
+      }}>
+        <label style={{ 
+          fontSize: '14px', 
+          fontWeight: 500, 
+          color: 'var(--text-primary, #374151)' 
+        }}>
+          Planning Area:
+        </label>
+        <Select
+          value={selectedPlanningArea}
+          onValueChange={setSelectedPlanningArea}
+        >
+          <SelectTrigger 
+            style={{ width: '200px' }}
+            data-testid="select-planning-area"
+          >
+            <SelectValue placeholder="Select area" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all" data-testid="option-planning-area-all">
+              All Areas
+            </SelectItem>
+            {planningAreas.map((area) => (
+              <SelectItem 
+                key={area} 
+                value={area}
+                data-testid={`option-planning-area-${area}`}
+              >
+                {area}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <BryntumSchedulerPro 
         ref={schedulerRef} 
         {...schedulerConfig}
