@@ -328,16 +328,13 @@ export default function DemandForecasting() {
     forecastMutation.mutate();
   };
 
-  // Reset training state when configuration changes
-  const resetTraining = () => {
+  // Reset training when configuration changes
+  useEffect(() => {
     setIsModelTrained(false);
     setTrainingMetrics(null);
     setModelId(null);
-  };
-
-  // Reset training when configuration changes
-  useEffect(() => {
-    resetTraining();
+    trainMutation.reset();
+    forecastMutation.reset();
   }, [selectedTable, dateColumn, itemColumn, quantityColumn, selectedItems, modelType, selectedPlanningAreas, selectedScenarios]);
 
   // Clear validation errors when selections change
