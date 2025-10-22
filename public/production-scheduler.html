@@ -1018,6 +1018,9 @@
             <select id="planningAreaFilter" data-testid="select-planning-area">
                 <option value="all">All Areas</option>
             </select>
+            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;">
+                Apply Filter
+            </button>
         </div>
 
         <div class="toolbar-group" style="display: flex; gap: 0.25rem;">
@@ -3717,17 +3720,19 @@
                 });
                 
                 // Add event listener for planning area filter with race condition protection
-                console.log('🔍 [DEBUG] Attempting to attach planning area filter event listener...');
+                console.log('🔍 [DEBUG] Attempting to attach planning area filter button...');
                 const planningAreaFilter = document.getElementById('planningAreaFilter');
+                const applyPlanningAreaButton = document.getElementById('applyPlanningAreaFilter');
                 console.log('🔍 [DEBUG] Planning area filter element:', planningAreaFilter);
+                console.log('🔍 [DEBUG] Apply button element:', applyPlanningAreaButton);
                 let currentFetchController = null; // AbortController for fetch cancellation
                 let requestToken = 0; // Monotonic token to identify latest request
                 
-                if (planningAreaFilter) {
-                    console.log('✅ [DEBUG] Planning area filter element found, attaching event listener');
-                    planningAreaFilter.addEventListener('change', async (e) => {
-                        console.log('🔥 [DEBUG] Planning area dropdown changed! New value:', e.target.value);
-                        selectedPlanningArea = e.target.value;
+                if (planningAreaFilter && applyPlanningAreaButton) {
+                    console.log('✅ [DEBUG] Planning area filter found, attaching button click listener');
+                    applyPlanningAreaButton.addEventListener('click', async () => {
+                        selectedPlanningArea = planningAreaFilter.value;
+                        console.log('🔥 [DEBUG] Apply Filter clicked! Planning Area:', selectedPlanningArea);
                         console.log(`[Planning Area Filter] Selected: ${selectedPlanningArea}`);
                         
                         // Cancel any in-flight requests
