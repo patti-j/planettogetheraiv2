@@ -3743,6 +3743,24 @@
                     await scheduler.project.commitAsync();
                     
                     console.log('✅ Data committed successfully');
+                    
+                    // Automatically apply ASAP scheduling to resolve overlaps
+                    console.log('⏳ Auto-applying ASAP scheduling to resolve overlaps...');
+                    const project = scheduler.project;
+                    project.schedulingDirection = 'forward';
+                    await project.propagate();
+                    console.log('✅ ASAP scheduling applied - overlaps resolved');
+                    
+                    // Update debug message
+                    if (debugDiv) {
+                        debugDiv.textContent = `✅ ASAP scheduled ${scheduler.eventStore.count} operations`;
+                        setTimeout(() => debugDiv.remove(), 5000);
+                    }
+                    
+                    // Zoom to fit after scheduling
+                    if (scheduler.zoomToFit) {
+                        scheduler.zoomToFit();
+                    }
                 } catch (error) {
                     console.error('❌ Error loading data into scheduler:', error);
                     console.error('Error details:', error.message, error.stack);
