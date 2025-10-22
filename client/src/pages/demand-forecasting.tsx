@@ -208,6 +208,7 @@ export default function DemandForecasting() {
           selectedItem: selectedItems[0], // Use first selected item for now
           forecastDays,
           modelType,
+          modelId: modelId || undefined, // Send the stored modelId from training
           planningAreaColumn: planningAreaColumn || null,
           selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
           scenarioColumn: scenarioColumn || null,
@@ -283,7 +284,7 @@ export default function DemandForecasting() {
   };
 
   const handleForecast = () => {
-    if (!isModelTrained) {
+    if (!isModelTrained || !modelId) {
       toast({
         title: "Model Not Trained",
         description: "Please train the model first before generating forecast",
@@ -331,6 +332,7 @@ export default function DemandForecasting() {
   const resetTraining = () => {
     setIsModelTrained(false);
     setTrainingMetrics(null);
+    setModelId(null);
   };
 
   // Reset training when configuration changes
@@ -811,7 +813,7 @@ export default function DemandForecasting() {
 
             <Button 
               onClick={handleForecast} 
-              disabled={forecastMutation.isPending || !isModelTrained}
+              disabled={forecastMutation.isPending || !isModelTrained || !modelId}
               className="w-full md:w-auto"
               data-testid="button-generate-forecast"
             >

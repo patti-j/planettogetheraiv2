@@ -306,11 +306,16 @@ router.post('/forecast', async (req, res) => {
   try {
     const { 
       schema, table, dateColumn, itemColumn, quantityColumn, selectedItem, forecastDays,
-      modelType, planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
+      modelType, modelId, planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
     } = req.body;
     
     if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
       return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Require modelId to ensure we use the trained model
+    if (!modelId) {
+      return res.status(400).json({ error: 'Model ID is required. Please train a model first.' });
     }
 
     const pool = await sql.connect(getSqlConfig());
@@ -363,15 +368,12 @@ router.post('/forecast', async (req, res) => {
       value: r.value
     }));
 
-    // Create unique model ID (must match training)
-    const modelId = `${selectedItem}_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
-
-    // Call Python ML service to generate forecast
+    // Call Python ML service to generate forecast using the trained model
     const mlResponse = await fetch(`${ML_SERVICE_URL}/forecast`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        modelId,
+        modelId, // Use the exact modelId from training
         forecastDays: forecastDays || 30,
         historicalData
       })
