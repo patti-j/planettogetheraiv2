@@ -1478,6 +1478,41 @@
                 scheduler.resourceStore.data = filteredResources;
                 console.log(`📊 [Planning Area Filter] Updated scheduler with ${filteredResources.length} resources`);
                 
+                // Reload operations when filtering (critical for visibility)
+                console.log(`📡 [Planning Area Filter] Reloading operations...`);
+                const opsResponse = await fetch('/api/pt-operations');
+                if (opsResponse.ok) {
+                    const operations = await opsResponse.json();
+                    
+                    // Map operations to Bryntum event format
+                    const events = operations.map(op => ({
+                        id: op.id,
+                        name: op.name,
+                        resourceId: op.resourceId,
+                        startDate: op.scheduledStart,
+                        endDate: op.scheduledEnd,
+                        duration: op.duration,
+                        percentDone: op.percentFinished || 0,
+                        manually_scheduled: op.manually_scheduled || false,
+                        // Additional fields
+                        jobName: op.jobName,
+                        jobPriority: op.jobPriority,
+                        operationExternalId: op.operationExternalId,
+                        actualResourceId: op.actualResourceId
+                    }));
+                    
+                    // If filtering, only show events for filtered resources
+                    if (selectedPlanningArea !== 'all') {
+                        const filteredResourceIds = new Set(filteredResources.map(r => r.id));
+                        const filteredEvents = events.filter(e => filteredResourceIds.has(e.resourceId));
+                        console.log(`📊 [Planning Area Filter] Showing ${filteredEvents.length} operations for ${filteredResources.length} resources`);
+                        scheduler.eventStore.data = filteredEvents;
+                    } else {
+                        console.log(`📊 [Planning Area Filter] Showing all ${events.length} operations`);
+                        scheduler.eventStore.data = events;
+                    }
+                }
+                
                 // Run ASAP scheduling if filtering to specific area
                 if (selectedPlanningArea !== 'all') {
                     console.log(`🚀 [Planning Area Filter] Running ASAP scheduling`);
