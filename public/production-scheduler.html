@@ -2191,6 +2191,16 @@
                     // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
                     
+                    // Project configuration for scheduling engine (following Bryntum best practices)
+                    project: {
+                        autoCalculate: true,          // Automatically recalculate when changes occur
+                        recalculateAfterLoad: true,  // Recalculate after loading data
+                        constraintsMode: 'honor',    // Honor constraints during scheduling
+                        schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
+                        allowDependencyLag: true,     // Allow lag times between dependencies
+                        calculateCriticalPath: true   // Enable critical path calculation
+                    },
+                    
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
                     
@@ -4303,37 +4313,97 @@
                 }
             }
             
-            // Modify the apply scheduling button to use constraints
-            const originalApplyHandler = document.getElementById('applyScheduling').onclick;
-            document.getElementById('applyScheduling').addEventListener('click', () => {
+            // Apply scheduling button handler using Bryntum's built-in scheduling engine
+            document.getElementById('applyScheduling').addEventListener('click', async () => {
                 try {
-                    // Clear any localStorage issues first
-                    try {
-                        // Test if localStorage is accessible
-                        localStorage.setItem('test', 'test');
-                        localStorage.removeItem('test');
-                    } catch (storageError) {
-                        console.warn('⚠️ localStorage is not accessible, some features may be limited');
-                        // Continue anyway - Bryntum can work without localStorage
-                    }
-                    
-                    const activeCount = Object.values(window.activeConstraints || {}).filter(v => v).length;
-                    if (activeCount > 0) {
-                        console.log(`⚙️ Applying algorithm with ${activeCount} active constraints`);
-                    }
-                    
                     const algorithm = document.getElementById('schedulingAlgorithm').value;
                     console.log(`🚀 Applying ${algorithm.toUpperCase()} algorithm...`);
                     
-                    // Apply the algorithm with error handling
-                    if (window.scheduler && window.scheduler.project) {
-                        // Disable Bryntum's state saving temporarily to avoid storage errors
-                        const originalStateId = window.scheduler.stateId;
-                        window.scheduler.stateId = null;
-                        
-                        // Apply the algorithm
-                        switch(algorithm) {
-                            case 'asap':
+                    if (!window.scheduler || !window.scheduler.project) {
+                        console.error('❌ Scheduler or project not initialized');
+                        return;
+                    }
+                    
+                    const scheduler = window.scheduler;
+                    const project = scheduler.project;
+                    
+                    // Apply the algorithm using Bryntum's scheduling engine
+                    switch(algorithm) {
+                        case 'asap':
+                            console.log('⏳ Running ASAP (Forward) scheduling...');
+                            project.schedulingDirection = 'forward';
+                            await project.propagate();
+                            console.log('✅ ASAP scheduling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('ASAP scheduling complete');
+                            }
+                            break;
+                            
+                        case 'alap':
+                            console.log('⏳ Running ALAP (Backward) scheduling...');
+                            project.schedulingDirection = 'backward';
+                            await project.propagate();
+                            console.log('✅ ALAP scheduling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('ALAP scheduling complete');
+                            }
+                            break;
+                            
+                        case 'criticalPath':
+                            console.log('⏳ Running Critical Path scheduling...');
+                            project.calculateCriticalPath = true;
+                            project.schedulingDirection = 'forward';
+                            await project.propagate();
+                            console.log('✅ Critical Path scheduling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('Critical Path scheduling complete');
+                            }
+                            break;
+                            
+                        case 'levelResources':
+                            console.log('⏳ Running Resource Leveling...');
+                            // For resource leveling, we use forward scheduling with resource constraints
+                            project.schedulingDirection = 'forward';
+                            project.constraintsMode = 'honor';
+                            await project.propagate();
+                            console.log('✅ Resource Leveling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('Resource Leveling complete');
+                            }
+                            break;
+                            
+                        case 'drum':
+                            console.log('⏳ Running Drum/TOC scheduling...');
+                            // Theory of Constraints - focus on bottleneck resources
+                            project.schedulingDirection = 'forward';
+                            await project.propagate();
+                            console.log('✅ Drum/TOC scheduling complete');
+                            if (scheduler.toast) {
+                                scheduler.toast('Drum/TOC scheduling complete');
+                            }
+                            break;
+                            
+                        default:
+                            console.warn('❌ Unknown algorithm:', algorithm);
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ Error applying scheduling algorithm:', error);
+                    if (window.scheduler && window.scheduler.toast) {
+                        window.scheduler.toast({
+                            html: `Error: ${error.message}`,
+                            style: 'background-color: #ff4444'
+                        });
+                    }
+                }
+            });
+            
+            // END OF SCHEDULING ALGORITHM HANDLER
+            
+            // The following section used to contain manual ASAP/ALAP scheduling logic
+            // but has been replaced with Bryntum's built-in scheduling engine
+            
+            /* OLD MANUAL CODE REMOVED - Replaced with Bryntum's propagate() method
                                 // ASAP scheduling - schedule as soon as possible (simplified approach)
                                 console.log('🚀 Applying ASAP scheduling with simplified resource tracking...');
                                 
@@ -4562,6 +4632,7 @@
                     }, 5000);
                 }
             });
+            */ // END OF OLD MANUAL CODE BLOCK
             
             // Add functionality for Save button to update main database
             document.getElementById('saveSchedule').addEventListener('click', async () => {
