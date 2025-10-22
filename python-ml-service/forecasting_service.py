@@ -22,24 +22,28 @@ print("Flask app created", flush=True)
 # Store trained models in memory (in production, use Redis or similar)
 trained_models = {}
 
-def create_features(df, n_lags=7):
-    """Create features for Random Forest model"""
-    # Create lag features
+def create_features(df, n_lags=3):
+    """Create features for Random Forest model with minimal data loss"""
+    # Use fewer lags to preserve more data
     for i in range(1, n_lags + 1):
         df[f'lag_{i}'] = df['value'].shift(i)
     
-    # Rolling statistics
+    # Rolling statistics with min_periods to avoid too much data loss
+    df['rolling_mean_3'] = df['value'].rolling(window=3, min_periods=1).mean()
+    df['rolling_std_3'] = df['value'].rolling(window=3, min_periods=1).std().fillna(0)
     df['rolling_mean_7'] = df['value'].rolling(window=7, min_periods=1).mean()
-    df['rolling_std_7'] = df['value'].rolling(window=7, min_periods=1).std()
-    df['rolling_mean_14'] = df['value'].rolling(window=14, min_periods=1).mean()
     
-    # Date features
+    # Date features (no NaN values)
     df['day_of_week'] = df['date'].dt.dayofweek
     df['day_of_month'] = df['date'].dt.day
     df['month'] = df['date'].dt.month
     df['quarter'] = df['date'].dt.quarter
     
-    # Drop rows with NaN from lagging
+    # Fill remaining NaN values in lag features with forward/backward fill
+    for i in range(1, n_lags + 1):
+        df[f'lag_{i}'] = df[f'lag_{i}'].fillna(method='bfill').fillna(method='ffill').fillna(df['value'].mean())
+    
+    # Only drop rows if we still have NaN (should be rare now)
     df = df.dropna()
     
     return df
