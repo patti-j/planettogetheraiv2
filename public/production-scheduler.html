@@ -3720,12 +3720,22 @@
                     console.log('Assignments count:', assignments.length);
                     console.log('Dependencies count:', dependencies.length);
                     
+                    // Create a visible alert to show what's happening
+                    const debugDiv = document.createElement('div');
+                    debugDiv.style.cssText = 'position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: #333; color: white; padding: 10px; border-radius: 5px; z-index: 10000;';
+                    debugDiv.textContent = `Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`;
+                    document.body.appendChild(debugDiv);
+                    
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Use events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
                         dependenciesData: dependencies
                     });
+                    
+                    // Update debug message
+                    debugDiv.textContent = `✅ Loaded! Store has: ${scheduler.eventStore.count} events`;
+                    setTimeout(() => debugDiv.remove(), 5000);
                     
                     console.log('✅ Inline data loaded successfully');
                     
