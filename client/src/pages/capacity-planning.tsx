@@ -40,6 +40,7 @@ import {
   Legend,
   ArcElement,
 } from 'chart.js';
+import type { PtPlant } from '@shared/schema';
 
 // Register Chart.js components
 ChartJS.register(
@@ -319,6 +320,11 @@ export default function CapacityPlanning() {
   // Queries for real resource data
   const { data: resources = [] } = useQuery<Resource[]>({
     queryKey: ["/api/resources"],
+  });
+
+  // Fetch plants data for the Plant Capacity Timeline
+  const { data: plants = [] } = useQuery<PtPlant[]>({
+    queryKey: ["/api/plants"],
   });
 
   const { data: shiftTemplates = [] } = useQuery<ShiftTemplate[]>({
@@ -1185,7 +1191,7 @@ export default function CapacityPlanning() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <PlantCapacityTimeline plants={[]} timeframe={selectedTimeframe} />
+              <PlantCapacityTimeline plants={plants} timeframe={selectedTimeframe} />
             </CardContent>
           </Card>
         </TabsContent>
