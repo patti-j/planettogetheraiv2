@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   Users, 
   Calendar, 
@@ -22,8 +23,12 @@ import {
   Save,
   X,
   CheckCircle,
-  Star
+  Star,
+  Coffee,
+  Home,
+  Briefcase
 } from "lucide-react";
+import { format, startOfWeek, addDays, isSameDay } from "date-fns";
 
 export default function LaborPlanning() {
   const [selectedShift, setSelectedShift] = useState("day");
@@ -32,6 +37,8 @@ export default function LaborPlanning() {
   const [skillsMatrix, setSkillsMatrix] = useState<{[key: string]: {[key: string]: number}}>({});
   const [newSkillName, setNewSkillName] = useState("");
   const [showAddSkill, setShowAddSkill] = useState(false);
+  const [scheduleDialogOpen, setScheduleDialogOpen] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState<any>(null);
 
   // Mock data for labor planning
   const shiftData = {
@@ -215,6 +222,121 @@ export default function LaborPlanning() {
       setNewSkillName("");
       setShowAddSkill(false);
     }
+  };
+
+  // Generate weekly schedule for an employee
+  const generateEmployeeSchedule = (employee: any) => {
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); // Start on Monday
+    const schedule = [];
+    
+    for (let i = 0; i < 7; i++) {
+      const date = addDays(weekStart, i);
+      const dayName = format(date, 'EEEE');
+      const isWeekend = i >= 5; // Saturday and Sunday
+      
+      // Generate shift info based on employee's shift type and day
+      let shiftInfo = null;
+      
+      if (!isWeekend || (employee.shift === 'night' && i === 5)) { // Some night shift workers may work Saturday
+        const shift = shiftData[employee.shift as keyof typeof shiftData];
+        shiftInfo = {
+          start: shift.start,
+          end: shift.end,
+          type: employee.shift,
+          location: employee.department === 'Brewing' ? 'Brew House' : 
+                    employee.department === 'Logistics' ? 'Warehouse' : 
+                    employee.department === 'Quality' ? 'Lab' : 
+                    employee.department === 'Maintenance' ? 'Shop Floor' : 
+                    'Production Floor',
+          tasks: getTasksForDay(employee, dayName),
+          breaks: getBreaksForShift(employee.shift),
+          overtime: (i === 2 || i === 3) && employee.shift === 'day' ? 2 : 0, // Some overtime on Tue/Wed for day shift
+        };
+      }
+      
+      schedule.push({
+        date,
+        dayName,
+        isWeekend,
+        isToday: isSameDay(date, new Date()),
+        shift: shiftInfo,
+        specialNotes: getSpecialNotes(employee, date, i),
+      });
+    }
+    
+    return schedule;
+  };
+
+  // Get tasks for a specific day
+  const getTasksForDay = (employee: any, dayName: string) => {
+    const baseTasks = employee.skills.map((skill: string) => {
+      if (skill === 'CNC Machining') return 'Operate CNC machines, quality checks';
+      if (skill === 'Quality Control') return 'Perform quality inspections, documentation';
+      if (skill === 'Forklift Operation') return 'Material handling, warehouse operations';
+      if (skill === 'Assembly') return 'Product assembly, line operations';
+      if (skill === 'Packaging') return 'Packaging operations, labeling';
+      if (skill === 'Brewing Operations') return 'Monitor brewing process, temperature control';
+      if (skill === 'Fermentation') return 'Check fermentation tanks, sampling';
+      if (skill === 'Maintenance') return 'Equipment maintenance, repairs';
+      if (skill === 'Electrical') return 'Electrical systems check, troubleshooting';
+      if (skill === 'Team Leadership') return 'Team coordination, shift handover';
+      return 'Standard operations';
+    });
+    
+    // Add day-specific tasks
+    if (dayName === 'Monday') baseTasks.push('Weekly safety meeting');
+    if (dayName === 'Friday') baseTasks.push('End-of-week reporting');
+    
+    return baseTasks;
+  };
+
+  // Get breaks for a shift
+  const getBreaksForShift = (shift: string) => {
+    if (shift === 'day') {
+      return [
+        { time: '09:00', duration: 15, type: 'Coffee Break' },
+        { time: '11:30', duration: 30, type: 'Lunch' },
+      ];
+    } else if (shift === 'evening') {
+      return [
+        { time: '17:00', duration: 15, type: 'Coffee Break' },
+        { time: '19:00', duration: 30, type: 'Dinner' },
+      ];
+    } else {
+      return [
+        { time: '01:00', duration: 15, type: 'Coffee Break' },
+        { time: '03:00', duration: 30, type: 'Meal Break' },
+      ];
+    }
+  };
+
+  // Get special notes for a day
+  const getSpecialNotes = (employee: any, date: Date, dayIndex: number) => {
+    const notes = [];
+    
+    if (employee.availability === 'requested-off' && dayIndex === 4) {
+      notes.push('Requested time off - pending approval');
+    }
+    
+    if (dayIndex === 0) {
+      notes.push('Department meeting at shift start');
+    }
+    
+    if (employee.certifications.includes('ISO 9001') && dayIndex === 2) {
+      notes.push('ISO audit participation required');
+    }
+    
+    if (employee.skills.includes('Team Leadership') && dayIndex === 1) {
+      notes.push('Lead morning briefing');
+    }
+    
+    return notes;
+  };
+
+  // Handle view schedule click
+  const handleViewSchedule = (employee: any) => {
+    setSelectedEmployee(employee);
+    setScheduleDialogOpen(true);
   };
 
   return (
@@ -604,7 +726,11 @@ export default function LaborPlanning() {
                         </p>
                       </div>
                     </div>
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleViewSchedule(employee)}
+                    >
                       View Schedule
                     </Button>
                   </div>
@@ -693,6 +819,207 @@ export default function LaborPlanning() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Employee Schedule Dialog */}
+      <Dialog open={scheduleDialogOpen} onOpenChange={setScheduleDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Weekly Schedule - {selectedEmployee?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedEmployee?.department} Department | {selectedEmployee?.shift} Shift | Week of {format(startOfWeek(new Date(), { weekStartsOn: 1 }), 'MMM dd, yyyy')}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedEmployee && (
+            <div className="space-y-4 mt-4">
+              {/* Employee Summary */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-600">Employee ID</p>
+                    <p className="font-medium">#{selectedEmployee.id}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Experience</p>
+                    <p className="font-medium">{selectedEmployee.yearsExperience} years</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Certifications</p>
+                    <p className="font-medium">{selectedEmployee.certifications.length}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-600">Availability</p>
+                    <Badge 
+                      variant={selectedEmployee.availability === "available" ? "default" : "secondary"}
+                    >
+                      {selectedEmployee.availability.replace("-", " ")}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+
+              {/* Weekly Schedule Grid */}
+              <div className="space-y-3">
+                {generateEmployeeSchedule(selectedEmployee).map((day, index) => (
+                  <div 
+                    key={index} 
+                    className={`border rounded-lg p-4 ${
+                      day.isToday ? 'border-blue-500 bg-blue-50/50' : 
+                      day.isWeekend ? 'bg-gray-50' : 'bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`text-lg font-semibold ${day.isToday ? 'text-blue-600' : ''}`}>
+                          {day.dayName}
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          {format(day.date, 'MMM dd')}
+                        </div>
+                        {day.isToday && (
+                          <Badge variant="default" className="text-xs">Today</Badge>
+                        )}
+                        {day.isWeekend && !day.shift && (
+                          <Badge variant="outline" className="text-xs">
+                            <Home className="w-3 h-3 mr-1" />
+                            Day Off
+                          </Badge>
+                        )}
+                      </div>
+                      {day.shift && (
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-gray-500" />
+                          <span className="text-sm font-medium">
+                            {day.shift.start} - {day.shift.end}
+                            {day.shift.overtime > 0 && ` (+${day.shift.overtime}h OT)`}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    {day.shift ? (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              <Briefcase className="w-4 h-4 text-gray-500" />
+                              <span className="text-sm font-medium">Location:</span>
+                              <span className="text-sm">{day.shift.location}</span>
+                            </div>
+                            
+                            <div>
+                              <p className="text-sm font-medium mb-1">Tasks:</p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                {day.shift.tasks.map((task: string, i: number) => (
+                                  <li key={i} className="flex items-start gap-1">
+                                    <span className="text-gray-400">•</span>
+                                    {task}
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="space-y-2">
+                            <div>
+                              <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                                <Coffee className="w-4 h-4 text-gray-500" />
+                                Breaks:
+                              </p>
+                              <ul className="text-xs text-gray-600 space-y-1">
+                                {day.shift.breaks.map((breakItem: any, i: number) => (
+                                  <li key={i}>
+                                    {breakItem.time} - {breakItem.type} ({breakItem.duration} min)
+                                  </li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {day.specialNotes.length > 0 && (
+                              <div>
+                                <p className="text-sm font-medium mb-1 flex items-center gap-2">
+                                  <AlertTriangle className="w-4 h-4 text-yellow-500" />
+                                  Notes:
+                                </p>
+                                <ul className="text-xs text-yellow-700 space-y-1">
+                                  {day.specialNotes.map((note: string, i: number) => (
+                                    <li key={i} className="flex items-start gap-1">
+                                      <span className="text-yellow-600">!</span>
+                                      {note}
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4 text-gray-500">
+                        <Home className="w-8 h-8 mx-auto mb-2 text-gray-400" />
+                        <p className="text-sm">Enjoy your day off!</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {/* Schedule Summary */}
+              <div className="border-t pt-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="bg-blue-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">Total Hours</p>
+                    <p className="text-xl font-semibold">
+                      {generateEmployeeSchedule(selectedEmployee)
+                        .filter(d => d.shift)
+                        .reduce((total, day) => {
+                          if (day.shift) {
+                            const start = new Date(`2024-01-01 ${day.shift.start}`);
+                            const end = new Date(`2024-01-01 ${day.shift.end}`);
+                            const hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
+                            return total + hours + (day.shift.overtime || 0);
+                          }
+                          return total;
+                        }, 0)} hours
+                    </p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">Overtime Hours</p>
+                    <p className="text-xl font-semibold">
+                      {generateEmployeeSchedule(selectedEmployee)
+                        .reduce((total, day) => total + (day.shift?.overtime || 0), 0)} hours
+                    </p>
+                  </div>
+                  <div className="bg-purple-50 p-3 rounded-lg">
+                    <p className="text-sm text-gray-600">Working Days</p>
+                    <p className="text-xl font-semibold">
+                      {generateEmployeeSchedule(selectedEmployee)
+                        .filter(d => d.shift).length} days
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button variant="outline" onClick={() => setScheduleDialogOpen(false)}>
+                  Close
+                </Button>
+                <Button variant="outline">
+                  <Edit className="w-4 h-4 mr-2" />
+                  Edit Schedule
+                </Button>
+                <Button>
+                  <CheckCircle className="w-4 h-4 mr-2" />
+                  Approve Schedule
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
