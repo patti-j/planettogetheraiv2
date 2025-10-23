@@ -2247,22 +2247,20 @@
                                         }
                                     }
                                     
-                                    // 2. CRITICAL: Use Bryntum's isDateRangeAvailable to check overlaps
+                                    // 2. CRITICAL: Use resource's isDateRangeAvailable to check overlaps (Best Practice)
                                     if (targetRecord && startDate && endDate) {
-                                        // Use Bryntum's built-in overlap detection
-                                        const isAvailable = window.scheduler.eventStore.isDateRangeAvailable(
+                                        // Use resource-level overlap detection per Bryntum best practices
+                                        const isAvailable = targetRecord.isDateRangeAvailable(
                                             startDate,
                                             endDate,
-                                            draggedRecord, // Exclude the dragged event itself
-                                            targetRecord   // Check for this specific resource
+                                            draggedRecord // Exclude the dragged event itself
                                         );
                                         
                                         if (!isAvailable) {
                                             console.warn(`⚠️ Cannot drop ${operationName}: Time slot occupied on ${targetRecord.name}`);
                                             
                                             // Find the conflicting event for better error message
-                                            const resourceEvents = window.scheduler.eventStore.query(event => 
-                                                event.resourceId === targetRecord.id && 
+                                            const resourceEvents = targetRecord.events.filter(event => 
                                                 event.id !== draggedRecord.id &&
                                                 event.startDate < endDate && 
                                                 event.endDate > startDate
@@ -2297,24 +2295,23 @@
                         // Enable resize with overlap validation
                         eventResize: {
                             showTooltip: true,
-                            // CRITICAL: Use Bryntum's isDateRangeAvailable to prevent overlaps
+                            // CRITICAL: Use resource's isDateRangeAvailable to prevent overlaps (Best Practice)
                             validatorFn({ eventRecord, startDate, endDate }) {
                                 const resource = eventRecord.resource;
+                                if (!resource || !startDate || !endDate) return true;
                                 
-                                // Use Bryntum's built-in overlap detection
-                                const isAvailable = window.scheduler.eventStore.isDateRangeAvailable(
+                                // Use resource-level overlap detection per Bryntum best practices
+                                const isAvailable = resource.isDateRangeAvailable(
                                     startDate,
                                     endDate,
-                                    eventRecord,  // Exclude the resized event itself
-                                    resource      // Check for this specific resource
+                                    eventRecord  // Exclude the resized event itself
                                 );
                                 
                                 if (!isAvailable) {
                                     console.warn(`⚠️ Cannot resize ${eventRecord.name}: Time slot occupied`);
                                     
                                     // Find the conflicting event for better error message
-                                    const resourceEvents = window.scheduler.eventStore.query(event => 
-                                        event.resourceId === eventRecord.resourceId && 
+                                    const resourceEvents = resource.events.filter(event => 
                                         event.id !== eventRecord.id &&
                                         event.startDate < endDate && 
                                         event.endDate > startDate
@@ -2559,16 +2556,38 @@
                     }
                 });
                 
-                // Helper function to check for constraint violations (resource overlaps)
+                // Improved debug function per Bryntum best practices
+                function assertNoOverlaps(scheduler) {
+                    const overlaps = [];
+                    for (const r of scheduler.resourceStore.records) {
+                        const evs = r.events.slice().sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 1; i < evs.length; i++) {
+                            if (evs[i - 1].endDate > evs[i].startDate) {
+                                overlaps.push({ 
+                                    resource: r.name, 
+                                    a: evs[i - 1].name, 
+                                    b: evs[i].name,
+                                    overlapMs: evs[i - 1].endDate - evs[i].startDate
+                                });
+                            }
+                        }
+                    }
+                    if (overlaps.length) {
+                        console.warn('❌ Overlaps found:', overlaps);
+                        return false;
+                    } else {
+                        console.log('✅ No overlaps per resource');
+                        return true;
+                    }
+                }
+                
+                // Helper function to check for constraint violations (resource overlaps) - legacy support
                 async function checkConstraintViolations() {
                     const violations = [];
                     const resources = scheduler.resourceStore.records;
                     
                     for (const resource of resources) {
-                        const events = scheduler.eventStore.query(e => e.resourceId === resource.id);
-                        
-                        // Sort events by start time
-                        events.sort((a, b) => a.startDate - b.startDate);
+                        const events = resource.events.slice().sort((a, b) => a.startDate - b.startDate);
                         
                         // Check for overlaps
                         for (let i = 0; i < events.length - 1; i++) {
@@ -2589,34 +2608,71 @@
                     return violations;
                 }
                 
+                // Best practice "packer" function - finds next free slot on resource
+                function findNextFreeSlotOnResource(resource, earliestStart, durationMs, excludeEvent) {
+                    // Start from earliestStart and push forward past any overlaps
+                    let start = new Date(earliestStart);
+                    
+                    // Optional: respect resource calendar working time
+                    const cal = resource.calendar || resource.project?.calendar;
+                    if (cal?.isNonWorkingTime?.(start)) {
+                        start = cal.skipNonWorkingTime(start, true);
+                    }
+                    
+                    // Get this resource's events (excluding the one we're scheduling)
+                    const events = resource.events
+                        .filter(e => e !== excludeEvent && e.id !== excludeEvent?.id)
+                        .sort((a, b) => a.startDate - b.startDate);
+                    
+                    // Find the next available slot
+                    for (const e of events) {
+                        const end = new Date(start.getTime() + durationMs);
+                        const overlap = (start < e.endDate) && (end > e.startDate);
+                        if (overlap) {
+                            // Snap start to the end of the conflicting event and continue
+                            start = new Date(e.endDate);
+                        }
+                    }
+                    
+                    // Recheck working time on the final boundary
+                    if (cal?.isNonWorkingTime?.(start)) {
+                        start = cal.skipNonWorkingTime(start, true);
+                    }
+                    const end = new Date(start.getTime() + durationMs);
+                    
+                    return { start, end };
+                }
+                
                 // Helper function to resolve overlaps by shifting operations
                 async function resolveOverlaps() {
-                    console.log('🔧 Attempting to resolve resource overlaps...');
+                    console.log('🔧 Attempting to resolve resource overlaps using best practice packer...');
                     const resources = scheduler.resourceStore.records;
                     
                     for (const resource of resources) {
-                        const events = scheduler.eventStore.query(e => e.resourceId === resource.id);
+                        const events = resource.events.slice().sort((a, b) => a.startDate - b.startDate);
                         
-                        // Sort events by start time
-                        events.sort((a, b) => a.startDate - b.startDate);
-                        
-                        // Fix overlaps by shifting later operations
-                        for (let i = 0; i < events.length - 1; i++) {
-                            const current = events[i];
-                            const next = events[i + 1];
+                        // Fix overlaps using the packer approach
+                        for (let i = 0; i < events.length; i++) {
+                            const event = events[i];
+                            const durationMs = event.duration * 60 * 60 * 1000;
                             
-                            if (current.endDate > next.startDate) {
-                                // Shift the next event to start after current ends
-                                const shift = current.endDate - next.startDate;
-                                next.startDate = new Date(current.endDate);
-                                next.endDate = new Date(next.endDate.getTime() + shift);
-                                console.log(`📅 Shifted ${next.name} by ${shift / (1000 * 60)} minutes to avoid overlap on ${resource.name}`);
+                            // Find the next free slot for this event
+                            const slot = findNextFreeSlotOnResource(resource, event.startDate, durationMs, event);
+                            
+                            if (slot.start.getTime() !== event.startDate.getTime()) {
+                                const shift = slot.start - event.startDate;
+                                event.startDate = slot.start;
+                                event.endDate = slot.end;
+                                console.log(`📅 Shifted ${event.name} by ${shift / (1000 * 60)} minutes to avoid overlap on ${resource.name}`);
                             }
                         }
                     }
                     
                     await scheduler.project.commitAsync();
                     console.log('✅ Overlap resolution complete');
+                    
+                    // Verify with the assertion function
+                    assertNoOverlaps(scheduler);
                 }
                 
                 // Function to run scheduler algorithms from quick actions
@@ -3034,143 +3090,79 @@
                 
                 // Scheduling Algorithm Implementations
                 async function asapScheduling() {
-                    // ASAP (As Soon As Possible) - Forward scheduling with STRICT resource constraints
-                    // CRITICAL: This ensures NO overlapping operations on the same resource
-                    console.log('🚀 Starting ASAP scheduling with strict NO-OVERLAP enforcement...');
+                    // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
+                    console.log('🚀 Starting ASAP scheduling with best practice no-overlap packer...');
                     
-                    const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                    const { eventStore, dependencyStore, project } = scheduler;
+                    const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
-                    // Clear any existing constraint dates to ensure clean scheduling
+                    // Clear any existing constraint dates and manual flags to ensure clean scheduling
                     events.forEach(event => {
                         event.constraintDate = null;
                         event.constraintType = null;
+                        event.manuallyScheduled = false;
                     });
                     
                     // Use September 3, 2025 as the base scheduling date
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
                     
-                    // Group events by resource to ensure NO OVERLAPS per resource
-                    const resourceEvents = {};
-                    events.forEach(event => {
-                        if (!resourceEvents[event.resourceId]) {
-                            resourceEvents[event.resourceId] = [];
-                        }
-                        resourceEvents[event.resourceId].push(event);
+                    // Build predecessors map for dependency handling
+                    const preds = new Map();
+                    dependencyStore.forEach(dep => {
+                        if (!preds.has(dep.toEvent)) preds.set(dep.toEvent, []);
+                        preds.get(dep.toEvent).push(dep.fromEvent);
                     });
                     
-                    console.log(`  Resources involved: ${Object.keys(resourceEvents).length}`);
+                    // Process events respecting dependencies using best practice packer
+                    const byId = id => eventStore.getById(id);
                     
-                    // Schedule each resource's operations STRICTLY SEQUENTIALLY (NO OVERLAPS!)
-                    Object.keys(resourceEvents).forEach(resourceId => {
-                        const resEvents = resourceEvents[resourceId];
-                        const resourceName = scheduler.resourceStore.getById(resourceId)?.name || resourceId;
+                    for (const event of events) {
+                        // Calculate earliest start based on dependencies
+                        let earliestStart = new Date(baseDate);
+                        const depIds = preds.get(event.id) || [];
                         
-                        console.log(`\n  Scheduling ${resEvents.length} operations for ${resourceName}:`);
-                        
-                        // Sort events by priority/dependencies
-                        resEvents.sort((a, b) => {
-                            // Check for dependencies first - use project dependency store
-                            const depStore = scheduler.project.dependencyStore;
-                            let aDeps = [];
-                            let bDeps = [];
-                            
-                            // Safely get dependencies if the store exists
-                            if (depStore) {
-                                // Get all dependencies and filter manually
-                                const allDeps = depStore.records || [];
-                                aDeps = allDeps.filter(dep => dep.from === a.id);
-                                bDeps = allDeps.filter(dep => dep.from === b.id);
-                            }
-                            
-                            // If a depends on b, b should come first
-                            if (aDeps.some(dep => dep.to === b.id)) return 1;
-                            // If b depends on a, a should come first  
-                            if (bDeps.some(dep => dep.to === a.id)) return -1;
-                            
-                            // Otherwise maintain order by existing start date or ID
-                            return (a.startDate?.getTime() || a.id) - (b.startDate?.getTime() || b.id);
-                        });
-                        
-                        // Track the next available time for this resource (CRITICAL for no overlaps)
-                        let nextAvailableTime = new Date(baseDate);
-                        
-                        // CRITICAL FIX: Get ALL existing operations on this resource to avoid overlaps
-                        const getAllResourceEvents = () => {
-                            return scheduler.eventStore.query(e => 
-                                e.resourceId === resourceId && 
-                                e.startDate && e.endDate
-                            ).sort((a, b) => a.startDate.getTime() - b.startDate.getTime());
-                        };
-                        
-                        resEvents.forEach((event, idx) => {
-                            const durationMs = event.duration * 60 * 60 * 1000;
-                            
-                            // Find next available slot that doesn't overlap with ANY existing operation
-                            let foundSlot = false;
-                            // CRITICAL FIX: Ignore old constraintDate and use nextAvailableTime to pack operations tightly
-                            let proposedStart = new Date(nextAvailableTime.getTime());
-                            let proposedEnd = new Date(proposedStart.getTime() + durationMs);
-                            let attempts = 0;
-                            
-                            while (!foundSlot && attempts < 100) {
-                                attempts++;
-                                foundSlot = true;
-                                
-                                // Check all existing events on this resource for conflicts
-                                const existingEvents = getAllResourceEvents();
-                                for (const existing of existingEvents) {
-                                    if (existing.id === event.id) continue; // Skip self
-                                    
-                                    // Check for overlap: proposedStart < existingEnd AND proposedEnd > existingStart
-                                    if (proposedStart < existing.endDate && proposedEnd > existing.startDate) {
-                                        // Conflict! Move to after this existing event with buffer
-                                        proposedStart = new Date(existing.endDate.getTime() + 30 * 60 * 1000);
-                                        proposedEnd = new Date(proposedStart.getTime() + durationMs);
-                                        foundSlot = false;
-                                        break;
-                                    }
-                                }
-                            }
-                            
-                            // Set the event dates with guaranteed no overlap
-                            event.startDate = proposedStart;
-                            event.endDate = proposedEnd;
-                            event.constraintType = 'startnoearlierthan';
-                            event.constraintDate = proposedStart;
-                            event.manuallyScheduled = false;
-                            
-                            // Update next available time with buffer to PREVENT overlaps
-                            nextAvailableTime = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
-                            
-                            console.log(`    ${idx + 1}. "${event.name}" -> ${event.startDate.toLocaleString()} to ${event.endDate.toLocaleString()}`);
-                        });
-                    });
-                    
-                    // Commit all changes
-                    scheduler.eventStore.commit();
-                    console.log('\n✅ ASAP scheduling completed - NO overlaps on any resource');
-                    
-                    // VERIFY no overlaps by checking each resource
-                    let overlapsFound = 0;
-                    Object.keys(resourceEvents).forEach(resourceId => {
-                        const resEvents = resourceEvents[resourceId].sort((a, b) => a.startDate - b.startDate);
-                        for (let i = 0; i < resEvents.length - 1; i++) {
-                            const current = resEvents[i];
-                            const next = resEvents[i + 1];
-                            if (current.endDate > next.startDate) {
-                                console.error(`❌ OVERLAP DETECTED on ${resourceId}: "${current.name}" (ends ${current.endDate.toLocaleTimeString()}) overlaps "${next.name}" (starts ${next.startDate.toLocaleTimeString()})`);
-                                overlapsFound++;
+                        for (const predId of depIds) {
+                            const pred = byId(predId);
+                            if (pred && pred.endDate > earliestStart) {
+                                earliestStart = new Date(pred.endDate);
                             }
                         }
-                    });
+                        
+                        const resource = event.resource;
+                        const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
+                        
+                        if (resource) {
+                            // Use best practice packer to find next free slot
+                            const slot = findNextFreeSlotOnResource(resource, earliestStart, durationMs, event);
+                            event.set({ 
+                                startDate: slot.start, 
+                                endDate: slot.end,
+                                manuallyScheduled: false
+                            });
+                            console.log(`  Scheduled "${event.name}" on ${resource.name}: ${slot.start.toLocaleString()} to ${slot.end.toLocaleString()}`);
+                        } else {
+                            // Unassigned events - schedule at earliest time
+                            event.set({ 
+                                startDate: earliestStart, 
+                                endDate: new Date(earliestStart.getTime() + durationMs),
+                                manuallyScheduled: false
+                            });
+                        }
+                    }
                     
-                    if (overlapsFound === 0) {
-                        console.log('✅ Verification passed: NO overlaps detected!');
+                    // Commit all changes and propagate
+                    await project.commitAsync();
+                    await project.propagate();
+                    
+                    console.log('\n✅ ASAP scheduling completed using best practice packer');
+                    
+                    // Verify no overlaps using the assertion function
+                    if (assertNoOverlaps(scheduler)) {
                         await saveSchedule();
                     } else {
-                        console.error(`❌ VERIFICATION FAILED: ${overlapsFound} overlaps detected!`);
+                        console.error('❌ VERIFICATION FAILED: Overlaps detected after ASAP!');
                     }
                 }
                 
