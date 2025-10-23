@@ -2625,10 +2625,23 @@
                         start = cal.skipNonWorkingTime(start, true);
                     }
                     
-                    // Get this resource's events (excluding the one we're scheduling)
-                    const events = resource.events
-                        .filter(e => e !== excludeEvent && e.id !== excludeEvent?.id)
-                        .sort((a, b) => a.startDate - b.startDate);
+                    // CRITICAL FIX: Get events from eventStore and filter by resource
+                    // This ensures we get all events for this resource, not just those in resource.events
+                    const { eventStore, assignmentStore } = scheduler;
+                    
+                    // Get all events assigned to this resource through assignments
+                    const events = [];
+                    assignmentStore.forEach(assignment => {
+                        if (assignment.resourceId === resource.id) {
+                            const event = eventStore.getById(assignment.eventId);
+                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate) {
+                                events.push(event);
+                            }
+                        }
+                    });
+                    
+                    // Sort events by start date for efficient overlap checking
+                    events.sort((a, b) => a.startDate - b.startDate);
                     
                     // Find the next available slot
                     for (const e of events) {
@@ -3095,7 +3108,8 @@
                 }
                 
                 // Scheduling Algorithm Implementations
-                async function asapScheduling() {
+                // Make asapScheduling globally accessible
+                window.asapScheduling = async function asapScheduling() {
                     // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
                     console.log('🚀 Starting ASAP scheduling with best practice no-overlap packer...');
                     
@@ -3183,10 +3197,23 @@
                         end = cal.skipNonWorkingTime(end, false); // false = backward
                     }
                     
-                    // Get this resource's events (excluding the one we're scheduling)
-                    const events = resource.events
-                        .filter(e => e !== excludeEvent && e.id !== excludeEvent?.id)
-                        .sort((a, b) => b.endDate - a.endDate); // Sort by end date descending for backward
+                    // CRITICAL FIX: Get events from eventStore and filter by resource
+                    // This ensures we get all events for this resource, not just those in resource.events
+                    const { eventStore, assignmentStore } = scheduler;
+                    
+                    // Get all events assigned to this resource through assignments
+                    const events = [];
+                    assignmentStore.forEach(assignment => {
+                        if (assignment.resourceId === resource.id) {
+                            const event = eventStore.getById(assignment.eventId);
+                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate) {
+                                events.push(event);
+                            }
+                        }
+                    });
+                    
+                    // Sort events by end date descending for backward scheduling
+                    events.sort((a, b) => b.endDate - a.endDate);
                     
                     // Find the latest available slot working backwards
                     for (const e of events) {
@@ -3207,7 +3234,7 @@
                     return { start, end };
                 }
                 
-                async function alapScheduling() {
+                window.alapScheduling = async function alapScheduling() {
                     // ALAP (As Late As Possible) - Backward scheduling using Bryntum direction
                     console.log('🚀 Starting ALAP scheduling with backward direction...');
                     
@@ -3702,34 +3729,50 @@
                 // Run ASAP and fit to view after it completes
                 setTimeout(async () => {
                     try {
-                        // Run ASAP scheduling
-                        await asapScheduling();
-                        console.log('✅ Initial ASAP scheduling complete');
+                        // Ensure data is fully loaded
+                        if (scheduler.eventStore.count === 0) {
+                            console.warn('⚠️ No events loaded, skipping initial ASAP');
+                            return;
+                        }
                         
-                        // Fit to view after ASAP completes
-                        setTimeout(() => {
-                            if (scheduler.zoomToFit) {
-                                scheduler.zoomToFit({
-                                    leftMargin: 50,
-                                    rightMargin: 50
-                                });
-                                console.log('✅ Zoomed to fit after ASAP');
+                        // Run ASAP scheduling using global function
+                        if (window.asapScheduling) {
+                            console.log('📋 Running initial ASAP scheduling...');
+                            await window.asapScheduling();
+                            console.log('✅ Initial ASAP scheduling complete');
+                            
+                            // Fit to view after ASAP completes
+                            setTimeout(() => {
+                                if (scheduler.zoomToFit) {
+                                    scheduler.zoomToFit({
+                                        leftMargin: 50,
+                                        rightMargin: 50
+                                    });
+                                    console.log('✅ Zoomed to fit after ASAP');
+                                }
+                            }, 500);
+                            
+                            // Add welcome message to Max AI
+                            const maxMessages = document.getElementById('maxMessages');
+                            if (maxMessages) {
+                                const welcomeMsg = document.createElement('div');
+                                welcomeMsg.className = 'max-ai-message assistant';
+                                welcomeMsg.innerHTML = '✅ <strong>Schedule loaded and optimized!</strong> ASAP scheduling applied automatically. All operations are scheduled with no overlaps.';
+                                maxMessages.appendChild(welcomeMsg);
+                                maxMessages.scrollTop = maxMessages.scrollHeight;
                             }
-                        }, 500);
-                        
-                        // Add welcome message to Max AI
-                        const maxMessages = document.getElementById('maxMessages');
-                        if (maxMessages) {
-                            const welcomeMsg = document.createElement('div');
-                            welcomeMsg.className = 'max-ai-message assistant';
-                            welcomeMsg.innerHTML = '✅ <strong>Schedule loaded and optimized!</strong> ASAP scheduling applied automatically. All operations are scheduled with no overlaps.';
-                            maxMessages.appendChild(welcomeMsg);
-                            maxMessages.scrollTop = maxMessages.scrollHeight;
+                        } else {
+                            console.error('❌ asapScheduling function not available');
+                            // Fallback: Try calling via global optimization function
+                            if (window.optimizeSchedule) {
+                                console.log('🔄 Trying fallback optimization...');
+                                await window.optimizeSchedule('asap');
+                            }
                         }
                     } catch (error) {
                         console.error('Error during initial ASAP scheduling:', error);
                     }
-                }, 1000); // Give scheduler time to fully initialize
+                }, 2000); // Increased delay to ensure everything is fully initialized
                 
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
