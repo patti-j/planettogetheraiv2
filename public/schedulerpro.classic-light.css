@@ -1,7 +1,7 @@
 @charset "UTF-8";
 /*!
  *
- * Bryntum Scheduler Pro 6.3.2
+ * Bryntum Scheduler Pro 6.3.3
  *
  * Copyright(c) 2025 Bryntum AB
  * https://bryntum.com/contact
@@ -325,7 +325,7 @@
 
 
 :root{
-  --bryntum-version:"6.3.2";
+  --bryntum-version:"6.3.3";
 }
 
 .b-fa{
