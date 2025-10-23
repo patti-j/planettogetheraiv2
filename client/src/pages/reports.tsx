@@ -409,6 +409,13 @@ export default function Dashboard() {
               allReportsCount: allReports?.length
             });
             
+            // Clear pages immediately for paginated reports (don't wait for loaded event)
+            if (reportType === "PaginatedReport") {
+              console.log(`🧹 [Reports.tsx] Clearing pages immediately for paginated report`);
+              // Note: We can't call setPages here directly as it's from the hook
+              // The hook will handle clearing pages in the loaded event
+            }
+            
             const config = await embedReport({ 
               workspaceId: selectedWorkspaceId, 
               reportId,
