@@ -3327,19 +3327,25 @@
                         succs.get(dep.fromEvent).push(dep.toEvent);
                     });
                     
-                    // Sort events for backward processing (process in reverse dependency order)
-                    const sortedEvents = [...events].sort((a, b) => {
-                        // Events with no successors should be scheduled first (latest in timeline)
-                        const aSuccs = succs.get(a.id) || [];
-                        const bSuccs = succs.get(b.id) || [];
-                        if (aSuccs.length === 0 && bSuccs.length > 0) return -1;
-                        if (bSuccs.length === 0 && aSuccs.length > 0) return 1;
-                        return 0;
-                    });
-                    
+                    // Build reverse topological order (successors first)
                     const byId = id => eventStore.getById(id);
+                    const scheduled = new Set();
+                    const sorted = [];
                     
-                    for (const event of sortedEvents) {
+                    function successorsOf(id) { return succs.get(id) || []; }
+                    
+                    // Basic reverse topo: loop until all inserted
+                    let guard = events.length * 2;
+                    while (sorted.length < events.length && guard-- > 0) {
+                        for (const ev of events) {
+                            if (scheduled.has(ev.id)) continue;
+                            const allSuccScheduled = successorsOf(ev.id).every(x => scheduled.has(x));
+                            if (allSuccScheduled) { sorted.push(ev); scheduled.add(ev.id); }
+                        }
+                    }
+                    for (const ev of events) if (!scheduled.has(ev.id)) sorted.push(ev);
+                    
+                    for (const event of sorted) {
                         // Calculate latest end based on successors
                         let latestEnd = new Date(dueDate);
                         const succIds = succs.get(event.id) || [];
