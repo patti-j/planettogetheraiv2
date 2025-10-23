@@ -274,6 +274,13 @@ export function usePowerBIEmbed(containerId: string = "reportContainer") {
       setIsLoading(true);
       setError(null);
       
+      // CRITICAL: Clear pages IMMEDIATELY for paginated reports to prevent showing stale pages
+      if (reportType === "PaginatedReport") {
+        console.log(`🧹 [Embed] Clearing pages immediately for paginated report (before embed)`);
+        setPages([]);
+        setCurrentPageId(null);
+      }
+      
       // Set a dummy AAD token for server-side auth (used by refresh logic)
       if (accessToken) {
         setAADToken(accessToken);
