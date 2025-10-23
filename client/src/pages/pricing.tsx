@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PublicSiteSearch } from "@/components/public-site-search";
 import { 
   Check, 
   X, 
@@ -491,6 +492,27 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Header with Search */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Sparkles className="w-6 h-6 text-blue-600" />
+              <span className="text-lg font-semibold">PlanetTogether</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <PublicSiteSearch />
+              <Button 
+                variant="outline"
+                onClick={() => window.location.href = '/login'}
+              >
+                Sign In
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+      
       {/* Hero Section */}
       <div className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">

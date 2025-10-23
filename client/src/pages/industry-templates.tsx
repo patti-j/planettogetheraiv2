@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { PublicSiteSearch } from "@/components/public-site-search";
 import { Sparkles, Building2, Settings, Check, Plus, Globe, Palette, BarChart, Factory, Maximize2, Minimize2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useAITheme } from "@/hooks/use-ai-theme";
@@ -321,6 +322,29 @@ export default function IndustryTemplates() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+      {/* Top Navigation with Search */}
+      <div className="bg-white border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Building2 className="w-6 h-6 text-blue-600" />
+              <span className="text-lg font-semibold">PlanetTogether</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <PublicSiteSearch />
+              {user && (
+                <Button 
+                  variant="outline"
+                  onClick={() => window.location.href = '/home'}
+                >
+                  Dashboard
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+      
       <div className="p-3 sm:p-6 space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="relative">
