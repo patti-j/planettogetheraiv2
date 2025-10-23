@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Production Scheduler with Planning Area Filter</title>
+
+  <!-- Local Bryntum Scheduler Pro -->
+  <link rel="stylesheet" href="./classic-light.css">
+  <script src="./schedulerpro.umd.js"></script>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 20px; }
+    #toolbar { margin-bottom: 10px; display: flex; gap: 10px; }
+    button, select { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; cursor: pointer; }
+    #container { height: 500px; border: 1px solid #eee; border-radius: 8px; }
+  </style>
+</head>
+<body>
+  <h2>Production Scheduler</h2>
+
+  <div id="toolbar">
+    <label for="planningAreaSelect">Planning Area:</label>
+    <select id="planningAreaSelect">
+      <option value="all">All</option>
+      <option value="A1">Area A1</option>
+      <option value="B2">Area B2</option>
+    </select>
+
+    <button id="forwardBtn">Forward Schedule (ASAP)</button>
+    <button id="backwardBtn">Backward Schedule (ALAP)</button>
+  </div>
+
+  <div id="container"></div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (!window.bryntum || !window.bryntum.SchedulerPro) {
+        document.body.innerHTML = '<h3 style="color:red">Bryntum Scheduler Pro could not be loaded.</h3>';
+        console.error('Bryntum Scheduler Pro not found on window.bryntum.');
+        return;
+      }
+
+      const { SchedulerPro } = window.bryntum;
+
+      // Initialize SchedulerPro
+      const scheduler = new SchedulerPro({
+        appendTo : 'container',
+        startDate : new Date(2025, 9, 20, 8),
+        endDate   : new Date(2025, 9, 20, 18),
+        viewPreset : 'hourAndDay',
+
+        project : {
+          autoCalculate        : true,
+          recalculateAfterLoad : true,
+          constraintsMode      : 'honor',
+          schedulingDirection  : 'forward',
+          allowDependencyLag   : true,
+          calculateCriticalPath: true
+        },
+
+        columns : [
+          { type: 'resourceInfo', text: 'Resource', field: 'name', width: 160 }
+        ],
+
+        resources : [
+          { id : 1, name : 'Machine A', planningAreaId : 'A1' },
+          { id : 2, name : 'Machine B', planningAreaId : 'B2' },
+          { id : 3, name : 'Machine C', planningAreaId : 'A1' }
+        ],
+
+        events : [
+          { id : 1, name : 'Operation 1', resourceId : 1, startDate : '2025-10-20T08:00', duration : 2, durationUnit : 'h' },
+          { id : 2, name : 'Operation 2', resourceId : 1, startDate : '2025-10-20T11:00', duration : 2, durationUnit : 'h' },
+          { id : 3, name : 'Operation 3', resourceId : 2, startDate : '2025-10-20T09:00', duration : 3, durationUnit : 'h' },
+          { id : 4, name : 'Operation 4', resourceId : 3, startDate : '2025-10-20T13:00', duration : 2, durationUnit : 'h' }
+        ],
+
+        dependencies : [
+          { fromEvent : 1, toEvent : 2, type : 0 }, // Finish-to-Start
+          { fromEvent : 2, toEvent : 3, type : 0 }
+        ],
+
+        listeners : {
+          beforeCalculate() { console.log('⏳ Scheduling calculation starting…'); },
+          calculate()       { console.log('✅ Scheduling calculation complete.'); },
+          conflict({ conflict }) { console.warn('⚠️ Scheduling conflict:', conflict); }
+        }
+      });
+
+      // --- Safe Chained Store Filtering ---
+      const masterResourceStore = scheduler.project.resourceStore;
+
+      async function applyPlanningAreaFilter(areaId) {
+        console.log('Applying planning area filter for', areaId);
+
+        if (areaId === 'all') {
+          scheduler.resourceStore = masterResourceStore;
+        } else {
+          scheduler.resourceStore = masterResourceStore.makeChained(r => r.planningAreaId === areaId);
+        }
+
+        await scheduler.project.commitAsync();
+        await scheduler.project.propagate();
+      }
+
+      // Dropdown listener
+      document.getElementById('planningAreaSelect').addEventListener('change', async e => {
+        await applyPlanningAreaFilter(e.target.value);
+      });
+
+      // --- Scheduling Direction ---
+      async function runScheduling(mode) {
+        scheduler.project.schedulingDirection = mode === 'ALAP' ? 'backward' : 'forward';
+        await scheduler.project.propagate();
+        scheduler.toast?.(`Schedule recalculated (${mode})`);
+        console.log(`Recalculated (${mode})`);
+      }
+
+      document.getElementById('forwardBtn').addEventListener('click', () => runScheduling('ASAP'));
+      document.getElementById('backwardBtn').addEventListener('click', () => runScheduling('ALAP'));
+    });
+  </script>
+</body>
+</html>

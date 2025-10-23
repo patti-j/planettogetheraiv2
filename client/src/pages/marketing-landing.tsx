@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
+import { PublicSiteSearch } from '@/components/public-site-search';
 import { 
   Factory, 
   TrendingUp, 
@@ -292,6 +293,9 @@ export default function MarketingLandingPage() {
               <span className="text-xl font-bold text-white">PlanetTogether</span>
             </div>
             <div className="flex items-center gap-4">
+              {/* Search Component */}
+              <PublicSiteSearch className="bg-white/10 border-white/20 text-white hover:bg-white/20 [&_span]:text-white [&_svg]:text-white" />
+              
               <Button 
                 variant="outline" 
                 className="border-white text-white hover:bg-white hover:text-slate-900"
