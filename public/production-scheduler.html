@@ -2591,6 +2591,24 @@
                     }
                 }
                 
+                // Repair function to enforce no overlaps across all resources
+                async function enforceNoOverlapAcrossAllResources() {
+                    const resList = scheduler.resourceStore.records;
+                    for (const r of resList) {
+                        const evs = r.events.slice().sort((a,b) => a.startDate - b.startDate);
+                        for (const ev of evs) {
+                            const dur = ev.durationMS ?? ev.duration * 3600000;
+                            const { start, end } = findNextFreeSlotOnResource(r, ev.startDate, dur, ev);
+                            // Only move if needed
+                            if (start.getTime() !== ev.startDate.getTime()) {
+                                ev.set({ startDate: start, endDate: end });
+                            }
+                        }
+                    }
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
+                }
+                
                 // Helper function to check for constraint violations (resource overlaps) - legacy support
                 async function checkConstraintViolations() {
                     const violations = [];
