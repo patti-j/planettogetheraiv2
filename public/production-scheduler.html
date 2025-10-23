@@ -1487,12 +1487,22 @@
                 await project.commitAsync();
                 await project.propagate();
                 
-                // Apply zoom to fit after filtering
-                scheduler.zoomToFit({
-                    leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                    rightMargin: 50   // Margin in pixels between last event end and last visible date
-                });
-                console.log('🔍 [Planning Area Filter] Zoom to fit applied');
+                // CRITICAL FIX: Run ASAP scheduling to show operations after filter change
+                console.log('📅 [Planning Area Filter] Running ASAP scheduling to display operations...');
+                if (window.asapScheduling) {
+                    await window.asapScheduling();
+                } else {
+                    console.error('❌ ASAP scheduling function not available!');
+                }
+                
+                // Apply zoom to fit after filtering AND scheduling
+                setTimeout(() => {
+                    scheduler.zoomToFit({
+                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                        rightMargin: 50   // Margin in pixels between last event end and last visible date
+                    });
+                    console.log('🔍 [Planning Area Filter] Zoom to fit applied');
+                }, 100); // Small delay to ensure rendering is complete
                 
             } catch (error) {
                 console.error('❌ [Planning Area Filter] Error:', error);
@@ -3302,8 +3312,9 @@
                         preds.get(dep.toEvent).push(dep.fromEvent);
                     });
                     
-                    // Topologically sort events based on dependencies
+                    // Topologically sort events based on dependencies AND sequence numbers
                     // This ensures we schedule predecessors before successors
+                    // AND operations with lower sequence numbers first on same resource
                     const scheduled = new Set();
                     const sortedEvents = [];
                     
@@ -3311,6 +3322,18 @@
                         const deps = preds.get(event.id) || [];
                         return deps.every(depId => scheduled.has(depId));
                     }
+                    
+                    // Sort events by sequence number within same job as secondary criteria
+                    events.sort((a, b) => {
+                        // First sort by job ID
+                        if (a.jobId !== b.jobId) {
+                            return (a.jobId || 0) - (b.jobId || 0);
+                        }
+                        // Then by sequence number within same job
+                        const seqA = a.sequence_number || 999;
+                        const seqB = b.sequence_number || 999;
+                        return seqA - seqB;
+                    });
                     
                     // Keep trying until all events are sorted
                     let maxIterations = events.length * 2;
