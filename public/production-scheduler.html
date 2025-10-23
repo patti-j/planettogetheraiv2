@@ -1438,6 +1438,9 @@
     
     <!-- Initialize the scheduler -->
     <script>
+        console.log('🔥 SCHEDULER SCRIPT STARTING - This should appear immediately!');
+        console.log('📊 Current document state:', document.readyState);
+        
         // Global function for planning area filter (must be defined before DOMContentLoaded)
         window.applyPlanningAreaFilter = async function() {
             console.log('🔥 [Planning Area Filter] Apply button clicked!');
@@ -1544,6 +1547,8 @@
         let schedulerInitialized = false;
         
         document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 DOMContentLoaded event fired - Starting scheduler initialization...');
+            
             // Prevent multiple initialization
             if (schedulerInitialized) {
                 console.log('Scheduler already initialized, skipping...');
@@ -1552,10 +1557,15 @@
             schedulerInitialized = true;
             
             try {
-                // Mark first task as in progress
+                console.log('📊 Checking if Bryntum is loaded...');
+                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                    console.error('❌ Bryntum SchedulerPro library not loaded!');
+                    return;
+                }
                 
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
+                console.log('✅ Bryntum SchedulerPro loaded successfully');
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
@@ -2190,16 +2200,6 @@
                     // Enable pinch zoom on mobile
                     pinchZoom: isMobile,
                     
-                    // Project configuration for scheduling engine (following Bryntum best practices)
-                    project: {
-                        autoCalculate: true,          // Automatically recalculate when changes occur
-                        recalculateAfterLoad: true,  // Recalculate after loading data
-                        constraintsMode: 'honor',    // Honor constraints during scheduling
-                        schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
-                        allowDependencyLag: true,     // Allow lag times between dependencies
-                        calculateCriticalPath: true   // Enable critical path calculation
-                    },
-                    
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
                     
@@ -2226,33 +2226,24 @@
                     // Disable sync storage to prevent errors
                     syncDataOnLoad: false,
 
-                    // Project configuration with strict no-overlap constraints
+                    // Single project configuration with strict no-overlap constraints
                     project: {
                         autoLoad: false,
                         autoSync: false,
                         silenceInitialCommit: true, // Prevent initial save attempts
                         
-                        // Load inline data
-                        resources: resources,
-                        events: events,
-                        dependencies: dependencies,
+                        // Note: inline data will be loaded after fetching from API
+                        // resources, events, dependencies will be provided via loadInlineData()
                         
                         // Enable automatic scheduling dates
                         autoCalculateStartDate: true,
                         autoCalculateEndDate: true,
-                        
-                        // Use ASAP scheduling with strict resource constraints
-                        schedulingEngine: {
-                            multiplePerResource: false, // Only one task at a time per resource
-                            allowOverlap: false, // Strictly prevent overlapping on same resource
-                            // Additional constraints
-                            scheduleOverlapEvents: false, // Don't allow overlapping during scheduling
-                            constraintResolution: 'honor', // Honor all constraints strictly
-                            // Enable automatic constraint checking
-                            strictDependencies: true,
-                            // Ensure operations don't overlap on same resource
-                            manuallyScheduled: false // Allow engine to auto-adjust for constraints
-                        }
+                        autoCalculate: true,          // Automatically recalculate when changes occur
+                        recalculateAfterLoad: true,  // Recalculate after loading data
+                        constraintsMode: 'honor',    // Honor constraints during scheduling
+                        schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
+                        allowDependencyLag: true,     // Allow lag times between dependencies
+                        calculateCriticalPath: true   // Enable critical path calculation
                     },
 
                     features: {
