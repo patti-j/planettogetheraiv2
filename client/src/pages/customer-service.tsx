@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,7 +42,7 @@ import {
   ExternalLink,
   Headphones
 } from "lucide-react";
-import { Job, Operation, Resource } from "@shared/schema";
+import { PtJob, JobOperation, Resource } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useNavigation } from "@/contexts/NavigationContext";
@@ -131,11 +131,11 @@ export default function CustomerService() {
   }, [addRecentPage]);
 
   // Fetch production data for integration
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<PtJob[]>({
     queryKey: ["/api/jobs"],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<JobOperation[]>({
     queryKey: ["/api/operations"],
   });
 
