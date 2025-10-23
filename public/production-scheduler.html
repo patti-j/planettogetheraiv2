@@ -3482,7 +3482,8 @@
                         });
                     });
                     
-                    scheduler.eventStore.commit();
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
                     console.log('✅ Critical Path scheduling completed');
                     
                     // VERIFY no overlaps
@@ -3581,7 +3582,8 @@
                     });
                     
                     // Commit the changes
-                    scheduler.eventStore.commit();
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
                     console.log('✅ Level Resources scheduling completed');
                     
                     // VERIFY no overlaps
@@ -3681,7 +3683,8 @@
                         resourceSchedules[resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                     });
                     
-                    scheduler.eventStore.commit();
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
                     console.log('✅ Drum (TOC) scheduling completed');
                     
                     // VERIFY no overlaps - use assignments to track resources
