@@ -1833,6 +1833,7 @@
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
+                        sequence_number: operation.sequence_number || operation.sequenceNumber, // Add sequence number for proper ordering
                         ptData: operation // Keep original PT data for algorithms
                     };
                 }).filter(event => event.resourceId); // Only include operations with valid resources
@@ -1989,10 +1990,12 @@
                     console.log('\n🔗 Creating additional dependencies for jobs (PT had only ' + dependencies.length + ')...');
                 
                 // Group ALL operations by job (not just brewery ops)
+                // CRITICAL: Only group by jobId to prevent cross-job dependencies
                 const allJobGroups = {};
                 events.forEach(op => {
-                    const jobId = op.jobId || op.jobName || 'NO_JOB';
-                    if (jobId !== 'NO_JOB') {
+                    // Use ONLY jobId - never fallback to jobName to prevent cross-job dependencies
+                    const jobId = op.jobId;
+                    if (jobId && jobId !== 'NO_JOB') {
                         if (!allJobGroups[jobId]) {
                             allJobGroups[jobId] = [];
                         }
@@ -2000,7 +2003,8 @@
                     }
                 });
                 
-                console.log(`Found ${Object.keys(allJobGroups).length} jobs total`);
+                console.log(`Found ${Object.keys(allJobGroups).length} jobs with proper jobId`);
+                console.log('Job IDs found:', Object.keys(allJobGroups));
                 
                 // Define process order for brewery operations
                 const processOrder = {
@@ -2012,9 +2016,13 @@
                     'whirlpool': 5,
                     'cool': 6,
                     'ferment': 7,
+                    'dry-hop': 7.5,  // AFTER fermentation, before conditioning
+                    'dry hop': 7.5,  // Alternative spelling
                     'condition': 8,
+                    'bright': 8,     // Bright tank is same as conditioning
                     'packag': 9,
-                    'dry hop': 6.5  // Between fermentation and conditioning
+                    'bottl': 9,      // Bottling is packaging
+                    'can': 9         // Canning is packaging
                 };
                 
                 let totalDepsCreated = 0;
@@ -2023,10 +2031,12 @@
                 Object.entries(allJobGroups).forEach(([jobId, jobOps]) => {
                     if (jobOps.length < 2) {
                         // Skip jobs with only one operation
+                        console.log(`  Skipping Job ${jobId}: Only ${jobOps.length} operation`);
                         return;
                     }
                     
-                    console.log(`\n  Job ${jobId}: ${jobOps.length} operations`);
+                    console.log(`\n  📦 Job ${jobId} (${jobOps[0].jobName || 'Unknown'}): ${jobOps.length} operations`);
+                    console.log(`    Operations in job:`, jobOps.map(op => op.name));
                     
                     // Try to determine process order for each operation
                     jobOps.forEach(op => {
@@ -2041,8 +2051,13 @@
                             }
                         }
                         
-                        // If not a brewery operation, try to use scheduled start time as order
-                        if (order === 999 && op.startDate) {
+                        // Use sequence_number if available (most reliable)
+                        if (op.sequence_number !== null && op.sequence_number !== undefined) {
+                            order = op.sequence_number;
+                            console.log(`    Using sequence_number ${op.sequence_number} for ${op.name}`);
+                        }
+                        // Otherwise, if not a brewery operation, try to use scheduled start time as order
+                        else if (order === 999 && op.startDate) {
                             order = new Date(op.startDate).getTime();
                         }
                         

@@ -1579,6 +1579,7 @@ router.get("/api/pt-operations", async (req, res) => {
         jo.scheduled_start,
         jo.scheduled_end,
         jo.percent_finished,
+        jo.sequence_number,
         
         -- Job information from ptjobs
         j.id as job_id,
@@ -1650,7 +1651,9 @@ router.get("/api/pt-operations", async (req, res) => {
       externalId: op.operation_external_id,
       jobExternalId: op.job_external_id,
       // IMPORTANT: Include job_id for dependency generation
-      jobId: op.job_id
+      jobId: op.job_id,
+      // Include sequence_number for proper operation ordering within jobs
+      sequence_number: op.sequence_number
     }));
 
     console.log(`Successfully fetched ${operations.length} PT operations`);
