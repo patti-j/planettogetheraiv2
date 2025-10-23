@@ -2203,13 +2203,7 @@
                         // Scheduling engine configuration
                         schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
                         allowDependencyLag: true,     // Allow lag times between dependencies
-                        calculateCriticalPath: true,   // Enable critical path calculation
-                        
-                        // Resource constraint enforcement
-                        eventStore: {
-                            // Ensure no two events can occupy same resource at same time
-                            useResourceConstraint: true
-                        }
+                        calculateCriticalPath: true   // Enable critical path calculation
                     },
 
                     features: {
