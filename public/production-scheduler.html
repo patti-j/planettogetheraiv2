@@ -4217,23 +4217,8 @@
                     switch(algorithm) {
                         case 'asap':
                             console.log('⏳ Running ASAP (Forward) scheduling...');
-                            project.schedulingDirection = 'forward';
-                            
-                            // Clear any manual scheduling flags to let engine optimize
-                            scheduler.eventStore.forEach(event => {
-                                event.manuallyScheduled = false;
-                            });
-                            
-                            await project.propagate();
-                            
-                            // Check for constraint violations after scheduling
-                            const violations = await checkConstraintViolations();
-                            if (violations.length > 0) {
-                                console.warn('⚠️ Constraint violations detected:', violations);
-                                // Try to resolve by spreading out operations
-                                await resolveOverlaps();
-                            }
-                            
+                            // Use the working custom ASAP implementation
+                            await asapScheduling();
                             console.log('✅ ASAP scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('ASAP scheduling complete');
@@ -4242,23 +4227,8 @@
                             
                         case 'alap':
                             console.log('⏳ Running ALAP (Backward) scheduling...');
-                            project.schedulingDirection = 'backward';
-                            
-                            // Clear any manual scheduling flags to let engine optimize
-                            scheduler.eventStore.forEach(event => {
-                                event.manuallyScheduled = false;
-                            });
-                            
-                            await project.propagate();
-                            
-                            // Check for constraint violations after scheduling
-                            const alapViolations = await checkConstraintViolations();
-                            if (alapViolations.length > 0) {
-                                console.warn('⚠️ Constraint violations detected:', alapViolations);
-                                // Try to resolve by spreading out operations
-                                await resolveOverlaps();
-                            }
-                            
+                            // Use the working custom ALAP implementation
+                            await alapScheduling();
                             console.log('✅ ALAP scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('ALAP scheduling complete');
@@ -4267,23 +4237,8 @@
                             
                         case 'criticalPath':
                             console.log('⏳ Running Critical Path scheduling...');
-                            project.calculateCriticalPath = true;
-                            project.schedulingDirection = 'forward';
-                            
-                            // Clear any manual scheduling flags to let engine optimize
-                            scheduler.eventStore.forEach(event => {
-                                event.manuallyScheduled = false;
-                            });
-                            
-                            await project.propagate();
-                            
-                            // Check for constraint violations after scheduling
-                            const cpViolations = await checkConstraintViolations();
-                            if (cpViolations.length > 0) {
-                                console.warn('⚠️ Constraint violations detected:', cpViolations);
-                                await resolveOverlaps();
-                            }
-                            
+                            // Use the working custom Critical Path implementation
+                            await criticalPathScheduling();
                             console.log('✅ Critical Path scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Critical Path scheduling complete');
@@ -4292,24 +4247,8 @@
                             
                         case 'levelResources':
                             console.log('⏳ Running Resource Leveling...');
-                            // For resource leveling, we use forward scheduling with resource constraints
-                            project.schedulingDirection = 'forward';
-                            project.constraintsMode = 'honor';
-                            
-                            // Clear any manual scheduling flags to let engine optimize
-                            scheduler.eventStore.forEach(event => {
-                                event.manuallyScheduled = false;
-                            });
-                            
-                            await project.propagate();
-                            
-                            // Resource leveling should inherently prevent overlaps, but check anyway
-                            const rlViolations = await checkConstraintViolations();
-                            if (rlViolations.length > 0) {
-                                console.warn('⚠️ Constraint violations detected after resource leveling:', rlViolations);
-                                await resolveOverlaps();
-                            }
-                            
+                            // Use the working custom Resource Leveling implementation
+                            await levelResourcesScheduling();
                             console.log('✅ Resource Leveling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Resource Leveling complete');
@@ -4318,23 +4257,8 @@
                             
                         case 'drum':
                             console.log('⏳ Running Drum/TOC scheduling...');
-                            // Theory of Constraints - focus on bottleneck resources
-                            project.schedulingDirection = 'forward';
-                            
-                            // Clear any manual scheduling flags to let engine optimize
-                            scheduler.eventStore.forEach(event => {
-                                event.manuallyScheduled = false;
-                            });
-                            
-                            await project.propagate();
-                            
-                            // Check for constraint violations after scheduling
-                            const tocViolations = await checkConstraintViolations();
-                            if (tocViolations.length > 0) {
-                                console.warn('⚠️ Constraint violations detected:', tocViolations);
-                                await resolveOverlaps();
-                            }
-                            
+                            // Use the working custom Drum/TOC implementation
+                            await drumScheduling();
                             console.log('✅ Drum/TOC scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Drum/TOC scheduling complete');
