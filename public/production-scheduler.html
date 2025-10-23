@@ -1445,98 +1445,54 @@
                 return;
             }
             const scheduler = window.scheduler;
+            const project = scheduler.project;
+            
+            // Keep reference to master store if not already stored
+            if (!window.masterResourceStore) {
+                window.masterResourceStore = project.resourceStore;
+                console.log('📦 [Planning Area Filter] Master resource store reference saved');
+            }
             
             try {
-                // Clear any existing filters first
-                scheduler.assignmentStore.clearFilters();
-                scheduler.resourceStore.clearFilters();
-                scheduler.eventStore.clearFilters();
-                
                 if (selectedPlanningArea !== 'all') {
                     console.log(`🎯 [Planning Area Filter] Applying filter for: ${selectedPlanningArea}`);
                     
-                    // Filter resources by planning area
-                    scheduler.resourceStore.filter(resource => {
+                    // Destroy any previous chained stores
+                    if (scheduler.resourceStore.destroyChainedStores) {
+                        scheduler.resourceStore.destroyChainedStores();
+                    }
+                    
+                    // Create a chained store with filtered resources
+                    const chainedStore = window.masterResourceStore.makeChained(resource => {
                         return resource.planning_area === selectedPlanningArea;
                     });
                     
-                    // Get filtered resource IDs
-                    const filteredResourceIds = new Set(
-                        scheduler.resourceStore.records.map(r => r.id)
-                    );
-                    
-                    // Filter events to only show those assigned to filtered resources
-                    scheduler.eventStore.filter(event => {
-                        return filteredResourceIds.has(event.resourceId);
-                    });
-                    
-                    // Alternative: Use assignmentStore filtering (commented out for now)
-                    // scheduler.assignmentStore.filter(assignment => {
-                    //     const resource = scheduler.resourceStore.getById(assignment.resourceId);
-                    //     return resource && resource.planning_area === selectedPlanningArea;
-                    // });
+                    // Replace the scheduler's resource store with the chained version
+                    scheduler.resourceStore = chainedStore;
                     
                     const visibleResources = scheduler.resourceStore.records.length;
-                    const visibleEvents = scheduler.eventStore.records.length;
-                    console.log(`✅ [Planning Area Filter] Showing ${visibleEvents} operations for ${visibleResources} resources`);
-                    
-                    // Run ASAP scheduling on filtered events
-                    console.log(`🚀 [Planning Area Filter] Running ASAP scheduling`);
-                    
-                    const events = scheduler.eventStore.records;
-                    
-                    // Simple ASAP: start each event as early as possible
-                    const baseDate = new Date();
-                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
-                    
-                    // Build dependency map
-                    const dependencyMap = new Map();
-                    scheduler.dependencyStore.records.forEach(dep => {
-                        if (!dependencyMap.has(dep.toEvent)) {
-                            dependencyMap.set(dep.toEvent, []);
-                        }
-                        dependencyMap.get(dep.toEvent).push(dep.fromEvent);
-                    });
-                    
-                    // Schedule each event
-                    events.forEach(event => {
-                        let earliestStart = new Date(baseDate);
-                        
-                        // Check dependencies
-                        const predecessors = dependencyMap.get(event.id) || [];
-                        predecessors.forEach(predId => {
-                            const predEvent = scheduler.eventStore.getById(predId);
-                            if (predEvent && predEvent.endDate > earliestStart) {
-                                earliestStart = new Date(predEvent.endDate);
-                            }
-                        });
-                        
-                        event.startDate = earliestStart;
-                        const durationMs = event.duration * 60 * 60 * 1000;
-                        event.endDate = new Date(earliestStart.getTime() + durationMs);
-                    });
-                    
-                    scheduler.eventStore.commit();
-                    console.log('✅ [Planning Area Filter] ASAP scheduling completed');
-                    
-                    // Apply zoom to fit after filtering and scheduling
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('🔍 [Planning Area Filter] Zoom to fit applied');
+                    console.log(`✅ [Planning Area Filter] Showing ${visibleResources} resources for planning area: ${selectedPlanningArea}`);
                     
                 } else {
                     console.log('📊 [Planning Area Filter] Showing all resources and operations');
-                    // Filters are already cleared above
                     
-                    // Apply zoom to fit for all resources
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('🔍 [Planning Area Filter] Zoom to fit applied (all resources)');
+                    // Restore the master store (removes any filters)
+                    if (window.masterResourceStore) {
+                        scheduler.resourceStore = window.masterResourceStore;
+                    }
                 }
+                
+                // Commit changes and recalculate schedule
+                console.log('🔄 [Planning Area Filter] Committing changes and propagating...');
+                await project.commitAsync();
+                await project.propagate();
+                
+                // Apply zoom to fit after filtering
+                scheduler.zoomToFit({
+                    leftMargin: 50,   // Margin in pixels between first event start and first visible date
+                    rightMargin: 50   // Margin in pixels between last event end and last visible date
+                });
+                console.log('🔍 [Planning Area Filter] Zoom to fit applied');
                 
             } catch (error) {
                 console.error('❌ [Planning Area Filter] Error:', error);
