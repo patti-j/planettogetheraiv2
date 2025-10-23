@@ -2594,32 +2594,111 @@
                 // Repair function to enforce no overlaps across all resources
                 async function enforceNoOverlapAcrossAllResources() {
                     console.log('  🔧 Starting overlap repair...');
-                    let movedCount = 0;
+                    let totalMoved = 0;
+                    let iterations = 0;
+                    const maxIterations = 10; // Prevent infinite loops
                     
-                    const resList = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
-                    for (const r of resList) {
-                        const evs = r.events.slice().sort((a,b) => a.startDate - b.startDate);
+                    // Keep repairing until no overlaps remain or max iterations reached
+                    while (iterations < maxIterations) {
+                        iterations++;
+                        let movedInThisPass = 0;
                         
-                        for (const ev of evs) {
-                            const dur = ev.durationMS ?? ev.duration * 3600000;
-                            const { start, end } = findNextFreeSlotOnResource(r, ev.startDate, dur, ev);
+                        const resList = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
+                        
+                        // Process each resource
+                        for (const resource of resList) {
+                            const events = resource.events.slice().sort((a, b) => a.startDate - b.startDate);
                             
-                            // Only move if needed
-                            if (start.getTime() !== ev.startDate.getTime()) {
-                                console.log(`    📅 Moving "${ev.name}" on ${r.name} from ${ev.startDate.toLocaleString()} to ${start.toLocaleString()}`);
-                                ev.set({ startDate: start, endDate: end, manuallyScheduled: false });
-                                movedCount++;
+                            // Check each event for overlaps with subsequent events
+                            for (let i = 0; i < events.length; i++) {
+                                const currentEvent = events[i];
+                                
+                                // Check if this event overlaps with any later events on the same resource
+                                let needsMove = false;
+                                for (let j = i + 1; j < events.length; j++) {
+                                    const nextEvent = events[j];
+                                    if (currentEvent.endDate > nextEvent.startDate) {
+                                        needsMove = true;
+                                        break;
+                                    }
+                                }
+                                
+                                // Also check if any earlier event overlaps with this one
+                                for (let j = 0; j < i; j++) {
+                                    const prevEvent = events[j];
+                                    if (prevEvent.endDate > currentEvent.startDate) {
+                                        needsMove = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (needsMove) {
+                                    const dur = currentEvent.durationMS ?? currentEvent.duration * 3600000;
+                                    
+                                    // Find the earliest free slot that doesn't create new overlaps
+                                    const { start, end } = findNextFreeSlotOnResource(resource, currentEvent.startDate, dur, currentEvent);
+                                    
+                                    // Double-check the slot is truly free by verifying against all events
+                                    let slotIsFree = true;
+                                    for (const otherEvent of events) {
+                                        if (otherEvent === currentEvent) continue;
+                                        
+                                        // Check if the proposed slot would overlap with this event
+                                        if ((start < otherEvent.endDate && end > otherEvent.startDate) ||
+                                            (start >= otherEvent.startDate && start < otherEvent.endDate) ||
+                                            (end > otherEvent.startDate && end <= otherEvent.endDate)) {
+                                            slotIsFree = false;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (slotIsFree && start.getTime() !== currentEvent.startDate.getTime()) {
+                                        console.log(`    📅 Moving "${currentEvent.name}" on ${resource.name} from ${currentEvent.startDate.toLocaleString()} to ${start.toLocaleString()}`);
+                                        currentEvent.set({ startDate: start, endDate: end, manuallyScheduled: false });
+                                        movedInThisPass++;
+                                        totalMoved++;
+                                    } else if (!slotIsFree) {
+                                        // If the slot finder didn't find a truly free slot, manually find one
+                                        console.log(`    ⚠️ Slot finder failed for "${currentEvent.name}" on ${resource.name}, searching manually...`);
+                                        
+                                        // Find the latest end time of all events on this resource
+                                        let latestEnd = new Date();
+                                        for (const evt of events) {
+                                            if (evt !== currentEvent && evt.endDate > latestEnd) {
+                                                latestEnd = new Date(evt.endDate);
+                                            }
+                                        }
+                                        
+                                        // Schedule after the latest event
+                                        const newStart = new Date(latestEnd);
+                                        const newEnd = new Date(newStart.getTime() + dur);
+                                        
+                                        console.log(`    📅 Moving "${currentEvent.name}" to end of schedule: ${newStart.toLocaleString()}`);
+                                        currentEvent.set({ startDate: newStart, endDate: newEnd, manuallyScheduled: false });
+                                        movedInThisPass++;
+                                        totalMoved++;
+                                    }
+                                }
                             }
+                        }
+                        
+                        // Commit changes after each pass
+                        if (movedInThisPass > 0) {
+                            await scheduler.project.commitAsync();
+                            await scheduler.project.propagate();
+                            console.log(`  🔄 Pass ${iterations}: Moved ${movedInThisPass} operations`);
+                        } else {
+                            // No more overlaps found, we're done
+                            console.log(`  ✅ All overlaps resolved after ${iterations} pass${iterations > 1 ? 'es' : ''}`);
+                            break;
                         }
                     }
                     
-                    if (movedCount > 0) {
-                        console.log(`  🔄 Moved ${movedCount} operations to fix overlaps`);
-                        await scheduler.project.commitAsync();
-                        await scheduler.project.propagate();
-                    } else {
-                        console.log('  ✅ No operations needed to be moved');
+                    if (iterations >= maxIterations) {
+                        console.error(`  ⚠️ Reached maximum iterations (${maxIterations}) - some overlaps may remain`);
                     }
+                    
+                    console.log(`  📊 Total operations moved: ${totalMoved}`);
                 }
                 
                 // Helper function to check for constraint violations (resource overlaps) - legacy support
@@ -2670,10 +2749,41 @@
                     });
                     events.sort((a, b) => a.startDate - b.startDate);
                     
-                    // Push forward past conflicts until free
-                    for (const e of events) {
+                    // Keep trying to find a truly free slot
+                    let attempts = 0;
+                    const maxAttempts = events.length + 2; // Prevent infinite loops
+                    
+                    while (attempts < maxAttempts) {
+                        attempts++;
+                        let needsMove = false;
                         const end = new Date(start.getTime() + durationMs);
-                        if (start < e.endDate && end > e.startDate) start = new Date(e.endDate);
+                        
+                        // Check against all events for any kind of overlap
+                        for (const e of events) {
+                            // Check if the proposed slot overlaps with this event
+                            if (start < e.endDate && end > e.startDate) {
+                                // Found an overlap, move to after this event
+                                start = new Date(e.endDate.getTime());
+                                needsMove = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!needsMove) {
+                            // No overlaps found, we have a valid slot
+                            break;
+                        }
+                    }
+                    
+                    // If we still can't find a slot, place at the very end
+                    if (attempts >= maxAttempts) {
+                        let latestEnd = new Date(earliestStart);
+                        for (const e of events) {
+                            if (e.endDate > latestEnd) {
+                                latestEnd = new Date(e.endDate.getTime());
+                            }
+                        }
+                        start = latestEnd;
                     }
                     
                     if (cal?.isNonWorkingTime?.(start)) start = cal.skipNonWorkingTime(start, true);
