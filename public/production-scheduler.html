@@ -2269,38 +2269,52 @@
                                     const operationName = draggedRecord.name || draggedRecord.operationName || '';
                                     const requiredCapability = getRequiredCapability(operationName);
                                     
-                                    // 1. Check capability requirements
-                                    if (requiredCapability !== null && targetRecord) {
-                                        const targetResourceId = targetRecord.id;
-                                        const targetCapabilities = resourceCapabilities[targetResourceId] || [];
+                                    // 1. Check capability requirements - USE SIMPLE NAME MATCHING SINCE API IS BROKEN
+                                    if (targetRecord) {
+                                        const operationNameLower = operationName.toLowerCase();
+                                        const targetResourceNameLower = targetRecord.name.toLowerCase();
                                         
-                                        // Log for debugging
-                                        console.log(`🔍 Validating drag: Operation "${operationName}" requires capability ${requiredCapability}`);
-                                        console.log(`🔍 Target resource "${targetRecord.name}" (ID: ${targetResourceId}) has capabilities:`, targetCapabilities);
+                                        console.log(`🔍 Validating drag: Operation "${operationName}" to resource "${targetRecord.name}"`);
                                         
-                                        // Check if target resource has the required capability
-                                        if (!targetCapabilities.includes(requiredCapability)) {
-                                            // Show a tooltip explaining why the drop is invalid
-                                            const capabilityNames = {
-                                                1: 'Milling', 2: 'Mashing', 3: 'Lautering',
-                                                4: 'Boiling', 5: 'Fermentation', 6: 'Conditioning',
-                                                7: 'Dry Hopping', 8: 'Packaging', 9: 'Pasteurization'
-                                            };
+                                        // Simple capability matching based on resource and operation names
+                                        const isValidMatch = 
+                                            // Milling operations can only go on Grain Mill
+                                            (operationNameLower.includes('mill') && targetResourceNameLower.includes('grain mill')) ||
+                                            // Mashing operations can only go on Mash Tun
+                                            (operationNameLower.includes('mash') && !operationNameLower.includes('unmash') && 
+                                             targetResourceNameLower.includes('mash tun')) ||
+                                            // Lautering operations can only go on Lauter Tun
+                                            (operationNameLower.includes('lauter') && targetResourceNameLower.includes('lauter tun')) ||
+                                            // Boiling operations can only go on Brew Kettle
+                                            (operationNameLower.includes('boil') && targetResourceNameLower.includes('brew kettle')) ||
+                                            // Fermentation operations can only go on Fermenter Tanks
+                                            (operationNameLower.includes('ferment') && targetResourceNameLower.includes('fermenter tank')) ||
+                                            // Conditioning operations can only go on Bright Tanks
+                                            (operationNameLower.includes('condition') && targetResourceNameLower.includes('bright tank')) ||
+                                            // Dry Hopping can go on Fermenter Tanks
+                                            (operationNameLower.includes('dry hop') && targetResourceNameLower.includes('fermenter tank')) ||
+                                            // Packaging operations can only go on Bottling/Canning Lines
+                                            (operationNameLower.includes('packag') && (targetResourceNameLower.includes('bottling') || 
+                                                                                        targetResourceNameLower.includes('canning'))) ||
+                                            // Decoction Mash is a special mashing operation
+                                            (operationNameLower.includes('decoction') && targetResourceNameLower.includes('mash tun'));
+                                        
+                                        if (!isValidMatch) {
+                                            console.warn(`❌ Invalid resource match: ${operationName} cannot be performed on ${targetRecord.name}`);
                                             
-                                            // Special case: Be very explicit about fermentation restrictions
-                                            if (requiredCapability === 5) {
-                                                console.error(`❌ BLOCKED: Fermentation operations can ONLY be placed on Fermenter Tanks!`);
-                                                console.error(`❌ ${targetRecord.name} does not have fermentation capability`);
-                                                return {
-                                                    valid: false,
-                                                    message: `❌ Fermentation can ONLY be done on Fermenter Tanks!\n${targetRecord.name} is not a fermenter.`
-                                                };
-                                            }
+                                            // Provide helpful error messages
+                                            let expectedResource = 'appropriate resource';
+                                            if (operationNameLower.includes('mill')) expectedResource = 'Grain Mill';
+                                            else if (operationNameLower.includes('mash')) expectedResource = 'Mash Tun';
+                                            else if (operationNameLower.includes('lauter')) expectedResource = 'Lauter Tun';
+                                            else if (operationNameLower.includes('boil')) expectedResource = 'Brew Kettle';
+                                            else if (operationNameLower.includes('ferment')) expectedResource = 'Fermenter Tank';
+                                            else if (operationNameLower.includes('condition')) expectedResource = 'Bright Tank';
+                                            else if (operationNameLower.includes('packag')) expectedResource = 'Bottling/Canning Line';
                                             
-                                            console.warn(`⚠️ Cannot drop ${operationName} on ${targetRecord.name}: Missing ${capabilityNames[requiredCapability]} capability`);
                                             return {
                                                 valid: false,
-                                                message: `${targetRecord.name} cannot perform ${capabilityNames[requiredCapability]} operations`
+                                                message: `${operationName} must be performed on ${expectedResource}, not ${targetRecord.name}`
                                             };
                                         }
                                     }
