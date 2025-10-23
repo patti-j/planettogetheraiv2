@@ -2624,45 +2624,35 @@
                     return violations;
                 }
                 
-                // Best practice "packer" function - finds next free slot on resource
+                // Canonical slot finder - uses assignments for single source of truth
                 function findNextFreeSlotOnResource(resource, earliestStart, durationMs, excludeEvent) {
-                    // Start from earliestStart and push forward past any overlaps
                     let start = new Date(earliestStart);
                     
-                    // Optional: respect resource calendar working time
+                    // Respect working time if a calendar exists
                     const cal = resource.calendar || resource.project?.calendar;
-                    if (cal?.isNonWorkingTime?.(start)) {
-                        start = cal.skipNonWorkingTime(start, true);
-                    }
+                    if (cal?.isNonWorkingTime?.(start)) start = cal.skipNonWorkingTime(start, true);
                     
-                    // CRITICAL FIX: Use Bryntum's native resource.events collection
-                    // This is the proper way to get all events assigned to a resource
-                    const allEvents = resource.events || [];
-                    
-                    // Filter out the event we're scheduling and sort by start date
-                    const events = allEvents.filter(e => {
-                        return e && e !== excludeEvent && e.id !== excludeEvent?.id && e.startDate;
+                    // Collect all events assigned to this resource (assignmentStore is the single source of truth)
+                    const { assignmentStore, eventStore } = scheduler;
+                    const events = [];
+                    assignmentStore.forEach(a => {
+                        if (a.resourceId === resource.id) {
+                            const e = eventStore.getById(a.eventId);
+                            if (e && e !== excludeEvent && e.id !== excludeEvent?.id && e.startDate && e.endDate) {
+                                events.push(e);
+                            }
+                        }
                     });
-                    
-                    // Sort events by start date for efficient overlap checking
                     events.sort((a, b) => a.startDate - b.startDate);
                     
-                    // Find the next available slot
+                    // Push forward past conflicts until free
                     for (const e of events) {
                         const end = new Date(start.getTime() + durationMs);
-                        const overlap = (start < e.endDate) && (end > e.startDate);
-                        if (overlap) {
-                            // Snap start to the end of the conflicting event and continue
-                            start = new Date(e.endDate);
-                        }
+                        if (start < e.endDate && end > e.startDate) start = new Date(e.endDate);
                     }
                     
-                    // Recheck working time on the final boundary
-                    if (cal?.isNonWorkingTime?.(start)) {
-                        start = cal.skipNonWorkingTime(start, true);
-                    }
+                    if (cal?.isNonWorkingTime?.(start)) start = cal.skipNonWorkingTime(start, true);
                     const end = new Date(start.getTime() + durationMs);
-                    
                     return { start, end };
                 }
                 
@@ -3109,59 +3099,6 @@
                         console.error('❌ Failed to save schedule:', error);
                         return false;
                     }
-                }
-                
-                // Helper function to find next available slot on a resource (forward scheduling)
-                function findNextFreeSlotOnResource(resource, earliestStart, durationMs, excludeEvent) {
-                    // Start from earliestStart and push forward past any overlaps
-                    let start = new Date(earliestStart);
-                    
-                    // CRITICAL FIX: Use Bryntum's native resource.events collection
-                    // This properly gets all events assigned to this resource
-                    const allEvents = resource.events || [];
-                    
-                    // Filter out the event we're scheduling and check it has valid dates
-                    const events = allEvents.filter(event => {
-                        return event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate && event.endDate;
-                    });
-                    
-                    // Sort events by start date for forward scheduling
-                    events.sort((a, b) => a.startDate - b.startDate);
-                    
-                    // Keep checking for overlaps and pushing forward until we find a free slot
-                    let attempts = 0;
-                    const maxAttempts = 100; // Prevent infinite loops
-                    
-                    while (attempts < maxAttempts) {
-                        attempts++;
-                        const end = new Date(start.getTime() + durationMs);
-                        let hasOverlap = false;
-                        
-                        // Check if this slot overlaps with any existing event
-                        for (const existingEvent of events) {
-                            // Check for overlap: new event overlaps if its start is before existing end
-                            // AND its end is after existing start
-                            if (start < existingEvent.endDate && end > existingEvent.startDate) {
-                                // Found overlap - push start to end of conflicting event
-                                start = new Date(existingEvent.endDate);
-                                hasOverlap = true;
-                                console.log(`  ⚠️ Overlap detected with "${existingEvent.name}", pushing to ${start.toLocaleString()}`);
-                                break; // Check again from new start time
-                            }
-                        }
-                        
-                        // If no overlap found, we have our slot
-                        if (!hasOverlap) {
-                            const finalEnd = new Date(start.getTime() + durationMs);
-                            console.log(`  ✅ Found free slot: ${start.toLocaleString()} to ${finalEnd.toLocaleString()}`);
-                            return { start, end: finalEnd };
-                        }
-                    }
-                    
-                    // Fallback if we couldn't find a slot (shouldn't happen)
-                    console.warn(`  ⚠️ Could not find free slot after ${maxAttempts} attempts, using last calculated time`);
-                    const end = new Date(start.getTime() + durationMs);
-                    return { start, end };
                 }
 
                 // Scheduling Algorithm Implementations
