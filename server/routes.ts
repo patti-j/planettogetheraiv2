@@ -1001,6 +1001,135 @@ router.delete("/api/items/:id", async (req, res) => {
   }
 });
 
+// Stock items endpoint for ATP-CTP page
+router.get("/api/stock-items", async (req, res) => {
+  try {
+    const itemsList = await storage.getItems();
+    
+    // Map items to stock items format with simulated stock data
+    const stockItems = itemsList.map((item: any) => ({
+      id: item.id,
+      sku: item.itemNumber,
+      name: item.itemName,
+      description: item.description || '',
+      currentStock: Math.floor(Math.random() * 500) + 100, // Simulated current stock
+      reservedStock: Math.floor(Math.random() * 50) + 10, // Simulated reserved stock
+      incomingStock: Math.floor(Math.random() * 100) + 20, // Simulated incoming stock
+      unitOfMeasure: item.unitOfMeasure || 'EA',
+      leadTimeDays: Math.floor(Math.random() * 10) + 3, // Simulated lead time
+      safetyStock: Math.floor(Math.random() * 100) + 50, // Simulated safety stock
+    }));
+    
+    // If no items exist, provide some sample data
+    if (stockItems.length === 0) {
+      const sampleStockItems = [
+        {
+          id: 1,
+          sku: 'PRD-001',
+          name: 'Premium Beer - IPA',
+          description: 'India Pale Ale, 6.5% ABV',
+          currentStock: 450,
+          reservedStock: 75,
+          incomingStock: 200,
+          unitOfMeasure: 'Cases',
+          leadTimeDays: 5,
+          safetyStock: 100
+        },
+        {
+          id: 2,
+          sku: 'PRD-002',
+          name: 'Premium Beer - Lager',
+          description: 'Classic Lager, 5% ABV',
+          currentStock: 320,
+          reservedStock: 50,
+          incomingStock: 150,
+          unitOfMeasure: 'Cases',
+          leadTimeDays: 4,
+          safetyStock: 80
+        },
+        {
+          id: 3,
+          sku: 'PRD-003',
+          name: 'Premium Beer - Wheat',
+          description: 'Wheat Beer, 5.5% ABV',
+          currentStock: 280,
+          reservedStock: 40,
+          incomingStock: 100,
+          unitOfMeasure: 'Cases',
+          leadTimeDays: 6,
+          safetyStock: 60
+        },
+        {
+          id: 4,
+          sku: 'MAT-001',
+          name: 'Malt Extract',
+          description: 'Premium malt extract for brewing',
+          currentStock: 1200,
+          reservedStock: 200,
+          incomingStock: 500,
+          unitOfMeasure: 'KG',
+          leadTimeDays: 7,
+          safetyStock: 300
+        },
+        {
+          id: 5,
+          sku: 'MAT-002',
+          name: 'Hops - Cascade',
+          description: 'Cascade hops for IPA brewing',
+          currentStock: 85,
+          reservedStock: 15,
+          incomingStock: 40,
+          unitOfMeasure: 'KG',
+          leadTimeDays: 10,
+          safetyStock: 25
+        },
+        {
+          id: 6,
+          sku: 'PKG-001',
+          name: 'Glass Bottles - 330ml',
+          description: 'Standard beer bottles',
+          currentStock: 5000,
+          reservedStock: 1000,
+          incomingStock: 2500,
+          unitOfMeasure: 'Units',
+          leadTimeDays: 3,
+          safetyStock: 1500
+        },
+        {
+          id: 7,
+          sku: 'PKG-002',
+          name: 'Six-Pack Carriers',
+          description: 'Cardboard carriers for six-packs',
+          currentStock: 800,
+          reservedStock: 150,
+          incomingStock: 400,
+          unitOfMeasure: 'Units',
+          leadTimeDays: 2,
+          safetyStock: 200
+        },
+        {
+          id: 8,
+          sku: 'LAB-001',
+          name: 'Yeast Culture - Ale',
+          description: 'Active ale yeast culture',
+          currentStock: 50,
+          reservedStock: 8,
+          incomingStock: 20,
+          unitOfMeasure: 'Vials',
+          leadTimeDays: 14,
+          safetyStock: 15
+        }
+      ];
+      return res.json(sampleStockItems);
+    }
+    
+    res.json(stockItems);
+  } catch (error) {
+    console.error("Error fetching stock items:", error);
+    res.status(500).json({ message: "Failed to fetch stock items" });
+  }
+});
+
 // Capabilities endpoints
 router.get("/api/capabilities", async (req, res) => {
   try {
