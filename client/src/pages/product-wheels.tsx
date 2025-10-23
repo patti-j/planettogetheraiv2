@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Progress } from "@/components/ui/progress";
 import type { PtProductWheel, PtProductWheelSegment } from "@shared/schema";
 
 export default function ProductWheelsPage() {
@@ -364,30 +365,473 @@ function WheelDesigner({ wheel, segments }: { wheel: PtProductWheel; segments: P
 }
 
 function WheelVisualization({ wheel, segments }: { wheel: PtProductWheel; segments: PtProductWheelSegment[] }) {
+  const totalHours = segments.reduce((acc, seg) => acc + parseFloat(seg.allocatedHours || '0'), 0);
+  
+  // Calculate angles for each segment
+  const calculateSegmentPath = (startAngle: number, endAngle: number, innerRadius: number, outerRadius: number) => {
+    const startAngleRad = (startAngle * Math.PI) / 180;
+    const endAngleRad = (endAngle * Math.PI) / 180;
+    
+    const x1 = Math.cos(startAngleRad);
+    const y1 = Math.sin(startAngleRad);
+    const x2 = Math.cos(endAngleRad);
+    const y2 = Math.sin(endAngleRad);
+    
+    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
+    
+    return `
+      M ${x1 * innerRadius} ${y1 * innerRadius}
+      L ${x1 * outerRadius} ${y1 * outerRadius}
+      A ${outerRadius} ${outerRadius} 0 ${largeArc} 1 ${x2 * outerRadius} ${y2 * outerRadius}
+      L ${x2 * innerRadius} ${y2 * innerRadius}
+      A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${x1 * innerRadius} ${y1 * innerRadius}
+      Z
+    `;
+  };
+  
+  let currentAngle = -90; // Start at top
+  
   return (
-    <div className="flex items-center justify-center h-[400px]">
-      <div className="text-center text-muted-foreground">
-        <BarChart className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <p>Circular wheel visualization coming soon</p>
-        <p className="text-sm mt-2">Will display segments as a circular diagram</p>
+    <div className="space-y-4">
+      {/* Circular Wheel Visualization */}
+      <div className="flex justify-center">
+        <div className="relative">
+          <svg width="400" height="400" viewBox="-200 -200 400 400">
+            {/* Background circle */}
+            <circle
+              cx="0"
+              cy="0"
+              r="180"
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth="2"
+            />
+            
+            {/* Segments */}
+            {segments.map((segment, index) => {
+              const segmentHours = parseFloat(segment.allocatedHours || '0');
+              const segmentAngle = (segmentHours / totalHours) * 360;
+              const path = calculateSegmentPath(currentAngle, currentAngle + segmentAngle, 80, 180);
+              const midAngle = currentAngle + segmentAngle / 2;
+              const midAngleRad = (midAngle * Math.PI) / 180;
+              const labelRadius = 130;
+              const labelX = Math.cos(midAngleRad) * labelRadius;
+              const labelY = Math.sin(midAngleRad) * labelRadius;
+              
+              const element = (
+                <g key={segment.id}>
+                  <path
+                    d={path}
+                    fill={segment.colorCode || '#94a3b8'}
+                    stroke="white"
+                    strokeWidth="2"
+                    opacity="0.9"
+                    className="hover:opacity-100 transition-opacity cursor-pointer"
+                  />
+                  <text
+                    x={labelX}
+                    y={labelY}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-white font-medium text-sm pointer-events-none"
+                  >
+                    {segment.productCode}
+                  </text>
+                  <text
+                    x={labelX}
+                    y={labelY + 15}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    className="fill-white text-xs pointer-events-none"
+                  >
+                    {segmentHours}h
+                  </text>
+                </g>
+              );
+              
+              currentAngle += segmentAngle;
+              return element;
+            })}
+            
+            {/* Center text */}
+            <text
+              x="0"
+              y="-10"
+              textAnchor="middle"
+              className="fill-gray-700 font-bold text-lg"
+            >
+              {wheel.name}
+            </text>
+            <text
+              x="0"
+              y="10"
+              textAnchor="middle"
+              className="fill-gray-500 text-sm"
+            >
+              {wheel.cycleDurationHours}h cycle
+            </text>
+          </svg>
+        </div>
+      </div>
+      
+      {/* Legend */}
+      <div className="grid grid-cols-2 gap-2 max-w-2xl mx-auto">
+        {segments.map((segment) => (
+          <div key={segment.id} className="flex items-center space-x-2 p-2 border rounded-lg">
+            <div
+              className="w-4 h-4 rounded"
+              style={{ backgroundColor: segment.colorCode || '#94a3b8' }}
+            />
+            <div className="flex-1">
+              <p className="text-sm font-medium">{segment.productName}</p>
+              <p className="text-xs text-muted-foreground">
+                {segment.allocatedHours}h ({Math.round((parseFloat(segment.allocatedHours || '0') / totalHours) * 100)}%)
+                • {segment.changeoverFromPrevious}min changeover
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+      
+      {/* Metrics Summary */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Total Cycle</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{wheel.cycleDurationHours}h</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Products</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{segments.length}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Allocated</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalHours}h</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Utilization</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {Math.round((totalHours / parseFloat(wheel.cycleDurationHours as any)) * 100)}%
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
 
 function WheelSchedule({ wheel }: { wheel: PtProductWheel }) {
+  const [selectedView, setSelectedView] = useState<'calendar' | 'timeline'>('calendar');
+  
+  // Generate sample scheduled cycles
+  const generateScheduledCycles = () => {
+    const cycles = [];
+    const now = new Date();
+    const cycleHours = parseFloat(wheel.cycleDurationHours as any);
+    
+    for (let i = 0; i < 12; i++) {
+      const startDate = new Date(now);
+      startDate.setHours(now.getHours() + (i * cycleHours));
+      
+      const endDate = new Date(startDate);
+      endDate.setHours(startDate.getHours() + cycleHours);
+      
+      cycles.push({
+        id: i + 1,
+        cycleNumber: i + 1,
+        startDate,
+        endDate,
+        status: i === 0 ? 'running' : i < 3 ? 'scheduled' : 'planned',
+        actualStart: i === 0 ? startDate : null,
+        actualEnd: null,
+        performance: i === 0 ? 87 : null,
+        notes: i === 0 ? 'Currently in progress' : i === 1 ? 'Next cycle ready' : ''
+      });
+    }
+    
+    return cycles;
+  };
+  
+  const scheduledCycles = generateScheduledCycles();
+  const currentCycle = scheduledCycles.find(c => c.status === 'running');
+  const upcomingCycles = scheduledCycles.filter(c => c.status === 'scheduled');
+  
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
-        <h3 className="font-medium">Scheduled Cycles</h3>
+        <div className="flex items-center gap-4">
+          <h3 className="font-medium">Production Schedule</h3>
+          <div className="flex gap-2">
+            <Button 
+              variant={selectedView === 'calendar' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setSelectedView('calendar')}
+            >
+              <Calendar className="w-4 h-4 mr-2" />
+              Calendar
+            </Button>
+            <Button 
+              variant={selectedView === 'timeline' ? 'default' : 'outline'} 
+              size="sm"
+              onClick={() => setSelectedView('timeline')}
+            >
+              <Clock className="w-4 h-4 mr-2" />
+              Timeline
+            </Button>
+          </div>
+        </div>
         <Button size="sm">
-          <Calendar className="w-4 h-4 mr-2" />
+          <Plus className="w-4 h-4 mr-2" />
           Schedule New Cycle
         </Button>
       </div>
-      <div className="text-center text-muted-foreground py-8">
-        <Calendar className="w-12 h-12 mx-auto mb-4 opacity-50" />
-        <p>No cycles scheduled yet</p>
+      
+      {/* Current Cycle Status */}
+      {currentCycle && (
+        <Card className="border-green-500">
+          <CardHeader>
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse" />
+                Current Cycle Running
+              </CardTitle>
+              <Badge variant="default">Cycle #{currentCycle.cycleNumber}</Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Started</p>
+                <p className="font-medium">{currentCycle.actualStart?.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Expected End</p>
+                <p className="font-medium">{currentCycle.endDate.toLocaleString()}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Progress</p>
+                <div className="flex items-center gap-2">
+                  <Progress value={35} className="flex-1" />
+                  <span className="text-sm font-medium">35%</span>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Performance</p>
+                <p className="font-medium text-green-600">{currentCycle.performance}% OEE</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* View Content */}
+      {selectedView === 'calendar' ? (
+        <div className="space-y-4">
+          {/* Week View */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-md">7-Day Schedule</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-7 gap-2">
+                {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
+                  const date = new Date();
+                  date.setDate(date.getDate() + dayOffset);
+                  const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
+                  const dayNum = date.getDate();
+                  
+                  const cyclesOnDay = scheduledCycles.filter(cycle => {
+                    const cycleDate = new Date(cycle.startDate);
+                    return cycleDate.toDateString() === date.toDateString();
+                  });
+                  
+                  return (
+                    <div key={dayOffset} className="border rounded-lg p-2">
+                      <div className="text-center mb-2">
+                        <p className="text-xs text-muted-foreground">{dayName}</p>
+                        <p className="font-bold">{dayNum}</p>
+                      </div>
+                      <div className="space-y-1">
+                        {cyclesOnDay.map(cycle => (
+                          <div
+                            key={cycle.id}
+                            className={`text-xs p-1 rounded ${
+                              cycle.status === 'running' ? 'bg-green-100 text-green-700' :
+                              cycle.status === 'scheduled' ? 'bg-blue-100 text-blue-700' :
+                              'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            Cycle #{cycle.cycleNumber}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Upcoming Cycles List */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-md">Upcoming Cycles</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {upcomingCycles.slice(0, 5).map((cycle) => (
+                  <div key={cycle.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline">#{cycle.cycleNumber}</Badge>
+                      <div>
+                        <p className="font-medium">Cycle {cycle.cycleNumber}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {cycle.startDate.toLocaleDateString()} {cycle.startDate.toLocaleTimeString()} - 
+                          {cycle.endDate.toLocaleDateString()} {cycle.endDate.toLocaleTimeString()}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={cycle.status === 'scheduled' ? 'default' : 'secondary'}>
+                        {cycle.status}
+                      </Badge>
+                      <Button variant="ghost" size="icon">
+                        <Edit2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : (
+        /* Timeline View */
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-md">Production Timeline</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative">
+              {/* Timeline header with hours */}
+              <div className="flex justify-between mb-2 text-xs text-muted-foreground">
+                <span>Now</span>
+                <span>+24h</span>
+                <span>+48h</span>
+                <span>+72h</span>
+                <span>+96h</span>
+                <span>+120h</span>
+                <span>+144h</span>
+                <span>+168h</span>
+              </div>
+              
+              {/* Timeline bars */}
+              <div className="space-y-2">
+                {scheduledCycles.slice(0, 8).map((cycle) => {
+                  const totalHours = 168; // 1 week view
+                  const startOffset = (cycle.startDate.getTime() - new Date().getTime()) / (1000 * 60 * 60);
+                  const duration = parseFloat(wheel.cycleDurationHours as any);
+                  const leftPercent = Math.max(0, (startOffset / totalHours) * 100);
+                  const widthPercent = (duration / totalHours) * 100;
+                  
+                  return (
+                    <div key={cycle.id} className="relative h-10">
+                      <div className="absolute inset-0 bg-gray-100 rounded" />
+                      <div
+                        className={`absolute h-full rounded flex items-center px-2 ${
+                          cycle.status === 'running' ? 'bg-green-500' :
+                          cycle.status === 'scheduled' ? 'bg-blue-500' :
+                          'bg-gray-400'
+                        }`}
+                        style={{
+                          left: `${leftPercent}%`,
+                          width: `${widthPercent}%`,
+                        }}
+                      >
+                        <span className="text-xs text-white font-medium">
+                          Cycle #{cycle.cycleNumber}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {/* Current time indicator */}
+              <div className="absolute top-8 bottom-0 left-0 w-0.5 bg-red-500" />
+            </div>
+            
+            {/* Legend */}
+            <div className="flex gap-4 mt-4 text-sm">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-green-500 rounded" />
+                <span>Running</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-blue-500 rounded" />
+                <span>Scheduled</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 bg-gray-400 rounded" />
+                <span>Planned</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+      
+      {/* Schedule Metrics */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Schedule Adherence</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">94%</div>
+            <p className="text-xs text-muted-foreground">Last 30 days</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Avg Cycle Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{parseFloat(wheel.cycleDurationHours as any) * 0.98}h</div>
+            <p className="text-xs text-muted-foreground">vs {wheel.cycleDurationHours}h target</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Cycles Completed</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">142</div>
+            <p className="text-xs text-muted-foreground">This month: 24</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">Next Maintenance</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">8 cycles</div>
+            <p className="text-xs text-muted-foreground">~{parseFloat(wheel.cycleDurationHours as any) * 8}h</p>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
