@@ -2593,20 +2593,33 @@
                 
                 // Repair function to enforce no overlaps across all resources
                 async function enforceNoOverlapAcrossAllResources() {
-                    const resList = scheduler.resourceStore.records;
+                    console.log('  🔧 Starting overlap repair...');
+                    let movedCount = 0;
+                    
+                    const resList = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
                     for (const r of resList) {
                         const evs = r.events.slice().sort((a,b) => a.startDate - b.startDate);
+                        
                         for (const ev of evs) {
                             const dur = ev.durationMS ?? ev.duration * 3600000;
                             const { start, end } = findNextFreeSlotOnResource(r, ev.startDate, dur, ev);
+                            
                             // Only move if needed
                             if (start.getTime() !== ev.startDate.getTime()) {
-                                ev.set({ startDate: start, endDate: end });
+                                console.log(`    📅 Moving "${ev.name}" on ${r.name} from ${ev.startDate.toLocaleString()} to ${start.toLocaleString()}`);
+                                ev.set({ startDate: start, endDate: end, manuallyScheduled: false });
+                                movedCount++;
                             }
                         }
                     }
-                    await scheduler.project.commitAsync();
-                    await scheduler.project.propagate();
+                    
+                    if (movedCount > 0) {
+                        console.log(`  🔄 Moved ${movedCount} operations to fix overlaps`);
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
+                    } else {
+                        console.log('  ✅ No operations needed to be moved');
+                    }
                 }
                 
                 // Helper function to check for constraint violations (resource overlaps) - legacy support
@@ -3236,7 +3249,8 @@
                         console.log('  ✅ No overlaps detected - saving schedule...');
                         await saveSchedule();
                     } else {
-                        console.error('  ❌ VERIFICATION FAILED: Overlaps still detected after ASAP!');
+                        console.error('  ❌ VERIFICATION FAILED: Overlaps detected after ASAP!');
+                        
                         // Log which resources have overlaps for debugging
                         const resourceOverlaps = new Map();
                         scheduler.assignmentStore.forEach(assignment => {
@@ -3259,6 +3273,18 @@
                                 }
                             }
                         });
+                        
+                        // Attempt to repair overlaps
+                        console.log('  🔧 Attempting to repair overlaps...');
+                        await enforceNoOverlapAcrossAllResources();
+                        
+                        // Check again after repair
+                        if (assertNoOverlaps(scheduler)) {
+                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
+                            await saveSchedule();
+                        } else {
+                            console.error('  ❌ Failed to repair all overlaps');
+                        }
                     }
                 }
                 
@@ -3403,9 +3429,22 @@
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
+                        console.log('  ✅ No overlaps detected - saving schedule...');
                         await saveSchedule();
                     } else {
                         console.error('❌ VERIFICATION FAILED: Overlaps detected after ALAP!');
+                        
+                        // Attempt to repair overlaps
+                        console.log('  🔧 Attempting to repair overlaps...');
+                        await enforceNoOverlapAcrossAllResources();
+                        
+                        // Check again after repair
+                        if (assertNoOverlaps(scheduler)) {
+                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
+                            await saveSchedule();
+                        } else {
+                            console.error('  ❌ Failed to repair all overlaps');
+                        }
                     }
                 }
                 
