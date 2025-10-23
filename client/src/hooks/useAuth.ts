@@ -9,7 +9,10 @@ const rolePermissionsMap: Record<string, string[]> = {
   ],
   'Plant Manager': [
     'plant-manager-view', 'capacity-planning-view', 'reports-view', 'analytics-view',
-    'schedule-view', 'ai-assistant-view', 'feedback-view', 'production-scheduling-view'
+    'schedule-view', 'ai-assistant-view', 'feedback-view', 'production-scheduling-view',
+    // Sales and Customer Service permissions
+    'sales-view', 'sales-edit', 'sales-create',
+    'customer-service-view', 'customer-service-edit', 'customer-service-create'
   ],
   'Production Scheduler': [
     'schedule-view', 'schedule-create', 'schedule-edit', 'schedule-delete',
@@ -61,6 +64,9 @@ const rolePermissionsMap: Record<string, string[]> = {
     'scheduling-optimizer-view', 'shop-floor-view', 'systems-integration-view',
     'systems-management-view', 'tenant-admin-view', 'training-view',
     'user-management-view', 'user-role-assignments-view', 'visual-factory-view',
+    // Sales and Customer Service permissions
+    'sales-view', 'sales-edit', 'sales-create',
+    'customer-service-view', 'customer-service-edit', 'customer-service-create',
     // Newly connected features
     'product-development-view', 'schedule-management-view', 'scheduling-history-view',
     'functional-map-view', 'api-integrations-view', 'analytics-new-view',
