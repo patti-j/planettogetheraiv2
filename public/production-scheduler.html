@@ -1680,17 +1680,23 @@
                     // Process dependencies
                     if (dependenciesResponse && dependenciesResponse.ok) {
                         const deps = await dependenciesResponse.json();
+                        // CRITICAL FIX: API returns 'from' and 'to' directly, not 'fromEvent' and 'toEvent'
                         fetchedDependencies = deps.map(dep => ({
-                            id: dep.id,
-                            from: dep.fromEvent,  // Correct backend field name
-                            to: dep.toEvent,      // Correct backend field name  
+                            id: String(dep.id),  // Ensure ID is a string
+                            from: dep.from,      // Correct field name from API
+                            to: dep.to,          // Correct field name from API
                             type: dep.type || 2, // Default to Finish-to-Start
                             lag: dep.lag || 0,
-                            lagUnit: dep.lagUnit || 'hour'
+                            lagUnit: dep.lagUnit || 'hour',
+                            fromEvent: dep.from, // Also include for compatibility
+                            toEvent: dep.to      // Also include for compatibility
                         }));
                         console.log('✅ Dependencies fetched from database:', fetchedDependencies.length);
                         if (fetchedDependencies.length > 0) {
                             console.log('Sample dependency:', fetchedDependencies[0]);
+                            // Validate the dependency has required fields
+                            const validDeps = fetchedDependencies.filter(d => d.from && d.to);
+                            console.log(`✅ ${validDeps.length}/${fetchedDependencies.length} dependencies have valid from/to fields`);
                         }
                     } else {
                         console.warn('Failed to fetch dependencies, using empty array');
@@ -3852,56 +3858,20 @@
                     console.error('First event:', events[0]);
                 }
                 
-                // Run ASAP scheduling on initial load for better visibility
-                console.log('🚀 Running ASAP scheduling on initial load...');
+                // DISABLED: Auto-ASAP was causing infinite loops
+                // Users should manually click Apply button to run scheduling
+                console.log('ℹ️ Scheduler loaded. Click "Apply" button to run ASAP scheduling.');
                 
-                // Run ASAP and fit to view after it completes
-                setTimeout(async () => {
-                    try {
-                        // Ensure data is fully loaded
-                        if (scheduler.eventStore.count === 0) {
-                            console.warn('⚠️ No events loaded, skipping initial ASAP');
-                            return;
-                        }
-                        
-                        // Run ASAP scheduling using global function
-                        if (window.asapScheduling) {
-                            console.log('📋 Running initial ASAP scheduling...');
-                            await window.asapScheduling();
-                            console.log('✅ Initial ASAP scheduling complete');
-                            
-                            // Fit to view after ASAP completes
-                            setTimeout(() => {
-                                if (scheduler.zoomToFit) {
-                                    scheduler.zoomToFit({
-                                        leftMargin: 50,
-                                        rightMargin: 50
-                                    });
-                                    console.log('✅ Zoomed to fit after ASAP');
-                                }
-                            }, 500);
-                            
-                            // Add welcome message to Max AI
-                            const maxMessages = document.getElementById('maxMessages');
-                            if (maxMessages) {
-                                const welcomeMsg = document.createElement('div');
-                                welcomeMsg.className = 'max-ai-message assistant';
-                                welcomeMsg.innerHTML = '✅ <strong>Schedule loaded and optimized!</strong> ASAP scheduling applied automatically. All operations are scheduled with no overlaps.';
-                                maxMessages.appendChild(welcomeMsg);
-                                maxMessages.scrollTop = maxMessages.scrollHeight;
-                            }
-                        } else {
-                            console.error('❌ asapScheduling function not available');
-                            // Fallback: Try calling via global optimization function
-                            if (window.optimizeSchedule) {
-                                console.log('🔄 Trying fallback optimization...');
-                                await window.optimizeSchedule('asap');
-                            }
-                        }
-                    } catch (error) {
-                        console.error('Error during initial ASAP scheduling:', error);
+                // Just fit to view without running ASAP automatically
+                setTimeout(() => {
+                    if (scheduler.zoomToFit) {
+                        scheduler.zoomToFit({
+                            leftMargin: 50,
+                            rightMargin: 50
+                        });
+                        console.log('✅ Zoomed to fit initial view');
                     }
-                }, 2000); // Increased delay to ensure everything is fully initialized
+                }, 500);
                 
                 // Periodic status refresh
                 setInterval(updateStatus, 30000); // Update every 30 seconds
