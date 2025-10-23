@@ -5,7 +5,7 @@ import { AILeftPanel } from './ai-left-panel';
 import { SlideOutMenu } from './slide-out-menu';
 import { MinimizedNavPanel } from './minimized-nav-panel';
 import TopMenu from '@/components/top-menu';
-import { IntegratedAIAssistant } from '@/components/integrated-ai-assistant';
+import IntegratedAIAssistant from '@/components/integrated-ai-assistant';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
