@@ -1777,9 +1777,9 @@
                     
                     let startDate;
                     
-                    // Use the actual scheduled times from database (now that overlaps are fixed)
-                    if (operation.scheduledStart) {
-                        startDate = new Date(operation.scheduledStart);
+                    // Use the actual scheduled times from database - API sends them as startDate/endDate
+                    if (operation.startDate) {
+                        startDate = new Date(operation.startDate);
                         console.log(`📅 Using DB scheduled time for ${operation.name}: ${startDate.toISOString()}`);
                     } else {
                         // Fallback: Use base date if no scheduled time exists
@@ -1793,21 +1793,25 @@
                         resourceId = 'unscheduled';
                     }
                     
-                    // Calculate duration from scheduled times if available (cap at 10 hours max)
+                    // Calculate duration - API sends duration in minutes from cycle_hrs
                     let duration = 2; // Default 2 hours
-                    if (operation.scheduledEnd && operation.scheduledStart) {
-                        const endDate = new Date(operation.scheduledEnd);
-                        const startMs = new Date(operation.scheduledStart).getTime();
-                        duration = (endDate.getTime() - startMs) / (1000 * 60 * 60); // Convert to hours
-                    } else if (operation.duration) {
+                    
+                    // First try to use duration field from API (already in minutes from cycle_hrs)
+                    if (operation.duration) {
                         duration = operation.duration / 60; // Convert minutes to hours
+                        console.log(`📊 Using API duration for ${operation.name}: ${duration.toFixed(1)} hours`);
+                    }
+                    // Then try calculated from scheduled times (API sends endDate/startDate)
+                    else if (operation.endDate && operation.startDate) {
+                        const endDate = new Date(operation.endDate);
+                        const startMs = new Date(operation.startDate).getTime();
+                        duration = (endDate.getTime() - startMs) / (1000 * 60 * 60); // Convert to hours
+                        console.log(`📊 Calculated duration from times for ${operation.name}: ${duration.toFixed(1)} hours`);
                     }
                     
-                    // Cap duration at 10 hours maximum for better visibility
-                    if (duration > 10) {
-                        console.log(`⚠️ Capping duration for ${operation.name} from ${duration.toFixed(1)}h to 10h`);
-                        duration = 10;
-                    }
+                    // NO CAPPING - Use actual durations for realistic scheduling
+                    // Fermentation can be 48+ hours, conditioning 24+ hours, etc.
+                    console.log(`✅ Operation ${operation.name} final duration: ${duration.toFixed(1)} hours`);
                     
                     return {
                         id: operation.id,
