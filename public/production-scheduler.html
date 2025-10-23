@@ -3381,7 +3381,7 @@
                     dueDate.setHours(17, 0, 0, 0); // 5 PM
                     
                     // Set project direction to Backward for ALAP
-                    project.direction = 'Backward';
+                    project.schedulingDirection = 'backward';
                     
                     // Build successors map for dependency handling (inverse of predecessors)
                     const succs = new Map();
@@ -3442,7 +3442,7 @@
                     await project.propagate();
                     
                     // Reset direction to Forward for normal operation
-                    project.direction = 'Forward';
+                    project.schedulingDirection = 'forward';
                     
                     console.log('\n✅ ALAP scheduling completed using backward direction');
                     
