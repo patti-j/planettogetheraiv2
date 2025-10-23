@@ -3107,6 +3107,65 @@
                     }
                 }
                 
+                // Helper function to find next available slot on a resource (forward scheduling)
+                function findNextFreeSlotOnResource(resource, earliestStart, durationMs, excludeEvent) {
+                    // Start from earliestStart and push forward past any overlaps
+                    let start = new Date(earliestStart);
+                    
+                    // CRITICAL FIX: Get events from assignmentStore to find all events on this resource
+                    const { eventStore, assignmentStore } = scheduler;
+                    
+                    // Get all events assigned to this resource through assignments
+                    const events = [];
+                    assignmentStore.forEach(assignment => {
+                        if (assignment.resourceId === resource.id) {
+                            const event = eventStore.getById(assignment.eventId);
+                            // Exclude the event being scheduled and check it has valid dates
+                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate && event.endDate) {
+                                events.push(event);
+                            }
+                        }
+                    });
+                    
+                    // Sort events by start date for forward scheduling
+                    events.sort((a, b) => a.startDate - b.startDate);
+                    
+                    // Keep checking for overlaps and pushing forward until we find a free slot
+                    let attempts = 0;
+                    const maxAttempts = 100; // Prevent infinite loops
+                    
+                    while (attempts < maxAttempts) {
+                        attempts++;
+                        const end = new Date(start.getTime() + durationMs);
+                        let hasOverlap = false;
+                        
+                        // Check if this slot overlaps with any existing event
+                        for (const existingEvent of events) {
+                            // Check for overlap: new event overlaps if its start is before existing end
+                            // AND its end is after existing start
+                            if (start < existingEvent.endDate && end > existingEvent.startDate) {
+                                // Found overlap - push start to end of conflicting event
+                                start = new Date(existingEvent.endDate);
+                                hasOverlap = true;
+                                console.log(`  ⚠️ Overlap detected with "${existingEvent.name}", pushing to ${start.toLocaleString()}`);
+                                break; // Check again from new start time
+                            }
+                        }
+                        
+                        // If no overlap found, we have our slot
+                        if (!hasOverlap) {
+                            const finalEnd = new Date(start.getTime() + durationMs);
+                            console.log(`  ✅ Found free slot: ${start.toLocaleString()} to ${finalEnd.toLocaleString()}`);
+                            return { start, end: finalEnd };
+                        }
+                    }
+                    
+                    // Fallback if we couldn't find a slot (shouldn't happen)
+                    console.warn(`  ⚠️ Could not find free slot after ${maxAttempts} attempts, using last calculated time`);
+                    const end = new Date(start.getTime() + durationMs);
+                    return { start, end };
+                }
+
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
                 window.asapScheduling = async function asapScheduling() {
