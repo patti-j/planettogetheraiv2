@@ -108,7 +108,7 @@ export function OperationSequencer({
       
       if (statusFilter !== 'all') {
         filteredOps = filteredOps.filter(op => 
-          op.status.toLowerCase() === statusFilter.toLowerCase()
+          op.status && op.status.toLowerCase() === statusFilter.toLowerCase()
         );
       }
       
@@ -155,7 +155,7 @@ export function OperationSequencer({
     const originalOps = [...(operationsData as Operation[])]
       .filter(op => {
         if (resourceFilter !== 'all' && op.assignedResourceId?.toString() !== resourceFilter) return false;
-        if (statusFilter !== 'all' && op.status.toLowerCase() !== statusFilter.toLowerCase()) return false;
+        if (statusFilter !== 'all' && (!op.status || op.status.toLowerCase() !== statusFilter.toLowerCase())) return false;
         return true;
       })
       .sort((a, b) => a.id - b.id); // Reset to original ID order
@@ -171,6 +171,9 @@ export function OperationSequencer({
 
   // Get status info
   const getStatusInfo = (status: string) => {
+    if (!status) {
+      return { icon: Pause, color: 'bg-gray-100 text-gray-800', bgColor: 'bg-gray-50' };
+    }
     switch (status.toLowerCase()) {
       case 'completed':
         return { icon: CheckCircle, color: 'bg-green-100 text-green-800', bgColor: 'bg-green-50' };
