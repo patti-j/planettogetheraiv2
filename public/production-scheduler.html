@@ -2153,22 +2153,11 @@
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
                     
-                    // Event layout to handle overlaps - 'stack' prevents visual overlaps
-                    eventLayout: 'stack',  // 'stack' | 'pack' | 'none' - stack shows overlaps clearly
+                    // Event layout - 'none' forces proper constraint handling, no visual stacking
+                    eventLayout: 'none',  // 'none' enforces hard constraints, no overlaps allowed
                     
-                    // Sort overlapping events by startDate first (REQUIRED for predictable results)
-                    overlappingEventSorter: (a, b) => {
-                        // CRITICAL: Must sort by startDate first per Bryntum docs
-                        if (a.startDate - b.startDate !== 0) {
-                            return a.startDate - b.startDate;
-                        }
-                        // Then by duration (shorter events on top)
-                        if (a.duration - b.duration !== 0) {
-                            return a.duration - b.duration;
-                        }
-                        // Finally by name for consistency
-                        return a.name.localeCompare(b.name);
-                    },
+                    // Enable constraint violation indicators
+                    enableEventAnimations: false,  // Disable animations for better performance with constraints
                     
                     // Disable state persistence to avoid localStorage errors
                     stateId: null,
@@ -2190,10 +2179,21 @@
                         autoCalculateEndDate: true,
                         autoCalculate: true,          // Automatically recalculate when changes occur
                         recalculateAfterLoad: true,  // Recalculate after loading data
-                        constraintsMode: 'honor',    // Honor constraints during scheduling
+                        
+                        // CRITICAL: Constraint configuration for preventing overlaps
+                        constraintsMode: 'honor',    // 'honor' = enforce all constraints strictly
+                        manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
+                        
+                        // Scheduling engine configuration
                         schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
                         allowDependencyLag: true,     // Allow lag times between dependencies
-                        calculateCriticalPath: true   // Enable critical path calculation
+                        calculateCriticalPath: true,   // Enable critical path calculation
+                        
+                        // Resource constraint enforcement
+                        eventStore: {
+                            // Ensure no two events can occupy same resource at same time
+                            useResourceConstraint: true
+                        }
                     },
 
                     features: {
@@ -2558,6 +2558,66 @@
                         runSchedulerAlgorithm(event.data.algorithm);
                     }
                 });
+                
+                // Helper function to check for constraint violations (resource overlaps)
+                async function checkConstraintViolations() {
+                    const violations = [];
+                    const resources = scheduler.resourceStore.records;
+                    
+                    for (const resource of resources) {
+                        const events = scheduler.eventStore.query(e => e.resourceId === resource.id);
+                        
+                        // Sort events by start time
+                        events.sort((a, b) => a.startDate - b.startDate);
+                        
+                        // Check for overlaps
+                        for (let i = 0; i < events.length - 1; i++) {
+                            const current = events[i];
+                            const next = events[i + 1];
+                            
+                            if (current.endDate > next.startDate) {
+                                violations.push({
+                                    resource: resource.name,
+                                    event1: current.name,
+                                    event2: next.name,
+                                    overlap: current.endDate - next.startDate
+                                });
+                            }
+                        }
+                    }
+                    
+                    return violations;
+                }
+                
+                // Helper function to resolve overlaps by shifting operations
+                async function resolveOverlaps() {
+                    console.log('🔧 Attempting to resolve resource overlaps...');
+                    const resources = scheduler.resourceStore.records;
+                    
+                    for (const resource of resources) {
+                        const events = scheduler.eventStore.query(e => e.resourceId === resource.id);
+                        
+                        // Sort events by start time
+                        events.sort((a, b) => a.startDate - b.startDate);
+                        
+                        // Fix overlaps by shifting later operations
+                        for (let i = 0; i < events.length - 1; i++) {
+                            const current = events[i];
+                            const next = events[i + 1];
+                            
+                            if (current.endDate > next.startDate) {
+                                // Shift the next event to start after current ends
+                                const shift = current.endDate - next.startDate;
+                                next.startDate = new Date(current.endDate);
+                                next.endDate = new Date(next.endDate.getTime() + shift);
+                                console.log(`📅 Shifted ${next.name} by ${shift / (1000 * 60)} minutes to avoid overlap on ${resource.name}`);
+                            }
+                        }
+                    }
+                    
+                    await scheduler.project.commitAsync();
+                    console.log('✅ Overlap resolution complete');
+                }
                 
                 // Function to run scheduler algorithms from quick actions
                 function runSchedulerAlgorithm(algorithm) {
@@ -4158,7 +4218,22 @@
                         case 'asap':
                             console.log('⏳ Running ASAP (Forward) scheduling...');
                             project.schedulingDirection = 'forward';
+                            
+                            // Clear any manual scheduling flags to let engine optimize
+                            scheduler.eventStore.forEach(event => {
+                                event.manuallyScheduled = false;
+                            });
+                            
                             await project.propagate();
+                            
+                            // Check for constraint violations after scheduling
+                            const violations = await checkConstraintViolations();
+                            if (violations.length > 0) {
+                                console.warn('⚠️ Constraint violations detected:', violations);
+                                // Try to resolve by spreading out operations
+                                await resolveOverlaps();
+                            }
+                            
                             console.log('✅ ASAP scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('ASAP scheduling complete');
@@ -4168,7 +4243,22 @@
                         case 'alap':
                             console.log('⏳ Running ALAP (Backward) scheduling...');
                             project.schedulingDirection = 'backward';
+                            
+                            // Clear any manual scheduling flags to let engine optimize
+                            scheduler.eventStore.forEach(event => {
+                                event.manuallyScheduled = false;
+                            });
+                            
                             await project.propagate();
+                            
+                            // Check for constraint violations after scheduling
+                            const alapViolations = await checkConstraintViolations();
+                            if (alapViolations.length > 0) {
+                                console.warn('⚠️ Constraint violations detected:', alapViolations);
+                                // Try to resolve by spreading out operations
+                                await resolveOverlaps();
+                            }
+                            
                             console.log('✅ ALAP scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('ALAP scheduling complete');
@@ -4179,7 +4269,21 @@
                             console.log('⏳ Running Critical Path scheduling...');
                             project.calculateCriticalPath = true;
                             project.schedulingDirection = 'forward';
+                            
+                            // Clear any manual scheduling flags to let engine optimize
+                            scheduler.eventStore.forEach(event => {
+                                event.manuallyScheduled = false;
+                            });
+                            
                             await project.propagate();
+                            
+                            // Check for constraint violations after scheduling
+                            const cpViolations = await checkConstraintViolations();
+                            if (cpViolations.length > 0) {
+                                console.warn('⚠️ Constraint violations detected:', cpViolations);
+                                await resolveOverlaps();
+                            }
+                            
                             console.log('✅ Critical Path scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Critical Path scheduling complete');
@@ -4191,7 +4295,21 @@
                             // For resource leveling, we use forward scheduling with resource constraints
                             project.schedulingDirection = 'forward';
                             project.constraintsMode = 'honor';
+                            
+                            // Clear any manual scheduling flags to let engine optimize
+                            scheduler.eventStore.forEach(event => {
+                                event.manuallyScheduled = false;
+                            });
+                            
                             await project.propagate();
+                            
+                            // Resource leveling should inherently prevent overlaps, but check anyway
+                            const rlViolations = await checkConstraintViolations();
+                            if (rlViolations.length > 0) {
+                                console.warn('⚠️ Constraint violations detected after resource leveling:', rlViolations);
+                                await resolveOverlaps();
+                            }
+                            
                             console.log('✅ Resource Leveling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Resource Leveling complete');
@@ -4202,7 +4320,21 @@
                             console.log('⏳ Running Drum/TOC scheduling...');
                             // Theory of Constraints - focus on bottleneck resources
                             project.schedulingDirection = 'forward';
+                            
+                            // Clear any manual scheduling flags to let engine optimize
+                            scheduler.eventStore.forEach(event => {
+                                event.manuallyScheduled = false;
+                            });
+                            
                             await project.propagate();
+                            
+                            // Check for constraint violations after scheduling
+                            const tocViolations = await checkConstraintViolations();
+                            if (tocViolations.length > 0) {
+                                console.warn('⚠️ Constraint violations detected:', tocViolations);
+                                await resolveOverlaps();
+                            }
+                            
                             console.log('✅ Drum/TOC scheduling complete');
                             if (scheduler.toast) {
                                 scheduler.toast('Drum/TOC scheduling complete');
