@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Loader2, Sparkles, Database, TrendingUp, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
@@ -41,6 +42,7 @@ export default function DemandForecasting() {
   
   // New: Model and filter selections
   const [modelType, setModelType] = useState<string>("Random Forest");
+  const [hyperparameterTuning, setHyperparameterTuning] = useState<boolean>(false);
   const planningAreaColumn = "PlanningAreaName";
   const [selectedPlanningAreas, setSelectedPlanningAreas] = useState<string[]>([]);
   const [planningAreaSearch, setPlanningAreaSearch] = useState<string>("");
@@ -50,7 +52,14 @@ export default function DemandForecasting() {
   
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
-  const [trainingMetrics, setTrainingMetrics] = useState<{ accuracy?: number; mape?: number; rmse?: number } | null>(null);
+  const [trainingMetrics, setTrainingMetrics] = useState<{ 
+    accuracy?: number; 
+    mape?: number; 
+    rmse?: number;
+    order?: any;
+    seasonal_order?: any;
+    [key: string]: any;
+  } | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   
   // Validation errors
@@ -145,7 +154,23 @@ export default function DemandForecasting() {
   });
 
   // Train model mutation
-  const trainMutation = useMutation<{ metrics: { accuracy?: number; mape?: number; rmse?: number }; modelId?: string; modelType?: string }, Error, void>({
+  const trainMutation = useMutation<{ 
+    metrics: { 
+      accuracy?: number; 
+      mape?: number; 
+      rmse?: number;
+      order?: any;
+      seasonal_order?: any;
+      [key: string]: any;
+    }; 
+    modelId?: string; 
+    modelType?: string;
+    tunedParameters?: {
+      order?: any;
+      seasonal_order?: any;
+      [key: string]: any;
+    }
+  }, Error, void>({
     mutationFn: async () => {
       const response = await fetch("/api/forecasting/train", {
         method: "POST",
@@ -158,6 +183,7 @@ export default function DemandForecasting() {
           quantityColumn,
           selectedItem: selectedItems[0],
           modelType,
+          hyperparameterTuning,
           planningAreaColumn: planningAreaColumn || null,
           selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
           scenarioColumn: scenarioColumn || null,
@@ -333,6 +359,7 @@ export default function DemandForecasting() {
     setIsModelTrained(false);
     setTrainingMetrics(null);
     setModelId(null);
+    setHyperparameterTuning(false);
     trainMutation.reset();
     forecastMutation.reset();
   }, [selectedTable, dateColumn, itemColumn, quantityColumn, selectedItems, modelType, selectedPlanningAreas, selectedScenarios]);
@@ -501,6 +528,26 @@ export default function DemandForecasting() {
               />
             </div>
           </div>
+
+          {/* Hyperparameter Tuning Toggle - Only for ARIMA and Prophet */}
+          {(modelType === "ARIMA" || modelType === "Prophet") && (
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+              <div className="space-y-0.5">
+                <Label htmlFor="hyperparameter-tuning" className="text-base">
+                  Enable Hyperparameter Tuning
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Automatically tune model parameters for better accuracy (may take longer)
+                </p>
+              </div>
+              <Switch
+                id="hyperparameter-tuning"
+                checked={hyperparameterTuning}
+                onCheckedChange={setHyperparameterTuning}
+                data-testid="switch-hyperparameter-tuning"
+              />
+            </div>
+          )}
 
           {/* Planning Areas Multi-Select */}
           {planningAreaColumn && filteredPlanningAreas && filteredPlanningAreas.length > 0 && (
@@ -762,9 +809,9 @@ export default function DemandForecasting() {
 
           {/* Training Metrics Display */}
           {trainingMetrics && (
-            <div className="bg-muted p-4 rounded-lg">
-              <div className="text-sm font-medium mb-2">Training Results ({modelType})</div>
-              <div className="flex gap-4">
+            <div className="bg-muted p-4 rounded-lg space-y-3">
+              <div className="text-sm font-medium">Training Results ({modelType})</div>
+              <div className="flex gap-4 flex-wrap">
                 {trainingMetrics.mape !== undefined && (
                   <div>
                     <div className="text-xs text-muted-foreground">MAPE</div>
@@ -784,6 +831,45 @@ export default function DemandForecasting() {
                   </div>
                 )}
               </div>
+              
+              {/* Display Tuned Parameters when hyperparameter tuning is enabled */}
+              {hyperparameterTuning && (modelType === "ARIMA" || modelType === "Prophet") && (
+                <div className="border-t pt-3 mt-3">
+                  <div className="text-sm font-medium mb-2">Tuned Parameters</div>
+                  <div className="space-y-2">
+                    {modelType === "ARIMA" && (
+                      <>
+                        {trainingMetrics.order && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Order (p,d,q):</span>{" "}
+                            <span className="font-mono">{JSON.stringify(trainingMetrics.order)}</span>
+                          </div>
+                        )}
+                        {trainingMetrics.seasonal_order && (
+                          <div className="text-sm">
+                            <span className="text-muted-foreground">Seasonal Order (P,D,Q,s):</span>{" "}
+                            <span className="font-mono">{JSON.stringify(trainingMetrics.seasonal_order)}</span>
+                          </div>
+                        )}
+                      </>
+                    )}
+                    {modelType === "Prophet" && Object.keys(trainingMetrics).filter(key => 
+                      !['mape', 'rmse', 'accuracy'].includes(key)
+                    ).length > 0 && (
+                      <div className="text-sm space-y-1">
+                        {Object.entries(trainingMetrics).filter(([key]) => 
+                          !['mape', 'rmse', 'accuracy', 'order', 'seasonal_order'].includes(key)
+                        ).map(([key, value]) => (
+                          <div key={key}>
+                            <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>{" "}
+                            <span className="font-mono">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

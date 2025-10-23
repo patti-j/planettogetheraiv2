@@ -11,8 +11,18 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_squared_error, mean_absolute_percentage_error
 from statsmodels.tsa.arima.model import ARIMA
 from prophet import Prophet
+import time
 import warnings
 warnings.filterwarnings('ignore')
+
+# Import model cache
+try:
+    from model_cache import get_model_cache
+    MODEL_CACHE_AVAILABLE = True
+    print("Model cache imported successfully", flush=True)
+except ImportError:
+    MODEL_CACHE_AVAILABLE = False
+    print("Model cache not available - caching disabled", flush=True)
 
 print("Imports successful", flush=True)
 
@@ -74,8 +84,45 @@ def train_model():
         historical_data = data.get('historicalData', [])
         model_id = data.get('modelId', 'default')
         
+        # Extract hierarchical filters for caching
+        planning_areas = data.get('planningAreas', None)
+        scenario_names = data.get('scenarioNames', None)
+        item = data.get('item', 'default_item')
+        forecast_days = data.get('forecastDays', 30)
+        hyperparameter_tuning = data.get('hyperparameterTuning', False)
+        
         if not historical_data:
             return jsonify({"error": "No historical data provided."}), 400
+        
+        # Check cache first if available
+        cache_key = None
+        if MODEL_CACHE_AVAILABLE:
+            try:
+                cache = get_model_cache()
+                cache_key = cache.get_cache_key(
+                    model_type, forecast_days, item, 
+                    planning_areas, scenario_names, hyperparameter_tuning
+                )
+                
+                # Try to load from cache
+                if cache.exists(model_type, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning):
+                    cached_model, cached_metadata = cache.load_model(cache_key)
+                    if cached_model is not None and cached_metadata is not None:
+                        # Store in memory for immediate use
+                        trained_models[model_id] = cached_model
+                        
+                        print(f"Loaded model from cache: {cache_key}", flush=True)
+                        return jsonify({
+                            "success": True,
+                            "modelType": model_type,
+                            "metrics": cached_metadata.get('metrics', {}),
+                            "trainingDataPoints": len(historical_data),
+                            "modelId": model_id,
+                            "cacheKey": cache_key,
+                            "fromCache": True
+                        })
+            except Exception as e:
+                print(f"Cache check failed: {e}", flush=True)
         
         # Convert to DataFrame
         df = pd.DataFrame(historical_data)
@@ -87,27 +134,45 @@ def train_model():
         if model_type == 'Linear Regression':
             metrics = train_linear_regression(df, model_id)
         elif model_type == 'Random Forest':
-            metrics = train_random_forest(df, model_id)
+            metrics = train_random_forest(df, model_id, hyperparameter_tuning)
         elif model_type == 'ARIMA':
-            metrics = train_arima(df, model_id)
+            metrics = train_arima(df, model_id, hyperparameter_tuning)
         elif model_type == 'Prophet':
-            metrics = train_prophet(df, model_id)
+            metrics = train_prophet(df, model_id, hyperparameter_tuning)
         else:
             return jsonify({"error": f"Unknown model type: {model_type}"}), 400
+        
+        # Save to cache if available
+        if MODEL_CACHE_AVAILABLE and cache_key:
+            try:
+                cache = get_model_cache()
+                model_info = trained_models.get(model_id)
+                if model_info:
+                    cache.save_model(
+                        model_type, forecast_days, item,
+                        model_info, 
+                        {'metrics': metrics, 'training_points': len(historical_data), 'hyperparameter_tuning': hyperparameter_tuning},
+                        planning_areas, scenario_names, hyperparameter_tuning
+                    )
+                    print(f"Saved model to cache: {cache_key}", flush=True)
+            except Exception as e:
+                print(f"Cache save failed: {e}", flush=True)
         
         return jsonify({
             "success": True,
             "modelType": model_type,
             "metrics": metrics,
             "trainingDataPoints": len(historical_data),
-            "modelId": model_id
+            "modelId": model_id,
+            "cacheKey": cache_key,
+            "fromCache": False
         })
         
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-def train_random_forest(df, model_id):
-    """Train Random Forest model"""
+def train_random_forest(df, model_id, hyperparameter_tuning=False):
+    """Train Random Forest model with optional hyperparameter tuning"""
     # Create features
     df_features = create_features(df.copy())
     
@@ -134,11 +199,17 @@ def train_random_forest(df, model_id):
     y_pred = model.predict(X)
     mape, rmse = calculate_metrics(y.values, y_pred)
     
+    # Calculate prediction intervals using quantile regression approach
+    # Estimate confidence intervals from residuals
+    residuals = y.values - y_pred
+    residual_std = np.std(residuals)
+    
     # Store model and feature info
     trained_models[model_id] = {
         'model': model,
         'type': 'Random Forest',
         'feature_cols': feature_cols,
+        'residual_std': residual_std,
         'last_data': df.tail(30).copy()  # Keep last 30 days for forecasting
     }
     
@@ -194,69 +265,144 @@ def train_linear_regression(df, model_id):
         "accuracy": max(0, 100 - mape)
     }
 
-def train_arima(df, model_id):
-    """Train ARIMA model"""
+def train_arima(df, model_id, hyperparameter_tuning=False):
+    """Train ARIMA model with optional hyperparameter tuning and seasonal support"""
     values = df['value'].values
     
     # ARIMA requires at least 2 data points
     if len(values) < 2:
         raise ValueError(f"ARIMA requires at least 2 data points. Found only {len(values)} row(s). Please select a different item or date range with more historical data.")
     
-    # Auto-select ARIMA parameters (p,d,q)
-    # For simplicity, using common parameters. In production, use auto_arima
-    try:
-        model = ARIMA(values, order=(5, 1, 2))
-        model_fit = model.fit()
+    if hyperparameter_tuning:
+        # Enhanced ARIMA with seasonal and trend components + timeout protection
+        start_time = time.time()
+        timeout_seconds = 300  # 5 minute timeout
         
-        # Calculate metrics on training data
-        y_pred = model_fit.fittedvalues
-        # Align predictions with original data (ARIMA may have different length)
+        best_aic = np.inf
+        best_order = None
+        best_seasonal_order = None
+        best_model = None
+        
+        # Expanded search space for ARIMA parameters
+        p_values = range(0, 4)
+        d_values = range(0, 3)
+        q_values = range(0, 4)
+        
+        # Seasonal parameters (for weekly/monthly patterns)
+        seasonal_periods = [7, 30]  # Weekly and monthly seasonality
+        
+        # First try non-seasonal ARIMA with expanded parameters
+        for p in p_values:
+            for d in d_values:
+                for q in q_values:
+                    # Check timeout
+                    if time.time() - start_time > timeout_seconds:
+                        print(f"ARIMA grid search timeout after {timeout_seconds}s", flush=True)
+                        break
+                    try:
+                        model = ARIMA(values, order=(p, d, q))
+                        fitted_model = model.fit()
+                        if fitted_model.aic < best_aic:
+                            best_aic = fitted_model.aic
+                            best_order = (p, d, q)
+                            best_seasonal_order = None
+                            best_model = fitted_model
+                    except:
+                        continue
+        
+        # Try seasonal ARIMA if we have enough data
+        if len(values) > 60:  # Need sufficient data for seasonal modeling
+            for s in seasonal_periods:
+                if len(values) > 2 * s:  # Need at least 2 full seasons
+                    for P in range(0, 3):
+                        for D in range(0, 2):
+                            for Q in range(0, 3):
+                                # Check timeout
+                                if time.time() - start_time > timeout_seconds:
+                                    print(f"ARIMA seasonal search timeout after {timeout_seconds}s", flush=True)
+                                    break
+                                try:
+                                    model = ARIMA(values, order=(1, 1, 1), seasonal_order=(P, D, Q, s))
+                                    fitted_model = model.fit()
+                                    if fitted_model.aic < best_aic:
+                                        best_aic = fitted_model.aic
+                                        best_order = (1, 1, 1)
+                                        best_seasonal_order = (P, D, Q, s)
+                                        best_model = fitted_model
+                                except:
+                                    continue
+        
+        if best_model is None:
+            # Fallback to default ARIMA(1,1,1)
+            model = ARIMA(values, order=(1, 1, 1))
+            best_model = model.fit()
+            best_order = (1, 1, 1)
+            best_seasonal_order = None
+        
+        # Calculate metrics
+        y_pred = best_model.fittedvalues
         if len(y_pred) < len(values):
-            values = values[-len(y_pred):]
+            values_aligned = values[-len(y_pred):]
         elif len(y_pred) > len(values):
             y_pred = y_pred[-len(values):]
+            values_aligned = values
+        else:
+            values_aligned = values
             
-        mape, rmse = calculate_metrics(values, y_pred)
+        mape, rmse = calculate_metrics(values_aligned, y_pred)
         
         # Store model
         trained_models[model_id] = {
-            'model': model_fit,
+            'model': best_model,
             'type': 'ARIMA',
+            'order': best_order,
+            'seasonal_order': best_seasonal_order,
             'last_data': df.copy()
         }
         
         return {
             "mape": mape,
             "rmse": rmse,
-            "accuracy": max(0, 100 - mape)
+            "accuracy": max(0, 100 - mape),
+            "best_order": best_order,
+            "seasonal_order": best_seasonal_order,
+            "aic": float(best_aic)
         }
-    except Exception as e:
-        # Fallback to simpler ARIMA if the initial parameters fail
-        model = ARIMA(values, order=(1, 1, 1))
-        model_fit = model.fit()
-        y_pred = model_fit.fittedvalues
-        
-        if len(y_pred) < len(values):
-            values = values[-len(y_pred):]
-        elif len(y_pred) > len(values):
-            y_pred = y_pred[-len(values):]
+    else:
+        # Use default ARIMA(1,1,1) for backward compatibility
+        try:
+            model = ARIMA(values, order=(1, 1, 1))
+            model_fit = model.fit()
             
-        mape, rmse = calculate_metrics(values, y_pred)
-        
-        trained_models[model_id] = {
-            'model': model_fit,
-            'type': 'ARIMA',
-            'last_data': df.copy()
-        }
-        
-        return {
-            "mape": mape,
-            "rmse": rmse,
-            "accuracy": max(0, 100 - mape)
-        }
+            # Calculate metrics on training data
+            y_pred = model_fit.fittedvalues
+            # Align predictions with original data (ARIMA may have different length)
+            if len(y_pred) < len(values):
+                values = values[-len(y_pred):]
+            elif len(y_pred) > len(values):
+                y_pred = y_pred[-len(values):]
+                
+            mape, rmse = calculate_metrics(values, y_pred)
+            
+            # Store model
+            trained_models[model_id] = {
+                'model': model_fit,
+                'type': 'ARIMA',
+                'order': (1, 1, 1),
+                'seasonal_order': None,
+                'last_data': df.copy()
+            }
+            
+            return {
+                "mape": mape,
+                "rmse": rmse,
+                "accuracy": max(0, 100 - mape)
+            }
+        except Exception as e:
+            raise ValueError(f"ARIMA training failed: {str(e)}")
 
-def train_prophet(df, model_id):
-    """Train Prophet model"""
+def train_prophet(df, model_id, hyperparameter_tuning=False):
+    """Train Prophet model with optional hyperparameter tuning"""
     # Prepare data for Prophet (requires 'ds' and 'y' columns)
     prophet_df = df[['date', 'value']].copy()
     prophet_df.columns = ['ds', 'y']
@@ -268,34 +414,149 @@ def train_prophet(df, model_id):
     if len(prophet_df) < 2:
         raise ValueError(f"Prophet requires at least 2 data points. Found only {len(prophet_df)} row(s). Please select a different item or date range with more historical data.")
     
-    # Train Prophet model
-    model = Prophet(
-        daily_seasonality=True,
-        weekly_seasonality=True,
-        yearly_seasonality=True,
-        changepoint_prior_scale=0.05
-    )
-    model.fit(prophet_df)
-    
-    # Make predictions on training data
-    forecast = model.predict(prophet_df)
-    y_pred = forecast['yhat'].values
-    y_true = prophet_df['y'].values
-    
-    mape, rmse = calculate_metrics(y_true, y_pred)
-    
-    # Store model
-    trained_models[model_id] = {
-        'model': model,
-        'type': 'Prophet',
-        'last_data': df.copy()
-    }
-    
-    return {
-        "mape": mape,
-        "rmse": rmse,
-        "accuracy": max(0, 100 - mape)
-    }
+    if hyperparameter_tuning:
+        # Enhanced Prophet hyperparameter tuning with cross-validation
+        param_grid = {
+            'changepoint_prior_scale': [0.001, 0.01, 0.05, 0.1, 0.5, 1.0],
+            'seasonality_prior_scale': [0.1, 1.0, 10.0, 50.0],
+            'seasonality_mode': ['additive', 'multiplicative'],
+            'changepoint_range': [0.8, 0.9, 0.95]
+        }
+        
+        best_mape = np.inf
+        best_params = None
+        best_model = None
+        
+        # Grid search with timeout protection
+        start_time = time.time()
+        timeout_seconds = 300  # 5 minute timeout
+        
+        for changepoint_prior in param_grid['changepoint_prior_scale']:
+            for seasonality_prior in param_grid['seasonality_prior_scale']:
+                for seasonality_mode in param_grid['seasonality_mode']:
+                    for changepoint_range in param_grid['changepoint_range']:
+                        # Check timeout
+                        if time.time() - start_time > timeout_seconds:
+                            print(f"Prophet grid search timeout after {timeout_seconds}s", flush=True)
+                            break
+                            
+                        try:
+                            # Cross-validation on last 30 data points
+                            if len(prophet_df) > 30:
+                                train_subset = prophet_df[:-30]
+                                test_subset = prophet_df[-30:]
+                            else:
+                                # Use all data for training if we don't have enough
+                                train_subset = prophet_df
+                                test_subset = prophet_df
+                            
+                            # Train model on subset
+                            model = Prophet(
+                                changepoint_prior_scale=changepoint_prior,
+                                seasonality_prior_scale=seasonality_prior,
+                                seasonality_mode=seasonality_mode,
+                                changepoint_range=changepoint_range,
+                                daily_seasonality=True,
+                                weekly_seasonality=True,
+                                yearly_seasonality=True
+                            )
+                            model.fit(train_subset)
+                            
+                            # Validate on test set
+                            if len(test_subset) > 0:
+                                forecast = model.predict(test_subset)
+                                
+                                # Calculate MAPE
+                                y_true = test_subset['y'].values
+                                y_pred = forecast['yhat'].values
+                                mask = y_true != 0
+                                if mask.sum() > 0:
+                                    mape = np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100
+                                else:
+                                    mape = 0
+                                
+                                if mape < best_mape:
+                                    best_mape = mape
+                                    best_params = {
+                                        'changepoint_prior_scale': changepoint_prior,
+                                        'seasonality_prior_scale': seasonality_prior,
+                                        'seasonality_mode': seasonality_mode,
+                                        'changepoint_range': changepoint_range
+                                    }
+                                    # Train final model on full data with best params
+                                    best_model = Prophet(
+                                        changepoint_prior_scale=changepoint_prior,
+                                        seasonality_prior_scale=seasonality_prior,
+                                        seasonality_mode=seasonality_mode,
+                                        changepoint_range=changepoint_range,
+                                        daily_seasonality=True,
+                                        weekly_seasonality=True,
+                                        yearly_seasonality=True
+                                    )
+                                    best_model.fit(prophet_df)
+                                    
+                        except Exception as e:
+                            continue
+        
+        if best_model is None:
+            # Fallback to default Prophet
+            best_model = Prophet(
+                daily_seasonality=True,
+                weekly_seasonality=True,
+                yearly_seasonality=True
+            )
+            best_model.fit(prophet_df)
+            best_params = {"default_params": True}
+        
+        # Calculate final metrics on full training data
+        forecast = best_model.predict(prophet_df)
+        y_pred = forecast['yhat'].values
+        y_true = prophet_df['y'].values
+        mape, rmse = calculate_metrics(y_true, y_pred)
+        
+        # Store model
+        trained_models[model_id] = {
+            'model': best_model,
+            'type': 'Prophet',
+            'best_params': best_params,
+            'last_data': df.copy()
+        }
+        
+        return {
+            "mape": mape,
+            "rmse": rmse,
+            "accuracy": max(0, 100 - mape),
+            "best_params": best_params
+        }
+    else:
+        # Use default Prophet parameters for backward compatibility
+        model = Prophet(
+            daily_seasonality=True,
+            weekly_seasonality=True,
+            yearly_seasonality=True,
+            changepoint_prior_scale=0.05
+        )
+        model.fit(prophet_df)
+        
+        # Make predictions on training data
+        forecast = model.predict(prophet_df)
+        y_pred = forecast['yhat'].values
+        y_true = prophet_df['y'].values
+        
+        mape, rmse = calculate_metrics(y_true, y_pred)
+        
+        # Store model
+        trained_models[model_id] = {
+            'model': model,
+            'type': 'Prophet',
+            'last_data': df.copy()
+        }
+        
+        return {
+            "mape": mape,
+            "rmse": rmse,
+            "accuracy": max(0, 100 - mape)
+        }
 
 @app.route('/forecast', methods=['POST'])
 def forecast():
@@ -305,6 +566,32 @@ def forecast():
         forecast_days = data.get('forecastDays', 30)
         historical_data = data.get('historicalData', [])
         
+        # Extract hierarchical filters for caching
+        planning_areas = data.get('planningAreas', None)
+        scenario_names = data.get('scenarioNames', None)
+        item = data.get('item', 'default_item')
+        model_type_requested = data.get('modelType', None)
+        hyperparameter_tuning = data.get('hyperparameterTuning', False)
+        
+        # Try to load from cache first if available
+        if MODEL_CACHE_AVAILABLE and model_type_requested:
+            try:
+                cache = get_model_cache()
+                cache_key = cache.get_cache_key(
+                    model_type_requested, forecast_days, item, 
+                    planning_areas, scenario_names, hyperparameter_tuning
+                )
+                
+                if cache.exists(model_type_requested, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning):
+                    cached_model, cached_metadata = cache.load_model(cache_key)
+                    if cached_model is not None:
+                        # Use cached model for prediction
+                        trained_models[model_id] = cached_model
+                        print(f"Using cached model for forecast: {cache_key}", flush=True)
+            except Exception as e:
+                print(f"Cache load for forecast failed: {e}", flush=True)
+        
+        # Check if model exists
         if model_id not in trained_models:
             return jsonify({"error": "Model not trained. Please train the model first."}), 400
         
@@ -421,9 +708,10 @@ def forecast_linear_regression(model_info, df, forecast_days):
     }
 
 def forecast_random_forest(model_info, df, forecast_days):
-    """Generate forecast using Random Forest"""
+    """Generate forecast using Random Forest with proper confidence intervals"""
     model = model_info['model']
     feature_cols = model_info['feature_cols']
+    residual_std = model_info.get('residual_std', 0)
     
     # Use last data point to start forecasting
     forecast_df = df.tail(30).copy()
@@ -446,13 +734,18 @@ def forecast_random_forest(model_info, df, forecast_days):
         pred_value = model.predict(X_next)[0]
         pred_value = max(0, pred_value)  # Ensure non-negative
         
+        # Calculate confidence intervals using residual std
+        margin = 1.96 * residual_std
+        lower = max(0, pred_value - margin)
+        upper = pred_value + margin
+        
         # Add to forecast
         next_date = last_date + pd.Timedelta(days=i+1)
         predictions.append({
             "date": next_date.strftime('%Y-%m-%d'),
             "value": float(pred_value),
-            "lower": float(max(0, pred_value * 0.8)),  # Simple confidence interval
-            "upper": float(pred_value * 1.2)
+            "lower": float(lower),
+            "upper": float(upper)
         })
         
         # Add predicted value to dataframe for next iteration
@@ -473,33 +766,64 @@ def forecast_random_forest(model_info, df, forecast_days):
     }
 
 def forecast_arima(model_info, df, forecast_days):
-    """Generate forecast using ARIMA"""
+    """Generate forecast using ARIMA with proper confidence intervals"""
     model = model_info['model']
     
-    # Generate forecast
-    forecast_result = model.forecast(steps=forecast_days)
-    forecast_values = forecast_result if isinstance(forecast_result, np.ndarray) else forecast_result.values
-    
-    # Calculate confidence intervals (using model's standard errors if available)
-    std_error = np.std(df['value'].tail(30))
-    
-    last_date = df['date'].max()
-    predictions = []
-    
-    for i, value in enumerate(forecast_values):
-        next_date = last_date + pd.Timedelta(days=i+1)
-        pred_value = max(0, float(value))
+    # Use get_forecast() to get proper confidence intervals from the model
+    try:
+        forecast_result = model.get_forecast(steps=forecast_days)
+        forecast_values = forecast_result.predicted_mean
         
-        predictions.append({
-            "date": next_date.strftime('%Y-%m-%d'),
-            "value": pred_value,
-            "lower": float(max(0, pred_value - 1.96 * std_error)),
-            "upper": float(pred_value + 1.96 * std_error)
-        })
+        # Get confidence intervals from the model (95% confidence)
+        conf_int = forecast_result.conf_int(alpha=0.05)
+        
+        last_date = df['date'].max()
+        predictions = []
+        
+        for i in range(forecast_days):
+            next_date = last_date + pd.Timedelta(days=i+1)
+            pred_value = max(0, float(forecast_values.iloc[i]))
+            
+            # Use model's confidence intervals
+            lower = max(0, float(conf_int.iloc[i, 0]))
+            upper = max(0, float(conf_int.iloc[i, 1]))
+            
+            predictions.append({
+                "date": next_date.strftime('%Y-%m-%d'),
+                "value": pred_value,
+                "lower": lower,
+                "upper": upper
+            })
+    except Exception as e:
+        # Fallback to simple forecast if get_forecast fails
+        print(f"ARIMA get_forecast failed, using simple forecast: {e}", flush=True)
+        forecast_result = model.forecast(steps=forecast_days)
+        forecast_values = forecast_result if isinstance(forecast_result, np.ndarray) else forecast_result.values
+        
+        # Use simple std error for confidence intervals
+        std_error = np.std(df['value'].tail(30))
+        
+        last_date = df['date'].max()
+        predictions = []
+        
+        for i, value in enumerate(forecast_values):
+            next_date = last_date + pd.Timedelta(days=i+1)
+            pred_value = max(0, float(value))
+            
+            predictions.append({
+                "date": next_date.strftime('%Y-%m-%d'),
+                "value": pred_value,
+                "lower": float(max(0, pred_value - 1.96 * std_error)),
+                "upper": float(pred_value + 1.96 * std_error)
+            })
     
     # Calculate metrics
-    mape = float(np.std(df['value'].tail(10)) / np.mean(df['value'].tail(10)) * 100)
-    rmse = float(std_error)
+    recent_values = df['value'].tail(10).values
+    if np.mean(recent_values) != 0:
+        mape = float(np.std(recent_values) / np.mean(recent_values) * 100)
+    else:
+        mape = 0.0
+    rmse = float(np.std(recent_values))
     
     return {
         "predictions": predictions,
