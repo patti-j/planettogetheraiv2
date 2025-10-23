@@ -2631,19 +2631,13 @@
                         start = cal.skipNonWorkingTime(start, true);
                     }
                     
-                    // CRITICAL FIX: Get events from eventStore and filter by resource
-                    // This ensures we get all events for this resource, not just those in resource.events
-                    const { eventStore, assignmentStore } = scheduler;
+                    // CRITICAL FIX: Use Bryntum's native resource.events collection
+                    // This is the proper way to get all events assigned to a resource
+                    const allEvents = resource.events || [];
                     
-                    // Get all events assigned to this resource through assignments
-                    const events = [];
-                    assignmentStore.forEach(assignment => {
-                        if (assignment.resourceId === resource.id) {
-                            const event = eventStore.getById(assignment.eventId);
-                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate) {
-                                events.push(event);
-                            }
-                        }
+                    // Filter out the event we're scheduling and sort by start date
+                    const events = allEvents.filter(e => {
+                        return e && e !== excludeEvent && e.id !== excludeEvent?.id && e.startDate;
                     });
                     
                     // Sort events by start date for efficient overlap checking
@@ -3118,19 +3112,13 @@
                     // Start from earliestStart and push forward past any overlaps
                     let start = new Date(earliestStart);
                     
-                    // CRITICAL FIX: Get events from assignmentStore to find all events on this resource
-                    const { eventStore, assignmentStore } = scheduler;
+                    // CRITICAL FIX: Use Bryntum's native resource.events collection
+                    // This properly gets all events assigned to this resource
+                    const allEvents = resource.events || [];
                     
-                    // Get all events assigned to this resource through assignments
-                    const events = [];
-                    assignmentStore.forEach(assignment => {
-                        if (assignment.resourceId === resource.id) {
-                            const event = eventStore.getById(assignment.eventId);
-                            // Exclude the event being scheduled and check it has valid dates
-                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate && event.endDate) {
-                                events.push(event);
-                            }
-                        }
+                    // Filter out the event we're scheduling and check it has valid dates
+                    const events = allEvents.filter(event => {
+                        return event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate && event.endDate;
                     });
                     
                     // Sort events by start date for forward scheduling
