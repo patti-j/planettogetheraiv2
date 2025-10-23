@@ -7,6 +7,7 @@ import {
   agentConnections, agentActions, agentMetricsHourly, agentPolicies, agentAlerts,
   ptProductWheels, ptProductWheelSegments, ptProductWheelSchedule, ptProductWheelPerformance,
   calendars, maintenancePeriods,
+  plantKpiTargets, plantKpiPerformance, autonomousOptimization,
   // Optimization Studio tables
   optimizationAlgorithms, optimizationProfiles,
   algorithmTests, algorithmDeployments, algorithmFeedback,
@@ -27,6 +28,9 @@ import {
   type PtProductWheelPerformance, type InsertPtProductWheelPerformance,
   type Calendar, type InsertCalendar,
   type MaintenancePeriod, type InsertMaintenancePeriod,
+  type PlantKpiTarget, type InsertPlantKpiTarget,
+  type PlantKpiPerformance, type InsertPlantKpiPerformance,
+  type AutonomousOptimization, type InsertAutonomousOptimization,
   // Optimization Studio types
   type OptimizationAlgorithm, type InsertOptimizationAlgorithm,
   type OptimizationProfile, type InsertOptimizationProfile,
@@ -201,6 +205,27 @@ export interface IStorage {
   getActiveMaintenancePeriods(date: Date): Promise<MaintenancePeriod[]>;
   updateMaintenancePeriod(id: number, data: Partial<InsertMaintenancePeriod>): Promise<MaintenancePeriod | undefined>;
   deleteMaintenancePeriod(id: number): Promise<boolean>;
+
+  // Plant KPI Targets
+  createPlantKpiTarget(data: InsertPlantKpiTarget): Promise<PlantKpiTarget>;
+  getPlantKpiTargets(plantId?: number): Promise<PlantKpiTarget[]>;
+  getPlantKpiTarget(id: number): Promise<PlantKpiTarget | undefined>;
+  updatePlantKpiTarget(id: number, data: Partial<InsertPlantKpiTarget>): Promise<PlantKpiTarget | undefined>;
+  deletePlantKpiTarget(id: number): Promise<boolean>;
+
+  // Plant KPI Performance
+  createPlantKpiPerformance(data: InsertPlantKpiPerformance): Promise<PlantKpiPerformance>;
+  getPlantKpiPerformance(filters?: { plantKpiTargetId?: number; startDate?: Date; endDate?: Date }): Promise<PlantKpiPerformance[]>;
+  getLatestKpiPerformance(plantKpiTargetId: number): Promise<PlantKpiPerformance | undefined>;
+  updatePlantKpiPerformance(id: number, data: Partial<InsertPlantKpiPerformance>): Promise<PlantKpiPerformance | undefined>;
+  deletePlantKpiPerformance(id: number): Promise<boolean>;
+
+  // Autonomous Optimization
+  createAutonomousOptimization(data: InsertAutonomousOptimization): Promise<AutonomousOptimization>;
+  getAutonomousOptimizations(plantId?: number): Promise<AutonomousOptimization[]>;
+  getAutonomousOptimization(id: number): Promise<AutonomousOptimization | undefined>;
+  updateAutonomousOptimization(id: number, data: Partial<InsertAutonomousOptimization>): Promise<AutonomousOptimization | undefined>;
+  deleteAutonomousOptimization(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -1996,6 +2021,206 @@ export class DatabaseStorage implements IStorage {
       return result.rowCount > 0;
     } catch (error) {
       console.error('Error deleting capability:', error);
+      return false;
+    }
+  }
+
+  // Plant KPI Targets
+  async createPlantKpiTarget(data: InsertPlantKpiTarget): Promise<PlantKpiTarget> {
+    try {
+      const [target] = await db.insert(plantKpiTargets).values(data).returning();
+      return target;
+    } catch (error) {
+      console.error('Error creating plant KPI target:', error);
+      throw error;
+    }
+  }
+
+  async getPlantKpiTargets(plantId?: number): Promise<PlantKpiTarget[]> {
+    try {
+      if (plantId) {
+        return await db.select()
+          .from(plantKpiTargets)
+          .where(eq(plantKpiTargets.plantId, plantId))
+          .orderBy(desc(plantKpiTargets.weight));
+      }
+      return await db.select()
+        .from(plantKpiTargets)
+        .orderBy(desc(plantKpiTargets.weight));
+    } catch (error) {
+      console.error('Error fetching plant KPI targets:', error);
+      return [];
+    }
+  }
+
+  async getPlantKpiTarget(id: number): Promise<PlantKpiTarget | undefined> {
+    try {
+      const [target] = await db.select()
+        .from(plantKpiTargets)
+        .where(eq(plantKpiTargets.id, id));
+      return target || undefined;
+    } catch (error) {
+      console.error('Error fetching plant KPI target:', error);
+      return undefined;
+    }
+  }
+
+  async updatePlantKpiTarget(id: number, data: Partial<InsertPlantKpiTarget>): Promise<PlantKpiTarget | undefined> {
+    try {
+      const [updated] = await db.update(plantKpiTargets)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(plantKpiTargets.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating plant KPI target:', error);
+      return undefined;
+    }
+  }
+
+  async deletePlantKpiTarget(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(plantKpiTargets)
+        .where(eq(plantKpiTargets.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting plant KPI target:', error);
+      return false;
+    }
+  }
+
+  // Plant KPI Performance
+  async createPlantKpiPerformance(data: InsertPlantKpiPerformance): Promise<PlantKpiPerformance> {
+    try {
+      const [performance] = await db.insert(plantKpiPerformance).values(data).returning();
+      return performance;
+    } catch (error) {
+      console.error('Error creating plant KPI performance:', error);
+      throw error;
+    }
+  }
+
+  async getPlantKpiPerformance(filters?: { plantKpiTargetId?: number; startDate?: Date; endDate?: Date }): Promise<PlantKpiPerformance[]> {
+    try {
+      let query = db.select().from(plantKpiPerformance);
+      
+      if (filters?.plantKpiTargetId) {
+        query = query.where(eq(plantKpiPerformance.plantKpiTargetId, filters.plantKpiTargetId));
+      }
+      
+      if (filters?.startDate) {
+        query = query.where(sql`${plantKpiPerformance.measurementDate} >= ${filters.startDate}`);
+      }
+      
+      if (filters?.endDate) {
+        query = query.where(sql`${plantKpiPerformance.measurementDate} <= ${filters.endDate}`);
+      }
+      
+      return await query.orderBy(desc(plantKpiPerformance.measurementDate));
+    } catch (error) {
+      console.error('Error fetching plant KPI performance:', error);
+      return [];
+    }
+  }
+
+  async getLatestKpiPerformance(plantKpiTargetId: number): Promise<PlantKpiPerformance | undefined> {
+    try {
+      const [performance] = await db.select()
+        .from(plantKpiPerformance)
+        .where(eq(plantKpiPerformance.plantKpiTargetId, plantKpiTargetId))
+        .orderBy(desc(plantKpiPerformance.measurementDate))
+        .limit(1);
+      return performance || undefined;
+    } catch (error) {
+      console.error('Error fetching latest KPI performance:', error);
+      return undefined;
+    }
+  }
+
+  async updatePlantKpiPerformance(id: number, data: Partial<InsertPlantKpiPerformance>): Promise<PlantKpiPerformance | undefined> {
+    try {
+      const [updated] = await db.update(plantKpiPerformance)
+        .set(data)
+        .where(eq(plantKpiPerformance.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating plant KPI performance:', error);
+      return undefined;
+    }
+  }
+
+  async deletePlantKpiPerformance(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(plantKpiPerformance)
+        .where(eq(plantKpiPerformance.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting plant KPI performance:', error);
+      return false;
+    }
+  }
+
+  // Autonomous Optimization
+  async createAutonomousOptimization(data: InsertAutonomousOptimization): Promise<AutonomousOptimization> {
+    try {
+      const [optimization] = await db.insert(autonomousOptimization).values(data).returning();
+      return optimization;
+    } catch (error) {
+      console.error('Error creating autonomous optimization:', error);
+      throw error;
+    }
+  }
+
+  async getAutonomousOptimizations(plantId?: number): Promise<AutonomousOptimization[]> {
+    try {
+      if (plantId) {
+        return await db.select()
+          .from(autonomousOptimization)
+          .where(eq(autonomousOptimization.plantId, plantId))
+          .orderBy(desc(autonomousOptimization.createdAt));
+      }
+      return await db.select()
+        .from(autonomousOptimization)
+        .orderBy(desc(autonomousOptimization.createdAt));
+    } catch (error) {
+      console.error('Error fetching autonomous optimizations:', error);
+      return [];
+    }
+  }
+
+  async getAutonomousOptimization(id: number): Promise<AutonomousOptimization | undefined> {
+    try {
+      const [optimization] = await db.select()
+        .from(autonomousOptimization)
+        .where(eq(autonomousOptimization.id, id));
+      return optimization || undefined;
+    } catch (error) {
+      console.error('Error fetching autonomous optimization:', error);
+      return undefined;
+    }
+  }
+
+  async updateAutonomousOptimization(id: number, data: Partial<InsertAutonomousOptimization>): Promise<AutonomousOptimization | undefined> {
+    try {
+      const [updated] = await db.update(autonomousOptimization)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(autonomousOptimization.id, id))
+        .returning();
+      return updated || undefined;
+    } catch (error) {
+      console.error('Error updating autonomous optimization:', error);
+      return undefined;
+    }
+  }
+
+  async deleteAutonomousOptimization(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(autonomousOptimization)
+        .where(eq(autonomousOptimization.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting autonomous optimization:', error);
       return false;
     }
   }
