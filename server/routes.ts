@@ -8235,6 +8235,143 @@ router.get("/api/product-wheels", enhancedAuth, async (req, res) => {
   try {
     const plantId = req.query.plantId ? parseInt(req.query.plantId as string) : undefined;
     const wheels = await storage.getProductWheels(plantId);
+    
+    // If no wheels exist, provide sample data
+    if (!wheels || wheels.length === 0) {
+      const sampleWheels = [
+        {
+          id: 1,
+          name: "Brewery Line 1 - Weekly Cycle",
+          description: "Primary brewing line production wheel for premium beer products",
+          plantId: 1,
+          resourceId: 1,
+          cycleDurationHours: 168, // 1 week
+          status: "active",
+          efficiencyTarget: 85,
+          changeoverTimeMin: 30,
+          sequenceOptimization: "minimize_changeover",
+          createdAt: new Date("2024-01-01"),
+          updatedAt: new Date("2024-01-15"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 2,
+          name: "Packaging Line A - Daily Cycle",
+          description: "High-speed bottling and canning line for finished products",
+          plantId: 1,
+          resourceId: 2,
+          cycleDurationHours: 24, // 1 day
+          status: "active",
+          efficiencyTarget: 90,
+          changeoverTimeMin: 15,
+          sequenceOptimization: "minimize_inventory",
+          createdAt: new Date("2024-01-05"),
+          updatedAt: new Date("2024-01-20"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 3,
+          name: "Fermentation Tanks - 14-Day Cycle",
+          description: "Fermentation tank rotation for lager and ale production",
+          plantId: 1,
+          resourceId: 3,
+          cycleDurationHours: 336, // 2 weeks
+          status: "active",
+          efficiencyTarget: 95,
+          changeoverTimeMin: 120,
+          sequenceOptimization: "maximize_throughput",
+          createdAt: new Date("2024-01-10"),
+          updatedAt: new Date("2024-01-10"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 4,
+          name: "Specialty Brew - Monthly Cycle",
+          description: "Small batch specialty and seasonal beer production wheel",
+          plantId: 1,
+          resourceId: 4,
+          cycleDurationHours: 720, // 30 days
+          status: "draft",
+          efficiencyTarget: 75,
+          changeoverTimeMin: 60,
+          sequenceOptimization: "minimize_changeover",
+          createdAt: new Date("2024-02-01"),
+          updatedAt: new Date("2024-02-01"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 5,
+          name: "Quality Lab Testing - Shift Cycle",
+          description: "Quality control testing rotation for all product lines",
+          plantId: 1,
+          resourceId: 5,
+          cycleDurationHours: 8, // 1 shift
+          status: "active",
+          efficiencyTarget: 100,
+          changeoverTimeMin: 5,
+          sequenceOptimization: "priority_based",
+          createdAt: new Date("2024-01-15"),
+          updatedAt: new Date("2024-02-10"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 6,
+          name: "Raw Material Processing",
+          description: "Malt milling and hop processing production wheel",
+          plantId: 2,
+          resourceId: 6,
+          cycleDurationHours: 48, // 2 days
+          status: "active",
+          efficiencyTarget: 88,
+          changeoverTimeMin: 45,
+          sequenceOptimization: "minimize_inventory",
+          createdAt: new Date("2024-01-20"),
+          updatedAt: new Date("2024-02-05"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 7,
+          name: "Distribution Center Cycle",
+          description: "Warehouse picking and shipping rotation schedule",
+          plantId: 2,
+          resourceId: 7,
+          cycleDurationHours: 12, // Half day
+          status: "draft",
+          efficiencyTarget: 92,
+          changeoverTimeMin: 10,
+          sequenceOptimization: "minimize_changeover",
+          createdAt: new Date("2024-02-15"),
+          updatedAt: new Date("2024-02-15"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        },
+        {
+          id: 8,
+          name: "Maintenance Window Rotation",
+          description: "Planned maintenance and cleaning cycle for all equipment",
+          plantId: 1,
+          resourceId: 8,
+          cycleDurationHours: 4, // 4 hours
+          status: "archived",
+          efficiencyTarget: 100,
+          changeoverTimeMin: 0,
+          sequenceOptimization: "fixed_sequence",
+          createdAt: new Date("2023-12-01"),
+          updatedAt: new Date("2024-01-31"),
+          createdBy: 1,
+          lastModifiedBy: 1
+        }
+      ];
+      
+      return res.json(sampleWheels);
+    }
+    
     res.json(wheels);
   } catch (error: any) {
     console.error("Error fetching product wheels:", error);
@@ -8307,9 +8444,300 @@ router.delete("/product-wheels/:id", enhancedAuth, async (req, res) => {
 });
 
 // Get wheel segments
-router.get("/product-wheels/:wheelId/segments", enhancedAuth, async (req, res) => {
+router.get("/api/product-wheels/:wheelId/segments", enhancedAuth, async (req, res) => {
   try {
-    const segments = await storage.getWheelSegments(parseInt(req.params.wheelId));
+    const wheelId = parseInt(req.params.wheelId);
+    const segments = await storage.getWheelSegments(wheelId);
+    
+    // If no segments exist, provide sample data based on wheel ID
+    if (!segments || segments.length === 0) {
+      const sampleSegmentsMap: any = {
+        1: [ // Brewery Line 1 - Weekly Cycle
+          {
+            id: 1,
+            wheelId: 1,
+            sequenceNumber: 1,
+            productCode: "IPA-001",
+            productName: "Premium IPA",
+            allocatedHours: "36",
+            minimumBatchSize: 1000,
+            maximumBatchSize: 5000,
+            changeoverFromPrevious: 30,
+            colorCode: "#FF6B6B",
+            notes: "High hop content, requires thorough cleaning after",
+            createdAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
+          },
+          {
+            id: 2,
+            wheelId: 1,
+            sequenceNumber: 2,
+            productCode: "LAG-001",
+            productName: "Classic Lager",
+            allocatedHours: "48",
+            minimumBatchSize: 2000,
+            maximumBatchSize: 6000,
+            changeoverFromPrevious: 45,
+            colorCode: "#FFD93D",
+            notes: "Extended fermentation time required",
+            createdAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
+          },
+          {
+            id: 3,
+            wheelId: 1,
+            sequenceNumber: 3,
+            productCode: "WHT-001",
+            productName: "Wheat Beer",
+            allocatedHours: "24",
+            minimumBatchSize: 800,
+            maximumBatchSize: 3000,
+            changeoverFromPrevious: 30,
+            colorCode: "#6BCB77",
+            notes: "Contains wheat malt, allergen considerations",
+            createdAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
+          },
+          {
+            id: 4,
+            wheelId: 1,
+            sequenceNumber: 4,
+            productCode: "STT-001",
+            productName: "Imperial Stout",
+            allocatedHours: "30",
+            minimumBatchSize: 500,
+            maximumBatchSize: 2000,
+            changeoverFromPrevious: 60,
+            colorCode: "#4D96FF",
+            notes: "Dark roasted malts, requires special handling",
+            createdAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
+          },
+          {
+            id: 5,
+            wheelId: 1,
+            sequenceNumber: 5,
+            productCode: "PIL-001",
+            productName: "Pilsner",
+            allocatedHours: "30",
+            minimumBatchSize: 1500,
+            maximumBatchSize: 4000,
+            changeoverFromPrevious: 30,
+            colorCode: "#B983FF",
+            notes: "Light color, quick turnaround",
+            createdAt: new Date("2024-01-01"),
+            updatedAt: new Date("2024-01-01")
+          }
+        ],
+        2: [ // Packaging Line A - Daily Cycle
+          {
+            id: 6,
+            wheelId: 2,
+            sequenceNumber: 1,
+            productCode: "BTL-330",
+            productName: "330ml Bottle Pack",
+            allocatedHours: "8",
+            minimumBatchSize: 5000,
+            maximumBatchSize: 20000,
+            changeoverFromPrevious: 15,
+            colorCode: "#00D9FF",
+            notes: "Standard bottle size, high volume",
+            createdAt: new Date("2024-01-05"),
+            updatedAt: new Date("2024-01-05")
+          },
+          {
+            id: 7,
+            wheelId: 2,
+            sequenceNumber: 2,
+            productCode: "CAN-500",
+            productName: "500ml Can Pack",
+            allocatedHours: "6",
+            minimumBatchSize: 3000,
+            maximumBatchSize: 15000,
+            changeoverFromPrevious: 20,
+            colorCode: "#00B871",
+            notes: "Requires can line changeover",
+            createdAt: new Date("2024-01-05"),
+            updatedAt: new Date("2024-01-05")
+          },
+          {
+            id: 8,
+            wheelId: 2,
+            sequenceNumber: 3,
+            productCode: "KEG-30L",
+            productName: "30L Keg Fill",
+            allocatedHours: "6",
+            minimumBatchSize: 100,
+            maximumBatchSize: 500,
+            changeoverFromPrevious: 30,
+            colorCode: "#FF9A00",
+            notes: "Keg line operation",
+            createdAt: new Date("2024-01-05"),
+            updatedAt: new Date("2024-01-05")
+          },
+          {
+            id: 9,
+            wheelId: 2,
+            sequenceNumber: 4,
+            productCode: "GFT-001",
+            productName: "Gift Pack Assembly",
+            allocatedHours: "4",
+            minimumBatchSize: 500,
+            maximumBatchSize: 2000,
+            changeoverFromPrevious: 45,
+            colorCode: "#E84855",
+            notes: "Manual assembly required",
+            createdAt: new Date("2024-01-05"),
+            updatedAt: new Date("2024-01-05")
+          }
+        ],
+        3: [ // Fermentation Tanks - 14-Day Cycle
+          {
+            id: 10,
+            wheelId: 3,
+            sequenceNumber: 1,
+            productCode: "FERM-LAG",
+            productName: "Lager Fermentation",
+            allocatedHours: "168", // 7 days
+            minimumBatchSize: 10000,
+            maximumBatchSize: 30000,
+            changeoverFromPrevious: 120,
+            colorCode: "#3D5A80",
+            notes: "Low temperature fermentation",
+            createdAt: new Date("2024-01-10"),
+            updatedAt: new Date("2024-01-10")
+          },
+          {
+            id: 11,
+            wheelId: 3,
+            sequenceNumber: 2,
+            productCode: "FERM-ALE",
+            productName: "Ale Fermentation",
+            allocatedHours: "120", // 5 days
+            minimumBatchSize: 8000,
+            maximumBatchSize: 25000,
+            changeoverFromPrevious: 90,
+            colorCode: "#98C1D9",
+            notes: "Standard temperature fermentation",
+            createdAt: new Date("2024-01-10"),
+            updatedAt: new Date("2024-01-10")
+          },
+          {
+            id: 12,
+            wheelId: 3,
+            sequenceNumber: 3,
+            productCode: "FERM-WHT",
+            productName: "Wheat Beer Fermentation",
+            allocatedHours: "48", // 2 days
+            minimumBatchSize: 5000,
+            maximumBatchSize: 15000,
+            changeoverFromPrevious: 60,
+            colorCode: "#EE6C4D",
+            notes: "Special yeast strain required",
+            createdAt: new Date("2024-01-10"),
+            updatedAt: new Date("2024-01-10")
+          }
+        ],
+        4: [ // Specialty Brew - Monthly Cycle
+          {
+            id: 13,
+            wheelId: 4,
+            sequenceNumber: 1,
+            productCode: "SPC-SOUR",
+            productName: "Sour Ale Special",
+            allocatedHours: "240", // 10 days
+            minimumBatchSize: 500,
+            maximumBatchSize: 2000,
+            changeoverFromPrevious: 180,
+            colorCode: "#C1666B",
+            notes: "Requires separate equipment to avoid contamination",
+            createdAt: new Date("2024-02-01"),
+            updatedAt: new Date("2024-02-01")
+          },
+          {
+            id: 14,
+            wheelId: 4,
+            sequenceNumber: 2,
+            productCode: "SPC-BARREL",
+            productName: "Barrel Aged Stout",
+            allocatedHours: "360", // 15 days
+            minimumBatchSize: 300,
+            maximumBatchSize: 1000,
+            changeoverFromPrevious: 240,
+            colorCode: "#4A5859",
+            notes: "Extended aging in oak barrels",
+            createdAt: new Date("2024-02-01"),
+            updatedAt: new Date("2024-02-01")
+          },
+          {
+            id: 15,
+            wheelId: 4,
+            sequenceNumber: 3,
+            productCode: "SPC-FRUIT",
+            productName: "Fruit Infusion Series",
+            allocatedHours: "120", // 5 days
+            minimumBatchSize: 400,
+            maximumBatchSize: 1500,
+            changeoverFromPrevious: 120,
+            colorCode: "#D4A373",
+            notes: "Seasonal fruit additions",
+            createdAt: new Date("2024-02-01"),
+            updatedAt: new Date("2024-02-01")
+          }
+        ],
+        5: [ // Quality Lab Testing - Shift Cycle
+          {
+            id: 16,
+            wheelId: 5,
+            sequenceNumber: 1,
+            productCode: "QC-MICRO",
+            productName: "Microbiological Testing",
+            allocatedHours: "2",
+            minimumBatchSize: 20,
+            maximumBatchSize: 50,
+            changeoverFromPrevious: 5,
+            colorCode: "#2A9D8F",
+            notes: "Sterile environment required",
+            createdAt: new Date("2024-01-15"),
+            updatedAt: new Date("2024-01-15")
+          },
+          {
+            id: 17,
+            wheelId: 5,
+            sequenceNumber: 2,
+            productCode: "QC-CHEM",
+            productName: "Chemical Analysis",
+            allocatedHours: "3",
+            minimumBatchSize: 30,
+            maximumBatchSize: 80,
+            changeoverFromPrevious: 10,
+            colorCode: "#E9C46A",
+            notes: "pH, alcohol content, IBU testing",
+            createdAt: new Date("2024-01-15"),
+            updatedAt: new Date("2024-01-15")
+          },
+          {
+            id: 18,
+            wheelId: 5,
+            sequenceNumber: 3,
+            productCode: "QC-SENSORY",
+            productName: "Sensory Evaluation",
+            allocatedHours: "3",
+            minimumBatchSize: 10,
+            maximumBatchSize: 30,
+            changeoverFromPrevious: 5,
+            colorCode: "#F4A261",
+            notes: "Taste panel evaluation",
+            createdAt: new Date("2024-01-15"),
+            updatedAt: new Date("2024-01-15")
+          }
+        ]
+      };
+      
+      const sampleSegments = sampleSegmentsMap[wheelId] || [];
+      return res.json(sampleSegments);
+    }
+    
     res.json(segments);
   } catch (error: any) {
     console.error("Error fetching wheel segments:", error);
