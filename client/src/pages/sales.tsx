@@ -40,7 +40,7 @@ import {
   Maximize2,
   Minimize2
 } from "lucide-react";
-import { Job, Operation, Resource } from "@shared/schema";
+import { PtJob, JobOperation, Resource } from "@shared/schema";
 
 interface SalesLead {
   id: number;
@@ -104,11 +104,11 @@ export default function Sales() {
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
 
   // Fetch production data for integration
-  const { data: jobs = [] } = useQuery<Job[]>({
+  const { data: jobs = [] } = useQuery<PtJob[]>({
     queryKey: ["/api/jobs"],
   });
 
-  const { data: operations = [] } = useQuery<Operation[]>({
+  const { data: operations = [] } = useQuery<JobOperation[]>({
     queryKey: ["/api/operations"],
   });
 
