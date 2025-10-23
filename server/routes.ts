@@ -9451,5 +9451,209 @@ router.post("/api/schedules/:scheduleId/check-conflicts", requireAuth, async (re
   }
 });
 
+// ============================================
+// Global Control Tower KPI Routes
+// ============================================
+
+// Get all plant KPI targets
+router.get("/api/plant-kpi-targets", requireAuth, async (req, res) => {
+  try {
+    const { plantId } = req.query;
+    const targets = await storage.getPlantKpiTargets(plantId ? parseInt(plantId as string) : undefined);
+    res.json(targets);
+  } catch (error: any) {
+    console.error("Error fetching plant KPI targets:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch KPI targets",
+      message: error.message 
+    });
+  }
+});
+
+// Get specific KPI target
+router.get("/api/plant-kpi-targets/:id", requireAuth, async (req, res) => {
+  try {
+    const target = await storage.getPlantKpiTarget(parseInt(req.params.id));
+    if (!target) {
+      return res.status(404).json({ error: "KPI target not found" });
+    }
+    res.json(target);
+  } catch (error: any) {
+    console.error("Error fetching KPI target:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch KPI target",
+      message: error.message 
+    });
+  }
+});
+
+// Create new KPI target
+router.post("/api/plant-kpi-targets", requireAuth, async (req, res) => {
+  try {
+    const target = await storage.createPlantKpiTarget(req.body);
+    res.status(201).json(target);
+  } catch (error: any) {
+    console.error("Error creating KPI target:", error);
+    res.status(500).json({ 
+      error: "Failed to create KPI target",
+      message: error.message 
+    });
+  }
+});
+
+// Update KPI target
+router.patch("/api/plant-kpi-targets/:id", requireAuth, async (req, res) => {
+  try {
+    const updated = await storage.updatePlantKpiTarget(parseInt(req.params.id), req.body);
+    if (!updated) {
+      return res.status(404).json({ error: "KPI target not found" });
+    }
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating KPI target:", error);
+    res.status(500).json({ 
+      error: "Failed to update KPI target",
+      message: error.message 
+    });
+  }
+});
+
+// Delete KPI target
+router.delete("/api/plant-kpi-targets/:id", requireAuth, async (req, res) => {
+  try {
+    const deleted = await storage.deletePlantKpiTarget(parseInt(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ error: "KPI target not found" });
+    }
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting KPI target:", error);
+    res.status(500).json({ 
+      error: "Failed to delete KPI target",
+      message: error.message 
+    });
+  }
+});
+
+// Get KPI performance data
+router.get("/api/plant-kpi-performance", requireAuth, async (req, res) => {
+  try {
+    const { plantKpiTargetId, startDate, endDate } = req.query;
+    const filters: any = {};
+    
+    if (plantKpiTargetId) filters.plantKpiTargetId = parseInt(plantKpiTargetId as string);
+    if (startDate) filters.startDate = new Date(startDate as string);
+    if (endDate) filters.endDate = new Date(endDate as string);
+    
+    const performance = await storage.getPlantKpiPerformance(filters);
+    res.json(performance);
+  } catch (error: any) {
+    console.error("Error fetching KPI performance:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch KPI performance",
+      message: error.message 
+    });
+  }
+});
+
+// Create KPI performance record
+router.post("/api/plant-kpi-performance", requireAuth, async (req, res) => {
+  try {
+    const performance = await storage.createPlantKpiPerformance(req.body);
+    res.status(201).json(performance);
+  } catch (error: any) {
+    console.error("Error creating KPI performance:", error);
+    res.status(500).json({ 
+      error: "Failed to create KPI performance",
+      message: error.message 
+    });
+  }
+});
+
+// Get all autonomous optimization configurations
+router.get("/api/autonomous-optimization", requireAuth, async (req, res) => {
+  try {
+    const { plantId } = req.query;
+    const optimizations = await storage.getAutonomousOptimizations(
+      plantId ? parseInt(plantId as string) : undefined
+    );
+    res.json(optimizations);
+  } catch (error: any) {
+    console.error("Error fetching autonomous optimizations:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch autonomous optimizations",
+      message: error.message 
+    });
+  }
+});
+
+// Get specific autonomous optimization
+router.get("/api/autonomous-optimization/:id", requireAuth, async (req, res) => {
+  try {
+    const optimization = await storage.getAutonomousOptimization(parseInt(req.params.id));
+    if (!optimization) {
+      return res.status(404).json({ error: "Autonomous optimization not found" });
+    }
+    res.json(optimization);
+  } catch (error: any) {
+    console.error("Error fetching autonomous optimization:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch autonomous optimization",
+      message: error.message 
+    });
+  }
+});
+
+// Create autonomous optimization
+router.post("/api/autonomous-optimization", requireAuth, async (req, res) => {
+  try {
+    const optimization = await storage.createAutonomousOptimization(req.body);
+    res.status(201).json(optimization);
+  } catch (error: any) {
+    console.error("Error creating autonomous optimization:", error);
+    res.status(500).json({ 
+      error: "Failed to create autonomous optimization",
+      message: error.message 
+    });
+  }
+});
+
+// Update autonomous optimization
+router.patch("/api/autonomous-optimization/:id", requireAuth, async (req, res) => {
+  try {
+    const updated = await storage.updateAutonomousOptimization(
+      parseInt(req.params.id), 
+      req.body
+    );
+    if (!updated) {
+      return res.status(404).json({ error: "Autonomous optimization not found" });
+    }
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating autonomous optimization:", error);
+    res.status(500).json({ 
+      error: "Failed to update autonomous optimization",
+      message: error.message 
+    });
+  }
+});
+
+// Delete autonomous optimization
+router.delete("/api/autonomous-optimization/:id", requireAuth, async (req, res) => {
+  try {
+    const deleted = await storage.deleteAutonomousOptimization(parseInt(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ error: "Autonomous optimization not found" });
+    }
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting autonomous optimization:", error);
+    res.status(500).json({ 
+      error: "Failed to delete autonomous optimization",
+      message: error.message 
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
