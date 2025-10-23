@@ -5,6 +5,7 @@ import { AILeftPanel } from './ai-left-panel';
 import { SlideOutMenu } from './slide-out-menu';
 import { MinimizedNavPanel } from './minimized-nav-panel';
 import TopMenu from '@/components/top-menu';
+import { IntegratedAIAssistant } from '@/components/integrated-ai-assistant';
 import { useFullScreen } from '@/contexts/FullScreenContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,7 +37,7 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
   const { addMessage } = useChatSync();
   const [location, setLocation] = useLocation();
   const { handleNavigation } = useSplitScreen();
-  const { setCanvasVisible, setCanvasItems } = useMaxDock();
+  const { setCanvasVisible, setCanvasItems, maxOpen } = useMaxDock();
   const { currentAgent, switchToAgent } = useAgent();
   const { toast } = useToast();
   const [floatingPrompt, setFloatingPrompt] = useState('');
@@ -1095,6 +1096,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
               </div>
             </ResizablePanel>
             
+            {/* Max Panel - conditionally show when maxOpen is true */}
+            {maxOpen && (
+              <>
+                <ResizableHandle withHandle className="w-[1px] bg-border/80 hover:bg-primary/20 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
+                <ResizablePanel 
+                  defaultSize={35} 
+                  minSize={25} 
+                  maxSize={50}
+                  className="min-w-0 h-full"
+                >
+                  <IntegratedAIAssistant />
+                </ResizablePanel>
+              </>
+            )}
+            
             {/* Resizable handle for navigation panel */}
             <ResizableHandle withHandle className="w-[6px] bg-gradient-to-r from-border/40 via-border/60 to-border/40 hover:from-primary/15 hover:via-primary/25 hover:to-primary/15 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
             
@@ -1154,6 +1170,21 @@ export function DesktopLayout({ children }: DesktopLayoutProps) {
                   </div>
                 </div>
               </ResizablePanel>
+              
+              {/* Max Panel - conditionally show when maxOpen is true */}
+              {maxOpen && (
+                <>
+                  <ResizableHandle withHandle className="w-[1px] bg-border/80 hover:bg-primary/20 hover:w-2 transition-all duration-300 ease-out cursor-col-resize" />
+                  <ResizablePanel 
+                    defaultSize={35} 
+                    minSize={25} 
+                    maxSize={50}
+                    className="min-w-0 h-full"
+                  >
+                    <IntegratedAIAssistant />
+                  </ResizablePanel>
+                </>
+              )}
             </ResizablePanelGroup>
             
             {/* Minimized Navigation Panel - positioned absolutely */}
