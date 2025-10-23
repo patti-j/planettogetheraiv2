@@ -649,6 +649,22 @@ export default function OnboardingPage() {
     }
   };
 
+  // Check if device is mobile based on window width
+  const [isMobile, setIsMobile] = useState(false);
+  
+  useEffect(() => {
+    const checkIsMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkIsMobile(); // Check on mount
+    window.addEventListener('resize', checkIsMobile);
+    
+    return () => {
+      window.removeEventListener('resize', checkIsMobile);
+    };
+  }, []);
+
 
 
   // Show loading state briefly while essential data is loading
