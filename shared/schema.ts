@@ -806,6 +806,104 @@ export const ptProductWheelPerformance = pgTable("pt_product_wheel_performance",
 });
 
 // ============================================
+// Global Control Tower KPI System
+// ============================================
+
+// Plant KPI Targets - define KPIs and targets for each plant
+export const plantKpiTargets = pgTable("plant_kpi_targets", {
+  id: serial("id").primaryKey(),
+  plantId: integer("plant_id").references(() => ptPlants.id).notNull(),
+  
+  // KPI definition
+  kpiName: varchar("kpi_name", { length: 200 }).notNull(),
+  kpiType: varchar("kpi_type", { length: 50 }).notNull(), // efficiency, quality, throughput, cost, delivery, safety, oee
+  targetValue: numeric("target_value").notNull(),
+  unitOfMeasure: varchar("unit_of_measure", { length: 50 }).notNull(),
+  
+  // KPI weight for aggregation (0-100)
+  weight: numeric("weight").default("1"),
+  
+  // Status
+  isActive: boolean("is_active").default(true),
+  
+  // Description and metadata
+  description: text("description"),
+  
+  // Thresholds for performance grading
+  excellentThreshold: numeric("excellent_threshold").default("1.0"), // >= 100% of target
+  goodThreshold: numeric("good_threshold").default("0.95"), // >= 95% of target  
+  warningThreshold: numeric("warning_threshold").default("0.85"), // >= 85% of target
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Plant KPI Performance - actual performance data for KPIs
+export const plantKpiPerformance = pgTable("plant_kpi_performance", {
+  id: serial("id").primaryKey(),
+  plantKpiTargetId: integer("plant_kpi_target_id").references(() => plantKpiTargets.id).notNull(),
+  
+  // Performance data
+  measurementDate: timestamp("measurement_date").notNull(),
+  actualValue: numeric("actual_value").notNull(),
+  targetValue: numeric("target_value").notNull(), // Target at time of measurement
+  performanceRatio: numeric("performance_ratio").notNull(), // actual/target
+  
+  // Performance grade based on thresholds
+  performanceGrade: varchar("performance_grade", { length: 20 }), // Excellent, Good, Warning, Critical
+  
+  // Additional metrics
+  trendDirection: varchar("trend_direction", { length: 10 }), // up, down, stable
+  percentageChange: numeric("percentage_change"), // vs previous measurement
+  
+  // Comments and context
+  notes: text("notes"),
+  dataSource: varchar("data_source", { length: 100 }), // manual, system, integration
+  
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Autonomous Optimization Configuration
+export const autonomousOptimization = pgTable("autonomous_optimization", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  plantId: integer("plant_id").references(() => ptPlants.id).notNull(),
+  
+  // Optimization settings
+  isEnabled: boolean("is_enabled").default(false),
+  optimizationObjective: varchar("optimization_objective", { length: 100 }).default("maximize_weighted_kpis"),
+  
+  // Target KPIs to optimize (array of KPI target IDs)
+  targetKpiIds: integer("target_kpi_ids").array(),
+  
+  // Algorithm configuration
+  allowedAlgorithms: varchar("allowed_algorithms").array(), // ASAP, ALAP, CRITICAL_PATH, etc.
+  currentAlgorithm: varchar("current_algorithm", { length: 50 }).default("ASAP"),
+  autoAlgorithmSelection: boolean("auto_algorithm_selection").default(true),
+  
+  // Optimization parameters
+  enableParameterTuning: boolean("enable_parameter_tuning").default(true),
+  learningMode: varchar("learning_mode", { length: 50 }).default("adaptive"), // adaptive, conservative, aggressive
+  performanceThreshold: numeric("performance_threshold").default("0.85"), // Min acceptable performance
+  evaluationPeriodMinutes: integer("evaluation_period_minutes").default(60),
+  
+  // Execution tracking
+  lastOptimizationAt: timestamp("last_optimization_at"),
+  totalOptimizations: integer("total_optimizations").default(0),
+  successfulOptimizations: integer("successful_optimizations").default(0),
+  lastPerformanceScore: numeric("last_performance_score"),
+  
+  // AI learning data
+  learningHistory: jsonb("learning_history"), // Historical performance data
+  parameterHistory: jsonb("parameter_history"), // Parameter tuning history
+  
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// ============================================
 // AI Agent Team System
 // ============================================
 
@@ -1955,3 +2053,29 @@ export const insertCapabilitySchema = createInsertSchema(capabilities).omit({
 });
 export type InsertCapability = z.infer<typeof insertCapabilitySchema>;
 export type Capability = typeof capabilities.$inferSelect;
+
+// Plant KPI Targets types
+export const insertPlantKpiTargetSchema = createInsertSchema(plantKpiTargets).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertPlantKpiTarget = z.infer<typeof insertPlantKpiTargetSchema>;
+export type PlantKpiTarget = typeof plantKpiTargets.$inferSelect;
+
+// Plant KPI Performance types
+export const insertPlantKpiPerformanceSchema = createInsertSchema(plantKpiPerformance).omit({
+  id: true,
+  createdAt: true
+});
+export type InsertPlantKpiPerformance = z.infer<typeof insertPlantKpiPerformanceSchema>;
+export type PlantKpiPerformance = typeof plantKpiPerformance.$inferSelect;
+
+// Autonomous Optimization types
+export const insertAutonomousOptimizationSchema = createInsertSchema(autonomousOptimization).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertAutonomousOptimization = z.infer<typeof insertAutonomousOptimizationSchema>;
+export type AutonomousOptimization = typeof autonomousOptimization.$inferSelect;
