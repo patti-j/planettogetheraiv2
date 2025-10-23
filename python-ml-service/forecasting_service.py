@@ -357,18 +357,31 @@ def forecast_linear_regression(model_info, df, forecast_days):
     last_date = df['date'].max()
     
     for i in range(forecast_days):
-        # Create features for next prediction
-        temp_df = forecast_df.copy()
+        # Calculate next date first
+        next_date = last_date + pd.Timedelta(days=i+1)
+        
+        # Add placeholder row for the future date with a temporary value BEFORE creating features
+        # Use the last known/predicted value as a temporary filler to survive dropna()
+        # This ensures features align with the intended forecast horizon
+        last_value = forecast_df['value'].iloc[-1]
+        new_row = pd.DataFrame({
+            'date': [next_date],
+            'value': [last_value]  # Temporary filler - model will predict the actual value
+        })
+        temp_df = pd.concat([forecast_df, new_row], ignore_index=True)
+        
+        # Now create features - this will correctly calculate day-of-week, lags, etc. for next_date
+        # The placeholder row will survive dropna() because it has a valid value
         temp_df = create_features(temp_df)
         
         if len(temp_df) == 0:
             break
             
-        # Get last row features
+        # Get last row features (which now correspond to the future date)
         X_next = temp_df[feature_cols].tail(1)
         X_next_scaled = scaler.transform(X_next)
         
-        # Predict
+        # Predict the actual value for the future date
         pred_value = model.predict(X_next_scaled)[0]
         pred_value = max(0, pred_value)  # Ensure non-negative
         
@@ -378,7 +391,6 @@ def forecast_linear_regression(model_info, df, forecast_days):
         upper = pred_value + margin
         
         # Add to forecast
-        next_date = last_date + pd.Timedelta(days=i+1)
         predictions.append({
             "date": next_date.strftime('%Y-%m-%d'),
             "value": float(pred_value),
@@ -387,11 +399,10 @@ def forecast_linear_regression(model_info, df, forecast_days):
         })
         
         # Add predicted value to dataframe for next iteration
-        new_row = pd.DataFrame({
+        forecast_df = pd.concat([forecast_df, pd.DataFrame({
             'date': [next_date],
             'value': [pred_value]
-        })
-        forecast_df = pd.concat([forecast_df, new_row], ignore_index=True)
+        })], ignore_index=True)
     
     # Calculate metrics on training data
     train_features = create_features(df.copy())
