@@ -9623,6 +9623,465 @@ function calculateResourceUtilization(schedule: any): number {
   return resourceCount > 0 ? (totalUtilization / resourceCount) * 100 : 0;
 }
 
+// ===========================================
+// SHIFT MANAGEMENT ENDPOINTS
+// ===========================================
+
+// GET /api/shift-templates - Get all shift templates
+router.get('/api/shift-templates', requireAuth, async (req, res) => {
+  try {
+    // Return sample shift templates
+    const sampleShiftTemplates = [
+      {
+        id: 1,
+        name: "Morning Shift - Production",
+        description: "Standard morning production shift with optimal staffing",
+        shiftType: "day",
+        startTime: "06:00",
+        endTime: "14:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+        minimumStaffing: 5,
+        maximumStaffing: 10,
+        plantId: 1,
+        color: "#22c55e",
+        premiumRate: 0,
+        isActive: true
+      },
+      {
+        id: 2,
+        name: "Afternoon Shift - Production",
+        description: "Standard afternoon production shift",
+        shiftType: "day",
+        startTime: "14:00",
+        endTime: "22:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [1, 2, 3, 4, 5], // Monday to Friday
+        minimumStaffing: 5,
+        maximumStaffing: 10,
+        plantId: 1,
+        color: "#3b82f6",
+        premiumRate: 15,
+        isActive: true
+      },
+      {
+        id: 3,
+        name: "Night Shift - Production",
+        description: "Overnight production with premium pay",
+        shiftType: "night",
+        startTime: "22:00",
+        endTime: "06:00",
+        duration: 480,
+        breakDuration: 45,
+        lunchDuration: 30,
+        daysOfWeek: [0, 1, 2, 3, 4], // Sunday to Thursday
+        minimumStaffing: 3,
+        maximumStaffing: 7,
+        plantId: 1,
+        color: "#8b5cf6",
+        premiumRate: 25,
+        isActive: true
+      },
+      {
+        id: 4,
+        name: "Weekend Day Shift",
+        description: "Weekend coverage with overtime pay",
+        shiftType: "day",
+        startTime: "08:00",
+        endTime: "16:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [6, 0], // Saturday & Sunday
+        minimumStaffing: 2,
+        maximumStaffing: 5,
+        plantId: 1,
+        color: "#f59e0b",
+        premiumRate: 50,
+        isActive: true
+      },
+      {
+        id: 5,
+        name: "Maintenance Shift",
+        description: "Dedicated maintenance window",
+        shiftType: "swing",
+        startTime: "04:00",
+        endTime: "08:00",
+        duration: 240,
+        breakDuration: 15,
+        lunchDuration: 0,
+        daysOfWeek: [1, 2, 3, 4, 5, 6], // Monday to Saturday
+        minimumStaffing: 2,
+        maximumStaffing: 4,
+        plantId: 1,
+        color: "#ef4444",
+        premiumRate: 0,
+        isActive: true
+      },
+      {
+        id: 6,
+        name: "Quality Control Shift",
+        description: "QC inspection shift aligned with production",
+        shiftType: "day",
+        startTime: "07:00",
+        endTime: "15:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [1, 2, 3, 4, 5],
+        minimumStaffing: 2,
+        maximumStaffing: 3,
+        plantId: 1,
+        color: "#06b6d4",
+        premiumRate: 10,
+        isActive: true
+      },
+      {
+        id: 7,
+        name: "Rotating Shift A",
+        description: "First rotation pattern - Days",
+        shiftType: "rotating",
+        startTime: "06:00",
+        endTime: "14:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [1, 2, 3, 4, 5],
+        minimumStaffing: 4,
+        maximumStaffing: 8,
+        plantId: 2,
+        color: "#84cc16",
+        premiumRate: 5,
+        isActive: true
+      },
+      {
+        id: 8,
+        name: "Rotating Shift B",
+        description: "Second rotation pattern - Evenings",
+        shiftType: "rotating",
+        startTime: "14:00",
+        endTime: "22:00",
+        duration: 480,
+        breakDuration: 30,
+        lunchDuration: 30,
+        daysOfWeek: [1, 2, 3, 4, 5],
+        minimumStaffing: 4,
+        maximumStaffing: 8,
+        plantId: 2,
+        color: "#0ea5e9",
+        premiumRate: 5,
+        isActive: true
+      }
+    ];
+
+    res.json(sampleShiftTemplates);
+  } catch (error: any) {
+    console.error("Error fetching shift templates:", error);
+    res.status(500).json({ error: "Failed to fetch shift templates" });
+  }
+});
+
+// GET /api/resource-shift-assignments - Get resource shift assignments
+router.get('/api/resource-shift-assignments', requireAuth, async (req, res) => {
+  try {
+    const sampleAssignments = [
+      {
+        id: 1,
+        resourceId: 1,
+        resourceName: "Milling Station",
+        shiftTemplateId: 1,
+        shiftTemplateName: "Morning Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 7,
+        status: "active",
+        notes: "Primary production line assignment"
+      },
+      {
+        id: 2,
+        resourceId: 2,
+        resourceName: "Mash Tun",
+        shiftTemplateId: 1,
+        shiftTemplateName: "Morning Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 5,
+        status: "active",
+        notes: "Core brewing operations"
+      },
+      {
+        id: 3,
+        resourceId: 3,
+        resourceName: "Fermentation Tank 1",
+        shiftTemplateId: 2,
+        shiftTemplateName: "Afternoon Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 6,
+        status: "active",
+        notes: "Fermentation monitoring"
+      },
+      {
+        id: 4,
+        resourceId: 4,
+        resourceName: "Fermentation Tank 2",
+        shiftTemplateId: 3,
+        shiftTemplateName: "Night Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 4,
+        status: "active",
+        notes: "24/7 fermentation coverage"
+      },
+      {
+        id: 5,
+        resourceId: 11,
+        resourceName: "Bottle Filler Line",
+        shiftTemplateId: 1,
+        shiftTemplateName: "Morning Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 8,
+        status: "active",
+        notes: "Packaging operations"
+      },
+      {
+        id: 6,
+        resourceId: 12,
+        resourceName: "Can Filler Line",
+        shiftTemplateId: 2,
+        shiftTemplateName: "Afternoon Shift - Production",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 8,
+        status: "active",
+        notes: "Canning line operations"
+      },
+      {
+        id: 7,
+        resourceId: 13,
+        resourceName: "Quality Lab",
+        shiftTemplateId: 6,
+        shiftTemplateName: "Quality Control Shift",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 3,
+        status: "active",
+        notes: "QC testing and analysis"
+      },
+      {
+        id: 8,
+        resourceId: 8,
+        resourceName: "Cooling System",
+        shiftTemplateId: 5,
+        shiftTemplateName: "Maintenance Shift",
+        effectiveDate: new Date().toISOString(),
+        endDate: null,
+        assignedStaff: 2,
+        status: "active",
+        notes: "System maintenance window"
+      }
+    ];
+
+    res.json(sampleAssignments);
+  } catch (error: any) {
+    console.error("Error fetching shift assignments:", error);
+    res.status(500).json({ error: "Failed to fetch shift assignments" });
+  }
+});
+
+// GET /api/unplanned-downtime - Get unplanned downtime records
+router.get('/api/unplanned-downtime', requireAuth, async (req, res) => {
+  try {
+    const sampleDowntime = [
+      {
+        id: 1,
+        resourceId: 1,
+        resourceName: "Milling Station",
+        startTime: new Date(Date.now() - 86400000).toISOString(),
+        endTime: new Date(Date.now() - 82800000).toISOString(),
+        duration: 60,
+        reason: "Equipment malfunction - grain hopper jam",
+        impact: "high",
+        reportedBy: "John Smith",
+        status: "resolved",
+        costImpact: 2500,
+        notes: "Hopper mechanism replaced"
+      },
+      {
+        id: 2,
+        resourceId: 11,
+        resourceName: "Bottle Filler Line",
+        startTime: new Date(Date.now() - 172800000).toISOString(),
+        endTime: new Date(Date.now() - 169200000).toISOString(),
+        duration: 60,
+        reason: "Bottle supply shortage",
+        impact: "medium",
+        reportedBy: "Sarah Johnson",
+        status: "resolved",
+        costImpact: 1800,
+        notes: "Emergency supplier contacted"
+      },
+      {
+        id: 3,
+        resourceId: 3,
+        resourceName: "Fermentation Tank 1",
+        startTime: new Date(Date.now() - 259200000).toISOString(),
+        endTime: new Date(Date.now() - 255600000).toISOString(),
+        duration: 60,
+        reason: "Temperature control failure",
+        impact: "critical",
+        reportedBy: "Mike Chen",
+        status: "resolved",
+        costImpact: 5000,
+        notes: "Temperature sensor replaced, batch quality verified"
+      },
+      {
+        id: 4,
+        resourceId: 12,
+        resourceName: "Can Filler Line",
+        startTime: new Date(Date.now() - 7200000).toISOString(),
+        endTime: null,
+        duration: null,
+        reason: "Seamer adjustment required",
+        impact: "low",
+        reportedBy: "Tom Wilson",
+        status: "ongoing",
+        costImpact: 500,
+        notes: "Maintenance team dispatched"
+      },
+      {
+        id: 5,
+        resourceId: 2,
+        resourceName: "Mash Tun",
+        startTime: new Date(Date.now() - 604800000).toISOString(),
+        endTime: new Date(Date.now() - 601200000).toISOString(),
+        duration: 60,
+        reason: "Agitator motor failure",
+        impact: "high",
+        reportedBy: "Lisa Anderson",
+        status: "resolved",
+        costImpact: 3200,
+        notes: "Motor rebuilt and tested"
+      }
+    ];
+
+    res.json(sampleDowntime);
+  } catch (error: any) {
+    console.error("Error fetching unplanned downtime:", error);
+    res.status(500).json({ error: "Failed to fetch unplanned downtime" });
+  }
+});
+
+// GET /api/overtime-shifts - Get overtime shift records
+router.get('/api/overtime-shifts', requireAuth, async (req, res) => {
+  try {
+    const sampleOvertimeShifts = [
+      {
+        id: 1,
+        date: new Date(Date.now() - 86400000).toISOString(),
+        shiftTemplateId: 2,
+        shiftTemplateName: "Afternoon Shift - Production",
+        resourceId: 11,
+        resourceName: "Bottle Filler Line",
+        requestedBy: "Production Manager",
+        approvedBy: "Plant Director",
+        reason: "Rush order - Customer ABC",
+        additionalStaff: 3,
+        overtimeHours: 4,
+        totalCost: 1200,
+        status: "approved"
+      },
+      {
+        id: 2,
+        date: new Date(Date.now() - 172800000).toISOString(),
+        shiftTemplateId: 4,
+        shiftTemplateName: "Weekend Day Shift",
+        resourceId: 3,
+        resourceName: "Fermentation Tank 1",
+        requestedBy: "Brew Master",
+        approvedBy: "Operations VP",
+        reason: "Special batch preparation",
+        additionalStaff: 2,
+        overtimeHours: 8,
+        totalCost: 2000,
+        status: "approved"
+      },
+      {
+        id: 3,
+        date: new Date().toISOString(),
+        shiftTemplateId: 3,
+        shiftTemplateName: "Night Shift - Production",
+        resourceId: 12,
+        resourceName: "Can Filler Line",
+        requestedBy: "Night Supervisor",
+        approvedBy: "Production Manager",
+        reason: "Equipment maintenance completion",
+        additionalStaff: 1,
+        overtimeHours: 2,
+        totalCost: 350,
+        status: "approved"
+      },
+      {
+        id: 4,
+        date: new Date(Date.now() + 86400000).toISOString(),
+        shiftTemplateId: 1,
+        shiftTemplateName: "Morning Shift - Production",
+        resourceId: 1,
+        resourceName: "Milling Station",
+        requestedBy: "Production Planner",
+        approvedBy: null,
+        reason: "Anticipated high demand",
+        additionalStaff: 2,
+        overtimeHours: 6,
+        totalCost: 900,
+        status: "pending"
+      },
+      {
+        id: 5,
+        date: new Date(Date.now() - 604800000).toISOString(),
+        shiftTemplateId: 6,
+        shiftTemplateName: "Quality Control Shift",
+        resourceId: 13,
+        resourceName: "Quality Lab",
+        requestedBy: "QC Manager",
+        approvedBy: "Plant Director",
+        reason: "FDA inspection preparation",
+        additionalStaff: 2,
+        overtimeHours: 10,
+        totalCost: 1800,
+        status: "approved"
+      }
+    ];
+
+    res.json(sampleOvertimeShifts);
+  } catch (error: any) {
+    console.error("Error fetching overtime shifts:", error);
+    res.status(500).json({ error: "Failed to fetch overtime shifts" });
+  }
+});
+
+// POST /api/shift-templates - Create a new shift template
+router.post('/api/shift-templates', requireAuth, async (req, res) => {
+  try {
+    const newTemplate = {
+      id: Date.now(),
+      ...req.body,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    res.status(201).json(newTemplate);
+  } catch (error: any) {
+    console.error("Error creating shift template:", error);
+    res.status(500).json({ error: "Failed to create shift template" });
+  }
+});
+
 function calculateTotalSetupTime(schedule: any): number {
   if (!schedule.operations || schedule.operations.length === 0) return 0;
   
