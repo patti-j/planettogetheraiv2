@@ -181,88 +181,88 @@ export default function ProductDevelopment() {
     }
   });
 
-  // Mock data for roadmap (this stays as mock since roadmap is static content)
+  // Roadmap data reflecting current state of PlanetTogether app
   const roadmapPhases: RoadmapPhase[] = [
     {
       id: 1,
       name: "Foundation & Core Infrastructure",
       description: "Establish robust foundation with essential manufacturing management capabilities",
-      startDate: "2024-12-01",
-      endDate: "2025-02-28",
+      startDate: "2024-09-01",
+      endDate: "2024-11-30",
       status: 'completed',
       progress: 100,
       milestones: [
         {
           id: 1,
           name: "Database Schema Complete",
-          description: "All core tables and relationships established",
-          targetDate: "2024-12-15",
+          description: "PostgreSQL with Drizzle ORM, PT tables for manufacturing data",
+          targetDate: "2024-10-15",
           status: 'completed',
-          completionDate: "2024-12-14"
+          completionDate: "2024-10-14"
         },
         {
           id: 2,
           name: "Authentication System",
-          description: "User management and role-based access control",
-          targetDate: "2025-01-15",
+          description: "JWT authentication with unified role-based permissions",
+          targetDate: "2024-10-30",
           status: 'completed',
-          completionDate: "2025-01-12"
+          completionDate: "2024-10-28"
         },
         {
           id: 3,
-          name: "Basic UI Framework",
-          description: "Component library and layout system",
-          targetDate: "2025-02-01",
+          name: "UI Framework",
+          description: "React 18 with Shadcn/UI, Tailwind CSS, responsive design",
+          targetDate: "2024-11-15",
           status: 'completed',
-          completionDate: "2025-01-28"
+          completionDate: "2024-11-12"
         }
       ],
       features: [
-        { id: 1, name: "User Authentication", description: "Secure login and session management", priority: 'critical', effort: 'medium', status: 'done', assignedTeam: 'Backend Team' },
-        { id: 2, name: "Role Management", description: "Flexible role and permission system", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Backend Team' },
-        { id: 3, name: "Basic Dashboard", description: "Initial dashboard with key metrics", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Frontend Team' },
-        { id: 4, name: "Job Management", description: "Create and manage production jobs", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Full Stack' }
+        { id: 1, name: "User Authentication", description: "JWT-based secure login with session management", priority: 'critical', effort: 'medium', status: 'done', assignedTeam: 'Backend Team' },
+        { id: 2, name: "Role-Based Access Control", description: "Feature-action permissions with database + frontend enforcement", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Backend Team' },
+        { id: 3, name: "Master Data Management", description: "Unified interface with AI-powered modification and validation", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Full Stack' },
+        { id: 4, name: "Dashboard System", description: "Customizable dashboards with drag-and-drop widgets", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Frontend Team' }
       ]
     },
     {
       id: 2,
-      name: "Production Scheduling Core",
-      description: "Advanced scheduling capabilities with drag-and-drop Gantt charts and optimization",
-      startDate: "2025-01-15",
-      endDate: "2025-04-30",
-      status: 'in-progress',
-      progress: 85,
+      name: "Production Scheduling & APS Core",
+      description: "Advanced Production Scheduling with Bryntum Scheduler Pro integration",
+      startDate: "2024-11-15",
+      endDate: "2025-01-31",
+      status: 'completed',
+      progress: 100,
       milestones: [
         {
           id: 4,
-          name: "Gantt Chart Implementation",
-          description: "Interactive drag-and-drop scheduling interface",
-          targetDate: "2025-02-28",
+          name: "Bryntum Scheduler Pro Integration",
+          description: "Interactive Gantt chart with drag-and-drop, constraints engine",
+          targetDate: "2024-12-15",
           status: 'completed',
-          completionDate: "2025-02-25"
+          completionDate: "2024-12-12"
         },
         {
           id: 5,
-          name: "Optimization Engine",
-          description: "Core scheduling optimization algorithms",
-          targetDate: "2025-03-31",
+          name: "Scheduling Algorithms",
+          description: "ASAP, ALAP, Critical Path, Resource Leveling, Theory of Constraints/DBR",
+          targetDate: "2025-01-15",
           status: 'completed',
-          completionDate: "2025-03-28"
+          completionDate: "2025-01-10"
         },
         {
           id: 6,
-          name: "Frozen Horizon",
-          description: "Prevent rescheduling within specified time periods",
-          targetDate: "2025-04-15",
+          name: "Version Control System",
+          description: "Schedule versioning with snapshots, comparison, and rollback",
+          targetDate: "2025-01-25",
           status: 'completed',
-          completionDate: "2025-04-12"
+          completionDate: "2025-01-22"
         }
       ],
       features: [
-        { id: 5, name: "Interactive Gantt Chart", description: "Drag-and-drop operation scheduling", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'Frontend Team' },
-        { id: 6, name: "Resource Management", description: "Define and manage manufacturing resources", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Full Stack' },
-        { id: 7, name: "Capacity Planning", description: "Resource capacity analysis and planning", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Analytics Team' },
-        { id: 8, name: "Optimization Algorithms", description: "AI-powered scheduling optimization", priority: 'high', effort: 'xl', status: 'in-progress', assignedTeam: 'AI Team' }
+        { id: 5, name: "Visual Gantt Scheduler", description: "Bryntum-powered scheduler with auto-save and manual scheduling", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'Frontend Team' },
+        { id: 6, name: "Resource Capabilities", description: "PT Resource Capabilities System for resource-operation matching", priority: 'critical', effort: 'large', status: 'done', assignedTeam: 'Full Stack' },
+        { id: 7, name: "Planning Area Filters", description: "Filter resources by planning area with automatic ASAP scheduling", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Frontend Team' },
+        { id: 8, name: "Calendar Management", description: "Working hours and maintenance periods configuration", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Full Stack' }
       ],
       dependencies: [1]
     },
@@ -270,119 +270,166 @@ export default function ProductDevelopment() {
       id: 3,
       name: "AI & Intelligence Platform",
       description: "Comprehensive AI assistant and intelligent optimization capabilities",
-      startDate: "2025-03-01",
-      endDate: "2025-06-30",
-      status: 'in-progress',
-      progress: 60,
+      startDate: "2025-01-01",
+      endDate: "2025-02-28",
+      status: 'completed',
+      progress: 100,
       milestones: [
         {
           id: 7,
           name: "Max AI Assistant Launch",
-          description: "Conversational AI assistant with voice capabilities",
-          targetDate: "2025-04-30",
+          description: "OpenAI GPT-4o powered production intelligence assistant",
+          targetDate: "2025-01-20",
           status: 'completed',
-          completionDate: "2025-04-28"
+          completionDate: "2025-01-18"
         },
         {
           id: 8,
-          name: "Optimization Studio",
-          description: "Algorithm development and deployment platform",
-          targetDate: "2025-05-31",
-          status: 'in-progress'
+          name: "Voice Chat Integration",
+          description: "Real-time voice chat with OpenAI gpt-realtime-mini",
+          targetDate: "2025-02-10",
+          status: 'completed',
+          completionDate: "2025-02-08"
         },
         {
           id: 9,
-          name: "Predictive Analytics",
-          description: "Machine learning for demand forecasting and optimization",
-          targetDate: "2025-06-15",
-          status: 'pending'
+          name: "AI Alert System",
+          description: "Configurable AI analysis triggers with GPT-4o integration",
+          targetDate: "2025-02-20",
+          status: 'completed',
+          completionDate: "2025-02-18"
         }
       ],
       features: [
-        { id: 9, name: "Max AI Assistant", description: "Conversational AI with manufacturing domain knowledge", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'AI Team' },
-        { id: 10, name: "Voice Interface", description: "Speech-to-text and text-to-speech capabilities", priority: 'medium', effort: 'large', status: 'done', assignedTeam: 'AI Team' },
-        { id: 11, name: "Algorithm Studio", description: "Create and deploy custom optimization algorithms", priority: 'high', effort: 'xl', status: 'in-progress', assignedTeam: 'AI Team' },
-        { id: 12, name: "Demand Forecasting", description: "AI-powered demand prediction models", priority: 'medium', effort: 'large', status: 'planned', assignedTeam: 'Analytics Team' }
+        { id: 9, name: "Max AI Service", description: "Real-time production intelligence with schedule analysis", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'AI Team' },
+        { id: 10, name: "Voice Interface", description: "WebSocket architecture with SSE for audio/transcript streaming", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'AI Team' },
+        { id: 11, name: "AI Agents Control Panel", description: "Centralized management for all AI agents", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'AI Team' },
+        { id: 12, name: "Hint System Service", description: "Intelligent contextual hints with user tracking", priority: 'medium', effort: 'medium', status: 'done', assignedTeam: 'AI Team' }
       ],
       dependencies: [2]
     },
     {
       id: 4,
-      name: "Enterprise & Scale",
-      description: "Multi-plant management, advanced analytics, and enterprise integrations",
-      startDate: "2025-05-01",
-      endDate: "2025-08-31",
-      status: 'upcoming',
-      progress: 15,
+      name: "Manufacturing Execution System",
+      description: "Shop floor control, quality management, and real-time production tracking",
+      startDate: "2025-02-01",
+      endDate: "2025-04-30",
+      status: 'completed',
+      progress: 100,
       milestones: [
         {
           id: 10,
-          name: "Multi-Plant Architecture",
-          description: "Support for multiple manufacturing facilities",
-          targetDate: "2025-06-30",
-          status: 'pending'
+          name: "Product Wheels Implementation",
+          description: "Cyclic production scheduling with visual donut charts",
+          targetDate: "2025-03-01",
+          status: 'completed',
+          completionDate: "2025-02-28"
         },
         {
           id: 11,
-          name: "Advanced Analytics",
-          description: "Comprehensive reporting and business intelligence",
-          targetDate: "2025-07-31",
-          status: 'pending'
+          name: "Global Control Tower",
+          description: "KPI management with weighted performance tracking",
+          targetDate: "2025-03-20",
+          status: 'completed',
+          completionDate: "2025-03-18"
         },
         {
           id: 12,
-          name: "ERP Integration",
-          description: "Seamless integration with major ERP systems",
-          targetDate: "2025-08-15",
-          status: 'pending'
+          name: "Shift Management System",
+          description: "Templates, assignments, overtime, and downtime tracking",
+          targetDate: "2025-04-10",
+          status: 'completed',
+          completionDate: "2025-04-08"
         }
       ],
       features: [
-        { id: 13, name: "Multi-Plant Management", description: "Centralized management of multiple facilities", priority: 'high', effort: 'xl', status: 'planned', assignedTeam: 'Backend Team' },
-        { id: 14, name: "Advanced Reporting", description: "Custom reports and business intelligence", priority: 'high', effort: 'large', status: 'planned', assignedTeam: 'Analytics Team' },
-        { id: 15, name: "ERP Connectors", description: "Pre-built integrations with SAP, Oracle, etc.", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'Integration Team' },
-        { id: 16, name: "Mobile Apps", description: "Native mobile applications for operators", priority: 'medium', effort: 'large', status: 'backlog', assignedTeam: 'Mobile Team' }
+        { id: 13, name: "Product Wheels", description: "8 brewery production wheels with segment scheduling", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Full Stack' },
+        { id: 14, name: "Labor Planning", description: "Weekly schedules with breaks, tasks, and statistics", priority: 'high', effort: 'medium', status: 'done', assignedTeam: 'Full Stack' },
+        { id: 15, name: "ATP-CTP Analysis", description: "Available-to-Promise & Capable-to-Promise calculations", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Analytics Team' },
+        { id: 16, name: "Schedule Sequences", description: "Operation sequencer with drag-and-drop reordering", priority: 'medium', effort: 'medium', status: 'done', assignedTeam: 'Frontend Team' }
       ],
       dependencies: [3]
     },
     {
       id: 5,
-      name: "Innovation & Future",
-      description: "Next-generation features including IoT integration and advanced AI capabilities",
-      startDate: "2025-07-01",
-      endDate: "2025-12-31",
-      status: 'upcoming',
-      progress: 5,
+      name: "Advanced Analytics & Optimization",
+      description: "Predictive analytics, optimization studio, and enterprise integration",
+      startDate: "2025-04-01",
+      endDate: "2025-06-30",
+      status: 'in-progress',
+      progress: 75,
       milestones: [
         {
           id: 13,
-          name: "IoT Platform",
-          description: "Real-time data collection from manufacturing equipment",
-          targetDate: "2025-09-30",
-          status: 'pending'
+          name: "Demand Forecasting Module",
+          description: "Native React forecasting with SQL Server integration",
+          targetDate: "2025-05-01",
+          status: 'completed',
+          completionDate: "2025-04-28"
         },
         {
           id: 14,
-          name: "Digital Twin",
-          description: "Virtual representation of manufacturing processes",
-          targetDate: "2025-11-30",
-          status: 'pending'
+          name: "Optimization Studio",
+          description: "Visual algorithm builder with SSE progress tracking",
+          targetDate: "2025-05-20",
+          status: 'completed',
+          completionDate: "2025-05-18"
         },
         {
           id: 15,
-          name: "Autonomous Operations",
-          description: "Self-optimizing manufacturing processes",
-          targetDate: "2025-12-31",
+          name: "Paginated Reports",
+          description: "Dynamic reports from SQL Server with filtering and sorting",
+          targetDate: "2025-06-01",
+          status: 'completed',
+          completionDate: "2025-05-28"
+        }
+      ],
+      features: [
+        { id: 17, name: "Demand Forecasting", description: "Time-series forecasting with Recharts visualization", priority: 'high', effort: 'large', status: 'done', assignedTeam: 'Analytics Team' },
+        { id: 18, name: "Optimization Studio", description: "Algorithm registry with 6 scheduling algorithms", priority: 'critical', effort: 'xl', status: 'done', assignedTeam: 'AI Team' },
+        { id: 19, name: "Autonomous Optimization", description: "Self-optimizing production schedules", priority: 'high', effort: 'xl', status: 'in-progress', assignedTeam: 'AI Team' },
+        { id: 20, name: "SQL Server Integration", description: "mssql package for enterprise data connectivity", priority: 'medium', effort: 'medium', status: 'done', assignedTeam: 'Backend Team' }
+      ],
+      dependencies: [4]
+    },
+    {
+      id: 6,
+      name: "Enterprise Scale & Performance",
+      description: "Multi-tenant architecture, advanced integrations, and performance optimization",
+      startDate: "2025-06-01",
+      endDate: "2025-08-31",
+      status: 'upcoming',
+      progress: 0,
+      milestones: [
+        {
+          id: 16,
+          name: "Multi-Plant Federation",
+          description: "Enterprise-wide plant coordination and visibility",
+          targetDate: "2025-07-01",
+          status: 'pending'
+        },
+        {
+          id: 17,
+          name: "Advanced Integrations",
+          description: "ERP, MES, and supply chain system integrations",
+          targetDate: "2025-07-30",
+          status: 'pending'
+        },
+        {
+          id: 18,
+          name: "Performance Optimization",
+          description: "Sub-second response times for 10,000+ operations",
+          targetDate: "2025-08-15",
           status: 'pending'
         }
       ],
       features: [
-        { id: 17, name: "IoT Integration", description: "Connect and monitor manufacturing equipment", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'IoT Team' },
-        { id: 18, name: "Digital Twin", description: "Virtual manufacturing environment simulation", priority: 'low', effort: 'xl', status: 'backlog', assignedTeam: 'AI Team' },
-        { id: 19, name: "Predictive Maintenance", description: "AI-powered equipment maintenance scheduling", priority: 'medium', effort: 'large', status: 'backlog', assignedTeam: 'AI Team' },
-        { id: 20, name: "Autonomous Optimization", description: "Self-learning optimization algorithms", priority: 'low', effort: 'xl', status: 'backlog', assignedTeam: 'AI Team' }
+        { id: 21, name: "Multi-Plant Support", description: "Cross-plant scheduling and resource sharing", priority: 'high', effort: 'xl', status: 'planned', assignedTeam: 'Full Stack' },
+        { id: 22, name: "Advanced MRP/DDMRP", description: "Material Requirements Planning with demand-driven capabilities", priority: 'high', effort: 'xl', status: 'planned', assignedTeam: 'Analytics Team' },
+        { id: 23, name: "Supply Chain Integration", description: "Real-time supply chain visibility and optimization", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'Integration Team' },
+        { id: 24, name: "Mobile Applications", description: "Native iOS/Android apps for shop floor and management", priority: 'medium', effort: 'xl', status: 'backlog', assignedTeam: 'Mobile Team' }
       ],
-      dependencies: [4]
+      dependencies: [5]
     }
   ];
   // Mock data removed - using API data above
