@@ -1936,7 +1936,22 @@
                 
                 console.log('===== DEPENDENCY DATA FROM DATABASE =====');
                 console.log('Total events:', events.length);
-                console.log('Total dependencies loaded:', dependencies.length);
+                console.log('Total dependencies loaded from PT database:', dependencies.length);
+                
+                // Debug: Verify dependencies match event IDs
+                if (dependencies.length > 0 && events.length > 0) {
+                    const eventIdSet = new Set(events.map(e => e.id));
+                    console.log('Available event IDs:', Array.from(eventIdSet).slice(0, 20));
+                    console.log('Sample dependency from/to:', dependencies.slice(0, 3).map(d => ({ from: d.from, to: d.to })));
+                    
+                    // Check if dependency IDs match event IDs
+                    const validDeps = dependencies.filter(d => eventIdSet.has(d.from) && eventIdSet.has(d.to));
+                    console.log(`✅ ${validDeps.length}/${dependencies.length} dependencies have matching event IDs`);
+                    
+                    if (validDeps.length < dependencies.length) {
+                        console.warn(`⚠️ ${dependencies.length - validDeps.length} dependencies have mismatched IDs and will be ignored`);
+                    }
+                }
                 
                 // First, let's see what brewery operations we have
                 const breweryOps = events.filter(event => {
@@ -1964,8 +1979,14 @@
                 
                 console.log('Jobs found:', Object.keys(jobGroups));
                 
-                // CREATE DEPENDENCIES FOR ALL JOBS WITH SUCCESSIVE OPERATIONS
-                console.log('\n🔗 Creating dependencies for all jobs with successive operations...');
+                // Only create additional dependencies if we don't have enough from the database
+                const needAdditionalDeps = dependencies.length < 10; // Arbitrary threshold
+                
+                if (!needAdditionalDeps) {
+                    console.log(`\n✅ Using ${dependencies.length} dependencies from PT database`);
+                } else {
+                    // CREATE DEPENDENCIES FOR ALL JOBS WITH SUCCESSIVE OPERATIONS
+                    console.log('\n🔗 Creating additional dependencies for jobs (PT had only ' + dependencies.length + ')...');
                 
                 // Group ALL operations by job (not just brewery ops)
                 const allJobGroups = {};
@@ -2070,8 +2091,10 @@
                 
                 console.log(`\n✅ Created ${totalDepsCreated} new dependencies across all jobs`);
                 
+                } // End of needAdditionalDeps else block
+                
                 console.log(`\n===== DEPENDENCY GENERATION END =====`);
-                console.log(`TOTAL DEPENDENCIES CREATED: ${dependencies.length}`);
+                console.log(`TOTAL DEPENDENCIES: ${dependencies.length}`);
                 if (dependencies.length > 0) {
                     console.log('Sample dependencies:', dependencies.slice(0, 3));
                 }
@@ -4089,6 +4112,10 @@
                 }
                 // Try to continue with scheduler initialization even if some resources fail
                 document.getElementById('loadingOverlay').style.display = 'none';
+            } finally {
+                // Ensure loading overlay is hidden
+                const overlay = document.getElementById('loadingOverlay');
+                if (overlay) overlay.style.display = 'none';
             }
         });
     </script>
