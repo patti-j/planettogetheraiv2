@@ -2307,43 +2307,59 @@
                                     
                                     // 2. CRITICAL: Use resource's isDateRangeAvailable to check overlaps (Best Practice)
                                     if (targetRecord && startDate && endDate) {
-                                        // Use resource-level overlap detection per Bryntum best practices
-                                        const isAvailable = targetRecord.isDateRangeAvailable(
-                                            startDate,
-                                            endDate,
-                                            draggedRecord // Exclude the dragged event itself
-                                        );
+                                        // DEBUG: Log all events on target resource
+                                        console.log(`🔍 Checking overlap for ${operationName} on ${targetRecord.name}`);
+                                        console.log(`  Proposed time: ${startDate.toLocaleString()} to ${endDate.toLocaleString()}`);
+                                        console.log(`  Events on ${targetRecord.name}:`, targetRecord.events?.map(e => ({
+                                            id: e.id,
+                                            name: e.name,
+                                            start: e.startDate?.toLocaleString(),
+                                            end: e.endDate?.toLocaleString()
+                                        })));
                                         
-                                        if (!isAvailable) {
-                                            console.warn(`⚠️ Cannot drop ${operationName}: Time slot occupied on ${targetRecord.name}`);
-                                            
-                                            // Find the conflicting event for better error message
-                                            const resourceEvents = targetRecord.events.filter(event => 
-                                                event.id !== draggedRecord.id &&
-                                                event.startDate < endDate && 
-                                                event.endDate > startDate
-                                            );
-                                            
-                                            const conflictingEvent = resourceEvents[0];
-                                            if (conflictingEvent) {
-                                                const conflictStart = conflictingEvent.startDate.toLocaleString('en-US', { 
-                                                    month: 'short', 
-                                                    day: 'numeric', 
-                                                    hour: 'numeric', 
-                                                    minute: '2-digit' 
-                                                });
-                                                const conflictEnd = conflictingEvent.endDate.toLocaleString('en-US', { 
-                                                    month: 'short', 
-                                                    day: 'numeric', 
-                                                    hour: 'numeric', 
-                                                    minute: '2-digit' 
-                                                });
-                                                return {
-                                                    valid: false,
-                                                    message: `Resource busy: ${conflictingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
-                                                };
+                                        // Find actual conflicting events manually (more reliable than isDateRangeAvailable)
+                                        const resourceEvents = targetRecord.events?.filter(event => {
+                                            // Skip the dragged event itself and any phantom events
+                                            if (event.id === draggedRecord.id || 
+                                                event.id === draggedRecord.eventId || 
+                                                !event.startDate || 
+                                                !event.endDate) {
+                                                return false;
                                             }
+                                            
+                                            // Check for actual time overlap
+                                            const overlap = event.startDate < endDate && event.endDate > startDate;
+                                            if (overlap) {
+                                                console.log(`  ⚠️ Found overlapping event: ${event.name} (${event.id})`);
+                                            }
+                                            return overlap;
+                                        }) || [];
+                                        
+                                        // Only show error if there's a REAL conflicting event
+                                        if (resourceEvents.length > 0) {
+                                            const conflictingEvent = resourceEvents[0];
+                                            console.warn(`⚠️ Cannot drop ${operationName}: Time slot occupied on ${targetRecord.name} by ${conflictingEvent.name}`);
+                                            
+                                            const conflictStart = conflictingEvent.startDate.toLocaleString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric', 
+                                                hour: 'numeric', 
+                                                minute: '2-digit' 
+                                            });
+                                            const conflictEnd = conflictingEvent.endDate.toLocaleString('en-US', { 
+                                                month: 'short', 
+                                                day: 'numeric', 
+                                                hour: 'numeric', 
+                                                minute: '2-digit' 
+                                            });
+                                            return {
+                                                valid: false,
+                                                message: `Resource busy: ${conflictingEvent.name} runs from ${conflictStart} to ${conflictEnd}`
+                                            };
                                         }
+                                        
+                                        // No real conflicts found - allow the drop
+                                        console.log(`  ✅ No conflicts found, allowing drop`);
                                     }
                                 }
                                 return true; // Valid drop
