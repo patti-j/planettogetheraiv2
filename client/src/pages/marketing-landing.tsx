@@ -648,58 +648,6 @@ export default function MarketingLandingPage() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl lg:text-5xl font-bold text-gray-900 mb-6">
-              Transparent Pricing for Every Scale
-            </h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              From small shops to enterprise facilities, we have a plan that scales with your manufacturing operations.
-            </p>
-          </div>
-          
-          <div className="grid lg:grid-cols-3 gap-8">
-            {COMPANY_SIZES.map((plan, index) => (
-              <Card 
-                key={index} 
-                className={`relative hover:shadow-xl transition-all duration-300 ${
-                  index === 1 ? `ring-2 ring-blue-500 scale-105 ${aiTheme.gradient} bg-clip-border` : ''
-                }`}
-              >
-                {index === 1 && (
-                  <div className={`absolute -top-4 left-1/2 transform -translate-x-1/2 ${aiTheme.gradient} text-white px-6 py-2 rounded-full text-sm font-semibold`}>
-                    Most Popular
-                  </div>
-                )}
-                <CardHeader className="text-center">
-                  <CardTitle className="text-2xl">{plan.size}</CardTitle>
-                  <div className="text-4xl font-bold text-blue-600 mt-4">{plan.pricing}</div>
-                  <CardDescription>per user per month</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <ul className="space-y-3 mb-8">
-                    {plan.benefits.map((benefit, i) => (
-                      <li key={i} className="flex items-center gap-3">
-                        <CheckCircle className="w-5 h-5 text-green-500 flex-shrink-0" />
-                        <span>{benefit}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button 
-                    className={`w-full ${index === 1 ? aiTheme.gradient + ' text-white' : 'border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white'}`}
-                    variant={index === 1 ? 'default' : 'outline'}
-                    onClick={() => setSelectedCompanySize(plan.size)}
-                  >
-                    Get Started
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* CTA Section */}
       <section className={`py-20 ${aiTheme.gradient} text-white`}>
