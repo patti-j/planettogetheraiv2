@@ -138,5 +138,75 @@
     },
     "training_points": 4,
     "hyperparameter_tuning": false
+  },
+  "b9b4d784b6297aed": {
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "b9b4d784b6297aed",
+    "cached_at": "2025-10-24T20:08:08.246122",
+    "metrics": {
+      "mape": 62.159108945788574,
+      "rmse": 851.8631774833327,
+      "accuracy": 37.840891054211426
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  },
+  "8ffcb23b626167ce": {
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "8ffcb23b626167ce",
+    "cached_at": "2025-10-24T20:08:08.501317",
+    "metrics": {
+      "mape": 43.21898204022988,
+      "rmse": 393.31004423991004,
+      "accuracy": 56.78101795977012
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "0f7815380449e5b8": {
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "0f7815380449e5b8",
+    "cached_at": "2025-10-24T20:08:08.694561",
+    "metrics": {
+      "mape": 20.053420230126324,
+      "rmse": 179.07439264171748,
+      "accuracy": 79.94657976987368
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "555b50f9da26a4ff": {
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "555b50f9da26a4ff",
+    "cached_at": "2025-10-24T20:08:08.927347",
+    "metrics": {
+      "mape": 34.49510912740083,
+      "rmse": 288.32011723083076,
+      "accuracy": 65.50489087259916
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "d07d094d6216858b": {
+    "model_type": "Random Forest",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "d07d094d6216858b",
+    "cached_at": "2025-10-24T20:08:09.096988",
+    "metrics": {
+      "mape": 47.94621249105655,
+      "rmse": 390.7704395166042,
+      "accuracy": 52.05378750894345
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
   }
 }
