@@ -1840,6 +1840,7 @@
                         // Additional PT operation data
                         jobId: operation.jobExternalId || operation.jobId || operation.job_id, // Use jobExternalId for dependency generation
                         jobName: operation.jobName,
+                        jobDueDate: operation.dueDate, // CRITICAL: Add job Need-By date for ALAP scheduling
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
@@ -4210,6 +4211,7 @@
                         eventColor: event.eventColor,
                         jobName: event.jobName,
                         jobId: event.jobId,
+                        jobDueDate: event.jobDueDate, // CRITICAL: Preserve job Need-By date for ALAP
                         operationId: event.operationId,
                         manually_scheduled: event.manually_scheduled,
                         isUnscheduled: event.isUnscheduled
