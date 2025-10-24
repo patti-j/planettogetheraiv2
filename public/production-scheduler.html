@@ -3708,27 +3708,29 @@
                         return 999; // Default low priority if not found
                     };
                     
-                    // Sort jobs by priority first (1=highest), then by due date
+                    // ALAP: Sort jobs by priority REVERSED (5 to 1) so lowest priority schedules first
+                    // This ensures Priority 1 (highest) gets scheduled last and thus starts earliest
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         const priorityA = getJobPriority(keyA, opsA);
                         const priorityB = getJobPriority(keyB, opsB);
                         
-                        // First sort by priority (lower number = higher priority)
+                        // REVERSED: Sort by priority DESC (higher number first = lower priority first)
+                        // Priority 5 schedules before Priority 1
                         if (priorityA !== priorityB) {
-                            return priorityA - priorityB;
+                            return priorityB - priorityA; // REVERSED for backward scheduling
                         }
                         
-                        // If same priority, sort by due date (earliest first)
+                        // If same priority, sort by due date (latest first for backward scheduling)
                         const dueA = jobDueMap.get(keyA) || globalFallback;
                         const dueB = jobDueMap.get(keyB) || globalFallback;
-                        return dueA.getTime() - dueB.getTime();
+                        return dueB.getTime() - dueA.getTime(); // REVERSED: Latest due dates first
                     });
                     
-                    console.log('📊 Job scheduling order by priority:');
-                    sortedJobs.forEach(([jobKey, ops]) => {
+                    console.log('📊 ALAP Job scheduling order (lowest priority first for backward scheduling):');
+                    sortedJobs.forEach(([jobKey, ops], index) => {
                         const priority = getJobPriority(jobKey, ops);
                         const due = jobDueMap.get(jobKey) || globalFallback;
-                        console.log(`  Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()})`);
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier)' : 'in middle'}`);
                     });
                     
                     // Process each job completely
