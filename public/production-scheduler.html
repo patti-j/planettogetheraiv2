@@ -3733,21 +3733,63 @@
                         }
                     };
                     
-                    // Start by scheduling all last operations first
-                    console.log('📍 Starting with last operations of each job...');
-                    for (const [jobKey, lastOpsSet] of jobLastOps.entries()) {
-                        for (const evId of lastOpsSet) {
-                            const ev = eventStore.getById(evId);
-                            if (ev) {
+                    // GROUP BY JOB - Process each job independently to avoid conflicts
+                    console.log('📍 Processing jobs one at a time to avoid resource conflicts...');
+                    
+                    // Group all operations by job
+                    const jobGroups = new Map(); // jobKey -> [events]
+                    for (const ev of allEvents) {
+                        const key = getJobKey(ev);
+                        if (!key) continue;
+                        if (!jobGroups.has(key)) jobGroups.set(key, []);
+                        jobGroups.get(key).push(ev);
+                    }
+                    
+                    // Sort jobs by priority or due date (process most urgent first)
+                    const sortedJobs = Array.from(jobGroups.entries()).sort(([keyA, eventsA], [keyB, eventsB]) => {
+                        const dueA = jobDueMap.get(keyA) || globalFallback;
+                        const dueB = jobDueMap.get(keyB) || globalFallback;
+                        // Earlier due dates first
+                        return dueA.getTime() - dueB.getTime();
+                    });
+                    
+                    // Process each job completely before moving to the next
+                    for (const [jobKey, jobEvents] of sortedJobs) {
+                        console.log(`\n🏭 Processing Job: ${jobKey}`);
+                        const jobDue = jobDueMap.get(jobKey) || globalFallback;
+                        console.log(`  Due: ${jobDue.toLocaleString()}`);
+                        
+                        // Find the last operations for this specific job
+                        const lastOps = jobEvents.filter(ev => {
+                            const successors = (succs.get(ev.id) || []).map(id => eventStore.getById(id)).filter(Boolean);
+                            const hasSuccInSameJob = successors.some(s => getJobKey(s) === jobKey);
+                            return !hasSuccInSameJob;
+                        });
+                        
+                        console.log(`  Found ${lastOps.length} last operation(s) in job ${jobKey}`);
+                        
+                        // Schedule all operations in this job starting from the last operations
+                        for (const lastOp of lastOps) {
+                            scheduleBackward(lastOp);
+                        }
+                        
+                        // Verify all operations in this job were scheduled
+                        const unscheduled = jobEvents.filter(ev => !scheduled.has(ev.id));
+                        if (unscheduled.length > 0) {
+                            console.warn(`  ⚠️ ${unscheduled.length} operations in job ${jobKey} were not reached through dependencies`);
+                            for (const ev of unscheduled) {
                                 scheduleBackward(ev);
                             }
                         }
+                        
+                        console.log(`  ✅ Job ${jobKey} complete - scheduled ${jobEvents.length} operations`);
                     }
                     
-                    // Schedule any remaining unscheduled events (shouldn't happen if dependencies are complete)
-                    for (const ev of allEvents) {
-                        if (!scheduled.has(ev.id)) {
-                            console.warn(`  ⚠️ Event "${ev.name}" was not reached through dependencies - scheduling anyway`);
+                    // Final check: any operations not part of a job
+                    const orphans = allEvents.filter(ev => !scheduled.has(ev.id));
+                    if (orphans.length > 0) {
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID) - scheduling them anyway`);
+                        for (const ev of orphans) {
                             scheduleBackward(ev);
                         }
                     }
