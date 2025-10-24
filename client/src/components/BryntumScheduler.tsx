@@ -219,7 +219,7 @@ const BryntumScheduler: React.FC = () => {
         ];
 
         // Build events - IMPORTANT: Do NOT include resourceId to avoid single-assignment mode conflict
-        const eventsData: any[] = [];
+        let eventsData: any[] = [];
         const seen = new Set<string>();
         for (let i = 0; i < rawOperations.length; i++) {
           const op = rawOperations[i] as Operation;
@@ -267,30 +267,41 @@ const BryntumScheduler: React.FC = () => {
           eventsData.push(eventData);
         }
 
-        // Build assignments
+        // Build assignments - FIXED: Only include operations that have resources in the filtered set
         const resSet = new Set(resourceRows.map((r) => r.id));
         const assignmentsData: any[] = [];
+        const validEventIds = new Set<string>();
+        
         for (const op of rawOperations) {
           const eid = S(op.id);
           const rid = S(op.resourceId ?? op.resource_id);
           if (!eid) continue;
+          
+          // If we're filtering by planning area and the operation's resource is not in the filtered set,
+          // only include it if it's unscheduled or we're showing all areas
           if (rid && resSet.has(rid)) {
             assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+            validEventIds.add(eid);
+          } else if (!rid || selectedPlanningArea === 'all') {
+            // Operations without resources or when showing all areas should be assigned to unscheduled
+            assignmentsData.push({
+              id: `a_${eid}_unscheduled`,
+              eventId: eid,
+              resourceId: 'unscheduled',
+            });
+            validEventIds.add(eid);
           }
         }
 
-        // Ensure all events have assignments (assign orphans to unscheduled)
-        const assigned = new Set(assignmentsData.map((a) => a.eventId));
+        // Filter events to only include those with valid assignments
+        eventsData = eventsData.filter(ev => validEventIds.has(ev.id));
+        
+        // Mark unscheduled events
+        const assigned = new Set(assignmentsData.filter(a => a.resourceId !== 'unscheduled').map(a => a.eventId));
         for (const ev of eventsData) {
           if (!assigned.has(ev.id)) {
             ev.isUnscheduled = true;
             ev.eventColor = '#808080';
-            // Add assignment to unscheduled resource
-            assignmentsData.push({
-              id: `a_${ev.id}_unscheduled`,
-              eventId: ev.id,
-              resourceId: 'unscheduled',
-            });
           }
         }
 
