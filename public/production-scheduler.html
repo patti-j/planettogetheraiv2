@@ -1482,14 +1482,10 @@
                     }
                 }
                 
-                // Commit changes and recalculate schedule
-                console.log('🔄 [Planning Area Filter] Committing changes and propagating...');
-                await project.commitAsync();
-                await project.propagate();
-                
-                // REMOVED: Automatic ASAP scheduling that was overwriting user's ALAP dates
-                // The filter should only filter resources, not reschedule operations
-                console.log('✅ [Planning Area Filter] Filter applied without rescheduling');
+                // REMOVED: project.commitAsync() and propagate() calls
+                // These were causing operations to disappear when filtering resources
+                // The filter should only hide/show resources visually, not commit any changes
+                console.log('✅ [Planning Area Filter] Filter applied without committing or rescheduling');
                 
                 // Apply zoom to fit after filtering AND scheduling
                 setTimeout(() => {
