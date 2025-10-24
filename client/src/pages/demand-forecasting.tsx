@@ -909,20 +909,36 @@ export default function DemandForecasting() {
                   <tbody>
                     {Object.entries(itemsTrainingMetrics)
                       .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([itemName, metrics]) => (
-                        <tr key={itemName} className="border-b hover:bg-muted/50">
-                          <td className="p-2 font-medium">{itemName}</td>
-                          <td className="text-right p-2">
-                            {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
-                          </td>
-                          <td className="text-right p-2">
-                            {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
-                          </td>
-                          <td className="text-right p-2">
-                            {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
-                          </td>
-                        </tr>
-                      ))}
+                      .map(([itemName, itemResult]) => {
+                        // Check if this item failed to train
+                        if (itemResult.success === false) {
+                          return (
+                            <tr key={itemName} className="border-b hover:bg-muted/50">
+                              <td className="p-2 font-medium">{itemName}</td>
+                              <td colSpan={3} className="text-center p-2 text-muted-foreground">
+                                Failed: {itemResult.error || 'Training error'}
+                              </td>
+                            </tr>
+                          );
+                        }
+                        
+                        // Handle both direct metrics and nested metrics structure
+                        const metrics = itemResult.metrics || itemResult;
+                        return (
+                          <tr key={itemName} className="border-b hover:bg-muted/50">
+                            <td className="p-2 font-medium">{itemName}</td>
+                            <td className="text-right p-2">
+                              {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
+                            </td>
+                            <td className="text-right p-2">
+                              {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
+                            </td>
+                            <td className="text-right p-2">
+                              {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
