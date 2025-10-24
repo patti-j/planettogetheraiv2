@@ -3442,9 +3442,50 @@
                     // Process events in dependency order
                     const byId = id => eventStore.getById(id);
                     
-                    // IMPROVED COMPACTING: Track resource availability - when each resource will be free
-                    const resourceAvailability = new Map();
+                    // ADVANCED BIN PACKING ALGORITHM for optimal schedule compaction
+                    // Track occupied time slots for each resource (like a timeline with filled bins)
+                    const resourceTimelines = new Map(); // resourceId -> array of {start, end, eventId}
                     
+                    console.log('\n📦 Starting Advanced Bin Packing Algorithm for schedule compaction...');
+                    
+                    // Helper function to find the earliest available slot on a resource
+                    function findEarliestSlot(resourceId, duration, earliestPossibleStart) {
+                        const timeline = resourceTimelines.get(resourceId) || [];
+                        
+                        // If no operations on this resource yet, can start at earliest possible time
+                        if (timeline.length === 0) {
+                            return earliestPossibleStart;
+                        }
+                        
+                        // Sort timeline by start time (should already be sorted, but ensure it)
+                        timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
+                        
+                        // Check if we can fit before the first operation
+                        if (timeline[0].start.getTime() - earliestPossibleStart.getTime() >= duration) {
+                            return earliestPossibleStart;
+                        }
+                        
+                        // Check gaps between operations (bin packing)
+                        for (let i = 0; i < timeline.length - 1; i++) {
+                            const gapStart = timeline[i].end;
+                            const gapEnd = timeline[i + 1].start;
+                            const gapSize = gapEnd.getTime() - gapStart.getTime();
+                            
+                            // Check if this gap is big enough and respects earliest start
+                            if (gapSize >= duration && gapStart.getTime() >= earliestPossibleStart.getTime()) {
+                                return gapStart;
+                            } else if (gapSize >= duration && gapEnd.getTime() - duration >= earliestPossibleStart.getTime()) {
+                                // Can start within the gap but need to respect earliest start
+                                return earliestPossibleStart;
+                            }
+                        }
+                        
+                        // No gaps found, schedule after the last operation
+                        const lastEnd = timeline[timeline.length - 1].end;
+                        return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
+                    }
+                    
+                    // Process each event and pack it optimally
                     for (const event of sortedEvents) {
                         // Calculate earliest start based on dependencies
                         let earliestStart = new Date(baseDate);
@@ -3468,32 +3509,35 @@
                         const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
                         
                         if (resource) {
-                            // IMPROVED COMPACTING: Use resource availability tracking for optimal compaction
                             const resourceId = resource.id;
                             
-                            // Get when this resource is available
-                            const resourceFreeTime = resourceAvailability.get(resourceId) || baseDate;
+                            // Find the earliest slot using bin packing algorithm
+                            const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
+                            const slotEnd = new Date(slotStart.getTime() + durationMs);
                             
-                            // The actual start time is the max of dependency constraints and resource availability
-                            const actualStart = new Date(Math.max(earliestStart.getTime(), resourceFreeTime.getTime()));
-                            const actualEnd = new Date(actualStart.getTime() + durationMs);
+                            console.log(`  📦 Packing "${event.name}" on "${resource.name}"`);
+                            console.log(`     Dependencies require after: ${earliestStart.toLocaleString()}`);
+                            console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                             
-                            console.log(`  🔍 Compacting "${event.name}" on "${resource.name}"`);
-                            console.log(`     Dependencies require: ${earliestStart.toLocaleString()}`);
-                            console.log(`     Resource free at: ${resourceFreeTime.toLocaleString()}`);
-                            console.log(`     Scheduled at: ${actualStart.toLocaleString()}`);
-                            
-                            // Update the event with the compacted times
-                            event.setStartDate(actualStart, true); // true = keep duration
+                            // Update the event with the packed times
+                            event.setStartDate(slotStart, true); // true = keep duration
                             event.set({
-                                endDate: actualEnd,
+                                endDate: slotEnd,
                                 manuallyScheduled: false
                             });
                             
-                            // Update resource availability to when this operation completes
-                            resourceAvailability.set(resourceId, actualEnd);
+                            // Add this time slot to the resource timeline
+                            if (!resourceTimelines.has(resourceId)) {
+                                resourceTimelines.set(resourceId, []);
+                            }
+                            resourceTimelines.get(resourceId).push({
+                                start: slotStart,
+                                end: slotEnd,
+                                eventId: event.id,
+                                eventName: event.name
+                            });
                             
-                            console.log(`  ✅ Compacted "${event.name}" on ${resource.name}: ${actualStart.toLocaleString()} to ${actualEnd.toLocaleString()}`);
+                            console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                         } else {
                             // Unassigned events - schedule at earliest time
                             console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
@@ -3504,6 +3548,22 @@
                             });
                         }
                     }
+                    
+                    // Log packing efficiency
+                    console.log('\n📊 Bin Packing Results:');
+                    resourceTimelines.forEach((timeline, resourceId) => {
+                        const resource = scheduler.resourceStore.getById(resourceId);
+                        if (timeline.length > 0) {
+                            timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
+                            const firstOp = timeline[0];
+                            const lastOp = timeline[timeline.length - 1];
+                            const totalSpan = lastOp.end.getTime() - firstOp.start.getTime();
+                            const totalWorkTime = timeline.reduce((sum, slot) => 
+                                sum + (slot.end.getTime() - slot.start.getTime()), 0);
+                            const utilization = ((totalWorkTime / totalSpan) * 100).toFixed(1);
+                            console.log(`  ${resource.name}: ${timeline.length} operations, ${utilization}% utilization`);
+                        }
+                    });
                     
                     // Commit all changes and propagate
                     console.log('  💾 Committing changes...');
