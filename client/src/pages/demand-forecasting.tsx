@@ -917,80 +917,228 @@ export default function DemandForecasting() {
         </CardContent>
       </Card>
 
-      {/* Results Section */}
+      {/* Results Section - Overall Demand Forecast */}
       {forecastMutation.data && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Forecast Results</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {/* Metrics */}
-              {forecastMutation.data.metrics && (
-                <div className="flex gap-4">
-                  {forecastMutation.data.metrics.mape !== undefined && (
-                    <div className="bg-muted p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground">MAPE</div>
-                      <div className="text-2xl font-bold">{forecastMutation.data.metrics.mape.toFixed(2)}%</div>
-                    </div>
-                  )}
-                  {forecastMutation.data.metrics.rmse !== undefined && (
-                    <div className="bg-muted p-4 rounded-lg">
-                      <div className="text-sm text-muted-foreground">RMSE</div>
-                      <div className="text-2xl font-bold">{forecastMutation.data.metrics.rmse.toFixed(2)}</div>
-                    </div>
-                  )}
-                </div>
-              )}
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold">Overall Demand Forecast</h2>
+            <div className="flex gap-2 text-sm">
+              <button className="px-3 py-1 border rounded hover:bg-muted">Overall</button>
+              <button className="px-3 py-1 border rounded hover:bg-muted">FG1</button>
+              <button className="px-3 py-1 border rounded hover:bg-muted">FG2</button>
+              <button className="px-3 py-1 border rounded hover:bg-muted">SUB1</button>
+              <button className="px-3 py-1 border rounded hover:bg-muted">SUB2</button>
+              <button className="px-3 py-1 border rounded hover:bg-muted">SUB3</button>
+            </div>
+          </div>
 
-              {/* Chart */}
-              <div className="h-96">
+          {/* Metric Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Items Included Card */}
+            <Card className="bg-gray-50 dark:bg-gray-900">
+              <CardContent className="p-6">
+                <div className="text-sm text-muted-foreground mb-2">Items Included</div>
+                <div className="text-3xl font-bold">
+                  {selectedItems.length}/{items?.length || 0}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Average Daily Forecast Card */}
+            <Card className="bg-gray-50 dark:bg-gray-900">
+              <CardContent className="p-6">
+                <div className="text-sm text-muted-foreground mb-2">Avg Daily Forecast</div>
+                <div className="text-3xl font-bold">
+                  {(() => {
+                    const avgDaily = forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.forecast.length;
+                    return avgDaily.toFixed(1);
+                  })()}
+                </div>
+                {(() => {
+                  const historicalAvg = forecastMutation.data.historical.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.historical.length;
+                  const forecastAvg = forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.forecast.length;
+                  const percentChange = ((forecastAvg - historicalAvg) / historicalAvg) * 100;
+                  return (
+                    <div className={`text-sm mt-1 ${percentChange < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                      {percentChange > 0 ? '↑' : '↓'} {Math.abs(percentChange).toFixed(1)}%
+                    </div>
+                  );
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Total Forecast Card */}
+            <Card className="bg-gray-50 dark:bg-gray-900">
+              <CardContent className="p-6">
+                <div className="text-sm text-muted-foreground mb-2">Total {forecastDays}-Day Forecast</div>
+                <div className="text-3xl font-bold">
+                  {Math.round(forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0)).toLocaleString()}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Enhanced Chart */}
+          <Card>
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-medium">
+                  Overall Demand Forecast - {modelType} ({selectedItems.length} Items Combined)
+                </CardTitle>
+                <button 
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                  onClick={() => {
+                    // Download CSV functionality
+                    const csv = [
+                      ['Date', 'Historical', 'Forecast', 'Lower Bound', 'Upper Bound'],
+                      ...forecastMutation.data.historical.map(d => [d.date, d.value, '', '', '']),
+                      ...forecastMutation.data.forecast.map(d => [d.date, '', d.value, d.lower, d.upper])
+                    ].map(row => row.join(',')).join('\n');
+                    
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'forecast.csv';
+                    a.click();
+                  }}
+                >
+                  Download CSV
+                </button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
-                    data={[...forecastMutation.data.historical, ...forecastMutation.data.forecast]}
-                    margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+                    data={(() => {
+                      // Combine historical and forecast data with proper labeling
+                      const historicalWithLabel = forecastMutation.data.historical.map(d => ({
+                        ...d,
+                        historical: d.value,
+                        forecast: null,
+                        lower: null,
+                        upper: null
+                      }));
+                      const forecastWithLabel = forecastMutation.data.forecast.map(d => ({
+                        ...d,
+                        historical: null,
+                        forecast: d.value
+                      }));
+                      return [...historicalWithLabel, ...forecastWithLabel];
+                    })()}
+                    margin={{ top: 5, right: 30, left: 50, bottom: 50 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
-                    <YAxis />
-                    <Tooltip />
-                    <Legend />
+                    <defs>
+                      <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                      </linearGradient>
+                      <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.1}/>
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                    <XAxis 
+                      dataKey="date" 
+                      tick={{ fontSize: 11 }}
+                      angle={-45}
+                      textAnchor="end"
+                      height={60}
+                    />
+                    <YAxis 
+                      tick={{ fontSize: 11 }}
+                      label={{ value: 'Units', angle: -90, position: 'insideLeft' }}
+                    />
+                    <Tooltip 
+                      contentStyle={{ 
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
+                        border: '1px solid #E5E7EB',
+                        borderRadius: '6px'
+                      }}
+                      formatter={(value: any) => value ? Math.round(value).toLocaleString() : '—'}
+                    />
+                    <Legend 
+                      wrapperStyle={{ paddingTop: '20px' }}
+                      iconType="line"
+                    />
+                    
+                    {/* Historical Data Line */}
                     <Line
                       type="monotone"
-                      dataKey="value"
-                      stroke="#8884d8"
+                      dataKey="historical"
+                      stroke="#3B82F6"
                       strokeWidth={2}
-                      name="Actual/Forecast"
+                      name="Historical Owned Demand"
                       dot={false}
+                      connectNulls={false}
+                      fillOpacity={1}
+                      fill="url(#colorHistorical)"
                     />
+                    
+                    {/* Forecast Data Line with dots */}
+                    <Line
+                      type="monotone"
+                      dataKey="forecast"
+                      stroke="#EF4444"
+                      strokeWidth={2}
+                      name="Overall Demand Forecast"
+                      dot={{ fill: '#EF4444', strokeWidth: 0, r: 3 }}
+                      connectNulls={false}
+                      fillOpacity={1}
+                      fill="url(#colorForecast)"
+                    />
+                    
+                    {/* Confidence Intervals */}
                     {forecastMutation.data.forecast.length > 0 && (
                       <>
                         <Line
                           type="monotone"
                           dataKey="lower"
-                          stroke="#82ca9d"
+                          stroke="#94A3B8"
                           strokeWidth={1}
-                          strokeDasharray="5 5"
+                          strokeDasharray="3 3"
                           name="Lower Bound"
                           dot={false}
+                          connectNulls={false}
                         />
                         <Line
                           type="monotone"
                           dataKey="upper"
-                          stroke="#ffc658"
+                          stroke="#94A3B8"
                           strokeWidth={1}
-                          strokeDasharray="5 5"
+                          strokeDasharray="3 3"
                           name="Upper Bound"
                           dot={false}
+                          connectNulls={false}
                         />
                       </>
                     )}
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+              
+              {/* Chart Footer Info */}
+              <div className="mt-4 pt-4 border-t">
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div>
+                    Date Range: {forecastMutation.data.historical[0]?.date} to {forecastMutation.data.forecast[forecastMutation.data.forecast.length - 1]?.date}
+                  </div>
+                  <div className="flex gap-4">
+                    {forecastMutation.data.metrics?.mape !== undefined && (
+                      <span>MAPE: {forecastMutation.data.metrics.mape.toFixed(2)}%</span>
+                    )}
+                    {forecastMutation.data.metrics?.rmse !== undefined && (
+                      <span>RMSE: {forecastMutation.data.metrics.rmse.toFixed(2)}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

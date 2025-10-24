@@ -1,0 +1,44 @@
+{
+  "f0430466583ec7b0": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "default_item",
+    "cache_key": "f0430466583ec7b0",
+    "cached_at": "2025-10-23T00:57:32.124019",
+    "metrics": {
+      "mape": 83.9616398587661,
+      "rmse": 1518.8483508072225,
+      "accuracy": 16.038360141233895
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  },
+  "5828d48656cb563d": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "default_item",
+    "cache_key": "5828d48656cb563d",
+    "cached_at": "2025-10-24T17:53:31.422106",
+    "metrics": {
+      "mape": 8.220947247907299e-06,
+      "rmse": 9.027029872816876e-05,
+      "accuracy": 99.99999177905275
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  },
+  "94eb4814885a8896": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "94eb4814885a8896",
+    "cached_at": "2025-10-24T18:31:28.703096",
+    "metrics": {
+      "mape": 8.220947247907299e-06,
+      "rmse": 9.027029872816876e-05,
+      "accuracy": 99.99999177905275
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  }
+}
