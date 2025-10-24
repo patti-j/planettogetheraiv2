@@ -4004,10 +4004,68 @@
                 // Initialize status updates
                 updateStatus();
                 
+                // CRITICAL: Helper function to wait for scheduler to be ready
+                // This eliminates the need for arbitrary timeouts
+                window.waitForSchedulerReady = function(timeout = 30000) {
+                    return new Promise((resolve, reject) => {
+                        // Check if already ready
+                        if (window.schedulerReady && window.scheduler?.eventStore?.count > 0) {
+                            console.log('✅ Scheduler already ready with', window.scheduler.eventStore.count, 'operations');
+                            resolve({
+                                ready: true,
+                                eventCount: window.scheduler.eventStore.count,
+                                resourceCount: window.scheduler.resourceStore.count,
+                                assignmentCount: window.scheduler.assignmentStore.count
+                            });
+                            return;
+                        }
+                        
+                        console.log('⏳ Waiting for scheduler to load operations...');
+                        
+                        // Set up timeout
+                        const timeoutId = setTimeout(() => {
+                            window.removeEventListener('schedulerOperationsLoaded', handleReady);
+                            clearInterval(pollInterval);
+                            reject(new Error('Timeout waiting for scheduler to be ready'));
+                        }, timeout);
+                        
+                        // Listen for the custom paint event
+                        const handleReady = (event) => {
+                            clearTimeout(timeoutId);
+                            clearInterval(pollInterval);
+                            window.removeEventListener('schedulerOperationsLoaded', handleReady);
+                            console.log('🎨 Scheduler paint event received! Operations loaded:', event.detail);
+                            resolve({
+                                ready: true,
+                                ...event.detail
+                            });
+                        };
+                        
+                        window.addEventListener('schedulerOperationsLoaded', handleReady);
+                        
+                        // Also poll periodically as backup (in case event was already fired)
+                        const pollInterval = setInterval(() => {
+                            if (window.scheduler?.eventStore?.count > 0) {
+                                clearTimeout(timeoutId);
+                                clearInterval(pollInterval);
+                                window.removeEventListener('schedulerOperationsLoaded', handleReady);
+                                console.log('✅ Scheduler ready (detected by polling) with', window.scheduler.eventStore.count, 'operations');
+                                resolve({
+                                    ready: true,
+                                    eventCount: window.scheduler.eventStore.count,
+                                    resourceCount: window.scheduler.resourceStore.count,
+                                    assignmentCount: window.scheduler.assignmentStore.count
+                                });
+                            }
+                        }, 500);
+                    });
+                };
+                
                 // CRITICAL FIX: Define global scheduling functions that were missing
                 // These functions are called from elsewhere but weren't defined
                 window.scheduleASAP = async function() {
                     console.log('📅 Running ASAP scheduling...');
+                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
                     const project = scheduler.project;
                     project.schedulingDirection = 'forward';
                     await project.propagate();
@@ -4017,6 +4075,7 @@
                 
                 window.scheduleALAP = async function() {
                     console.log('📅 Running ALAP scheduling...');
+                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
                     const project = scheduler.project;
                     project.schedulingDirection = 'backward';
                     await project.propagate();
@@ -4026,12 +4085,14 @@
                 
                 window.optimizeSchedule = async function(algorithmId) {
                     console.log(`📅 Running optimization algorithm: ${algorithmId}...`);
+                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
                     // Apply the selected algorithm
                     await applyAlgorithm(scheduler, algorithmId);
                     console.log(`✅ ${algorithmId} optimization complete`);
                     updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
                 
+                console.log('[Scheduler] Helper function registered: window.waitForSchedulerReady(timeout)');
                 console.log('[Scheduler] Global scheduling functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
                 
                 // CRITICAL DATA LOADING FIX: Load the events into the scheduler's event store
@@ -4129,6 +4190,21 @@
                 const assignmentCount = scheduler.assignmentStore.count || 0;
                 
                 console.warn(`📊 Final counts - Resources: ${resourceCount}, Events: ${eventCount}, Assignments: ${assignmentCount}`);
+                
+                // CRITICAL: Fire custom event when operations are loaded and ready
+                // This allows external code to know when the scheduler is ready without waiting
+                if (eventCount > 0) {
+                    window.schedulerReady = true;
+                    window.dispatchEvent(new CustomEvent('schedulerOperationsLoaded', {
+                        detail: {
+                            eventCount,
+                            resourceCount,
+                            assignmentCount,
+                            timestamp: Date.now()
+                        }
+                    }));
+                    console.log('🎨 Paint event fired: Scheduler operations loaded and ready!');
+                }
                 
                 if (eventCount === 0) {
                     console.error('❌ NO EVENTS LOADED! Debugging info:');
