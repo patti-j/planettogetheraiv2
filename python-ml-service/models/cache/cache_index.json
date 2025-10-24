@@ -68,5 +68,75 @@
     },
     "training_points": 4,
     "hyperparameter_tuning": false
+  },
+  "14e25b3ad6c53400": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "14e25b3ad6c53400",
+    "cached_at": "2025-10-24T19:59:22.314148",
+    "metrics": {
+      "mape": 83.9616398587661,
+      "rmse": 1518.8483508072225,
+      "accuracy": 16.038360141233895
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  },
+  "98ad3366fcb3d48e": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "98ad3366fcb3d48e",
+    "cached_at": "2025-10-24T19:59:22.730898",
+    "metrics": {
+      "mape": 40.03209556442136,
+      "rmse": 777.0818129113824,
+      "accuracy": 59.96790443557864
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "dfb9dd837ccf1a36": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "dfb9dd837ccf1a36",
+    "cached_at": "2025-10-24T19:59:23.009193",
+    "metrics": {
+      "mape": 52.902751845111375,
+      "rmse": 417.0439744570647,
+      "accuracy": 47.097248154888625
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "5f60f8085ec69424": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "5f60f8085ec69424",
+    "cached_at": "2025-10-24T19:59:23.297223",
+    "metrics": {
+      "mape": 63.63844019280709,
+      "rmse": 642.5773750235523,
+      "accuracy": 36.36155980719291
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "a67701072cbdcadc": {
+    "model_type": "ARIMA",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "a67701072cbdcadc",
+    "cached_at": "2025-10-24T19:59:23.519594",
+    "metrics": {
+      "mape": 49.21700656968219,
+      "rmse": 768.2639128504528,
+      "accuracy": 50.78299343031781
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
   }
 }

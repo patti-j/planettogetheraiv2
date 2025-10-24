@@ -1,0 +1,14 @@
+{
+  "model_type": "ARIMA",
+  "forecast_days": 30,
+  "item": "SUB2",
+  "cache_key": "5f60f8085ec69424",
+  "cached_at": "2025-10-24T19:59:23.297223",
+  "metrics": {
+    "mape": 63.63844019280709,
+    "rmse": 642.5773750235523,
+    "accuracy": 36.36155980719291
+  },
+  "training_points": 4,
+  "hyperparameter_tuning": false
+}

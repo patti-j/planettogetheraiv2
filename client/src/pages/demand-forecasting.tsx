@@ -87,6 +87,14 @@ export default function DemandForecasting() {
     seasonal_order?: any;
     [key: string]: any;
   } | null>(null);
+  const [itemsTrainingMetrics, setItemsTrainingMetrics] = useState<{
+    [itemName: string]: {
+      mape?: number;
+      rmse?: number;
+      mae?: number;
+      accuracy?: number;
+    }
+  } | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
   
   // Validation errors
@@ -234,6 +242,7 @@ export default function DemandForecasting() {
     onSuccess: (data) => {
       setIsModelTrained(true);
       setTrainingMetrics(data.overallMetrics || data.metrics);
+      setItemsTrainingMetrics(data.itemsResults || null);
       if (data.modelId) {
         setModelId(data.modelId);
       }
@@ -254,6 +263,7 @@ export default function DemandForecasting() {
     onError: (error) => {
       setIsModelTrained(false);
       setTrainingMetrics(null);
+      setItemsTrainingMetrics(null);
       setModelId(null);
       toast({
         title: "Training Failed",
@@ -856,32 +866,69 @@ export default function DemandForecasting() {
           </div>
 
           {/* Training Metrics Display */}
-          {trainingMetrics && (
+          {itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
             <div className="bg-muted p-4 rounded-lg space-y-3">
-              <div className="text-sm font-medium">Training Results ({modelType})</div>
-              <div className="flex gap-4 flex-wrap">
-                {trainingMetrics.mape !== undefined && (
-                  <div>
-                    <div className="text-xs text-muted-foreground">MAPE</div>
-                    <div className="text-lg font-bold">{trainingMetrics.mape.toFixed(2)}%</div>
+              <div className="text-sm font-medium">Training Results per Item ({modelType})</div>
+              
+              {/* Summary Statistics */}
+              {trainingMetrics && (
+                <div className="mb-3 p-3 bg-background rounded border">
+                  <div className="text-xs font-medium text-muted-foreground mb-2">Overall Summary</div>
+                  <div className="flex gap-4 flex-wrap">
+                    {trainingMetrics.mape !== undefined && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">Avg MAPE: </span>
+                        <span className="font-semibold">{trainingMetrics.mape.toFixed(2)}%</span>
+                      </div>
+                    )}
+                    {trainingMetrics.rmse !== undefined && (
+                      <div>
+                        <span className="text-xs text-muted-foreground">Avg RMSE: </span>
+                        <span className="font-semibold">{trainingMetrics.rmse.toFixed(2)}</span>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-xs text-muted-foreground">Total Items: </span>
+                      <span className="font-semibold">{Object.keys(itemsTrainingMetrics).length}</span>
+                    </div>
                   </div>
-                )}
-                {trainingMetrics.rmse !== undefined && (
-                  <div>
-                    <div className="text-xs text-muted-foreground">RMSE</div>
-                    <div className="text-lg font-bold">{trainingMetrics.rmse.toFixed(2)}</div>
-                  </div>
-                )}
-                {trainingMetrics.accuracy !== undefined && (
-                  <div>
-                    <div className="text-xs text-muted-foreground">Accuracy</div>
-                    <div className="text-lg font-bold">{trainingMetrics.accuracy.toFixed(2)}%</div>
-                  </div>
-                )}
+                </div>
+              )}
+              
+              {/* Individual Item Metrics Table */}
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left p-2">Item</th>
+                      <th className="text-right p-2">MAPE (%)</th>
+                      <th className="text-right p-2">RMSE</th>
+                      <th className="text-right p-2">MAE</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {Object.entries(itemsTrainingMetrics)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([itemName, metrics]) => (
+                        <tr key={itemName} className="border-b hover:bg-muted/50">
+                          <td className="p-2 font-medium">{itemName}</td>
+                          <td className="text-right p-2">
+                            {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
+                          </td>
+                          <td className="text-right p-2">
+                            {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
+                          </td>
+                          <td className="text-right p-2">
+                            {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
               </div>
               
               {/* Display Tuned Parameters when hyperparameter tuning is enabled */}
-              {hyperparameterTuning && (modelType === "ARIMA" || modelType === "Prophet") && (
+              {hyperparameterTuning && (modelType === "ARIMA" || modelType === "Prophet") && trainingMetrics && (
                 <div className="border-t pt-3 mt-3">
                   <div className="text-sm font-medium mb-2">Tuned Parameters</div>
                   <div className="space-y-2">

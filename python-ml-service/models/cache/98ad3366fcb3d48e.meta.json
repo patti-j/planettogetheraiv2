@@ -1,0 +1,14 @@
+{
+  "model_type": "ARIMA",
+  "forecast_days": 30,
+  "item": "FG2",
+  "cache_key": "98ad3366fcb3d48e",
+  "cached_at": "2025-10-24T19:59:22.730898",
+  "metrics": {
+    "mape": 40.03209556442136,
+    "rmse": 777.0818129113824,
+    "accuracy": 59.96790443557864
+  },
+  "training_points": 4,
+  "hyperparameter_tuning": false
+}
