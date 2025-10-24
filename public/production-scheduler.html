@@ -3675,11 +3675,41 @@
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // Sort jobs by due date (process most urgent first)
-                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA], [keyB]) => {
+                    // Helper to get job priority from event
+                    const getJobPriority = (jobKey, operations) => {
+                        // Try to get priority from any operation in this job
+                        for (const op of operations) {
+                            const priority = op.jobPriority || op.job_priority || 
+                                           op.ptData?.jobPriority || op.ptData?.job_priority ||
+                                           op.data?.jobPriority || op.data?.job_priority;
+                            if (priority !== undefined && priority !== null) {
+                                return parseInt(priority);
+                            }
+                        }
+                        return 999; // Default low priority if not found
+                    };
+                    
+                    // Sort jobs by priority first (1=highest), then by due date
+                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
+                        const priorityA = getJobPriority(keyA, opsA);
+                        const priorityB = getJobPriority(keyB, opsB);
+                        
+                        // First sort by priority (lower number = higher priority)
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB;
+                        }
+                        
+                        // If same priority, sort by due date (earliest first)
                         const dueA = jobDueMap.get(keyA) || globalFallback;
                         const dueB = jobDueMap.get(keyB) || globalFallback;
                         return dueA.getTime() - dueB.getTime();
+                    });
+                    
+                    console.log('📊 Job scheduling order by priority:');
+                    sortedJobs.forEach(([jobKey, ops]) => {
+                        const priority = getJobPriority(jobKey, ops);
+                        const due = jobDueMap.get(jobKey) || globalFallback;
+                        console.log(`  Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()})`);
                     });
                     
                     // Process each job completely

@@ -1646,6 +1646,7 @@ router.get("/api/pt-operations", async (req, res) => {
       percent_done: op.percent_finished || 0,
       status: op.activity_status || 'Not Started',
       priority: op.job_priority || 'Medium',
+      jobPriority: op.job_priority || 3,  // Pass numeric priority for ALAP scheduling (1=highest, 5=lowest)
       dueDate: op.job_due_date,
       // Also pass the raw external_id for dependency grouping
       externalId: op.operation_external_id,
