@@ -50,6 +50,9 @@ export default function DemandForecasting() {
   const [selectedScenarios, setSelectedScenarios] = useState<string[]>([]);
   const [scenarioSearch, setScenarioSearch] = useState<string>("");
   
+  // Filter state for forecast visualization
+  const [selectedForecastItem, setSelectedForecastItem] = useState<string>("Overall");
+  
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
   const [trainingMetrics, setTrainingMetrics] = useState<{ 
@@ -924,12 +927,29 @@ export default function DemandForecasting() {
           <div className="flex items-center justify-between">
             <h2 className="text-2xl font-bold">Overall Demand Forecast</h2>
             <div className="flex gap-2 text-sm">
-              <button className="px-3 py-1 border rounded hover:bg-muted">Overall</button>
-              <button className="px-3 py-1 border rounded hover:bg-muted">FG1</button>
-              <button className="px-3 py-1 border rounded hover:bg-muted">FG2</button>
-              <button className="px-3 py-1 border rounded hover:bg-muted">SUB1</button>
-              <button className="px-3 py-1 border rounded hover:bg-muted">SUB2</button>
-              <button className="px-3 py-1 border rounded hover:bg-muted">SUB3</button>
+              <button 
+                className={`px-3 py-1 border rounded transition-colors ${
+                  selectedForecastItem === 'Overall' 
+                    ? 'bg-primary text-primary-foreground border-primary' 
+                    : 'hover:bg-muted'
+                }`}
+                onClick={() => setSelectedForecastItem('Overall')}
+              >
+                Overall
+              </button>
+              {selectedItems.slice(0, 5).map((item, index) => (
+                <button
+                  key={item}
+                  className={`px-3 py-1 border rounded transition-colors ${
+                    selectedForecastItem === item 
+                      ? 'bg-primary text-primary-foreground border-primary' 
+                      : 'hover:bg-muted'
+                  }`}
+                  onClick={() => setSelectedForecastItem(item)}
+                >
+                  {item.length > 8 ? `${item.substring(0, 6)}...` : item}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -984,7 +1004,10 @@ export default function DemandForecasting() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-medium">
-                  Overall Demand Forecast - {modelType} ({selectedItems.length} Items Combined)
+                  {selectedForecastItem === 'Overall' 
+                    ? `Overall Demand Forecast - ${modelType} (${selectedItems.length} Items Combined)`
+                    : `Demand Forecast - ${modelType} (${selectedForecastItem})`
+                  }
                 </CardTitle>
                 <button 
                   className="text-sm text-muted-foreground hover:text-foreground"
@@ -1013,15 +1036,23 @@ export default function DemandForecasting() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={(() => {
+                      // Filter data based on selected item
+                      let filteredHistorical = forecastMutation.data.historical;
+                      let filteredForecast = forecastMutation.data.forecast;
+                      
+                      // Note: For now, we show all data regardless of filter selection
+                      // since the backend returns aggregated data for all selected items
+                      // In a future enhancement, we could request individual item forecasts
+                      
                       // Combine historical and forecast data with proper labeling
-                      const historicalWithLabel = forecastMutation.data.historical.map(d => ({
+                      const historicalWithLabel = filteredHistorical.map(d => ({
                         ...d,
                         historical: d.value,
                         forecast: null,
                         lower: null,
                         upper: null
                       }));
-                      const forecastWithLabel = forecastMutation.data.forecast.map(d => ({
+                      const forecastWithLabel = filteredForecast.map(d => ({
                         ...d,
                         historical: null,
                         forecast: d.value
