@@ -3631,206 +3631,134 @@
                         ev.manuallyScheduled = false;
                     });
                     
-                    // Build predecessors and successors maps
-                    const preds = new Map();   // eventId -> [predecessorId]
-                    const succs = new Map();   // eventId -> [successorId]
-                    dependencyStore.forEach(dep => {
-                        const fromId = dep.fromEvent ?? dep.from;
-                        const toId   = dep.toEvent   ?? dep.to;
-                        if (!succs.has(fromId)) succs.set(fromId, []);
-                        succs.get(fromId).push(toId);
-                        if (!preds.has(toId)) preds.set(toId, []);
-                        preds.get(toId).push(fromId);
-                    });
+                    // 🔄 SIMPLIFIED: Using sequence numbers directly - no dependencies needed!
+                    console.log('📋 Using sequence numbers for finish-to-start scheduling');
                     
-                    // Determine which events are the "last ops" per job using SEQUENCE NUMBERS
-                    // The last operation is the one with the highest sequence number in each job
-                    const jobLastOps = new Map(); // jobKey -> Set(eventIds)
-                    const jobMaxSequence = new Map(); // jobKey -> max sequence number
+                    // Get sequence number from event
+                    const getSequence = (ev) => {
+                        return ev.sequence_number || ev.sequenceNumber || 
+                               ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
+                    };
                     
-                    // First pass: find the maximum sequence number for each job
+                    // Group operations by job and sort by sequence number
+                    const jobOperations = new Map(); // jobKey -> array of events sorted by sequence
+                    
                     for (const ev of allEvents) {
                         const key = getJobKey(ev);
                         if (!key) continue;
                         
-                        // Get sequence number from various possible fields
-                        const seq = ev.sequence_number || ev.sequenceNumber || 
-                                   ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
+                        const seq = getSequence(ev);
                         
-                        if (!jobMaxSequence.has(key) || seq > jobMaxSequence.get(key)) {
-                            jobMaxSequence.set(key, seq);
+                        if (!jobOperations.has(key)) {
+                            jobOperations.set(key, []);
                         }
+                        jobOperations.get(key).push(ev);
                     }
                     
-                    // Second pass: mark operations with max sequence as last operations
-                    for (const ev of allEvents) {
-                        const key = getJobKey(ev);
-                        if (!key) continue;
-                        
-                        const seq = ev.sequence_number || ev.sequenceNumber || 
-                                   ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
-                        
-                        // This is a last operation if it has the maximum sequence number for its job
-                        if (seq === jobMaxSequence.get(key)) {
-                            if (!jobLastOps.has(key)) jobLastOps.set(key, new Set());
-                            jobLastOps.get(key).add(ev.id);
-                            console.log(`  📍 Identified last operation: "${ev.name}" (seq: ${seq}) in job ${key}`);
-                        }
-                    }
-                    
-                    console.log('📊 Job last operations summary:');
-                    for (const [jobKey, lastOpsSet] of jobLastOps.entries()) {
-                        const ops = Array.from(lastOpsSet).map(id => {
-                            const ev = eventStore.getById(id);
-                            return ev ? ev.name : 'Unknown';
-                        });
-                        console.log(`  Job ${jobKey}: ${ops.join(', ')}`);
+                    // Sort each job's operations by sequence number
+                    for (const [jobKey, operations] of jobOperations.entries()) {
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
+                        console.log(`  Job "${jobKey}": ${operations.length} operations (seq ${getSequence(operations[0])} to ${getSequence(operations[operations.length - 1])})`);
                     }
                     
                     // Set project direction to Backward for ALAP
                     project.direction = 'Backward';
                     project.schedulingDirection = 'backward';
                     
-                    // Helper to resolve the resource for an event (use assignments to avoid nulls)
+                    // Helper to resolve the resource for an event
                     const resolveResource = (ev) => {
                         const asg = assignmentStore.find(a => a.eventId === ev.id);
                         return asg ? resourceStore.getById(asg.resourceId) : null;
                     };
                     
-                    // Track which events have been scheduled
-                    const scheduled = new Set();
-                    const scheduledDates = new Map(); // eventId -> {start, end}
+                    // Process each job independently
+                    console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // Recursive function to schedule an event and its predecessors
-                    const scheduleBackward = (ev) => {
-                        if (scheduled.has(ev.id)) return; // Already scheduled
-                        
-                        const key = getJobKey(ev);
-                        const jobDue = jobDueMap.get(key) || globalFallback;
-                        const isJobLastOp = key && jobLastOps.get(key)?.has(ev.id);
-                        const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
-                        const resource = resolveResource(ev) || ev.resource;
-                        
-                        let latestEnd;
-                        
-                        if (isJobLastOp && requireNeedDates) {
-                            // This is a last operation - constrain to job due date
-                            latestEnd = new Date(jobDue);
-                            ev.constraintType = 'finishnolaterthan';
-                            ev.constraintDate = new Date(jobDue);
-                            console.log(`  📌 Last op "${ev.name}" constrained to finish by ${jobDue.toLocaleString()}`);
-                        } else {
-                            // Not a last operation - constrain by successors only
-                            latestEnd = null;
-                            
-                            // Find the earliest successor start time
-                            const mySuccs = succs.get(ev.id) || [];
-                            for (const sid of mySuccs) {
-                                const sched = scheduledDates.get(sid);
-                                if (sched) {
-                                    if (!latestEnd || sched.start < latestEnd) {
-                                        latestEnd = new Date(sched.start);
-                                        console.log(`    "${ev.name}" must finish before successor (id:${sid}) starts at ${sched.start.toLocaleString()}`);
-                                    }
-                                }
-                            }
-                            
-                            // If no scheduled successors yet, use a reasonable default
-                            if (!latestEnd) {
-                                latestEnd = new Date(jobDue); // Default to job due if no successors scheduled yet
-                            }
-                        }
-                        
-                        // Calculate the slot for this operation
-                        let start, end;
-                        
-                        if (resource) {
-                            // Use the backward packer to find latest free slot on resource
-                            const slot = findLatestFreeSlotOnResource(resource, latestEnd, durationMs, ev);
-                            start = slot.start;
-                            end = slot.end;
-                        } else {
-                            // No resource - just place backward from latestEnd
-                            end = latestEnd;
-                            start = new Date(end.getTime() - durationMs);
-                        }
-                        
-                        // Set the dates on the event
-                        ev.set({ startDate: start, endDate: end, manuallyScheduled: false });
-                        
-                        // Track that we've scheduled this event
-                        scheduled.add(ev.id);
-                        scheduledDates.set(ev.id, { start, end });
-                        
-                        console.log(`  ⬅️ ALAP: ${ev.name} @ ${resource?.name || 'no-resource'} -> ${start.toLocaleString()} to ${end.toLocaleString()}`);
-                        
-                        // Now recursively schedule all predecessors
-                        const myPreds = preds.get(ev.id) || [];
-                        for (const pid of myPreds) {
-                            const pred = eventStore.getById(pid);
-                            if (pred && !scheduled.has(pid)) {
-                                scheduleBackward(pred);
-                            }
-                        }
-                    };
-                    
-                    // GROUP BY JOB - Process each job independently to avoid conflicts
-                    console.log('📍 Processing jobs one at a time to avoid resource conflicts...');
-                    
-                    // Group all operations by job
-                    const jobGroups = new Map(); // jobKey -> [events]
-                    for (const ev of allEvents) {
-                        const key = getJobKey(ev);
-                        if (!key) continue;
-                        if (!jobGroups.has(key)) jobGroups.set(key, []);
-                        jobGroups.get(key).push(ev);
-                    }
-                    
-                    // Sort jobs by priority or due date (process most urgent first)
-                    const sortedJobs = Array.from(jobGroups.entries()).sort(([keyA, eventsA], [keyB, eventsB]) => {
+                    // Sort jobs by due date (process most urgent first)
+                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA], [keyB]) => {
                         const dueA = jobDueMap.get(keyA) || globalFallback;
                         const dueB = jobDueMap.get(keyB) || globalFallback;
-                        // Earlier due dates first
                         return dueA.getTime() - dueB.getTime();
                     });
                     
-                    // Process each job completely before moving to the next
-                    for (const [jobKey, jobEvents] of sortedJobs) {
+                    // Process each job completely
+                    for (const [jobKey, operations] of sortedJobs) {
                         console.log(`\n🏭 Processing Job: ${jobKey}`);
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
+                        console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                         
-                        // Find the last operations for this specific job using sequence numbers
-                        const lastOps = jobEvents.filter(ev => {
-                            return jobLastOps.get(jobKey)?.has(ev.id) || false;
-                        });
+                        // Schedule backward from last operation (highest sequence)
+                        let nextOperationStart = null;
                         
-                        console.log(`  Found ${lastOps.length} last operation(s) in job ${jobKey}`);
-                        
-                        // Schedule all operations in this job starting from the last operations
-                        for (const lastOp of lastOps) {
-                            scheduleBackward(lastOp);
-                        }
-                        
-                        // Verify all operations in this job were scheduled
-                        const unscheduled = jobEvents.filter(ev => !scheduled.has(ev.id));
-                        if (unscheduled.length > 0) {
-                            console.warn(`  ⚠️ ${unscheduled.length} operations in job ${jobKey} were not reached through dependencies`);
-                            for (const ev of unscheduled) {
-                                scheduleBackward(ev);
+                        // Process operations in REVERSE sequence order (highest to lowest)
+                        for (let i = operations.length - 1; i >= 0; i--) {
+                            const operation = operations[i];
+                            const sequence = getSequence(operation);
+                            const durationMs = operation.durationMS ?? (operation.duration * 60 * 60 * 1000);
+                            const resource = resolveResource(operation);
+                            
+                            let endDate;
+                            
+                            // Last operation (highest sequence) gets the Need-By constraint
+                            if (i === operations.length - 1) {
+                                endDate = new Date(jobDue);
+                                if (requireNeedDates) {
+                                    operation.constraintType = 'finishnolaterthan';
+                                    operation.constraintDate = new Date(jobDue);
+                                    console.log(`  📌 Last op "${operation.name}" (seq ${sequence}) constrained to finish by ${jobDue.toLocaleString()}`);
+                                }
+                            } else {
+                                // Earlier operations must finish when the next operation starts (finish-to-start)
+                                endDate = nextOperationStart;
+                                console.log(`  🔗 "${operation.name}" (seq ${sequence}) must finish before next operation starts at ${endDate.toLocaleString()}`);
                             }
+                            
+                            // Calculate start date based on duration
+                            let startDate, actualEndDate;
+                            
+                            if (resource) {
+                                // Find latest free slot on the resource
+                                const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
+                                startDate = slot.start;
+                                actualEndDate = slot.end;
+                            } else {
+                                // No resource - simple backward calculation
+                                actualEndDate = endDate;
+                                startDate = new Date(endDate.getTime() - durationMs);
+                            }
+                            
+                            // Set the dates on the operation
+                            operation.set({
+                                startDate: startDate,
+                                endDate: actualEndDate,
+                                manuallyScheduled: false
+                            });
+                            
+                            console.log(`  ⬅️ Scheduled: ${operation.name} @ ${resource?.name || 'no-resource'}`);
+                            console.log(`     ${startDate.toLocaleString()} to ${actualEndDate.toLocaleString()}`);
+                            
+                            // This operation's start becomes the next operation's end (working backward)
+                            nextOperationStart = startDate;
                         }
                         
-                        console.log(`  ✅ Job ${jobKey} complete - scheduled ${jobEvents.length} operations`);
+                        console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
                     }
                     
-                    // Final check: any operations not part of a job
-                    const orphans = allEvents.filter(ev => !scheduled.has(ev.id));
+                    // Handle any orphan operations (no job ID)
+                    const orphans = allEvents.filter(ev => !getJobKey(ev));
                     if (orphans.length > 0) {
-                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID) - scheduling them anyway`);
-                        for (const ev of orphans) {
-                            scheduleBackward(ev);
-                        }
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID)`);
+                        // Schedule orphans to start from current date
+                        const baseDate = new Date();
+                        orphans.forEach(ev => {
+                            const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
+                            ev.set({
+                                startDate: baseDate,
+                                endDate: new Date(baseDate.getTime() + durationMs),
+                                manuallyScheduled: false
+                            });
+                        });
                     }
                     
                     // Commit and propagate with backward direction
