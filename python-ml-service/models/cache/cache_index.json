@@ -208,5 +208,19 @@
     },
     "training_points": 4,
     "hyperparameter_tuning": false
+  },
+  "fb97e4e68ab57eb9": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "OVERALL",
+    "cache_key": "fb97e4e68ab57eb9",
+    "cached_at": "2025-10-24T20:49:29.482489",
+    "metrics": {
+      "mape": 2.7873273100620425e-05,
+      "rmse": 0.0002589804535713197,
+      "accuracy": 99.9999721267269
+    },
+    "training_points": 21,
+    "hyperparameter_tuning": false
   }
 }
