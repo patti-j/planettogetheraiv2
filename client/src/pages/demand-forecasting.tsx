@@ -132,15 +132,20 @@ export default function DemandForecasting() {
   }>({});
   
   // Fetch SQL Server tables
-  const { data: tables, isLoading: isLoadingTables } = useQuery({
-    queryKey: ["/api/demand-forecast/tables"],
+  const { data: tablesData, isLoading: isLoadingTables } = useQuery({
+    queryKey: ["/api/forecasting/tables"],
     enabled: true,
   });
+  
+  // Process tables data for Combobox
+  const tables = tablesData || [];
+  
+  console.log("Tables fetched:", tables);
 
   // Fetch columns when table is selected
   const { data: columns, isLoading: isLoadingColumns } = useQuery({
     queryKey: selectedTable 
-      ? [`/api/demand-forecast/columns`, selectedTable.schema, selectedTable.name]
+      ? [`/api/forecasting/columns/${selectedTable.schema}/${selectedTable.name}`]
       : [],
     enabled: !!selectedTable,
   });
@@ -148,25 +153,23 @@ export default function DemandForecasting() {
   // Fetch unique values for filters
   const { data: planningAreas } = useQuery({
     queryKey: selectedTable && planningAreaColumn
-      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, planningAreaColumn]
+      ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${planningAreaColumn}`]
       : [],
     enabled: !!selectedTable && !!planningAreaColumn,
   });
 
   const { data: scenarios } = useQuery({
     queryKey: selectedTable && scenarioColumn
-      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, scenarioColumn]
+      ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${scenarioColumn}`]
       : [],
     enabled: !!selectedTable && !!scenarioColumn,
   });
 
   const { data: items } = useQuery({
     queryKey: selectedTable && itemColumn
-      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, itemColumn, {
-        filters: {
-          ...(selectedPlanningAreas.length > 0 && { [planningAreaColumn]: selectedPlanningAreas }),
-          ...(selectedScenarios.length > 0 && { [scenarioColumn]: selectedScenarios })
-        }
+      ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}`, {
+        planningAreas: selectedPlanningAreas.join(','),
+        scenarios: selectedScenarios.join(',')
       }]
       : [],
     enabled: !!selectedTable && !!itemColumn,
@@ -195,7 +198,7 @@ export default function DemandForecasting() {
       const controller = new AbortController();
       setAbortController(controller);
       
-      const response = await fetch("/api/demand-forecast/train", {
+      const response = await fetch("/api/forecasting/train", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
@@ -294,7 +297,7 @@ export default function DemandForecasting() {
   // Generate forecast mutation  
   const forecastMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/demand-forecast/forecast", {
+      const response = await apiRequest("/api/forecasting/forecast", {
         method: "POST",
         body: JSON.stringify(data),
       });
@@ -344,17 +347,18 @@ export default function DemandForecasting() {
     }
     
     await trainMutation.mutateAsync({
-      table_schema: selectedTable!.schema,
-      table_name: selectedTable!.name,
-      date_column: dateColumn,
-      item_column: itemColumn,
-      quantity_column: quantityColumn,
-      planning_areas: selectedPlanningAreas,
-      scenarios: selectedScenarios,
-      items: forecastMode === "overall" ? items || [] : selectedItems,
-      model_type: modelType,
-      hyperparameter_tuning: hyperparameterTuning,
-      forecast_mode: forecastMode
+      schema: selectedTable!.schema,
+      table: selectedTable!.name,
+      dateColumn: dateColumn,
+      itemColumn: itemColumn,
+      quantityColumn: quantityColumn,
+      selectedPlanningAreas: selectedPlanningAreas,
+      selectedScenarios: selectedScenarios,
+      selectedItems: forecastMode === "overall" ? items || [] : selectedItems,
+      modelType: modelType,
+      hyperparameterTuning: hyperparameterTuning,
+      planningAreaColumn: planningAreaColumn,
+      scenarioColumn: scenarioColumn
     });
   };
 
@@ -369,9 +373,19 @@ export default function DemandForecasting() {
     }
 
     await forecastMutation.mutateAsync({
-      model_id: modelId,
-      forecast_days: forecastDays,
-      forecast_mode: forecastMode
+      schema: selectedTable!.schema,
+      table: selectedTable!.name,
+      dateColumn: dateColumn,
+      itemColumn: itemColumn,
+      quantityColumn: quantityColumn,
+      selectedPlanningAreas: selectedPlanningAreas,
+      selectedScenarios: selectedScenarios,
+      selectedItems: forecastMode === "overall" ? items || [] : selectedItems,
+      modelType: modelType,
+      modelId: modelId,
+      forecastDays: forecastDays,
+      planningAreaColumn: planningAreaColumn,
+      scenarioColumn: scenarioColumn
     });
   };
   
