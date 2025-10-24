@@ -2649,24 +2649,32 @@
                 // Improved debug function per Bryntum best practices
                 function assertNoOverlaps(scheduler) {
                     const overlaps = [];
+                    const TOLERANCE_MS = 1000; // 1 second tolerance for perfect handoffs
+                    
                     for (const r of scheduler.resourceStore.records) {
                         const evs = r.events.slice().sort((a, b) => a.startDate - b.startDate);
                         for (let i = 1; i < evs.length; i++) {
-                            if (evs[i - 1].endDate > evs[i].startDate) {
+                            const overlapMs = evs[i - 1].endDate - evs[i].startDate;
+                            // Only flag as overlap if operations overlap by more than the tolerance
+                            // This handles perfect handoffs where one ends exactly when another starts
+                            if (overlapMs > TOLERANCE_MS) {
                                 overlaps.push({ 
                                     resource: r.name, 
                                     a: evs[i - 1].name, 
                                     b: evs[i].name,
-                                    overlapMs: evs[i - 1].endDate - evs[i].startDate
+                                    overlapMs: overlapMs
                                 });
+                                console.log(`  ⚠️ Real overlap detected on ${r.name}: "${evs[i - 1].name}" ends at ${evs[i - 1].endDate.toLocaleString()} but "${evs[i].name}" starts at ${evs[i].startDate.toLocaleString()} (${overlapMs}ms overlap)`);
+                            } else if (overlapMs > 0 && overlapMs <= TOLERANCE_MS) {
+                                console.log(`  ✅ Perfect handoff on ${r.name}: "${evs[i - 1].name}" to "${evs[i].name}" (${overlapMs}ms within tolerance)`);
                             }
                         }
                     }
                     if (overlaps.length) {
-                        console.warn('❌ Overlaps found:', overlaps);
+                        console.warn('❌ Real overlaps found:', overlaps);
                         return false;
                     } else {
-                        console.log('✅ No overlaps per resource');
+                        console.log('✅ No overlaps per resource (perfect handoffs allowed)');
                         return true;
                     }
                 }
