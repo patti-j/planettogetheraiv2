@@ -2762,10 +2762,9 @@
                             }
                         }
                         
-                        // Commit changes after each pass
+                        // DON'T commit changes inside the loop to prevent triggering events
                         if (movedInThisPass > 0) {
-                            await scheduler.project.commitAsync();
-                            await scheduler.project.propagate();
+                            // Just log the progress, don't commit yet
                             console.log(`  🔄 Pass ${iterations}: Moved ${movedInThisPass} operations`);
                         } else {
                             // No more overlaps found, we're done
@@ -2776,6 +2775,12 @@
                     
                     if (iterations >= maxIterations) {
                         console.error(`  ⚠️ Reached maximum iterations (${maxIterations}) - some overlaps may remain`);
+                    }
+                    
+                    // Commit all changes ONCE at the end to avoid triggering events during the loop
+                    if (totalMoved > 0) {
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
                     }
                     
                     console.log(`  📊 Total operations moved: ${totalMoved}`);
@@ -3318,13 +3323,23 @@
 
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
+                let isAsapRunning = false; // Add flag to prevent re-entrance
                 window.asapScheduling = async function asapScheduling() {
-                    // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
-                    console.log('🚀 Starting ASAP scheduling with dependency-aware overlap prevention...');
+                    // Prevent re-entrance if already running
+                    if (isAsapRunning) {
+                        console.warn('⚠️ ASAP scheduling already in progress, skipping...');
+                        return;
+                    }
                     
-                    const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
-                    const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
-                    console.log(`  Total operations to schedule: ${events.length}`);
+                    isAsapRunning = true;
+                    
+                    try {
+                        // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
+                        console.log('🚀 Starting ASAP scheduling with dependency-aware overlap prevention...');
+                        
+                        const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
+                        const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                        console.log(`  Total operations to schedule: ${events.length}`);
                     
                     // Clear any existing constraint dates and manual flags to ensure clean scheduling
                     events.forEach(event => {
@@ -3488,6 +3503,10 @@
                         } else {
                             console.error('  ❌ Failed to repair all overlaps');
                         }
+                    }
+                    } finally {
+                        // Always reset the flag, even if there was an error
+                        isAsapRunning = false;
                     }
                 }
                 
