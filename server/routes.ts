@@ -1215,6 +1215,57 @@ router.get("/users/:userId/assigned-roles", async (req, res) => {
   }
 });
 
+// Get all users with their roles for the User Access Management page
+router.get("/api/users-with-roles", async (req, res) => {
+  try {
+    console.log("Fetching all users with roles...");
+    
+    // Get all users
+    const allUsers = await storage.getAllUsers();
+    
+    // For each user, fetch their roles
+    const usersWithRoles = await Promise.all(
+      allUsers.map(async (user) => {
+        const userRoles = await storage.getUserRoles(user.id);
+        const roles = [];
+        
+        for (const userRole of userRoles) {
+          const role = await storage.getRole(userRole.roleId);
+          if (role) {
+            roles.push({
+              id: role.id,
+              name: role.name,
+              description: role.description || `${role.name} role`
+            });
+          }
+        }
+        
+        return {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          isActive: user.isActive,
+          lastLogin: user.lastLogin,
+          createdAt: user.createdAt,
+          roles: roles
+        };
+      })
+    );
+    
+    console.log(`Found ${usersWithRoles.length} users with roles`);
+    res.json(usersWithRoles);
+    
+  } catch (error) {
+    console.error("Error fetching users with roles:", error);
+    res.status(500).json({ 
+      message: "Failed to fetch users with roles",
+      error: error instanceof Error ? error.message : "Unknown error" 
+    });
+  }
+});
+
 router.get("/users/:userId/current-role", async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
