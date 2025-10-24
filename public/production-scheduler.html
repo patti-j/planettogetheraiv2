@@ -3406,6 +3406,9 @@
                     // Process events in dependency order
                     const byId = id => eventStore.getById(id);
                     
+                    // IMPROVED COMPACTING: Track resource availability - when each resource will be free
+                    const resourceAvailability = new Map();
+                    
                     for (const event of sortedEvents) {
                         // Calculate earliest start based on dependencies
                         let earliestStart = new Date(baseDate);
@@ -3429,18 +3432,32 @@
                         const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
                         
                         if (resource) {
-                            // Use best practice packer to find next free slot
-                            console.log(`  🔍 Finding slot for "${event.name}" on "${resource.name}" starting from ${earliestStart.toLocaleString()}`);
-                            const slot = findNextFreeSlotOnResource(resource, earliestStart, durationMs, event);
+                            // IMPROVED COMPACTING: Use resource availability tracking for optimal compaction
+                            const resourceId = resource.id;
                             
-                            // Update the event with the new times
-                            event.setStartDate(slot.start, true); // true = keep duration
+                            // Get when this resource is available
+                            const resourceFreeTime = resourceAvailability.get(resourceId) || baseDate;
+                            
+                            // The actual start time is the max of dependency constraints and resource availability
+                            const actualStart = new Date(Math.max(earliestStart.getTime(), resourceFreeTime.getTime()));
+                            const actualEnd = new Date(actualStart.getTime() + durationMs);
+                            
+                            console.log(`  🔍 Compacting "${event.name}" on "${resource.name}"`);
+                            console.log(`     Dependencies require: ${earliestStart.toLocaleString()}`);
+                            console.log(`     Resource free at: ${resourceFreeTime.toLocaleString()}`);
+                            console.log(`     Scheduled at: ${actualStart.toLocaleString()}`);
+                            
+                            // Update the event with the compacted times
+                            event.setStartDate(actualStart, true); // true = keep duration
                             event.set({
-                                endDate: slot.end,
+                                endDate: actualEnd,
                                 manuallyScheduled: false
                             });
                             
-                            console.log(`  ✅ Scheduled "${event.name}" on ${resource.name}: ${slot.start.toLocaleString()} to ${slot.end.toLocaleString()}`);
+                            // Update resource availability to when this operation completes
+                            resourceAvailability.set(resourceId, actualEnd);
+                            
+                            console.log(`  ✅ Compacted "${event.name}" on ${resource.name}: ${actualStart.toLocaleString()} to ${actualEnd.toLocaleString()}`);
                         } else {
                             // Unassigned events - schedule at earliest time
                             console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
