@@ -7,7 +7,7 @@ import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
 import { Loader2, Sparkles, Database, TrendingUp, Search } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -1216,7 +1216,7 @@ export default function DemandForecasting() {
                     
                     {/* Historical Data Line */}
                     <Line
-                      type="monotone"
+                      type="linear"
                       dataKey="historical"
                       stroke="#3B82F6"
                       strokeWidth={2}
@@ -1229,7 +1229,7 @@ export default function DemandForecasting() {
                     
                     {/* Forecast Data Line with dots */}
                     <Line
-                      type="monotone"
+                      type="linear"
                       dataKey="forecast"
                       stroke="#EF4444"
                       strokeWidth={2}
@@ -1249,7 +1249,7 @@ export default function DemandForecasting() {
                       return currentData?.forecast?.length > 0 && (
                         <>
                           <Line
-                            type="monotone"
+                            type="linear"
                             dataKey="lower"
                             stroke="#94A3B8"
                             strokeWidth={1}
@@ -1259,7 +1259,7 @@ export default function DemandForecasting() {
                             connectNulls={false}
                           />
                           <Line
-                            type="monotone"
+                            type="linear"
                             dataKey="upper"
                             stroke="#94A3B8"
                             strokeWidth={1}
@@ -1271,6 +1271,24 @@ export default function DemandForecasting() {
                         </>
                       );
                     })()}
+                    
+                    {/* Brush component for zooming */}
+                    <Brush 
+                      dataKey="date" 
+                      height={30} 
+                      stroke="#3B82F6"
+                      fill="#E5E7EB"
+                      fillOpacity={0.3}
+                      startIndex={0}
+                      endIndex={Math.min(30, (() => {
+                        const currentData = selectedForecastItem === 'Overall' 
+                          ? forecastMutation.data.overall 
+                          : forecastMutation.data.items?.[selectedForecastItem];
+                        const historicalData = currentData?.historical || forecastMutation.data.historical || [];
+                        const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
+                        return historicalData.length + forecastData.length - 1;
+                      })())}
+                    />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
