@@ -5108,15 +5108,29 @@
                     if (window.scheduler && window.scheduler.eventStore) {
                         const events = window.scheduler.eventStore.records;
                         
-                        // Prepare operations update data
-                        const operations = events.map(event => ({
-                            id: event.operationId || event.id, // Use operationId if available
-                            start: event.startDate ? event.startDate.toISOString() : null,
-                            end: event.endDate ? event.endDate.toISOString() : null,
-                            manuallyScheduled: event.manually_scheduled || false
-                        }));
+                        // Prepare operations update data - filter out unscheduled operations
+                        const operations = events
+                            .filter(event => event.resourceId !== 'unscheduled' && event.startDate && event.endDate)
+                            .map(event => {
+                                // The event.id corresponds to the ptjoboperations table ID
+                                const op = {
+                                    id: parseInt(event.id), // Ensure it's a number for the database
+                                    start: event.startDate ? event.startDate.toISOString() : null,
+                                    end: event.endDate ? event.endDate.toISOString() : null,
+                                    manuallyScheduled: event.manuallyScheduled || false
+                                };
+                                console.log(`📝 Saving operation: ${event.name} (ID: ${op.id}) - Start: ${op.start}, End: ${op.end}`);
+                                return op;
+                            });
                         
-                        console.log(`📝 Updating ${operations.length} operations in main database...`);
+                        if (operations.length === 0) {
+                            alert('No scheduled operations to save. Please schedule some operations first.');
+                            saveBtn.innerHTML = originalHTML;
+                            saveBtn.disabled = false;
+                            return;
+                        }
+                        
+                        console.log(`📝 Updating ${operations.length} scheduled operations in database...`);
                         
                         // Get auth token from parent window or localStorage
                         const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
