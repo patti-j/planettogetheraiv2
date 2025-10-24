@@ -221,19 +221,121 @@ def train_model():
                     "modelId": model_id
                 }
         
-        # Calculate overall metrics (average of all items)
+        # Train a separate aggregated model for Overall if multiple items
         overall_metrics = {}
-        if all_metrics:
-            metric_keys = all_metrics[0].keys()
-            for key in metric_keys:
-                values = [m.get(key, 0) for m in all_metrics if key in m]
-                if values:
-                    overall_metrics[key] = sum(values) / len(values)
+        overall_training_result = None
+        
+        if len(successfully_trained) > 1:
+            # Aggregate all historical data across items for Overall model
+            all_dates = set()
+            for item_name, historical_data in items_data.items():
+                if item_name not in successfully_trained:
+                    continue
+                for point in historical_data:
+                    all_dates.add(point['date'])
+            
+            # Sort dates
+            sorted_dates = sorted(all_dates)
+            
+            # Create aggregated dataset
+            aggregated_data = []
+            for date in sorted_dates:
+                total_value = 0
+                for item_name, historical_data in items_data.items():
+                    if item_name not in successfully_trained:
+                        continue
+                    for point in historical_data:
+                        if point['date'] == date:
+                            total_value += point['value']
+                            break
+                aggregated_data.append({'date': date, 'value': total_value})
+            
+            # Train the Overall model on aggregated data
+            overall_model_id = f"{base_model_id}_OVERALL"
+            
+            # Check cache for Overall model
+            overall_cache_key = None
+            from_cache = False
+            if MODEL_CACHE_AVAILABLE:
+                try:
+                    cache = get_model_cache()
+                    overall_cache_key = cache.get_cache_key(
+                        model_type, forecast_days, "OVERALL", 
+                        planning_areas, scenario_names, hyperparameter_tuning
+                    )
+                    
+                    if cache.exists(model_type, forecast_days, "OVERALL", planning_areas, scenario_names, hyperparameter_tuning):
+                        cached_model, cached_metadata = cache.load_model(overall_cache_key)
+                        if cached_model is not None and cached_metadata is not None:
+                            trained_models[overall_model_id] = cached_model
+                            overall_metrics = cached_metadata.get('metrics', {})
+                            from_cache = True
+                            print(f"Loaded Overall model from cache: {overall_cache_key}", flush=True)
+                except Exception as e:
+                    print(f"Cache check failed for Overall model: {e}", flush=True)
+            
+            if not from_cache and len(aggregated_data) > 0:
+                # Convert to DataFrame
+                df = pd.DataFrame(aggregated_data)
+                df['date'] = pd.to_datetime(df['date'])
+                df = df.sort_values('date')
+                df['value'] = df['value'].astype(float)
+                
+                # Train Overall model
+                try:
+                    if model_type == 'Linear Regression':
+                        overall_metrics = train_linear_regression(df, overall_model_id)
+                    elif model_type == 'Random Forest':
+                        overall_metrics = train_random_forest(df, overall_model_id, hyperparameter_tuning)
+                    elif model_type == 'ARIMA':
+                        overall_metrics = train_arima(df, overall_model_id, hyperparameter_tuning)
+                    elif model_type == 'Prophet':
+                        overall_metrics = train_prophet(df, overall_model_id, hyperparameter_tuning)
+                    
+                    # Save Overall model to cache
+                    if MODEL_CACHE_AVAILABLE and overall_cache_key:
+                        try:
+                            cache = get_model_cache()
+                            model_info = trained_models.get(overall_model_id)
+                            if model_info:
+                                cache.save_model(
+                                    model_type, forecast_days, "OVERALL",
+                                    model_info,
+                                    {'metrics': overall_metrics, 'training_points': len(aggregated_data), 'hyperparameter_tuning': hyperparameter_tuning},
+                                    planning_areas, scenario_names, hyperparameter_tuning
+                                )
+                                print(f"Saved Overall model to cache: {overall_cache_key}", flush=True)
+                        except Exception as e:
+                            print(f"Cache save failed for Overall model: {e}", flush=True)
+                    
+                    overall_training_result = {
+                        "success": True,
+                        "modelType": model_type,
+                        "metrics": overall_metrics,
+                        "trainingDataPoints": len(aggregated_data),
+                        "modelId": overall_model_id,
+                        "cacheKey": overall_cache_key,
+                        "fromCache": from_cache
+                    }
+                    print(f"Successfully trained Overall model on {len(aggregated_data)} aggregated data points", flush=True)
+                    
+                except Exception as overall_error:
+                    print(f"Failed to train Overall model: {str(overall_error)}", flush=True)
+                    overall_training_result = {
+                        "success": False,
+                        "error": str(overall_error),
+                        "modelId": overall_model_id
+                    }
+        else:
+            # If only one item, use its metrics as overall
+            if all_metrics:
+                overall_metrics = all_metrics[0]
         
         return jsonify({
             "success": True,
             "modelType": model_type,
             "overallMetrics": overall_metrics,
+            "overallTrainingResult": overall_training_result,
             "itemsResults": training_results,
             "totalItems": len(items_data),
             "trainedItems": len(successfully_trained),
@@ -677,6 +779,73 @@ def train_prophet(df, model_id, hyperparameter_tuning=False):
             "accuracy": max(0, 100 - mape)
         }
 
+def calculate_summed_overall_forecast(individual_forecasts):
+    """Fallback function to calculate overall forecast by summing individual forecasts"""
+    if not individual_forecasts:
+        return None
+    
+    # Aggregate historical data
+    all_dates = set()
+    for item_forecast in individual_forecasts.values():
+        all_dates.update([h['date'] for h in item_forecast['historical']])
+    
+    sorted_dates = sorted(all_dates)
+    overall_historical = []
+    
+    for date in sorted_dates:
+        total_value = 0
+        for item_forecast in individual_forecasts.values():
+            for h in item_forecast['historical']:
+                if h['date'] == date:
+                    total_value += h['value']
+                    break
+        overall_historical.append({"date": date, "value": total_value})
+    
+    # Aggregate forecasted data
+    if individual_forecasts:
+        first_item_forecast = list(individual_forecasts.values())[0]
+        forecast_dates = [f['date'] for f in first_item_forecast['forecast']]
+        
+        overall_predictions = []
+        for date in forecast_dates:
+            total_value = 0
+            total_lower = 0
+            total_upper = 0
+            
+            for item_forecast in individual_forecasts.values():
+                for f in item_forecast['forecast']:
+                    if f['date'] == date:
+                        total_value += f['value']
+                        total_lower += f['lower']
+                        total_upper += f['upper']
+                        break
+            
+            overall_predictions.append({
+                "date": date,
+                "value": total_value,
+                "lower": total_lower,
+                "upper": total_upper
+            })
+        
+        # Calculate overall metrics (average of individual metrics)
+        overall_metrics = {}
+        if individual_forecasts:
+            all_item_metrics = [f['metrics'] for f in individual_forecasts.values()]
+            metric_keys = all_item_metrics[0].keys()
+            for key in metric_keys:
+                values = [m.get(key, 0) for m in all_item_metrics if key in m]
+                if values:
+                    overall_metrics[key] = sum(values) / len(values)
+        
+        return {
+            "historical": overall_historical,
+            "forecast": overall_predictions,
+            "metrics": overall_metrics,
+            "usingDedicatedModel": False
+        }
+    
+    return None
+
 @app.route('/forecast', methods=['POST'])
 def forecast():
     try:
@@ -761,67 +930,86 @@ def forecast():
                 print(f"Failed to generate forecast for item {item_name}: {str(item_error)}", flush=True)
                 continue
         
-        # Calculate overall forecast (sum of individual forecasts)
+        # Calculate overall forecast using the dedicated Overall model
         overall_forecast = None
-        if individual_forecasts:
-            # Aggregate historical data
-            all_dates = set()
-            for item_forecast in individual_forecasts.values():
-                all_dates.update([h['date'] for h in item_forecast['historical']])
+        if len(successful_forecasts) > 1:
+            # Use the dedicated Overall model
+            overall_model_id = f"{base_model_id}_OVERALL"
             
-            sorted_dates = sorted(all_dates)
-            overall_historical = []
-            
-            for date in sorted_dates:
-                total_value = 0
-                for item_forecast in individual_forecasts.values():
-                    for h in item_forecast['historical']:
-                        if h['date'] == date:
-                            total_value += h['value']
-                            break
-                overall_historical.append({"date": date, "value": total_value})
-            
-            # Aggregate forecasted data
-            if individual_forecasts:
-                first_item_forecast = list(individual_forecasts.values())[0]
-                forecast_dates = [f['date'] for f in first_item_forecast['forecast']]
+            if overall_model_id in trained_models:
+                # Aggregate historical data for Overall
+                all_dates = set()
+                for item_name, historical_data in items_data.items():
+                    if item_name not in successful_forecasts:
+                        continue
+                    for point in historical_data:
+                        all_dates.add(point['date'])
                 
-                overall_predictions = []
-                for date in forecast_dates:
+                sorted_dates = sorted(all_dates)
+                overall_historical = []
+                
+                for date in sorted_dates:
                     total_value = 0
-                    total_lower = 0
-                    total_upper = 0
-                    
-                    for item_forecast in individual_forecasts.values():
-                        for f in item_forecast['forecast']:
-                            if f['date'] == date:
-                                total_value += f['value']
-                                total_lower += f['lower']
-                                total_upper += f['upper']
+                    for item_name, historical_data in items_data.items():
+                        if item_name not in successful_forecasts:
+                            continue
+                        for point in historical_data:
+                            if point['date'] == date:
+                                total_value += point['value']
                                 break
+                    overall_historical.append({"date": date, "value": total_value})
+                
+                # Get Overall model info
+                model_info = trained_models[overall_model_id]
+                model_type_overall = model_info['type']
+                
+                # Create DataFrame from aggregated historical data
+                df_overall = pd.DataFrame(overall_historical)
+                df_overall['date'] = pd.to_datetime(df_overall['date'])
+                df_overall = df_overall.sort_values('date')
+                df_overall['value'] = df_overall['value'].astype(float)
+                
+                try:
+                    # Generate forecast using Overall model
+                    if model_type_overall == 'Linear Regression':
+                        forecast_data = forecast_linear_regression(model_info, df_overall, forecast_days)
+                    elif model_type_overall == 'Random Forest':
+                        forecast_data = forecast_random_forest(model_info, df_overall, forecast_days)
+                    elif model_type_overall == 'ARIMA':
+                        forecast_data = forecast_arima(model_info, df_overall, forecast_days)
+                    elif model_type_overall == 'Prophet':
+                        forecast_data = forecast_prophet(model_info, df_overall, forecast_days)
                     
-                    overall_predictions.append({
-                        "date": date,
-                        "value": total_value,
-                        "lower": total_lower,
-                        "upper": total_upper
-                    })
-                
-                # Calculate overall metrics (average of individual metrics)
-                overall_metrics = {}
-                if individual_forecasts:
-                    all_item_metrics = [f['metrics'] for f in individual_forecasts.values()]
-                    metric_keys = all_item_metrics[0].keys()
-                    for key in metric_keys:
-                        values = [m.get(key, 0) for m in all_item_metrics if key in m]
-                        if values:
-                            overall_metrics[key] = sum(values) / len(values)
-                
-                overall_forecast = {
-                    "historical": overall_historical,
-                    "forecast": overall_predictions,
-                    "metrics": overall_metrics
-                }
+                    overall_forecast = {
+                        "historical": overall_historical,
+                        "forecast": forecast_data['predictions'],
+                        "metrics": forecast_data['metrics'],
+                        "modelType": model_type_overall,
+                        "usingDedicatedModel": True
+                    }
+                    print(f"Generated Overall forecast using dedicated aggregated model", flush=True)
+                    
+                except Exception as overall_error:
+                    print(f"Failed to generate Overall forecast: {str(overall_error)}", flush=True)
+                    # Fallback to summing individual forecasts
+                    overall_forecast = calculate_summed_overall_forecast(individual_forecasts)
+            else:
+                # Fallback to summing if no dedicated Overall model exists
+                print(f"No dedicated Overall model found, falling back to summing individual forecasts", flush=True)
+                overall_forecast = calculate_summed_overall_forecast(individual_forecasts)
+        elif len(successful_forecasts) == 1:
+            # For single item, use its forecast as Overall
+            item_name = successful_forecasts[0]
+            overall_forecast = {
+                "historical": individual_forecasts[item_name]['historical'],
+                "forecast": individual_forecasts[item_name]['forecast'],
+                "metrics": individual_forecasts[item_name]['metrics'],
+                "modelType": individual_forecasts[item_name]['modelType'],
+                "singleItem": True
+            }
+        else:
+            # No successful forecasts
+            overall_forecast = None
         
         return jsonify({
             "success": True,
