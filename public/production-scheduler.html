@@ -1840,7 +1840,7 @@
                         sequence_number: operation.sequence_number || operation.sequenceNumber || 0, // Map from API response
                         ptData: operation // Keep original PT data for algorithms
                     };
-                }).filter(event => event.resourceId); // Only include operations with valid resources
+                }); // Include all operations, even unscheduled ones
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
@@ -3472,11 +3472,15 @@
                             const gapSize = gapEnd.getTime() - gapStart.getTime();
                             
                             // Check if this gap is big enough and respects earliest start
-                            if (gapSize >= duration && gapStart.getTime() >= earliestPossibleStart.getTime()) {
-                                return gapStart;
-                            } else if (gapSize >= duration && gapEnd.getTime() - duration >= earliestPossibleStart.getTime()) {
-                                // Can start within the gap but need to respect earliest start
-                                return earliestPossibleStart;
+                            if (gapSize >= duration) {
+                                // If gap starts after or at earliest possible start, use gap start
+                                if (gapStart.getTime() >= earliestPossibleStart.getTime()) {
+                                    return gapStart;
+                                }
+                                // If gap ends late enough to fit operation after earliest start
+                                else if (earliestPossibleStart.getTime() + duration <= gapEnd.getTime()) {
+                                    return earliestPossibleStart;
+                                }
                             }
                         }
                         

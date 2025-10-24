@@ -274,28 +274,51 @@ const BryntumScheduler: React.FC = () => {
           eventsData.push(eventData);
         }
 
-        // Build assignments - IMPROVED: Properly filter operations by planning area
+        // Build assignments - FIXED: Properly filter operations by planning area without losing data
         const resSet = new Set(resourceRows.map((r) => r.id));
         const assignmentsData: any[] = [];
         const validEventIds = new Set<string>();
         
         console.log(`🔍 Filtering by planning area: ${selectedPlanningArea}`);
-        console.log(`   Available resources in filtered set:`, resSet);
+        console.log(`   Available resources in filtered set:`, Array.from(resSet));
         
         for (const op of rawOperations) {
           const eid = S(op.id);
-          const rid = S(op.resourceId ?? op.resource_id);
+          const rid = S(op.resourceId ?? op.resource_id ?? op.actual_resource_id);
           if (!eid) continue;
           
-          // Decision logic for including operations:
-          // 1. If showing all areas, include everything
-          // 2. If resource is in filtered set, include it
-          // 3. If no resource assigned (unscheduled), include it
+          // CRITICAL FIX: Include operations based on proper logic
+          let includeOperation = false;
+          let assignToResource = rid;
           
           if (selectedPlanningArea === 'all') {
-            // Show all operations when "All Areas" is selected
+            // Show ALL operations when "All Areas" is selected
+            includeOperation = true;
+            // If resource not in current set (shouldn't happen with 'all'), assign to unscheduled
+            if (rid && !resSet.has(rid)) {
+              assignToResource = 'unscheduled';
+            }
+          } else {
+            // Filtering by specific planning area
             if (rid && resSet.has(rid)) {
-              assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+              // Operation is assigned to a resource in the selected planning area
+              includeOperation = true;
+            } else if (!rid) {
+              // Operation has no resource assignment (unscheduled) - always include these
+              includeOperation = true;
+              assignToResource = 'unscheduled';
+            }
+            // Operations assigned to resources outside the selected planning area are excluded
+          }
+          
+          if (includeOperation) {
+            validEventIds.add(eid);
+            if (assignToResource && assignToResource !== 'unscheduled' && resSet.has(assignToResource)) {
+              assignmentsData.push({ 
+                id: `a_${eid}_${assignToResource}`, 
+                eventId: eid, 
+                resourceId: assignToResource 
+              });
             } else {
               assignmentsData.push({
                 id: `a_${eid}_unscheduled`,
@@ -303,28 +326,11 @@ const BryntumScheduler: React.FC = () => {
                 resourceId: 'unscheduled',
               });
             }
-            validEventIds.add(eid);
-          } else {
-            // Filter by specific planning area
-            if (rid && resSet.has(rid)) {
-              // Operation is assigned to a resource in the selected planning area
-              assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
-              validEventIds.add(eid);
-            } else if (!rid) {
-              // Operation has no resource assignment (unscheduled) - always show these
-              assignmentsData.push({
-                id: `a_${eid}_unscheduled`,
-                eventId: eid,
-                resourceId: 'unscheduled',
-              });
-              validEventIds.add(eid);
-            }
-            // Operations assigned to resources outside the selected planning area are excluded
           }
         }
 
         console.log(`   Total operations: ${rawOperations.length}`);
-        console.log(`   Operations after filtering: ${validEventIds.size}`);
+        console.log(`   Operations included: ${validEventIds.size}`);
         console.log(`   Assignments created: ${assignmentsData.length}`);
         
         // Filter events to only include those with valid assignments
