@@ -3667,23 +3667,32 @@
                     for (const ev of sorted) {
                         const key = getJobKey(ev);
                         const jobDue = jobDueMap.get(key) || globalFallback;
-                        
-                        // Start with the job due; if needDates is off, still respect successors
-                        let latestEnd = new Date(jobDue);
-                        
-                        // Constrain by already-placed successors (across jobs too)
-                        const mySuccs = succs.get(ev.id) || [];
-                        for (const sid of mySuccs) {
-                            const s = eventStore.getById(sid);
-                            if (s?.startDate && s.startDate < latestEnd) latestEnd = new Date(s.startDate);
-                        }
-                        
-                        // If this is a "last-op" of its job and needDates is ON, enforce a finish-no-later-than
                         const isJobLastOp = key && jobLastOps.get(key)?.has(ev.id);
-                        if (requireNeedDates && isJobLastOp) {
+                        
+                        // CRITICAL FIX: Only use job due date for LAST operations
+                        // Other operations should be constrained only by their successors
+                        let latestEnd;
+                        
+                        if (isJobLastOp && requireNeedDates) {
+                            // This is a last operation - constrain to job due date
+                            latestEnd = new Date(jobDue);
                             ev.constraintType = 'finishnolaterthan';
                             ev.constraintDate = new Date(jobDue);
                             console.log(`  Setting finish-no-later-than constraint for last op "${ev.name}" to ${jobDue.toLocaleString()}`);
+                        } else {
+                            // Not a last operation - use a far future date as initial value
+                            // This allows operations to be scheduled based purely on successor constraints
+                            latestEnd = new Date(2030, 0, 1); // Far future initial value
+                        }
+                        
+                        // Constrain by already-placed successors (both within and across jobs)
+                        const mySuccs = succs.get(ev.id) || [];
+                        for (const sid of mySuccs) {
+                            const s = eventStore.getById(sid);
+                            if (s?.startDate && s.startDate < latestEnd) {
+                                latestEnd = new Date(s.startDate);
+                                console.log(`    "${ev.name}" must finish before successor "${s.name}" starts at ${s.startDate.toLocaleString()}`);
+                            }
                         }
                         
                         const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
