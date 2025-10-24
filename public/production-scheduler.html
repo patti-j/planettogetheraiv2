@@ -3370,13 +3370,31 @@
                         return deps.every(depId => scheduled.has(depId));
                     }
                     
-                    // Sort events by sequence number within same job as secondary criteria
+                    // FIXED: Sort events by PRIORITY first, then sequence number within same job
                     events.sort((a, b) => {
-                        // First sort by job ID
-                        if (a.jobId !== b.jobId) {
-                            return (a.jobId || 0) - (b.jobId || 0);
+                        // Extract job priorities from event data
+                        const getPriority = (event) => {
+                            return event.jobPriority || event.job_priority || 
+                                   event.ptData?.jobPriority || event.ptData?.job_priority ||
+                                   event.data?.jobPriority || event.data?.job_priority ||
+                                   999; // Default low priority if not found
+                        };
+                        
+                        const priorityA = parseInt(getPriority(a));
+                        const priorityB = parseInt(getPriority(b));
+                        
+                        // ASAP: Sort by priority ASC (1 before 2 before 3, etc)
+                        // Priority 1 (highest) should be scheduled FIRST in forward scheduling
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB; // Lower number = higher priority = schedule first
                         }
-                        // Then by sequence number within same job
+                        
+                        // If same priority, sort by job ID to keep jobs together
+                        if (a.jobId !== b.jobId) {
+                            return (a.jobId || '').localeCompare(b.jobId || '');
+                        }
+                        
+                        // Finally, sort by sequence number within same job
                         const seqA = a.sequence_number || 999;
                         const seqB = b.sequence_number || 999;
                         return seqA - seqB;
@@ -3402,6 +3420,24 @@
                     }
                     
                     console.log(`  ✅ Sorted ${sortedEvents.length} events by dependencies`);
+                    
+                    // Log the priority order for verification
+                    const jobPriorityMap = new Map();
+                    sortedEvents.forEach(event => {
+                        const priority = event.jobPriority || event.job_priority || 
+                                       event.ptData?.jobPriority || event.ptData?.job_priority ||
+                                       event.data?.jobPriority || event.data?.job_priority || 999;
+                        if (!jobPriorityMap.has(event.jobId)) {
+                            jobPriorityMap.set(event.jobId, { priority: parseInt(priority), operations: [] });
+                        }
+                        jobPriorityMap.get(event.jobId).operations.push(event.name);
+                    });
+                    
+                    console.log('📊 ASAP Job scheduling order (highest priority first for forward scheduling):');
+                    const sortedJobs = Array.from(jobPriorityMap.entries()).sort(([, a], [, b]) => a.priority - b.priority);
+                    sortedJobs.forEach(([jobId, info], index) => {
+                        console.log(`  ${index + 1}. Priority ${info.priority}: Job ${jobId} - ${info.operations.length} operations`);
+                    });
                     
                     // Process events in dependency order
                     const byId = id => eventStore.getById(id);
