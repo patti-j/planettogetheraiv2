@@ -1,0 +1,14 @@
+{
+  "model_type": "Prophet",
+  "forecast_days": 30,
+  "item": "FG1",
+  "cache_key": "94eb4814885a8896",
+  "cached_at": "2025-10-24T19:53:50.657947",
+  "metrics": {
+    "mape": 8.220947247907299e-06,
+    "rmse": 9.027029872816876e-05,
+    "accuracy": 99.99999177905275
+  },
+  "training_points": 5,
+  "hyperparameter_tuning": false
+}

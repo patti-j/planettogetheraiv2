@@ -1194,30 +1194,36 @@ export default function DemandForecasting() {
                     />
                     
                     {/* Confidence Intervals */}
-                    {forecastMutation.data.forecast.length > 0 && (
-                      <>
-                        <Line
-                          type="monotone"
-                          dataKey="lower"
-                          stroke="#94A3B8"
-                          strokeWidth={1}
-                          strokeDasharray="3 3"
-                          name="Lower Bound"
-                          dot={false}
-                          connectNulls={false}
-                        />
-                        <Line
-                          type="monotone"
-                          dataKey="upper"
-                          stroke="#94A3B8"
-                          strokeWidth={1}
-                          strokeDasharray="3 3"
-                          name="Upper Bound"
-                          dot={false}
-                          connectNulls={false}
-                        />
-                      </>
-                    )}
+                    {(() => {
+                      const currentData = selectedForecastItem === 'Overall' 
+                        ? forecastMutation.data.overall 
+                        : forecastMutation.data.items?.[selectedForecastItem];
+                      
+                      return currentData?.forecast?.length > 0 && (
+                        <>
+                          <Line
+                            type="monotone"
+                            dataKey="lower"
+                            stroke="#94A3B8"
+                            strokeWidth={1}
+                            strokeDasharray="3 3"
+                            name="Lower Bound"
+                            dot={false}
+                            connectNulls={false}
+                          />
+                          <Line
+                            type="monotone"
+                            dataKey="upper"
+                            stroke="#94A3B8"
+                            strokeWidth={1}
+                            strokeDasharray="3 3"
+                            name="Upper Bound"
+                            dot={false}
+                            connectNulls={false}
+                          />
+                        </>
+                      );
+                    })()}
                   </LineChart>
                 </ResponsiveContainer>
               </div>

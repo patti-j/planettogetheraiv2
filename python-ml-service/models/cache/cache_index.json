@@ -1,0 +1,72 @@
+{
+  "94eb4814885a8896": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "FG1",
+    "cache_key": "94eb4814885a8896",
+    "cached_at": "2025-10-24T19:53:50.657947",
+    "metrics": {
+      "mape": 8.220947247907299e-06,
+      "rmse": 9.027029872816876e-05,
+      "accuracy": 99.99999177905275
+    },
+    "training_points": 5,
+    "hyperparameter_tuning": false
+  },
+  "3453f3ccda89d499": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "FG2",
+    "cache_key": "3453f3ccda89d499",
+    "cached_at": "2025-10-24T19:53:50.790571",
+    "metrics": {
+      "mape": 1.317824446987706e-05,
+      "rmse": 0.00014880445756539895,
+      "accuracy": 99.99998682175553
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "77781a1a79433a35": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB1",
+    "cache_key": "77781a1a79433a35",
+    "cached_at": "2025-10-24T19:53:51.348571",
+    "metrics": {
+      "mape": 1.066212214664125e-05,
+      "rmse": 8.172090662644755e-05,
+      "accuracy": 99.99998933787785
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "602ba4f68a06fa84": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB2",
+    "cache_key": "602ba4f68a06fa84",
+    "cached_at": "2025-10-24T19:53:51.510027",
+    "metrics": {
+      "mape": 5.077586888636068e-06,
+      "rmse": 4.1752370465679194e-05,
+      "accuracy": 99.99999492241311
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  },
+  "51f7cc936c91bb78": {
+    "model_type": "Prophet",
+    "forecast_days": 30,
+    "item": "SUB3",
+    "cache_key": "51f7cc936c91bb78",
+    "cached_at": "2025-10-24T19:53:51.632943",
+    "metrics": {
+      "mape": 1.5823888801599787e-05,
+      "rmse": 0.00012845196898761724,
+      "accuracy": 99.9999841761112
+    },
+    "training_points": 4,
+    "hyperparameter_tuning": false
+  }
+}
