@@ -5311,114 +5311,195 @@
                         const schedules = await response.json();
                         
                         if (schedules.length === 0) {
-                            alert('No saved schedules found');
+                            // Use Bryntum's MessageDialog instead of alert
+                            if (window.scheduler && window.scheduler.bryntum) {
+                                window.scheduler.bryntum.MessageDialog.alert({
+                                    title: 'No Schedules',
+                                    message: 'No saved schedules found'
+                                });
+                            } else {
+                                alert('No saved schedules found');
+                            }
                             return;
                         }
                         
-                        // Create a simple selection dialog
-                        const scheduleList = schedules.map((s, i) => 
-                            `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
-                        ).join('\n');
-                        
-                        const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
-                        
-                        if (selection) {
-                            const index = parseInt(selection) - 1;
-                            if (index >= 0 && index < schedules.length) {
-                                const selectedSchedule = schedules[index];
-                                
-                                // Load the schedule using Bryntum's loadInlineData method
-                                if (window.scheduler && window.scheduler.project) {
-                                    // Load the project data
-                                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
-                                    
-                                    // Restore metadata if available
-                                    if (selectedSchedule.metadata) {
-                                        if (selectedSchedule.metadata.algorithm) {
-                                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
-                                        }
-                                        if (selectedSchedule.metadata.constraints) {
-                                            window.activeConstraints = selectedSchedule.metadata.constraints;
-                                        }
+                        // Use Bryntum's built-in combo selection dialog
+                        if (window.scheduler && window.scheduler.bryntum) {
+                            const { Combo, Popup } = window.scheduler.bryntum;
+                            
+                            // Prepare schedule items for the combo
+                            const scheduleItems = schedules.map((s, i) => ({
+                                id: i,
+                                text: `${s.name} - ${new Date(s.updatedAt).toLocaleDateString()} ${new Date(s.updatedAt).toLocaleTimeString()}`,
+                                schedule: s
+                            }));
+                            
+                            // Create a popup with a combo box
+                            const popup = new Popup({
+                                autoShow: true,
+                                centered: true,
+                                closable: true,
+                                modal: true,
+                                title: 'Select a schedule to load',
+                                width: 500,
+                                items: [
+                                    {
+                                        type: 'combo',
+                                        ref: 'scheduleCombo',
+                                        label: 'Schedule',
+                                        displayField: 'text',
+                                        valueField: 'id',
+                                        items: scheduleItems,
+                                        placeholder: 'Choose a schedule...',
+                                        style: 'margin: 20px'
                                     }
-                                    
-                                    // Store the schedule ID for future updates
-                                    window.currentScheduleId = selectedSchedule.id;
-                                    
-                                    // Zoom to fit the entire schedule in view
-                                    const events = window.scheduler.eventStore.records;
-                                    if (events && events.length > 0) {
-                                        // Find the earliest and latest dates in the schedule
-                                        let minDate = null;
-                                        let maxDate = null;
-                                        
-                                        events.forEach(event => {
-                                            if (!minDate || event.startDate < minDate) {
-                                                minDate = new Date(event.startDate);
-                                            }
-                                            if (!maxDate || event.endDate > maxDate) {
-                                                maxDate = new Date(event.endDate);
-                                            }
-                                        });
-                                        
-                                        if (minDate && maxDate) {
-                                            // Add some padding (1 day before and after)
-                                            minDate.setDate(minDate.getDate() - 1);
-                                            maxDate.setDate(maxDate.getDate() + 1);
+                                ],
+                                bbar: [
+                                    {
+                                        text: 'OK',
+                                        cls: 'b-blue',
+                                        onClick: async () => {
+                                            const combo = popup.widgetMap.scheduleCombo;
+                                            const selectedId = combo.value;
                                             
-                                            // Set the time span to show all events
-                                            window.scheduler.setTimeSpan(minDate, maxDate);
-                                            
-                                            // Adjust zoom level to fit the view
-                                            // Calculate the number of days to show
-                                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-                                            
-                                            // Set appropriate zoom level based on days
-                                            if (daysDiff <= 7) {
-                                                window.scheduler.zoomLevel = 10; // Hour view
-                                            } else if (daysDiff <= 14) {
-                                                window.scheduler.zoomLevel = 8; // Day view
-                                            } else if (daysDiff <= 30) {
-                                                window.scheduler.zoomLevel = 6; // Week view
-                                            } else {
-                                                window.scheduler.zoomLevel = 4; // Month view
+                                            if (selectedId !== null && selectedId !== undefined) {
+                                                const selectedItem = scheduleItems.find(item => item.id === selectedId);
+                                                if (selectedItem && selectedItem.schedule) {
+                                                    await loadSelectedSchedule(selectedItem.schedule);
+                                                }
                                             }
+                                            popup.close();
                                         }
+                                    },
+                                    {
+                                        text: 'Cancel',
+                                        onClick: () => popup.close()
                                     }
-                                    
-                                    // Update status
-                                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                                    updateStatus();
-                                    
-                                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                                ]
+                            });
+                            
+                            return;
+                        } else {
+                            // Fallback to prompt if Bryntum widgets not available
+                            const scheduleList = schedules.map((s, i) => 
+                                `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
+                            ).join('\n');
+                            
+                            const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
+                            
+                            if (selection) {
+                                const index = parseInt(selection) - 1;
+                                if (index >= 0 && index < schedules.length) {
+                                    await loadSelectedSchedule(schedules[index]);
                                 }
                             }
                         }
                     } else {
-                        // Fallback to localStorage
-                        const localSchedules = [];
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i);
-                            if (key && (key.startsWith('savedSchedule_') || key.startsWith('scheduleBackup_'))) {
-                                try {
-                                    const data = JSON.parse(localStorage.getItem(key));
-                                    localSchedules.push({ key, data });
-                                } catch (e) {}
+                        // Handle error or fallback to localStorage
+                        loadLocalSchedules();
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading schedules:', error);
+                    alert('Failed to load schedules. Please try again.');
+                }
+            };
+            
+            // Helper function to load a selected schedule
+            async function loadSelectedSchedule(selectedSchedule) {
+                // Load the schedule using Bryntum's loadInlineData method
+                if (window.scheduler && window.scheduler.project) {
+                    // Load the project data
+                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
+                    
+                    // Restore metadata if available
+                    if (selectedSchedule.metadata) {
+                        if (selectedSchedule.metadata.algorithm) {
+                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                        }
+                        if (selectedSchedule.metadata.constraints) {
+                            window.activeConstraints = selectedSchedule.metadata.constraints;
+                        }
+                    }
+                    
+                    // Store the schedule ID for future updates
+                    window.currentScheduleId = selectedSchedule.id;
+                    
+                    // Zoom to fit the entire schedule in view
+                    const events = window.scheduler.eventStore.records;
+                    if (events && events.length > 0) {
+                        // Find the earliest and latest dates in the schedule
+                        let minDate = null;
+                        let maxDate = null;
+                        
+                        events.forEach(event => {
+                            if (!minDate || event.startDate < minDate) {
+                                minDate = new Date(event.startDate);
+                            }
+                            if (!maxDate || event.endDate > maxDate) {
+                                maxDate = new Date(event.endDate);
+                            }
+                        });
+                        
+                        if (minDate && maxDate) {
+                            // Add some padding (1 day before and after)
+                            minDate.setDate(minDate.getDate() - 1);
+                            maxDate.setDate(maxDate.getDate() + 1);
+                            
+                            // Set the time span to show all events
+                            window.scheduler.setTimeSpan(minDate, maxDate);
+                            
+                            // Adjust zoom level to fit the view
+                            // Calculate the number of days to show
+                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+                            
+                            // Set appropriate zoom level based on days
+                            if (daysDiff <= 7) {
+                                window.scheduler.zoomLevel = 10; // Hour view
+                            } else if (daysDiff <= 14) {
+                                window.scheduler.zoomLevel = 8; // Day view
+                            } else if (daysDiff <= 30) {
+                                window.scheduler.zoomLevel = 6; // Week view
+                            } else {
+                                window.scheduler.zoomLevel = 4; // Month view
                             }
                         }
+                    }
+                    
+                    // Update status
+                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                    updateStatus();
+                    
+                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                }
+            }
+            
+            // Helper function to load local schedules from localStorage
+            async function loadLocalSchedules() {
+                try {
+                    // Fallback to localStorage
+                    const localSchedules = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('savedSchedule_') || key.startsWith('scheduleBackup_'))) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                localSchedules.push({ key, data });
+                            } catch (e) {}
+                        }
+                    }
+                    
+                    if (localSchedules.length > 0) {
+                        const scheduleList = localSchedules.map((s, i) => 
+                            `${i + 1}. ${s.data.name || 'Unnamed'} (Local)`
+                        ).join('\n');
                         
-                        if (localSchedules.length > 0) {
-                            const scheduleList = localSchedules.map((s, i) => 
-                                `${i + 1}. ${s.data.name || 'Unnamed'} (Local)`
-                            ).join('\n');
-                            
-                            const selection = prompt(`Select a local schedule to load:\n\n${scheduleList}\n\nEnter number:`);
-                            if (selection) {
-                                const index = parseInt(selection) - 1;
-                                if (index >= 0 && index < localSchedules.length) {
-                                    const selectedSchedule = localSchedules[index].data;
-                                    if (selectedSchedule.scheduleData || selectedSchedule.data) {
-                                        await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
+                        const selection = prompt(`Select a local schedule to load:\n\n${scheduleList}\n\nEnter number:`);
+                        if (selection) {
+                            const index = parseInt(selection) - 1;
+                            if (index >= 0 && index < localSchedules.length) {
+                                const selectedSchedule = localSchedules[index].data;
+                                if (selectedSchedule.scheduleData || selectedSchedule.data) {
+                                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
                                         
                                         // Zoom to fit the entire schedule in view
                                         const events = window.scheduler.eventStore.records;
@@ -5465,15 +5546,14 @@
                                     }
                                 }
                             }
-                        } else {
-                            alert('No saved schedules found');
-                        }
+                    } else {
+                        alert('No local schedules found');
                     }
                 } catch (error) {
-                    console.error('❌ Error loading schedule:', error);
-                    alert('Failed to load schedule. Please try again.');
+                    console.error('❌ Error loading local schedules:', error);
+                    alert('Failed to load local schedules. Please try again.');
                 }
-            };
+            }
             
             // Add functionality for Refresh button - simply reload the page
             document.getElementById('refreshSchedule').addEventListener('click', () => {
