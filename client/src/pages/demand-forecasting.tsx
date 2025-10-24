@@ -1196,7 +1196,14 @@ export default function DemandForecasting() {
         <div className="space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-bold">Overall Demand Forecast</h2>
+            <h2 className="text-2xl font-bold">
+              Overall Demand Forecast
+              {forecastMutation.data.overall?.usingDedicatedModel && (
+                <span className="ml-2 text-xs font-normal text-muted-foreground">
+                  (Aggregated Model)
+                </span>
+              )}
+            </h2>
             <div className="flex gap-2 text-sm">
               <button 
                 className={`px-3 py-1 border rounded transition-colors ${
