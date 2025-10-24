@@ -108,6 +108,15 @@ export default function DemandForecasting() {
   const [isTableExpanded, setIsTableExpanded] = useState<boolean>(false);
   const [itemSearchFilter, setItemSearchFilter] = useState<string>("");
   
+  // Training progress state
+  const [trainingProgress, setTrainingProgress] = useState<{
+    currentItem: number;
+    totalItems: number;
+    startTime: number;
+    estimatedRemainingTime: number;
+  } | null>(null);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  
   // Validation errors
   const [planningAreaError, setPlanningAreaError] = useState<boolean>(false);
   const [scenarioError, setScenarioError] = useState<boolean>(false);
@@ -226,29 +235,50 @@ export default function DemandForecasting() {
     modelType?: string;
   }, Error, void>({
     mutationFn: async () => {
-      const response = await fetch("/api/forecasting/train", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          schema: selectedTable?.schema,
-          table: selectedTable?.name,
-          dateColumn,
-          itemColumn,
-          quantityColumn,
-          selectedItems,  // Send all selected items, not just the first one
-          modelType,
-          hyperparameterTuning,
-          planningAreaColumn: planningAreaColumn || null,
-          selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
-          scenarioColumn: scenarioColumn || null,
-          selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
-        }),
+      // Create abort controller for cancellation
+      const controller = new AbortController();
+      setAbortController(controller);
+      
+      // Set initial progress
+      const startTime = Date.now();
+      setTrainingProgress({
+        currentItem: 0,
+        totalItems: selectedItems.length,
+        startTime,
+        estimatedRemainingTime: selectedItems.length * 2000, // Estimate 2 seconds per item
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Training failed');
+      
+      try {
+        const response = await fetch("/api/forecasting/train", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: controller.signal,
+          body: JSON.stringify({
+            schema: selectedTable?.schema,
+            table: selectedTable?.name,
+            dateColumn,
+            itemColumn,
+            quantityColumn,
+            selectedItems,  // Send all selected items, not just the first one
+            modelType,
+            hyperparameterTuning,
+            planningAreaColumn: planningAreaColumn || null,
+            selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
+            scenarioColumn: scenarioColumn || null,
+            selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
+          }),
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Training failed');
+        }
+        return await response.json();
+      } finally {
+        // Clean up progress and abort controller
+        setTrainingProgress(null);
+        setAbortController(null);
       }
-      return await response.json();
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
@@ -276,11 +306,20 @@ export default function DemandForecasting() {
       setTrainingMetrics(null);
       setItemsTrainingMetrics(null);
       setModelId(null);
-      toast({
-        title: "Training Failed",
-        description: error.message,
-        variant: "destructive",
-      });
+      
+      // Handle abort separately
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Training Stopped",
+          description: "Training was cancelled by user",
+        });
+      } else {
+        toast({
+          title: "Training Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
     },
   });
 
@@ -849,9 +888,21 @@ export default function DemandForecasting() {
                 )}
               </div>
               {selectedItems.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedItems.length} of {items.length} selected
-                </p>
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground">
+                    {selectedItems.length} of {items.length} selected
+                  </p>
+                  {selectedItems.length > 1000 && (
+                    <div className="flex items-start gap-2 p-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-md">
+                      <span className="text-orange-600 dark:text-orange-400">⚠️</span>
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        Warning: Training {selectedItems.length.toLocaleString()} items may take a very long time. 
+                        Consider selecting fewer items for better performance. 
+                        Estimated time: ~{Math.ceil(selectedItems.length * 2 / 60)} minutes.
+                      </p>
+                    </div>
+                  )}
+                </div>
               )}
               {itemError && (
                 <p className="text-sm text-red-500" data-testid="error-item">
@@ -1052,28 +1103,72 @@ export default function DemandForecasting() {
           )}
 
           {/* Action Buttons */}
-          <div className="flex gap-3">
-            <Button 
-              onClick={handleTrain} 
-              disabled={trainMutation.isPending || selectedItems.length === 0}
-              variant={isModelTrained ? "outline" : "default"}
-              className="w-full md:w-auto"
-              data-testid="button-train-model"
-            >
-              {trainMutation.isPending ? (
-                <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Training Model...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-4 h-4 mr-2" />
-                  {isModelTrained ? "Retrain Model" : "Train Model"}
-                </>
+          <div className="space-y-3">
+            {/* Progress display */}
+            {trainMutation.isPending && trainingProgress && (
+              <div className="p-3 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="font-medium">Training Progress</span>
+                  <span className="text-muted-foreground">
+                    {Math.min(Math.round((Date.now() - trainingProgress.startTime) / (trainingProgress.estimatedRemainingTime + (Date.now() - trainingProgress.startTime)) * 100), 99)}%
+                  </span>
+                </div>
+                <div className="w-full bg-background rounded-full h-2">
+                  <div 
+                    className="bg-primary h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${Math.min(Math.round((Date.now() - trainingProgress.startTime) / (trainingProgress.estimatedRemainingTime + (Date.now() - trainingProgress.startTime)) * 100), 99)}%` 
+                    }}
+                  />
+                </div>
+                <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <span>Processing {trainingProgress.totalItems} items</span>
+                  <span>
+                    Est. remaining: {Math.max(0, Math.ceil((trainingProgress.estimatedRemainingTime - (Date.now() - trainingProgress.startTime)) / 1000))}s
+                  </span>
+                </div>
+              </div>
+            )}
+            
+            {/* Action buttons */}
+            <div className="flex gap-3">
+              <Button 
+                onClick={handleTrain} 
+                disabled={trainMutation.isPending || selectedItems.length === 0}
+                variant={isModelTrained ? "outline" : "default"}
+                className="w-full md:w-auto"
+                data-testid="button-train-model"
+              >
+                {trainMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Training Model...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4 mr-2" />
+                    {isModelTrained ? "Retrain Model" : "Train Model"}
+                  </>
+                )}
+              </Button>
+              
+              {/* Stop button - only show during training */}
+              {trainMutation.isPending && abortController && (
+                <Button
+                  onClick={() => {
+                    abortController.abort();
+                    setAbortController(null);
+                    setTrainingProgress(null);
+                  }}
+                  variant="destructive"
+                  className="w-full md:w-auto"
+                  data-testid="button-stop-training"
+                >
+                  Stop Training
+                </Button>
               )}
-            </Button>
-
-            <Button 
+              
+              <Button 
               onClick={handleForecast} 
               disabled={forecastMutation.isPending || !isModelTrained || !modelId}
               className="w-full md:w-auto"
@@ -1091,6 +1186,7 @@ export default function DemandForecasting() {
                 </>
               )}
             </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
