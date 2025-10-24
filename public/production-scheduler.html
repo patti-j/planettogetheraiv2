@@ -4175,50 +4175,88 @@
                 
                 // CRITICAL FIX: Define global scheduling functions that were missing
                 // These functions are called from elsewhere but weren't defined
+                // Add flag to prevent re-entrance
+                let isScheduleASAPRunning = false;
+                
                 window.scheduleASAP = async function() {
-                    console.log('📅 Running ASAP scheduling...');
-                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
-                    const project = scheduler.project;
+                    // Prevent re-entrance if already running
+                    if (isScheduleASAPRunning) {
+                        console.warn('⚠️ scheduleASAP already in progress, skipping...');
+                        return;
+                    }
                     
-                    // First commit any pending changes to ensure data is ready
-                    await project.commitAsync();
+                    isScheduleASAPRunning = true;
                     
-                    // Enable calculation temporarily for this operation
-                    project.autoCalculate = true;
-                    project.schedulingDirection = 'forward';
-                    await project.propagate();
-                    
-                    // Commit the scheduled changes
-                    await project.commitAsync();
-                    
-                    // Disable auto-calculation again to prevent loops
-                    project.autoCalculate = false;
-                    
-                    console.log('✅ ASAP scheduling complete');
-                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    try {
+                        console.log('📅 Running ASAP scheduling...');
+                        await window.waitForSchedulerReady(); // Wait for operations to be loaded
+                        const project = scheduler.project;
+                        
+                        // Disable auto-calculation BEFORE making changes to prevent loops
+                        const wasAutoCalculate = project.autoCalculate;
+                        project.autoCalculate = false;
+                        
+                        // Set scheduling direction
+                        project.schedulingDirection = 'forward';
+                        
+                        // Manually trigger calculation once
+                        await project.propagate();
+                        
+                        // Commit the scheduled changes
+                        await project.commitAsync();
+                        
+                        // Restore previous auto-calculate state (should stay false)
+                        project.autoCalculate = wasAutoCalculate;
+                        
+                        console.log('✅ ASAP scheduling complete');
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    } catch (error) {
+                        console.error('❌ ASAP scheduling error:', error);
+                    } finally {
+                        isScheduleASAPRunning = false;
+                    }
                 };
                 
+                // Add flag to prevent re-entrance for ALAP
+                let isScheduleALAPRunning = false;
+                
                 window.scheduleALAP = async function() {
-                    console.log('📅 Running ALAP scheduling...');
-                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
-                    const project = scheduler.project;
+                    // Prevent re-entrance if already running
+                    if (isScheduleALAPRunning) {
+                        console.warn('⚠️ scheduleALAP already in progress, skipping...');
+                        return;
+                    }
                     
-                    // First commit any pending changes to ensure data is ready
-                    await project.commitAsync();
+                    isScheduleALAPRunning = true;
                     
-                    // Enable calculation temporarily for this operation
-                    project.autoCalculate = true;
-                    project.schedulingDirection = 'backward';
-                    await project.propagate();
-                    
-                    // Commit the scheduled changes
-                    await project.commitAsync();
-                    
-                    // Disable auto-calculation again to prevent loops
-                    project.autoCalculate = false;
-                    
-                    console.log('✅ ALAP scheduling complete');
-                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    try {
+                        console.log('📅 Running ALAP scheduling...');
+                        await window.waitForSchedulerReady(); // Wait for operations to be loaded
+                        const project = scheduler.project;
+                        
+                        // Disable auto-calculation BEFORE making changes to prevent loops
+                        const wasAutoCalculate = project.autoCalculate;
+                        project.autoCalculate = false;
+                        
+                        // Set scheduling direction
+                        project.schedulingDirection = 'backward';
+                        
+                        // Manually trigger calculation once
+                        await project.propagate();
+                        
+                        // Commit the scheduled changes
+                        await project.commitAsync();
+                        
+                        // Restore previous auto-calculate state (should stay false)
+                        project.autoCalculate = wasAutoCalculate;
+                        
+                        console.log('✅ ALAP scheduling complete');
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    } catch (error) {
+                        console.error('❌ ALAP scheduling error:', error);
+                    } finally {
+                        isScheduleALAPRunning = false;
+                    }
                 };
                 
                 window.optimizeSchedule = async function(algorithmId) {
