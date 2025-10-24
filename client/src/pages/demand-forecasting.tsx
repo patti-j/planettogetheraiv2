@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
-import { Loader2, Sparkles, Database, TrendingUp, Search } from "lucide-react";
+import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Table {
@@ -93,9 +93,20 @@ export default function DemandForecasting() {
       rmse?: number;
       mae?: number;
       accuracy?: number;
+      success?: boolean;
+      error?: string;
+      metrics?: {
+        mape?: number;
+        rmse?: number;
+        mae?: number;
+      };
     }
   } | null>(null);
   const [modelId, setModelId] = useState<string | null>(null);
+  
+  // Training results table state
+  const [isTableExpanded, setIsTableExpanded] = useState<boolean>(false);
+  const [itemSearchFilter, setItemSearchFilter] = useState<string>("");
   
   // Validation errors
   const [planningAreaError, setPlanningAreaError] = useState<boolean>(false);
@@ -868,80 +879,136 @@ export default function DemandForecasting() {
           {/* Training Metrics Display */}
           {itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
             <div className="bg-muted p-4 rounded-lg space-y-3">
-              <div className="text-sm font-medium">Training Results per Item ({modelType})</div>
-              
-              {/* Summary Statistics */}
-              {trainingMetrics && (
-                <div className="mb-3 p-3 bg-background rounded border">
-                  <div className="text-xs font-medium text-muted-foreground mb-2">Overall Summary</div>
-                  <div className="flex gap-4 flex-wrap">
-                    {trainingMetrics.mape !== undefined && (
-                      <div>
-                        <span className="text-xs text-muted-foreground">Avg MAPE: </span>
-                        <span className="font-semibold">{trainingMetrics.mape.toFixed(2)}%</span>
-                      </div>
+              {/* Header with toggle button and summary */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="text-sm font-medium">Training Results per Item ({modelType})</div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsTableExpanded(!isTableExpanded)}
+                    className="gap-2"
+                    data-testid="button-toggle-training-results"
+                  >
+                    {isTableExpanded ? (
+                      <>
+                        <ChevronUp className="h-4 w-4" />
+                        Hide Details
+                      </>
+                    ) : (
+                      <>
+                        <ChevronDown className="h-4 w-4" />
+                        Show Details
+                      </>
                     )}
-                    {trainingMetrics.rmse !== undefined && (
+                  </Button>
+                </div>
+                
+                {/* Summary Statistics - Always visible */}
+                {trainingMetrics && (
+                  <div className="p-3 bg-background rounded border">
+                    <div className="text-xs font-medium text-muted-foreground mb-2">Overall Summary</div>
+                    <div className="flex gap-4 flex-wrap">
+                      {trainingMetrics.mape !== undefined && (
+                        <div>
+                          <span className="text-xs text-muted-foreground">Avg MAPE: </span>
+                          <span className="font-semibold">{trainingMetrics.mape.toFixed(2)}%</span>
+                        </div>
+                      )}
+                      {trainingMetrics.rmse !== undefined && (
+                        <div>
+                          <span className="text-xs text-muted-foreground">Avg RMSE: </span>
+                          <span className="font-semibold">{trainingMetrics.rmse.toFixed(2)}</span>
+                        </div>
+                      )}
                       <div>
-                        <span className="text-xs text-muted-foreground">Avg RMSE: </span>
-                        <span className="font-semibold">{trainingMetrics.rmse.toFixed(2)}</span>
+                        <span className="text-xs text-muted-foreground">Total Items: </span>
+                        <span className="font-semibold">{Object.keys(itemsTrainingMetrics).length}</span>
                       </div>
-                    )}
-                    <div>
-                      <span className="text-xs text-muted-foreground">Total Items: </span>
-                      <span className="font-semibold">{Object.keys(itemsTrainingMetrics).length}</span>
                     </div>
+                  </div>
+                )}
+              </div>
+              
+              {/* Collapsible Table Section */}
+              {isTableExpanded && (
+                <div className="space-y-3">
+                  {/* Search Box */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      type="text"
+                      placeholder="Search items..."
+                      value={itemSearchFilter}
+                      onChange={(e) => setItemSearchFilter(e.target.value)}
+                      className="pl-9"
+                      data-testid="input-search-training-results"
+                    />
+                  </div>
+                  
+                  {/* Individual Item Metrics Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b">
+                          <th className="text-left p-2">Item</th>
+                          <th className="text-right p-2">MAPE (%)</th>
+                          <th className="text-right p-2">RMSE</th>
+                          <th className="text-right p-2">MAE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Object.entries(itemsTrainingMetrics)
+                          .filter(([itemName]) => 
+                            itemName.toLowerCase().includes(itemSearchFilter.toLowerCase())
+                          )
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([itemName, itemResult]) => {
+                            // Check if this item failed to train
+                            if (itemResult.success === false) {
+                              return (
+                                <tr key={itemName} className="border-b hover:bg-muted/50">
+                                  <td className="p-2 font-medium">{itemName}</td>
+                                  <td colSpan={3} className="text-center p-2 text-muted-foreground">
+                                    Failed: {itemResult.error || 'Training error'}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            
+                            // Handle both direct metrics and nested metrics structure
+                            const metrics = itemResult.metrics || itemResult;
+                            return (
+                              <tr key={itemName} className="border-b hover:bg-muted/50">
+                                <td className="p-2 font-medium">{itemName}</td>
+                                <td className="text-right p-2">
+                                  {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
+                                </td>
+                                <td className="text-right p-2">
+                                  {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
+                                </td>
+                                <td className="text-right p-2">
+                                  {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                    
+                    {/* No results message */}
+                    {Object.entries(itemsTrainingMetrics)
+                      .filter(([itemName]) => 
+                        itemName.toLowerCase().includes(itemSearchFilter.toLowerCase())
+                      ).length === 0 && (
+                      <div className="text-center text-muted-foreground py-4">
+                        No items found matching "{itemSearchFilter}"
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-              
-              {/* Individual Item Metrics Table */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-2">Item</th>
-                      <th className="text-right p-2">MAPE (%)</th>
-                      <th className="text-right p-2">RMSE</th>
-                      <th className="text-right p-2">MAE</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Object.entries(itemsTrainingMetrics)
-                      .sort(([a], [b]) => a.localeCompare(b))
-                      .map(([itemName, itemResult]) => {
-                        // Check if this item failed to train
-                        if (itemResult.success === false) {
-                          return (
-                            <tr key={itemName} className="border-b hover:bg-muted/50">
-                              <td className="p-2 font-medium">{itemName}</td>
-                              <td colSpan={3} className="text-center p-2 text-muted-foreground">
-                                Failed: {itemResult.error || 'Training error'}
-                              </td>
-                            </tr>
-                          );
-                        }
-                        
-                        // Handle both direct metrics and nested metrics structure
-                        const metrics = itemResult.metrics || itemResult;
-                        return (
-                          <tr key={itemName} className="border-b hover:bg-muted/50">
-                            <td className="p-2 font-medium">{itemName}</td>
-                            <td className="text-right p-2">
-                              {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
-                            </td>
-                            <td className="text-right p-2">
-                              {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
-                            </td>
-                            <td className="text-right p-2">
-                              {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
               
               {/* Display Tuned Parameters when hyperparameter tuning is enabled */}
               {hyperparameterTuning && (modelType === "ARIMA" || modelType === "Prophet") && trainingMetrics && (
