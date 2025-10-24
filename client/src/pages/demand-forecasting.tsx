@@ -76,6 +76,8 @@ export default function DemandForecasting() {
   
   // Filter state for forecast visualization
   const [selectedForecastItem, setSelectedForecastItem] = useState<string>("Overall");
+  const [forecastMode, setForecastMode] = useState<"separate" | "overall">("separate");
+  const [itemSearchQuery, setItemSearchQuery] = useState<string>("");
   
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
@@ -925,6 +927,32 @@ export default function DemandForecasting() {
                 data-testid="input-forecast-days"
               />
             </div>
+
+            {/* Forecast Mode */}
+            <div className="space-y-2">
+              <Label>Forecast Mode</Label>
+              <Select 
+                value={forecastMode} 
+                onValueChange={(value) => setForecastMode(value as "separate" | "overall")}
+              >
+                <SelectTrigger data-testid="select-forecast-mode">
+                  <SelectValue placeholder="Select forecast mode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="separate">
+                    Separate forecast for each item
+                  </SelectItem>
+                  <SelectItem value="overall">
+                    One overall forecast
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {forecastMode === "separate" 
+                  ? "Each selected item will have its own forecast" 
+                  : "All selected items will be aggregated into one forecast"}
+              </p>
+            </div>
           </div>
 
           {/* Training Metrics Display */}
@@ -933,27 +961,33 @@ export default function DemandForecasting() {
               {/* Header with toggle button and summary */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">Training Results per Item ({modelType})</div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setIsTableExpanded(!isTableExpanded)}
-                    className="gap-2"
-                    data-testid="button-toggle-training-results"
-                  >
-                    {isTableExpanded ? (
-                      <>
-                        <ChevronUp className="h-4 w-4" />
-                        Hide Details
-                      </>
-                    ) : (
-                      <>
-                        <ChevronDown className="h-4 w-4" />
-                        Show Details
-                      </>
-                    )}
-                  </Button>
+                  <div className="text-sm font-medium">
+                    {forecastMode === "overall" 
+                      ? `Overall Training Results (${modelType})` 
+                      : `Training Results per Item (${modelType})`}
+                  </div>
+                  {forecastMode === "separate" && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsTableExpanded(!isTableExpanded)}
+                      className="gap-2"
+                      data-testid="button-toggle-training-results"
+                    >
+                      {isTableExpanded ? (
+                        <>
+                          <ChevronUp className="h-4 w-4" />
+                          Hide Details
+                        </>
+                      ) : (
+                        <>
+                          <ChevronDown className="h-4 w-4" />
+                          Show Details
+                        </>
+                      )}
+                    </Button>
+                  )}
                 </div>
                 
                 {/* Summary Statistics - Always visible */}
@@ -982,8 +1016,8 @@ export default function DemandForecasting() {
                 )}
               </div>
               
-              {/* Collapsible Table Section */}
-              {isTableExpanded && (
+              {/* Collapsible Table Section - Only shown in separate mode */}
+              {isTableExpanded && forecastMode === "separate" && (
                 <div className="space-y-3">
                   {/* Search Box */}
                   <div className="relative">
@@ -1407,6 +1441,15 @@ export default function DemandForecasting() {
                         backgroundColor: 'rgba(255, 255, 255, 0.95)', 
                         border: '1px solid #E5E7EB',
                         borderRadius: '6px'
+                      }}
+                      labelFormatter={(timestamp: number) => {
+                        // Format the timestamp to a readable date
+                        const date = new Date(timestamp);
+                        return date.toLocaleDateString('en-US', {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric'
+                        });
                       }}
                       formatter={(value: any) => value ? Math.round(value).toLocaleString() : '—'}
                     />
