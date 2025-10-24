@@ -1,0 +1,14 @@
+{
+  "model_type": "Random Forest",
+  "forecast_days": 30,
+  "item": "OVERALL",
+  "cache_key": "f50e9ef48c914630",
+  "cached_at": "2025-10-24T20:52:53.536742",
+  "metrics": {
+    "mape": 14.617701552307041,
+    "rmse": 198.90866790863882,
+    "accuracy": 85.38229844769296
+  },
+  "training_points": 21,
+  "hyperparameter_tuning": false
+}
