@@ -1591,11 +1591,12 @@
                 let fetchedDependencies = []; // Store dependencies at a higher scope
                 
                 try {
-                    // Fetch resources, PT operations, and dependencies from the backend APIs
-                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
+                    // Fetch resources and PT operations from the backend APIs
+                    // 🔄 SIMPLIFIED: No longer fetching dependencies - using sequence numbers instead
+                    const [resourcesResponse, operationsResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
-                        fetch('/api/pt-dependencies'),
+                        // fetch('/api/pt-dependencies'), // REMOVED - using sequence numbers
                         fetch('/api/resources-with-capabilities')
                     ]);
                     
@@ -1687,7 +1688,8 @@
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
                     
-                    // Process dependencies
+                    // 🔄 SIMPLIFIED: Dependencies processing removed - using sequence numbers instead
+                    /*
                     if (dependenciesResponse && dependenciesResponse.ok) {
                         const deps = await dependenciesResponse.json();
                         // CRITICAL FIX: API returns 'from' and 'to' directly, not 'fromEvent' and 'toEvent'
@@ -1711,6 +1713,7 @@
                     } else {
                         console.warn('Failed to fetch dependencies, using empty array');
                     }
+                    */
                     
                     // Process resource capabilities
                     if (capabilitiesResponse && capabilitiesResponse.ok) {
@@ -4206,11 +4209,12 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
+                    // 🔄 SIMPLIFIED: No dependencies needed - using sequence numbers instead
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: dependencies
+                        dependenciesData: [] // Empty - we use sequence numbers for ordering
                     });
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
