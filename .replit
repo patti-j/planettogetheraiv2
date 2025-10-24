@@ -119,10 +119,6 @@ externalPort = 8081
 localPort = 45281
 externalPort = 4200
 
-[[ports]]
-localPort = 8000
-externalPort = 8000
-
 [agent]
 integrations = ["javascript_openai:1.0.0", "javascript_database:1.0.0"]
 expertMode = true

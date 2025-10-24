@@ -272,7 +272,12 @@ router.post('/train', async (req, res) => {
       body: JSON.stringify({
         modelType: modelType || 'Random Forest',
         historicalData,
-        modelId
+        modelId,
+        planningAreas: selectedPlanningAreas || [],
+        scenarioNames: selectedScenarios || [],
+        item: selectedItem,
+        forecastDays: 30,
+        hyperparameterTuning: false
       })
     });
 
@@ -375,7 +380,12 @@ router.post('/forecast', async (req, res) => {
       body: JSON.stringify({
         modelId, // Use the exact modelId from training
         forecastDays: forecastDays || 30,
-        historicalData
+        historicalData,
+        modelType: modelType || 'Random Forest',
+        planningAreas: selectedPlanningAreas || [],
+        scenarioNames: selectedScenarios || [],
+        item: selectedItem,
+        hyperparameterTuning: false
       })
     });
 
