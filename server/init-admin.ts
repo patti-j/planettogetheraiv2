@@ -13,12 +13,17 @@ export async function initializeAdminUser() {
     if (existingUsers.length === 0) {
       console.log('📝 No users found. Creating default admin user...');
       
+      // Get admin credentials from environment variables or use defaults
+      const adminUsername = process.env.ADMIN_USERNAME || 'admin';
+      const adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+      const adminEmail = process.env.ADMIN_EMAIL || 'admin@planettogether.com';
+      
       // Create default admin user
-      const hashedPassword = await bcryptjs.hash('Admin@2024!', 10);
+      const hashedPassword = await bcryptjs.hash(adminPassword, 10);
       
       const [adminUser] = await db.insert(users).values({
-        username: 'admin',
-        email: 'admin@planettogether.com',
+        username: adminUsername,
+        email: adminEmail,
         passwordHash: hashedPassword,
         firstName: 'Admin',
         lastName: 'User',
@@ -55,8 +60,8 @@ export async function initializeAdminUser() {
       console.log('');
       console.log('═══════════════════════════════════════════');
       console.log('📌 DEFAULT ADMIN CREDENTIALS:');
-      console.log('   Username: admin');
-      console.log('   Password: Admin@2024!');
+      console.log(`   Username: ${adminUsername}`);
+      console.log(`   Password: ${adminPassword}`);
       console.log('═══════════════════════════════════════════');
       console.log('');
       console.log('⚠️  IMPORTANT: Change this password after first login!');
