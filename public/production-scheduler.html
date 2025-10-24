@@ -3545,6 +3545,15 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
+                    // 🔧 CRITICAL: Suspend validation and auto-resolve conflicts during ALAP
+                    const originalAutoSync = project.autoSync;
+                    const originalValidateConstraintInterval = project.validateConstraintInterval;
+                    
+                    project.autoSync = false; // Prevent automatic syncing during changes
+                    project.validateConstraintInterval = false; // Disable constraint validation during scheduling
+                    
+                    console.log('⏸️ Suspended conflict validation for ALAP scheduling');
+                    
                     // Guard
                     const allEvents = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     if (!allEvents.length) {
@@ -3831,6 +3840,11 @@
                     // Restore to Forward for normal operation
                     project.direction = 'Forward';
                     project.schedulingDirection = 'forward';
+                    
+                    // 🔧 CRITICAL: Restore validation settings
+                    project.autoSync = originalAutoSync;
+                    project.validateConstraintInterval = originalValidateConstraintInterval;
+                    console.log('▶️ Restored conflict validation settings');
                     
                     console.log('✅ ALAP complete (backward cascade from Need-By dates). Verifying overlaps…');
                     
