@@ -1487,13 +1487,9 @@
                 await project.commitAsync();
                 await project.propagate();
                 
-                // CRITICAL FIX: Run ASAP scheduling to show operations after filter change
-                console.log('📅 [Planning Area Filter] Running ASAP scheduling to display operations...');
-                if (window.asapScheduling) {
-                    await window.asapScheduling();
-                } else {
-                    console.error('❌ ASAP scheduling function not available!');
-                }
+                // REMOVED: Automatic ASAP scheduling that was overwriting user's ALAP dates
+                // The filter should only filter resources, not reschedule operations
+                console.log('✅ [Planning Area Filter] Filter applied without rescheduling');
                 
                 // Apply zoom to fit after filtering AND scheduling
                 setTimeout(() => {
@@ -3457,8 +3453,8 @@
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
-                        console.log('  ✅ No overlaps detected - saving schedule...');
-                        await saveSchedule();
+                        console.log('  ✅ No overlaps detected - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.error('  ❌ VERIFICATION FAILED: Overlaps detected after ASAP!');
                         
@@ -3491,8 +3487,8 @@
                         
                         // Check again after repair
                         if (assertNoOverlaps(scheduler)) {
-                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
-                            await saveSchedule();
+                            console.log('  ✅ Overlaps successfully repaired - schedule ready to save');
+                            // REMOVED automatic save - user must click Save button
                         } else {
                             console.error('  ❌ Failed to repair all overlaps');
                         }
@@ -3790,16 +3786,17 @@
                     
                     console.log('✅ ALAP complete (backward cascade from Need-By dates). Verifying overlaps…');
                     
-                    // Optional assertion you already use
+                    // Verify overlaps but don't save automatically
                     if (typeof assertNoOverlaps === 'function' && assertNoOverlaps(scheduler)) {
-                        await saveSchedule?.();
+                        console.log('  ✅ No overlaps detected - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.error('❌ Overlap verification failed after ALAP.');
                         
                         // Check again after repair
                         if (assertNoOverlaps(scheduler)) {
-                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
-                            await saveSchedule();
+                            console.log('  ✅ Overlaps successfully repaired - schedule ready to save');
+                            // REMOVED automatic save - user must click Save button
                         } else {
                             console.error('  ❌ Failed to repair all overlaps');
                         }
@@ -3849,8 +3846,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Critical Path Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Critical Path Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Critical Path FAILED: ${overlapsFound} overlaps`);
                     }
@@ -3949,8 +3946,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Level Resources Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Level Resources Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Level Resources FAILED: ${overlapsFound} overlaps`);
                     }
@@ -4062,8 +4059,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Drum Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Drum Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Drum FAILED: ${overlapsFound} overlaps`);
                     }
