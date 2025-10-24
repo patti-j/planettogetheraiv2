@@ -121,378 +121,284 @@ export default function DemandForecasting() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // Validation errors
-  const [planningAreaError, setPlanningAreaError] = useState<boolean>(false);
-  const [scenarioError, setScenarioError] = useState<boolean>(false);
-  const [itemError, setItemError] = useState<boolean>(false);
-
-  // Fetch available tables
-  const { data: tables, isLoading: tablesLoading } = useQuery<Table[]>({
-    queryKey: ["/api/forecasting/tables"],
-    queryFn: async () => {
-      const response = await fetch("/api/forecasting/tables");
-      if (!response.ok) throw new Error("Failed to fetch tables");
-      return response.json();
-    },
-  });
-
-  // Fetch columns for selected table
-  const { data: columns } = useQuery<Column[]>({
-    queryKey: ["/api/forecasting/columns", selectedTable?.schema, selectedTable?.name],
-    enabled: !!selectedTable,
-    queryFn: async () => {
-      if (!selectedTable) return [];
-      const response = await fetch(`/api/forecasting/columns/${selectedTable.schema}/${selectedTable.name}`);
-      if (!response.ok) throw new Error("Failed to fetch columns");
-      return response.json();
-    },
-  });
-
-  // Fetch planning area and scenario combinations
-  const { data: planningScenarioCombinations } = useQuery<Array<{ planningArea: string; scenario: string }>>({
-    queryKey: ["/api/forecasting/planning-scenario-combinations", selectedTable?.schema, selectedTable?.name],
-    enabled: !!selectedTable,
-    queryFn: async () => {
-      if (!selectedTable) return [];
-      const response = await fetch(`/api/forecasting/planning-scenario-combinations/${selectedTable.schema}/${selectedTable.name}`);
-      if (!response.ok) throw new Error("Failed to fetch planning-scenario combinations");
-      return response.json();
-    },
-  });
-
-  // Extract unique planning areas and scenarios from combinations
-  const planningAreas = planningScenarioCombinations 
-    ? Array.from(new Set(planningScenarioCombinations.map(c => c.planningArea))).sort()
-    : [];
+  const [validationErrors, setValidationErrors] = useState<{
+    table?: string;
+    dateColumn?: string;
+    itemColumn?: string;
+    quantityColumn?: string;
+    planningAreas?: string;
+    scenarios?: string;
+    items?: string;
+  }>({});
   
-  const scenarios = planningScenarioCombinations
-    ? Array.from(new Set(planningScenarioCombinations.map(c => c.scenario))).sort()
-    : [];
-
-  // Filter scenarios based on selected planning areas
-  const filteredScenarios = selectedPlanningAreas.length > 0
-    ? Array.from(new Set(
-        planningScenarioCombinations
-          ?.filter(c => selectedPlanningAreas.includes(c.planningArea))
-          .map(c => c.scenario)
-      )).sort()
-    : scenarios;
-
-  // Filter planning areas based on selected scenarios
-  const filteredPlanningAreas = selectedScenarios.length > 0
-    ? Array.from(new Set(
-        planningScenarioCombinations
-          ?.filter(c => selectedScenarios.includes(c.scenario))
-          .map(c => c.planningArea)
-      )).sort()
-    : planningAreas;
-
-  // Fetch items for selected item column (filtered by planning areas and scenarios)
-  const { data: items } = useQuery<string[]>({
-    queryKey: ["/api/forecasting/items", selectedTable?.schema, selectedTable?.name, itemColumn, selectedPlanningAreas, selectedScenarios],
-    enabled: !!selectedTable && !!itemColumn,
-    queryFn: async () => {
-      if (!selectedTable || !itemColumn) return [];
-      
-      // Build query parameters for filtering
-      const params = new URLSearchParams();
-      if (selectedPlanningAreas.length > 0) {
-        params.set('planningAreas', selectedPlanningAreas.join(','));
-      }
-      if (selectedScenarios.length > 0) {
-        params.set('scenarios', selectedScenarios.join(','));
-      }
-      
-      const queryString = params.toString();
-      const url = `/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}${queryString ? `?${queryString}` : ''}`;
-      
-      const response = await fetch(url);
-      if (!response.ok) throw new Error("Failed to fetch items");
-      return response.json();
-    },
+  // Fetch SQL Server tables
+  const { data: tables, isLoading: isLoadingTables } = useQuery({
+    queryKey: ["/api/demand-forecast/tables"],
+    enabled: true,
   });
 
-  // Train model mutation - updated to handle multiple items
-  const trainMutation = useMutation<{ 
-    overallMetrics?: { 
-      accuracy?: number; 
-      mape?: number; 
-      rmse?: number;
-      order?: any;
-      seasonal_order?: any;
-      [key: string]: any;
-    };
-    itemsResults?: {
-      [itemName: string]: {
-        success: boolean;
-        metrics?: {
-          mape?: number;
-          rmse?: number;
-          accuracy?: number;
-        };
-        error?: string;
-      }
-    };
-    trainedItems?: number;
-    trainedItemNames?: string[];
-    modelId?: string; 
-    modelType?: string;
-  }, Error, void>({
-    mutationFn: async () => {
-      // Create abort controller for cancellation
+  // Fetch columns when table is selected
+  const { data: columns, isLoading: isLoadingColumns } = useQuery({
+    queryKey: selectedTable 
+      ? [`/api/demand-forecast/columns`, selectedTable.schema, selectedTable.name]
+      : [],
+    enabled: !!selectedTable,
+  });
+
+  // Fetch unique values for filters
+  const { data: planningAreas } = useQuery({
+    queryKey: selectedTable && planningAreaColumn
+      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, planningAreaColumn]
+      : [],
+    enabled: !!selectedTable && !!planningAreaColumn,
+  });
+
+  const { data: scenarios } = useQuery({
+    queryKey: selectedTable && scenarioColumn
+      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, scenarioColumn]
+      : [],
+    enabled: !!selectedTable && !!scenarioColumn,
+  });
+
+  const { data: items } = useQuery({
+    queryKey: selectedTable && itemColumn
+      ? [`/api/demand-forecast/unique-values`, selectedTable.schema, selectedTable.name, itemColumn, {
+        filters: {
+          ...(selectedPlanningAreas.length > 0 && { [planningAreaColumn]: selectedPlanningAreas }),
+          ...(selectedScenarios.length > 0 && { [scenarioColumn]: selectedScenarios })
+        }
+      }]
+      : [],
+    enabled: !!selectedTable && !!itemColumn,
+  });
+  
+  const validateForm = () => {
+    const errors: typeof validationErrors = {};
+    
+    if (!selectedTable) errors.table = "Please select a table";
+    if (!dateColumn) errors.dateColumn = "Please select a date column";
+    if (!itemColumn) errors.itemColumn = "Please select an item column";
+    if (!quantityColumn) errors.quantityColumn = "Please select a quantity column";
+    
+    // Only require items selection for "separate" mode
+    if (forecastMode === "separate" && selectedItems.length === 0) {
+      errors.items = "Please select at least one item";
+    }
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  // Train model mutation
+  const trainMutation = useMutation({
+    mutationFn: async (data: any) => {
       const controller = new AbortController();
       setAbortController(controller);
       
-      // Set initial progress
-      const startTime = Date.now();
-      setTrainingProgress({
-        currentItem: 0,
-        totalItems: selectedItems.length,
-        startTime,
-        estimatedRemainingTime: selectedItems.length * 2000, // Estimate 2 seconds per item
+      const response = await fetch("/api/demand-forecast/train", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+        signal: controller.signal
       });
       
-      try {
-        const response = await fetch("/api/forecasting/train", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            schema: selectedTable?.schema,
-            table: selectedTable?.name,
-            dateColumn,
-            itemColumn,
-            quantityColumn,
-            selectedItems,  // Send all selected items, not just the first one
-            modelType,
-            hyperparameterTuning,
-            planningAreaColumn: planningAreaColumn || null,
-            selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
-            scenarioColumn: scenarioColumn || null,
-            selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
-          }),
-        });
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Training failed');
-        }
-        return await response.json();
-      } finally {
-        // Clean up progress and abort controller
-        setTrainingProgress(null);
-        setAbortController(null);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Training failed");
       }
+      
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      
+      let allMetrics: any = {};
+      let finalModelId = null;
+      
+      while (reader) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim());
+        
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              
+              if (data.type === 'progress') {
+                setTrainingProgress({
+                  currentItem: data.currentItem,
+                  totalItems: data.totalItems,
+                  startTime: data.startTime,
+                  estimatedRemainingTime: data.estimatedRemainingTime
+                });
+              } else if (data.type === 'model_result') {
+                allMetrics[data.itemName] = data.metrics;
+              } else if (data.type === 'complete') {
+                finalModelId = data.model_id;
+                if (data.overall_metrics) {
+                  allMetrics['Overall'] = data.overall_metrics;
+                }
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data:', e);
+            }
+          }
+        }
+      }
+      
+      setAbortController(null);
+      setTrainingProgress(null);
+      
+      return { 
+        model_id: finalModelId, 
+        metrics: allMetrics
+      };
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
-      setTrainingMetrics(data.overallMetrics || data.metrics);
-      setItemsTrainingMetrics(data.itemsResults || null);
-      if (data.modelId) {
-        setModelId(data.modelId);
+      setModelId(data.model_id);
+      
+      // Store metrics based on forecast mode
+      if (forecastMode === "overall") {
+        // Only store overall metrics
+        setTrainingMetrics(data.metrics?.Overall || {});
+        setItemsTrainingMetrics(null);
+      } else {
+        // Store both overall and item-specific metrics
+        const { Overall: overallMetrics, ...itemMetrics } = data.metrics || {};
+        setTrainingMetrics(overallMetrics || {});
+        setItemsTrainingMetrics(itemMetrics || {});
       }
       
-      // Show success message with details about trained items
-      if (data.trainedItems && data.trainedItemNames) {
-        toast({
-          title: "Models Trained Successfully",
-          description: `Trained ${data.trainedItems} models for items: ${data.trainedItemNames.join(', ')}. Average MAPE: ${data.overallMetrics?.mape?.toFixed(2)}%`,
-        });
-      } else {
-        toast({
-          title: "Model Trained Successfully",
-          description: `${data.modelType || modelType} model trained with MAPE: ${data.overallMetrics?.mape?.toFixed(2) || 'N/A'}%`,
-        });
-      }
+      toast({
+        title: "Model Training Complete",
+        description: forecastMode === "overall" 
+          ? "Overall forecast model trained successfully"
+          : `Successfully trained models for ${Object.keys(data.metrics || {}).length - 1} items plus overall`,
+      });
     },
-    onError: (error) => {
-      setIsModelTrained(false);
-      setTrainingMetrics(null);
-      setItemsTrainingMetrics(null);
-      setModelId(null);
-      
-      // Handle abort separately
-      if (error.name === 'AbortError') {
-        toast({
-          title: "Training Stopped",
-          description: "Training was cancelled by user",
-        });
-      } else {
+    onError: (error: any) => {
+      if (error.name !== 'AbortError') {
         toast({
           title: "Training Failed",
           description: error.message,
           variant: "destructive",
         });
       }
+      setTrainingProgress(null);
+      setAbortController(null);
     },
   });
 
-  // Forecast mutation - updated to handle multiple items
-  const forecastMutation = useMutation<ForecastResult, Error, void>({
-    mutationFn: async () => {
-      const response = await fetch("/api/forecasting/forecast", {
+  // Generate forecast mutation  
+  const forecastMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await apiRequest("/api/demand-forecast/forecast", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          schema: selectedTable?.schema,
-          table: selectedTable?.name,
-          dateColumn,
-          itemColumn,
-          quantityColumn,
-          selectedItems,  // Send all selected items
-          forecastDays,
-          modelType,
-          modelId: modelId || undefined, // Send the stored modelId from training
-          planningAreaColumn: planningAreaColumn || null,
-          selectedPlanningAreas: selectedPlanningAreas.length > 0 ? selectedPlanningAreas : null,
-          scenarioColumn: scenarioColumn || null,
-          selectedScenarios: selectedScenarios.length > 0 ? selectedScenarios : null,
-        }),
+        body: JSON.stringify(data),
       });
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Forecast failed');
-      }
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
-      // Update the selected forecast item to "Overall" by default
-      setSelectedForecastItem("Overall");
-      
-      const itemCount = data.forecastedItemNames?.length || 0;
-      toast({
-        title: "Forecast Complete",
-        description: `Generated ${forecastDays}-day forecast for ${itemCount} item(s) successfully`,
-      });
-      // Invalidate relevant queries
-      queryClient.invalidateQueries({ queryKey: ["/api/forecasting"] });
+      if (data.success) {
+        toast({
+          title: "Forecast Generated",
+          description: "Your demand forecast has been generated successfully.",
+        });
+        
+        // Update selected forecast item to show the first available item
+        if (data.forecastedItemNames && data.forecastedItemNames.length > 0) {
+          setSelectedForecastItem("Overall");
+        }
+      }
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast({
-        title: "Forecast Failed",
-        description: error.message,
+        title: "Forecast Failed", 
+        description: error.message || "Failed to generate forecast",
         variant: "destructive",
       });
     },
   });
 
-  const handleTrain = () => {
-    if (!selectedTable || !dateColumn || !itemColumn || !quantityColumn) {
+  const handleTrain = async () => {
+    if (!validateForm()) {
       toast({
-        title: "Missing Configuration",
-        description: "Please select all required fields",
+        title: "Validation Error",
+        description: "Please fill in all required fields",
         variant: "destructive",
       });
       return;
     }
     
-    // Clear all errors first
-    setPlanningAreaError(false);
-    setScenarioError(false);
-    setItemError(false);
+    // Warning for large selections
+    const itemCount = forecastMode === "overall" ? 
+      (items?.length || 0) : selectedItems.length;
     
-    // Validate required fields
-    let hasError = false;
-    
-    if (selectedPlanningAreas.length === 0) {
-      setPlanningAreaError(true);
-      hasError = true;
+    if (itemCount > 1000) {
+      const proceed = window.confirm(
+        `You are about to train models for ${itemCount} items. This may take a significant amount of time. Do you want to proceed?`
+      );
+      if (!proceed) return;
     }
     
-    if (selectedScenarios.length === 0) {
-      setScenarioError(true);
-      hasError = true;
-    }
-    
-    if (selectedItems.length === 0) {
-      setItemError(true);
-      hasError = true;
-    }
-    
-    if (hasError) {
-      toast({
-        title: "Required Fields Missing",
-        description: "Please select at least one planning area, scenario, and item",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    trainMutation.mutate();
+    await trainMutation.mutateAsync({
+      table_schema: selectedTable!.schema,
+      table_name: selectedTable!.name,
+      date_column: dateColumn,
+      item_column: itemColumn,
+      quantity_column: quantityColumn,
+      planning_areas: selectedPlanningAreas,
+      scenarios: selectedScenarios,
+      items: forecastMode === "overall" ? items || [] : selectedItems,
+      model_type: modelType,
+      hyperparameter_tuning: hyperparameterTuning,
+      forecast_mode: forecastMode
+    });
   };
 
-  const handleForecast = () => {
+  const handleForecast = async () => {
     if (!isModelTrained || !modelId) {
       toast({
-        title: "Model Not Trained",
-        description: "Please train the model first before generating forecast",
+        title: "No Model Trained",
+        description: "Please train a model first before generating forecasts.",
         variant: "destructive",
       });
       return;
     }
-    
-    // Clear all errors first
-    setPlanningAreaError(false);
-    setScenarioError(false);
-    setItemError(false);
-    
-    // Validate required fields
-    let hasError = false;
-    
-    if (selectedPlanningAreas.length === 0) {
-      setPlanningAreaError(true);
-      hasError = true;
-    }
-    
-    if (selectedScenarios.length === 0) {
-      setScenarioError(true);
-      hasError = true;
-    }
-    
-    if (selectedItems.length === 0) {
-      setItemError(true);
-      hasError = true;
-    }
-    
-    if (hasError) {
-      toast({
-        title: "Required Fields Missing",
-        description: "Please select at least one planning area, scenario, and item",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    forecastMutation.mutate();
+
+    await forecastMutation.mutateAsync({
+      model_id: modelId,
+      forecast_days: forecastDays,
+      forecast_mode: forecastMode
+    });
   };
-
-  // Reset training when configuration changes
-  useEffect(() => {
-    setIsModelTrained(false);
-    setTrainingMetrics(null);
-    setModelId(null);
-    setHyperparameterTuning(false);
-    trainMutation.reset();
-    forecastMutation.reset();
-  }, [selectedTable, dateColumn, itemColumn, quantityColumn, selectedItems, modelType, selectedPlanningAreas, selectedScenarios]);
-
-  // Clear validation errors when selections change
-  useEffect(() => {
-    if (selectedPlanningAreas.length > 0) {
-      setPlanningAreaError(false);
+  
+  const cancelTraining = () => {
+    if (abortController) {
+      abortController.abort();
+      setTrainingProgress(null);
+      setAbortController(null);
+      toast({
+        title: "Training Cancelled",
+        description: "Model training has been cancelled.",
+      });
     }
-  }, [selectedPlanningAreas]);
-
-  useEffect(() => {
-    if (selectedScenarios.length > 0) {
-      setScenarioError(false);
-    }
-  }, [selectedScenarios]);
-
-  useEffect(() => {
-    if (selectedItems.length > 0) {
-      setItemError(false);
-    }
-  }, [selectedItems]);
+  };
+  
+  // Filter items for search
+  const filteredItems = items?.filter((item: string) =>
+    item.toLowerCase().includes(itemSearch.toLowerCase())
+  ) || [];
+  
+  const filteredPlanningAreas = planningAreas?.filter((area: string) =>
+    area.toLowerCase().includes(planningAreaSearch.toLowerCase())
+  ) || [];
+  
+  const filteredScenarios = scenarios?.filter((scenario: string) =>
+    scenario.toLowerCase().includes(scenarioSearch.toLowerCase())
+  ) || [];
 
   // Auto-select columns based on heuristics
   useEffect(() => {
@@ -557,17 +463,15 @@ export default function DemandForecasting() {
                 })) || []}
                 value={selectedTable ? `${selectedTable.schema}.${selectedTable.name}` : ""}
                 onValueChange={(value) => {
-                  const [schema, name] = value.split('.');
+                  const [schema, name] = value.split(".");
                   setSelectedTable({ schema, name });
-                  setDateColumn("");
-                  setItemColumn("");
-                  setQuantityColumn("");
-                  setSelectedItems([]);
                 }}
-                placeholder={tablesLoading ? "Loading..." : "Select table"}
-                searchPlaceholder="Search tables..."
-                data-testid="select-table"
+                placeholder="Select a table..."
+                disabled={isLoadingTables}
               />
+              {validationErrors.table && (
+                <p className="text-sm text-red-500">{validationErrors.table}</p>
+              )}
             </div>
 
             {/* Date Column */}
@@ -576,15 +480,16 @@ export default function DemandForecasting() {
               <Combobox
                 options={columns?.map((col) => ({
                   value: col.name,
-                  label: `${col.name} (${col.type})`
+                  label: col.name
                 })) || []}
                 value={dateColumn}
                 onValueChange={setDateColumn}
-                disabled={!selectedTable}
-                placeholder="Select date column"
-                searchPlaceholder="Search columns..."
-                data-testid="select-date-column"
+                placeholder="Select date column..."
+                disabled={!selectedTable || isLoadingColumns}
               />
+              {validationErrors.dateColumn && (
+                <p className="text-sm text-red-500">{validationErrors.dateColumn}</p>
+              )}
             </div>
 
             {/* Item Column */}
@@ -593,15 +498,16 @@ export default function DemandForecasting() {
               <Combobox
                 options={columns?.map((col) => ({
                   value: col.name,
-                  label: `${col.name} (${col.type})`
+                  label: col.name
                 })) || []}
                 value={itemColumn}
                 onValueChange={setItemColumn}
-                disabled={!selectedTable}
-                placeholder="Select item column"
-                searchPlaceholder="Search columns..."
-                data-testid="select-item-column"
+                placeholder="Select item column..."
+                disabled={!selectedTable || isLoadingColumns}
               />
+              {validationErrors.itemColumn && (
+                <p className="text-sm text-red-500">{validationErrors.itemColumn}</p>
+              )}
             </div>
 
             {/* Quantity Column */}
@@ -610,312 +516,180 @@ export default function DemandForecasting() {
               <Combobox
                 options={columns?.map((col) => ({
                   value: col.name,
-                  label: `${col.name} (${col.type})`
+                  label: col.name
                 })) || []}
                 value={quantityColumn}
                 onValueChange={setQuantityColumn}
-                disabled={!selectedTable}
-                placeholder="Select quantity column"
-                searchPlaceholder="Search columns..."
-                data-testid="select-quantity-column"
+                placeholder="Select quantity column..."
+                disabled={!selectedTable || isLoadingColumns}
               />
+              {validationErrors.quantityColumn && (
+                <p className="text-sm text-red-500">{validationErrors.quantityColumn}</p>
+              )}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filter Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Filters</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Planning Area Filter */}
+            <div className="space-y-2">
+              <Label>Planning Areas (Optional)</Label>
+              <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Search planning areas..."
+                    value={planningAreaSearch}
+                    onChange={(e) => setPlanningAreaSearch(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  {filteredPlanningAreas?.length > 0 ? (
+                    filteredPlanningAreas.map((area: string) => (
+                      <label key={area} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedPlanningAreas.includes(area)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedPlanningAreas([...selectedPlanningAreas, area]);
+                            } else {
+                              setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{area}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No planning areas available</p>
+                  )}
+                </div>
+              </div>
             </div>
 
-            {/* Model Type Selection */}
+            {/* Scenario Filter */}
             <div className="space-y-2">
-              <Label>Model Type</Label>
-              <Combobox
-                options={[
-                  { value: "Linear Regression", label: "Linear Regression" },
-                  { value: "Random Forest", label: "Random Forest" },
-                  { value: "ARIMA", label: "ARIMA" },
-                  { value: "Prophet", label: "Prophet" }
-                ]}
-                value={modelType}
-                onValueChange={setModelType}
-                placeholder="Select forecasting model"
-                searchPlaceholder="Search models..."
-                data-testid="select-model-type"
-              />
+              <Label>Scenarios (Optional)</Label>
+              <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Search scenarios..."
+                    value={scenarioSearch}
+                    onChange={(e) => setScenarioSearch(e.target.value)}
+                    className="h-8"
+                  />
+                </div>
+                <div className="space-y-1">
+                  {filteredScenarios?.length > 0 ? (
+                    filteredScenarios.map((scenario: string) => (
+                      <label key={scenario} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedScenarios.includes(scenario)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedScenarios([...selectedScenarios, scenario]);
+                            } else {
+                              setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
+                            }
+                          }}
+                          className="rounded"
+                        />
+                        <span className="text-sm">{scenario}</span>
+                      </label>
+                    ))
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No scenarios available</p>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Hyperparameter Tuning Toggle - Only for ARIMA and Prophet */}
-          {(modelType === "ARIMA" || modelType === "Prophet") && (
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="hyperparameter-tuning" className="text-base">
-                  Enable Hyperparameter Tuning
-                </Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically tune model parameters for better accuracy (may take longer)
-                </p>
-              </div>
-              <Switch
-                id="hyperparameter-tuning"
-                checked={hyperparameterTuning}
-                onCheckedChange={setHyperparameterTuning}
-                data-testid="switch-hyperparameter-tuning"
-              />
-            </div>
-          )}
-
-          {/* Planning Areas Multi-Select */}
-          {planningAreaColumn && filteredPlanningAreas && filteredPlanningAreas.length > 0 && (
+          {/* Item Selection - Only show for "separate" mode */}
+          {forecastMode === "separate" && (
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Select Planning Areas <span className="text-red-500">*</span></Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const filtered = filteredPlanningAreas.filter(area => 
-                        area.toLowerCase().includes(planningAreaSearch.toLowerCase())
-                      );
-                      setSelectedPlanningAreas(filtered);
-                    }}
-                    data-testid="button-select-all-planning-areas"
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedPlanningAreas([]);
-                      setSelectedScenarios([]);
-                    }}
-                    data-testid="button-clear-all-planning-areas"
-                  >
-                    Clear All
-                  </Button>
+              <Label>Select Items ({selectedItems.length} selected)</Label>
+              {validationErrors.items && (
+                <p className="text-sm text-red-500">{validationErrors.items}</p>
+              )}
+              <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Search items..."
+                    value={itemSearch}
+                    onChange={(e) => setItemSearch(e.target.value)}
+                    className="h-8"
+                  />
                 </div>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search planning areas..."
-                  value={planningAreaSearch}
-                  onChange={(e) => setPlanningAreaSearch(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-planning-areas"
-                />
-              </div>
-              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
-                {filteredPlanningAreas
-                  .filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase()))
-                  .map((area) => (
-                    <label key={area} className="flex items-center space-x-2 cursor-pointer py-0.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedPlanningAreas.includes(area)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedPlanningAreas([...selectedPlanningAreas, area]);
-                          } else {
-                            setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{area}</span>
-                    </label>
-                  ))}
-                {filteredPlanningAreas.filter(area => area.toLowerCase().includes(planningAreaSearch.toLowerCase())).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">No planning areas found</p>
-                )}
-              </div>
-              {selectedPlanningAreas.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedPlanningAreas.length} of {filteredPlanningAreas.length} selected
-                </p>
-              )}
-              {planningAreaError && (
-                <p className="text-sm text-red-500" data-testid="error-planning-area">
-                  Please select at least one planning area
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Scenarios Multi-Select */}
-          {scenarioColumn && filteredScenarios && filteredScenarios.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Select Scenarios <span className="text-red-500">*</span></Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const filtered = filteredScenarios.filter(scenario => 
-                        scenario.toLowerCase().includes(scenarioSearch.toLowerCase())
-                      );
-                      setSelectedScenarios(filtered);
-                    }}
-                    data-testid="button-select-all-scenarios"
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedScenarios([]);
-                      setSelectedPlanningAreas([]);
-                    }}
-                    data-testid="button-clear-all-scenarios"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search scenarios..."
-                  value={scenarioSearch}
-                  onChange={(e) => setScenarioSearch(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-scenarios"
-                />
-              </div>
-              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
-                {filteredScenarios
-                  .filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase()))
-                  .map((scenario) => (
-                    <label key={scenario} className="flex items-center space-x-2 cursor-pointer py-0.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedScenarios.includes(scenario)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedScenarios([...selectedScenarios, scenario]);
-                          } else {
-                            setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{scenario}</span>
-                    </label>
-                  ))}
-                {filteredScenarios.filter(scenario => scenario.toLowerCase().includes(scenarioSearch.toLowerCase())).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">No scenarios found</p>
-                )}
-              </div>
-              {selectedScenarios.length > 0 && (
-                <p className="text-xs text-muted-foreground">
-                  {selectedScenarios.length} of {filteredScenarios.length} selected
-                </p>
-              )}
-              {scenarioError && (
-                <p className="text-sm text-red-500" data-testid="error-scenario">
-                  Please select at least one scenario
-                </p>
-              )}
-            </div>
-          )}
-
-          {/* Items Multi-Select */}
-          {itemColumn && items && items.length > 0 && (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label>Select Items <span className="text-red-500">*</span></Label>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const filtered = items.filter(item => 
-                        item.toLowerCase().includes(itemSearch.toLowerCase())
-                      );
-                      setSelectedItems(filtered);
-                    }}
-                    data-testid="button-select-all-items"
-                  >
-                    Select All
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setSelectedItems([])}
-                    data-testid="button-clear-all-items"
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </div>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search items..."
-                  value={itemSearch}
-                  onChange={(e) => setItemSearch(e.target.value)}
-                  className="pl-9"
-                  data-testid="input-search-items"
-                />
-              </div>
-              <div className="border rounded-md p-3 max-h-60 overflow-y-auto space-y-1">
-                {items
-                  .filter(item => item.toLowerCase().includes(itemSearch.toLowerCase()))
-                  .map((item) => (
-                    <label key={item} className="flex items-center space-x-2 cursor-pointer py-0.5">
-                      <input
-                        type="checkbox"
-                        checked={selectedItems.includes(item)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedItems([...selectedItems, item]);
-                          } else {
-                            setSelectedItems(selectedItems.filter(i => i !== item));
-                          }
-                        }}
-                        className="rounded"
-                      />
-                      <span className="text-sm">{item}</span>
-                    </label>
-                  ))}
-                {items.filter(item => item.toLowerCase().includes(itemSearch.toLowerCase())).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-2">No items found</p>
-                )}
-              </div>
-              {selectedItems.length > 0 && (
                 <div className="space-y-1">
-                  <p className="text-xs text-muted-foreground">
-                    {selectedItems.length} of {items.length} selected
-                  </p>
-                  {selectedItems.length > 1000 && (
-                    <div className="flex items-start gap-2 p-2 bg-orange-100 dark:bg-orange-900/20 border border-orange-300 dark:border-orange-700 rounded-md">
-                      <span className="text-orange-600 dark:text-orange-400">⚠️</span>
-                      <p className="text-xs text-orange-600 dark:text-orange-400">
-                        Warning: Training {selectedItems.length.toLocaleString()} items may take a very long time. 
-                        Consider selecting fewer items for better performance. 
-                        Estimated time: ~{Math.ceil(selectedItems.length * 2 / 60)} minutes.
-                      </p>
-                    </div>
+                  {filteredItems.length > 0 ? (
+                    <>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedItems(filteredItems)}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedItems([])}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      {filteredItems.map((item: string) => (
+                        <label key={item} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(item)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedItems([...selectedItems, item]);
+                              } else {
+                                setSelectedItems(selectedItems.filter(i => i !== item));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{item}</span>
+                        </label>
+                      ))}
+                    </>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      {itemColumn ? "No items found" : "Select an item column first"}
+                    </p>
                   )}
                 </div>
-              )}
-              {itemError && (
-                <p className="text-sm text-red-500" data-testid="error-item">
-                  Please select at least one item
-                </p>
-              )}
+              </div>
             </div>
           )}
+        </CardContent>
+      </Card>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Forecast Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5" />
+            Forecast Settings
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {/* Forecast Days */}
             <div className="space-y-2">
               <Label>Forecast Days</Label>
@@ -925,677 +699,521 @@ export default function DemandForecasting() {
                 onChange={(e) => setForecastDays(parseInt(e.target.value) || 30)}
                 min={1}
                 max={365}
-                data-testid="input-forecast-days"
+                placeholder="30"
               />
             </div>
-
+            
+            {/* Model Type */}
+            <div className="space-y-2">
+              <Label>Model Type</Label>
+              <Combobox
+                options={[
+                  { value: "Random Forest", label: "Random Forest" },
+                  { value: "ARIMA", label: "ARIMA" },
+                  { value: "Prophet", label: "Prophet" },
+                  { value: "Linear Regression", label: "Linear Regression" }
+                ]}
+                value={modelType}
+                onValueChange={setModelType}
+                placeholder="Select model..."
+              />
+            </div>
+            
             {/* Forecast Mode */}
             <div className="space-y-2">
               <Label>Forecast Mode</Label>
-              <Select 
-                value={forecastMode} 
+              <Combobox
+                options={[
+                  { value: "separate", label: "Separate (Individual + Overall)" },
+                  { value: "overall", label: "Overall Only" }
+                ]}
+                value={forecastMode}
                 onValueChange={(value) => setForecastMode(value as "separate" | "overall")}
-              >
-                <SelectTrigger data-testid="select-forecast-mode">
-                  <SelectValue placeholder="Select forecast mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="separate">
-                    Separate forecast for each item
-                  </SelectItem>
-                  <SelectItem value="overall">
-                    One overall forecast
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {forecastMode === "separate" 
-                  ? "Each selected item will have its own forecast" 
-                  : "All selected items will be aggregated into one forecast"}
-              </p>
+                placeholder="Select mode..."
+              />
+            </div>
+            
+            {/* Hyperparameter Tuning */}
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="hyperparameter-tuning"
+                checked={hyperparameterTuning}
+                onCheckedChange={setHyperparameterTuning}
+              />
+              <Label htmlFor="hyperparameter-tuning">
+                Hyperparameter Tuning (Slower but more accurate)
+              </Label>
             </div>
           </div>
 
-          {/* Training Metrics Display */}
-          {itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
-            <div className="bg-muted p-4 rounded-lg space-y-3">
-              {/* Header with toggle button and summary */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="text-sm font-medium">
-                    {forecastMode === "overall" 
-                      ? `Overall Training Results (${modelType})` 
-                      : `Training Results per Item (${modelType})`}
-                  </div>
-                  {forecastMode === "separate" && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsTableExpanded(!isTableExpanded)}
-                      className="gap-2"
-                      data-testid="button-toggle-training-results"
-                    >
-                      {isTableExpanded ? (
-                        <>
-                          <ChevronUp className="h-4 w-4" />
-                          Hide Details
-                        </>
-                      ) : (
-                        <>
-                          <ChevronDown className="h-4 w-4" />
-                          Show Details
-                        </>
-                      )}
-                    </Button>
-                  )}
-                </div>
-                
-                {/* Summary Statistics - Always visible */}
-                {trainingMetrics && (
-                  <div className="p-3 bg-background rounded border">
-                    <div className="text-xs font-medium text-muted-foreground mb-2">Overall Summary</div>
-                    <div className="flex gap-4 flex-wrap">
-                      {trainingMetrics.mape !== undefined && (
-                        <div>
-                          <span className="text-xs text-muted-foreground">Avg MAPE: </span>
-                          <span className="font-semibold">{trainingMetrics.mape.toFixed(2)}%</span>
-                        </div>
-                      )}
-                      {trainingMetrics.rmse !== undefined && (
-                        <div>
-                          <span className="text-xs text-muted-foreground">Avg RMSE: </span>
-                          <span className="font-semibold">{trainingMetrics.rmse.toFixed(2)}</span>
-                        </div>
-                      )}
-                      <div>
-                        <span className="text-xs text-muted-foreground">Total Items: </span>
-                        <span className="font-semibold">{Object.keys(itemsTrainingMetrics).length}</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
+          {/* Training Progress */}
+          {trainingProgress && (
+            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">Training Progress</span>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={cancelTraining}
+                >
+                  Cancel
+                </Button>
               </div>
-              
-              {/* Collapsible Table Section - Only shown in separate mode */}
-              {isTableExpanded && forecastMode === "separate" && (
-                <div className="space-y-3">
-                  {/* Search Box */}
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      type="text"
-                      placeholder="Search items..."
-                      value={itemSearchFilter}
-                      onChange={(e) => setItemSearchFilter(e.target.value)}
-                      className="pl-9"
-                      data-testid="input-search-training-results"
-                    />
-                  </div>
-                  
-                  {/* Individual Item Metrics Table */}
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="border-b">
-                          <th className="text-left p-2">Item</th>
-                          <th className="text-right p-2">MAPE (%)</th>
-                          <th className="text-right p-2">RMSE</th>
-                          <th className="text-right p-2">MAE</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {Object.entries(itemsTrainingMetrics)
-                          .filter(([itemName]) => 
-                            itemName.toLowerCase().includes(itemSearchFilter.toLowerCase())
-                          )
-                          .sort(([a], [b]) => a.localeCompare(b))
-                          .map(([itemName, itemResult]) => {
-                            // Check if this item failed to train
-                            if (itemResult.success === false) {
-                              return (
-                                <tr key={itemName} className="border-b hover:bg-muted/50">
-                                  <td className="p-2 font-medium">{itemName}</td>
-                                  <td colSpan={3} className="text-center p-2 text-muted-foreground">
-                                    Failed: {itemResult.error || 'Training error'}
-                                  </td>
-                                </tr>
-                              );
-                            }
-                            
-                            // Handle both direct metrics and nested metrics structure
-                            const metrics = itemResult.metrics || itemResult;
-                            return (
-                              <tr key={itemName} className="border-b hover:bg-muted/50">
-                                <td className="p-2 font-medium">{itemName}</td>
-                                <td className="text-right p-2">
-                                  {metrics.mape !== undefined ? metrics.mape.toFixed(2) : 'N/A'}
-                                </td>
-                                <td className="text-right p-2">
-                                  {metrics.rmse !== undefined ? metrics.rmse.toFixed(2) : 'N/A'}
-                                </td>
-                                <td className="text-right p-2">
-                                  {metrics.mae !== undefined ? metrics.mae.toFixed(2) : 'N/A'}
-                                </td>
-                              </tr>
-                            );
-                          })}
-                      </tbody>
-                    </table>
-                    
-                    {/* No results message */}
-                    {Object.entries(itemsTrainingMetrics)
-                      .filter(([itemName]) => 
-                        itemName.toLowerCase().includes(itemSearchFilter.toLowerCase())
-                      ).length === 0 && (
-                      <div className="text-center text-muted-foreground py-4">
-                        No items found matching "{itemSearchFilter}"
-                      </div>
-                    )}
-                  </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span>Item {trainingProgress.currentItem} of {trainingProgress.totalItems}</span>
+                  <span>
+                    Est. time remaining: {Math.ceil(trainingProgress.estimatedRemainingTime / 1000)}s
+                  </span>
                 </div>
-              )}
-              
-              {/* Display Tuned Parameters when hyperparameter tuning is enabled */}
-              {hyperparameterTuning && (modelType === "ARIMA" || modelType === "Prophet") && trainingMetrics && (
-                <div className="border-t pt-3 mt-3">
-                  <div className="text-sm font-medium mb-2">Tuned Parameters</div>
-                  <div className="space-y-2">
-                    {modelType === "ARIMA" && (
-                      <>
-                        {trainingMetrics.order && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Order (p,d,q):</span>{" "}
-                            <span className="font-mono">{JSON.stringify(trainingMetrics.order)}</span>
-                          </div>
-                        )}
-                        {trainingMetrics.seasonal_order && (
-                          <div className="text-sm">
-                            <span className="text-muted-foreground">Seasonal Order (P,D,Q,s):</span>{" "}
-                            <span className="font-mono">{JSON.stringify(trainingMetrics.seasonal_order)}</span>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {modelType === "Prophet" && Object.keys(trainingMetrics).filter(key => 
-                      !['mape', 'rmse', 'accuracy'].includes(key)
-                    ).length > 0 && (
-                      <div className="text-sm space-y-1">
-                        {Object.entries(trainingMetrics).filter(([key]) => 
-                          !['mape', 'rmse', 'accuracy', 'order', 'seasonal_order'].includes(key)
-                        ).map(([key, value]) => (
-                          <div key={key}>
-                            <span className="text-muted-foreground capitalize">{key.replace(/_/g, ' ')}:</span>{" "}
-                            <span className="font-mono">{typeof value === 'object' ? JSON.stringify(value) : String(value)}</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div 
+                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${(trainingProgress.currentItem / trainingProgress.totalItems) * 100}%` 
+                    }}
+                  />
                 </div>
-              )}
+              </div>
             </div>
           )}
 
           {/* Action Buttons */}
-          <div className="space-y-3">
-            {/* Progress display */}
-            {trainMutation.isPending && trainingProgress && (
-              <div className="p-3 bg-muted rounded-lg space-y-2">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="font-medium">Training Progress</span>
-                  <span className="text-muted-foreground">
-                    {Math.min(Math.round((Date.now() - trainingProgress.startTime) / (trainingProgress.estimatedRemainingTime + (Date.now() - trainingProgress.startTime)) * 100), 99)}%
-                  </span>
-                </div>
-                <div className="w-full bg-background rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300"
-                    style={{ 
-                      width: `${Math.min(Math.round((Date.now() - trainingProgress.startTime) / (trainingProgress.estimatedRemainingTime + (Date.now() - trainingProgress.startTime)) * 100), 99)}%` 
-                    }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Processing {trainingProgress.totalItems} items</span>
-                  <span>
-                    Est. remaining: {Math.max(0, Math.ceil((trainingProgress.estimatedRemainingTime - (Date.now() - trainingProgress.startTime)) / 1000))}s
-                  </span>
-                </div>
-              </div>
-            )}
-            
-            {/* Action buttons */}
-            <div className="flex gap-3">
-              <Button 
-                onClick={handleTrain} 
-                disabled={trainMutation.isPending || selectedItems.length === 0}
-                variant={isModelTrained ? "outline" : "default"}
-                className="w-full md:w-auto"
-                data-testid="button-train-model"
-              >
-                {trainMutation.isPending ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Training Model...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    {isModelTrained ? "Retrain Model" : "Train Model"}
-                  </>
-                )}
-              </Button>
-              
-              {/* Stop button - only show during training */}
-              {trainMutation.isPending && abortController && (
-                <Button
-                  onClick={() => {
-                    abortController.abort();
-                    setAbortController(null);
-                    setTrainingProgress(null);
-                  }}
-                  variant="destructive"
-                  className="w-full md:w-auto"
-                  data-testid="button-stop-training"
-                >
-                  Stop Training
-                </Button>
+          <div className="flex gap-2">
+            <Button
+              onClick={handleTrain}
+              disabled={trainMutation.isPending || !!trainingProgress}
+            >
+              {trainMutation.isPending || trainingProgress ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Training Model...
+                </>
+              ) : (
+                "Train Model"
               )}
-              
-              <Button 
-              onClick={handleForecast} 
-              disabled={forecastMutation.isPending || !isModelTrained || !modelId}
-              className="w-full md:w-auto"
-              data-testid="button-generate-forecast"
+            </Button>
+            <Button
+              onClick={handleForecast}
+              disabled={!isModelTrained || forecastMutation.isPending}
+              variant="secondary"
             >
               {forecastMutation.isPending ? (
                 <>
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Generating Forecast...
                 </>
               ) : (
-                <>
-                  <TrendingUp className="w-4 h-4 mr-2" />
-                  Generate Forecast
-                </>
+                "Generate Forecast"
               )}
             </Button>
-            </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Results Section - Overall Demand Forecast */}
-      {forecastMutation.data && (
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <h2 className="text-2xl font-bold">
-              {forecastMode === 'overall' ? 'Overall Demand Forecast' : 'Demand Forecast'}
-              {forecastMutation.data.overall?.usingDedicatedModel && (
-                <span className="ml-2 text-xs font-normal text-muted-foreground">
-                  (Aggregated Model)
-                </span>
-              )}
-            </h2>
-            
-            {/* Item Selection based on mode */}
-            {forecastMode === 'separate' ? (
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    placeholder="Search items to view forecast..."
-                    value={forecastSearchQuery}
-                    onChange={(e) => setForecastSearchQuery(e.target.value)}
-                    className="pl-9 h-9"
-                    data-testid="input-search-forecast-items"
-                  />
+      {/* Training Results */}
+      {isModelTrained && (trainingMetrics || itemsTrainingMetrics) && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Training Results</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {/* Overall Metrics */}
+            {trainingMetrics && (
+              <div className="mb-4 p-4 bg-gray-50 rounded-md">
+                <h4 className="font-semibold mb-2">Overall Forecast Metrics</h4>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
+                  {trainingMetrics.mape !== undefined && (
+                    <div>
+                      <span className="font-medium">MAPE:</span> {trainingMetrics.mape.toFixed(2)}%
+                    </div>
+                  )}
+                  {trainingMetrics.rmse !== undefined && (
+                    <div>
+                      <span className="font-medium">RMSE:</span> {trainingMetrics.rmse.toFixed(2)}
+                    </div>
+                  )}
+                  {trainingMetrics.mae !== undefined && (
+                    <div>
+                      <span className="font-medium">MAE:</span> {trainingMetrics.mae.toFixed(2)}
+                    </div>
+                  )}
+                  {trainingMetrics.accuracy !== undefined && (
+                    <div>
+                      <span className="font-medium">Accuracy:</span> {(trainingMetrics.accuracy * 100).toFixed(2)}%
+                    </div>
+                  )}
                 </div>
-                <Select value={selectedForecastItem} onValueChange={setSelectedForecastItem}>
-                  <SelectTrigger className="w-48 h-9" data-testid="select-forecast-item">
-                    <SelectValue placeholder="Select item" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Overall">Overall (All Items)</SelectItem>
-                    {selectedItems
-                      .filter(item => item.toLowerCase().includes(forecastSearchQuery.toLowerCase()))
-                      .map(item => (
-                        <SelectItem key={item} value={item}>{item}</SelectItem>
-                      ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ) : (
-              <div className="text-sm text-muted-foreground">
-                Aggregated forecast for all selected items
               </div>
             )}
-          </div>
-
-          {/* Metric Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Items Included Card */}
-            <Card className="bg-gray-50 dark:bg-gray-900">
-              <CardContent className="p-6">
-                <div className="text-sm text-muted-foreground mb-2">Items Included</div>
-                <div className="text-3xl font-bold">
-                  {forecastMutation.data.forecastedItemNames?.length || selectedItems.length}/{items?.length || 0}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Average Daily Forecast Card */}
-            <Card className="bg-gray-50 dark:bg-gray-900">
-              <CardContent className="p-6">
-                <div className="text-sm text-muted-foreground mb-2">Avg Daily Forecast</div>
-                <div className="text-3xl font-bold">
-                  {(() => {
-                    // Get the current forecast data based on mode and selection
-                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
-                    const currentData = itemToShow === 'Overall' 
-                      ? forecastMutation.data.overall 
-                      : forecastMutation.data.items?.[itemToShow];
-                    
-                    if (!currentData?.forecast) return '0.0';
-                    
-                    const avgDaily = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
-                    return avgDaily.toFixed(1);
-                  })()}
-                </div>
-                {(() => {
-                  // Get the current data based on mode and selection
-                  const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
-                  const currentData = itemToShow === 'Overall' 
-                    ? forecastMutation.data.overall 
-                    : forecastMutation.data.items?.[itemToShow];
-                  
-                  if (!currentData?.historical || !currentData?.forecast) return null;
-                  
-                  const historicalAvg = currentData.historical.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.historical.length;
-                  const forecastAvg = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
-                  const percentChange = historicalAvg !== 0 ? ((forecastAvg - historicalAvg) / historicalAvg) * 100 : 0;
-                  
-                  return (
-                    <div className={`text-sm mt-1 ${percentChange < 0 ? 'text-red-500' : 'text-green-500'}`}>
-                      {percentChange > 0 ? '↑' : '↓'} {Math.abs(percentChange).toFixed(1)}%
-                    </div>
-                  );
-                })()}
-              </CardContent>
-            </Card>
-
-            {/* Total Forecast Card */}
-            <Card className="bg-gray-50 dark:bg-gray-900">
-              <CardContent className="p-6">
-                <div className="text-sm text-muted-foreground mb-2">Total {forecastDays}-Day Forecast</div>
-                <div className="text-3xl font-bold">
-                  {(() => {
-                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
-                    const currentData = itemToShow === 'Overall' 
-                      ? forecastMutation.data.overall 
-                      : forecastMutation.data.items?.[itemToShow];
-                    
-                    if (!currentData?.forecast) return '0';
-                    
-                    return Math.round(currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0)).toLocaleString();
-                  })()}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Enhanced Chart */}
-          <Card>
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-medium">
-                  {(() => {
-                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
-                    return itemToShow === 'Overall' 
-                      ? `Overall Demand Forecast - ${modelType} (${selectedItems.length} Items Combined)`
-                      : `Demand Forecast - ${modelType} (${itemToShow})`
-                  })()}
-                </CardTitle>
-                <button 
-                  className="text-sm text-muted-foreground hover:text-foreground"
-                  onClick={() => {
-                    // Download CSV functionality
-                    const csv = [
-                      ['Date', 'Historical', 'Forecast', 'Lower Bound', 'Upper Bound'],
-                      ...forecastMutation.data.historical.map(d => [d.date, d.value, '', '', '']),
-                      ...forecastMutation.data.forecast.map(d => [d.date, '', d.value, d.lower, d.upper])
-                    ].map(row => row.join(',')).join('\n');
-                    
-                    const blob = new Blob([csv], { type: 'text/csv' });
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = 'forecast.csv';
-                    a.click();
-                  }}
+            
+            {/* Item-specific metrics - Only show for "separate" mode */}
+            {forecastMode === "separate" && itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
+              <div>
+                <div 
+                  className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded"
+                  onClick={() => setIsTableExpanded(!isTableExpanded)}
                 >
-                  Download CSV
-                </button>
+                  <h4 className="font-semibold">
+                    Item-Level Metrics ({Object.keys(itemsTrainingMetrics).length} items)
+                  </h4>
+                  {isTableExpanded ? <ChevronUp /> : <ChevronDown />}
+                </div>
+                
+                {isTableExpanded && (
+                  <div className="mt-4">
+                    <div className="mb-3">
+                      <Input
+                        placeholder="Search items..."
+                        value={itemSearchFilter}
+                        onChange={(e) => setItemSearchFilter(e.target.value)}
+                        className="max-w-sm"
+                        icon={<Search className="w-4 h-4" />}
+                      />
+                    </div>
+                    
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b">
+                            <th className="text-left p-2">Item</th>
+                            <th className="text-right p-2">MAPE (%)</th>
+                            <th className="text-right p-2">RMSE</th>
+                            <th className="text-right p-2">MAE</th>
+                            <th className="text-center p-2">Status</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {Object.entries(itemsTrainingMetrics)
+                            .filter(([itemName]) => 
+                              itemName.toLowerCase().includes(itemSearchFilter.toLowerCase())
+                            )
+                            .map(([itemName, metrics]) => {
+                              // Handle both direct metrics and nested metrics structure
+                              const displayMetrics = metrics.metrics || metrics;
+                              
+                              if (metrics.success === false || metrics.error) {
+                                return (
+                                  <tr key={itemName} className="border-b hover:bg-muted/50">
+                                    <td className="p-2 font-medium">{itemName}</td>
+                                    <td colSpan={3} className="text-center p-2 text-muted-foreground">
+                                      {metrics.error || "Training failed"}
+                                    </td>
+                                    <td className="text-center p-2">
+                                      <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Failed
+                                      </span>
+                                    </td>
+                                  </tr>
+                                );
+                              }
+                              
+                              return (
+                                <tr key={itemName} className="border-b hover:bg-muted/50">
+                                  <td className="p-2 font-medium">{itemName}</td>
+                                  <td className="text-right p-2">
+                                    {displayMetrics.mape !== undefined ? displayMetrics.mape.toFixed(2) : '-'}
+                                  </td>
+                                  <td className="text-right p-2">
+                                    {displayMetrics.rmse !== undefined ? displayMetrics.rmse.toFixed(2) : '-'}
+                                  </td>
+                                  <td className="text-right p-2">
+                                    {displayMetrics.mae !== undefined ? displayMetrics.mae.toFixed(2) : '-'}
+                                  </td>
+                                  <td className="text-center p-2">
+                                    <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                      Success
+                                    </span>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
               </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Forecast Results */}
+      {forecastMutation.isSuccess && forecastMutation.data && (
+        <div className="space-y-4">
+          {/* Forecast Summary Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Forecast Summary</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart
-                    data={(() => {
-                      // Get data based on mode and selection
-                      const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
-                      const currentData = itemToShow === 'Overall' 
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-600">
+                    {(() => {
+                      const itemToShow = forecastMode === "overall" 
+                        ? "Overall" 
+                        : selectedForecastItem;
+                      
+                      const currentData = itemToShow === "Overall" 
                         ? forecastMutation.data.overall 
                         : forecastMutation.data.items?.[itemToShow];
                       
-                      // Support legacy single-item forecast
-                      const historicalData = currentData?.historical || forecastMutation.data.historical || [];
-                      const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
+                      if (!currentData?.forecast) return '0.0';
                       
-                      // Combine historical and forecast data with proper labeling
-                      // Convert dates to timestamps for proper time scale
-                      const historicalWithLabel = historicalData.map((d: any) => ({
-                        ...d,
-                        timestamp: new Date(d.date).getTime(),
-                        historical: d.value,
-                        forecast: null,
-                        lower: null,
-                        upper: null
-                      }));
-                      const forecastWithLabel = forecastData.map((d: any) => ({
-                        ...d,
-                        timestamp: new Date(d.date).getTime(),
-                        historical: null,
-                        forecast: d.value,
-                        lower: d.lower,
-                        upper: d.upper
-                      }));
-                      // Combine and sort by timestamp to ensure proper ordering
-                      const combined = [...historicalWithLabel, ...forecastWithLabel];
-                      return combined.sort((a, b) => a.timestamp - b.timestamp);
-                    })()}
-                    margin={{ top: 5, right: 30, left: 50, bottom: 50 }}
-                  >
-                    <defs>
-                      <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.1}/>
-                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                    <XAxis 
-                      dataKey="timestamp" 
-                      type="number"
-                      domain={['dataMin', 'dataMax']}
-                      scale="time"
-                      tick={{ fontSize: 11 }}
-                      angle={-45}
-                      textAnchor="end"
-                      height={60}
-                      tickFormatter={(timestamp) => {
-                        const date = new Date(timestamp);
-                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                        const day = date.getDate().toString().padStart(2, '0');
-                        const year = date.getFullYear().toString().slice(-2);
-                        return `${month}/${day}/${year}`;
-                      }}
-                    />
-                    <YAxis 
-                      tick={{ fontSize: 11 }}
-                      label={{ value: 'Units', angle: -90, position: 'insideLeft' }}
-                    />
-                    <Tooltip 
-                      contentStyle={{ 
-                        backgroundColor: 'rgba(255, 255, 255, 0.95)', 
-                        border: '1px solid #E5E7EB',
-                        borderRadius: '6px'
-                      }}
-                      labelFormatter={(timestamp: number) => {
-                        // Format the timestamp to a readable date
-                        const date = new Date(timestamp);
-                        return date.toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        });
-                      }}
-                      formatter={(value: any) => value ? Math.round(value).toLocaleString() : '—'}
-                    />
-                    <Legend 
-                      wrapperStyle={{ paddingTop: '20px' }}
-                      iconType="line"
-                    />
-                    
-                    {/* Historical Data Line */}
-                    <Line
-                      type="linear"
-                      dataKey="historical"
-                      stroke="#3B82F6"
-                      strokeWidth={2}
-                      name="Historical Owned Demand"
-                      dot={false}
-                      connectNulls={false}
-                      fillOpacity={1}
-                      fill="url(#colorHistorical)"
-                    />
-                    
-                    {/* Forecast Data Line with dots */}
-                    <Line
-                      type="linear"
-                      dataKey="forecast"
-                      stroke="#EF4444"
-                      strokeWidth={2}
-                      name="Overall Demand Forecast"
-                      dot={{ fill: '#EF4444', strokeWidth: 0, r: 3 }}
-                      connectNulls={false}
-                      fillOpacity={1}
-                      fill="url(#colorForecast)"
-                    />
-                    
-                    {/* Confidence Intervals */}
-                    {(() => {
-                      const currentData = selectedForecastItem === 'Overall' 
-                        ? forecastMutation.data.overall 
-                        : forecastMutation.data.items?.[selectedForecastItem];
-                      
-                      return currentData?.forecast?.length > 0 && (
-                        <>
-                          <Line
-                            type="linear"
-                            dataKey="lower"
-                            stroke="#94A3B8"
-                            strokeWidth={1}
-                            strokeDasharray="3 3"
-                            name="Lower Bound"
-                            dot={false}
-                            connectNulls={false}
-                          />
-                          <Line
-                            type="linear"
-                            dataKey="upper"
-                            stroke="#94A3B8"
-                            strokeWidth={1}
-                            strokeDasharray="3 3"
-                            name="Upper Bound"
-                            dot={false}
-                            connectNulls={false}
-                          />
-                        </>
-                      );
-                    })()}
-                    
-                    {/* Brush component for zooming */}
-                    <Brush 
-                      dataKey="date" 
-                      height={30} 
-                      stroke="#3B82F6"
-                      fill="#E5E7EB"
-                      fillOpacity={0.3}
-                      startIndex={0}
-                      endIndex={Math.min(30, (() => {
-                        const currentData = selectedForecastItem === 'Overall' 
-                          ? forecastMutation.data.overall 
-                          : forecastMutation.data.items?.[selectedForecastItem];
-                        const historicalData = currentData?.historical || forecastMutation.data.historical || [];
-                        const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
-                        return historicalData.length + forecastData.length - 1;
-                      })())}
-                    />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              
-              {/* Chart Footer Info */}
-              <div className="mt-4 pt-4 border-t">
-                <div className="flex items-center justify-between text-sm text-muted-foreground">
-                  <div>
-                    {(() => {
-                      const currentData = selectedForecastItem === 'Overall' 
-                        ? forecastMutation.data.overall 
-                        : forecastMutation.data.items?.[selectedForecastItem];
-                      
-                      const historicalData = currentData?.historical || forecastMutation.data.historical || [];
-                      const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
-                      
-                      const startDate = historicalData[0]?.date;
-                      const endDate = forecastData[forecastData.length - 1]?.date;
-                      
-                      return startDate && endDate ? `Date Range: ${startDate} to ${endDate}` : 'Date Range: N/A';
+                      const avgDaily = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
+                      return avgDaily.toFixed(1);
                     })()}
                   </div>
-                  <div className="flex gap-4">
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Avg Daily Forecast
+                  </div>
+                  {(() => {
+                    const itemToShow = forecastMode === "overall" 
+                      ? "Overall" 
+                      : selectedForecastItem;
+                    
+                    const currentData = itemToShow === "Overall" 
+                      ? forecastMutation.data.overall 
+                      : forecastMutation.data.items?.[itemToShow];
+                    
+                    if (!currentData?.historical || !currentData?.forecast) return null;
+                    
+                    const historicalAvg = currentData.historical.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.historical.length;
+                    const forecastAvg = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
+                    const percentChange = ((forecastAvg - historicalAvg) / historicalAvg) * 100;
+                    
+                    return (
+                      <div className={`text-sm mt-1 ${percentChange < 0 ? 'text-red-500' : 'text-green-500'}`}>
+                        {percentChange > 0 ? '↑' : '↓'} {Math.abs(percentChange).toFixed(1)}%
+                      </div>
+                    );
+                  })()}
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-green-600">
                     {(() => {
-                      const currentData = selectedForecastItem === 'Overall' 
+                      const itemToShow = forecastMode === "overall" 
+                        ? "Overall" 
+                        : selectedForecastItem;
+                      
+                      const currentData = itemToShow === "Overall" 
                         ? forecastMutation.data.overall 
-                        : forecastMutation.data.items?.[selectedForecastItem];
+                        : forecastMutation.data.items?.[itemToShow];
                       
-                      const metrics = currentData?.metrics || forecastMutation.data.metrics;
+                      if (!currentData?.forecast) return '0';
                       
-                      return (
-                        <>
-                          {metrics?.mape !== undefined && (
-                            <span>MAPE: {metrics.mape.toFixed(2)}%</span>
-                          )}
-                          {metrics?.rmse !== undefined && (
-                            <span>RMSE: {metrics.rmse.toFixed(2)}</span>
-                          )}
-                          {metrics?.mae !== undefined && (
-                            <span>MAE: {metrics.mae.toFixed(2)}</span>
-                          )}
-                        </>
-                      );
+                      return Math.round(currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0)).toLocaleString();
                     })()}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Total {forecastDays} Day Forecast
+                  </div>
+                </div>
+                <div className="text-center p-4 bg-gray-50 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-600">
+                    {forecastMode === "overall" ? 1 : (forecastMutation.data.forecastedItemNames?.length || 0)}
+                  </div>
+                  <div className="text-sm text-muted-foreground mt-1">
+                    Items Forecasted
                   </div>
                 </div>
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Forecast Visualization */}
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <div className="flex items-center justify-between">
+                  <span>Forecast Visualization</span>
+                  {/* Item selection - Only show for "separate" mode */}
+                  {forecastMode === "separate" && forecastMutation.data.forecastedItemNames && (
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="Search items..."
+                        value={forecastSearchQuery}
+                        onChange={(e) => setForecastSearchQuery(e.target.value)}
+                        className="w-48 h-8"
+                      />
+                      <Combobox
+                        options={[
+                          { value: "Overall", label: "Overall (All Items)" },
+                          ...(forecastMutation.data.forecastedItemNames || [])
+                            .filter((item: string) => 
+                              item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
+                            )
+                            .map((item: string) => ({
+                              value: item,
+                              label: item
+                            }))
+                        ]}
+                        value={selectedForecastItem}
+                        onValueChange={setSelectedForecastItem}
+                        placeholder="Select item..."
+                        className="w-64"
+                      />
+                    </div>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(() => {
+                const itemToShow = forecastMode === "overall" 
+                  ? "Overall" 
+                  : selectedForecastItem;
+                
+                let chartData: any[] = [];
+                let metrics: any = {};
+                
+                // Get data based on forecast mode and selected item
+                if (itemToShow === "Overall" && forecastMutation.data.overall) {
+                  const { historical, forecast } = forecastMutation.data.overall;
+                  metrics = forecastMutation.data.overall.metrics || {};
+                  
+                  // Combine historical and forecast data
+                  chartData = [
+                    ...historical.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      historical: d.value
+                    })),
+                    ...forecast.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      forecast: d.value,
+                      lower: d.lower,
+                      upper: d.upper
+                    }))
+                  ];
+                } else if (forecastMutation.data.items?.[itemToShow]) {
+                  const itemData = forecastMutation.data.items[itemToShow];
+                  const { historical, forecast } = itemData;
+                  metrics = itemData.metrics || {};
+                  
+                  chartData = [
+                    ...historical.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      historical: d.value
+                    })),
+                    ...forecast.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      forecast: d.value,
+                      lower: d.lower,
+                      upper: d.upper
+                    }))
+                  ];
+                } else if (forecastMutation.data.historical && forecastMutation.data.forecast) {
+                  // Legacy single-item format
+                  const { historical, forecast } = forecastMutation.data;
+                  metrics = forecastMutation.data.metrics || {};
+                  
+                  chartData = [
+                    ...historical.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      historical: d.value
+                    })),
+                    ...forecast.map((d: any) => ({
+                      date: new Date(d.date).getTime(),
+                      forecast: d.value,
+                      lower: d.lower,
+                      upper: d.upper
+                    }))
+                  ];
+                }
+                
+                if (chartData.length === 0) {
+                  return (
+                    <div className="text-center text-muted-foreground p-8">
+                      No forecast data available for the selected item.
+                    </div>
+                  );
+                }
+                
+                return (
+                  <div>
+                    <ResponsiveContainer width="100%" height={400}>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis 
+                          dataKey="date" 
+                          domain={['dataMin', 'dataMax']}
+                          type="number"
+                          tickFormatter={(value) => {
+                            const date = new Date(value);
+                            return `${date.getMonth() + 1}/${date.getDate()}`;
+                          }}
+                        />
+                        <YAxis />
+                        <Tooltip 
+                          labelFormatter={(value) => {
+                            const date = new Date(value as number);
+                            return date.toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric',
+                              year: 'numeric'
+                            });
+                          }}
+                        />
+                        <Legend />
+                        <Line
+                          type="monotone"
+                          dataKey="historical"
+                          stroke="#8884d8"
+                          name="Historical"
+                          strokeWidth={2}
+                          dot={false}
+                          connectNulls
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="forecast"
+                          stroke="#82ca9d"
+                          name="Forecast"
+                          strokeWidth={2}
+                          dot={false}
+                          connectNulls
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="lower"
+                          stroke="#ffc658"
+                          name="Lower Bound"
+                          strokeDasharray="5 5"
+                          dot={false}
+                          connectNulls
+                        />
+                        <Line
+                          type="monotone"
+                          dataKey="upper"
+                          stroke="#ff7c7c"
+                          name="Upper Bound"
+                          strokeDasharray="5 5"
+                          dot={false}
+                          connectNulls
+                        />
+                        <Brush dataKey="date" height={30} stroke="#8884d8" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                    
+                    {/* Display Metrics */}
+                    <div className="mt-4 p-4 bg-gray-50 rounded-md">
+                      <div className="flex items-center gap-4 text-sm">
+                        {metrics?.mape !== undefined && (
+                          <span>MAPE: {metrics.mape.toFixed(2)}%</span>
+                        )}
+                        {metrics?.rmse !== undefined && (
+                          <span>RMSE: {metrics.rmse.toFixed(2)}</span>
+                        )}
+                        {metrics?.mae !== undefined && (
+                          <span>MAE: {metrics.mae.toFixed(2)}</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>

@@ -67,6 +67,7 @@ import DataRelationships from "@/pages/data-relationships";
 import DataSchema from "@/pages/data-schema";
 import DataValidation from "@/pages/data-validation";
 import DemandForecasting from "@/pages/demand-forecasting";
+import DemandForecastingSimple from "@/pages/demand-forecasting-simple";
 import DesignStudio from "@/pages/design-studio";
 import DisruptionManagement from "@/pages/disruption-management";
 import ErrorLogs from "@/pages/error-logs";
