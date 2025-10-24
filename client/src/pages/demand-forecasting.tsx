@@ -1293,10 +1293,11 @@ export default function DemandForecasting() {
                 <div className="text-sm text-muted-foreground mb-2">Avg Daily Forecast</div>
                 <div className="text-3xl font-bold">
                   {(() => {
-                    // Get the current forecast data based on selected tab
-                    const currentData = selectedForecastItem === 'Overall' 
+                    // Get the current forecast data based on mode and selection
+                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
+                    const currentData = itemToShow === 'Overall' 
                       ? forecastMutation.data.overall 
-                      : forecastMutation.data.items?.[selectedForecastItem];
+                      : forecastMutation.data.items?.[itemToShow];
                     
                     if (!currentData?.forecast) return '0.0';
                     
@@ -1305,10 +1306,11 @@ export default function DemandForecasting() {
                   })()}
                 </div>
                 {(() => {
-                  // Get the current data based on selected tab
-                  const currentData = selectedForecastItem === 'Overall' 
+                  // Get the current data based on mode and selection
+                  const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
+                  const currentData = itemToShow === 'Overall' 
                     ? forecastMutation.data.overall 
-                    : forecastMutation.data.items?.[selectedForecastItem];
+                    : forecastMutation.data.items?.[itemToShow];
                   
                   if (!currentData?.historical || !currentData?.forecast) return null;
                   
@@ -1331,9 +1333,10 @@ export default function DemandForecasting() {
                 <div className="text-sm text-muted-foreground mb-2">Total {forecastDays}-Day Forecast</div>
                 <div className="text-3xl font-bold">
                   {(() => {
-                    const currentData = selectedForecastItem === 'Overall' 
+                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
+                    const currentData = itemToShow === 'Overall' 
                       ? forecastMutation.data.overall 
-                      : forecastMutation.data.items?.[selectedForecastItem];
+                      : forecastMutation.data.items?.[itemToShow];
                     
                     if (!currentData?.forecast) return '0';
                     
@@ -1349,10 +1352,12 @@ export default function DemandForecasting() {
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-base font-medium">
-                  {selectedForecastItem === 'Overall' 
-                    ? `Overall Demand Forecast - ${modelType} (${selectedItems.length} Items Combined)`
-                    : `Demand Forecast - ${modelType} (${selectedForecastItem})`
-                  }
+                  {(() => {
+                    const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
+                    return itemToShow === 'Overall' 
+                      ? `Overall Demand Forecast - ${modelType} (${selectedItems.length} Items Combined)`
+                      : `Demand Forecast - ${modelType} (${itemToShow})`
+                  })()}
                 </CardTitle>
                 <button 
                   className="text-sm text-muted-foreground hover:text-foreground"
@@ -1381,10 +1386,11 @@ export default function DemandForecasting() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={(() => {
-                      // Get data based on selected item (Overall or individual)
-                      const currentData = selectedForecastItem === 'Overall' 
+                      // Get data based on mode and selection
+                      const itemToShow = forecastMode === 'overall' ? 'Overall' : selectedForecastItem;
+                      const currentData = itemToShow === 'Overall' 
                         ? forecastMutation.data.overall 
-                        : forecastMutation.data.items?.[selectedForecastItem];
+                        : forecastMutation.data.items?.[itemToShow];
                       
                       // Support legacy single-item forecast
                       const historicalData = currentData?.historical || forecastMutation.data.historical || [];
