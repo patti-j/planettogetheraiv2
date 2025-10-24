@@ -3744,6 +3744,11 @@
                         }
                         
                         console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
+                        
+                        // 🔧 CRITICAL: Commit changes after each job to ensure resource conflicts are visible
+                        // This ensures findLatestFreeSlotOnResource sees the updated schedules
+                        await project.commitAsync();
+                        console.log(`  📝 Committed job ${jobKey} to stores`);
                     }
                     
                     // Handle any orphan operations (no job ID)
