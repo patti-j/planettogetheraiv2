@@ -1591,12 +1591,12 @@
                 let fetchedDependencies = []; // Store dependencies at a higher scope
                 
                 try {
-                    // Fetch resources and PT operations from the backend APIs
-                    // 🔄 SIMPLIFIED: No longer fetching dependencies - using sequence numbers instead
-                    const [resourcesResponse, operationsResponse, capabilitiesResponse] = await Promise.all([
+                    // Fetch resources, PT operations, and dependencies from the backend APIs
+                    // NOTE: Dependencies are for visual display only - ALAP uses sequence numbers for scheduling
+                    const [resourcesResponse, operationsResponse, dependenciesResponse, capabilitiesResponse] = await Promise.all([
                         fetch('/api/resources'),
                         fetch('/api/pt-operations'),
-                        // fetch('/api/pt-dependencies'), // REMOVED - using sequence numbers
+                        fetch('/api/pt-dependencies'), // Keep for visual dependency lines
                         fetch('/api/resources-with-capabilities')
                     ]);
                     
@@ -1688,8 +1688,7 @@
                         console.error('❌ Failed to fetch PT operations:', operationsResponse.status);
                     }
                     
-                    // 🔄 SIMPLIFIED: Dependencies processing removed - using sequence numbers instead
-                    /*
+                    // Process dependencies (for visual display only - ALAP uses sequence numbers)
                     if (dependenciesResponse && dependenciesResponse.ok) {
                         const deps = await dependenciesResponse.json();
                         // CRITICAL FIX: API returns 'from' and 'to' directly, not 'fromEvent' and 'toEvent'
@@ -1703,7 +1702,7 @@
                             fromEvent: dep.from, // Also include for compatibility
                             toEvent: dep.to      // Also include for compatibility
                         }));
-                        console.log('✅ Dependencies fetched from database:', fetchedDependencies.length);
+                        console.log('✅ Dependencies fetched from database (for visual display):', fetchedDependencies.length);
                         if (fetchedDependencies.length > 0) {
                             console.log('Sample dependency:', fetchedDependencies[0]);
                             // Validate the dependency has required fields
@@ -1713,7 +1712,6 @@
                     } else {
                         console.warn('Failed to fetch dependencies, using empty array');
                     }
-                    */
                     
                     // Process resource capabilities
                     if (capabilitiesResponse && capabilitiesResponse.ok) {
@@ -4209,12 +4207,13 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // 🔄 SIMPLIFIED: No dependencies needed - using sequence numbers instead
+                    // Load data including dependencies for visual display
+                    // NOTE: ALAP algorithm ignores dependencies and uses sequence numbers instead
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: [] // Empty - we use sequence numbers for ordering
+                        dependenciesData: dependencies // Visual dependency lines (ALAP uses sequence numbers)
                     });
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
