@@ -2235,15 +2235,15 @@
                         // Enable automatic scheduling dates
                         autoCalculateStartDate: true,
                         autoCalculateEndDate: true,
-                        autoCalculate: true,          // Automatically recalculate when changes occur
-                        recalculateAfterLoad: true,  // Recalculate after loading data
+                        autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
+                        recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
                         
                         // CRITICAL: Constraint configuration for preventing overlaps
                         constraintsMode: 'honor',    // 'honor' = enforce all constraints strictly
                         manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
                         
                         // Scheduling engine configuration
-                        schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
+                        schedulingDirection: 'none', // DISABLED - No default scheduling direction
                         allowDependencyLag: true,     // Allow lag times between dependencies
                         calculateCriticalPath: true   // Enable critical path calculation
                     },
@@ -4179,8 +4179,12 @@
                     console.log('📅 Running ASAP scheduling...');
                     await window.waitForSchedulerReady(); // Wait for operations to be loaded
                     const project = scheduler.project;
+                    // Enable calculation temporarily for this operation
+                    project.autoCalculate = true;
                     project.schedulingDirection = 'forward';
                     await project.propagate();
+                    // Disable auto-calculation again to prevent loops
+                    project.autoCalculate = false;
                     console.log('✅ ASAP scheduling complete');
                     updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
@@ -4189,8 +4193,12 @@
                     console.log('📅 Running ALAP scheduling...');
                     await window.waitForSchedulerReady(); // Wait for operations to be loaded
                     const project = scheduler.project;
+                    // Enable calculation temporarily for this operation
+                    project.autoCalculate = true;
                     project.schedulingDirection = 'backward';
                     await project.propagate();
+                    // Disable auto-calculation again to prevent loops
+                    project.autoCalculate = false;
                     console.log('✅ ALAP scheduling complete');
                     updateStatus(); // Use updateStatus instead of updateSchedulerStatus
                 };
