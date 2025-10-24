@@ -4890,63 +4890,18 @@
                 }
             }
             
-            // Apply scheduling button handler using Bryntum's built-in scheduling engine
+            // REMOVED DUPLICATE EVENT LISTENER
+            // This was causing the ASAP infinite loop because there were two event listeners
+            // for the same button. The original listener is at line 3198.
+            // Keeping only the first event listener to prevent duplicate scheduling calls.
+            
+            /* DUPLICATE CODE REMOVED - SEE LINE 3198 FOR THE ACTIVE EVENT LISTENER
             document.getElementById('applyScheduling').addEventListener('click', async () => {
-                try {
-                    const algorithm = document.getElementById('schedulingAlgorithm').value;
-                    console.log(`🚀 Applying ${algorithm.toUpperCase()} algorithm...`);
-                    
-                    if (!window.scheduler || !window.scheduler.project) {
-                        console.error('❌ Scheduler or project not initialized');
-                        return;
-                    }
-                    
-                    const scheduler = window.scheduler;
-                    const project = scheduler.project;
-                    
-                    // Apply the algorithm using Bryntum's scheduling engine
-                    switch(algorithm) {
-                        case 'asap':
-                            console.log('⏳ Running ASAP (Forward) scheduling...');
-                            // Use the working custom ASAP implementation
-                            await asapScheduling();
-                            console.log('✅ ASAP scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('ASAP scheduling complete');
-                            }
-                            break;
-                            
-                        case 'alap':
-                            console.log('⏳ Running ALAP (Backward) scheduling...');
-                            // Use the working custom ALAP implementation
-                            await alapScheduling();
-                            console.log('✅ ALAP scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('ALAP scheduling complete');
-                            }
-                            break;
-                            
-                        case 'criticalPath':
-                            console.log('⏳ Running Critical Path scheduling...');
-                            // Use the working custom Critical Path implementation
-                            await criticalPathScheduling();
-                            console.log('✅ Critical Path scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('Critical Path scheduling complete');
-                            }
-                            break;
-                            
-                        case 'levelResources':
-                            console.log('⏳ Running Resource Leveling...');
-                            // Use the working custom Resource Leveling implementation
-                            await levelResourcesScheduling();
-                            console.log('✅ Resource Leveling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('Resource Leveling complete');
-                            }
-                            break;
-                            
-                        case 'drum':
+                // This entire block was commented out to prevent duplicate event listener
+                // The working event listener is at line 3198
+            });
+            
+            The following block from lines 4903-5158 contained duplicate scheduling logic:
                             console.log('⏳ Running Drum/TOC scheduling...');
                             // Use the working custom Drum/TOC implementation
                             await drumScheduling();
