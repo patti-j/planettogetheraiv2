@@ -3621,13 +3621,16 @@
                         ev.manuallyScheduled = false;
                     });
                     
-                    // Build successors map across the whole project to obey dependencies
+                    // Build predecessors and successors maps
+                    const preds = new Map();   // eventId -> [predecessorId]
                     const succs = new Map();   // eventId -> [successorId]
                     dependencyStore.forEach(dep => {
                         const fromId = dep.fromEvent ?? dep.from;
                         const toId   = dep.toEvent   ?? dep.to;
                         if (!succs.has(fromId)) succs.set(fromId, []);
                         succs.get(fromId).push(toId);
+                        if (!preds.has(toId)) preds.set(toId, []);
+                        preds.get(toId).push(fromId);
                     });
                     
                     // Determine which events are the "last ops" per job (no successors *in the same job*)
@@ -3647,30 +3650,26 @@
                     project.direction = 'Backward';
                     project.schedulingDirection = 'backward';
                     
-                    // We will traverse events in reverse topological-ish order:
-                    //  - schedule last-ops first (closest to their job due),
-                    //  - then predecessors back toward the start
-                    const sorted = [...allEvents].sort((a, b) => {
-                        const aSucc = (succs.get(a.id) || []).length;
-                        const bSucc = (succs.get(b.id) || []).length;
-                        // fewer successors later in time => schedule earlier in code (i.e., end later)
-                        return aSucc - bSucc;
-                    });
-                    
                     // Helper to resolve the resource for an event (use assignments to avoid nulls)
                     const resolveResource = (ev) => {
                         const asg = assignmentStore.find(a => a.eventId === ev.id);
                         return asg ? resourceStore.getById(asg.resourceId) : null;
                     };
                     
-                    // Main backward pass
-                    for (const ev of sorted) {
+                    // Track which events have been scheduled
+                    const scheduled = new Set();
+                    const scheduledDates = new Map(); // eventId -> {start, end}
+                    
+                    // Recursive function to schedule an event and its predecessors
+                    const scheduleBackward = (ev) => {
+                        if (scheduled.has(ev.id)) return; // Already scheduled
+                        
                         const key = getJobKey(ev);
                         const jobDue = jobDueMap.get(key) || globalFallback;
                         const isJobLastOp = key && jobLastOps.get(key)?.has(ev.id);
+                        const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
+                        const resource = resolveResource(ev) || ev.resource;
                         
-                        // CRITICAL FIX: Only use job due date for LAST operations
-                        // Other operations should be constrained only by their successors
                         let latestEnd;
                         
                         if (isJobLastOp && requireNeedDates) {
@@ -3678,41 +3677,82 @@
                             latestEnd = new Date(jobDue);
                             ev.constraintType = 'finishnolaterthan';
                             ev.constraintDate = new Date(jobDue);
-                            console.log(`  Setting finish-no-later-than constraint for last op "${ev.name}" to ${jobDue.toLocaleString()}`);
+                            console.log(`  📌 Last op "${ev.name}" constrained to finish by ${jobDue.toLocaleString()}`);
                         } else {
-                            // Not a last operation - use a far future date as initial value
-                            // This allows operations to be scheduled based purely on successor constraints
-                            latestEnd = new Date(2030, 0, 1); // Far future initial value
-                        }
-                        
-                        // Constrain by already-placed successors (both within and across jobs)
-                        const mySuccs = succs.get(ev.id) || [];
-                        for (const sid of mySuccs) {
-                            const s = eventStore.getById(sid);
-                            if (s?.startDate && s.startDate < latestEnd) {
-                                latestEnd = new Date(s.startDate);
-                                console.log(`    "${ev.name}" must finish before successor "${s.name}" starts at ${s.startDate.toLocaleString()}`);
+                            // Not a last operation - constrain by successors only
+                            latestEnd = null;
+                            
+                            // Find the earliest successor start time
+                            const mySuccs = succs.get(ev.id) || [];
+                            for (const sid of mySuccs) {
+                                const sched = scheduledDates.get(sid);
+                                if (sched) {
+                                    if (!latestEnd || sched.start < latestEnd) {
+                                        latestEnd = new Date(sched.start);
+                                        console.log(`    "${ev.name}" must finish before successor (id:${sid}) starts at ${sched.start.toLocaleString()}`);
+                                    }
+                                }
+                            }
+                            
+                            // If no scheduled successors yet, use a reasonable default
+                            if (!latestEnd) {
+                                latestEnd = new Date(jobDue); // Default to job due if no successors scheduled yet
                             }
                         }
                         
-                        const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
-                        const resource = resolveResource(ev) || ev.resource;
+                        // Calculate the slot for this operation
+                        let start, end;
                         
                         if (resource) {
-                            // Use your existing backward packer to avoid overlaps on the machine
-                            const { start, end } = findLatestFreeSlotOnResource(resource, latestEnd, durationMs, ev);
-                            ev.set({ startDate: start, endDate: end, manuallyScheduled: false });
-                            // Debug:
-                            console.log(`  ALAP: ${ev.name} @ ${resource.name} -> ${start.toLocaleString()} .. ${end.toLocaleString()}`);
+                            // Use the backward packer to find latest free slot on resource
+                            const slot = findLatestFreeSlotOnResource(resource, latestEnd, durationMs, ev);
+                            start = slot.start;
+                            end = slot.end;
                         } else {
-                            // Unassigned: just back off from the latestEnd
-                            const start = new Date(latestEnd.getTime() - durationMs);
-                            ev.set({ startDate: start, endDate: latestEnd, manuallyScheduled: false });
-                            console.warn(`  ALAP: ${ev.name} has no resource; placed ${start.toLocaleString()} .. ${latestEnd.toLocaleString()}`);
+                            // No resource - just place backward from latestEnd
+                            end = latestEnd;
+                            start = new Date(end.getTime() - durationMs);
+                        }
+                        
+                        // Set the dates on the event
+                        ev.set({ startDate: start, endDate: end, manuallyScheduled: false });
+                        
+                        // Track that we've scheduled this event
+                        scheduled.add(ev.id);
+                        scheduledDates.set(ev.id, { start, end });
+                        
+                        console.log(`  ⬅️ ALAP: ${ev.name} @ ${resource?.name || 'no-resource'} -> ${start.toLocaleString()} to ${end.toLocaleString()}`);
+                        
+                        // Now recursively schedule all predecessors
+                        const myPreds = preds.get(ev.id) || [];
+                        for (const pid of myPreds) {
+                            const pred = eventStore.getById(pid);
+                            if (pred && !scheduled.has(pid)) {
+                                scheduleBackward(pred);
+                            }
+                        }
+                    };
+                    
+                    // Start by scheduling all last operations first
+                    console.log('📍 Starting with last operations of each job...');
+                    for (const [jobKey, lastOpsSet] of jobLastOps.entries()) {
+                        for (const evId of lastOpsSet) {
+                            const ev = eventStore.getById(evId);
+                            if (ev) {
+                                scheduleBackward(ev);
+                            }
                         }
                     }
                     
-                    // Commit and propagate with backward direction (keeps dependency math coherent)
+                    // Schedule any remaining unscheduled events (shouldn't happen if dependencies are complete)
+                    for (const ev of allEvents) {
+                        if (!scheduled.has(ev.id)) {
+                            console.warn(`  ⚠️ Event "${ev.name}" was not reached through dependencies - scheduling anyway`);
+                            scheduleBackward(ev);
+                        }
+                    }
+                    
+                    // Commit and propagate with backward direction
                     await project.commitAsync();
                     await project.propagate();
                     
@@ -3720,7 +3760,7 @@
                     project.direction = 'Forward';
                     project.schedulingDirection = 'forward';
                     
-                    console.log('✅ ALAP complete (per-job Need-By). Verifying overlaps …');
+                    console.log('✅ ALAP complete (backward cascade from Need-By dates). Verifying overlaps…');
                     
                     // Optional assertion you already use
                     if (typeof assertNoOverlaps === 'function' && assertNoOverlaps(scheduler)) {
