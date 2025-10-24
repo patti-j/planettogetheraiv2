@@ -435,8 +435,14 @@ def train_prophet(df, model_id, hyperparameter_tuning=False):
     # Prophet doesn't work well with flat/near-zero data
     data_std = prophet_df['y'].std()
     data_mean = prophet_df['y'].mean()
+    data_max = prophet_df['y'].max()
+    data_min = prophet_df['y'].min()
     
-    if data_std < 0.01 and abs(data_mean) < 0.01:
+    print(f"Prophet data stats: mean={data_mean:.4f}, std={data_std:.4f}, min={data_min:.4f}, max={data_max:.4f}, len={len(prophet_df)}", flush=True)
+    
+    # Check for near-zero data with low variance
+    # If all values are very small (close to zero) with minimal variation, use simple forecast
+    if data_max < 1.0 and data_std < 0.5:
         # Data is essentially flat and near zero - use a simple average forecast
         print(f"Warning: Data has very low variance (std={data_std:.4f}, mean={data_mean:.4f}). Using simple average forecast.", flush=True)
         
