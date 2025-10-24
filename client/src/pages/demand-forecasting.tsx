@@ -78,6 +78,7 @@ export default function DemandForecasting() {
   const [selectedForecastItem, setSelectedForecastItem] = useState<string>("Overall");
   const [forecastMode, setForecastMode] = useState<"separate" | "overall">("separate");
   const [itemSearchQuery, setItemSearchQuery] = useState<string>("");
+  const [forecastSearchQuery, setForecastSearchQuery] = useState<string>("");
   
   // Training state
   const [isModelTrained, setIsModelTrained] = useState<boolean>(false);
@@ -1229,40 +1230,49 @@ export default function DemandForecasting() {
       {forecastMutation.data && (
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <h2 className="text-2xl font-bold">
-              Overall Demand Forecast
+              {forecastMode === 'overall' ? 'Overall Demand Forecast' : 'Demand Forecast'}
               {forecastMutation.data.overall?.usingDedicatedModel && (
                 <span className="ml-2 text-xs font-normal text-muted-foreground">
                   (Aggregated Model)
                 </span>
               )}
             </h2>
-            <div className="flex gap-2 text-sm">
-              <button 
-                className={`px-3 py-1 border rounded transition-colors ${
-                  selectedForecastItem === 'Overall' 
-                    ? 'bg-primary text-primary-foreground border-primary' 
-                    : 'hover:bg-muted'
-                }`}
-                onClick={() => setSelectedForecastItem('Overall')}
-              >
-                Overall
-              </button>
-              {selectedItems.slice(0, 5).map((item, index) => (
-                <button
-                  key={item}
-                  className={`px-3 py-1 border rounded transition-colors ${
-                    selectedForecastItem === item 
-                      ? 'bg-primary text-primary-foreground border-primary' 
-                      : 'hover:bg-muted'
-                  }`}
-                  onClick={() => setSelectedForecastItem(item)}
-                >
-                  {item.length > 8 ? `${item.substring(0, 6)}...` : item}
-                </button>
-              ))}
-            </div>
+            
+            {/* Item Selection based on mode */}
+            {forecastMode === 'separate' ? (
+              <div className="flex items-center gap-3">
+                <div className="relative w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search items to view forecast..."
+                    value={forecastSearchQuery}
+                    onChange={(e) => setForecastSearchQuery(e.target.value)}
+                    className="pl-9 h-9"
+                    data-testid="input-search-forecast-items"
+                  />
+                </div>
+                <Select value={selectedForecastItem} onValueChange={setSelectedForecastItem}>
+                  <SelectTrigger className="w-48 h-9" data-testid="select-forecast-item">
+                    <SelectValue placeholder="Select item" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Overall">Overall (All Items)</SelectItem>
+                    {selectedItems
+                      .filter(item => item.toLowerCase().includes(forecastSearchQuery.toLowerCase()))
+                      .map(item => (
+                        <SelectItem key={item} value={item}>{item}</SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">
+                Aggregated forecast for all selected items
+              </div>
+            )}
           </div>
 
           {/* Metric Cards */}
