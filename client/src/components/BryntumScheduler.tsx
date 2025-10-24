@@ -187,6 +187,13 @@ const BryntumScheduler: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingResources(true);
+      
+      // CRITICAL: Reset state before loading new data to prevent stale data issues
+      setResources([]);
+      setEvents([]);
+      setAssignments([]);
+      setDependencies([]);
+      
       try {
         // Build resource URL with planning area filter
         const resourceUrl = selectedPlanningArea !== 'all' 
@@ -267,32 +274,59 @@ const BryntumScheduler: React.FC = () => {
           eventsData.push(eventData);
         }
 
-        // Build assignments - FIXED: Only include operations that have resources in the filtered set
+        // Build assignments - IMPROVED: Properly filter operations by planning area
         const resSet = new Set(resourceRows.map((r) => r.id));
         const assignmentsData: any[] = [];
         const validEventIds = new Set<string>();
+        
+        console.log(`🔍 Filtering by planning area: ${selectedPlanningArea}`);
+        console.log(`   Available resources in filtered set:`, resSet);
         
         for (const op of rawOperations) {
           const eid = S(op.id);
           const rid = S(op.resourceId ?? op.resource_id);
           if (!eid) continue;
           
-          // If we're filtering by planning area and the operation's resource is not in the filtered set,
-          // only include it if it's unscheduled or we're showing all areas
-          if (rid && resSet.has(rid)) {
-            assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+          // Decision logic for including operations:
+          // 1. If showing all areas, include everything
+          // 2. If resource is in filtered set, include it
+          // 3. If no resource assigned (unscheduled), include it
+          
+          if (selectedPlanningArea === 'all') {
+            // Show all operations when "All Areas" is selected
+            if (rid && resSet.has(rid)) {
+              assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+            } else {
+              assignmentsData.push({
+                id: `a_${eid}_unscheduled`,
+                eventId: eid,
+                resourceId: 'unscheduled',
+              });
+            }
             validEventIds.add(eid);
-          } else if (!rid || selectedPlanningArea === 'all') {
-            // Operations without resources or when showing all areas should be assigned to unscheduled
-            assignmentsData.push({
-              id: `a_${eid}_unscheduled`,
-              eventId: eid,
-              resourceId: 'unscheduled',
-            });
-            validEventIds.add(eid);
+          } else {
+            // Filter by specific planning area
+            if (rid && resSet.has(rid)) {
+              // Operation is assigned to a resource in the selected planning area
+              assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+              validEventIds.add(eid);
+            } else if (!rid) {
+              // Operation has no resource assignment (unscheduled) - always show these
+              assignmentsData.push({
+                id: `a_${eid}_unscheduled`,
+                eventId: eid,
+                resourceId: 'unscheduled',
+              });
+              validEventIds.add(eid);
+            }
+            // Operations assigned to resources outside the selected planning area are excluded
           }
         }
 
+        console.log(`   Total operations: ${rawOperations.length}`);
+        console.log(`   Operations after filtering: ${validEventIds.size}`);
+        console.log(`   Assignments created: ${assignmentsData.length}`);
+        
         // Filter events to only include those with valid assignments
         eventsData = eventsData.filter(ev => validEventIds.has(ev.id));
         
