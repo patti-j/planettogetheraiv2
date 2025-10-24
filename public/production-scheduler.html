@@ -3634,17 +3634,48 @@
                         preds.get(toId).push(fromId);
                     });
                     
-                    // Determine which events are the "last ops" per job (no successors *in the same job*)
+                    // Determine which events are the "last ops" per job using SEQUENCE NUMBERS
+                    // The last operation is the one with the highest sequence number in each job
                     const jobLastOps = new Map(); // jobKey -> Set(eventIds)
+                    const jobMaxSequence = new Map(); // jobKey -> max sequence number
+                    
+                    // First pass: find the maximum sequence number for each job
                     for (const ev of allEvents) {
                         const key = getJobKey(ev);
                         if (!key) continue;
-                        const successors = (succs.get(ev.id) || []).map(id => eventStore.getById(id)).filter(Boolean);
-                        const hasSuccInSameJob = successors.some(s => getJobKey(s) === key);
-                        if (!hasSuccInSameJob) {
+                        
+                        // Get sequence number from various possible fields
+                        const seq = ev.sequence_number || ev.sequenceNumber || 
+                                   ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
+                        
+                        if (!jobMaxSequence.has(key) || seq > jobMaxSequence.get(key)) {
+                            jobMaxSequence.set(key, seq);
+                        }
+                    }
+                    
+                    // Second pass: mark operations with max sequence as last operations
+                    for (const ev of allEvents) {
+                        const key = getJobKey(ev);
+                        if (!key) continue;
+                        
+                        const seq = ev.sequence_number || ev.sequenceNumber || 
+                                   ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
+                        
+                        // This is a last operation if it has the maximum sequence number for its job
+                        if (seq === jobMaxSequence.get(key)) {
                             if (!jobLastOps.has(key)) jobLastOps.set(key, new Set());
                             jobLastOps.get(key).add(ev.id);
+                            console.log(`  📍 Identified last operation: "${ev.name}" (seq: ${seq}) in job ${key}`);
                         }
+                    }
+                    
+                    console.log('📊 Job last operations summary:');
+                    for (const [jobKey, lastOpsSet] of jobLastOps.entries()) {
+                        const ops = Array.from(lastOpsSet).map(id => {
+                            const ev = eventStore.getById(id);
+                            return ev ? ev.name : 'Unknown';
+                        });
+                        console.log(`  Job ${jobKey}: ${ops.join(', ')}`);
                     }
                     
                     // Set project direction to Backward for ALAP
@@ -3760,11 +3791,9 @@
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
                         
-                        // Find the last operations for this specific job
+                        // Find the last operations for this specific job using sequence numbers
                         const lastOps = jobEvents.filter(ev => {
-                            const successors = (succs.get(ev.id) || []).map(id => eventStore.getById(id)).filter(Boolean);
-                            const hasSuccInSameJob = successors.some(s => getJobKey(s) === jobKey);
-                            return !hasSuccInSameJob;
+                            return jobLastOps.get(jobKey)?.has(ev.id) || false;
                         });
                         
                         console.log(`  Found ${lastOps.length} last operation(s) in job ${jobKey}`);
