@@ -379,20 +379,23 @@ def train_random_forest(df, model_id, hyperparameter_tuning=False):
     residuals = y.values - y_pred
     residual_std = np.std(residuals)
     
-    # Store model and feature info
+    # Store model and feature info with training metrics
+    metrics = {
+        "mape": mape,
+        "rmse": rmse,
+        "accuracy": max(0, 100 - mape)
+    }
+    
     trained_models[model_id] = {
         'model': model,
         'type': 'Random Forest',
         'feature_cols': feature_cols,
         'residual_std': residual_std,
-        'last_data': df.tail(30).copy()  # Keep last 30 days for forecasting
+        'last_data': df.tail(30).copy(),  # Keep last 30 days for forecasting
+        'training_metrics': metrics  # Store training metrics with the model
     }
     
-    return {
-        "mape": mape,
-        "rmse": rmse,
-        "accuracy": max(0, 100 - mape)
-    }
+    return metrics
 
 def train_linear_regression(df, model_id):
     """Train Linear Regression model"""
@@ -424,21 +427,24 @@ def train_linear_regression(df, model_id):
     residuals = y - y_pred
     residual_std = np.std(residuals)
     
-    # Store model and feature info
+    # Store model and feature info with training metrics
+    metrics = {
+        "mape": mape,
+        "rmse": rmse,
+        "accuracy": max(0, 100 - mape)
+    }
+    
     trained_models[model_id] = {
         'model': model,
         'scaler': scaler,
         'type': 'Linear Regression',
         'feature_cols': feature_cols,
         'residual_std': residual_std,
-        'last_data': df.tail(30).copy()  # Keep last 30 days for forecasting
+        'last_data': df.tail(30).copy(),  # Keep last 30 days for forecasting
+        'training_metrics': metrics  # Store training metrics with the model
     }
     
-    return {
-        "mape": mape,
-        "rmse": rmse,
-        "accuracy": max(0, 100 - mape)
-    }
+    return metrics
 
 def train_arima(df, model_id, hyperparameter_tuning=False):
     """Train ARIMA model with optional hyperparameter tuning and seasonal support"""
@@ -1148,14 +1154,11 @@ def forecast_random_forest(model_info, df, forecast_days):
         })
         forecast_df = pd.concat([forecast_df, new_row], ignore_index=True)
     
-    # Calculate metrics from last known values
-    recent_values = df['value'].tail(10).values
-    mape = float(np.std(recent_values) / np.mean(recent_values) * 100) if np.mean(recent_values) != 0 else 0
-    rmse = float(np.std(recent_values))
-    
+    # Return the actual training metrics stored with the model
+    training_metrics = model_info.get('training_metrics', {})
     return {
         "predictions": predictions,
-        "metrics": {"mape": mape, "rmse": rmse}
+        "metrics": training_metrics
     }
 
 def forecast_arima(model_info, df, forecast_days):
@@ -1210,17 +1213,11 @@ def forecast_arima(model_info, df, forecast_days):
                 "upper": float(pred_value + 1.96 * std_error)
             })
     
-    # Calculate metrics
-    recent_values = df['value'].tail(10).values
-    if np.mean(recent_values) != 0:
-        mape = float(np.std(recent_values) / np.mean(recent_values) * 100)
-    else:
-        mape = 0.0
-    rmse = float(np.std(recent_values))
-    
+    # Return the actual training metrics stored with the model
+    training_metrics = model_info.get('training_metrics', {})
     return {
         "predictions": predictions,
-        "metrics": {"mape": mape, "rmse": rmse}
+        "metrics": training_metrics
     }
 
 def forecast_prophet(model_info, df, forecast_days):
@@ -1244,13 +1241,11 @@ def forecast_prophet(model_info, df, forecast_days):
             "upper": float(max(0, row['yhat_upper']))
         })
     
-    # Calculate metrics from recent data
-    mape = float(np.std(df['value'].tail(10)) / np.mean(df['value'].tail(10)) * 100)
-    rmse = float(np.std(df['value'].tail(10)))
-    
+    # Return the actual training metrics stored with the model
+    training_metrics = model_info.get('training_metrics', {})
     return {
         "predictions": predictions,
-        "metrics": {"mape": mape, "rmse": rmse}
+        "metrics": training_metrics
     }
 
 if __name__ == '__main__':

@@ -1347,8 +1347,10 @@ export default function DemandForecasting() {
                       const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
                       
                       // Combine historical and forecast data with proper labeling
+                      // Convert dates to timestamps for proper time scale
                       const historicalWithLabel = historicalData.map((d: any) => ({
                         ...d,
+                        timestamp: new Date(d.date).getTime(),
                         historical: d.value,
                         forecast: null,
                         lower: null,
@@ -1356,12 +1358,15 @@ export default function DemandForecasting() {
                       }));
                       const forecastWithLabel = forecastData.map((d: any) => ({
                         ...d,
+                        timestamp: new Date(d.date).getTime(),
                         historical: null,
                         forecast: d.value,
                         lower: d.lower,
                         upper: d.upper
                       }));
-                      return [...historicalWithLabel, ...forecastWithLabel];
+                      // Combine and sort by timestamp to ensure proper ordering
+                      const combined = [...historicalWithLabel, ...forecastWithLabel];
+                      return combined.sort((a, b) => a.timestamp - b.timestamp);
                     })()}
                     margin={{ top: 5, right: 30, left: 50, bottom: 50 }}
                   >
@@ -1377,11 +1382,21 @@ export default function DemandForecasting() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
                     <XAxis 
-                      dataKey="date" 
+                      dataKey="timestamp" 
+                      type="number"
+                      domain={['dataMin', 'dataMax']}
+                      scale="time"
                       tick={{ fontSize: 11 }}
                       angle={-45}
                       textAnchor="end"
                       height={60}
+                      tickFormatter={(timestamp) => {
+                        const date = new Date(timestamp);
+                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                        const day = date.getDate().toString().padStart(2, '0');
+                        const year = date.getFullYear().toString().slice(-2);
+                        return `${month}/${day}/${year}`;
+                      }}
                     />
                     <YAxis 
                       tick={{ fontSize: 11 }}
