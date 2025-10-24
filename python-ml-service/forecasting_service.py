@@ -98,91 +98,147 @@ def train_model():
     try:
         data = request.json
         model_type = data.get('modelType', 'Random Forest')
-        historical_data = data.get('historicalData', [])
-        model_id = data.get('modelId', 'default')
+        
+        # Support both single-item (legacy) and multi-item training
+        items_data = data.get('itemsData', {})  # New: dict with item names as keys
+        if not items_data:
+            # Legacy single-item support
+            historical_data = data.get('historicalData', [])
+            item = data.get('item', 'default_item')
+            if historical_data and item:
+                items_data = {item: historical_data}
+        
+        base_model_id = data.get('modelId', 'default')
         
         # Extract hierarchical filters for caching
         planning_areas = data.get('planningAreas', None)
         scenario_names = data.get('scenarioNames', None)
-        item = data.get('item', 'default_item')
         forecast_days = data.get('forecastDays', 30)
         hyperparameter_tuning = data.get('hyperparameterTuning', False)
         
-        if not historical_data:
-            return jsonify({"error": "No historical data provided."}), 400
+        if not items_data:
+            return jsonify({"error": "No items data provided."}), 400
         
-        # Check cache first if available
-        cache_key = None
-        if MODEL_CACHE_AVAILABLE:
-            try:
-                cache = get_model_cache()
-                cache_key = cache.get_cache_key(
-                    model_type, forecast_days, item, 
-                    planning_areas, scenario_names, hyperparameter_tuning
-                )
-                
-                # Try to load from cache
-                if cache.exists(model_type, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning):
-                    cached_model, cached_metadata = cache.load_model(cache_key)
-                    if cached_model is not None and cached_metadata is not None:
-                        # Store in memory for immediate use
-                        trained_models[model_id] = cached_model
-                        
-                        print(f"Loaded model from cache: {cache_key}", flush=True)
-                        return jsonify({
-                            "success": True,
-                            "modelType": model_type,
-                            "metrics": cached_metadata.get('metrics', {}),
-                            "trainingDataPoints": len(historical_data),
-                            "modelId": model_id,
-                            "cacheKey": cache_key,
-                            "fromCache": True
-                        })
-            except Exception as e:
-                print(f"Cache check failed: {e}", flush=True)
+        # Results for each item
+        training_results = {}
+        all_metrics = []
+        successfully_trained = []
         
-        # Convert to DataFrame
-        df = pd.DataFrame(historical_data)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date')
-        df['value'] = df['value'].astype(float)
-        
-        # Train based on model type
-        if model_type == 'Linear Regression':
-            metrics = train_linear_regression(df, model_id)
-        elif model_type == 'Random Forest':
-            metrics = train_random_forest(df, model_id, hyperparameter_tuning)
-        elif model_type == 'ARIMA':
-            metrics = train_arima(df, model_id, hyperparameter_tuning)
-        elif model_type == 'Prophet':
-            metrics = train_prophet(df, model_id, hyperparameter_tuning)
-        else:
-            return jsonify({"error": f"Unknown model type: {model_type}"}), 400
-        
-        # Save to cache if available
-        if MODEL_CACHE_AVAILABLE and cache_key:
-            try:
-                cache = get_model_cache()
-                model_info = trained_models.get(model_id)
-                if model_info:
-                    cache.save_model(
-                        model_type, forecast_days, item,
-                        model_info, 
-                        {'metrics': metrics, 'training_points': len(historical_data), 'hyperparameter_tuning': hyperparameter_tuning},
+        # Train individual models for each item
+        for item_name, historical_data in items_data.items():
+            if not historical_data:
+                print(f"No data for item {item_name}, skipping", flush=True)
+                continue
+            
+            # Create unique model ID for this item
+            model_id = f"{base_model_id}_{item_name}"
+            
+            # Check cache first if available
+            cache_key = None
+            if MODEL_CACHE_AVAILABLE:
+                try:
+                    cache = get_model_cache()
+                    cache_key = cache.get_cache_key(
+                        model_type, forecast_days, item_name, 
                         planning_areas, scenario_names, hyperparameter_tuning
                     )
-                    print(f"Saved model to cache: {cache_key}", flush=True)
-            except Exception as e:
-                print(f"Cache save failed: {e}", flush=True)
+                    
+                    # Try to load from cache
+                    if cache.exists(model_type, forecast_days, item_name, planning_areas, scenario_names, hyperparameter_tuning):
+                        cached_model, cached_metadata = cache.load_model(cache_key)
+                        if cached_model is not None and cached_metadata is not None:
+                            # Store in memory for immediate use
+                            trained_models[model_id] = cached_model
+                            
+                            print(f"Loaded model from cache for item {item_name}: {cache_key}", flush=True)
+                            training_results[item_name] = {
+                                "success": True,
+                                "modelType": model_type,
+                                "metrics": cached_metadata.get('metrics', {}),
+                                "trainingDataPoints": len(historical_data),
+                                "modelId": model_id,
+                                "cacheKey": cache_key,
+                                "fromCache": True
+                            }
+                            all_metrics.append(cached_metadata.get('metrics', {}))
+                            successfully_trained.append(item_name)
+                            continue
+                except Exception as e:
+                    print(f"Cache check failed for item {item_name}: {e}", flush=True)
+            
+            # Convert to DataFrame
+            df = pd.DataFrame(historical_data)
+            df['date'] = pd.to_datetime(df['date'])
+            df = df.sort_values('date')
+            df['value'] = df['value'].astype(float)
+            
+            # Train based on model type
+            try:
+                if model_type == 'Linear Regression':
+                    metrics = train_linear_regression(df, model_id)
+                elif model_type == 'Random Forest':
+                    metrics = train_random_forest(df, model_id, hyperparameter_tuning)
+                elif model_type == 'ARIMA':
+                    metrics = train_arima(df, model_id, hyperparameter_tuning)
+                elif model_type == 'Prophet':
+                    metrics = train_prophet(df, model_id, hyperparameter_tuning)
+                else:
+                    return jsonify({"error": f"Unknown model type: {model_type}"}), 400
+                
+                # Save to cache if available
+                if MODEL_CACHE_AVAILABLE and cache_key:
+                    try:
+                        cache = get_model_cache()
+                        model_info = trained_models.get(model_id)
+                        if model_info:
+                            cache.save_model(
+                                model_type, forecast_days, item_name,
+                                model_info, 
+                                {'metrics': metrics, 'training_points': len(historical_data), 'hyperparameter_tuning': hyperparameter_tuning},
+                                planning_areas, scenario_names, hyperparameter_tuning
+                            )
+                            print(f"Saved model to cache for item {item_name}: {cache_key}", flush=True)
+                    except Exception as e:
+                        print(f"Cache save failed for item {item_name}: {e}", flush=True)
+                
+                training_results[item_name] = {
+                    "success": True,
+                    "modelType": model_type,
+                    "metrics": metrics,
+                    "trainingDataPoints": len(historical_data),
+                    "modelId": model_id,
+                    "cacheKey": cache_key,
+                    "fromCache": False
+                }
+                all_metrics.append(metrics)
+                successfully_trained.append(item_name)
+                
+            except Exception as item_error:
+                print(f"Failed to train model for item {item_name}: {str(item_error)}", flush=True)
+                training_results[item_name] = {
+                    "success": False,
+                    "error": str(item_error),
+                    "modelId": model_id
+                }
+        
+        # Calculate overall metrics (average of all items)
+        overall_metrics = {}
+        if all_metrics:
+            metric_keys = all_metrics[0].keys()
+            for key in metric_keys:
+                values = [m.get(key, 0) for m in all_metrics if key in m]
+                if values:
+                    overall_metrics[key] = sum(values) / len(values)
         
         return jsonify({
             "success": True,
             "modelType": model_type,
-            "metrics": metrics,
-            "trainingDataPoints": len(historical_data),
-            "modelId": model_id,
-            "cacheKey": cache_key,
-            "fromCache": False
+            "overallMetrics": overall_metrics,
+            "itemsResults": training_results,
+            "totalItems": len(items_data),
+            "trainedItems": len(successfully_trained),
+            "baseModelId": base_model_id,
+            "trainedItemNames": successfully_trained
         })
         
     except Exception as e:
@@ -625,69 +681,155 @@ def train_prophet(df, model_id, hyperparameter_tuning=False):
 def forecast():
     try:
         data = request.json
-        model_id = data.get('modelId', 'default')
+        
+        # Support both single-item (legacy) and multi-item forecasting
+        items_data = data.get('itemsData', {})  # New: dict with item names as keys and historical data as values
+        if not items_data:
+            # Legacy single-item support
+            model_id = data.get('modelId', 'default')
+            forecast_days = data.get('forecastDays', 30)
+            historical_data = data.get('historicalData', [])
+        
+            item = data.get('item', 'default_item')
+            if historical_data and item:
+                items_data = {item: historical_data}
+        
+        base_model_id = data.get('baseModelId', data.get('modelId', 'default'))
         forecast_days = data.get('forecastDays', 30)
-        historical_data = data.get('historicalData', [])
         
-        # Extract hierarchical filters for caching
-        planning_areas = data.get('planningAreas', None)
-        scenario_names = data.get('scenarioNames', None)
-        item = data.get('item', 'default_item')
-        model_type_requested = data.get('modelType', None)
-        hyperparameter_tuning = data.get('hyperparameterTuning', False)
+        if not items_data:
+            return jsonify({"error": "No items data provided"}), 400
         
-        # Try to load from cache first if available
-        if MODEL_CACHE_AVAILABLE and model_type_requested:
+        # Results for each item
+        individual_forecasts = {}
+        successful_forecasts = []
+        
+        # Generate forecasts for each item
+        for item_name, historical_data in items_data.items():
+            # Get the model ID for this item
+            model_id = f"{base_model_id}_{item_name}"
+            
+            if model_id not in trained_models:
+                print(f"No trained model found for item {item_name} with ID: {model_id}", flush=True)
+                continue
+            
+            # Get model info
+            model_info = trained_models[model_id]
+            model_type = model_info['type']
+            
+            # Convert historical data to DataFrame for context
+            if not historical_data:
+                # Use the last_data stored during training
+                df = model_info.get('last_data', pd.DataFrame())
+            else:
+                df = pd.DataFrame(historical_data)
+                df['date'] = pd.to_datetime(df['date'])
+                df = df.sort_values('date')
+                df['value'] = df['value'].astype(float)
+            
+            if df.empty:
+                print(f"No historical data available for item {item_name}", flush=True)
+                continue
+            
             try:
-                cache = get_model_cache()
-                cache_key = cache.get_cache_key(
-                    model_type_requested, forecast_days, item, 
-                    planning_areas, scenario_names, hyperparameter_tuning
-                )
+                # Generate forecast based on model type
+                if model_type == 'Linear Regression':
+                    forecast_data = forecast_linear_regression(model_info, df, forecast_days)
+                elif model_type == 'Random Forest':
+                    forecast_data = forecast_random_forest(model_info, df, forecast_days)
+                elif model_type == 'ARIMA':
+                    forecast_data = forecast_arima(model_info, df, forecast_days)
+                elif model_type == 'Prophet':
+                    forecast_data = forecast_prophet(model_info, df, forecast_days)
+                else:
+                    print(f"Unknown model type for item {item_name}: {model_type}", flush=True)
+                    continue
                 
-                if cache.exists(model_type_requested, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning):
-                    cached_model, cached_metadata = cache.load_model(cache_key)
-                    if cached_model is not None:
-                        # Use cached model for prediction
-                        trained_models[model_id] = cached_model
-                        print(f"Using cached model for forecast: {cache_key}", flush=True)
-            except Exception as e:
-                print(f"Cache load for forecast failed: {e}", flush=True)
+                # Format historical data
+                historical = [{"date": row['date'].strftime('%Y-%m-%d'), "value": float(row['value'])} 
+                             for _, row in df.iterrows()]
+                
+                individual_forecasts[item_name] = {
+                    "historical": historical,
+                    "forecast": forecast_data['predictions'],
+                    "metrics": forecast_data['metrics'],
+                    "modelType": model_type
+                }
+                successful_forecasts.append(item_name)
+                
+            except Exception as item_error:
+                print(f"Failed to generate forecast for item {item_name}: {str(item_error)}", flush=True)
+                continue
         
-        # Check if model exists
-        if model_id not in trained_models:
-            return jsonify({"error": "Model not trained. Please train the model first."}), 400
-        
-        model_info = trained_models[model_id]
-        model_type = model_info['type']
-        
-        # Convert historical data to DataFrame
-        df = pd.DataFrame(historical_data)
-        df['date'] = pd.to_datetime(df['date'])
-        df = df.sort_values('date')
-        df['value'] = df['value'].astype(float)
-        
-        # Generate forecast based on model type
-        if model_type == 'Linear Regression':
-            forecast_data = forecast_linear_regression(model_info, df, forecast_days)
-        elif model_type == 'Random Forest':
-            forecast_data = forecast_random_forest(model_info, df, forecast_days)
-        elif model_type == 'ARIMA':
-            forecast_data = forecast_arima(model_info, df, forecast_days)
-        elif model_type == 'Prophet':
-            forecast_data = forecast_prophet(model_info, df, forecast_days)
-        else:
-            return jsonify({"error": f"Unknown model type: {model_type}"}), 400
-        
-        # Format historical data
-        historical = [{"date": row['date'].strftime('%Y-%m-%d'), "value": float(row['value'])} 
-                     for _, row in df.iterrows()]
+        # Calculate overall forecast (sum of individual forecasts)
+        overall_forecast = None
+        if individual_forecasts:
+            # Aggregate historical data
+            all_dates = set()
+            for item_forecast in individual_forecasts.values():
+                all_dates.update([h['date'] for h in item_forecast['historical']])
+            
+            sorted_dates = sorted(all_dates)
+            overall_historical = []
+            
+            for date in sorted_dates:
+                total_value = 0
+                for item_forecast in individual_forecasts.values():
+                    for h in item_forecast['historical']:
+                        if h['date'] == date:
+                            total_value += h['value']
+                            break
+                overall_historical.append({"date": date, "value": total_value})
+            
+            # Aggregate forecasted data
+            if individual_forecasts:
+                first_item_forecast = list(individual_forecasts.values())[0]
+                forecast_dates = [f['date'] for f in first_item_forecast['forecast']]
+                
+                overall_predictions = []
+                for date in forecast_dates:
+                    total_value = 0
+                    total_lower = 0
+                    total_upper = 0
+                    
+                    for item_forecast in individual_forecasts.values():
+                        for f in item_forecast['forecast']:
+                            if f['date'] == date:
+                                total_value += f['value']
+                                total_lower += f['lower']
+                                total_upper += f['upper']
+                                break
+                    
+                    overall_predictions.append({
+                        "date": date,
+                        "value": total_value,
+                        "lower": total_lower,
+                        "upper": total_upper
+                    })
+                
+                # Calculate overall metrics (average of individual metrics)
+                overall_metrics = {}
+                if individual_forecasts:
+                    all_item_metrics = [f['metrics'] for f in individual_forecasts.values()]
+                    metric_keys = all_item_metrics[0].keys()
+                    for key in metric_keys:
+                        values = [m.get(key, 0) for m in all_item_metrics if key in m]
+                        if values:
+                            overall_metrics[key] = sum(values) / len(values)
+                
+                overall_forecast = {
+                    "historical": overall_historical,
+                    "forecast": overall_predictions,
+                    "metrics": overall_metrics
+                }
         
         return jsonify({
-            "historical": historical,
-            "forecast": forecast_data['predictions'],
-            "metrics": forecast_data['metrics'],
-            "modelType": model_type
+            "success": True,
+            "overall": overall_forecast,
+            "items": individual_forecasts,
+            "totalItems": len(items_data),
+            "forecastedItems": len(successful_forecasts),
+            "forecastedItemNames": successful_forecasts
         })
         
     except Exception as e:

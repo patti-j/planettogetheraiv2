@@ -22,12 +22,36 @@ interface Column {
 }
 
 interface ForecastResult {
-  historical: Array<{ date: string; value: number }>;
-  forecast: Array<{ date: string; value: number; lower: number; upper: number }>;
-  metrics: {
+  overall?: {
+    historical: Array<{ date: string; value: number }>;
+    forecast: Array<{ date: string; value: number; lower: number; upper: number }>;
+    metrics: {
+      mape?: number;
+      rmse?: number;
+      mae?: number;
+    };
+  };
+  items?: {
+    [itemName: string]: {
+      historical: Array<{ date: string; value: number }>;
+      forecast: Array<{ date: string; value: number; lower: number; upper: number }>;
+      metrics: {
+        mape?: number;
+        rmse?: number;
+        mae?: number;
+      };
+      modelType?: string;
+    };
+  };
+  // Legacy support for single-item forecast
+  historical?: Array<{ date: string; value: number }>;
+  forecast?: Array<{ date: string; value: number; lower: number; upper: number }>;
+  metrics?: {
     mape?: number;
     rmse?: number;
   };
+  success?: boolean;
+  forecastedItemNames?: string[];
 }
 
 export default function DemandForecasting() {
@@ -156,23 +180,31 @@ export default function DemandForecasting() {
     },
   });
 
-  // Train model mutation
+  // Train model mutation - updated to handle multiple items
   const trainMutation = useMutation<{ 
-    metrics: { 
+    overallMetrics?: { 
       accuracy?: number; 
       mape?: number; 
       rmse?: number;
       order?: any;
       seasonal_order?: any;
       [key: string]: any;
-    }; 
+    };
+    itemsResults?: {
+      [itemName: string]: {
+        success: boolean;
+        metrics?: {
+          mape?: number;
+          rmse?: number;
+          accuracy?: number;
+        };
+        error?: string;
+      }
+    };
+    trainedItems?: number;
+    trainedItemNames?: string[];
     modelId?: string; 
     modelType?: string;
-    tunedParameters?: {
-      order?: any;
-      seasonal_order?: any;
-      [key: string]: any;
-    }
   }, Error, void>({
     mutationFn: async () => {
       const response = await fetch("/api/forecasting/train", {
@@ -184,7 +216,7 @@ export default function DemandForecasting() {
           dateColumn,
           itemColumn,
           quantityColumn,
-          selectedItem: selectedItems[0],
+          selectedItems,  // Send all selected items, not just the first one
           modelType,
           hyperparameterTuning,
           planningAreaColumn: planningAreaColumn || null,
@@ -201,14 +233,23 @@ export default function DemandForecasting() {
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
-      setTrainingMetrics(data.metrics);
+      setTrainingMetrics(data.overallMetrics || data.metrics);
       if (data.modelId) {
         setModelId(data.modelId);
       }
-      toast({
-        title: "Model Trained Successfully",
-        description: `${data.modelType || modelType} model trained with MAPE: ${data.metrics.mape?.toFixed(2)}%`,
-      });
+      
+      // Show success message with details about trained items
+      if (data.trainedItems && data.trainedItemNames) {
+        toast({
+          title: "Models Trained Successfully",
+          description: `Trained ${data.trainedItems} models for items: ${data.trainedItemNames.join(', ')}. Average MAPE: ${data.overallMetrics?.mape?.toFixed(2)}%`,
+        });
+      } else {
+        toast({
+          title: "Model Trained Successfully",
+          description: `${data.modelType || modelType} model trained with MAPE: ${data.overallMetrics?.mape?.toFixed(2) || 'N/A'}%`,
+        });
+      }
     },
     onError: (error) => {
       setIsModelTrained(false);
@@ -222,7 +263,7 @@ export default function DemandForecasting() {
     },
   });
 
-  // Forecast mutation
+  // Forecast mutation - updated to handle multiple items
   const forecastMutation = useMutation<ForecastResult, Error, void>({
     mutationFn: async () => {
       const response = await fetch("/api/forecasting/forecast", {
@@ -234,7 +275,7 @@ export default function DemandForecasting() {
           dateColumn,
           itemColumn,
           quantityColumn,
-          selectedItem: selectedItems[0], // Use first selected item for now
+          selectedItems,  // Send all selected items
           forecastDays,
           modelType,
           modelId: modelId || undefined, // Send the stored modelId from training
@@ -250,10 +291,14 @@ export default function DemandForecasting() {
       }
       return await response.json();
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update the selected forecast item to "Overall" by default
+      setSelectedForecastItem("Overall");
+      
+      const itemCount = data.forecastedItemNames?.length || 0;
       toast({
         title: "Forecast Complete",
-        description: `Generated ${forecastDays}-day forecast successfully`,
+        description: `Generated ${forecastDays}-day forecast for ${itemCount} item(s) successfully`,
       });
       // Invalidate relevant queries
       queryClient.invalidateQueries({ queryKey: ["/api/forecasting"] });
@@ -960,7 +1005,7 @@ export default function DemandForecasting() {
               <CardContent className="p-6">
                 <div className="text-sm text-muted-foreground mb-2">Items Included</div>
                 <div className="text-3xl font-bold">
-                  {selectedItems.length}/{items?.length || 0}
+                  {forecastMutation.data.forecastedItemNames?.length || selectedItems.length}/{items?.length || 0}
                 </div>
               </CardContent>
             </Card>
@@ -971,14 +1016,29 @@ export default function DemandForecasting() {
                 <div className="text-sm text-muted-foreground mb-2">Avg Daily Forecast</div>
                 <div className="text-3xl font-bold">
                   {(() => {
-                    const avgDaily = forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.forecast.length;
+                    // Get the current forecast data based on selected tab
+                    const currentData = selectedForecastItem === 'Overall' 
+                      ? forecastMutation.data.overall 
+                      : forecastMutation.data.items?.[selectedForecastItem];
+                    
+                    if (!currentData?.forecast) return '0.0';
+                    
+                    const avgDaily = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
                     return avgDaily.toFixed(1);
                   })()}
                 </div>
                 {(() => {
-                  const historicalAvg = forecastMutation.data.historical.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.historical.length;
-                  const forecastAvg = forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0) / forecastMutation.data.forecast.length;
-                  const percentChange = ((forecastAvg - historicalAvg) / historicalAvg) * 100;
+                  // Get the current data based on selected tab
+                  const currentData = selectedForecastItem === 'Overall' 
+                    ? forecastMutation.data.overall 
+                    : forecastMutation.data.items?.[selectedForecastItem];
+                  
+                  if (!currentData?.historical || !currentData?.forecast) return null;
+                  
+                  const historicalAvg = currentData.historical.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.historical.length;
+                  const forecastAvg = currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0) / currentData.forecast.length;
+                  const percentChange = historicalAvg !== 0 ? ((forecastAvg - historicalAvg) / historicalAvg) * 100 : 0;
+                  
                   return (
                     <div className={`text-sm mt-1 ${percentChange < 0 ? 'text-red-500' : 'text-green-500'}`}>
                       {percentChange > 0 ? '↑' : '↓'} {Math.abs(percentChange).toFixed(1)}%
@@ -993,7 +1053,15 @@ export default function DemandForecasting() {
               <CardContent className="p-6">
                 <div className="text-sm text-muted-foreground mb-2">Total {forecastDays}-Day Forecast</div>
                 <div className="text-3xl font-bold">
-                  {Math.round(forecastMutation.data.forecast.reduce((sum, d) => sum + d.value, 0)).toLocaleString()}
+                  {(() => {
+                    const currentData = selectedForecastItem === 'Overall' 
+                      ? forecastMutation.data.overall 
+                      : forecastMutation.data.items?.[selectedForecastItem];
+                    
+                    if (!currentData?.forecast) return '0';
+                    
+                    return Math.round(currentData.forecast.reduce((sum: number, d: any) => sum + d.value, 0)).toLocaleString();
+                  })()}
                 </div>
               </CardContent>
             </Card>
@@ -1036,26 +1104,29 @@ export default function DemandForecasting() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart
                     data={(() => {
-                      // Filter data based on selected item
-                      let filteredHistorical = forecastMutation.data.historical;
-                      let filteredForecast = forecastMutation.data.forecast;
+                      // Get data based on selected item (Overall or individual)
+                      const currentData = selectedForecastItem === 'Overall' 
+                        ? forecastMutation.data.overall 
+                        : forecastMutation.data.items?.[selectedForecastItem];
                       
-                      // Note: For now, we show all data regardless of filter selection
-                      // since the backend returns aggregated data for all selected items
-                      // In a future enhancement, we could request individual item forecasts
+                      // Support legacy single-item forecast
+                      const historicalData = currentData?.historical || forecastMutation.data.historical || [];
+                      const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
                       
                       // Combine historical and forecast data with proper labeling
-                      const historicalWithLabel = filteredHistorical.map(d => ({
+                      const historicalWithLabel = historicalData.map((d: any) => ({
                         ...d,
                         historical: d.value,
                         forecast: null,
                         lower: null,
                         upper: null
                       }));
-                      const forecastWithLabel = filteredForecast.map(d => ({
+                      const forecastWithLabel = forecastData.map((d: any) => ({
                         ...d,
                         historical: null,
-                        forecast: d.value
+                        forecast: d.value,
+                        lower: d.lower,
+                        upper: d.upper
                       }));
                       return [...historicalWithLabel, ...forecastWithLabel];
                     })()}
@@ -1155,15 +1226,42 @@ export default function DemandForecasting() {
               <div className="mt-4 pt-4 border-t">
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div>
-                    Date Range: {forecastMutation.data.historical[0]?.date} to {forecastMutation.data.forecast[forecastMutation.data.forecast.length - 1]?.date}
+                    {(() => {
+                      const currentData = selectedForecastItem === 'Overall' 
+                        ? forecastMutation.data.overall 
+                        : forecastMutation.data.items?.[selectedForecastItem];
+                      
+                      const historicalData = currentData?.historical || forecastMutation.data.historical || [];
+                      const forecastData = currentData?.forecast || forecastMutation.data.forecast || [];
+                      
+                      const startDate = historicalData[0]?.date;
+                      const endDate = forecastData[forecastData.length - 1]?.date;
+                      
+                      return startDate && endDate ? `Date Range: ${startDate} to ${endDate}` : 'Date Range: N/A';
+                    })()}
                   </div>
                   <div className="flex gap-4">
-                    {forecastMutation.data.metrics?.mape !== undefined && (
-                      <span>MAPE: {forecastMutation.data.metrics.mape.toFixed(2)}%</span>
-                    )}
-                    {forecastMutation.data.metrics?.rmse !== undefined && (
-                      <span>RMSE: {forecastMutation.data.metrics.rmse.toFixed(2)}</span>
-                    )}
+                    {(() => {
+                      const currentData = selectedForecastItem === 'Overall' 
+                        ? forecastMutation.data.overall 
+                        : forecastMutation.data.items?.[selectedForecastItem];
+                      
+                      const metrics = currentData?.metrics || forecastMutation.data.metrics;
+                      
+                      return (
+                        <>
+                          {metrics?.mape !== undefined && (
+                            <span>MAPE: {metrics.mape.toFixed(2)}%</span>
+                          )}
+                          {metrics?.rmse !== undefined && (
+                            <span>RMSE: {metrics.rmse.toFixed(2)}</span>
+                          )}
+                          {metrics?.mae !== undefined && (
+                            <span>MAE: {metrics.mae.toFixed(2)}</span>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>

@@ -204,11 +204,14 @@ function calculateRMSE(actual: number[], predicted: number[]): number {
 router.post('/train', async (req, res) => {
   try {
     const { 
-      schema, table, dateColumn, itemColumn, quantityColumn, selectedItem, modelType,
+      schema, table, dateColumn, itemColumn, quantityColumn, selectedItems, modelType,
       planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
     } = req.body;
     
-    if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
+    // Support both single item (legacy) and multiple items
+    const items = selectedItems || (req.body.selectedItem ? [req.body.selectedItem] : []);
+    
+    if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || items.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
@@ -220,62 +223,70 @@ router.post('/train', async (req, res) => {
     const itemCol = `[${itemColumn}]`;
     const qtyCol = `[${quantityColumn}]`;
     
-    // Build WHERE clause with hierarchical filtering
-    let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+    // Fetch historical data for all selected items
+    const itemsData: any = {};
     
-    // Add planning area filter
-    if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
-      const planningAreaCol = `[${planningAreaColumn}]`;
-      const planningAreaList = selectedPlanningAreas.map((area: string) => `'${area.replace(/'/g, "''")}'`).join(',');
-      whereConditions.push(`${planningAreaCol} IN (${planningAreaList})`);
-    }
-    
-    // Add scenario filter
-    if (scenarioColumn && selectedScenarios && selectedScenarios.length > 0) {
-      const scenarioCol = `[${scenarioColumn}]`;
-      const scenarioList = selectedScenarios.map((scenario: string) => `'${scenario.replace(/'/g, "''")}'`).join(',');
-      whereConditions.push(`${scenarioCol} IN (${scenarioList})`);
-    }
-    
-    const whereClause = whereConditions.join(' AND ');
-    
-    // Fetch historical data for training
-    const result = await pool.request()
-      .input('item', sql.VarChar, selectedItem)
-      .query(`
-        SELECT 
-          ${dateCol} as date,
-          SUM(CAST(${qtyCol} AS FLOAT)) as value
-        FROM ${tableName}
-        WHERE ${whereClause}
-        GROUP BY ${dateCol}
-        ORDER BY ${dateCol}
-      `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'No data found for training' });
+    for (const item of items) {
+      // Build WHERE clause with hierarchical filtering
+      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+      
+      // Add planning area filter
+      if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
+        const planningAreaCol = `[${planningAreaColumn}]`;
+        const planningAreaList = selectedPlanningAreas.map((area: string) => `'${area.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${planningAreaCol} IN (${planningAreaList})`);
+      }
+      
+      // Add scenario filter
+      if (scenarioColumn && selectedScenarios && selectedScenarios.length > 0) {
+        const scenarioCol = `[${scenarioColumn}]`;
+        const scenarioList = selectedScenarios.map((scenario: string) => `'${scenario.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${scenarioCol} IN (${scenarioList})`);
+      }
+      
+      const whereClause = whereConditions.join(' AND ');
+      
+      // Fetch historical data for this item
+      const result = await pool.request()
+        .input('item', sql.VarChar, item)
+        .query(`
+          SELECT 
+            ${dateCol} as date,
+            SUM(CAST(${qtyCol} AS FLOAT)) as value
+          FROM ${tableName}
+          WHERE ${whereClause}
+          GROUP BY ${dateCol}
+          ORDER BY ${dateCol}
+        `);
+      
+      if (result.recordset.length > 0) {
+        // Format training data for this item
+        itemsData[item] = result.recordset.map((r: any) => ({
+          date: new Date(r.date).toISOString().split('T')[0],
+          value: r.value
+        }));
+      } else {
+        console.log(`No data found for item: ${item}`);
+      }
     }
 
-    // Format training data
-    const historicalData = result.recordset.map((r: any) => ({
-      date: new Date(r.date).toISOString().split('T')[0],
-      value: r.value
-    }));
+    if (Object.keys(itemsData).length === 0) {
+      return res.status(404).json({ error: 'No data found for any of the selected items' });
+    }
 
-    // Create unique model ID based on item, filters, and timestamp
-    const modelId = `${selectedItem}_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
+    // Create unique model ID based on filters
+    const modelId = `model_${selectedPlanningAreas?.join('_') || 'all'}_${selectedScenarios?.join('_') || 'all'}`;
 
-    // Call Python ML service to train the model
+    // Call Python ML service to train models for all items
     const mlResponse = await fetch(`${ML_SERVICE_URL}/train`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         modelType: modelType || 'Random Forest',
-        historicalData,
+        itemsData,  // Pass all items data
         modelId,
         planningAreas: selectedPlanningAreas || [],
         scenarioNames: selectedScenarios || [],
-        item: selectedItem,
         forecastDays: 30,
         hyperparameterTuning: false
       })
@@ -291,8 +302,11 @@ router.post('/train', async (req, res) => {
     res.json({
       success: true,
       modelType: mlResult.modelType,
-      metrics: mlResult.metrics,
-      trainingDataPoints: historicalData.length,
+      overallMetrics: mlResult.overallMetrics,
+      itemsResults: mlResult.itemsResults,
+      totalItems: mlResult.totalItems,
+      trainedItems: mlResult.trainedItems,
+      trainedItemNames: mlResult.trainedItemNames,
       modelId,
       filters: {
         planningAreas: selectedPlanningAreas || [],
@@ -310,11 +324,14 @@ router.post('/train', async (req, res) => {
 router.post('/forecast', async (req, res) => {
   try {
     const { 
-      schema, table, dateColumn, itemColumn, quantityColumn, selectedItem, forecastDays,
+      schema, table, dateColumn, itemColumn, quantityColumn, selectedItems, forecastDays,
       modelType, modelId, planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
     } = req.body;
     
-    if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || !selectedItem) {
+    // Support both single item (legacy) and multiple items
+    const items = selectedItems || (req.body.selectedItem ? [req.body.selectedItem] : []);
+    
+    if (!schema || !table || !dateColumn || !itemColumn || !quantityColumn || items.length === 0) {
       return res.status(400).json({ error: 'Missing required fields' });
     }
     
@@ -331,60 +348,68 @@ router.post('/forecast', async (req, res) => {
     const itemCol = `[${itemColumn}]`;
     const qtyCol = `[${quantityColumn}]`;
     
-    // Build WHERE clause with hierarchical filtering
-    let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+    // Fetch historical data for all selected items
+    const itemsData: any = {};
     
-    // Add planning area filter
-    if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
-      const planningAreaCol = `[${planningAreaColumn}]`;
-      const planningAreaList = selectedPlanningAreas.map((area: string) => `'${area.replace(/'/g, "''")}'`).join(',');
-      whereConditions.push(`${planningAreaCol} IN (${planningAreaList})`);
-    }
-    
-    // Add scenario filter
-    if (scenarioColumn && selectedScenarios && selectedScenarios.length > 0) {
-      const scenarioCol = `[${scenarioColumn}]`;
-      const scenarioList = selectedScenarios.map((scenario: string) => `'${scenario.replace(/'/g, "''")}'`).join(',');
-      whereConditions.push(`${scenarioCol} IN (${scenarioList})`);
-    }
-    
-    const whereClause = whereConditions.join(' AND ');
-    
-    // Fetch historical data
-    const result = await pool.request()
-      .input('item', sql.VarChar, selectedItem)
-      .query(`
-        SELECT 
-          ${dateCol} as date,
-          SUM(CAST(${qtyCol} AS FLOAT)) as value
-        FROM ${tableName}
-        WHERE ${whereClause}
-        GROUP BY ${dateCol}
-        ORDER BY ${dateCol}
-      `);
-    
-    if (result.recordset.length === 0) {
-      return res.status(404).json({ error: 'No data found for selected item' });
+    for (const item of items) {
+      // Build WHERE clause with hierarchical filtering
+      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+      
+      // Add planning area filter
+      if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
+        const planningAreaCol = `[${planningAreaColumn}]`;
+        const planningAreaList = selectedPlanningAreas.map((area: string) => `'${area.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${planningAreaCol} IN (${planningAreaList})`);
+      }
+      
+      // Add scenario filter
+      if (scenarioColumn && selectedScenarios && selectedScenarios.length > 0) {
+        const scenarioCol = `[${scenarioColumn}]`;
+        const scenarioList = selectedScenarios.map((scenario: string) => `'${scenario.replace(/'/g, "''")}'`).join(',');
+        whereConditions.push(`${scenarioCol} IN (${scenarioList})`);
+      }
+      
+      const whereClause = whereConditions.join(' AND ');
+      
+      // Fetch historical data for this item
+      const result = await pool.request()
+        .input('item', sql.VarChar, item)
+        .query(`
+          SELECT 
+            ${dateCol} as date,
+            SUM(CAST(${qtyCol} AS FLOAT)) as value
+          FROM ${tableName}
+          WHERE ${whereClause}
+          GROUP BY ${dateCol}
+          ORDER BY ${dateCol}
+        `);
+      
+      if (result.recordset.length > 0) {
+        // Format historical data for this item
+        itemsData[item] = result.recordset.map((r: any) => ({
+          date: new Date(r.date).toISOString().split('T')[0],
+          value: r.value
+        }));
+      } else {
+        console.log(`No historical data found for item: ${item}`);
+      }
     }
 
-    // Format historical data
-    const historicalData = result.recordset.map((r: any) => ({
-      date: new Date(r.date).toISOString().split('T')[0],
-      value: r.value
-    }));
+    if (Object.keys(itemsData).length === 0) {
+      return res.status(404).json({ error: 'No data found for any of the selected items' });
+    }
 
-    // Call Python ML service to generate forecast using the trained model
+    // Call Python ML service to generate forecast using the trained models
     const mlResponse = await fetch(`${ML_SERVICE_URL}/forecast`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        modelId, // Use the exact modelId from training
+        baseModelId: modelId,  // Base model ID from training
+        itemsData,  // Pass all items data
         forecastDays: forecastDays || 30,
-        historicalData,
         modelType: modelType || 'Random Forest',
         planningAreas: selectedPlanningAreas || [],
         scenarioNames: selectedScenarios || [],
-        item: selectedItem,
         hyperparameterTuning: false
       })
     });
@@ -396,11 +421,15 @@ router.post('/forecast', async (req, res) => {
 
     const mlResult = await mlResponse.json();
 
+    // Return multi-item forecast results
     res.json({
-      historical: mlResult.historical,
-      forecast: mlResult.forecast,
-      metrics: mlResult.metrics,
-      modelType: mlResult.modelType,
+      success: true,
+      overall: mlResult.overall,
+      items: mlResult.items,
+      totalItems: mlResult.totalItems,
+      forecastedItems: mlResult.forecastedItems,
+      forecastedItemNames: mlResult.forecastedItemNames,
+      modelType: modelType,
       filters: {
         planningAreas: selectedPlanningAreas || [],
         scenarios: selectedScenarios || []
