@@ -1844,7 +1844,7 @@
                         operationName: operation.name,
                         resourceName: operation.resourceName,
                         isUnscheduled: isUnscheduled,
-                        sequence_number: operation.sequence_number || operation.sequenceNumber, // Add sequence number for proper ordering
+                        sequence_number: operation.sequence_number || operation.sequenceNumber || 0, // Map from API response
                         ptData: operation // Keep original PT data for algorithms
                     };
                 }).filter(event => event.resourceId); // Only include operations with valid resources

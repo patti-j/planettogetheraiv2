@@ -957,6 +957,7 @@ export class DatabaseStorage implements IStorage {
           jo.post_processing_hours,
           jo.constraint_type,
           jo.constraint_date,
+          jo.sequence_number, -- CRITICAL: Add sequence_number for ALAP scheduling
           j.name as job_name,
           j.priority,
           j.need_date_time as due_date,
@@ -981,6 +982,7 @@ export class DatabaseStorage implements IStorage {
         jobId: op.job_id,
         name: op.operation_name || 'Operation',
         jobName: op.job_name,
+        sequenceNumber: op.sequence_number || 0, // CRITICAL: Include sequence_number for ALAP scheduling
         resourceId: op.resource_id || null, // Use the actual assigned resource from ptjobresources
         resourceName: op.resource_name || 'Unassigned', // Include resource name for display
         resourceExternalId: op.resource_external_id, // Keep external ID for reference
