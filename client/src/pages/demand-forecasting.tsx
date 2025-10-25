@@ -258,22 +258,46 @@ export default function DemandForecasting() {
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
-      setModelId(data.model_id);
+      setModelId(data.model_id || data.modelId);
+      
+      // Handle different response formats
+      let metrics = {};
+      
+      // Build metrics object from itemsResults and overallMetrics
+      if (data.itemsResults) {
+        // Convert itemsResults to metrics format
+        for (const [itemName, result] of Object.entries(data.itemsResults)) {
+          if (result && typeof result === 'object' && 'metrics' in result) {
+            metrics[itemName] = (result as any).metrics;
+          }
+        }
+      }
+      
+      if (data.overallMetrics) {
+        metrics['Overall'] = data.overallMetrics;
+      }
+      
+      // If no metrics found in new format, check old format
+      if (Object.keys(metrics).length === 0 && data.metrics) {
+        metrics = data.metrics;
+      }
+      
+      console.log("Training completed. Metrics:", metrics);
       
       // Store metrics based on forecast mode
       if (forecastMode === "overall") {
         // Only store overall metrics
-        setTrainingMetrics(data.metrics?.Overall || {});
+        setTrainingMetrics(metrics.Overall || data.overallMetrics || {});
         setItemsTrainingMetrics(null);
       } else {
         // Store both overall and item-specific metrics
-        const { Overall: overallMetrics, ...itemMetrics } = data.metrics || {};
-        setTrainingMetrics(overallMetrics || {});
+        const { Overall: overallMetrics, ...itemMetrics } = metrics;
+        setTrainingMetrics(overallMetrics || data.overallMetrics || {});
         setItemsTrainingMetrics(itemMetrics || {});
       }
       
       // Count the number of items trained (excluding Overall)
-      const metricsKeys = Object.keys(data.metrics || {});
+      const metricsKeys = Object.keys(metrics);
       const itemCount = metricsKeys.filter(key => key !== 'Overall').length;
       
       toast({
