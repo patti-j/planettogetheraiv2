@@ -596,22 +596,37 @@ export default function DemandForecasting() {
         </CardContent>
       </Card>
 
-      {/* Filter Section - Step 2 */}
-      <Card className={isModelTrained ? "opacity-75" : ""}>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <div className="flex items-center gap-3">
-              <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full">
-                2
-              </span>
-              <span>Filters</span>
-              {(selectedPlanningAreas.length > 0 || selectedScenarios.length > 0 || selectedItems.length > 0) && (
-                <span className="ml-2 text-xs text-green-600">✓ Configured</span>
-              )}
-            </div>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
+      {/* Filter Section - Step 2 - Only show when Step 1 is complete */}
+      {!selectedTable || !dateColumn || !itemColumn || !quantityColumn ? (
+        <Card className="mb-4 opacity-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-gray-400 rounded-full">
+                  2
+                </span>
+                <span className="text-gray-600">Filters</span>
+                <span className="text-sm text-gray-500">(Complete Step 1 first)</span>
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card className={isModelTrained ? "opacity-75" : ""}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full">
+                  2
+                </span>
+                <span>Filters</span>
+                {(selectedPlanningAreas.length > 0 || selectedScenarios.length > 0 || selectedItems.length > 0) && (
+                  <span className="ml-2 text-xs text-green-600">✓ Configured</span>
+                )}
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
           <div className="grid grid-cols-3 gap-4">
             {/* Planning Area Filter */}
             <div className="space-y-2">
@@ -792,9 +807,25 @@ export default function DemandForecasting() {
           </div>
         </CardContent>
       </Card>
+      )}
 
-      {/* Forecast Settings - Step 3 */}
-      <Card>
+      {/* Forecast Settings - Step 3 - Only show when Steps 1 & 2 are complete */}
+      {!selectedTable || !dateColumn || !itemColumn || !quantityColumn ? (
+        <Card className="mb-4 opacity-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
+                <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-gray-400 rounded-full">
+                  3
+                </span>
+                <span className="text-gray-600">Model Configuration & Training</span>
+                <span className="text-sm text-gray-500">(Complete Steps 1 & 2 first)</span>
+              </div>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      ) : (
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <div className="flex items-center gap-3">
@@ -942,6 +973,7 @@ export default function DemandForecasting() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Training Results */}
       {isModelTrained && (trainingMetrics || itemsTrainingMetrics) && (
