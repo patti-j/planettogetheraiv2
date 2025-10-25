@@ -837,7 +837,11 @@ export default function DemandForecasting() {
             <Button
               onClick={handleForecast}
               disabled={!isModelTrained || forecastMutation.isPending}
-              variant="secondary"
+              className={
+                !isModelTrained || forecastMutation.isPending
+                  ? "" // Default disabled styling
+                  : "bg-green-600 hover:bg-green-700 text-white animate-pulse hover:animate-none"
+              }
             >
               {forecastMutation.isPending ? (
                 <>
@@ -845,7 +849,10 @@ export default function DemandForecasting() {
                   Generating Forecast...
                 </>
               ) : (
-                "Generate Forecast"
+                <>
+                  <Sparkles className="mr-2 h-4 w-4" />
+                  Generate Forecast
+                </>
               )}
             </Button>
           </div>
