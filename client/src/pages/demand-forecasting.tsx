@@ -193,68 +193,13 @@ export default function DemandForecasting() {
   // Train model mutation
   const trainMutation = useMutation({
     mutationFn: async (data: any) => {
-      const controller = new AbortController();
-      setAbortController(controller);
-      
-      const response = await fetch("/api/forecasting/train", {
+      const response = await apiRequest("/api/forecasting/train", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
-        signal: controller.signal
       });
       
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Training failed");
-      }
-      
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      
-      let allMetrics: any = {};
-      let finalModelId = null;
-      
-      while (reader) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        
-        const chunk = decoder.decode(value);
-        const lines = chunk.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              
-              if (data.type === 'progress') {
-                setTrainingProgress({
-                  currentItem: data.currentItem,
-                  totalItems: data.totalItems,
-                  startTime: data.startTime,
-                  estimatedRemainingTime: data.estimatedRemainingTime
-                });
-              } else if (data.type === 'model_result') {
-                allMetrics[data.itemName] = data.metrics;
-              } else if (data.type === 'complete') {
-                finalModelId = data.model_id;
-                if (data.overall_metrics) {
-                  allMetrics['Overall'] = data.overall_metrics;
-                }
-              }
-            } catch (e) {
-              console.error('Failed to parse SSE data:', e);
-            }
-          }
-        }
-      }
-      
-      setAbortController(null);
-      setTrainingProgress(null);
-      
-      return { 
-        model_id: finalModelId, 
-        metrics: allMetrics
-      };
+      console.log("Training response from server:", response);
+      return response;
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
