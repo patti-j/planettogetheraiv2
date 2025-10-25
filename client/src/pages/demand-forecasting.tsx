@@ -193,13 +193,11 @@ export default function DemandForecasting() {
   // Train model mutation
   const trainMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/forecasting/train", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
+      const response = await apiRequest("POST", "/api/forecasting/train", data);
+      const result = await response.json();
       
-      console.log("Training response from server:", response);
-      return response;
+      console.log("Training response from server:", result);
+      return result;
     },
     onSuccess: (data) => {
       setIsModelTrained(true);
@@ -270,11 +268,9 @@ export default function DemandForecasting() {
   // Generate forecast mutation  
   const forecastMutation = useMutation({
     mutationFn: async (data: any) => {
-      const response = await apiRequest("/api/forecasting/forecast", {
-        method: "POST",
-        body: JSON.stringify(data),
-      });
-      return response;
+      const response = await apiRequest("POST", "/api/forecasting/forecast", data);
+      const result = await response.json();
+      return result;
     },
     onSuccess: (data) => {
       if (data.success) {
