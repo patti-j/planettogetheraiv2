@@ -1485,15 +1485,10 @@
                     chainedEventStore.assignmentStore = chainedAssignmentStore;
                     chainedAssignmentStore.eventStore = chainedEventStore;
                     
-                    // Update the project stores
+                    // Update ONLY the project stores (SchedulerPro doesn't allow direct store assignment)
                     project.resourceStore = chainedResourceStore;
                     project.eventStore = chainedEventStore;
                     project.assignmentStore = chainedAssignmentStore;
-                    
-                    // Force the scheduler to use the new stores
-                    scheduler.resourceStore = chainedResourceStore;
-                    scheduler.eventStore = chainedEventStore;
-                    scheduler.assignmentStore = chainedAssignmentStore;
                     
                     const visibleResources = scheduler.resourceStore.records.length;
                     const visibleEvents = scheduler.eventStore.records.length;
@@ -1502,21 +1497,18 @@
                 } else {
                     console.log('📊 [Planning Area Filter] Showing all resources and operations');
                     
-                    // Restore all master stores
+                    // Restore all master stores (only on project, not scheduler)
                     if (window.masterResourceStore) {
                         project.resourceStore = window.masterResourceStore;
-                        scheduler.resourceStore = window.masterResourceStore;
                     }
                     if (window.masterEventStore) {
                         project.eventStore = window.masterEventStore;
-                        scheduler.eventStore = window.masterEventStore;
                     }
                     if (window.masterAssignmentStore) {
                         project.assignmentStore = window.masterAssignmentStore;
-                        scheduler.assignmentStore = window.masterAssignmentStore;
                     }
                     
-                    console.log(`✅ [Planning Area Filter] Restored all ${scheduler.resourceStore.count} resources and ${scheduler.eventStore.count} events`);
+                    console.log(`✅ [Planning Area Filter] Restored all ${project.resourceStore.count} resources and ${project.eventStore.count} events`);
                 }
                 
                 // Force scheduler to refresh its view
