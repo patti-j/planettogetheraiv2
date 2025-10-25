@@ -75,7 +75,7 @@ export default function DemandForecasting() {
   const [scenarioSearch, setScenarioSearch] = useState<string>("");
   
   // Filter state for forecast visualization
-  const [selectedForecastItem, setSelectedForecastItem] = useState<string>("Overall");
+  const [selectedForecastItem, setSelectedForecastItem] = useState<string>("");
   const [forecastMode, setForecastMode] = useState<"individual" | "overall">("individual");
   const [itemSearchQuery, setItemSearchQuery] = useState<string>("");
   const [forecastSearchQuery, setForecastSearchQuery] = useState<string>("");
@@ -130,6 +130,15 @@ export default function DemandForecasting() {
     scenarios?: string;
     items?: string;
   }>({});
+  
+  // Auto-select first item when in individual mode and forecast is available
+  useEffect(() => {
+    if (forecastMode === "individual" && forecastMutation.data?.forecastedItemNames?.length > 0) {
+      if (!selectedForecastItem || selectedForecastItem === "Overall") {
+        setSelectedForecastItem(forecastMutation.data.forecastedItemNames[0]);
+      }
+    }
+  }, [forecastMode, forecastMutation.data?.forecastedItemNames]);
   
   // Fetch SQL Server tables
   const { data: tablesData, isLoading: isLoadingTables } = useQuery({
@@ -984,11 +993,18 @@ export default function DemandForecasting() {
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-blue-600">
                     {(() => {
-                      const itemToShow = forecastMode === "overall" 
-                        ? "Overall" 
-                        : selectedForecastItem;
+                      let itemToShow = selectedForecastItem;
                       
-                      const currentData = itemToShow === "Overall" 
+                      // Handle item selection based on forecast mode
+                      if (forecastMode === "individual") {
+                        if (!itemToShow || itemToShow === "Overall") {
+                          itemToShow = forecastMutation.data.forecastedItemNames?.[0] || "";
+                        }
+                      } else {
+                        itemToShow = itemToShow || "Overall";
+                      }
+                      
+                      const currentData = (itemToShow === "Overall" && forecastMode === "overall")
                         ? forecastMutation.data.overall 
                         : forecastMutation.data.items?.[itemToShow];
                       
@@ -1002,11 +1018,18 @@ export default function DemandForecasting() {
                     Avg Daily Forecast
                   </div>
                   {(() => {
-                    const itemToShow = forecastMode === "overall" 
-                      ? "Overall" 
-                      : selectedForecastItem;
+                    let itemToShow = selectedForecastItem;
                     
-                    const currentData = itemToShow === "Overall" 
+                    // Handle item selection based on forecast mode
+                    if (forecastMode === "individual") {
+                      if (!itemToShow || itemToShow === "Overall") {
+                        itemToShow = forecastMutation.data.forecastedItemNames?.[0] || "";
+                      }
+                    } else {
+                      itemToShow = itemToShow || "Overall";
+                    }
+                    
+                    const currentData = (itemToShow === "Overall" && forecastMode === "overall")
                       ? forecastMutation.data.overall 
                       : forecastMutation.data.items?.[itemToShow];
                     
@@ -1026,9 +1049,18 @@ export default function DemandForecasting() {
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-600">
                     {(() => {
-                      const itemToShow = selectedForecastItem || "Overall";
+                      let itemToShow = selectedForecastItem;
                       
-                      const currentData = itemToShow === "Overall" 
+                      // Handle item selection based on forecast mode
+                      if (forecastMode === "individual") {
+                        if (!itemToShow || itemToShow === "Overall") {
+                          itemToShow = forecastMutation.data.forecastedItemNames?.[0] || "";
+                        }
+                      } else {
+                        itemToShow = itemToShow || "Overall";
+                      }
+                      
+                      const currentData = (itemToShow === "Overall" && forecastMode === "overall")
                         ? forecastMutation.data.overall 
                         : forecastMutation.data.items?.[itemToShow];
                       
@@ -1070,7 +1102,8 @@ export default function DemandForecasting() {
                       />
                       <Combobox
                         options={[
-                          { value: "Overall", label: "Overall (All Items)" },
+                          // Only show Overall if forecast mode is "overall"
+                          ...(forecastMode === "overall" ? [{ value: "Overall", label: "Overall (All Items)" }] : []),
                           ...(forecastMutation.data.forecastedItemNames || [])
                             .filter((item: string) => 
                               item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
@@ -1092,14 +1125,24 @@ export default function DemandForecasting() {
             </CardHeader>
             <CardContent>
               {(() => {
-                // Always use selectedForecastItem for display, default to Overall
-                const itemToShow = selectedForecastItem || "Overall";
+                // Determine which item to show based on forecast mode
+                let itemToShow = selectedForecastItem;
+                
+                // If in individual mode and no item selected, use first available item
+                if (forecastMode === "individual") {
+                  if (!itemToShow || itemToShow === "Overall") {
+                    itemToShow = forecastMutation.data.forecastedItemNames?.[0] || "";
+                  }
+                } else {
+                  // In overall mode, default to "Overall"
+                  itemToShow = itemToShow || "Overall";
+                }
                 
                 let chartData: any[] = [];
                 let metrics: any = {};
                 
                 // Get data based on forecast mode and selected item
-                if (itemToShow === "Overall" && forecastMutation.data.overall) {
+                if (itemToShow === "Overall" && forecastMode === "overall" && forecastMutation.data.overall) {
                   const { historical, forecast } = forecastMutation.data.overall;
                   metrics = forecastMutation.data.overall.metrics || {};
                   
