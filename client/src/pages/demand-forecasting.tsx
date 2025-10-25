@@ -131,15 +131,6 @@ export default function DemandForecasting() {
     items?: string;
   }>({});
   
-  // Auto-select first item when in individual mode and forecast is available
-  useEffect(() => {
-    if (forecastMode === "individual" && forecastMutation.data?.forecastedItemNames?.length > 0) {
-      if (!selectedForecastItem || selectedForecastItem === "Overall") {
-        setSelectedForecastItem(forecastMutation.data.forecastedItemNames[0]);
-      }
-    }
-  }, [forecastMode, forecastMutation.data?.forecastedItemNames]);
-  
   // Fetch SQL Server tables
   const { data: tablesData, isLoading: isLoadingTables } = useQuery({
     queryKey: ["/api/forecasting/tables"],
@@ -302,6 +293,15 @@ export default function DemandForecasting() {
       });
     },
   });
+
+  // Auto-select first item when in individual mode and forecast is available
+  useEffect(() => {
+    if (forecastMode === "individual" && forecastMutation.data?.forecastedItemNames?.length > 0) {
+      if (!selectedForecastItem || selectedForecastItem === "Overall") {
+        setSelectedForecastItem(forecastMutation.data.forecastedItemNames[0]);
+      }
+    }
+  }, [forecastMode, forecastMutation.data?.forecastedItemNames]);
 
   const handleTrain = async () => {
     console.log("handleTrain called");
