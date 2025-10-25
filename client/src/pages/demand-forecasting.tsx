@@ -272,11 +272,17 @@ export default function DemandForecasting() {
         setItemsTrainingMetrics(itemMetrics || {});
       }
       
+      // Count the number of items trained (excluding Overall)
+      const metricsKeys = Object.keys(data.metrics || {});
+      const itemCount = metricsKeys.filter(key => key !== 'Overall').length;
+      
       toast({
         title: "Model Training Complete",
         description: forecastMode === "overall" 
           ? "Overall forecast model trained successfully"
-          : `Successfully trained models for ${Object.keys(data.metrics || {}).length - 1} items plus overall`,
+          : itemCount > 0 
+            ? `Successfully trained models for ${itemCount} item${itemCount > 1 ? 's' : ''} plus overall`
+            : "Overall forecast model trained successfully",
       });
     },
     onError: (error: any) => {
