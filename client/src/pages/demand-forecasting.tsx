@@ -611,8 +611,8 @@ export default function DemandForecasting() {
             </div>
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <CardContent>
+          <div className="grid grid-cols-3 gap-4">
             {/* Planning Area Filter */}
             <div className="space-y-2">
               <Label>Planning Areas</Label>
@@ -724,15 +724,14 @@ export default function DemandForecasting() {
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* Item Selection */}
-          <div className="space-y-2">
-            <Label>
-              {forecastMode === "individual" 
-                ? `Select Items to Forecast Individually (${selectedItems.length} selected)`
-                : `Filter Items for Overall Forecast (${selectedItems.length === 0 ? 'All' : selectedItems.length} selected)`}
-            </Label>
+            
+            {/* Item Selection */}
+            <div className="space-y-2">
+              <Label>
+                {forecastMode === "individual" 
+                  ? `Items (${selectedItems.length} selected)`
+                  : `Items (${selectedItems.length === 0 ? 'All' : selectedItems.length} selected)`}
+              </Label>
             {validationErrors.items && (
               <p className="text-sm text-red-500">{validationErrors.items}</p>
             )}
@@ -790,6 +789,7 @@ export default function DemandForecasting() {
                 </div>
               </div>
             </div>
+          </div>
         </CardContent>
       </Card>
 
