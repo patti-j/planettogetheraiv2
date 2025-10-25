@@ -303,6 +303,45 @@ export default function DemandForecasting() {
     }
   }, [forecastMode, forecastMutation.data?.forecastedItemNames]);
 
+  // Reset all progress when configuration changes
+  useEffect(() => {
+    // When any configuration changes, reset training and forecast state
+    if (isModelTrained) {
+      setIsModelTrained(false);
+      setTrainingMetrics(null);
+      setItemsTrainingMetrics(null);
+      setModelId(null);
+      // Clear forecast results
+      forecastMutation.reset();
+      // Clear selected forecast item
+      setSelectedForecastItem("");
+      
+      // Notify user that their changes have reset the progress
+      toast({
+        title: "Configuration Changed",
+        description: "Your changes have reset the training and forecast. Please retrain the model with the new configuration.",
+        variant: "default",
+      });
+      
+      console.log("Configuration changed - resetting training and forecast state");
+    }
+  }, [
+    // Data source configuration
+    selectedTable,
+    dateColumn,
+    itemColumn,
+    quantityColumn,
+    // Filters
+    selectedPlanningAreas,
+    selectedScenarios,
+    selectedItems,
+    // Model settings
+    modelType,
+    hyperparameterTuning,
+    forecastMode,
+    forecastDays
+  ]);
+
   const handleTrain = async () => {
     console.log("handleTrain called");
     console.log("Forecast mode:", forecastMode);
@@ -448,12 +487,20 @@ export default function DemandForecasting() {
         </div>
       </div>
 
-      {/* Configuration Section */}
-      <Card>
+      {/* Configuration Section - Step 1 */}
+      <Card className={isModelTrained ? "opacity-75" : ""}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Database className="w-5 h-5" />
-            Data Source Configuration
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full">
+                1
+              </span>
+              <Database className="w-5 h-5" />
+              <span>Data Source Configuration</span>
+              {selectedTable && dateColumn && itemColumn && quantityColumn && (
+                <span className="ml-2 text-xs text-green-600">✓ Complete</span>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -536,10 +583,20 @@ export default function DemandForecasting() {
         </CardContent>
       </Card>
 
-      {/* Filter Section */}
-      <Card>
+      {/* Filter Section - Step 2 */}
+      <Card className={isModelTrained ? "opacity-75" : ""}>
         <CardHeader>
-          <CardTitle>Filters</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white bg-blue-600 rounded-full">
+                2
+              </span>
+              <span>Filters</span>
+              {(selectedPlanningAreas.length > 0 || selectedScenarios.length > 0 || selectedItems.length > 0) && (
+                <span className="ml-2 text-xs text-green-600">✓ Configured</span>
+              )}
+            </div>
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -721,12 +778,24 @@ export default function DemandForecasting() {
         </CardContent>
       </Card>
 
-      {/* Forecast Settings */}
+      {/* Forecast Settings - Step 3 */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
-            Forecast Settings
+            <div className="flex items-center gap-3">
+              <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-bold text-white rounded-full ${
+                !selectedTable || !dateColumn || !itemColumn || !quantityColumn
+                  ? "bg-gray-400"
+                  : "bg-blue-600"
+              }`}>
+                3
+              </span>
+              <TrendingUp className="w-5 h-5" />
+              <span>Model Configuration & Training</span>
+              {isModelTrained && (
+                <span className="ml-2 text-xs text-green-600">✓ Model Trained</span>
+              )}
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
