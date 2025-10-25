@@ -139,8 +139,6 @@ export default function DemandForecasting() {
   
   // Process tables data for Combobox
   const tables = tablesData || [];
-  
-  console.log("Tables fetched:", tables);
 
   // Fetch columns when table is selected
   const { data: columns, isLoading: isLoadingColumns } = useQuery({
@@ -167,10 +165,10 @@ export default function DemandForecasting() {
 
   const { data: items } = useQuery({
     queryKey: selectedTable && itemColumn
-      ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}`, {
-        planningAreas: selectedPlanningAreas.join(','),
-        scenarios: selectedScenarios.join(',')
-      }]
+      ? [`/api/forecasting/items/${selectedTable.schema}/${selectedTable.name}/${itemColumn}?${new URLSearchParams({
+          ...(selectedPlanningAreas.length > 0 && { planningAreas: selectedPlanningAreas.join(',') }),
+          ...(selectedScenarios.length > 0 && { scenarios: selectedScenarios.join(',') })
+        }).toString()}`]
       : [],
     enabled: !!selectedTable && !!itemColumn,
   });
@@ -555,7 +553,7 @@ export default function DemandForecasting() {
             {/* Planning Area Filter */}
             <div className="space-y-2">
               <Label>Planning Areas (Optional)</Label>
-              <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+              <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
                 <div className="mb-2">
                   <Input
                     placeholder="Search planning areas..."
@@ -566,23 +564,41 @@ export default function DemandForecasting() {
                 </div>
                 <div className="space-y-1">
                   {filteredPlanningAreas?.length > 0 ? (
-                    filteredPlanningAreas.map((area: string) => (
-                      <label key={area} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedPlanningAreas.includes(area)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedPlanningAreas([...selectedPlanningAreas, area]);
-                            } else {
-                              setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{area}</span>
-                      </label>
-                    ))
+                    <>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedPlanningAreas(filteredPlanningAreas)}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedPlanningAreas([])}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      {filteredPlanningAreas.map((area: string) => (
+                        <label key={area} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedPlanningAreas.includes(area)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedPlanningAreas([...selectedPlanningAreas, area]);
+                              } else {
+                                setSelectedPlanningAreas(selectedPlanningAreas.filter(a => a !== area));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{area}</span>
+                        </label>
+                      ))}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground">No planning areas available</p>
                   )}
@@ -593,7 +609,7 @@ export default function DemandForecasting() {
             {/* Scenario Filter */}
             <div className="space-y-2">
               <Label>Scenarios (Optional)</Label>
-              <div className="border rounded-md p-2 max-h-32 overflow-y-auto">
+              <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
                 <div className="mb-2">
                   <Input
                     placeholder="Search scenarios..."
@@ -604,23 +620,41 @@ export default function DemandForecasting() {
                 </div>
                 <div className="space-y-1">
                   {filteredScenarios?.length > 0 ? (
-                    filteredScenarios.map((scenario: string) => (
-                      <label key={scenario} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedScenarios.includes(scenario)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setSelectedScenarios([...selectedScenarios, scenario]);
-                            } else {
-                              setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
-                            }
-                          }}
-                          className="rounded"
-                        />
-                        <span className="text-sm">{scenario}</span>
-                      </label>
-                    ))
+                    <>
+                      <div className="flex gap-2 mb-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedScenarios(filteredScenarios)}
+                        >
+                          Select All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setSelectedScenarios([])}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      {filteredScenarios.map((scenario: string) => (
+                        <label key={scenario} className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={selectedScenarios.includes(scenario)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedScenarios([...selectedScenarios, scenario]);
+                              } else {
+                                setSelectedScenarios(selectedScenarios.filter(s => s !== scenario));
+                              }
+                            }}
+                            className="rounded"
+                          />
+                          <span className="text-sm">{scenario}</span>
+                        </label>
+                      ))}
+                    </>
                   ) : (
                     <p className="text-sm text-muted-foreground">No scenarios available</p>
                   )}

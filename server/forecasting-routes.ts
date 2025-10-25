@@ -82,9 +82,9 @@ router.get('/items/:schema/:table/:column', async (req, res) => {
     // Build WHERE clause with filters
     let whereConditions = [`${columnName} IS NOT NULL`];
     
-    // Add planning area filter if provided
-    if (planningAreas && typeof planningAreas === 'string') {
-      const planningAreaList = planningAreas.split(',');
+    // Add planning area filter ONLY if provided and not empty
+    if (planningAreas && typeof planningAreas === 'string' && planningAreas.trim() !== '') {
+      const planningAreaList = planningAreas.split(',').filter(area => area.trim() !== '');
       if (planningAreaList.length > 0) {
         const planningAreaCol = `[PlanningAreaName]`;
         const escapedAreas = planningAreaList.map(area => `'${area.replace(/'/g, "''")}'`).join(',');
@@ -92,9 +92,9 @@ router.get('/items/:schema/:table/:column', async (req, res) => {
       }
     }
     
-    // Add scenario filter if provided
-    if (scenarios && typeof scenarios === 'string') {
-      const scenarioList = scenarios.split(',');
+    // Add scenario filter ONLY if provided and not empty
+    if (scenarios && typeof scenarios === 'string' && scenarios.trim() !== '') {
+      const scenarioList = scenarios.split(',').filter(scenario => scenario.trim() !== '');
       if (scenarioList.length > 0) {
         const scenarioCol = `[ScenarioName]`;
         const escapedScenarios = scenarioList.map(scenario => `'${scenario.replace(/'/g, "''")}'`).join(',');
