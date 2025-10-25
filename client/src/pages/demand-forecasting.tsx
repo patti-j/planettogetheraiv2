@@ -872,7 +872,7 @@ export default function DemandForecasting() {
                   )}
                   {trainingMetrics.accuracy !== undefined && (
                     <div>
-                      <span className="font-medium">Accuracy:</span> {(trainingMetrics.accuracy * 100).toFixed(2)}%
+                      <span className="font-medium">Accuracy:</span> {trainingMetrics.accuracy.toFixed(2)}%
                     </div>
                   )}
                 </div>
@@ -1026,9 +1026,7 @@ export default function DemandForecasting() {
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-green-600">
                     {(() => {
-                      const itemToShow = forecastMode === "overall" 
-                        ? "Overall" 
-                        : selectedForecastItem;
+                      const itemToShow = selectedForecastItem || "Overall";
                       
                       const currentData = itemToShow === "Overall" 
                         ? forecastMutation.data.overall 
@@ -1061,8 +1059,8 @@ export default function DemandForecasting() {
               <CardTitle>
                 <div className="flex items-center justify-between">
                   <span>Forecast Visualization</span>
-                  {/* Item selection - Only show for "individual" mode */}
-                  {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && (
+                  {/* Item selection - Show when we have forecasted items */}
+                  {forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
                     <div className="flex items-center gap-2">
                       <Input
                         placeholder="Search items..."
@@ -1094,9 +1092,8 @@ export default function DemandForecasting() {
             </CardHeader>
             <CardContent>
               {(() => {
-                const itemToShow = forecastMode === "overall" 
-                  ? "Overall" 
-                  : selectedForecastItem;
+                // Always use selectedForecastItem for display, default to Overall
+                const itemToShow = selectedForecastItem || "Overall";
                 
                 let chartData: any[] = [];
                 let metrics: any = {};
