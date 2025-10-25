@@ -76,7 +76,7 @@ export default function DemandForecasting() {
   
   // Filter state for forecast visualization
   const [selectedForecastItem, setSelectedForecastItem] = useState<string>("Overall");
-  const [forecastMode, setForecastMode] = useState<"separate" | "overall">("separate");
+  const [forecastMode, setForecastMode] = useState<"individual" | "overall">("individual");
   const [itemSearchQuery, setItemSearchQuery] = useState<string>("");
   const [forecastSearchQuery, setForecastSearchQuery] = useState<string>("");
   
@@ -181,8 +181,8 @@ export default function DemandForecasting() {
     if (!itemColumn) errors.itemColumn = "Please select an item column";
     if (!quantityColumn) errors.quantityColumn = "Please select a quantity column";
     
-    // Only require items selection for "separate" mode
-    if (forecastMode === "separate" && selectedItems.length === 0) {
+    // Only require items selection for "individual" mode
+    if (forecastMode === "individual" && selectedItems.length === 0) {
       errors.items = "Please select at least one item";
     }
     
@@ -324,6 +324,11 @@ export default function DemandForecasting() {
   });
 
   const handleTrain = async () => {
+    console.log("handleTrain called");
+    console.log("Forecast mode:", forecastMode);
+    console.log("Selected items:", selectedItems);
+    console.log("Items available:", items);
+    
     if (!validateForm()) {
       toast({
         title: "Validation Error",
@@ -344,7 +349,7 @@ export default function DemandForecasting() {
       if (!proceed) return;
     }
     
-    await trainMutation.mutateAsync({
+    const trainingData = {
       schema: selectedTable!.schema,
       table: selectedTable!.name,
       dateColumn: dateColumn,
@@ -357,7 +362,15 @@ export default function DemandForecasting() {
       hyperparameterTuning: hyperparameterTuning,
       planningAreaColumn: planningAreaColumn,
       scenarioColumn: scenarioColumn
-    });
+    };
+    
+    console.log("Training data being sent:", trainingData);
+    
+    try {
+      await trainMutation.mutateAsync(trainingData);
+    } catch (error) {
+      console.error("Training error:", error);
+    }
   };
 
   const handleForecast = async () => {
@@ -552,7 +565,7 @@ export default function DemandForecasting() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Planning Area Filter */}
             <div className="space-y-2">
-              <Label>Planning Areas (Optional)</Label>
+              <Label>Planning Areas</Label>
               <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
                 <div className="mb-2">
                   <Input
@@ -608,7 +621,7 @@ export default function DemandForecasting() {
 
             {/* Scenario Filter */}
             <div className="space-y-2">
-              <Label>Scenarios (Optional)</Label>
+              <Label>Scenarios</Label>
               <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
                 <div className="mb-2">
                   <Input
@@ -663,8 +676,8 @@ export default function DemandForecasting() {
             </div>
           </div>
 
-          {/* Item Selection - Only show for "separate" mode */}
-          {forecastMode === "separate" && (
+          {/* Item Selection - Only show for "individual" mode */}
+          {forecastMode === "individual" && (
             <div className="space-y-2">
               <Label>Select Items ({selectedItems.length} selected)</Label>
               {validationErrors.items && (
@@ -772,11 +785,11 @@ export default function DemandForecasting() {
               <Label>Forecast Mode</Label>
               <Combobox
                 options={[
-                  { value: "separate", label: "Separate (Individual + Overall)" },
+                  { value: "individual", label: "Individual (Individual + Overall)" },
                   { value: "overall", label: "Overall Only" }
                 ]}
                 value={forecastMode}
-                onValueChange={(value) => setForecastMode(value as "separate" | "overall")}
+                onValueChange={(value) => setForecastMode(value as "individual" | "overall")}
                 placeholder="Select mode..."
               />
             </div>
@@ -895,8 +908,8 @@ export default function DemandForecasting() {
               </div>
             )}
             
-            {/* Item-specific metrics - Only show for "separate" mode */}
-            {forecastMode === "separate" && itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
+            {/* Item-specific metrics - Only show for "individual" mode */}
+            {forecastMode === "individual" && itemsTrainingMetrics && Object.keys(itemsTrainingMetrics).length > 0 && (
               <div>
                 <div 
                   className="flex items-center justify-between cursor-pointer hover:bg-gray-50 p-2 rounded"
@@ -1077,8 +1090,8 @@ export default function DemandForecasting() {
               <CardTitle>
                 <div className="flex items-center justify-between">
                   <span>Forecast Visualization</span>
-                  {/* Item selection - Only show for "separate" mode */}
-                  {forecastMode === "separate" && forecastMutation.data.forecastedItemNames && (
+                  {/* Item selection - Only show for "individual" mode */}
+                  {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && (
                     <div className="flex items-center gap-2">
                       <Input
                         placeholder="Search items..."
