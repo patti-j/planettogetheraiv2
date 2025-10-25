@@ -357,9 +357,15 @@ export default function DemandForecasting() {
       return;
     }
     
+    // Determine items to use based on mode and selection
+    let itemsToTrain = selectedItems;
+    if (forecastMode === "overall" && selectedItems.length === 0) {
+      // In overall mode with no selection, use all items
+      itemsToTrain = items || [];
+    }
+    
     // Warning for large selections
-    const itemCount = forecastMode === "overall" ? 
-      (items?.length || 0) : selectedItems.length;
+    const itemCount = itemsToTrain.length;
     
     if (itemCount > 1000) {
       const proceed = window.confirm(
@@ -376,7 +382,7 @@ export default function DemandForecasting() {
       quantityColumn: quantityColumn,
       selectedPlanningAreas: selectedPlanningAreas,
       selectedScenarios: selectedScenarios,
-      selectedItems: forecastMode === "overall" ? items || [] : selectedItems,
+      selectedItems: itemsToTrain,
       modelType: modelType,
       hyperparameterTuning: hyperparameterTuning,
       planningAreaColumn: planningAreaColumn,
@@ -402,6 +408,13 @@ export default function DemandForecasting() {
       return;
     }
 
+    // Use the same items as training
+    let itemsToForecast = selectedItems;
+    if (forecastMode === "overall" && selectedItems.length === 0) {
+      // In overall mode with no selection, use all items
+      itemsToForecast = items || [];
+    }
+
     await forecastMutation.mutateAsync({
       schema: selectedTable!.schema,
       table: selectedTable!.name,
@@ -410,7 +423,7 @@ export default function DemandForecasting() {
       quantityColumn: quantityColumn,
       selectedPlanningAreas: selectedPlanningAreas,
       selectedScenarios: selectedScenarios,
-      selectedItems: forecastMode === "overall" ? items || [] : selectedItems,
+      selectedItems: itemsToForecast,
       modelType: modelType,
       modelId: modelId,
       forecastDays: forecastDays,
@@ -713,14 +726,17 @@ export default function DemandForecasting() {
             </div>
           </div>
 
-          {/* Item Selection - Only show for "individual" mode */}
-          {forecastMode === "individual" && (
-            <div className="space-y-2">
-              <Label>Select Items ({selectedItems.length} selected)</Label>
-              {validationErrors.items && (
-                <p className="text-sm text-red-500">{validationErrors.items}</p>
-              )}
-              <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
+          {/* Item Selection */}
+          <div className="space-y-2">
+            <Label>
+              {forecastMode === "individual" 
+                ? `Select Items to Forecast Individually (${selectedItems.length} selected)`
+                : `Filter Items for Overall Forecast (${selectedItems.length === 0 ? 'All' : selectedItems.length} selected)`}
+            </Label>
+            {validationErrors.items && (
+              <p className="text-sm text-red-500">{validationErrors.items}</p>
+            )}
+            <div className="border rounded-md p-2 max-h-48 overflow-y-auto">
                 <div className="mb-2">
                   <Input
                     placeholder="Search items..."
@@ -774,7 +790,6 @@ export default function DemandForecasting() {
                 </div>
               </div>
             </div>
-          )}
         </CardContent>
       </Card>
 
