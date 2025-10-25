@@ -93,96 +93,10 @@ const ToastContainer: React.FC<{ toasts: string[] }> = ({ toasts }) => {
   );
 };
 
-// Global scheduler instance for testing
-let globalSchedulerInstance: any = null;
-let schedulerInitPromise: Promise<void> | null = null;
-let schedulerInitResolver: (() => void) | null = null;
-
-// Create a promise that resolves when scheduler is ready
-schedulerInitPromise = new Promise((resolve) => {
-  schedulerInitResolver = resolve;
-});
-
-// Wait for scheduler to be initialized
-const waitForScheduler = async () => {
-  if (globalSchedulerInstance) return true;
-  console.log('[Scheduler] Waiting for scheduler to initialize...');
-  await schedulerInitPromise;
-  return true;
-};
-
-// Global function to schedule ASAP - accessible from console
-(window as any).scheduleASAP = async () => {
-  await waitForScheduler();
-  
-  if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler initialization failed');
-    return;
-  }
-  
-  console.log('[Direct Scheduling] Starting ASAP (forward) scheduling...');
-  
-  // Set to forward scheduling
-  globalSchedulerInstance.project.schedulingDirection = 'forward';
-  globalSchedulerInstance.project.constraintsMode = 'honor';
-  
-  // Trigger the scheduling engine
-  await globalSchedulerInstance.project.propagate();
-  await globalSchedulerInstance.project.commitAsync();
-  
-  console.log('[Direct Scheduling] ASAP scheduling complete');
-  return true;
-};
-
-// Global function to schedule ALAP - accessible from console
-(window as any).scheduleALAP = async () => {
-  await waitForScheduler();
-  
-  if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler initialization failed');
-    return;
-  }
-  
-  console.log('[Direct Scheduling] Starting ALAP (backward) scheduling...');
-  
-  // Set to backward scheduling
-  globalSchedulerInstance.project.schedulingDirection = 'backward';
-  globalSchedulerInstance.project.constraintsMode = 'honor';
-  
-  // Trigger the scheduling engine
-  await globalSchedulerInstance.project.propagate();
-  await globalSchedulerInstance.project.commitAsync();
-  
-  console.log('[Direct Scheduling] ALAP scheduling complete');
-  return true;
-};
-
-// Global function to optimize schedule with different algorithms
-(window as any).optimizeSchedule = async (algorithmId?: string) => {
-  await waitForScheduler();
-  
-  if (!globalSchedulerInstance) {
-    console.error('[Scheduler] Scheduler initialization failed');
-    return;
-  }
-  
-  const algorithm = algorithmId || 'forward-scheduling';
-  console.log(`[Scheduler Optimization] Starting optimization with algorithm: ${algorithm}`);
-  
-  // For now, map algorithms to ASAP/ALAP
-  if (algorithm === 'forward-scheduling') {
-    await (window as any).scheduleASAP();
-  } else if (algorithm === 'backward-scheduling') {
-    await (window as any).scheduleALAP();
-  } else {
-    console.log(`[Scheduler Optimization] Algorithm ${algorithm} not yet implemented, using ASAP`);
-    await (window as any).scheduleASAP();
-  }
-  
-  return true;
-};
-
-console.log('[Scheduler] Global test functions registered: window.scheduleASAP(), window.scheduleALAP(), window.optimizeSchedule(algorithmId)');
+// REMOVED: Global scheduler instance and functions
+// These were causing conflicts with the iframe's own scheduling functions
+// The iframe (production-scheduler.html) handles its own scheduling internally
+// and doesn't need these duplicate global functions
 
 const BryntumScheduler: React.FC = () => {
   const schedulerRef = useRef<any>(null);
@@ -273,6 +187,13 @@ const BryntumScheduler: React.FC = () => {
   useEffect(() => {
     const loadData = async () => {
       setIsLoadingResources(true);
+      
+      // CRITICAL: Reset state before loading new data to prevent stale data issues
+      setResources([]);
+      setEvents([]);
+      setAssignments([]);
+      setDependencies([]);
+      
       try {
         // Build resource URL with planning area filter
         const resourceUrl = selectedPlanningArea !== 'all' 
@@ -305,7 +226,7 @@ const BryntumScheduler: React.FC = () => {
         ];
 
         // Build events - IMPORTANT: Do NOT include resourceId to avoid single-assignment mode conflict
-        const eventsData: any[] = [];
+        let eventsData: any[] = [];
         const seen = new Set<string>();
         for (let i = 0; i < rawOperations.length; i++) {
           const op = rawOperations[i] as Operation;
@@ -353,30 +274,74 @@ const BryntumScheduler: React.FC = () => {
           eventsData.push(eventData);
         }
 
-        // Build assignments
+        // Build assignments - FIXED: Properly filter operations by planning area without losing data
         const resSet = new Set(resourceRows.map((r) => r.id));
         const assignmentsData: any[] = [];
+        const validEventIds = new Set<string>();
+        
+        console.log(`🔍 Filtering by planning area: ${selectedPlanningArea}`);
+        console.log(`   Available resources in filtered set:`, Array.from(resSet));
+        
         for (const op of rawOperations) {
           const eid = S(op.id);
-          const rid = S(op.resourceId ?? op.resource_id);
+          const rid = S(op.resourceId ?? op.resource_id ?? op.actual_resource_id);
           if (!eid) continue;
-          if (rid && resSet.has(rid)) {
-            assignmentsData.push({ id: `a_${eid}_${rid}`, eventId: eid, resourceId: rid });
+          
+          // CRITICAL FIX: Include operations based on proper logic
+          let includeOperation = false;
+          let assignToResource = rid;
+          
+          if (selectedPlanningArea === 'all') {
+            // Show ALL operations when "All Areas" is selected
+            includeOperation = true;
+            // If resource not in current set (shouldn't happen with 'all'), assign to unscheduled
+            if (rid && !resSet.has(rid)) {
+              assignToResource = 'unscheduled';
+            }
+          } else {
+            // Filtering by specific planning area
+            if (rid && resSet.has(rid)) {
+              // Operation is assigned to a resource in the selected planning area
+              includeOperation = true;
+            } else if (!rid) {
+              // Operation has no resource assignment (unscheduled) - always include these
+              includeOperation = true;
+              assignToResource = 'unscheduled';
+            }
+            // Operations assigned to resources outside the selected planning area are excluded
+          }
+          
+          if (includeOperation) {
+            validEventIds.add(eid);
+            if (assignToResource && assignToResource !== 'unscheduled' && resSet.has(assignToResource)) {
+              assignmentsData.push({ 
+                id: `a_${eid}_${assignToResource}`, 
+                eventId: eid, 
+                resourceId: assignToResource 
+              });
+            } else {
+              assignmentsData.push({
+                id: `a_${eid}_unscheduled`,
+                eventId: eid,
+                resourceId: 'unscheduled',
+              });
+            }
           }
         }
 
-        // Ensure all events have assignments (assign orphans to unscheduled)
-        const assigned = new Set(assignmentsData.map((a) => a.eventId));
+        console.log(`   Total operations: ${rawOperations.length}`);
+        console.log(`   Operations included: ${validEventIds.size}`);
+        console.log(`   Assignments created: ${assignmentsData.length}`);
+        
+        // Filter events to only include those with valid assignments
+        eventsData = eventsData.filter(ev => validEventIds.has(ev.id));
+        
+        // Mark unscheduled events
+        const assigned = new Set(assignmentsData.filter(a => a.resourceId !== 'unscheduled').map(a => a.eventId));
         for (const ev of eventsData) {
           if (!assigned.has(ev.id)) {
             ev.isUnscheduled = true;
             ev.eventColor = '#808080';
-            // Add assignment to unscheduled resource
-            assignmentsData.push({
-              id: `a_${ev.id}_unscheduled`,
-              eventId: ev.id,
-              resourceId: 'unscheduled',
-            });
           }
         }
 
@@ -430,19 +395,8 @@ const BryntumScheduler: React.FC = () => {
             const scheduler = schedulerRef.current.instance;
             scheduler.project.commitAsync();
             
-            // Fallback initialization if paint event hasn't fired
-            if (!globalSchedulerInstance) {
-              console.log('[Scheduler] Fallback initialization after data load');
-              globalSchedulerInstance = scheduler;
-              if (schedulerInitResolver) {
-                schedulerInitResolver();
-                schedulerInitResolver = null;
-              }
-              console.log('[Scheduler] ✅ Scheduler initialized via data load fallback! Test functions available.');
-              console.log('  • window.scheduleASAP() - Forward scheduling');
-              console.log('  • window.scheduleALAP() - Backward scheduling');
-              console.log('  • window.optimizeSchedule(algorithmId) - Run optimization');
-            }
+            // The iframe handles its own scheduling functions
+            console.log('[Scheduler] Data loaded into scheduler');
           }
         }, 100);
       } catch (error) {
@@ -1188,19 +1142,8 @@ const BryntumScheduler: React.FC = () => {
         // Setup event handlers after scheduler is painted
         const scheduler = source;
         
-        // Set the global scheduler instance for testing
-        globalSchedulerInstance = scheduler;
-        
-        // Resolve the initialization promise so functions can proceed
-        if (schedulerInitResolver) {
-          schedulerInitResolver();
-          schedulerInitResolver = null; // Clear the resolver
-        }
-        
-        console.log('[Scheduler] ✅ Scheduler initialized! Test functions now available:');
-        console.log('  • window.scheduleASAP() - Forward scheduling');
-        console.log('  • window.scheduleALAP() - Backward scheduling');
-        console.log('  • window.optimizeSchedule(algorithmId) - Run optimization');
+        // The iframe handles its own scheduling functions
+        console.log('[Scheduler] ✅ Scheduler painted and ready');
 
         // Cleanup overlaps after initial load
         setTimeout(async () => {

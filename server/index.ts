@@ -281,6 +281,14 @@ app.use((req, res, next) => {
     } catch (error) {
       log(`ℹ️ Database seeding skipped (already seeded or error): ${error}`);
     }
+    
+    // Initialize admin user for production login
+    try {
+      const { initializeAdminUser } = await import('./init-admin');
+      await initializeAdminUser();
+    } catch (error) {
+      log(`⚠️ Admin user initialization error: ${error}`);
+    }
   })();
   
   // Start HTTP server

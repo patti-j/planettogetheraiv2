@@ -1447,55 +1447,75 @@
             const scheduler = window.scheduler;
             const project = scheduler.project;
             
-            // Keep reference to master store if not already stored
-            if (!window.masterResourceStore) {
+            // Check if master stores exist (they should be saved during initial load)
+            if (!window.masterResourceStore || !window.masterEventStore || !window.masterAssignmentStore) {
+                console.error('❌ Master stores not found! They should be saved during initial data load.');
+                console.log('📦 [Planning Area Filter] Attempting to save current stores as master (may already be filtered)');
                 window.masterResourceStore = project.resourceStore;
-                console.log('📦 [Planning Area Filter] Master resource store reference saved');
+                window.masterEventStore = project.eventStore;
+                window.masterAssignmentStore = project.assignmentStore;
             }
             
             try {
                 if (selectedPlanningArea !== 'all') {
                     console.log(`🎯 [Planning Area Filter] Applying filter for: ${selectedPlanningArea}`);
                     
-                    // Destroy any previous chained stores
-                    if (scheduler.resourceStore.destroyChainedStores) {
-                        scheduler.resourceStore.destroyChainedStores();
-                    }
-                    
+                    // Use chain() instead of deprecated makeChained()
                     // Create a chained store with filtered resources
-                    const chainedStore = window.masterResourceStore.makeChained(resource => {
+                    const chainedResourceStore = window.masterResourceStore.chain(resource => {
                         return resource.planning_area === selectedPlanningArea;
                     });
                     
-                    // Replace the scheduler's resource store with the chained version
-                    scheduler.resourceStore = chainedStore;
+                    // Get the filtered resource IDs
+                    const filteredResourceIds = chainedResourceStore.records.map(r => r.id);
+                    console.log(`📋 Filtered resource IDs: ${filteredResourceIds.join(', ')}`);
+                    
+                    // Create chained event store that only shows events for filtered resources
+                    const chainedEventStore = window.masterEventStore.chain(event => {
+                        // Show event if it's assigned to one of the filtered resources
+                        return event && event.resourceId && filteredResourceIds.includes(event.resourceId);
+                    });
+                    
+                    // Create chained assignment store for the filtered resources
+                    const chainedAssignmentStore = window.masterAssignmentStore.chain(assignment => {
+                        return assignment && assignment.resourceId && filteredResourceIds.includes(assignment.resourceId);
+                    });
+                    
+                    // Link the stores together properly
+                    chainedEventStore.assignmentStore = chainedAssignmentStore;
+                    chainedAssignmentStore.eventStore = chainedEventStore;
+                    
+                    // Update ONLY the project stores (SchedulerPro doesn't allow direct store assignment)
+                    project.resourceStore = chainedResourceStore;
+                    project.eventStore = chainedEventStore;
+                    project.assignmentStore = chainedAssignmentStore;
                     
                     const visibleResources = scheduler.resourceStore.records.length;
-                    console.log(`✅ [Planning Area Filter] Showing ${visibleResources} resources for planning area: ${selectedPlanningArea}`);
+                    const visibleEvents = scheduler.eventStore.records.length;
+                    console.log(`✅ [Planning Area Filter] Showing ${visibleResources} resources and ${visibleEvents} events for planning area: ${selectedPlanningArea}`);
                     
                 } else {
                     console.log('📊 [Planning Area Filter] Showing all resources and operations');
                     
-                    // Restore the master store (removes any filters)
+                    // Restore all master stores (only on project, not scheduler)
                     if (window.masterResourceStore) {
-                        scheduler.resourceStore = window.masterResourceStore;
+                        project.resourceStore = window.masterResourceStore;
                     }
+                    if (window.masterEventStore) {
+                        project.eventStore = window.masterEventStore;
+                    }
+                    if (window.masterAssignmentStore) {
+                        project.assignmentStore = window.masterAssignmentStore;
+                    }
+                    
+                    console.log(`✅ [Planning Area Filter] Restored all ${project.resourceStore.count} resources and ${project.eventStore.count} events`);
                 }
                 
-                // Commit changes and recalculate schedule
-                console.log('🔄 [Planning Area Filter] Committing changes and propagating...');
-                await project.commitAsync();
-                await project.propagate();
+                // Force scheduler to refresh its view
+                scheduler.refresh();
+                scheduler.refreshRows();
                 
-                // CRITICAL FIX: Run ASAP scheduling to show operations after filter change
-                console.log('📅 [Planning Area Filter] Running ASAP scheduling to display operations...');
-                if (window.asapScheduling) {
-                    await window.asapScheduling();
-                } else {
-                    console.error('❌ ASAP scheduling function not available!');
-                }
-                
-                // Apply zoom to fit after filtering AND scheduling
+                // Apply zoom to fit after filtering
                 setTimeout(() => {
                     scheduler.zoomToFit({
                         leftMargin: 50,   // Margin in pixels between first event start and first visible date
@@ -1848,7 +1868,7 @@
                         sequence_number: operation.sequence_number || operation.sequenceNumber || 0, // Map from API response
                         ptData: operation // Keep original PT data for algorithms
                     };
-                }).filter(event => event.resourceId); // Only include operations with valid resources
+                }); // Include all operations, even unscheduled ones
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
@@ -2243,15 +2263,15 @@
                         // Enable automatic scheduling dates
                         autoCalculateStartDate: true,
                         autoCalculateEndDate: true,
-                        autoCalculate: true,          // Automatically recalculate when changes occur
-                        recalculateAfterLoad: true,  // Recalculate after loading data
+                        autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
+                        recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
                         
                         // CRITICAL: Constraint configuration for preventing overlaps
                         constraintsMode: 'honor',    // 'honor' = enforce all constraints strictly
                         manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
                         
                         // Scheduling engine configuration
-                        schedulingDirection: 'forward', // Default to ASAP (forward) scheduling
+                        schedulingDirection: 'none', // DISABLED - No default scheduling direction
                         allowDependencyLag: true,     // Allow lag times between dependencies
                         calculateCriticalPath: true   // Enable critical path calculation
                     },
@@ -2649,24 +2669,32 @@
                 // Improved debug function per Bryntum best practices
                 function assertNoOverlaps(scheduler) {
                     const overlaps = [];
+                    const TOLERANCE_MS = 1000; // 1 second tolerance for perfect handoffs
+                    
                     for (const r of scheduler.resourceStore.records) {
                         const evs = r.events.slice().sort((a, b) => a.startDate - b.startDate);
                         for (let i = 1; i < evs.length; i++) {
-                            if (evs[i - 1].endDate > evs[i].startDate) {
+                            const overlapMs = evs[i - 1].endDate - evs[i].startDate;
+                            // Only flag as overlap if operations overlap by more than the tolerance
+                            // This handles perfect handoffs where one ends exactly when another starts
+                            if (overlapMs > TOLERANCE_MS) {
                                 overlaps.push({ 
                                     resource: r.name, 
                                     a: evs[i - 1].name, 
                                     b: evs[i].name,
-                                    overlapMs: evs[i - 1].endDate - evs[i].startDate
+                                    overlapMs: overlapMs
                                 });
+                                console.log(`  ⚠️ Real overlap detected on ${r.name}: "${evs[i - 1].name}" ends at ${evs[i - 1].endDate.toLocaleString()} but "${evs[i].name}" starts at ${evs[i].startDate.toLocaleString()} (${overlapMs}ms overlap)`);
+                            } else if (overlapMs > 0 && overlapMs <= TOLERANCE_MS) {
+                                console.log(`  ✅ Perfect handoff on ${r.name}: "${evs[i - 1].name}" to "${evs[i].name}" (${overlapMs}ms within tolerance)`);
                             }
                         }
                     }
                     if (overlaps.length) {
-                        console.warn('❌ Overlaps found:', overlaps);
+                        console.warn('❌ Real overlaps found:', overlaps);
                         return false;
                     } else {
-                        console.log('✅ No overlaps per resource');
+                        console.log('✅ No overlaps per resource (perfect handoffs allowed)');
                         return true;
                     }
                 }
@@ -2762,10 +2790,9 @@
                             }
                         }
                         
-                        // Commit changes after each pass
+                        // DON'T commit changes inside the loop to prevent triggering events
                         if (movedInThisPass > 0) {
-                            await scheduler.project.commitAsync();
-                            await scheduler.project.propagate();
+                            // Just log the progress, don't commit yet
                             console.log(`  🔄 Pass ${iterations}: Moved ${movedInThisPass} operations`);
                         } else {
                             // No more overlaps found, we're done
@@ -2776,6 +2803,12 @@
                     
                     if (iterations >= maxIterations) {
                         console.error(`  ⚠️ Reached maximum iterations (${maxIterations}) - some overlaps may remain`);
+                    }
+                    
+                    // Commit all changes ONCE at the end to avoid triggering events during the loop
+                    if (totalMoved > 0) {
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
                     }
                     
                     console.log(`  📊 Total operations moved: ${totalMoved}`);
@@ -3318,13 +3351,23 @@
 
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
+                let isAsapRunning = false; // Add flag to prevent re-entrance
                 window.asapScheduling = async function asapScheduling() {
-                    // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
-                    console.log('🚀 Starting ASAP scheduling with dependency-aware overlap prevention...');
+                    // Prevent re-entrance if already running
+                    if (isAsapRunning) {
+                        console.warn('⚠️ ASAP scheduling already in progress, skipping...');
+                        return;
+                    }
                     
-                    const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
-                    const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
-                    console.log(`  Total operations to schedule: ${events.length}`);
+                    isAsapRunning = true;
+                    
+                    try {
+                        // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
+                        console.log('🚀 Starting ASAP scheduling with dependency-aware overlap prevention...');
+                        
+                        const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
+                        const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
+                        console.log(`  Total operations to schedule: ${events.length}`);
                     
                     // Clear any existing constraint dates and manual flags to ensure clean scheduling
                     events.forEach(event => {
@@ -3355,13 +3398,31 @@
                         return deps.every(depId => scheduled.has(depId));
                     }
                     
-                    // Sort events by sequence number within same job as secondary criteria
+                    // FIXED: Sort events by PRIORITY first, then sequence number within same job
                     events.sort((a, b) => {
-                        // First sort by job ID
-                        if (a.jobId !== b.jobId) {
-                            return (a.jobId || 0) - (b.jobId || 0);
+                        // Extract job priorities from event data
+                        const getPriority = (event) => {
+                            return event.jobPriority || event.job_priority || 
+                                   event.ptData?.jobPriority || event.ptData?.job_priority ||
+                                   event.data?.jobPriority || event.data?.job_priority ||
+                                   999; // Default low priority if not found
+                        };
+                        
+                        const priorityA = parseInt(getPriority(a));
+                        const priorityB = parseInt(getPriority(b));
+                        
+                        // ASAP: Sort by priority ASC (1 before 2 before 3, etc)
+                        // Priority 1 (highest) should be scheduled FIRST in forward scheduling
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB; // Lower number = higher priority = schedule first
                         }
-                        // Then by sequence number within same job
+                        
+                        // If same priority, sort by job ID to keep jobs together
+                        if (a.jobId !== b.jobId) {
+                            return (a.jobId || '').localeCompare(b.jobId || '');
+                        }
+                        
+                        // Finally, sort by sequence number within same job
                         const seqA = a.sequence_number || 999;
                         const seqB = b.sequence_number || 999;
                         return seqA - seqB;
@@ -3388,9 +3449,75 @@
                     
                     console.log(`  ✅ Sorted ${sortedEvents.length} events by dependencies`);
                     
+                    // Log the priority order for verification
+                    const jobPriorityMap = new Map();
+                    sortedEvents.forEach(event => {
+                        const priority = event.jobPriority || event.job_priority || 
+                                       event.ptData?.jobPriority || event.ptData?.job_priority ||
+                                       event.data?.jobPriority || event.data?.job_priority || 999;
+                        if (!jobPriorityMap.has(event.jobId)) {
+                            jobPriorityMap.set(event.jobId, { priority: parseInt(priority), operations: [] });
+                        }
+                        jobPriorityMap.get(event.jobId).operations.push(event.name);
+                    });
+                    
+                    console.log('📊 ASAP Job scheduling order (highest priority first for forward scheduling):');
+                    const sortedJobs = Array.from(jobPriorityMap.entries()).sort(([, a], [, b]) => a.priority - b.priority);
+                    sortedJobs.forEach(([jobId, info], index) => {
+                        console.log(`  ${index + 1}. Priority ${info.priority}: Job ${jobId} - ${info.operations.length} operations`);
+                    });
+                    
                     // Process events in dependency order
                     const byId = id => eventStore.getById(id);
                     
+                    // ADVANCED BIN PACKING ALGORITHM for optimal schedule compaction
+                    // Track occupied time slots for each resource (like a timeline with filled bins)
+                    const resourceTimelines = new Map(); // resourceId -> array of {start, end, eventId}
+                    
+                    console.log('\n📦 Starting Advanced Bin Packing Algorithm for schedule compaction...');
+                    
+                    // Helper function to find the earliest available slot on a resource
+                    function findEarliestSlot(resourceId, duration, earliestPossibleStart) {
+                        const timeline = resourceTimelines.get(resourceId) || [];
+                        
+                        // If no operations on this resource yet, can start at earliest possible time
+                        if (timeline.length === 0) {
+                            return earliestPossibleStart;
+                        }
+                        
+                        // Sort timeline by start time (should already be sorted, but ensure it)
+                        timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
+                        
+                        // Check if we can fit before the first operation
+                        if (timeline[0].start.getTime() - earliestPossibleStart.getTime() >= duration) {
+                            return earliestPossibleStart;
+                        }
+                        
+                        // Check gaps between operations (bin packing)
+                        for (let i = 0; i < timeline.length - 1; i++) {
+                            const gapStart = timeline[i].end;
+                            const gapEnd = timeline[i + 1].start;
+                            const gapSize = gapEnd.getTime() - gapStart.getTime();
+                            
+                            // Check if this gap is big enough and respects earliest start
+                            if (gapSize >= duration) {
+                                // If gap starts after or at earliest possible start, use gap start
+                                if (gapStart.getTime() >= earliestPossibleStart.getTime()) {
+                                    return gapStart;
+                                }
+                                // If gap ends late enough to fit operation after earliest start
+                                else if (earliestPossibleStart.getTime() + duration <= gapEnd.getTime()) {
+                                    return earliestPossibleStart;
+                                }
+                            }
+                        }
+                        
+                        // No gaps found, schedule after the last operation
+                        const lastEnd = timeline[timeline.length - 1].end;
+                        return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
+                    }
+                    
+                    // Process each event and pack it optimally
                     for (const event of sortedEvents) {
                         // Calculate earliest start based on dependencies
                         let earliestStart = new Date(baseDate);
@@ -3414,18 +3541,35 @@
                         const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
                         
                         if (resource) {
-                            // Use best practice packer to find next free slot
-                            console.log(`  🔍 Finding slot for "${event.name}" on "${resource.name}" starting from ${earliestStart.toLocaleString()}`);
-                            const slot = findNextFreeSlotOnResource(resource, earliestStart, durationMs, event);
+                            const resourceId = resource.id;
                             
-                            // Update the event with the new times
-                            event.setStartDate(slot.start, true); // true = keep duration
+                            // Find the earliest slot using bin packing algorithm
+                            const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
+                            const slotEnd = new Date(slotStart.getTime() + durationMs);
+                            
+                            console.log(`  📦 Packing "${event.name}" on "${resource.name}"`);
+                            console.log(`     Dependencies require after: ${earliestStart.toLocaleString()}`);
+                            console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
+                            
+                            // Update the event with the packed times
+                            event.setStartDate(slotStart, true); // true = keep duration
                             event.set({
-                                endDate: slot.end,
+                                endDate: slotEnd,
                                 manuallyScheduled: false
                             });
                             
-                            console.log(`  ✅ Scheduled "${event.name}" on ${resource.name}: ${slot.start.toLocaleString()} to ${slot.end.toLocaleString()}`);
+                            // Add this time slot to the resource timeline
+                            if (!resourceTimelines.has(resourceId)) {
+                                resourceTimelines.set(resourceId, []);
+                            }
+                            resourceTimelines.get(resourceId).push({
+                                start: slotStart,
+                                end: slotEnd,
+                                eventId: event.id,
+                                eventName: event.name
+                            });
+                            
+                            console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
                         } else {
                             // Unassigned events - schedule at earliest time
                             console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
@@ -3436,6 +3580,22 @@
                             });
                         }
                     }
+                    
+                    // Log packing efficiency
+                    console.log('\n📊 Bin Packing Results:');
+                    resourceTimelines.forEach((timeline, resourceId) => {
+                        const resource = scheduler.resourceStore.getById(resourceId);
+                        if (timeline.length > 0) {
+                            timeline.sort((a, b) => a.start.getTime() - b.start.getTime());
+                            const firstOp = timeline[0];
+                            const lastOp = timeline[timeline.length - 1];
+                            const totalSpan = lastOp.end.getTime() - firstOp.start.getTime();
+                            const totalWorkTime = timeline.reduce((sum, slot) => 
+                                sum + (slot.end.getTime() - slot.start.getTime()), 0);
+                            const utilization = ((totalWorkTime / totalSpan) * 100).toFixed(1);
+                            console.log(`  ${resource.name}: ${timeline.length} operations, ${utilization}% utilization`);
+                        }
+                    });
                     
                     // Commit all changes and propagate
                     console.log('  💾 Committing changes...');
@@ -3449,8 +3609,8 @@
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
-                        console.log('  ✅ No overlaps detected - saving schedule...');
-                        await saveSchedule();
+                        console.log('  ✅ No overlaps detected - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.error('  ❌ VERIFICATION FAILED: Overlaps detected after ASAP!');
                         
@@ -3483,11 +3643,15 @@
                         
                         // Check again after repair
                         if (assertNoOverlaps(scheduler)) {
-                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
-                            await saveSchedule();
+                            console.log('  ✅ Overlaps successfully repaired - schedule ready to save');
+                            // REMOVED automatic save - user must click Save button
                         } else {
                             console.error('  ❌ Failed to repair all overlaps');
                         }
+                    }
+                    } finally {
+                        // Always reset the flag, even if there was an error
+                        isAsapRunning = false;
                     }
                 }
                 
@@ -3675,11 +3839,43 @@
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // Sort jobs by due date (process most urgent first)
-                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA], [keyB]) => {
+                    // Helper to get job priority from event
+                    const getJobPriority = (jobKey, operations) => {
+                        // Try to get priority from any operation in this job
+                        for (const op of operations) {
+                            const priority = op.jobPriority || op.job_priority || 
+                                           op.ptData?.jobPriority || op.ptData?.job_priority ||
+                                           op.data?.jobPriority || op.data?.job_priority;
+                            if (priority !== undefined && priority !== null) {
+                                return parseInt(priority);
+                            }
+                        }
+                        return 999; // Default low priority if not found
+                    };
+                    
+                    // ALAP: Sort jobs by priority REVERSED (5 to 1) so lowest priority schedules first
+                    // This ensures Priority 1 (highest) gets scheduled last and thus starts earliest
+                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
+                        const priorityA = getJobPriority(keyA, opsA);
+                        const priorityB = getJobPriority(keyB, opsB);
+                        
+                        // REVERSED: Sort by priority DESC (higher number first = lower priority first)
+                        // Priority 5 schedules before Priority 1
+                        if (priorityA !== priorityB) {
+                            return priorityB - priorityA; // REVERSED for backward scheduling
+                        }
+                        
+                        // If same priority, sort by due date (latest first for backward scheduling)
                         const dueA = jobDueMap.get(keyA) || globalFallback;
                         const dueB = jobDueMap.get(keyB) || globalFallback;
-                        return dueA.getTime() - dueB.getTime();
+                        return dueB.getTime() - dueA.getTime(); // REVERSED: Latest due dates first
+                    });
+                    
+                    console.log('📊 ALAP Job scheduling order (lowest priority first for backward scheduling):');
+                    sortedJobs.forEach(([jobKey, ops], index) => {
+                        const priority = getJobPriority(jobKey, ops);
+                        const due = jobDueMap.get(jobKey) || globalFallback;
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier)' : 'in middle'}`);
                     });
                     
                     // Process each job completely
@@ -3744,6 +3940,11 @@
                         }
                         
                         console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
+                        
+                        // 🔧 CRITICAL: Commit changes after each job to ensure resource conflicts are visible
+                        // This ensures findLatestFreeSlotOnResource sees the updated schedules
+                        await project.commitAsync();
+                        console.log(`  📝 Committed job ${jobKey} to stores`);
                     }
                     
                     // Handle any orphan operations (no job ID)
@@ -3777,16 +3978,17 @@
                     
                     console.log('✅ ALAP complete (backward cascade from Need-By dates). Verifying overlaps…');
                     
-                    // Optional assertion you already use
+                    // Verify overlaps but don't save automatically
                     if (typeof assertNoOverlaps === 'function' && assertNoOverlaps(scheduler)) {
-                        await saveSchedule?.();
+                        console.log('  ✅ No overlaps detected - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.error('❌ Overlap verification failed after ALAP.');
                         
                         // Check again after repair
                         if (assertNoOverlaps(scheduler)) {
-                            console.log('  ✅ Overlaps successfully repaired - saving schedule...');
-                            await saveSchedule();
+                            console.log('  ✅ Overlaps successfully repaired - schedule ready to save');
+                            // REMOVED automatic save - user must click Save button
                         } else {
                             console.error('  ❌ Failed to repair all overlaps');
                         }
@@ -3836,8 +4038,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Critical Path Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Critical Path Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Critical Path FAILED: ${overlapsFound} overlaps`);
                     }
@@ -3936,8 +4138,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Level Resources Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Level Resources Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Level Resources FAILED: ${overlapsFound} overlaps`);
                     }
@@ -4049,8 +4251,8 @@
                         }
                     });
                     if (overlapsFound === 0) {
-                        console.log('✅ Drum Verification passed');
-                        await saveSchedule();
+                        console.log('✅ Drum Verification passed - schedule ready to save');
+                        // REMOVED automatic save - user must click Save button
                     } else {
                         console.log(`❌ Drum FAILED: ${overlapsFound} overlaps`);
                     }
@@ -4118,24 +4320,88 @@
                 
                 // CRITICAL FIX: Define global scheduling functions that were missing
                 // These functions are called from elsewhere but weren't defined
+                // Add flag to prevent re-entrance
+                let isScheduleASAPRunning = false;
+                
                 window.scheduleASAP = async function() {
-                    console.log('📅 Running ASAP scheduling...');
-                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
-                    const project = scheduler.project;
-                    project.schedulingDirection = 'forward';
-                    await project.propagate();
-                    console.log('✅ ASAP scheduling complete');
-                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    // Prevent re-entrance if already running
+                    if (isScheduleASAPRunning) {
+                        console.warn('⚠️ scheduleASAP already in progress, skipping...');
+                        return;
+                    }
+                    
+                    isScheduleASAPRunning = true;
+                    
+                    try {
+                        console.log('📅 Running ASAP scheduling...');
+                        await window.waitForSchedulerReady(); // Wait for operations to be loaded
+                        const project = scheduler.project;
+                        
+                        // Disable auto-calculation BEFORE making changes to prevent loops
+                        const wasAutoCalculate = project.autoCalculate;
+                        project.autoCalculate = false;
+                        
+                        // Set scheduling direction
+                        project.schedulingDirection = 'forward';
+                        
+                        // Manually trigger calculation once
+                        await project.propagate();
+                        
+                        // Commit the scheduled changes
+                        await project.commitAsync();
+                        
+                        // Restore previous auto-calculate state (should stay false)
+                        project.autoCalculate = wasAutoCalculate;
+                        
+                        console.log('✅ ASAP scheduling complete');
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    } catch (error) {
+                        console.error('❌ ASAP scheduling error:', error);
+                    } finally {
+                        isScheduleASAPRunning = false;
+                    }
                 };
                 
+                // Add flag to prevent re-entrance for ALAP
+                let isScheduleALAPRunning = false;
+                
                 window.scheduleALAP = async function() {
-                    console.log('📅 Running ALAP scheduling...');
-                    await window.waitForSchedulerReady(); // Wait for operations to be loaded
-                    const project = scheduler.project;
-                    project.schedulingDirection = 'backward';
-                    await project.propagate();
-                    console.log('✅ ALAP scheduling complete');
-                    updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    // Prevent re-entrance if already running
+                    if (isScheduleALAPRunning) {
+                        console.warn('⚠️ scheduleALAP already in progress, skipping...');
+                        return;
+                    }
+                    
+                    isScheduleALAPRunning = true;
+                    
+                    try {
+                        console.log('📅 Running ALAP scheduling...');
+                        await window.waitForSchedulerReady(); // Wait for operations to be loaded
+                        const project = scheduler.project;
+                        
+                        // Disable auto-calculation BEFORE making changes to prevent loops
+                        const wasAutoCalculate = project.autoCalculate;
+                        project.autoCalculate = false;
+                        
+                        // Set scheduling direction
+                        project.schedulingDirection = 'backward';
+                        
+                        // Manually trigger calculation once
+                        await project.propagate();
+                        
+                        // Commit the scheduled changes
+                        await project.commitAsync();
+                        
+                        // Restore previous auto-calculate state (should stay false)
+                        project.autoCalculate = wasAutoCalculate;
+                        
+                        console.log('✅ ALAP scheduling complete');
+                        updateStatus(); // Use updateStatus instead of updateSchedulerStatus
+                    } catch (error) {
+                        console.error('❌ ALAP scheduling error:', error);
+                    } finally {
+                        isScheduleALAPRunning = false;
+                    }
                 };
                 
                 window.optimizeSchedule = async function(algorithmId) {
@@ -4219,10 +4485,18 @@
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
                     
-                    // Commit the data to finalize the loading
-                    await scheduler.project.commitAsync();
+                    // Save the original stores immediately after loading
+                    // This ensures we have the unfiltered data before any filtering occurs
+                    window.masterResourceStore = scheduler.project.resourceStore;
+                    window.masterEventStore = scheduler.project.eventStore;
+                    window.masterAssignmentStore = scheduler.project.assignmentStore;
+                    console.log('📦 [Initial Load] Master stores saved with all data');
                     
-                    console.log('✅ Data committed successfully');
+                    // DISABLED: Commit was triggering automatic propagation/scheduling
+                    // Users should manually trigger scheduling via Apply button
+                    // await scheduler.project.commitAsync();
+                    
+                    console.log('✅ Data loaded (not committed - manual scheduling required)');
                     
                     // Log success to console
                     console.log(`✅ Loaded ${scheduler.eventStore.count} operations on ${scheduler.resourceStore.count} resources`);
@@ -4768,63 +5042,18 @@
                 }
             }
             
-            // Apply scheduling button handler using Bryntum's built-in scheduling engine
+            // REMOVED DUPLICATE EVENT LISTENER
+            // This was causing the ASAP infinite loop because there were two event listeners
+            // for the same button. The original listener is at line 3198.
+            // Keeping only the first event listener to prevent duplicate scheduling calls.
+            
+            /* DUPLICATE CODE REMOVED - SEE LINE 3198 FOR THE ACTIVE EVENT LISTENER
             document.getElementById('applyScheduling').addEventListener('click', async () => {
-                try {
-                    const algorithm = document.getElementById('schedulingAlgorithm').value;
-                    console.log(`🚀 Applying ${algorithm.toUpperCase()} algorithm...`);
-                    
-                    if (!window.scheduler || !window.scheduler.project) {
-                        console.error('❌ Scheduler or project not initialized');
-                        return;
-                    }
-                    
-                    const scheduler = window.scheduler;
-                    const project = scheduler.project;
-                    
-                    // Apply the algorithm using Bryntum's scheduling engine
-                    switch(algorithm) {
-                        case 'asap':
-                            console.log('⏳ Running ASAP (Forward) scheduling...');
-                            // Use the working custom ASAP implementation
-                            await asapScheduling();
-                            console.log('✅ ASAP scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('ASAP scheduling complete');
-                            }
-                            break;
-                            
-                        case 'alap':
-                            console.log('⏳ Running ALAP (Backward) scheduling...');
-                            // Use the working custom ALAP implementation
-                            await alapScheduling();
-                            console.log('✅ ALAP scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('ALAP scheduling complete');
-                            }
-                            break;
-                            
-                        case 'criticalPath':
-                            console.log('⏳ Running Critical Path scheduling...');
-                            // Use the working custom Critical Path implementation
-                            await criticalPathScheduling();
-                            console.log('✅ Critical Path scheduling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('Critical Path scheduling complete');
-                            }
-                            break;
-                            
-                        case 'levelResources':
-                            console.log('⏳ Running Resource Leveling...');
-                            // Use the working custom Resource Leveling implementation
-                            await levelResourcesScheduling();
-                            console.log('✅ Resource Leveling complete');
-                            if (scheduler.toast) {
-                                scheduler.toast('Resource Leveling complete');
-                            }
-                            break;
-                            
-                        case 'drum':
+                // This entire block was commented out to prevent duplicate event listener
+                // The working event listener is at line 3198
+            });
+            
+            The following block from lines 4903-5158 contained duplicate scheduling logic:
                             console.log('⏳ Running Drum/TOC scheduling...');
                             // Use the working custom Drum/TOC implementation
                             await drumScheduling();
@@ -5098,15 +5327,29 @@
                     if (window.scheduler && window.scheduler.eventStore) {
                         const events = window.scheduler.eventStore.records;
                         
-                        // Prepare operations update data
-                        const operations = events.map(event => ({
-                            id: event.operationId || event.id, // Use operationId if available
-                            start: event.startDate ? event.startDate.toISOString() : null,
-                            end: event.endDate ? event.endDate.toISOString() : null,
-                            manuallyScheduled: event.manually_scheduled || false
-                        }));
+                        // Prepare operations update data - filter out unscheduled operations
+                        const operations = events
+                            .filter(event => event.resourceId !== 'unscheduled' && event.startDate && event.endDate)
+                            .map(event => {
+                                // The event.id corresponds to the ptjoboperations table ID
+                                const op = {
+                                    id: parseInt(event.id), // Ensure it's a number for the database
+                                    start: event.startDate ? event.startDate.toISOString() : null,
+                                    end: event.endDate ? event.endDate.toISOString() : null,
+                                    manuallyScheduled: event.manuallyScheduled || false
+                                };
+                                console.log(`📝 Saving operation: ${event.name} (ID: ${op.id}) - Start: ${op.start}, End: ${op.end}`);
+                                return op;
+                            });
                         
-                        console.log(`📝 Updating ${operations.length} operations in main database...`);
+                        if (operations.length === 0) {
+                            alert('No scheduled operations to save. Please schedule some operations first.');
+                            saveBtn.innerHTML = originalHTML;
+                            saveBtn.disabled = false;
+                            return;
+                        }
+                        
+                        console.log(`📝 Updating ${operations.length} scheduled operations in database...`);
                         
                         // Get auth token from parent window or localStorage
                         const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
@@ -5220,114 +5463,195 @@
                         const schedules = await response.json();
                         
                         if (schedules.length === 0) {
-                            alert('No saved schedules found');
+                            // Use Bryntum's MessageDialog instead of alert
+                            if (window.scheduler && window.scheduler.bryntum) {
+                                window.scheduler.bryntum.MessageDialog.alert({
+                                    title: 'No Schedules',
+                                    message: 'No saved schedules found'
+                                });
+                            } else {
+                                alert('No saved schedules found');
+                            }
                             return;
                         }
                         
-                        // Create a simple selection dialog
-                        const scheduleList = schedules.map((s, i) => 
-                            `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
-                        ).join('\n');
-                        
-                        const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
-                        
-                        if (selection) {
-                            const index = parseInt(selection) - 1;
-                            if (index >= 0 && index < schedules.length) {
-                                const selectedSchedule = schedules[index];
-                                
-                                // Load the schedule using Bryntum's loadInlineData method
-                                if (window.scheduler && window.scheduler.project) {
-                                    // Load the project data
-                                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
-                                    
-                                    // Restore metadata if available
-                                    if (selectedSchedule.metadata) {
-                                        if (selectedSchedule.metadata.algorithm) {
-                                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
-                                        }
-                                        if (selectedSchedule.metadata.constraints) {
-                                            window.activeConstraints = selectedSchedule.metadata.constraints;
-                                        }
+                        // Use Bryntum's built-in combo selection dialog
+                        if (window.scheduler && window.scheduler.bryntum) {
+                            const { Combo, Popup } = window.scheduler.bryntum;
+                            
+                            // Prepare schedule items for the combo
+                            const scheduleItems = schedules.map((s, i) => ({
+                                id: i,
+                                text: `${s.name} - ${new Date(s.updatedAt).toLocaleDateString()} ${new Date(s.updatedAt).toLocaleTimeString()}`,
+                                schedule: s
+                            }));
+                            
+                            // Create a popup with a combo box
+                            const popup = new Popup({
+                                autoShow: true,
+                                centered: true,
+                                closable: true,
+                                modal: true,
+                                title: 'Select a schedule to load',
+                                width: 500,
+                                items: [
+                                    {
+                                        type: 'combo',
+                                        ref: 'scheduleCombo',
+                                        label: 'Schedule',
+                                        displayField: 'text',
+                                        valueField: 'id',
+                                        items: scheduleItems,
+                                        placeholder: 'Choose a schedule...',
+                                        style: 'margin: 20px'
                                     }
-                                    
-                                    // Store the schedule ID for future updates
-                                    window.currentScheduleId = selectedSchedule.id;
-                                    
-                                    // Zoom to fit the entire schedule in view
-                                    const events = window.scheduler.eventStore.records;
-                                    if (events && events.length > 0) {
-                                        // Find the earliest and latest dates in the schedule
-                                        let minDate = null;
-                                        let maxDate = null;
-                                        
-                                        events.forEach(event => {
-                                            if (!minDate || event.startDate < minDate) {
-                                                minDate = new Date(event.startDate);
-                                            }
-                                            if (!maxDate || event.endDate > maxDate) {
-                                                maxDate = new Date(event.endDate);
-                                            }
-                                        });
-                                        
-                                        if (minDate && maxDate) {
-                                            // Add some padding (1 day before and after)
-                                            minDate.setDate(minDate.getDate() - 1);
-                                            maxDate.setDate(maxDate.getDate() + 1);
+                                ],
+                                bbar: [
+                                    {
+                                        text: 'OK',
+                                        cls: 'b-blue',
+                                        onClick: async () => {
+                                            const combo = popup.widgetMap.scheduleCombo;
+                                            const selectedId = combo.value;
                                             
-                                            // Set the time span to show all events
-                                            window.scheduler.setTimeSpan(minDate, maxDate);
-                                            
-                                            // Adjust zoom level to fit the view
-                                            // Calculate the number of days to show
-                                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
-                                            
-                                            // Set appropriate zoom level based on days
-                                            if (daysDiff <= 7) {
-                                                window.scheduler.zoomLevel = 10; // Hour view
-                                            } else if (daysDiff <= 14) {
-                                                window.scheduler.zoomLevel = 8; // Day view
-                                            } else if (daysDiff <= 30) {
-                                                window.scheduler.zoomLevel = 6; // Week view
-                                            } else {
-                                                window.scheduler.zoomLevel = 4; // Month view
+                                            if (selectedId !== null && selectedId !== undefined) {
+                                                const selectedItem = scheduleItems.find(item => item.id === selectedId);
+                                                if (selectedItem && selectedItem.schedule) {
+                                                    await loadSelectedSchedule(selectedItem.schedule);
+                                                }
                                             }
+                                            popup.close();
                                         }
+                                    },
+                                    {
+                                        text: 'Cancel',
+                                        onClick: () => popup.close()
                                     }
-                                    
-                                    // Update status
-                                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                                    updateStatus();
-                                    
-                                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                                ]
+                            });
+                            
+                            return;
+                        } else {
+                            // Fallback to prompt if Bryntum widgets not available
+                            const scheduleList = schedules.map((s, i) => 
+                                `${i + 1}. ${s.name} (${new Date(s.updatedAt).toLocaleDateString()})`
+                            ).join('\n');
+                            
+                            const selection = prompt(`Select a schedule to load:\n\n${scheduleList}\n\nEnter number (1-${schedules.length}):`);
+                            
+                            if (selection) {
+                                const index = parseInt(selection) - 1;
+                                if (index >= 0 && index < schedules.length) {
+                                    await loadSelectedSchedule(schedules[index]);
                                 }
                             }
                         }
                     } else {
-                        // Fallback to localStorage
-                        const localSchedules = [];
-                        for (let i = 0; i < localStorage.length; i++) {
-                            const key = localStorage.key(i);
-                            if (key && (key.startsWith('savedSchedule_') || key.startsWith('scheduleBackup_'))) {
-                                try {
-                                    const data = JSON.parse(localStorage.getItem(key));
-                                    localSchedules.push({ key, data });
-                                } catch (e) {}
+                        // Handle error or fallback to localStorage
+                        loadLocalSchedules();
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading schedules:', error);
+                    alert('Failed to load schedules. Please try again.');
+                }
+            };
+            
+            // Helper function to load a selected schedule
+            async function loadSelectedSchedule(selectedSchedule) {
+                // Load the schedule using Bryntum's loadInlineData method
+                if (window.scheduler && window.scheduler.project) {
+                    // Load the project data
+                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
+                    
+                    // Restore metadata if available
+                    if (selectedSchedule.metadata) {
+                        if (selectedSchedule.metadata.algorithm) {
+                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                        }
+                        if (selectedSchedule.metadata.constraints) {
+                            window.activeConstraints = selectedSchedule.metadata.constraints;
+                        }
+                    }
+                    
+                    // Store the schedule ID for future updates
+                    window.currentScheduleId = selectedSchedule.id;
+                    
+                    // Zoom to fit the entire schedule in view
+                    const events = window.scheduler.eventStore.records;
+                    if (events && events.length > 0) {
+                        // Find the earliest and latest dates in the schedule
+                        let minDate = null;
+                        let maxDate = null;
+                        
+                        events.forEach(event => {
+                            if (!minDate || event.startDate < minDate) {
+                                minDate = new Date(event.startDate);
+                            }
+                            if (!maxDate || event.endDate > maxDate) {
+                                maxDate = new Date(event.endDate);
+                            }
+                        });
+                        
+                        if (minDate && maxDate) {
+                            // Add some padding (1 day before and after)
+                            minDate.setDate(minDate.getDate() - 1);
+                            maxDate.setDate(maxDate.getDate() + 1);
+                            
+                            // Set the time span to show all events
+                            window.scheduler.setTimeSpan(minDate, maxDate);
+                            
+                            // Adjust zoom level to fit the view
+                            // Calculate the number of days to show
+                            const daysDiff = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+                            
+                            // Set appropriate zoom level based on days
+                            if (daysDiff <= 7) {
+                                window.scheduler.zoomLevel = 10; // Hour view
+                            } else if (daysDiff <= 14) {
+                                window.scheduler.zoomLevel = 8; // Day view
+                            } else if (daysDiff <= 30) {
+                                window.scheduler.zoomLevel = 6; // Week view
+                            } else {
+                                window.scheduler.zoomLevel = 4; // Month view
                             }
                         }
+                    }
+                    
+                    // Update status
+                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                    updateStatus();
+                    
+                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                }
+            }
+            
+            // Helper function to load local schedules from localStorage
+            async function loadLocalSchedules() {
+                try {
+                    // Fallback to localStorage
+                    const localSchedules = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (key.startsWith('savedSchedule_') || key.startsWith('scheduleBackup_'))) {
+                            try {
+                                const data = JSON.parse(localStorage.getItem(key));
+                                localSchedules.push({ key, data });
+                            } catch (e) {}
+                        }
+                    }
+                    
+                    if (localSchedules.length > 0) {
+                        const scheduleList = localSchedules.map((s, i) => 
+                            `${i + 1}. ${s.data.name || 'Unnamed'} (Local)`
+                        ).join('\n');
                         
-                        if (localSchedules.length > 0) {
-                            const scheduleList = localSchedules.map((s, i) => 
-                                `${i + 1}. ${s.data.name || 'Unnamed'} (Local)`
-                            ).join('\n');
-                            
-                            const selection = prompt(`Select a local schedule to load:\n\n${scheduleList}\n\nEnter number:`);
-                            if (selection) {
-                                const index = parseInt(selection) - 1;
-                                if (index >= 0 && index < localSchedules.length) {
-                                    const selectedSchedule = localSchedules[index].data;
-                                    if (selectedSchedule.scheduleData || selectedSchedule.data) {
-                                        await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
+                        const selection = prompt(`Select a local schedule to load:\n\n${scheduleList}\n\nEnter number:`);
+                        if (selection) {
+                            const index = parseInt(selection) - 1;
+                            if (index >= 0 && index < localSchedules.length) {
+                                const selectedSchedule = localSchedules[index].data;
+                                if (selectedSchedule.scheduleData || selectedSchedule.data) {
+                                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData || selectedSchedule.data);
                                         
                                         // Zoom to fit the entire schedule in view
                                         const events = window.scheduler.eventStore.records;
@@ -5374,15 +5698,14 @@
                                     }
                                 }
                             }
-                        } else {
-                            alert('No saved schedules found');
-                        }
+                    } else {
+                        alert('No local schedules found');
                     }
                 } catch (error) {
-                    console.error('❌ Error loading schedule:', error);
-                    alert('Failed to load schedule. Please try again.');
+                    console.error('❌ Error loading local schedules:', error);
+                    alert('Failed to load local schedules. Please try again.');
                 }
-            };
+            }
             
             // Add functionality for Refresh button - simply reload the page
             document.getElementById('refreshSchedule').addEventListener('click', () => {
