@@ -1447,25 +1447,22 @@
             const scheduler = window.scheduler;
             const project = scheduler.project;
             
-            // Keep reference to master stores if not already stored
-            if (!window.masterResourceStore) {
-                window.masterResourceStore = project.resourceStore.masterStore || project.resourceStore;
-                console.log('📦 [Planning Area Filter] Master resource store reference saved');
-            }
-            
-            // Also keep reference to master event store and assignment store
-            if (!window.masterEventStore) {
-                window.masterEventStore = project.eventStore.masterStore || project.eventStore;
-                window.masterAssignmentStore = project.assignmentStore.masterStore || project.assignmentStore;
-                console.log('📦 [Planning Area Filter] Master event and assignment stores saved');
+            // Check if master stores exist (they should be saved during initial load)
+            if (!window.masterResourceStore || !window.masterEventStore || !window.masterAssignmentStore) {
+                console.error('❌ Master stores not found! They should be saved during initial data load.');
+                console.log('📦 [Planning Area Filter] Attempting to save current stores as master (may already be filtered)');
+                window.masterResourceStore = project.resourceStore;
+                window.masterEventStore = project.eventStore;
+                window.masterAssignmentStore = project.assignmentStore;
             }
             
             try {
                 if (selectedPlanningArea !== 'all') {
                     console.log(`🎯 [Planning Area Filter] Applying filter for: ${selectedPlanningArea}`);
                     
+                    // Use chain() instead of deprecated makeChained()
                     // Create a chained store with filtered resources
-                    const chainedResourceStore = window.masterResourceStore.makeChained(resource => {
+                    const chainedResourceStore = window.masterResourceStore.chain(resource => {
                         return resource.planning_area === selectedPlanningArea;
                     });
                     
@@ -1474,15 +1471,19 @@
                     console.log(`📋 Filtered resource IDs: ${filteredResourceIds.join(', ')}`);
                     
                     // Create chained event store that only shows events for filtered resources
-                    const chainedEventStore = window.masterEventStore.makeChained(event => {
+                    const chainedEventStore = window.masterEventStore.chain(event => {
                         // Show event if it's assigned to one of the filtered resources
-                        return filteredResourceIds.includes(event.resourceId);
+                        return event && event.resourceId && filteredResourceIds.includes(event.resourceId);
                     });
                     
                     // Create chained assignment store for the filtered resources
-                    const chainedAssignmentStore = window.masterAssignmentStore.makeChained(assignment => {
-                        return filteredResourceIds.includes(assignment.resourceId);
+                    const chainedAssignmentStore = window.masterAssignmentStore.chain(assignment => {
+                        return assignment && assignment.resourceId && filteredResourceIds.includes(assignment.resourceId);
                     });
+                    
+                    // Link the stores together properly
+                    chainedEventStore.assignmentStore = chainedAssignmentStore;
+                    chainedAssignmentStore.eventStore = chainedEventStore;
                     
                     // Update the project stores
                     project.resourceStore = chainedResourceStore;
@@ -4491,6 +4492,13 @@
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
+                    
+                    // Save the original stores immediately after loading
+                    // This ensures we have the unfiltered data before any filtering occurs
+                    window.masterResourceStore = scheduler.project.resourceStore;
+                    window.masterEventStore = scheduler.project.eventStore;
+                    window.masterAssignmentStore = scheduler.project.assignmentStore;
+                    console.log('📦 [Initial Load] Master stores saved with all data');
                     
                     // DISABLED: Commit was triggering automatic propagation/scheduling
                     // Users should manually trigger scheduling via Apply button
