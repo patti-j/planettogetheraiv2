@@ -140,6 +140,21 @@ export default function DemandForecasting() {
   // Process tables data for Combobox
   const tables = tablesData || [];
 
+  // Set default table to 'publish.DASHt_SalesOrders' when tables are loaded
+  useEffect(() => {
+    if (tables && tables.length > 0 && !selectedTable) {
+      const defaultTable = tables.find(
+        (table: Table) => table.schema === "publish" && table.name === "DASHt_SalesOrders"
+      );
+      if (defaultTable) {
+        console.log("Setting default table:", defaultTable);
+        setSelectedTable(defaultTable);
+      } else {
+        console.log("Default table not found. Available tables:", tables.map((t: Table) => `${t.schema}.${t.name}`).slice(0, 10));
+      }
+    }
+  }, [tables]);
+
   // Fetch columns when table is selected
   const { data: columns, isLoading: isLoadingColumns } = useQuery({
     queryKey: selectedTable 
