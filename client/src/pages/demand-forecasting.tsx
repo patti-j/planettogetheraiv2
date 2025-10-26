@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +8,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
-import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp, RefreshCw, Trash2, Info } from "lucide-react";
+import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp, RefreshCw, Trash2, Info, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import html2canvas from "html2canvas";
 
 interface Table {
   schema: string;
@@ -56,6 +57,7 @@ interface ForecastResult {
 
 export default function DemandForecasting() {
   const { toast } = useToast();
+  const chartRef = useRef<HTMLDivElement>(null);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [dateColumn, setDateColumn] = useState<string>("");
   const [itemColumn, setItemColumn] = useState<string>("");
@@ -485,6 +487,42 @@ export default function DemandForecasting() {
       toast({
         title: "Training Cancelled",
         description: "Model training has been cancelled.",
+      });
+    }
+  };
+
+  // Export chart functionality
+  const exportChart = async () => {
+    if (!chartRef.current) {
+      toast({
+        title: "Export Failed",
+        description: "Chart element not found",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const canvas = await html2canvas(chartRef.current, {
+        backgroundColor: '#ffffff',
+        scale: 2,
+      });
+      
+      const link = document.createElement('a');
+      link.download = `forecast_${selectedForecastItem || 'overall'}_${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+      
+      toast({
+        title: "Chart Exported",
+        description: "The forecast chart has been downloaded as an image.",
+      });
+    } catch (error) {
+      console.error('Failed to export chart:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export the chart. Please try again.",
+        variant: "destructive",
       });
     }
   };
@@ -1335,34 +1373,46 @@ export default function DemandForecasting() {
               <CardTitle>
                 <div className="flex items-center justify-between">
                   <span>Forecast Visualization</span>
-                  {/* Item selection - Show only for individual mode when we have forecasted items */}
-                  {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        placeholder="Search items..."
-                        value={forecastSearchQuery}
-                        onChange={(e) => setForecastSearchQuery(e.target.value)}
-                        className="w-48 h-8"
-                      />
-                      <Combobox
-                        options={[
-                          { value: "Overall", label: "Overall (All Items)" },
-                          ...(forecastMutation.data.forecastedItemNames || [])
-                            .filter((item: string) => 
-                              item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
-                            )
-                            .map((item: string) => ({
-                              value: item,
-                              label: item
-                            }))
-                        ]}
-                        value={selectedForecastItem}
-                        onValueChange={setSelectedForecastItem}
-                        placeholder="Select item..."
-                        className="w-64"
-                      />
-                    </div>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {/* Item selection - Show only for individual mode when we have forecasted items */}
+                    {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
+                      <>
+                        <Input
+                          placeholder="Search items..."
+                          value={forecastSearchQuery}
+                          onChange={(e) => setForecastSearchQuery(e.target.value)}
+                          className="w-48 h-8"
+                        />
+                        <Combobox
+                          options={[
+                            { value: "Overall", label: "Overall (All Items)" },
+                            ...(forecastMutation.data.forecastedItemNames || [])
+                              .filter((item: string) => 
+                                item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
+                              )
+                              .map((item: string) => ({
+                                value: item,
+                                label: item
+                              }))
+                          ]}
+                          value={selectedForecastItem}
+                          onValueChange={setSelectedForecastItem}
+                          placeholder="Select item..."
+                          className="w-64"
+                        />
+                      </>
+                    )}
+                    {/* Export button */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={exportChart}
+                      title="Export chart as image"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export
+                    </Button>
+                  </div>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -1447,7 +1497,7 @@ export default function DemandForecasting() {
                 }
                 
                 return (
-                  <div>
+                  <div ref={chartRef}>
                     <ResponsiveContainer width="100%" height={400}>
                       <LineChart data={chartData}>
                         <CartesianGrid strokeDasharray="3 3" />
