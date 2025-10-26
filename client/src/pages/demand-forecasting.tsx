@@ -880,8 +880,8 @@ export default function DemandForecasting() {
               <Label>Forecast Mode</Label>
               <Combobox
                 options={[
-                  { value: "individual", label: "Individual (Individual + Overall)" },
-                  { value: "overall", label: "Overall Only" }
+                  { value: "individual", label: "Individual" },
+                  { value: "overall", label: "Overall" }
                 ]}
                 value={forecastMode}
                 onValueChange={(value) => setForecastMode(value as "individual" | "overall")}
