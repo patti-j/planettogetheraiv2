@@ -526,6 +526,101 @@ export default function DemandForecasting() {
       });
     }
   };
+
+  // Export data to CSV
+  const exportCSV = () => {
+    if (!forecastMutation.data) {
+      toast({
+        title: "Export Failed",
+        description: "No forecast data available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      // Determine which item to export based on forecast mode
+      let itemToShow = selectedForecastItem;
+      
+      if (forecastMode === "individual") {
+        if (!itemToShow || itemToShow === "Overall") {
+          itemToShow = forecastMutation.data.forecastedItemNames?.[0] || "";
+        }
+      } else {
+        itemToShow = "Overall";
+      }
+      
+      let csvData = [];
+      let headers = ["Date", "Historical", "Forecast", "Lower Bound", "Upper Bound"];
+      
+      // Get data based on forecast mode and selected item
+      let historical = [];
+      let forecast = [];
+      
+      if (itemToShow === "Overall" && forecastMode === "overall" && forecastMutation.data.overall) {
+        historical = forecastMutation.data.overall.historical;
+        forecast = forecastMutation.data.overall.forecast;
+      } else if (forecastMutation.data.items?.[itemToShow]) {
+        const itemData = forecastMutation.data.items[itemToShow];
+        historical = itemData.historical;
+        forecast = itemData.forecast;
+      } else if (forecastMutation.data.historical && forecastMutation.data.forecast) {
+        // Legacy single-item format
+        historical = forecastMutation.data.historical;
+        forecast = forecastMutation.data.forecast;
+      }
+      
+      // Combine historical and forecast data for CSV
+      const allDates = new Set([
+        ...historical.map((d: any) => d.date),
+        ...forecast.map((d: any) => d.date)
+      ]);
+      
+      // Create CSV rows
+      const sortedDates = Array.from(allDates).sort();
+      sortedDates.forEach(date => {
+        const histItem = historical.find((h: any) => h.date === date);
+        const fcstItem = forecast.find((f: any) => f.date === date);
+        
+        csvData.push([
+          date,
+          histItem ? histItem.value : "",
+          fcstItem ? fcstItem.value : "",
+          fcstItem ? fcstItem.lower : "",
+          fcstItem ? fcstItem.upper : ""
+        ]);
+      });
+      
+      // Convert to CSV string
+      const csvContent = [
+        headers.join(","),
+        ...csvData.map(row => row.join(","))
+      ].join("\n");
+      
+      // Create download link
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `forecast_data_${itemToShow}_${new Date().toISOString().slice(0, 10)}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "Data Exported",
+        description: "The forecast data has been downloaded as a CSV file.",
+      });
+    } catch (error) {
+      console.error('Failed to export CSV:', error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export the data. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
   
   // Filter items for search
   const filteredItems = items?.filter((item: string) =>
@@ -1404,15 +1499,24 @@ export default function DemandForecasting() {
                         />
                       </>
                     )}
-                    {/* Export button */}
+                    {/* Export buttons */}
                     <Button
                       size="sm"
                       variant="outline"
                       onClick={exportChart}
-                      title="Export chart as image"
+                      title="Export chart as PNG image"
                     >
                       <Download className="h-4 w-4 mr-1" />
-                      Export
+                      PNG
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={exportCSV}
+                      title="Export data as CSV"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      CSV
                     </Button>
                   </div>
                 </div>
