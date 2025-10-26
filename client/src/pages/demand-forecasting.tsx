@@ -121,7 +121,7 @@ export default function DemandForecasting() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
   // Cache control state
-  const [trainingMode, setTrainingMode] = useState<"smart" | "force_retrain" | "clear_retrain">("smart");
+  const [trainingMode, setTrainingMode] = useState<"smart" | "force_retrain">("smart");
   const [cacheStats, setCacheStats] = useState<{
     totalModels: number;
     totalSize: string;
@@ -309,33 +309,6 @@ export default function DemandForecasting() {
     },
   });
 
-  // Clear cache mutation
-  const clearCacheMutation = useMutation({
-    mutationFn: async () => {
-      const response = await apiRequest("POST", "/api/forecasting/cache/clear");
-      return response.json();
-    },
-    onSuccess: () => {
-      toast({
-        title: "Cache Cleared",
-        description: "All cached models have been removed. The next training will build fresh models.",
-      });
-      setIsModelTrained(false);
-      setTrainingMetrics(null);
-      setItemsTrainingMetrics(null);
-      setModelId(null);
-      setModelCacheInfo({});
-      queryClient.invalidateQueries({ queryKey: ["/api/forecasting/cache/stats"] });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Failed to Clear Cache",
-        description: error.message || "Could not clear the model cache",
-        variant: "destructive",
-      });
-    },
-  });
-
   // Generate forecast mutation  
   const forecastMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -458,8 +431,7 @@ export default function DemandForecasting() {
       hyperparameterTuning: hyperparameterTuning,
       planningAreaColumn: planningAreaColumn,
       scenarioColumn: scenarioColumn,
-      forceRetrain: trainingMode === "force_retrain",
-      clearCache: trainingMode === "clear_retrain"
+      forceRetrain: trainingMode === "force_retrain"
     };
     
     console.log("Training data being sent:", trainingData);
@@ -975,12 +947,12 @@ export default function DemandForecasting() {
             </div>
           </div>
 
-          {/* Cache Control Section */}
+          {/* Training Mode Section */}
           <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
             <div className="flex items-center justify-between">
               <h4 className="font-semibold flex items-center gap-2">
                 <RefreshCw className="w-4 h-4" />
-                Training Mode & Cache Control
+                Training Mode
               </h4>
               {cacheStats && (
                 <div className="text-sm text-gray-600">
@@ -989,7 +961,7 @@ export default function DemandForecasting() {
               )}
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Training Mode Selector */}
               <div className="space-y-2">
                 <Label>Training Mode</Label>
@@ -997,22 +969,17 @@ export default function DemandForecasting() {
                   options={[
                     { 
                       value: "smart", 
-                      label: "Smart Training",
-                      description: "Only train missing items" 
+                      label: "Train Only Missing",
+                      description: "Only train items without any trained model found (helps save time)" 
                     },
                     { 
                       value: "force_retrain", 
-                      label: "Force Retrain All",
-                      description: "Retrain all items with fresh data" 
-                    },
-                    { 
-                      value: "clear_retrain", 
-                      label: "Clear Cache & Retrain",
-                      description: "Remove all cached models first" 
+                      label: "Train Everything",
+                      description: "Train all items even with existing models (more up-to-date for increased accuracy)" 
                     }
                   ]}
                   value={trainingMode}
-                  onValueChange={(value) => setTrainingMode(value as "smart" | "force_retrain" | "clear_retrain")}
+                  onValueChange={(value) => setTrainingMode(value as "smart" | "force_retrain")}
                   placeholder="Select training mode..."
                 />
               </div>
@@ -1020,43 +987,19 @@ export default function DemandForecasting() {
               {/* Cache Statistics */}
               {cacheStats && (
                 <div className="space-y-2">
-                  <Label>Cache Statistics</Label>
+                  <Label>Model Cache Information</Label>
                   <div className="text-sm space-y-1">
                     <div className="flex items-center gap-1">
                       <Info className="w-3 h-3" />
-                      <span>Oldest: {cacheStats.oldestModel}</span>
+                      <span>Oldest model: {cacheStats.oldestModel}</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Info className="w-3 h-3" />
-                      <span>Newest: {cacheStats.newestModel}</span>
+                      <span>Newest model: {cacheStats.newestModel}</span>
                     </div>
                   </div>
                 </div>
               )}
-              
-              {/* Clear Cache Button */}
-              <div className="space-y-2">
-                <Label>Cache Management</Label>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => clearCacheMutation.mutate()}
-                  disabled={clearCacheMutation.isPending}
-                  className="w-full"
-                >
-                  {clearCacheMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Clearing Cache...
-                    </>
-                  ) : (
-                    <>
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      Clear All Cache
-                    </>
-                  )}
-                </Button>
-              </div>
             </div>
 
             {/* Training Mode Info */}
@@ -1064,19 +1007,13 @@ export default function DemandForecasting() {
               {trainingMode === "smart" && (
                 <span className="flex items-center gap-1">
                   <Info className="w-3 h-3" />
-                  Smart Training: Only items without cached models will be trained. Use this for fastest training.
+                  Train Only Missing: Will only train items that don't have any cached models. This is the fastest option and saves time by reusing existing models.
                 </span>
               )}
               {trainingMode === "force_retrain" && (
                 <span className="flex items-center gap-1 text-amber-600">
                   <Info className="w-3 h-3" />
-                  Force Retrain: All items will be retrained with the latest data, ignoring cache.
-                </span>
-              )}
-              {trainingMode === "clear_retrain" && (
-                <span className="flex items-center gap-1 text-red-600">
-                  <Info className="w-3 h-3" />
-                  Clear & Retrain: All cached models will be deleted first, then fresh models trained.
+                  Train Everything: Will retrain all items with the latest data from the database, replacing any existing models. Use this when data has changed significantly for better accuracy.
                 </span>
               )}
             </div>

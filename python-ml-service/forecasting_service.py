@@ -123,18 +123,8 @@ def train_model():
         forecast_days = data.get('forecastDays', 30)
         hyperparameter_tuning = data.get('hyperparameterTuning', False)
         
-        # Cache control flags
+        # Cache control flag
         force_retrain = data.get('forceRetrain', False)
-        clear_cache = data.get('clearCache', False)
-        
-        # Clear cache if requested
-        if clear_cache and MODEL_CACHE_AVAILABLE:
-            try:
-                cache = get_model_cache()
-                cache.clear_all()
-                print("Cache cleared as requested", flush=True)
-            except Exception as e:
-                print(f"Failed to clear cache: {e}", flush=True)
         
         if not items_data:
             return jsonify({"error": "No items data provided."}), 400

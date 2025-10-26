@@ -206,7 +206,7 @@ router.post('/train', async (req, res) => {
     const { 
       schema, table, dateColumn, itemColumn, quantityColumn, selectedItems, modelType,
       planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios,
-      hyperparameterTuning, forceRetrain, clearCache
+      hyperparameterTuning, forceRetrain
     } = req.body;
     
     // Support both single item (legacy) and multiple items
@@ -297,9 +297,8 @@ router.post('/train', async (req, res) => {
         scenarioNames: selectedScenarios || [],
         forecastDays: 30,
         hyperparameterTuning: hyperparameterTuning || false,
-        // Cache control flags
-        forceRetrain: forceRetrain || false,
-        clearCache: clearCache || false
+        // Cache control flag
+        forceRetrain: forceRetrain || false
       })
     });
 
