@@ -113,27 +113,34 @@ export class AISchedulingRecommendationsService {
 
     // 3. Find at-risk jobs (jobs that might miss their due date)
     const atRiskQuery = `
+      WITH job_schedules AS (
+        SELECT 
+          j.id,
+          j.name as job_name,
+          j.priority,
+          j.need_date_time as due_date,
+          MAX(o.scheduled_end) as predicted_end,
+          j.scheduled_status,
+          COUNT(o.id) as total_operations
+        FROM ptjobs j
+        LEFT JOIN ptjoboperations o ON j.id = o.job_id
+        WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
+          AND j.need_date_time IS NOT NULL
+        GROUP BY j.id, j.name, j.priority, j.need_date_time, j.scheduled_status
+      )
       SELECT 
-        j.id,
-        j.name as job_name,
-        j.priority,
-        j.need_date_time as due_date,
-        j.scheduled_end_date,
-        EXTRACT(EPOCH FROM (j.need_date_time - j.scheduled_end_date))/3600 as buffer_hours,
-        j.scheduled_status,
-        COUNT(o.id) as pending_operations,
-        MAX(o.scheduled_end) as last_operation_end
-      FROM ptjobs j
-      LEFT JOIN ptjoboperations o ON j.id = o.job_id
-      WHERE j.scheduled_status NOT IN ('Completed', 'Shipped', 'Delivered')
-        AND j.need_date_time IS NOT NULL
-        AND j.scheduled_end_date IS NOT NULL
-        AND (
-          j.scheduled_end_date > j.need_date_time - INTERVAL '24 hours'
-          OR (o.scheduled_end > j.need_date_time - INTERVAL '24 hours')
-        )
-      GROUP BY j.id, j.name, j.priority, j.need_date_time, j.scheduled_end_date, j.scheduled_status
-      ORDER BY j.priority DESC, buffer_hours ASC
+        id,
+        job_name,
+        priority,
+        due_date,
+        predicted_end,
+        EXTRACT(EPOCH FROM (due_date - predicted_end))/3600 as buffer_hours,
+        scheduled_status,
+        total_operations
+      FROM job_schedules
+      WHERE predicted_end IS NOT NULL
+        AND predicted_end > due_date - INTERVAL '24 hours'
+      ORDER BY priority DESC, buffer_hours ASC
       LIMIT 10
     `;
     
