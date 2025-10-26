@@ -1214,33 +1214,27 @@ export default function DemandForecasting() {
               <CardTitle>
                 <div className="flex items-center justify-between">
                   <span>Forecast Visualization</span>
-                  {/* Item selection - Show when we have forecasted items */}
-                  {forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
+                  {/* Item selection - Show only for individual mode when we have forecasted items */}
+                  {forecastMode === "individual" && forecastMutation.data.forecastedItemNames && forecastMutation.data.forecastedItemNames.length > 0 && (
                     <div className="flex items-center gap-2">
-                      {forecastMode === "individual" && (
-                        <Input
-                          placeholder="Search items..."
-                          value={forecastSearchQuery}
-                          onChange={(e) => setForecastSearchQuery(e.target.value)}
-                          className="w-48 h-8"
-                        />
-                      )}
+                      <Input
+                        placeholder="Search items..."
+                        value={forecastSearchQuery}
+                        onChange={(e) => setForecastSearchQuery(e.target.value)}
+                        className="w-48 h-8"
+                      />
                       <Combobox
-                        options={
-                          forecastMode === "overall" 
-                            ? [{ value: "Overall", label: "Overall (All Items)" }]
-                            : [
-                                { value: "Overall", label: "Overall (All Items)" },
-                                ...(forecastMutation.data.forecastedItemNames || [])
-                                  .filter((item: string) => 
-                                    item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
-                                  )
-                                  .map((item: string) => ({
-                                    value: item,
-                                    label: item
-                                  }))
-                              ]
-                        }
+                        options={[
+                          { value: "Overall", label: "Overall (All Items)" },
+                          ...(forecastMutation.data.forecastedItemNames || [])
+                            .filter((item: string) => 
+                              item.toLowerCase().includes(forecastSearchQuery.toLowerCase())
+                            )
+                            .map((item: string) => ({
+                              value: item,
+                              label: item
+                            }))
+                        ]}
                         value={selectedForecastItem}
                         onValueChange={setSelectedForecastItem}
                         placeholder="Select item..."
