@@ -982,8 +982,8 @@ export default function DemandForecasting() {
             <CardTitle>Training Results</CardTitle>
           </CardHeader>
           <CardContent>
-            {/* Overall Metrics */}
-            {trainingMetrics && (
+            {/* Overall Metrics - Only show for "overall" mode */}
+            {forecastMode === "overall" && trainingMetrics && (
               <div className="mb-4 p-4 bg-gray-50 rounded-md">
                 <h4 className="font-semibold mb-2">Overall Forecast Metrics</h4>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-2 text-sm">
