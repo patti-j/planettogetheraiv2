@@ -285,10 +285,17 @@ router.post('/train', async (req, res) => {
         modelType: modelType || 'Random Forest',
         itemsData,  // Pass all items data
         modelId,
+        // Database configuration for caching
+        schema: schema,
+        table: table,
+        dateCol: dateColumn,
+        itemCol: itemColumn,
+        qtyCol: quantityColumn,
+        // Filters and settings
         planningAreas: selectedPlanningAreas || [],
         scenarioNames: selectedScenarios || [],
         forecastDays: 30,
-        hyperparameterTuning: false
+        hyperparameterTuning: hyperparameterTuning || false
       })
     });
 

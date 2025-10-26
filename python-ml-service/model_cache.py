@@ -15,12 +15,17 @@ class ModelCache:
         self.metadata_cache = {}
         self._load_metadata_index()
     
-    def _generate_cache_key(self, model_type: str, forecast_days: int, item: str, 
+    def _generate_cache_key(self, schema: str, table: str, date_col: str, 
+                           item_col: str, qty_col: str, model_type: str, 
+                           forecast_days: int, item: str, 
                            planning_areas: Optional[List[str]] = None,
                            scenario_names: Optional[List[str]] = None,
                            hyperparameter_tuning: bool = False) -> str:
-        """Generate stable hash key for caching including hierarchical filters and hyperparameter tuning flag"""
-        key_components = [model_type, str(forecast_days), str(item)]
+        """Generate stable hash key for caching based on database config and filters"""
+        key_components = [
+            schema, table, date_col, item_col, qty_col, 
+            model_type, str(forecast_days), str(item)
+        ]
         
         # Add hyperparameter tuning flag to ensure tuned vs untuned models don't collide
         key_components.append(f"HPT:{hyperparameter_tuning}")
@@ -58,30 +63,41 @@ class ModelCache:
         except Exception:
             pass
     
-    def save_model(self, model_type: str, forecast_days: int, item: str, 
-                   model: Any, metadata: Dict, 
-                   planning_areas: Optional[List[str]] = None,
+    def save_model(self, schema: str, table: str, date_col: str, 
+                   item_col: str, qty_col: str, model_type: str,
+                   forecast_days: int, item: str, model: Any, 
+                   metadata: Dict, planning_areas: Optional[List[str]] = None,
                    scenario_names: Optional[List[str]] = None,
-                   hyperparameter_tuning: bool = False) -> str:
-        """Save model and metadata to cache"""
+                   hyperparameter_tuning: bool = False) -> Optional[str]:
+        """Save model and metadata to persistent cache"""
         
         cache_key = self._generate_cache_key(
-            model_type, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning
+            schema, table, date_col, item_col, qty_col, 
+            model_type, forecast_days, item, 
+            planning_areas, scenario_names, hyperparameter_tuning
         )
         
         try:
-            # Save model to disk
+            # Save model to disk using joblib
             model_file = self.cache_dir / f"{cache_key}.joblib"
             joblib.dump(model, model_file)
             
-            # Prepare metadata
+            # Save metadata (metrics, timestamps, config)
             full_metadata = {
+                'schema': schema,
+                'table': table,
+                'date_col': date_col,
+                'item_col': item_col,
+                'qty_col': qty_col,
                 'model_type': model_type,
                 'forecast_days': forecast_days,
                 'item': str(item),
                 'cache_key': cache_key,
                 'cached_at': datetime.now().isoformat(),
-                **metadata
+                'planning_areas': planning_areas,
+                'scenario_names': scenario_names,
+                'hyperparameter_tuning': hyperparameter_tuning,
+                **metadata  # Includes MAE, MAPE, RMSE, data_points
             }
             
             # Save metadata
@@ -93,6 +109,7 @@ class ModelCache:
             self.metadata_cache[cache_key] = full_metadata
             self._save_metadata_index()
             
+            print(f"Cached model for {item} with key {cache_key}")
             return cache_key
             
         except Exception as e:
@@ -121,25 +138,38 @@ class ModelCache:
             print(f"Failed to load model from cache: {e}")
             return None, None
     
-    def exists(self, model_type: str, forecast_days: int, item: str,
+    def exists(self, schema: str, table: str, date_col: str, 
+               item_col: str, qty_col: str, model_type: str,
+               forecast_days: int, item: str,
                planning_areas: Optional[List[str]] = None,
                scenario_names: Optional[List[str]] = None,
                hyperparameter_tuning: bool = False) -> bool:
         """Check if model exists in cache"""
         
         cache_key = self._generate_cache_key(
-            model_type, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning
+            schema, table, date_col, item_col, qty_col, 
+            model_type, forecast_days, item, 
+            planning_areas, scenario_names, hyperparameter_tuning
         )
         
-        return cache_key in self.metadata_cache
+        # Check both in-memory index and actual file existence
+        model_file = self.cache_dir / f"{cache_key}.joblib"
+        meta_file = self.cache_dir / f"{cache_key}.meta.json"
+        
+        return (cache_key in self.metadata_cache or 
+                (model_file.exists() and meta_file.exists()))
     
-    def get_cache_key(self, model_type: str, forecast_days: int, item: str,
+    def get_cache_key(self, schema: str, table: str, date_col: str,
+                      item_col: str, qty_col: str, model_type: str,
+                      forecast_days: int, item: str,
                       planning_areas: Optional[List[str]] = None,
                       scenario_names: Optional[List[str]] = None,
                       hyperparameter_tuning: bool = False) -> str:
         """Get cache key for configuration"""
         return self._generate_cache_key(
-            model_type, forecast_days, item, planning_areas, scenario_names, hyperparameter_tuning
+            schema, table, date_col, item_col, qty_col, 
+            model_type, forecast_days, item, 
+            planning_areas, scenario_names, hyperparameter_tuning
         )
     
     def delete_model(self, cache_key: str) -> bool:
@@ -165,6 +195,26 @@ class ModelCache:
             print(f"Failed to delete model from cache: {e}")
             return False
     
+    def get_cached_items(self, schema: str, table: str, date_col: str,
+                         item_col: str, qty_col: str, model_type: str,
+                         forecast_days: int, items: List[str],
+                         planning_areas: Optional[List[str]] = None,
+                         scenario_names: Optional[List[str]] = None,
+                         hyperparameter_tuning: bool = False) -> Tuple[List[str], List[str]]:
+        """Check which items have cached models and which need training"""
+        cached_items = []
+        missing_items = []
+        
+        for item in items:
+            if self.exists(schema, table, date_col, item_col, qty_col, 
+                          model_type, forecast_days, item, 
+                          planning_areas, scenario_names, hyperparameter_tuning):
+                cached_items.append(item)
+            else:
+                missing_items.append(item)
+        
+        return cached_items, missing_items
+    
     def clear_all(self) -> int:
         """Clear all cached models"""
         deleted_count = 0
@@ -172,6 +222,22 @@ class ModelCache:
             if self.delete_model(cache_key):
                 deleted_count += 1
         return deleted_count
+    
+    def get_cache_stats(self) -> Dict:
+        """Get cache statistics"""
+        total_models = len(self.metadata_cache)
+        total_size = 0
+        
+        for cache_key in self.metadata_cache:
+            model_file = self.cache_dir / f"{cache_key}.joblib"
+            if model_file.exists():
+                total_size += model_file.stat().st_size
+        
+        return {
+            'total_models': total_models,
+            'total_size_mb': round(total_size / (1024 * 1024), 2),
+            'cache_dir': str(self.cache_dir)
+        }
 
 # Global cache instance
 _model_cache = None

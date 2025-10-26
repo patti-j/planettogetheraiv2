@@ -110,6 +110,13 @@ def train_model():
         
         base_model_id = data.get('modelId', 'default')
         
+        # Extract database configuration for caching
+        schema = data.get('schema', 'dbo')
+        table = data.get('table', 'default_table')
+        date_col = data.get('dateCol', 'date')
+        item_col = data.get('itemCol', 'item')
+        qty_col = data.get('qtyCol', 'quantity')
+        
         # Extract hierarchical filters for caching
         planning_areas = data.get('planningAreas', None)
         scenario_names = data.get('scenarioNames', None)
@@ -139,12 +146,15 @@ def train_model():
                 try:
                     cache = get_model_cache()
                     cache_key = cache.get_cache_key(
+                        schema, table, date_col, item_col, qty_col,
                         model_type, forecast_days, item_name, 
                         planning_areas, scenario_names, hyperparameter_tuning
                     )
                     
                     # Try to load from cache
-                    if cache.exists(model_type, forecast_days, item_name, planning_areas, scenario_names, hyperparameter_tuning):
+                    if cache.exists(schema, table, date_col, item_col, qty_col, 
+                                  model_type, forecast_days, item_name, 
+                                  planning_areas, scenario_names, hyperparameter_tuning):
                         cached_model, cached_metadata = cache.load_model(cache_key)
                         if cached_model is not None and cached_metadata is not None:
                             # Store in memory for immediate use
@@ -192,6 +202,7 @@ def train_model():
                         model_info = trained_models.get(model_id)
                         if model_info:
                             cache.save_model(
+                                schema, table, date_col, item_col, qty_col,
                                 model_type, forecast_days, item_name,
                                 model_info, 
                                 {'metrics': metrics, 'training_points': len(historical_data), 'hyperparameter_tuning': hyperparameter_tuning},
@@ -260,11 +271,14 @@ def train_model():
                 try:
                     cache = get_model_cache()
                     overall_cache_key = cache.get_cache_key(
+                        schema, table, date_col, item_col, qty_col,
                         model_type, forecast_days, "OVERALL", 
                         planning_areas, scenario_names, hyperparameter_tuning
                     )
                     
-                    if cache.exists(model_type, forecast_days, "OVERALL", planning_areas, scenario_names, hyperparameter_tuning):
+                    if cache.exists(schema, table, date_col, item_col, qty_col,
+                                  model_type, forecast_days, "OVERALL", 
+                                  planning_areas, scenario_names, hyperparameter_tuning):
                         cached_model, cached_metadata = cache.load_model(overall_cache_key)
                         if cached_model is not None and cached_metadata is not None:
                             trained_models[overall_model_id] = cached_model
@@ -299,6 +313,7 @@ def train_model():
                             model_info = trained_models.get(overall_model_id)
                             if model_info:
                                 cache.save_model(
+                                    schema, table, date_col, item_col, qty_col,
                                     model_type, forecast_days, "OVERALL",
                                     model_info,
                                     {'metrics': overall_metrics, 'training_points': len(aggregated_data), 'hyperparameter_tuning': hyperparameter_tuning},
@@ -1247,6 +1262,84 @@ def forecast_prophet(model_info, df, forecast_days):
         "predictions": predictions,
         "metrics": training_metrics
     }
+
+@app.route('/cache/clear', methods=['POST'])
+def clear_cache():
+    """Clear all cached models"""
+    if not MODEL_CACHE_AVAILABLE:
+        return jsonify({"error": "Model cache not available"}), 503
+    
+    try:
+        cache = get_model_cache()
+        deleted_count = cache.clear_all()
+        return jsonify({
+            "success": True,
+            "message": f"Cleared {deleted_count} models from cache",
+            "deletedCount": deleted_count
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/cache/stats', methods=['GET'])
+def cache_stats():
+    """Get cache statistics"""
+    if not MODEL_CACHE_AVAILABLE:
+        return jsonify({"error": "Model cache not available"}), 503
+    
+    try:
+        cache = get_model_cache()
+        stats = cache.get_cache_stats()
+        return jsonify({
+            "success": True,
+            "stats": stats
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/cache/check', methods=['POST'])
+def check_cached_items():
+    """Check which items have cached models"""
+    if not MODEL_CACHE_AVAILABLE:
+        return jsonify({"error": "Model cache not available"}), 503
+    
+    try:
+        data = request.json
+        
+        # Extract database configuration
+        schema = data.get('schema', 'dbo')
+        table = data.get('table', 'default_table')
+        date_col = data.get('dateCol', 'date')
+        item_col = data.get('itemCol', 'item')
+        qty_col = data.get('qtyCol', 'quantity')
+        
+        # Extract other parameters
+        model_type = data.get('modelType', 'Random Forest')
+        forecast_days = data.get('forecastDays', 30)
+        items = data.get('items', [])
+        planning_areas = data.get('planningAreas', None)
+        scenario_names = data.get('scenarioNames', None)
+        hyperparameter_tuning = data.get('hyperparameterTuning', False)
+        
+        if not items:
+            return jsonify({"error": "No items provided"}), 400
+        
+        cache = get_model_cache()
+        cached_items, missing_items = cache.get_cached_items(
+            schema, table, date_col, item_col, qty_col,
+            model_type, forecast_days, items,
+            planning_areas, scenario_names, hyperparameter_tuning
+        )
+        
+        return jsonify({
+            "success": True,
+            "cachedItems": cached_items,
+            "missingItems": missing_items,
+            "totalItems": len(items),
+            "cachedCount": len(cached_items),
+            "missingCount": len(missing_items)
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     print("Starting Flask server on port 8000...", flush=True)
