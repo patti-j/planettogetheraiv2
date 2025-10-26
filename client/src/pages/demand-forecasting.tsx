@@ -1213,10 +1213,14 @@ export default function DemandForecasting() {
                 </div>
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
                   <div className="text-2xl font-bold text-purple-600">
-                    {forecastMode === "overall" ? 1 : (forecastMutation.data.forecastedItemNames?.length || 0)}
+                    {forecastMode === "overall" 
+                      ? (forecastMutation.data.forecastedItemNames?.length || 0)
+                      : (forecastMutation.data.forecastedItemNames?.length || 0)}
                   </div>
                   <div className="text-sm text-muted-foreground mt-1">
-                    Items Forecasted
+                    {forecastMode === "overall" 
+                      ? "Items Aggregated" 
+                      : "Individual Items"}
                   </div>
                 </div>
               </div>
