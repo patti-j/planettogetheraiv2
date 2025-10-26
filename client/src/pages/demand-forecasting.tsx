@@ -238,8 +238,8 @@ export default function DemandForecasting() {
 
   // Train model mutation
   const trainMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const response = await apiRequest("POST", "/api/forecasting/train", data);
+    mutationFn: async ({ data, signal }: { data: any; signal?: AbortSignal }) => {
+      const response = await apiRequest("POST", "/api/forecasting/train", data, signal);
       const result = await response.json();
       
       console.log("Training response from server:", result);
@@ -420,6 +420,20 @@ export default function DemandForecasting() {
       if (!proceed) return;
     }
     
+    // Create a new AbortController for this training session
+    const controller = new AbortController();
+    setAbortController(controller);
+    
+    // Set initial training progress
+    if (forecastMode === "individual" && itemsToTrain.length > 0) {
+      setTrainingProgress({
+        currentItem: 0,
+        totalItems: itemsToTrain.length,
+        startTime: Date.now(),
+        estimatedRemainingTime: itemsToTrain.length * 5000 // Estimate 5 seconds per item initially
+      });
+    }
+    
     const trainingData = {
       schema: selectedTable!.schema,
       table: selectedTable!.name,
@@ -439,9 +453,24 @@ export default function DemandForecasting() {
     console.log("Training data being sent:", trainingData);
     
     try {
-      await trainMutation.mutateAsync(trainingData);
-    } catch (error) {
-      console.error("Training error:", error);
+      // Pass both the data and abort signal to the mutation
+      await trainMutation.mutateAsync({ 
+        data: trainingData, 
+        signal: controller.signal 
+      });
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log("Training was cancelled by user");
+        toast({
+          title: "Training Stopped",
+          description: "Model training was stopped by user request.",
+        });
+      } else {
+        console.error("Training error:", error);
+      }
+    } finally {
+      setTrainingProgress(null);
+      setAbortController(null);
     }
   };
 
@@ -481,13 +510,23 @@ export default function DemandForecasting() {
   
   const cancelTraining = () => {
     if (abortController) {
+      // Show immediate feedback
+      toast({
+        title: "Stopping Training...",
+        description: "Cancelling the training process. Please wait...",
+      });
+      
+      // Abort the request
       abortController.abort();
+      
+      // Clean up state
       setTrainingProgress(null);
       setAbortController(null);
-      toast({
-        title: "Training Cancelled",
-        description: "Model training has been cancelled.",
-      });
+      
+      // Clear any pending mutations
+      if (trainMutation.isPending) {
+        trainMutation.reset();
+      }
     }
   };
 
@@ -1328,32 +1367,42 @@ export default function DemandForecasting() {
 
           {/* Training Progress */}
           {trainingProgress && (
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">Training Progress</span>
+            <div className="bg-blue-50 border-2 border-blue-300 rounded-md p-4 shadow-sm">
+              <div className="flex justify-between items-center mb-3">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-5 w-5 animate-spin text-blue-600" />
+                  <span className="font-semibold text-blue-900">Training in Progress</span>
+                </div>
                 <Button
-                  size="sm"
+                  size="default"
                   variant="destructive"
                   onClick={cancelTraining}
+                  className="bg-red-600 hover:bg-red-700 text-white font-medium px-4"
                 >
-                  Cancel
+                  <span className="mr-2">⛔</span>
+                  Stop Training
                 </Button>
               </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Item {trainingProgress.currentItem} of {trainingProgress.totalItems}</span>
-                  <span>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm text-gray-700">
+                  <span className="font-medium">
+                    Processing Item {trainingProgress.currentItem} of {trainingProgress.totalItems}
+                  </span>
+                  <span className="font-medium">
                     Est. time remaining: {Math.ceil(trainingProgress.estimatedRemainingTime / 1000)}s
                   </span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                   <div 
-                    className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-3 rounded-full transition-all duration-300 shadow-sm"
                     style={{ 
                       width: `${(trainingProgress.currentItem / trainingProgress.totalItems) * 100}%` 
                     }}
                   />
                 </div>
+                <p className="text-xs text-gray-600 italic">
+                  Tip: Training may take several minutes for large datasets. Click "Stop Training" to cancel at any time.
+                </p>
               </div>
             </div>
           )}

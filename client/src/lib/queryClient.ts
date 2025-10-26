@@ -10,7 +10,8 @@ async function throwIfResNotOk(res: Response) {
 export async function apiRequest(
   method: string,
   url: string,
-  body?: any
+  body?: any,
+  signal?: AbortSignal
 ): Promise<Response> {
   // Validate HTTP method before making request
   const validMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'];
@@ -38,11 +39,16 @@ export async function apiRequest(
       headers,
       body: body ? JSON.stringify(body) : undefined,
       credentials: "include",
+      signal: signal, // Pass the abort signal to fetch
     });
 
     await throwIfResNotOk(res);
     return res;
   } catch (error) {
+    // Don't log abort errors as they are expected when user cancels
+    if (error instanceof Error && error.name === 'AbortError') {
+      throw error;
+    }
     console.error('Fetch error in apiRequest:', error instanceof Error ? error.message : error);
     console.error('Method:', method, 'URL:', url);
     if (error instanceof Error && error.stack) {
