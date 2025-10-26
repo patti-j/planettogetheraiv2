@@ -88,7 +88,7 @@ export class AISchedulingRecommendationsService {
         SELECT 
           r.id,
           r.name as resource_name,
-          r.resource_type,
+          r.capacity_type,
           COUNT(DISTINCT o.id) as total_operations,
           SUM(EXTRACT(EPOCH FROM (o.scheduled_end - o.scheduled_start))/3600) as total_hours,
           AVG(EXTRACT(EPOCH FROM (o.scheduled_end - o.scheduled_start))/3600) as avg_operation_hours,
@@ -100,7 +100,7 @@ export class AISchedulingRecommendationsService {
         LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
         WHERE o.scheduled_start >= NOW() - INTERVAL '7 days'
           AND o.scheduled_start <= NOW() + INTERVAL '14 days'
-        GROUP BY r.id, r.name, r.resource_type
+        GROUP BY r.id, r.name, r.capacity_type
         HAVING COUNT(DISTINCT o.id) > 5
         ORDER BY total_hours DESC
         LIMIT 10
@@ -146,8 +146,7 @@ export class AISchedulingRecommendationsService {
         SELECT 
           r.id,
           r.name as resource_name,
-          r.resource_type,
-          r.efficiency_pct,
+          r.capacity_type,
           COUNT(o.id) as operation_count,
           COALESCE(
             SUM(EXTRACT(EPOCH FROM (o.scheduled_end - o.scheduled_start))/3600),
@@ -166,8 +165,8 @@ export class AISchedulingRecommendationsService {
         LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
           AND o.scheduled_start >= NOW()
           AND o.scheduled_start <= NOW() + INTERVAL '7 days'
-        WHERE r.is_active = true
-        GROUP BY r.id, r.name, r.resource_type, r.efficiency_pct
+        WHERE r.active = true
+        GROUP BY r.id, r.name, r.capacity_type
         HAVING COUNT(o.id) < 5 OR 
           COALESCE(SUM(EXTRACT(EPOCH FROM (o.scheduled_end - o.scheduled_start))/3600), 0) < 40
         ORDER BY utilization_pct ASC
@@ -185,14 +184,13 @@ export class AISchedulingRecommendationsService {
         COUNT(DISTINCT r.id) as total_resources,
         COUNT(DISTINCT j.id) as total_active_jobs,
         COUNT(DISTINCT o.id) as total_operations,
-        ROUND(AVG(r.efficiency_pct), 2) as avg_efficiency,
         COUNT(DISTINCT CASE WHEN j.priority <= 3 THEN j.id END) as high_priority_jobs,
         COUNT(DISTINCT CASE WHEN j.scheduled_status = 'In-Progress' THEN j.id END) as in_progress_jobs
       FROM ptresources r
       LEFT JOIN ptjobresources jr ON r.id::text = jr.default_resource_id
       LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
       LEFT JOIN ptjobs j ON o.job_id = j.id
-      WHERE r.is_active = true
+      WHERE r.active = true
     `;
     
     const utilizationResult = await db.execute(sql.raw(utilizationQuery));
