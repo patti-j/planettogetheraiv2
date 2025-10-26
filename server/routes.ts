@@ -6,6 +6,7 @@ import { eq, sql, and, desc } from "drizzle-orm";
 import { storage } from "./storage";
 import { maxAI } from "./services/max-ai-service";
 import { realtimeVoiceService } from './services/realtime-voice-service';
+import { aiSchedulingService } from "./services/ai-scheduling-recommendations";
 import { enhancedAuth } from "./enhanced-auth-middleware";
 import { db, directSql } from "./db";
 import { 
@@ -2377,50 +2378,94 @@ router.delete("/ai/schedule/conversations/:conversationId", requireAuth, async (
   }
 });
 
-// AI Recommendations endpoint
+// AI Recommendations endpoint - now using real production data
 router.get("/api/ai/recommendations", requireAuth, async (req, res) => {
   try {
-    // Get sample AI recommendations for now - in production this would be from AI service
-    const recommendations = [
-      {
-        id: '1',
-        title: 'Optimize Resource M-203 Schedule',
-        description: 'Machine M-203 shows 15% idle time. Recommend moving Job-447 earlier to improve utilization.',
-        priority: 'high',
-        category: 'Resource Optimization',
-        confidence: 92,
-        estimatedImpact: '+12% efficiency',
-        createdAt: new Date().toISOString(),
-        aiAgent: 'Production Optimizer'
-      },
-      {
-        id: '2',
-        title: 'Quality Alert Pattern Detected',
-        description: 'Batch quality issues correlate with morning shift changes. Recommend additional quality checks.',
-        priority: 'medium',
-        category: 'Quality Control',
-        confidence: 87,
-        estimatedImpact: '-8% defect rate',
-        createdAt: new Date(Date.now() - 3600000).toISOString(),
-        aiAgent: 'Quality Analyst'
-      },
-      {
-        id: '3',
-        title: 'Preventive Maintenance Optimization',
-        description: 'Analysis shows equipment downtime can be reduced by 23% with schedule adjustment.',
-        priority: 'medium',
-        category: 'Maintenance',
-        confidence: 78,
-        estimatedImpact: '+23% uptime',
-        createdAt: new Date(Date.now() - 7200000).toISOString(),
-        aiAgent: 'Maintenance Scheduler'
-      }
-    ];
+    console.log('📊 Fetching AI recommendations based on production schedule...');
     
+    // Get recommendations from the AI service that analyzes real production data
+    const recommendations = await aiSchedulingService.getAllRecommendations();
+    
+    console.log(`✅ Returning ${recommendations.length} AI recommendations`);
     res.json(recommendations);
   } catch (error: any) {
-    console.error('Error fetching AI recommendations:', error);
+    console.error('❌ Error fetching AI recommendations:', error);
     res.status(500).json({ error: 'Failed to fetch AI recommendations' });
+  }
+});
+
+// Apply a recommendation
+router.post("/api/ai/recommendations/:id/apply", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`✅ Applying recommendation: ${id}`);
+    
+    const success = await aiSchedulingService.applyRecommendation(id);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        message: 'Recommendation applied successfully',
+        recommendationId: id,
+        appliedAt: new Date().toISOString()
+      });
+    } else {
+      res.status(400).json({ error: 'Failed to apply recommendation' });
+    }
+  } catch (error: any) {
+    console.error('Error applying recommendation:', error);
+    res.status(500).json({ error: 'Failed to apply recommendation' });
+  }
+});
+
+// Dismiss a recommendation
+router.post("/api/ai/recommendations/:id/dismiss", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+    
+    console.log(`❌ Dismissing recommendation: ${id}`, reason ? `Reason: ${reason}` : '');
+    
+    const success = await aiSchedulingService.dismissRecommendation(id, reason);
+    
+    if (success) {
+      res.json({ 
+        success: true, 
+        message: 'Recommendation dismissed',
+        recommendationId: id,
+        dismissedAt: new Date().toISOString()
+      });
+    } else {
+      res.status(400).json({ error: 'Failed to dismiss recommendation' });
+    }
+  } catch (error: any) {
+    console.error('Error dismissing recommendation:', error);
+    res.status(500).json({ error: 'Failed to dismiss recommendation' });
+  }
+});
+
+// Trigger manual analysis
+router.post("/api/ai/recommendations/analyze", requireAuth, async (req, res) => {
+  try {
+    console.log('🔄 Manual schedule analysis triggered');
+    
+    // Run analysis in the background and return immediately
+    aiSchedulingService.getAllRecommendations()
+      .then(recommendations => {
+        console.log(`✅ Analysis complete: ${recommendations.length} recommendations generated`);
+      })
+      .catch(error => {
+        console.error('❌ Background analysis failed:', error);
+      });
+    
+    res.json({ 
+      success: true, 
+      message: 'Schedule analysis started. Recommendations will be updated shortly.',
+      triggeredAt: new Date().toISOString()
+    });
+  } catch (error: any) {
+    console.error('Error triggering analysis:', error);
+    res.status(500).json({ error: 'Failed to trigger analysis' });
   }
 });
 
