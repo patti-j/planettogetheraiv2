@@ -205,7 +205,8 @@ router.post('/train', async (req, res) => {
   try {
     const { 
       schema, table, dateColumn, itemColumn, quantityColumn, selectedItems, modelType,
-      planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios
+      planningAreaColumn, selectedPlanningAreas, scenarioColumn, selectedScenarios,
+      hyperparameterTuning
     } = req.body;
     
     // Support both single item (legacy) and multiple items
