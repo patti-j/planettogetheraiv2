@@ -247,7 +247,7 @@
     "forecast_days": 30,
     "item": "FG1",
     "cache_key": "c8219affe0f601ae",
-    "cached_at": "2025-10-26T20:26:46.433317",
+    "cached_at": "2025-10-26T21:17:20.844377",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -275,7 +275,7 @@
     "forecast_days": 30,
     "item": "FG2",
     "cache_key": "aee455e03768493f",
-    "cached_at": "2025-10-26T20:26:46.703696",
+    "cached_at": "2025-10-26T21:17:21.041070",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -303,7 +303,7 @@
     "forecast_days": 30,
     "item": "SUB1",
     "cache_key": "88b25be4d103eb94",
-    "cached_at": "2025-10-26T20:26:46.916612",
+    "cached_at": "2025-10-26T21:17:21.247894",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -331,7 +331,7 @@
     "forecast_days": 30,
     "item": "SUB2",
     "cache_key": "61b0231eff834c5b",
-    "cached_at": "2025-10-26T20:26:47.108457",
+    "cached_at": "2025-10-26T21:17:21.441112",
     "planning_areas": [
       "BI01",
       "BI02"
@@ -359,7 +359,7 @@
     "forecast_days": 30,
     "item": "SUB3",
     "cache_key": "274f381f5cc4d1ac",
-    "cached_at": "2025-10-26T20:26:47.346736",
+    "cached_at": "2025-10-26T21:17:21.629989",
     "planning_areas": [
       "BI01",
       "BI02"

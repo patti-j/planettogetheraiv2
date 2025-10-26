@@ -78,7 +78,7 @@ export default function DemandForecasting() {
   
   // Filter state for forecast visualization
   const [selectedForecastItem, setSelectedForecastItem] = useState<string>("");
-  const [forecastMode, setForecastMode] = useState<"individual" | "overall">("individual");
+  const [forecastMode, setForecastMode] = useState<"individual" | "overall">("overall");
   const [itemSearchQuery, setItemSearchQuery] = useState<string>("");
   const [forecastSearchQuery, setForecastSearchQuery] = useState<string>("");
   
@@ -985,77 +985,79 @@ export default function DemandForecasting() {
             </div>
           </div>
 
-          {/* Training Mode Section */}
-          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between">
-              <h4 className="font-semibold flex items-center gap-2">
-                <RefreshCw className="w-4 h-4" />
-                Training Mode
-              </h4>
-              {cacheStats && (
-                <div className="text-sm text-gray-600">
-                  {cacheStats.totalModels} models cached ({cacheStats.totalSize})
-                </div>
-              )}
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Training Mode Selector */}
-              <div className="space-y-2">
-                <Label>Training Mode</Label>
-                <Combobox
-                  options={[
-                    { 
-                      value: "smart", 
-                      label: "Train Only Missing",
-                      description: "Only train items without any trained model found (helps save time)" 
-                    },
-                    { 
-                      value: "force_retrain", 
-                      label: "Train Everything",
-                      description: "Train all items even with existing models (more up-to-date for increased accuracy)" 
-                    }
-                  ]}
-                  value={trainingMode}
-                  onValueChange={(value) => setTrainingMode(value as "smart" | "force_retrain")}
-                  placeholder="Select training mode..."
-                />
+          {/* Training Mode Section - Only show for individual mode */}
+          {forecastMode === "individual" && (
+            <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center justify-between">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <RefreshCw className="w-4 h-4" />
+                  Training Mode
+                </h4>
+                {cacheStats && (
+                  <div className="text-sm text-gray-600">
+                    {cacheStats.totalModels} models cached ({cacheStats.totalSize})
+                  </div>
+                )}
               </div>
               
-              {/* Cache Statistics */}
-              {cacheStats && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Training Mode Selector */}
                 <div className="space-y-2">
-                  <Label>Model Cache Information</Label>
-                  <div className="text-sm space-y-1">
-                    <div className="flex items-center gap-1">
-                      <Info className="w-3 h-3" />
-                      <span>Oldest model: {cacheStats.oldestModel}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Info className="w-3 h-3" />
-                      <span>Newest model: {cacheStats.newestModel}</span>
+                  <Label>Training Mode</Label>
+                  <Combobox
+                    options={[
+                      { 
+                        value: "smart", 
+                        label: "Train Only Missing",
+                        description: "Only train items without any trained model found (helps save time)" 
+                      },
+                      { 
+                        value: "force_retrain", 
+                        label: "Train Everything",
+                        description: "Train all items even with existing models (more up-to-date for increased accuracy)" 
+                      }
+                    ]}
+                    value={trainingMode}
+                    onValueChange={(value) => setTrainingMode(value as "smart" | "force_retrain")}
+                    placeholder="Select training mode..."
+                  />
+                </div>
+                
+                {/* Cache Statistics */}
+                {cacheStats && (
+                  <div className="space-y-2">
+                    <Label>Model Cache Information</Label>
+                    <div className="text-sm space-y-1">
+                      <div className="flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        <span>Oldest model: {cacheStats.oldestModel}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Info className="w-3 h-3" />
+                        <span>Newest model: {cacheStats.newestModel}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
 
-            {/* Training Mode Info */}
-            <div className="text-xs text-gray-600 italic">
-              {trainingMode === "smart" && (
-                <span className="flex items-center gap-1">
-                  <Info className="w-3 h-3" />
-                  Train Only Missing: Will only train items that don't have any cached models. This is the fastest option and saves time by reusing existing models.
-                </span>
-              )}
-              {trainingMode === "force_retrain" && (
-                <span className="flex items-center gap-1 text-amber-600">
-                  <Info className="w-3 h-3" />
-                  Train Everything: Will retrain all items with the latest data from the database, replacing any existing models. Use this when data has changed significantly for better accuracy.
-                </span>
-              )}
+              {/* Training Mode Info */}
+              <div className="text-xs text-gray-600 italic">
+                {trainingMode === "smart" && (
+                  <span className="flex items-center gap-1">
+                    <Info className="w-3 h-3" />
+                    Train Only Missing: Will only train items that don't have any cached models. This is the fastest option and saves time by reusing existing models.
+                  </span>
+                )}
+                {trainingMode === "force_retrain" && (
+                  <span className="flex items-center gap-1 text-amber-600">
+                    <Info className="w-3 h-3" />
+                    Train Everything: Will retrain all items with the latest data from the database, replacing any existing models. Use this when data has changed significantly for better accuracy.
+                  </span>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Training Progress */}
           {trainingProgress && (
