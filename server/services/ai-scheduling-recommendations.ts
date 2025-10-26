@@ -63,7 +63,9 @@ export class AISchedulingRecommendationsService {
           o2.scheduled_end as op2_end
         FROM ptjoboperations o1
         JOIN ptjoboperations o2 ON o1.id < o2.id
-        JOIN ptresources r ON r.id = o1.resource_id AND r.id = o2.resource_id
+        JOIN ptjobresources jr1 ON jr1.operation_id = o1.id
+        JOIN ptjobresources jr2 ON jr2.operation_id = o2.id
+        JOIN ptresources r ON r.id::text = jr1.default_resource_id AND r.id::text = jr2.default_resource_id
         WHERE o1.scheduled_start IS NOT NULL 
           AND o1.scheduled_end IS NOT NULL
           AND o2.scheduled_start IS NOT NULL 
@@ -94,7 +96,8 @@ export class AISchedulingRecommendationsService {
           MIN(o.scheduled_start) as earliest_start,
           MAX(o.scheduled_end) as latest_end
         FROM ptresources r
-        LEFT JOIN ptjoboperations o ON r.id = o.resource_id
+        LEFT JOIN ptjobresources jr ON r.id::text = jr.default_resource_id
+        LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
         WHERE o.scheduled_start >= NOW() - INTERVAL '7 days'
           AND o.scheduled_start <= NOW() + INTERVAL '14 days'
         GROUP BY r.id, r.name, r.resource_type
@@ -159,7 +162,8 @@ export class AISchedulingRecommendationsService {
             )
           END as utilization_pct
         FROM ptresources r
-        LEFT JOIN ptjoboperations o ON r.id = o.resource_id
+        LEFT JOIN ptjobresources jr ON r.id::text = jr.default_resource_id
+        LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
           AND o.scheduled_start >= NOW()
           AND o.scheduled_start <= NOW() + INTERVAL '7 days'
         WHERE r.is_active = true
@@ -185,7 +189,8 @@ export class AISchedulingRecommendationsService {
         COUNT(DISTINCT CASE WHEN j.priority <= 3 THEN j.id END) as high_priority_jobs,
         COUNT(DISTINCT CASE WHEN j.scheduled_status = 'In-Progress' THEN j.id END) as in_progress_jobs
       FROM ptresources r
-      LEFT JOIN ptjoboperations o ON r.id = o.resource_id
+      LEFT JOIN ptjobresources jr ON r.id::text = jr.default_resource_id
+      LEFT JOIN ptjoboperations o ON jr.operation_id = o.id
       LEFT JOIN ptjobs j ON o.job_id = j.id
       WHERE r.is_active = true
     `;
