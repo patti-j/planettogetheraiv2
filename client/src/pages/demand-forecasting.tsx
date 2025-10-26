@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
-import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp, RefreshCw, Trash2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface Table {
@@ -120,6 +120,23 @@ export default function DemandForecasting() {
   } | null>(null);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   
+  // Cache control state
+  const [trainingMode, setTrainingMode] = useState<"smart" | "force_retrain" | "clear_retrain">("smart");
+  const [cacheStats, setCacheStats] = useState<{
+    totalModels: number;
+    totalSize: string;
+    oldestModel: string;
+    newestModel: string;
+  } | null>(null);
+  const [modelCacheInfo, setModelCacheInfo] = useState<{
+    [itemName: string]: {
+      exists: boolean;
+      trainedAt?: string;
+      dataPoints?: number;
+      modelType?: string;
+    }
+  }>({});
+  
   // Validation errors
   const [validationErrors, setValidationErrors] = useState<{
     table?: string;
@@ -187,6 +204,18 @@ export default function DemandForecasting() {
       : [],
     enabled: !!selectedTable && !!itemColumn,
   });
+  
+  // Fetch cache statistics
+  const { data: cacheStatsData } = useQuery({
+    queryKey: ["/api/forecasting/cache/stats"],
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  
+  useEffect(() => {
+    if (cacheStatsData) {
+      setCacheStats(cacheStatsData);
+    }
+  }, [cacheStatsData]);
   
   const validateForm = () => {
     const errors: typeof validationErrors = {};
@@ -277,6 +306,33 @@ export default function DemandForecasting() {
       }
       setTrainingProgress(null);
       setAbortController(null);
+    },
+  });
+
+  // Clear cache mutation
+  const clearCacheMutation = useMutation({
+    mutationFn: async () => {
+      const response = await apiRequest("POST", "/api/forecasting/cache/clear");
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({
+        title: "Cache Cleared",
+        description: "All cached models have been removed. The next training will build fresh models.",
+      });
+      setIsModelTrained(false);
+      setTrainingMetrics(null);
+      setItemsTrainingMetrics(null);
+      setModelId(null);
+      setModelCacheInfo({});
+      queryClient.invalidateQueries({ queryKey: ["/api/forecasting/cache/stats"] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Clear Cache",
+        description: error.message || "Could not clear the model cache",
+        variant: "destructive",
+      });
     },
   });
 
@@ -401,7 +457,9 @@ export default function DemandForecasting() {
       modelType: modelType,
       hyperparameterTuning: hyperparameterTuning,
       planningAreaColumn: planningAreaColumn,
-      scenarioColumn: scenarioColumn
+      scenarioColumn: scenarioColumn,
+      forceRetrain: trainingMode === "force_retrain",
+      clearCache: trainingMode === "clear_retrain"
     };
     
     console.log("Training data being sent:", trainingData);
@@ -914,6 +972,113 @@ export default function DemandForecasting() {
               <Label htmlFor="hyperparameter-tuning">
                 Hyperparameter Tuning (Slower but more accurate)
               </Label>
+            </div>
+          </div>
+
+          {/* Cache Control Section */}
+          <div className="space-y-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold flex items-center gap-2">
+                <RefreshCw className="w-4 h-4" />
+                Training Mode & Cache Control
+              </h4>
+              {cacheStats && (
+                <div className="text-sm text-gray-600">
+                  {cacheStats.totalModels} models cached ({cacheStats.totalSize})
+                </div>
+              )}
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* Training Mode Selector */}
+              <div className="space-y-2">
+                <Label>Training Mode</Label>
+                <Combobox
+                  options={[
+                    { 
+                      value: "smart", 
+                      label: "Smart Training",
+                      description: "Only train missing items" 
+                    },
+                    { 
+                      value: "force_retrain", 
+                      label: "Force Retrain All",
+                      description: "Retrain all items with fresh data" 
+                    },
+                    { 
+                      value: "clear_retrain", 
+                      label: "Clear Cache & Retrain",
+                      description: "Remove all cached models first" 
+                    }
+                  ]}
+                  value={trainingMode}
+                  onValueChange={(value) => setTrainingMode(value as "smart" | "force_retrain" | "clear_retrain")}
+                  placeholder="Select training mode..."
+                />
+              </div>
+              
+              {/* Cache Statistics */}
+              {cacheStats && (
+                <div className="space-y-2">
+                  <Label>Cache Statistics</Label>
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      <span>Oldest: {cacheStats.oldestModel}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      <span>Newest: {cacheStats.newestModel}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Clear Cache Button */}
+              <div className="space-y-2">
+                <Label>Cache Management</Label>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => clearCacheMutation.mutate()}
+                  disabled={clearCacheMutation.isPending}
+                  className="w-full"
+                >
+                  {clearCacheMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Clearing Cache...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Clear All Cache
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            {/* Training Mode Info */}
+            <div className="text-xs text-gray-600 italic">
+              {trainingMode === "smart" && (
+                <span className="flex items-center gap-1">
+                  <Info className="w-3 h-3" />
+                  Smart Training: Only items without cached models will be trained. Use this for fastest training.
+                </span>
+              )}
+              {trainingMode === "force_retrain" && (
+                <span className="flex items-center gap-1 text-amber-600">
+                  <Info className="w-3 h-3" />
+                  Force Retrain: All items will be retrained with the latest data, ignoring cache.
+                </span>
+              )}
+              {trainingMode === "clear_retrain" && (
+                <span className="flex items-center gap-1 text-red-600">
+                  <Info className="w-3 h-3" />
+                  Clear & Retrain: All cached models will be deleted first, then fresh models trained.
+                </span>
+              )}
             </div>
           </div>
 

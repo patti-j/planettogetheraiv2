@@ -123,6 +123,19 @@ def train_model():
         forecast_days = data.get('forecastDays', 30)
         hyperparameter_tuning = data.get('hyperparameterTuning', False)
         
+        # Cache control flags
+        force_retrain = data.get('forceRetrain', False)
+        clear_cache = data.get('clearCache', False)
+        
+        # Clear cache if requested
+        if clear_cache and MODEL_CACHE_AVAILABLE:
+            try:
+                cache = get_model_cache()
+                cache.clear_all()
+                print("Cache cleared as requested", flush=True)
+            except Exception as e:
+                print(f"Failed to clear cache: {e}", flush=True)
+        
         if not items_data:
             return jsonify({"error": "No items data provided."}), 400
         
@@ -140,7 +153,7 @@ def train_model():
             # Create unique model ID for this item
             model_id = f"{base_model_id}_{item_name}"
             
-            # Check cache first if available
+            # Generate cache key for this item (will be used for loading or saving)
             cache_key = None
             if MODEL_CACHE_AVAILABLE:
                 try:
@@ -150,7 +163,12 @@ def train_model():
                         model_type, forecast_days, item_name, 
                         planning_areas, scenario_names, hyperparameter_tuning
                     )
-                    
+                except Exception as e:
+                    print(f"Failed to generate cache key for item {item_name}: {e}", flush=True)
+            
+            # Check cache first if not forcing retrain
+            if MODEL_CACHE_AVAILABLE and not force_retrain and cache_key:
+                try:
                     # Try to load from cache
                     if cache.exists(schema, table, date_col, item_col, qty_col, 
                                   model_type, forecast_days, item_name, 
@@ -174,7 +192,9 @@ def train_model():
                             successfully_trained.append(item_name)
                             continue
                 except Exception as e:
-                    print(f"Cache check failed for item {item_name}: {e}", flush=True)
+                    print(f"Cache load failed for item {item_name}: {e}", flush=True)
+            elif force_retrain:
+                print(f"Force retrain enabled - skipping cache for item {item_name}", flush=True)
             
             # Convert to DataFrame
             df = pd.DataFrame(historical_data)
