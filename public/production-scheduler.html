@@ -1698,27 +1698,14 @@
                     // Keep events array empty - better to show an empty scheduler than wrong data
                 }
 
-                // Use the dependencies that were fetched earlier
-                let dependencies = fetchedDependencies || [];
+                // DISABLED: Dependencies are not loaded to prevent scheduling conflicts
+                // Bryntum was showing conflict popups even with constraintsMode: 'none'
+                // Our scheduling uses ONLY job priority and operation sequence numbers
+                let dependencies = []; // Always empty - no dependencies loaded
                 
-                console.log('===== DEPENDENCY DATA FROM DATABASE =====');
-                console.log('Total events:', events.length);
-                console.log('Total dependencies loaded from PT database:', dependencies.length);
-                
-                // Debug: Verify dependencies match event IDs
-                if (dependencies.length > 0 && events.length > 0) {
-                    const eventIdSet = new Set(events.map(e => e.id));
-                    console.log('Available event IDs:', Array.from(eventIdSet).slice(0, 20));
-                    console.log('Sample dependency from/to:', dependencies.slice(0, 3).map(d => ({ from: d.from, to: d.to })));
-                    
-                    // Check if dependency IDs match event IDs
-                    const validDeps = dependencies.filter(d => eventIdSet.has(d.from) && eventIdSet.has(d.to));
-                    console.log(`✅ ${validDeps.length}/${dependencies.length} dependencies have matching event IDs`);
-                    
-                    if (validDeps.length < dependencies.length) {
-                        console.warn(`⚠️ ${dependencies.length - validDeps.length} dependencies have mismatched IDs and will be ignored`);
-                    }
-                }
+                console.log('===== DEPENDENCIES DISABLED =====');
+                console.log('Dependencies are not loaded to prevent conflict popups');
+                console.log('Scheduling based on: Job Priority (1=highest) and Operation Sequence Numbers only');
                 
                 // First, let's see what brewery operations we have
                 const breweryOps = events.filter(event => {
@@ -1746,14 +1733,14 @@
                 
                 console.log('Jobs found:', Object.keys(jobGroups));
                 
-                // Only create additional dependencies if we don't have enough from the database
-                const needAdditionalDeps = dependencies.length < 10; // Arbitrary threshold
+                // DISABLED: No dependency generation at all to prevent Bryntum conflict popups
+                const needAdditionalDeps = false; // Always false - we don't want any dependencies
                 
                 if (!needAdditionalDeps) {
-                    console.log(`\n✅ Using ${dependencies.length} dependencies from PT database`);
+                    console.log(`\n✅ No dependencies loaded - scheduling based on priority and sequence only`);
                 } else {
-                    // CREATE DEPENDENCIES FOR ALL JOBS WITH SUCCESSIVE OPERATIONS
-                    console.log('\n🔗 Creating additional dependencies for jobs (PT had only ' + dependencies.length + ')...');
+                    // This block will never run since needAdditionalDeps is always false
+                    console.log('\n🔗 DISABLED: Dependency generation is turned off');
                 
                 // Group ALL operations by job (not just brewery ops)
                 // CRITICAL: Only group by jobId to prevent cross-job dependencies
@@ -4439,13 +4426,14 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // Load data including dependencies for visual display
-                    // NOTE: ALAP algorithm ignores dependencies and uses sequence numbers instead
+                    // Load data WITHOUT dependencies to prevent scheduling conflicts
+                    // Since we use constraintsMode: 'none' and schedule based on job priority + sequence numbers only,
+                    // we don't need dependencies at all - they were causing conflict popups even in 'none' mode
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: dependencies // Visual dependency lines (ALAP uses sequence numbers)
+                        dependenciesData: [] // Empty array - no dependencies loaded to prevent any conflicts
                     });
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
