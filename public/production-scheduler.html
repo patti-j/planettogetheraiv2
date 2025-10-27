@@ -2009,7 +2009,7 @@
                         recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
                         
                         // CRITICAL: Constraint configuration for preventing overlaps
-                        constraintsMode: 'honor',    // 'honor' = enforce all constraints strictly
+                        constraintsMode: 'none',      // 'none' = disable constraint enforcement (dependencies are visual only)
                         manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
                         
                         // Scheduling engine configuration
@@ -3758,22 +3758,22 @@
                         return 999; // Default low priority if not found
                     };
                     
-                    // ALAP: Sort jobs by priority REVERSED (5 to 1) so lowest priority schedules first
-                    // This ensures Priority 1 (highest) gets scheduled last and thus starts earliest
+                    // ALAP: Sort jobs by priority DESCENDING (5 to 1) so highest priority schedules last
+                    // This ensures Priority 1 (highest) gets scheduled last and thus gets earliest position
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         const priorityA = getJobPriority(keyA, opsA);
                         const priorityB = getJobPriority(keyB, opsB);
                         
-                        // REVERSED: Sort by priority DESC (higher number first = lower priority first)
-                        // Priority 5 schedules before Priority 1
+                        // Sort by priority DESC (higher number first = lower priority first)
+                        // Priority 5 schedules first (gets latest position), Priority 1 schedules last (gets earliest position)
                         if (priorityA !== priorityB) {
-                            return priorityB - priorityA; // REVERSED for backward scheduling
+                            return priorityB - priorityA; // DESCENDING: 5, 4, 3, 2, 1
                         }
                         
                         // If same priority, sort by due date (latest first for backward scheduling)
                         const dueA = jobDueMap.get(keyA) || globalFallback;
                         const dueB = jobDueMap.get(keyB) || globalFallback;
-                        return dueB.getTime() - dueA.getTime(); // REVERSED: Latest due dates first
+                        return dueB.getTime() - dueA.getTime(); // Latest due dates first
                     });
                     
                     console.log('📊 ALAP Job scheduling order (lowest priority first for backward scheduling):');
