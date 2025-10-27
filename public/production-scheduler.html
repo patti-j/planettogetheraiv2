@@ -1741,15 +1741,27 @@
                             return true;
                         },
                         
-                        // Also suppress dependency validation errors
-                        beforeDependencyAdd: () => {
-                            console.log('⚠️ Dependency add prevented - dependencies disabled');
-                            return false;
+                        // Allow inactive (visual-only) dependencies, block active (constraining) dependencies
+                        beforeDependencyAdd: ({ dependency }) => {
+                            // Always mark dependencies as inactive for visual display only
+                            if (dependency && !dependency.inactive) {
+                                dependency.inactive = true;
+                                console.log('📋 Dependency marked as inactive (visual-only):', dependency.id);
+                            }
+                            
+                            // Allow the dependency to be added now that it's inactive
+                            return true;
                         },
                         
-                        beforeDependencyUpdate: () => {
-                            console.log('⚠️ Dependency update prevented - dependencies disabled');
-                            return false;
+                        beforeDependencyUpdate: ({ dependency }) => {
+                            // Ensure dependency remains inactive during updates
+                            if (dependency && !dependency.inactive) {
+                                dependency.inactive = true;
+                                console.log('📋 Dependency update - enforced inactive flag:', dependency.id);
+                            }
+                            
+                            // Allow the update now that inactive flag is set
+                            return true;
                         }
                     },
                     
