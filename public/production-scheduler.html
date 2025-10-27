@@ -354,6 +354,22 @@
             stroke: #333 !important;
         }
         
+        /* Inactive/Visual-only dependencies - dashed to show they're guides only */
+        .b-sch-dependency.b-inactive,
+        .b-sch-dependency.visual-dependency {
+            stroke: #aaa !important;
+            stroke-dasharray: 5, 5 !important;
+            stroke-width: 1.5 !important;
+            opacity: 0.5 !important;
+        }
+        
+        .b-sch-dependency.b-inactive .b-sch-dependency-arrow,
+        .b-sch-dependency.visual-dependency .b-sch-dependency-arrow {
+            fill: #aaa !important;
+            stroke: #aaa !important;
+            opacity: 0.5 !important;
+        }
+        
         /* Critical path dependency styling */
         .b-sch-dependency.b-critical {
             stroke: #ff4444 !important;
@@ -1454,7 +1470,10 @@
                             lag: dep.lag || 0,
                             lagUnit: dep.lagUnit || 'hour',
                             fromEvent: dep.from, // Also include for compatibility
-                            toEvent: dep.to      // Also include for compatibility
+                            toEvent: dep.to,     // Also include for compatibility
+                            // Mark as inactive so they show visually but don't constrain
+                            inactive: true,
+                            cls: 'visual-dependency' // CSS class for visual styling
                         }));
                         console.log('✅ Dependencies fetched from database (for visual display):', fetchedDependencies.length);
                         if (fetchedDependencies.length > 0) {
@@ -1956,15 +1975,6 @@
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
-                    // CRITICAL: Suppress ALL conflict resolution dialogs
-                    // Dependencies are visual-only, conflicts should never be shown
-                    listeners: {
-                        beforeSchedulingConflictResolution: ({ source }) => {
-                            console.log('⚠️ Conflict detected but suppressed - dependencies are visual only');
-                            // Return false to prevent the conflict resolution dialog
-                            return false;
-                        }
-                    },
                     
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
