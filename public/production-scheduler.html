@@ -1707,8 +1707,13 @@
                     }));
                     
                     console.log(`✅ ${dependencies.length} PT dependencies ready for visual display`);
+                    
+                    // Store original dependencies globally so they can be restored after scheduling
+                    window.originalDependencies = dependencies;
+                    console.log('💾 Stored original dependencies globally for restoration after scheduling');
                 } else {
                     console.log('ℹ️ No PT dependencies found in database');
+                    window.originalDependencies = [];
                 }
 
                 // Detect mobile device
@@ -2935,8 +2940,8 @@
                         const scheduler = window.scheduler;
                         const { project, eventStore, dependencyStore, assignmentStore } = scheduler;
                         
-                        // Store and clear dependencies to prevent conflicts
-                        const savedDependencies = dependencyStore.records.map(dep => dep.data);
+                        // Clear dependencies to prevent conflicts during scheduling
+                        // (We'll restore from window.originalDependencies at the end)
                         dependencyStore.removeAll();
                         console.log('⏸️ Temporarily removed dependencies for conflict-free ASAP scheduling');
                         // 3. Manufacturing release date (if specified in ptjobs table)
@@ -3261,15 +3266,19 @@
                     console.log('  🔄 Propagating schedule...');
                     await project.propagate();
                     
-                    // Restore the saved dependencies for visual display
-                    if (savedDependencies && savedDependencies.length > 0) {
+                    // Restore the ORIGINAL dependencies from global storage
+                    // This ensures we always get back the PT dependencies from the database
+                    const originalDeps = window.originalDependencies || [];
+                    if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = savedDependencies.map(dep => ({
+                        const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
                         dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                    } else {
+                        console.log('ℹ️ No original dependencies to restore');
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
@@ -3446,10 +3455,8 @@
                     project.autoSync = false; // Prevent automatic syncing during changes
                     project.validateConstraintInterval = false; // Disable constraint validation during scheduling
                     
-                    // Store dependencies for later restoration
-                    const savedDependencies = dependencyStore.records.map(dep => dep.data);
-                    
                     // Clear all dependencies to prevent any conflicts
+                    // (We'll restore from window.originalDependencies at the end)
                     dependencyStore.removeAll();
                     console.log('⏸️ Temporarily removed dependencies for conflict-free ALAP scheduling');
                     
@@ -3723,15 +3730,19 @@
                     project.autoSync = originalAutoSync;
                     project.validateConstraintInterval = originalValidateConstraintInterval;
                     
-                    // Restore the saved dependencies for visual display
-                    if (savedDependencies && savedDependencies.length > 0) {
+                    // Restore the ORIGINAL dependencies from global storage
+                    // This ensures we always get back the PT dependencies from the database
+                    const originalDeps = window.originalDependencies || [];
+                    if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = savedDependencies.map(dep => ({
+                        const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
                         dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                    } else {
+                        console.log('ℹ️ No original dependencies to restore');
                     }
                     
                     console.log('▶️ Restored conflict validation settings');
@@ -3956,8 +3967,8 @@
                     
                     const { dependencyStore } = scheduler;
                     
-                    // Store and clear dependencies to prevent conflicts
-                    const savedDependencies = dependencyStore.records.map(dep => dep.data);
+                    // Clear dependencies to prevent conflicts during scheduling
+                    // (We'll restore from window.originalDependencies at the end)
                     dependencyStore.removeAll();
                     console.log('⏸️ Temporarily removed dependencies for conflict-free Drum scheduling');
                     
@@ -4055,15 +4066,19 @@
                     await scheduler.project.commitAsync();
                     await scheduler.project.propagate();
                     
-                    // Restore the saved dependencies for visual display
-                    if (savedDependencies && savedDependencies.length > 0) {
+                    // Restore the ORIGINAL dependencies from global storage
+                    // This ensures we always get back the PT dependencies from the database
+                    const originalDeps = window.originalDependencies || [];
+                    if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = savedDependencies.map(dep => ({
+                        const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
                         dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                    } else {
+                        console.log('ℹ️ No original dependencies to restore');
                     }
                     
                     console.log('✅ Drum (TOC) scheduling completed');
