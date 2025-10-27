@@ -354,20 +354,19 @@
             stroke: #333 !important;
         }
         
-        /* Inactive/Visual-only dependencies - dashed to show they're guides only */
+        /* Visual-only dependencies - solid lines with lighter color */
         .b-sch-dependency.b-inactive,
         .b-sch-dependency.visual-dependency {
-            stroke: #aaa !important;
-            stroke-dasharray: 5, 5 !important;
+            stroke: #999 !important;
             stroke-width: 1.5 !important;
-            opacity: 0.5 !important;
+            opacity: 0.6 !important;
         }
         
         .b-sch-dependency.b-inactive .b-sch-dependency-arrow,
         .b-sch-dependency.visual-dependency .b-sch-dependency-arrow {
-            fill: #aaa !important;
-            stroke: #aaa !important;
-            opacity: 0.5 !important;
+            fill: #999 !important;
+            stroke: #999 !important;
+            opacity: 0.6 !important;
         }
         
         /* Critical path dependency styling */
@@ -1975,6 +1974,20 @@
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
+                    // CRITICAL: Event listeners to prevent dependency conflicts
+                    listeners: {
+                        // Prevent conflict resolution dialogs for dependencies
+                        beforeSchedulingConflictResolution: ({ schedulingIssue }) => {
+                            // Check if the conflict is related to dependencies
+                            if (schedulingIssue && schedulingIssue.type === 'dependencyconflict') {
+                                console.log('⚠️ Dependency conflict suppressed - dependencies are visual only');
+                                return false; // Prevent the dialog
+                            }
+                            // For date constraints, allow the dialog (need-by dates are important)
+                            return true;
+                        }
+                    },
+                    
                     
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
@@ -3120,6 +3133,14 @@
                         // This algorithm schedules operations from today forward, respecting:
                         // 1. Job priority (1=highest, 5=lowest) 
                         // 2. Operation sequence within each job
+                        
+                        const scheduler = window.scheduler;
+                        const { project, eventStore, dependencyStore } = scheduler;
+                        
+                        // Store and clear dependencies to prevent conflicts
+                        const savedDependencies = dependencyStore.records.map(dep => dep.data);
+                        dependencyStore.removeAll();
+                        console.log('⏸️ Temporarily removed dependencies for conflict-free ASAP scheduling');
                         // 3. Manufacturing release date (if specified in ptjobs table)
                         // 
                         // IMPORTANT: Dependency lines are VISUAL ONLY for the Gantt chart.
@@ -3444,6 +3465,12 @@
                     console.log('  🔄 Propagating schedule...');
                     await project.propagate();
                     
+                    // Restore the saved dependencies for visual display
+                    if (savedDependencies && savedDependencies.length > 0) {
+                        dependencyStore.add(savedDependencies);
+                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                    }
+                    
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
                     // Verify no overlaps using the assertion function
@@ -3611,14 +3638,19 @@
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
                     
-                    // 🔧 CRITICAL: Suspend validation and auto-resolve conflicts during ALAP
+                    // 🔧 CRITICAL: Temporarily clear dependencies to prevent conflicts during ALAP
                     const originalAutoSync = project.autoSync;
                     const originalValidateConstraintInterval = project.validateConstraintInterval;
                     
                     project.autoSync = false; // Prevent automatic syncing during changes
                     project.validateConstraintInterval = false; // Disable constraint validation during scheduling
                     
-                    console.log('⏸️ Suspended conflict validation for ALAP scheduling');
+                    // Store dependencies for later restoration
+                    const savedDependencies = dependencyStore.records.map(dep => dep.data);
+                    
+                    // Clear all dependencies to prevent any conflicts
+                    dependencyStore.removeAll();
+                    console.log('⏸️ Temporarily removed dependencies for conflict-free ALAP scheduling');
                     
                     // Guard
                     const allEvents = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
@@ -3886,9 +3918,16 @@
                     project.direction = 'Forward';
                     project.schedulingDirection = 'forward';
                     
-                    // 🔧 CRITICAL: Restore validation settings
+                    // 🔧 CRITICAL: Restore validation settings and dependencies
                     project.autoSync = originalAutoSync;
                     project.validateConstraintInterval = originalValidateConstraintInterval;
+                    
+                    // Restore the saved dependencies for visual display
+                    if (savedDependencies && savedDependencies.length > 0) {
+                        dependencyStore.add(savedDependencies);
+                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                    }
+                    
                     console.log('▶️ Restored conflict validation settings');
                     
                     console.log('✅ ALAP complete (backward cascade from Need-By dates). Compacting schedule…');
@@ -4109,6 +4148,13 @@
                     console.log('🚀 Starting Drum (TOC) scheduling - Theory of Constraints');
                     console.log('📌 NOTE: Dependencies are visual-only. Scheduling optimizes bottleneck resource.');
                     
+                    const { dependencyStore } = scheduler;
+                    
+                    // Store and clear dependencies to prevent conflicts
+                    const savedDependencies = dependencyStore.records.map(dep => dep.data);
+                    dependencyStore.removeAll();
+                    console.log('⏸️ Temporarily removed dependencies for conflict-free Drum scheduling');
+                    
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
                     // ========================================================================
@@ -4202,6 +4248,13 @@
                     
                     await scheduler.project.commitAsync();
                     await scheduler.project.propagate();
+                    
+                    // Restore the saved dependencies for visual display
+                    if (savedDependencies && savedDependencies.length > 0) {
+                        dependencyStore.add(savedDependencies);
+                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                    }
+                    
                     console.log('✅ Drum (TOC) scheduling completed');
                     
                     // VERIFY no overlaps - use assignments to track resources
