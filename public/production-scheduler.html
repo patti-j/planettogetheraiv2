@@ -1115,26 +1115,11 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
-    <!-- Load Bryntum Scheduler Pro ES Module -->
-    <script type="module">
-        console.log('🔥 SCHEDULER SCRIPT STARTING - Loading ES Module...');
-        
-        // Import all exports from Bryntum ES module and attach to window
-        import * as BryntumModule from '/schedulerpro.module.js';
-        
-        // Make Bryntum available globally
-        window.bryntum = window.bryntum || {};
-        Object.assign(window.bryntum, BryntumModule);
-        
-        // Also assign directly to window for backward compatibility
-        Object.assign(window, BryntumModule);
-        
-        console.log('✅ Bryntum ES Module loaded!', {
-            schedulerpro: !!BryntumModule.SchedulerPro,
-            projectModel: !!BryntumModule.ProjectModel,
-            availableClasses: Object.keys(BryntumModule).slice(0, 10)
-        });
-        console.log('📊 Current document state:', document.readyState);
+    <!-- Load Bryntum Scheduler Pro UMD -->
+    <script src="/schedulerpro.umd.js?v=633"></script>
+    
+    <script>
+        console.log('🔥 SCHEDULER SCRIPT STARTING...');
         
         // Global error handler to catch any errors
         window.onerror = function(msg, url, lineNo, columnNo, error) {
@@ -1155,217 +1140,44 @@
             return true;
         };
         
-        // Check if Bryntum is loading
-        let bryntumCheckCount = 0;
-        const checkBryntumInterval = setInterval(() => {
-            bryntumCheckCount++;
-            console.log(`🔍 Checking for Bryntum (attempt ${bryntumCheckCount})...`);
-            
-            // Check for bryntum in different ways
-            console.log('Window properties:', Object.keys(window).filter(k => k.toLowerCase().includes('bryntum')));
-            console.log('typeof bryntum:', typeof bryntum);
-            console.log('typeof window.bryntum:', typeof window.bryntum);
-            
-            if (typeof bryntum !== 'undefined' || typeof window.bryntum !== 'undefined') {
-                const bryntumObj = window.bryntum || bryntum;
-                console.log('✅ Bryntum object found!', bryntumObj);
-                console.log('Bryntum properties:', Object.keys(bryntumObj || {}));
-                clearInterval(checkBryntumInterval);
-                
-                // Hide loading overlay immediately when accessed directly
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.style.display = 'none';
-                    console.log('🎯 Loading overlay hidden (direct access)');
-                }
-                
-                // Try to initialize scheduler immediately
-                initScheduler();
-            } else if (bryntumCheckCount > 50) { // 5 seconds timeout
-                console.error('❌ Bryntum failed to load after 5 seconds');
-                console.error('Final window check:', Object.keys(window).length, 'properties');
-                clearInterval(checkBryntumInterval);
-                
-                // Hide loading overlay and show error
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.innerHTML = '<div style="color: red; font-size: 18px;">Error: Scheduler library failed to load. Please refresh the page.</div>';
-                }
-            }
-        }, 100);
-        
-        // Move scheduler initialization to a function
-        function initScheduler() {
-            console.log('🚀 Initializing scheduler...');
-            if (!window.bryntum || !window.bryntum.schedulerpro) {
-                console.error('❌ Bryntum SchedulerPro not available');
-                return;
-            }
-            
-            // Initialize scheduler using global bryntum object
-            const { SchedulerPro } = window.bryntum.schedulerpro;
-            console.log('✅ Bryntum SchedulerPro loaded successfully');
-            
-            // Notify parent window that scheduler is ready
-            if (window.parent !== window) {
-                window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
-                console.log('📤 Sent SCHEDULER_READY message to parent');
-            }
-            
-            // Hide loading overlay
-            const loadingOverlay = document.getElementById('loadingOverlay');
-            if (loadingOverlay) {
-                loadingOverlay.style.display = 'none';
-            }
-            
-            // Continue with scheduler setup...
-            setupScheduler();
-        }
-        
-        function setupScheduler() {
-            // This function will contain the actual scheduler setup code
-            console.log('📊 Setting up scheduler...');
-            // The rest of the scheduler initialization will go here
-        }
-        
         // --- Planning area filter: robust wiring + safe filtering ---
-        (function wirePlanningAreaFilter() {
-            // 1) Bind as early and unconditionally as possible
-            document.addEventListener('click', (e) => {
-                const target = e.target;
-                if (target && target.id === 'applyPlanningAreaFilter') {
-                    e.preventDefault();
-                    handleApplyPlanningAreaFilter().catch(err => console.error(err));
-                }
-            });
-
-            // 2) Backward-compat: expose the handler on window for any existing callers
-            window.applyPlanningAreaFilter = () => handleApplyPlanningAreaFilter();
-        })();
+        // Bind once, unconditionally
+        document.addEventListener('click', (e) => {
+            if (e.target?.id === 'applyPlanningAreaFilter') {
+                e.preventDefault();
+                handleApplyPlanningAreaFilter().catch(console.error);
+            }
+        });
+        
+        // Back-compat for inline onclick="applyPlanningAreaFilter()"
+        window.applyPlanningAreaFilter = () => handleApplyPlanningAreaFilter();
 
         async function handleApplyPlanningAreaFilter() {
             console.log('🔥 [Planning Area Filter] Apply clicked');
             const ddl = document.getElementById('planningAreaFilter');
-            if (!ddl) return console.error('❌ planningAreaFilter not found');
-
-            const area = ddl.value;
+            const area = ddl?.value || 'all';
             const sch = window.scheduler;
             if (!sch) return console.error('❌ Scheduler not initialized yet');
 
             const { resourceStore, eventStore, project } = sch;
 
-            // Clear any previous filtering
             sch.suspendRefresh();
             resourceStore.clearFilters();
             eventStore.clearFilters();
 
             if (area !== 'all') {
-                // Show only resources in the area
-                resourceStore.filter(r => r.planning_area === area);
-
-                // Show only events whose resource is currently visible
-                const visibleResourceIds = new Set(resourceStore.records.map(r => String(r.id)));
-                eventStore.filter(ev => visibleResourceIds.has(String(ev.resourceId)));
+                resourceStore.filter(r => (r.planning_area ?? r.data?.planning_area) === area);
+                const visible = new Set(resourceStore.records.map(r => String(r.id)));
+                eventStore.filter(ev => visible.has(String(ev.resourceId)));
             }
-            sch.resumeRefresh();
 
-            // Recalculate & fit view
+            sch.resumeRefresh();
             await project.commitAsync();
             await project.propagate();
             sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
         }
         
-        // Keep old function for compatibility but it will now use the new handler
-        window.applyPlanningAreaFilterLegacy = async function() {
-            const scheduler = window.scheduler;
-            const project = scheduler.project;
-            
-            // Check if master stores exist (they should be saved during initial load)
-            if (!window.masterResourceStore || !window.masterEventStore || !window.masterAssignmentStore) {
-                console.error('❌ Master stores not found! They should be saved during initial data load.');
-                console.log('📦 [Planning Area Filter] Attempting to save current stores as master (may already be filtered)');
-                window.masterResourceStore = project.resourceStore;
-                window.masterEventStore = project.eventStore;
-                window.masterAssignmentStore = project.assignmentStore;
-            }
-            
-            try {
-                if (selectedPlanningArea !== 'all') {
-                    console.log(`🎯 [Planning Area Filter] Applying filter for: ${selectedPlanningArea}`);
-                    
-                    // Use chain() instead of deprecated makeChained()
-                    // Create a chained store with filtered resources
-                    const chainedResourceStore = window.masterResourceStore.chain(resource => {
-                        // Access planning_area from resource data (Bryntum may wrap the raw data)
-                        const planningArea = resource.planning_area || resource.data?.planning_area || resource.get?.('planning_area');
-                        console.log(`🔍 Resource ${resource.name || resource.get?.('name')}: planning_area = ${planningArea}`);
-                        return planningArea === selectedPlanningArea;
-                    });
-                    
-                    // Get the filtered resource IDs
-                    const filteredResourceIds = chainedResourceStore.records.map(r => r.id);
-                    console.log(`📋 Filtered resource IDs: ${filteredResourceIds.join(', ')}`);
-                    
-                    // Create chained event store that only shows events for filtered resources
-                    const chainedEventStore = window.masterEventStore.chain(event => {
-                        // Show event if it's assigned to one of the filtered resources
-                        return event && event.resourceId && filteredResourceIds.includes(event.resourceId);
-                    });
-                    
-                    // Create chained assignment store for the filtered resources
-                    const chainedAssignmentStore = window.masterAssignmentStore.chain(assignment => {
-                        return assignment && assignment.resourceId && filteredResourceIds.includes(assignment.resourceId);
-                    });
-                    
-                    // Link the stores together properly
-                    chainedEventStore.assignmentStore = chainedAssignmentStore;
-                    chainedAssignmentStore.eventStore = chainedEventStore;
-                    
-                    // Update ONLY the project stores (SchedulerPro doesn't allow direct store assignment)
-                    project.resourceStore = chainedResourceStore;
-                    project.eventStore = chainedEventStore;
-                    project.assignmentStore = chainedAssignmentStore;
-                    
-                    const visibleResources = scheduler.resourceStore.records.length;
-                    const visibleEvents = scheduler.eventStore.records.length;
-                    console.log(`✅ [Planning Area Filter] Showing ${visibleResources} resources and ${visibleEvents} events for planning area: ${selectedPlanningArea}`);
-                    
-                } else {
-                    console.log('📊 [Planning Area Filter] Showing all resources and operations');
-                    
-                    // Restore all master stores (only on project, not scheduler)
-                    if (window.masterResourceStore) {
-                        project.resourceStore = window.masterResourceStore;
-                    }
-                    if (window.masterEventStore) {
-                        project.eventStore = window.masterEventStore;
-                    }
-                    if (window.masterAssignmentStore) {
-                        project.assignmentStore = window.masterAssignmentStore;
-                    }
-                    
-                    console.log(`✅ [Planning Area Filter] Restored all ${project.resourceStore.count} resources and ${project.eventStore.count} events`);
-                }
-                
-                // Force scheduler to refresh its view
-                scheduler.refresh();
-                scheduler.refreshRows();
-                
-                // Apply zoom to fit after filtering
-                setTimeout(() => {
-                    scheduler.zoomToFit({
-                        leftMargin: 50,   // Margin in pixels between first event start and first visible date
-                        rightMargin: 50   // Margin in pixels between last event end and last visible date
-                    });
-                    console.log('🔍 [Planning Area Filter] Zoom to fit applied');
-                }, 100); // Small delay to ensure rendering is complete
-                
-            } catch (error) {
-                console.error('❌ [Planning Area Filter] Error:', error);
-            }
-        };
-        
-        // Wait for DOM and Bryntum to load
+        // Wait for DOM to load
         // Guard to prevent multiple initialization attempts
         let schedulerInitialized = false;
         
