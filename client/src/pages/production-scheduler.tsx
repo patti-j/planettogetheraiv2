@@ -49,23 +49,33 @@ export default function ProductionScheduler() {
     checkMobile();
     window.addEventListener('resize', checkMobile);
 
-    // Handle iframe load event
+    // Handle iframe load event - only sets up message listener
     const handleLoad = () => {
-      setIsLoading(false);
-      console.log('✅ Production scheduler loaded successfully');
-      
-      // Also send theme via postMessage as backup
-      console.log('📤 [Parent] Sending theme to scheduler iframe:', resolvedTheme);
-      setTimeout(() => {
-        iframeRef.current?.contentWindow?.postMessage({
-          type: 'SET_THEME',
-          theme: resolvedTheme
-        }, '*');
-      }, 100); // Small delay to ensure iframe is ready
+      console.log('📄 Production scheduler iframe loaded, waiting for Bryntum initialization...');
       
       // Ensure iframe is touch-friendly on mobile
       if (iframeRef.current && isMobile) {
         iframeRef.current.style.touchAction = 'pan-x pan-y';
+      }
+    };
+    
+    // Handle messages from scheduler iframe
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === 'SCHEDULER_READY') {
+        console.log('✅ Received SCHEDULER_READY from iframe - scheduler fully loaded!');
+        setIsLoading(false);
+        
+        // Send theme after scheduler is ready
+        console.log('📤 [Parent] Sending theme to scheduler iframe:', resolvedTheme);
+        setTimeout(() => {
+          iframeRef.current?.contentWindow?.postMessage({
+            type: 'SET_THEME',
+            theme: resolvedTheme
+          }, '*');
+        }, 100); // Small delay to ensure scheduler is ready
+      } else if (event.data?.type === 'SCHEDULER_ERROR') {
+        console.error('❌ Scheduler error:', event.data.error);
+        setIsLoading(false); // Hide loading overlay even on error
       }
     };
 
@@ -101,9 +111,10 @@ export default function ProductionScheduler() {
       });
     }
 
-    // Listen for Max AI actions and theme changes
+    // Listen for Max AI actions, theme changes, and scheduler messages
     window.addEventListener('maxai:action' as any, handleMaxAIAction as any);
     window.addEventListener('themechange' as any, handleThemeChange as any);
+    window.addEventListener('message', handleMessage);
 
     return () => {
       if (iframe) {
@@ -112,6 +123,7 @@ export default function ProductionScheduler() {
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('maxai:action' as any, handleMaxAIAction as any);
       window.removeEventListener('themechange' as any, handleThemeChange as any);
+      window.removeEventListener('message', handleMessage);
     };
   }, [isMobile, resolvedTheme]);
   

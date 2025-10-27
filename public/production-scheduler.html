@@ -1278,12 +1278,27 @@
                 console.log('📊 Checking if Bryntum is loaded...');
                 if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
                     console.error('❌ Bryntum SchedulerPro library not loaded!');
+                    // Notify parent of error
+                    if (window.parent !== window) {
+                        window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
+                    }
+                    // Hide loading overlay when directly accessed
+                    const loadingOverlay = document.getElementById('loading-overlay');
+                    if (loadingOverlay) {
+                        loadingOverlay.style.display = 'none';
+                    }
                     return;
                 }
                 
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 console.log('✅ Bryntum SchedulerPro loaded successfully');
+                
+                // Notify parent window that scheduler is ready
+                if (window.parent !== window) {
+                    window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
+                    console.log('📤 Sent SCHEDULER_READY message to parent');
+                }
                 
                 // Set today's date to September 3, 2025
                 const today = new Date(2025, 8, 3); // September 3, 2025
