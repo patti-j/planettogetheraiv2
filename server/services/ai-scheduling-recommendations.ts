@@ -509,6 +509,199 @@ export class AISchedulingRecommendationsService {
   }
 
   /**
+   * Generate an implementation plan for a recommendation
+   */
+  async generateImplementationPlan(recommendation: AIRecommendation): Promise<any> {
+    try {
+      console.log(`📋 Generating plan for recommendation: ${recommendation.id}`);
+      
+      // Generate steps based on the recommendation type
+      const steps: any[] = [];
+      let estimatedDuration = '5-10 minutes';
+      let resourcesRequired = ['System resources', 'Database access'];
+      let potentialRisks: string[] = [];
+      
+      // Create steps based on category
+      switch (recommendation.category) {
+        case 'Resource Conflicts':
+          steps.push(
+            {
+              id: 1,
+              title: 'Analyze Current Conflicts',
+              description: 'System will identify all overlapping operations and resource conflicts',
+              type: 'automatic',
+              duration: '30 seconds',
+              status: 'pending'
+            },
+            {
+              id: 2,
+              title: 'Reschedule Operations',
+              description: `Move conflicting operations to available time slots on ${recommendation.affectedEntities?.[0] || 'affected resources'}`,
+              type: 'automatic',
+              duration: '1-2 minutes',
+              status: 'pending'
+            },
+            {
+              id: 3,
+              title: 'Validate Constraints',
+              description: 'Verify all dependencies and constraints are still satisfied',
+              type: 'automatic',
+              duration: '30 seconds',
+              status: 'pending'
+            },
+            {
+              id: 4,
+              title: 'Confirm Resolution',
+              description: 'Review the updated schedule to ensure conflicts are resolved',
+              type: 'review',
+              duration: '1 minute',
+              status: 'pending'
+            }
+          );
+          estimatedDuration = '3-5 minutes';
+          potentialRisks = ['Temporary resource reallocation', 'Downstream schedule adjustments'];
+          break;
+          
+        case 'Bottleneck Resolution':
+          steps.push(
+            {
+              id: 1,
+              title: 'Identify Bottleneck Operations',
+              description: 'Analyze operations causing production delays',
+              type: 'automatic',
+              duration: '45 seconds',
+              status: 'pending'
+            },
+            {
+              id: 2,
+              title: 'Load Balance Resources',
+              description: 'Redistribute workload from overloaded to available resources',
+              type: 'automatic',
+              duration: '2-3 minutes',
+              status: 'pending'
+            },
+            {
+              id: 3,
+              title: 'Optimize Operation Sequence',
+              description: 'Reorder operations for maximum throughput',
+              type: 'automatic',
+              duration: '1 minute',
+              status: 'pending'
+            },
+            {
+              id: 4,
+              title: 'Performance Validation',
+              description: 'Verify improved resource utilization and reduced wait times',
+              type: 'review',
+              duration: '1 minute',
+              status: 'pending'
+            }
+          );
+          estimatedDuration = '5-7 minutes';
+          resourcesRequired.push('Alternative resource capacity');
+          potentialRisks = ['Initial setup time for resource changes', 'Learning curve for operators'];
+          break;
+          
+        case 'Risk Mitigation':
+          steps.push(
+            {
+              id: 1,
+              title: 'Risk Assessment',
+              description: 'Evaluate current risks and their potential impact',
+              type: 'automatic',
+              duration: '30 seconds',
+              status: 'pending'
+            },
+            {
+              id: 2,
+              title: 'Apply Mitigation Strategy',
+              description: recommendation.description,
+              type: 'automatic',
+              duration: '2-3 minutes',
+              status: 'pending'
+            },
+            {
+              id: 3,
+              title: 'Update Priorities',
+              description: 'Adjust job priorities and expedite critical operations',
+              type: 'automatic',
+              duration: '1 minute',
+              status: 'pending'
+            },
+            {
+              id: 4,
+              title: 'Monitor Implementation',
+              description: 'Track changes and confirm risk reduction',
+              type: 'review',
+              duration: '2 minutes',
+              status: 'pending'
+            }
+          );
+          estimatedDuration = '6-8 minutes';
+          potentialRisks = ['Disruption to non-critical jobs', 'Resource overtime may be required'];
+          break;
+          
+        default:
+          // Generic steps for other categories
+          steps.push(
+            {
+              id: 1,
+              title: 'Validate Current State',
+              description: 'System will verify current production schedule and resource availability',
+              type: 'automatic',
+              duration: '30 seconds',
+              status: 'pending'
+            },
+            {
+              id: 2,
+              title: 'Apply Optimization',
+              description: `Implement ${recommendation.category}: ${recommendation.title}`,
+              type: 'automatic',
+              duration: '1-2 minutes',
+              status: 'pending'
+            },
+            {
+              id: 3,
+              title: 'Verify Implementation',
+              description: 'Confirm changes have been applied correctly',
+              type: 'automatic',
+              duration: '30 seconds',
+              status: 'pending'
+            },
+            {
+              id: 4,
+              title: 'Review Results',
+              description: 'Review the updated schedule and optimization metrics',
+              type: 'review',
+              duration: '1 minute',
+              status: 'pending'
+            }
+          );
+      }
+      
+      // Build the plan object
+      const plan = {
+        recommendation,
+        steps,
+        estimatedDuration,
+        resourcesRequired,
+        potentialRisks: potentialRisks.length > 0 ? potentialRisks : [
+          'Temporary schedule adjustments',
+          'Minor resource reallocation'
+        ],
+        rollbackPlan: 'All changes are versioned and can be reverted through the schedule history. The system automatically creates a backup before applying changes.'
+      };
+      
+      console.log(`✅ Generated plan with ${steps.length} steps`);
+      return plan;
+      
+    } catch (error) {
+      console.error('Error generating implementation plan:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Apply a recommendation (execute the suggested action)
    */
   async applyRecommendation(recommendationId: string): Promise<boolean> {

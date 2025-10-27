@@ -2418,6 +2418,30 @@ router.post("/api/ai/recommendations/:id/apply", requireAuth, async (req, res) =
   }
 });
 
+// Generate implementation plan for a recommendation
+router.get("/api/ai/recommendations/:id/plan", requireAuth, async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`📋 Generating implementation plan for recommendation: ${id}`);
+    
+    // Get the recommendation details
+    const recommendations = await aiSchedulingService.getAllRecommendations();
+    const recommendation = recommendations.find(r => r.id === id);
+    
+    if (!recommendation) {
+      return res.status(404).json({ error: 'Recommendation not found' });
+    }
+    
+    // Generate the implementation plan based on the recommendation type
+    const plan = await aiSchedulingService.generateImplementationPlan(recommendation);
+    
+    res.json(plan);
+  } catch (error: any) {
+    console.error('Error generating implementation plan:', error);
+    res.status(500).json({ error: 'Failed to generate implementation plan' });
+  }
+});
+
 // Dismiss a recommendation
 router.post("/api/ai/recommendations/:id/dismiss", requireAuth, async (req, res) => {
   try {
