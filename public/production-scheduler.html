@@ -3096,8 +3096,20 @@
                     isAsapRunning = true;
                     
                     try {
-                        // ASAP (As Soon As Possible) - Forward scheduling using best practice packer
-                        console.log('🚀 Starting ASAP scheduling with dependency-aware overlap prevention...');
+                        // ============================================================================
+                        // ASAP (As Soon As Possible) - Forward Scheduling Algorithm
+                        // ============================================================================
+                        // This algorithm schedules operations from today forward, respecting:
+                        // 1. Job priority (1=highest, 5=lowest) 
+                        // 2. Operation sequence within each job
+                        // 3. Manufacturing release date (if specified in ptjobs table)
+                        // 
+                        // IMPORTANT: Dependency lines are VISUAL ONLY for the Gantt chart.
+                        // The scheduling logic IGNORES dependencies and uses only priority + sequence.
+                        // ============================================================================
+                        
+                        console.log('🚀 Starting ASAP scheduling (Forward from Today)...');
+                        console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
                         
                         const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
                         const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
@@ -3110,30 +3122,68 @@
                         event.manuallyScheduled = false;
                     });
                     
-                    // Use September 3, 2025 as the base scheduling date
-                    const baseDate = new Date(2025, 8, 3);
-                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
+                    // ============================================================================
+                    // ASAP Base Date Logic:
+                    // Use TODAY as the default base scheduling date (not a hardcoded date)
+                    // Operations will be scheduled as soon as possible from today forward
+                    // ============================================================================
+                    const today = new Date();
+                    today.setHours(7, 0, 0, 0); // Start at 7 AM today
+                    console.log(`📅 Base scheduling date (today): ${today.toLocaleDateString()}`);
                     
-                    // 🔄 SIMPLIFIED: Using sequence numbers and job priority only - NO DEPENDENCIES!
-                    console.log('📋 Using job priority and sequence numbers for scheduling (dependencies ignored)');
+                    // Map to store job-specific start dates (from manufacturing_release_date if available)
+                    const jobStartDates = new Map(); // jobKey -> Date
                     
-                    // Helper functions
+                    // NOTE: Dependencies are IGNORED for scheduling logic
+                    console.log('📋 Using job priority and sequence numbers for scheduling');
+                    console.log('🔗 Dependencies shown as lines on Gantt but do NOT affect schedule');
+                    
+                    // ============================================================================
+                    // Helper Functions for Data Extraction
+                    // ============================================================================
+                    
+                    // Get the job identifier from an event (handles various data structures)
                     const getJobKey = (ev) => {
                         return ev.jobId ?? ev.jobID ?? ev.job_id ?? ev.jobName ?? ev.job_name ?? 
                                ev.ptData?.jobId ?? ev.ptData?.jobName ?? 
                                ev.data?.jobId ?? ev.data?.jobName ?? null;
                     };
                     
+                    // Get the sequence number for operation ordering within a job
                     const getSequence = (ev) => {
                         return ev.sequence_number || ev.sequenceNumber || 
                                ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
                     };
                     
+                    // Get the job priority (1=highest priority, 5=lowest priority)
                     const getPriority = (event) => {
                         return event.jobPriority || event.job_priority || 
                                event.ptData?.jobPriority || event.ptData?.job_priority ||
                                event.data?.jobPriority || event.data?.job_priority ||
                                999; // Default low priority if not found
+                    };
+                    
+                    // Get the manufacturing release date for a job (if specified)
+                    const getManufacturingReleaseDate = (event) => {
+                        // Check for manufacturing_release_date in various locations
+                        const releaseDateStr = event.manufacturingReleaseDate || 
+                                              event.manufacturing_release_date ||
+                                              event.ptData?.manufacturingReleaseDate ||
+                                              event.ptData?.manufacturing_release_date ||
+                                              event.data?.manufacturingReleaseDate ||
+                                              event.data?.manufacturing_release_date ||
+                                              null;
+                        
+                        if (releaseDateStr) {
+                            const releaseDate = new Date(releaseDateStr);
+                            // Ensure release date is not in the past (use today if it is)
+                            if (releaseDate < today) {
+                                console.log(`  ⚠️ Manufacturing release date ${releaseDate.toLocaleDateString()} is in the past, using today instead`);
+                                return today;
+                            }
+                            return releaseDate;
+                        }
+                        return null; // No release date specified
                     };
                     
                     // Group operations by job and sort by sequence number
@@ -3249,22 +3299,46 @@
                         return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
                     }
                     
-                    // Process operations in job/sequence order (NOT using dependencies)
+                    // ============================================================================
+                    // Process Operations in Job/Sequence Order
+                    // NOTE: Dependencies are NOT used for scheduling logic, only visual display
+                    // ============================================================================
                     for (const [jobKey, operations] of sortedJobs) {
                         console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
+                        
+                        // Determine the start date for this job
+                        let jobStartDate = today; // Default to today
+                        
+                        // Check if this job has a manufacturing release date
+                        if (operations.length > 0 && jobKey !== '_orphans_') {
+                            const releaseDate = getManufacturingReleaseDate(operations[0]);
+                            if (releaseDate) {
+                                jobStartDate = releaseDate;
+                                console.log(`  📅 Job has manufacturing release date: ${releaseDate.toLocaleDateString()}`);
+                            } else {
+                                console.log(`  📅 No release date specified, starting from today: ${today.toLocaleDateString()}`);
+                            }
+                            // Store for potential reuse
+                            jobStartDates.set(jobKey, jobStartDate);
+                        }
                         
                         let previousOperationEnd = null; // Track end of previous operation in this job
                         
                         for (const event of operations) {
                             const sequence = getSequence(event);
                             
-                            // Calculate earliest start based on job sequence (finish-to-start within job)
-                            // NOT using dependencies - only sequence order matters
-                            let earliestStart = previousOperationEnd || new Date(baseDate);
+                            // ========================================================================
+                            // Calculate Earliest Start Time
+                            // For first operation in job: use job start date (today or release date)
+                            // For subsequent operations: must start after previous operation ends
+                            // ========================================================================
+                            let earliestStart = previousOperationEnd || jobStartDate;
                             
                             console.log(`  📋 Operation "${event.name}" (seq ${sequence})`);
                             if (previousOperationEnd) {
                                 console.log(`     Must start after previous operation ends: ${previousOperationEnd.toLocaleString()}`);
+                            } else {
+                                console.log(`     First operation, can start at: ${earliestStart.toLocaleString()}`);
                             }
                             
                             // Get the resource this event is assigned to

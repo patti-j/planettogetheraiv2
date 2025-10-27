@@ -283,7 +283,7 @@ export const widgetTypes = pgTable("widget_types", {
 // PT Manufacturing Tables (Minimal Schema)
 // ============================================
 
-// Minimal ptjobs table matching actual database structure (9 columns)
+// Minimal ptjobs table matching actual database structure (10 columns)
 export const ptJobs = pgTable("ptjobs", {
   id: serial("id").primaryKey(),
   externalId: varchar("external_id"),
@@ -291,6 +291,8 @@ export const ptJobs = pgTable("ptjobs", {
   description: text("description"),
   priority: integer("priority").default(1),
   needDateTime: timestamp("need_date_time"),
+  // Manufacturing release date - when the job can start production (for ASAP scheduling)
+  manufacturingReleaseDate: timestamp("manufacturing_release_date"),
   scheduledStatus: varchar("scheduled_status"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
