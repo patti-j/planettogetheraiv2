@@ -1956,6 +1956,16 @@
                     rowHeight: isMobile ? 50 : 60,
                     barMargin: isMobile ? 5 : 8,
                     
+                    // CRITICAL: Suppress ALL conflict resolution dialogs
+                    // Dependencies are visual-only, conflicts should never be shown
+                    listeners: {
+                        beforeSchedulingConflictResolution: ({ source }) => {
+                            console.log('⚠️ Conflict detected but suppressed - dependencies are visual only');
+                            // Return false to prevent the conflict resolution dialog
+                            return false;
+                        }
+                    },
+                    
                     // Enable horizontal scrolling on mobile
                     scrollable: isMobile ? { overflowX: 'auto', overflowY: 'auto' } : true,
                     
