@@ -1193,23 +1193,29 @@
             
             try {
                 console.log('📊 Checking if Bryntum is loaded...');
-                if (typeof window.SchedulerPro === 'undefined') {
+                
+                // Check for SchedulerPro in the UMD bundle
+                const SchedulerPro =
+                    window.bryntum?.schedulerpro?.SchedulerPro || // normal UMD nested
+                    window.bryntum?.SchedulerPro;                 // flat fallback
+                
+                if (!SchedulerPro) {
                     console.error('❌ Bryntum SchedulerPro library not loaded!');
-                    console.log('Available window properties:', Object.keys(window).filter(k => k.includes('Scheduler')).slice(0, 10));
+                    console.error('Bryntum UMD not found on window.bryntum');
                     // Notify parent of error
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
                     }
                     // Hide loading overlay when directly accessed
-                    const loadingOverlay = document.getElementById('loading-overlay');
+                    const loadingOverlay = document.getElementById('loadingOverlay');
                     if (loadingOverlay) {
                         loadingOverlay.style.display = 'none';
                     }
                     return;
                 }
                 
-                // Initialize scheduler using SchedulerPro from ES module (now on window)
-                const SchedulerPro = window.SchedulerPro;
+                // Make SchedulerPro available on window for the rest of the code
+                window.SchedulerPro = SchedulerPro;
                 console.log('✅ Bryntum SchedulerPro loaded successfully', SchedulerPro);
                 
                 // Notify parent window that scheduler is ready
