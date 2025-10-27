@@ -48,10 +48,30 @@ export default function ProductionScheduler() {
     
     checkMobile();
     window.addEventListener('resize', checkMobile);
+    
+    // Set a timeout fallback to hide loading after 3 seconds
+    const loadingTimeout = setTimeout(() => {
+      if (isLoading) {
+        console.log('⏰ Loading timeout - hiding overlay');
+        setIsLoading(false);
+      }
+    }, 3000);
 
     // Handle iframe load event - only sets up message listener
     const handleLoad = () => {
-      console.log('📄 Production scheduler iframe loaded, waiting for Bryntum initialization...');
+      console.log('📄 Production scheduler iframe loaded');
+      
+      // Check if iframe content is accessible and hide loading immediately for same-origin
+      try {
+        const iframeDoc = iframeRef.current?.contentDocument || iframeRef.current?.contentWindow?.document;
+        if (iframeDoc) {
+          console.log('✅ Iframe content accessible - assuming scheduler is ready');
+          setIsLoading(false);
+        }
+      } catch (e) {
+        // Cross-origin, wait for postMessage
+        console.log('📄 Waiting for scheduler ready message...');
+      }
       
       // Ensure iframe is touch-friendly on mobile
       if (iframeRef.current && isMobile) {
@@ -120,6 +140,7 @@ export default function ProductionScheduler() {
       if (iframe) {
         iframe.removeEventListener('load', handleLoad);
       }
+      clearTimeout(loadingTimeout);
       window.removeEventListener('resize', checkMobile);
       window.removeEventListener('maxai:action' as any, handleMaxAIAction as any);
       window.removeEventListener('themechange' as any, handleThemeChange as any);
