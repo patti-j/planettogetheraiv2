@@ -1018,7 +1018,7 @@
             <select id="planningAreaFilter" data-testid="select-planning-area">
                 <option value="all">All Areas</option>
             </select>
-            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;" onclick="console.log('🎯 Button onclick triggered!'); applyPlanningAreaFilterImpl();">
+            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;">
                 Apply Filter
             </button>
         </div>
@@ -1428,42 +1428,24 @@
         console.log('🔥 SCHEDULER SCRIPT STARTING - This should appear immediately!');
         console.log('📊 Current document state:', document.readyState);
         
-        // Define the filter function immediately at global scope
-        function applyPlanningAreaFilterImpl() {
+        // Global function for planning area filter (must be defined before DOMContentLoaded)
+        window.applyPlanningAreaFilter = async function() {
             console.log('🔥 [Planning Area Filter] Apply button clicked!');
-            
-            // Update button text to show it's working
-            const button = document.getElementById('applyPlanningAreaFilter');
-            if (button) {
-                button.textContent = 'Filtering...';
-                button.style.backgroundColor = '#fbbf24';
-            }
-            
             const planningAreaFilter = document.getElementById('planningAreaFilter');
             if (!planningAreaFilter) {
                 console.error('❌ Planning area filter dropdown not found!');
-                if (button) {
-                    button.textContent = 'Error!';
-                    button.style.backgroundColor = '#ef4444';
-                }
                 return;
             }
             const selectedPlanningArea = planningAreaFilter.value;
             console.log(`📋 [Planning Area Filter] Selected: ${selectedPlanningArea}`);
             
-            // Get scheduler instance dynamically
+            // Get scheduler instance
             if (!window.scheduler) {
-                console.error('❌ Scheduler not initialized yet! window.scheduler is:', window.scheduler);
-                console.log('📍 Current window properties:', Object.keys(window).filter(k => k.includes('scheduler')));
-                if (button) {
-                    button.textContent = 'Scheduler Not Ready';
-                    button.style.backgroundColor = '#ef4444';
-                }
+                console.error('❌ Scheduler not initialized yet!');
                 return;
             }
             const scheduler = window.scheduler;
             const project = scheduler.project;
-            console.log('✅ Got scheduler and project instances');
             
             // Check if master stores exist (they should be saved during initial load)
             if (!window.masterResourceStore || !window.masterEventStore || !window.masterAssignmentStore) {
@@ -1545,45 +1527,10 @@
                     console.log('🔍 [Planning Area Filter] Zoom to fit applied');
                 }, 100); // Small delay to ensure rendering is complete
                 
-                // Update button to show success
-                if (button) {
-                    const visibleCount = scheduler.resourceStore.count;
-                    const totalCount = window.masterResourceStore ? window.masterResourceStore.count : visibleCount;
-                    button.textContent = `Filtered (${visibleCount}/${totalCount})`;
-                    button.style.backgroundColor = '#10b981';
-                    
-                    // Reset button after 2 seconds
-                    setTimeout(() => {
-                        button.textContent = 'Apply Filter';
-                        button.style.backgroundColor = '';
-                    }, 2000);
-                }
-                
             } catch (error) {
                 console.error('❌ [Planning Area Filter] Error:', error);
-                console.error('Error message:', error.message);
-                console.error('Error stack:', error.stack);
-                
-                // Show error details on button for debugging
-                if (button) {
-                    // Show specific error message
-                    const errorMsg = error.message || 'Unknown error';
-                    button.textContent = errorMsg.substring(0, 30); // Show first 30 chars
-                    button.style.backgroundColor = '#ef4444';
-                    button.title = errorMsg; // Show full error on hover
-                    
-                    // Reset button after 3 seconds
-                    setTimeout(() => {
-                        button.textContent = 'Apply Filter';
-                        button.style.backgroundColor = '';
-                        button.title = '';
-                    }, 3000);
-                }
             }
-        }
-        
-        // Immediately attach to window object
-        window.applyPlanningAreaFilter = applyPlanningAreaFilterImpl;
+        };
         
         // Wait for DOM and Bryntum to load
         // Guard to prevent multiple initialization attempts
@@ -1664,8 +1611,14 @@
                 const applyFilterButton = document.getElementById('applyPlanningAreaFilter');
                 if (applyFilterButton) {
                     console.log('📎 Attaching click listener to Apply Filter button');
-                    applyFilterButton.addEventListener('click', applyPlanningAreaFilterImpl);
-                    console.log('✅ Apply Filter button event listener attached successfully');
+                    applyFilterButton.addEventListener('click', function() {
+                        console.log('🔥 Apply Filter button clicked!');
+                        if (window.applyPlanningAreaFilter) {
+                            window.applyPlanningAreaFilter();
+                        } else {
+                            console.error('❌ applyPlanningAreaFilter function not found on window!');
+                        }
+                    });
                 } else {
                     console.error('❌ Apply Filter button not found in DOM!');
                 }
