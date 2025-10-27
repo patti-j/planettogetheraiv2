@@ -1463,7 +1463,10 @@
                     // Use chain() instead of deprecated makeChained()
                     // Create a chained store with filtered resources
                     const chainedResourceStore = window.masterResourceStore.chain(resource => {
-                        return resource.planning_area === selectedPlanningArea;
+                        // Access planning_area from resource data (Bryntum may wrap the raw data)
+                        const planningArea = resource.planning_area || resource.data?.planning_area || resource.get?.('planning_area');
+                        console.log(`🔍 Resource ${resource.name || resource.get?.('name')}: planning_area = ${planningArea}`);
+                        return planningArea === selectedPlanningArea;
                     });
                     
                     // Get the filtered resource IDs
@@ -1677,12 +1680,14 @@
                             sortOrder: index + 1,  // Add explicit sort order
                             // Override the numeric ID with a string to prevent numeric sorting
                             originalId: resource.id,
-                            id: `resource_${index + 1}_${resource.id}`
+                            id: `resource_${index + 1}_${resource.id}`,
+                            // CRITICAL: Explicitly preserve planning_area field for filtering
+                            planning_area: resource.planning_area || resource.planning_area_name || ''
                         }));
                         
                         console.log('✅ Resources sorted by operational sequence:');
                         resources.forEach((r, idx) => {
-                            console.log(`  ${idx + 1}. ${r.name} (sortOrder: ${r.sortOrder}, id: ${r.id})`);
+                            console.log(`  ${idx + 1}. ${r.name} (sortOrder: ${r.sortOrder}, id: ${r.id}, planning_area: ${r.planning_area || 'NONE'})`);
                         });
                     } else {
                         console.error('❌ Failed to fetch resources:', resourcesResponse.status);
@@ -4491,6 +4496,14 @@
                     window.masterEventStore = scheduler.project.eventStore;
                     window.masterAssignmentStore = scheduler.project.assignmentStore;
                     console.log('📦 [Initial Load] Master stores saved with all data');
+                    
+                    // Debug: Check if resources have planning_area field
+                    console.log('🔍 [Debug] Checking planning_area in master resource store:');
+                    const sampleResources = window.masterResourceStore.records.slice(0, 3);
+                    sampleResources.forEach(r => {
+                        const planningArea = r.planning_area || r.data?.planning_area || r.get?.('planning_area');
+                        console.log(`  - ${r.name || r.get?.('name')}: planning_area = ${planningArea}`);
+                    });
                     
                     // DISABLED: Commit was triggering automatic propagation/scheduling
                     // Users should manually trigger scheduling via Apply button
