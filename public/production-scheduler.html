@@ -1428,22 +1428,55 @@
         console.log('🔥 SCHEDULER SCRIPT STARTING - This should appear immediately!');
         console.log('📊 Current document state:', document.readyState);
         
-        // Global function for planning area filter (must be defined before DOMContentLoaded)
-        window.applyPlanningAreaFilter = async function() {
-            console.log('🔥 [Planning Area Filter] Apply button clicked!');
-            const planningAreaFilter = document.getElementById('planningAreaFilter');
-            if (!planningAreaFilter) {
-                console.error('❌ Planning area filter dropdown not found!');
-                return;
+        // --- Planning area filter: robust wiring + safe filtering ---
+        (function wirePlanningAreaFilter() {
+            // 1) Bind as early and unconditionally as possible
+            document.addEventListener('click', (e) => {
+                const target = e.target;
+                if (target && target.id === 'applyPlanningAreaFilter') {
+                    e.preventDefault();
+                    handleApplyPlanningAreaFilter().catch(err => console.error(err));
+                }
+            });
+
+            // 2) Backward-compat: expose the handler on window for any existing callers
+            window.applyPlanningAreaFilter = () => handleApplyPlanningAreaFilter();
+        })();
+
+        async function handleApplyPlanningAreaFilter() {
+            console.log('🔥 [Planning Area Filter] Apply clicked');
+            const ddl = document.getElementById('planningAreaFilter');
+            if (!ddl) return console.error('❌ planningAreaFilter not found');
+
+            const area = ddl.value;
+            const sch = window.scheduler;
+            if (!sch) return console.error('❌ Scheduler not initialized yet');
+
+            const { resourceStore, eventStore, project } = sch;
+
+            // Clear any previous filtering
+            sch.suspendRefresh();
+            resourceStore.clearFilters();
+            eventStore.clearFilters();
+
+            if (area !== 'all') {
+                // Show only resources in the area
+                resourceStore.filter(r => r.planning_area === area);
+
+                // Show only events whose resource is currently visible
+                const visibleResourceIds = new Set(resourceStore.records.map(r => String(r.id)));
+                eventStore.filter(ev => visibleResourceIds.has(String(ev.resourceId)));
             }
-            const selectedPlanningArea = planningAreaFilter.value;
-            console.log(`📋 [Planning Area Filter] Selected: ${selectedPlanningArea}`);
-            
-            // Get scheduler instance
-            if (!window.scheduler) {
-                console.error('❌ Scheduler not initialized yet!');
-                return;
-            }
+            sch.resumeRefresh();
+
+            // Recalculate & fit view
+            await project.commitAsync();
+            await project.propagate();
+            sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+        }
+        
+        // Keep old function for compatibility but it will now use the new handler
+        window.applyPlanningAreaFilterLegacy = async function() {
             const scheduler = window.scheduler;
             const project = scheduler.project;
             
@@ -3678,50 +3711,98 @@
                 
                 // Backward packer helper - finds the latest free slot on resource working backwards
                 function findLatestFreeSlotOnResource(resource, latestEnd, durationMs, excludeEvent) {
-                    // Start from latestEnd and push backward past any overlaps
-                    let end = new Date(latestEnd);
-                    
-                    // Optional: respect resource calendar working time
-                    const cal = resource.calendar || resource.project?.calendar;
-                    if (cal?.isNonWorkingTime?.(end)) {
-                        end = cal.skipNonWorkingTime(end, false); // false = backward
-                    }
-                    
-                    // CRITICAL FIX: Get events from eventStore and filter by resource
-                    // This ensures we get all events for this resource, not just those in resource.events
                     const { eventStore, assignmentStore } = scheduler;
-                    
-                    // Get all events assigned to this resource through assignments
-                    const events = [];
-                    assignmentStore.forEach(assignment => {
-                        if (assignment.resourceId === resource.id) {
-                            const event = eventStore.getById(assignment.eventId);
-                            if (event && event !== excludeEvent && event.id !== excludeEvent?.id && event.startDate) {
-                                events.push(event);
+
+                    // 1) Collect busy intervals for this resource
+                    const busy = new Map(); // eventId -> { start, end }
+
+                    // from assignments (multi-assign model)
+                    if (assignmentStore?.count) {
+                        assignmentStore.forEach(asg => {
+                            if (String(asg.resourceId) === String(resource.id)) {
+                                const ev = eventStore.getById(asg.eventId);
+                                if (ev && ev !== excludeEvent && ev.startDate && ev.endDate) {
+                                    busy.set(ev.id, { start: new Date(ev.startDate), end: new Date(ev.endDate) });
+                                }
                             }
+                        });
+                    }
+
+                    // from event.resourceId (single-assign model)
+                    eventStore.records.forEach(ev => {
+                        if (ev !== excludeEvent &&
+                            String(ev.resourceId) === String(resource.id) &&
+                            ev.startDate && ev.endDate) {
+                            busy.set(ev.id, { start: new Date(ev.startDate), end: new Date(ev.endDate) });
                         }
                     });
-                    
-                    // Sort events by end date descending for backward scheduling
-                    events.sort((a, b) => b.endDate - a.endDate);
-                    
-                    // Find the latest available slot working backwards
-                    for (const e of events) {
-                        const start = new Date(end.getTime() - durationMs);
-                        const overlap = (start < e.endDate) && (end > e.startDate);
-                        if (overlap) {
-                            // Snap end to the start of the conflicting event and continue backwards
-                            end = new Date(e.startDate);
+
+                    // 2) Normalize & sort by start
+                    const intervals = Array.from(busy.values())
+                        .filter(i => i.start < i.end && i.start < latestEnd)
+                        .sort((a, b) => a.start - b.start);
+
+                    // 3) Merge overlaps
+                    const merged = [];
+                    for (const cur of intervals) {
+                        if (merged.length === 0) {
+                            merged.push({ ...cur });
+                        } else {
+                            const last = merged[merged.length - 1];
+                            if (cur.start <= last.end) {
+                                if (cur.end > last.end) last.end = cur.end; // extend
+                            } else {
+                                merged.push({ ...cur });
+                            }
                         }
                     }
-                    
-                    // Recheck working time on the final boundary
-                    if (cal?.isNonWorkingTime?.(end)) {
-                        end = cal.skipNonWorkingTime(end, false);
+
+                    // 4) Walk from the right to find the latest gap that fits
+                    const cal = resource.calendar || resource.project?.calendar;
+                    let right = new Date(latestEnd);
+
+                    // Snap right boundary to working time (backwards)
+                    if (cal?.isNonWorkingTime?.(right)) right = cal.skipNonWorkingTime(right, false);
+
+                    // Helper to return a working-time adjusted slot
+                    function finish(start, end) {
+                        // Snap again if needed
+                        if (cal?.isNonWorkingTime?.(end)) end = cal.skipNonWorkingTime(end, false);
+                        let s = new Date(end.getTime() - durationMs);
+
+                        // If start is in non-working, snap backwards to previous working instant
+                        if (cal?.isNonWorkingTime?.(s)) s = cal.skipNonWorkingTime(s, false);
+
+                        return { start: s, end };
                     }
-                    const start = new Date(end.getTime() - durationMs);
-                    
-                    return { start, end };
+
+                    // Sentinel: if no intervals, the slot ends at 'right'
+                    if (!merged.length) return finish(new Date(right.getTime() - durationMs), right);
+
+                    // Consider only intervals that start < right
+                    for (let i = merged.length - 1; i >= 0; i--) {
+                        const iv = merged[i];
+
+                        // If this interval ends after 'right', move 'right' to iv.start and continue (it overlaps the boundary)
+                        if (iv.end > right) {
+                            right = new Date(Math.min(right.getTime(), iv.start.getTime()));
+                            continue;
+                        }
+
+                        // Latest candidate gap is (iv.end, right)
+                        if (right - iv.end >= durationMs) {
+                            const end = new Date(right);
+                            const start = new Date(end.getTime() - durationMs);
+                            // Fits here — return right-justified inside the gap
+                            return finish(start, end);
+                        }
+
+                        // Not enough room; move 'right' to the start of this interval and continue left
+                        right = new Date(iv.start);
+                    }
+
+                    // Gap from -∞ … right
+                    return finish(new Date(right.getTime() - durationMs), right);
                 }
                 
                 // ---- ALAP scheduled by Job Need-By date ----
@@ -3851,10 +3932,18 @@
                     project.direction = 'Backward';
                     project.schedulingDirection = 'backward';
                     
-                    // Helper to resolve the resource for an event
+                    // Helper to resolve the resource for an event (handles both assignment and direct resourceId)
                     const resolveResource = (ev) => {
-                        const asg = assignmentStore.find(a => a.eventId === ev.id);
-                        return asg ? resourceStore.getById(asg.resourceId) : null;
+                        const { assignmentStore, resourceStore } = scheduler;
+
+                        // Prefer assignments when present
+                        const asg = assignmentStore?.find?.(a => a.eventId === ev.id);
+                        if (asg) return resourceStore.getById(asg.resourceId);
+
+                        // Fallback to direct event.resourceId (single-assignment model)
+                        if (ev.resourceId != null) return resourceStore.getById(ev.resourceId);
+
+                        return null;
                     };
                     
                     // Process each job independently
@@ -3997,7 +4086,35 @@
                     project.validateConstraintInterval = originalValidateConstraintInterval;
                     console.log('▶️ Restored conflict validation settings');
                     
-                    console.log('✅ ALAP complete (backward cascade from Need-By dates). Verifying overlaps…');
+                    console.log('✅ ALAP complete (backward cascade from Need-By dates). Compacting schedule…');
+                    
+                    // Add right-compaction pass to close gaps
+                    async function compactRightPerResource() {
+                        const { resourceStore, eventStore } = scheduler;
+
+                        for (const res of resourceStore.records) {
+                            // Get all events on this resource, sorted by start ASC
+                            const evs = eventStore.records
+                                .filter(e => String(e.resourceId) === String(res.id))
+                                .filter(e => e.startDate && e.endDate)
+                                .sort((a, b) => a.startDate - b.startDate);
+
+                            // Slide each event as far right as possible up to the next event start
+                            for (let i = evs.length - 2; i >= 0; i--) {
+                                const cur = evs[i];
+                                const next = evs[i + 1];
+                                const dur = cur.endDate - cur.startDate;
+                                const latestEnd = next.startDate;
+                                const slot = findLatestFreeSlotOnResource(res, latestEnd, dur, cur);
+                                cur.set({ startDate: slot.start, endDate: slot.end, manuallyScheduled: false });
+                            }
+                        }
+
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
+                    }
+
+                    await compactRightPerResource();
                     
                     // Verify overlaps but don't save automatically
                     if (typeof assertNoOverlaps === 'function' && assertNoOverlaps(scheduler)) {
