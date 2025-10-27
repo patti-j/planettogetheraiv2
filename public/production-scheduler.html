@@ -1115,16 +1115,25 @@
         <span id="resourceUtilization">Resource utilization: --</span>
     </div>
 
-    <!-- Load Bryntum Scheduler Pro UMD -->
-    <script>
-        // Create global bryntum object if it doesn't exist
+    <!-- Load Bryntum Scheduler Pro ES Module -->
+    <script type="module">
+        console.log('🔥 SCHEDULER SCRIPT STARTING - Loading ES Module...');
+        
+        // Import all exports from Bryntum ES module and attach to window
+        import * as BryntumModule from '/schedulerpro.module.js';
+        
+        // Make Bryntum available globally
         window.bryntum = window.bryntum || {};
-    </script>
-    <script src="/schedulerpro.umd.js?v=633" onload="console.log('✅ Bryntum script loaded!')" onerror="console.error('❌ Failed to load Bryntum script!')"></script>
-    
-    <!-- Initialize the scheduler -->
-    <script>
-        console.log('🔥 SCHEDULER SCRIPT STARTING - This should appear immediately!');
+        Object.assign(window.bryntum, BryntumModule);
+        
+        // Also assign directly to window for backward compatibility
+        Object.assign(window, BryntumModule);
+        
+        console.log('✅ Bryntum ES Module loaded!', {
+            schedulerpro: !!BryntumModule.SchedulerPro,
+            projectModel: !!BryntumModule.ProjectModel,
+            availableClasses: Object.keys(BryntumModule).slice(0, 10)
+        });
         console.log('📊 Current document state:', document.readyState);
         
         // Global error handler to catch any errors
@@ -2076,7 +2085,8 @@
                 
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
-                window.scheduler = new SchedulerPro({
+                // Use SchedulerPro from the ES module (now available on window)
+                window.scheduler = new window.SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,

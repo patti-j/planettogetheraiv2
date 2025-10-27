@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ES Module Loading</title>
+</head>
+<body>
+    <h1>Testing Bryntum ES Module</h1>
+    <div id="output"></div>
+    
+    <script type="module">
+        const output = document.getElementById('output');
+        
+        try {
+            console.log('Starting ES module import...');
+            output.innerHTML += '<p>Starting ES module import...</p>';
+            
+            // Import from the local ES module file
+            import * as BryntumModule from '/schedulerpro.module.js';
+            
+            console.log('ES Module loaded!', BryntumModule);
+            output.innerHTML += '<p>✅ ES Module loaded successfully!</p>';
+            output.innerHTML += '<p>Available exports: ' + Object.keys(BryntumModule).length + '</p>';
+            output.innerHTML += '<p>SchedulerPro available: ' + (!!BryntumModule.SchedulerPro) + '</p>';
+            
+            // List first 10 exports
+            const exports = Object.keys(BryntumModule).slice(0, 10);
+            output.innerHTML += '<p>First 10 exports: ' + exports.join(', ') + '</p>';
+            
+            // Try to create a simple scheduler instance
+            if (BryntumModule.SchedulerPro) {
+                output.innerHTML += '<p>✅ SchedulerPro class found!</p>';
+                window.SchedulerPro = BryntumModule.SchedulerPro;
+                output.innerHTML += '<p>✅ SchedulerPro exposed on window!</p>';
+            }
+            
+        } catch (error) {
+            console.error('Error loading ES module:', error);
+            output.innerHTML += '<p style="color: red;">❌ Error: ' + error.message + '</p>';
+        }
+    </script>
+</body>
+</html>
