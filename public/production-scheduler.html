@@ -1018,7 +1018,7 @@
             <select id="planningAreaFilter" data-testid="select-planning-area">
                 <option value="all">All Areas</option>
             </select>
-            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;" onclick="applyPlanningAreaFilter()">
+            <button id="applyPlanningAreaFilter" class="scheduler-btn" data-testid="button-apply-planning-area" style="margin-left: 0.5rem;">
                 Apply Filter
             </button>
         </div>
@@ -1606,6 +1606,22 @@
                 
                 // Load planning areas first
                 await loadPlanningAreas();
+                
+                // Attach event listener to the Apply Filter button
+                const applyFilterButton = document.getElementById('applyPlanningAreaFilter');
+                if (applyFilterButton) {
+                    console.log('📎 Attaching click listener to Apply Filter button');
+                    applyFilterButton.addEventListener('click', function() {
+                        console.log('🔥 Apply Filter button clicked!');
+                        if (window.applyPlanningAreaFilter) {
+                            window.applyPlanningAreaFilter();
+                        } else {
+                            console.error('❌ applyPlanningAreaFilter function not found on window!');
+                        }
+                    });
+                } else {
+                    console.error('❌ Apply Filter button not found in DOM!');
+                }
                 
                 // Fetch real PT operations and resources from the backend
                 let resources = [];
