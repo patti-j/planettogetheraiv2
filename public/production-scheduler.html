@@ -1561,17 +1561,23 @@
                 
             } catch (error) {
                 console.error('❌ [Planning Area Filter] Error:', error);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
                 
-                // Update button to show error
+                // Show error details on button for debugging
                 if (button) {
-                    button.textContent = 'Filter Failed!';
+                    // Show specific error message
+                    const errorMsg = error.message || 'Unknown error';
+                    button.textContent = errorMsg.substring(0, 30); // Show first 30 chars
                     button.style.backgroundColor = '#ef4444';
+                    button.title = errorMsg; // Show full error on hover
                     
-                    // Reset button after 2 seconds
+                    // Reset button after 3 seconds
                     setTimeout(() => {
                         button.textContent = 'Apply Filter';
                         button.style.backgroundColor = '';
-                    }, 2000);
+                        button.title = '';
+                    }, 3000);
                 }
             }
         }
