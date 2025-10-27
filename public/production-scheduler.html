@@ -1844,7 +1844,15 @@
                         return a.id - b.id;
                     });
                     
-                    // Create dependencies between successive operations
+                    // ============================================================================
+                    // IMPORTANT: Dependencies are VISUAL ONLY
+                    // These dependency lines create visual connections on the Gantt chart
+                    // but DO NOT affect the scheduling logic. All three algorithms
+                    // (ASAP, ALAP, Drum/TOC) ignore these dependencies and schedule based on:
+                    // - Job priority (1=highest, 5=lowest)
+                    // - Operation sequence numbers within each job
+                    // ============================================================================
+                    // Create dependencies between successive operations (for visual display)
                     for (let i = 0; i < sortedOps.length - 1; i++) {
                         const from = sortedOps[i];
                         const to = sortedOps[i + 1];
@@ -1860,11 +1868,11 @@
                                 id: depId,
                                 from: from.id,
                                 to: to.id,
-                                type: 2, // Finish-to-Start
+                                type: 2, // Finish-to-Start (visual only, not enforced by scheduling)
                                 lag: 0,
                                 lagUnit: 'hour'
                             });
-                            console.log(`    ✅ ${from.name} → ${to.name}`);
+                            console.log(`    ✅ ${from.name} → ${to.name} (visual dependency)`);
                             totalDepsCreated++;
                         }
                     }
