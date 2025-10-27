@@ -3434,94 +3434,92 @@
                     const baseDate = new Date(2025, 8, 3);
                     baseDate.setHours(7, 0, 0, 0); // Start at 7 AM
                     
-                    // Build predecessors map for dependency handling
-                    const preds = new Map();
-                    dependencyStore.forEach(dep => {
-                        if (!preds.has(dep.toEvent)) preds.set(dep.toEvent, []);
-                        preds.get(dep.toEvent).push(dep.fromEvent);
-                    });
+                    // 🔄 SIMPLIFIED: Using sequence numbers and job priority only - NO DEPENDENCIES!
+                    console.log('📋 Using job priority and sequence numbers for scheduling (dependencies ignored)');
                     
-                    // Topologically sort events based on dependencies AND sequence numbers
-                    // This ensures we schedule predecessors before successors
-                    // AND operations with lower sequence numbers first on same resource
-                    const scheduled = new Set();
-                    const sortedEvents = [];
+                    // Helper functions
+                    const getJobKey = (ev) => {
+                        return ev.jobId ?? ev.jobID ?? ev.job_id ?? ev.jobName ?? ev.job_name ?? 
+                               ev.ptData?.jobId ?? ev.ptData?.jobName ?? 
+                               ev.data?.jobId ?? ev.data?.jobName ?? null;
+                    };
                     
-                    function canSchedule(event) {
-                        const deps = preds.get(event.id) || [];
-                        return deps.every(depId => scheduled.has(depId));
-                    }
+                    const getSequence = (ev) => {
+                        return ev.sequence_number || ev.sequenceNumber || 
+                               ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
+                    };
                     
-                    // FIXED: Sort events by PRIORITY first, then sequence number within same job
-                    events.sort((a, b) => {
-                        // Extract job priorities from event data
-                        const getPriority = (event) => {
-                            return event.jobPriority || event.job_priority || 
-                                   event.ptData?.jobPriority || event.ptData?.job_priority ||
-                                   event.data?.jobPriority || event.data?.job_priority ||
-                                   999; // Default low priority if not found
-                        };
-                        
-                        const priorityA = parseInt(getPriority(a));
-                        const priorityB = parseInt(getPriority(b));
-                        
-                        // ASAP: Sort by priority ASC (1 before 2 before 3, etc)
-                        // Priority 1 (highest) should be scheduled FIRST in forward scheduling
-                        if (priorityA !== priorityB) {
-                            return priorityA - priorityB; // Lower number = higher priority = schedule first
-                        }
-                        
-                        // If same priority, sort by job ID to keep jobs together
-                        if (a.jobId !== b.jobId) {
-                            return (a.jobId || '').localeCompare(b.jobId || '');
-                        }
-                        
-                        // Finally, sort by sequence number within same job
-                        const seqA = a.sequence_number || 999;
-                        const seqB = b.sequence_number || 999;
-                        return seqA - seqB;
-                    });
+                    const getPriority = (event) => {
+                        return event.jobPriority || event.job_priority || 
+                               event.ptData?.jobPriority || event.ptData?.job_priority ||
+                               event.data?.jobPriority || event.data?.job_priority ||
+                               999; // Default low priority if not found
+                    };
                     
-                    // Keep trying until all events are sorted
-                    let maxIterations = events.length * 2;
-                    while (sortedEvents.length < events.length && maxIterations-- > 0) {
-                        for (const event of events) {
-                            if (!scheduled.has(event.id) && canSchedule(event)) {
-                                sortedEvents.push(event);
-                                scheduled.add(event.id);
+                    // Group operations by job and sort by sequence number
+                    const jobOperations = new Map(); // jobKey -> array of events sorted by sequence
+                    
+                    for (const ev of events) {
+                        const key = getJobKey(ev);
+                        if (!key) {
+                            // Handle orphan operations (no job ID)
+                            if (!jobOperations.has('_orphans_')) {
+                                jobOperations.set('_orphans_', []);
                             }
+                            jobOperations.get('_orphans_').push(ev);
+                            continue;
                         }
+                        
+                        if (!jobOperations.has(key)) {
+                            jobOperations.set(key, []);
+                        }
+                        jobOperations.get(key).push(ev);
                     }
                     
-                    // If we couldn't sort all events (circular dependencies), add remaining
-                    for (const event of events) {
-                        if (!scheduled.has(event.id)) {
-                            sortedEvents.push(event);
-                            console.warn(`  ⚠️ Event "${event.name}" may have circular dependencies`);
-                        }
+                    // Sort each job's operations by sequence number
+                    for (const [jobKey, operations] of jobOperations.entries()) {
+                        operations.sort((a, b) => getSequence(a) - getSequence(b));
+                        console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
-                    console.log(`  ✅ Sorted ${sortedEvents.length} events by dependencies`);
+                    // ASAP: Sort jobs by priority ASC (1 before 5) so highest priority schedules first
+                    const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
+                        // Skip orphans for priority sorting
+                        if (keyA === '_orphans_') return 1;
+                        if (keyB === '_orphans_') return -1;
+                        
+                        const priorityA = parseInt(getPriority(opsA[0]));
+                        const priorityB = parseInt(getPriority(opsB[0]));
+                        
+                        // ASAP: Sort by priority ASC (lower number = higher priority = schedule first)
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB;
+                        }
+                        
+                        // If same priority, sort by job ID for consistency
+                        return keyA.localeCompare(keyB);
+                    });
+                    
+                    // Flatten sorted jobs into a single sorted events array
+                    const sortedEvents = [];
+                    for (const [jobKey, operations] of sortedJobs) {
+                        sortedEvents.push(...operations);
+                    }
+                    
+                    console.log(`  ✅ Sorted ${sortedEvents.length} events by job priority and sequence`);
                     
                     // Log the priority order for verification
-                    const jobPriorityMap = new Map();
-                    sortedEvents.forEach(event => {
-                        const priority = event.jobPriority || event.job_priority || 
-                                       event.ptData?.jobPriority || event.ptData?.job_priority ||
-                                       event.data?.jobPriority || event.data?.job_priority || 999;
-                        if (!jobPriorityMap.has(event.jobId)) {
-                            jobPriorityMap.set(event.jobId, { priority: parseInt(priority), operations: [] });
-                        }
-                        jobPriorityMap.get(event.jobId).operations.push(event.name);
-                    });
-                    
                     console.log('📊 ASAP Job scheduling order (highest priority first for forward scheduling):');
-                    const sortedJobs = Array.from(jobPriorityMap.entries()).sort(([, a], [, b]) => a.priority - b.priority);
-                    sortedJobs.forEach(([jobId, info], index) => {
-                        console.log(`  ${index + 1}. Priority ${info.priority}: Job ${jobId} - ${info.operations.length} operations`);
+                    sortedJobs.forEach(([jobKey, operations], index) => {
+                        if (jobKey === '_orphans_') {
+                            console.log(`  ${index + 1}. Orphan operations: ${operations.length} operations`);
+                        } else {
+                            const priority = parseInt(getPriority(operations[0]));
+                            console.log(`  ${index + 1}. Priority ${priority}: Job ${jobKey} - ${operations.length} operations`);
+                        }
                     });
                     
-                    // Process events in dependency order
+                    // Process events in job/sequence order
                     const byId = id => eventStore.getById(id);
                     
                     // ADVANCED BIN PACKING ALGORITHM for optimal schedule compaction
@@ -3571,68 +3569,83 @@
                         return new Date(Math.max(lastEnd.getTime(), earliestPossibleStart.getTime()));
                     }
                     
-                    // Process each event and pack it optimally
-                    for (const event of sortedEvents) {
-                        // Calculate earliest start based on dependencies
-                        let earliestStart = new Date(baseDate);
-                        const depIds = preds.get(event.id) || [];
+                    // Process operations in job/sequence order (NOT using dependencies)
+                    for (const [jobKey, operations] of sortedJobs) {
+                        console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
                         
-                        for (const predId of depIds) {
-                            const pred = byId(predId);
-                            if (pred && pred.endDate && pred.endDate > earliestStart) {
-                                earliestStart = new Date(pred.endDate);
-                                console.log(`    Dependency: "${event.name}" must start after "${pred.name}" ends at ${pred.endDate.toLocaleString()}`);
+                        let previousOperationEnd = null; // Track end of previous operation in this job
+                        
+                        for (const event of operations) {
+                            const sequence = getSequence(event);
+                            
+                            // Calculate earliest start based on job sequence (finish-to-start within job)
+                            // NOT using dependencies - only sequence order matters
+                            let earliestStart = previousOperationEnd || new Date(baseDate);
+                            
+                            console.log(`  📋 Operation "${event.name}" (seq ${sequence})`);
+                            if (previousOperationEnd) {
+                                console.log(`     Must start after previous operation ends: ${previousOperationEnd.toLocaleString()}`);
+                            }
+                            
+                            // Get the resource this event is assigned to
+                            let resource = null;
+                            const assignment = assignmentStore.find(a => a.eventId === event.id);
+                            if (assignment) {
+                                resource = scheduler.resourceStore.getById(assignment.resourceId);
+                            }
+                            
+                            const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
+                            
+                            if (resource) {
+                                const resourceId = resource.id;
+                                
+                                // Find the earliest slot using bin packing algorithm
+                                const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
+                                const slotEnd = new Date(slotStart.getTime() + durationMs);
+                                
+                                console.log(`  📦 Packing "${event.name}" on "${resource.name}"`);
+                                console.log(`     Sequence requires after: ${earliestStart.toLocaleString()}`);
+                                console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
+                                
+                                // Update the event with the packed times
+                                event.setStartDate(slotStart, true); // true = keep duration
+                                event.set({
+                                    endDate: slotEnd,
+                                    manuallyScheduled: false
+                                });
+                                
+                                // Add this time slot to the resource timeline
+                                if (!resourceTimelines.has(resourceId)) {
+                                    resourceTimelines.set(resourceId, []);
+                                }
+                                resourceTimelines.get(resourceId).push({
+                                    start: slotStart,
+                                    end: slotEnd,
+                                    eventId: event.id,
+                                    eventName: event.name
+                                });
+                                
+                                // Update previous operation end for next operation in sequence
+                                previousOperationEnd = slotEnd;
+                                
+                                console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
+                            } else {
+                                // Unassigned events - schedule at earliest time
+                                const endDate = new Date(earliestStart.getTime() + durationMs);
+                                
+                                console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
+                                event.set({ 
+                                    startDate: earliestStart, 
+                                    endDate: endDate,
+                                    manuallyScheduled: false
+                                });
+                                
+                                // Update previous operation end for next operation in sequence
+                                previousOperationEnd = endDate;
                             }
                         }
                         
-                        // Get the resource this event is assigned to
-                        let resource = null;
-                        const assignment = assignmentStore.find(a => a.eventId === event.id);
-                        if (assignment) {
-                            resource = scheduler.resourceStore.getById(assignment.resourceId);
-                        }
-                        
-                        const durationMs = event.durationMS ?? (event.duration * 60 * 60 * 1000);
-                        
-                        if (resource) {
-                            const resourceId = resource.id;
-                            
-                            // Find the earliest slot using bin packing algorithm
-                            const slotStart = findEarliestSlot(resourceId, durationMs, earliestStart);
-                            const slotEnd = new Date(slotStart.getTime() + durationMs);
-                            
-                            console.log(`  📦 Packing "${event.name}" on "${resource.name}"`);
-                            console.log(`     Dependencies require after: ${earliestStart.toLocaleString()}`);
-                            console.log(`     Found optimal slot: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
-                            
-                            // Update the event with the packed times
-                            event.setStartDate(slotStart, true); // true = keep duration
-                            event.set({
-                                endDate: slotEnd,
-                                manuallyScheduled: false
-                            });
-                            
-                            // Add this time slot to the resource timeline
-                            if (!resourceTimelines.has(resourceId)) {
-                                resourceTimelines.set(resourceId, []);
-                            }
-                            resourceTimelines.get(resourceId).push({
-                                start: slotStart,
-                                end: slotEnd,
-                                eventId: event.id,
-                                eventName: event.name
-                            });
-                            
-                            console.log(`  ✅ Packed "${event.name}" on ${resource.name}: ${slotStart.toLocaleString()} to ${slotEnd.toLocaleString()}`);
-                        } else {
-                            // Unassigned events - schedule at earliest time
-                            console.log(`  ⚠️ Event "${event.name}" has no resource assignment`);
-                            event.set({ 
-                                startDate: earliestStart, 
-                                endDate: new Date(earliestStart.getTime() + durationMs),
-                                manuallyScheduled: false
-                            });
-                        }
+                        console.log(`  ✅ Job ${jobKey} complete - scheduled ${operations.length} operations by sequence`);
                     }
                     
                     // Log packing efficiency
@@ -3659,7 +3672,7 @@
                     console.log('  🔄 Propagating schedule...');
                     await project.propagate();
                     
-                    console.log('\n✅ ASAP scheduling completed with dependency-aware overlap prevention');
+                    console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
