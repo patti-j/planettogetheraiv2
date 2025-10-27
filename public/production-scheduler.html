@@ -1464,7 +1464,7 @@
                 
                 // Define capability mappings for brewing operations
                 // Based on PT Resource Capabilities: 1=MILLING, 2=MASHING, 3=LAUTERING, 
-                // 4=BOILING, 5=FERMENTATION, 6=CONDITIONING, 7=DRY_HOPPING, 8=PACKAGING, 9=PASTEURIZATION
+                // 4=BOILING, 5=FERMENTATION, 6=CONDITIONING, 8=PACKAGING, 9=PASTEURIZATION
                 function getRequiredCapability(operationName) {
                     if (!operationName) return null;
                     const name = operationName.toLowerCase();
@@ -1477,7 +1477,6 @@
                     if (name.includes('boil')) return 4;
                     if (name.includes('ferment')) return 5;
                     if (name.includes('condition')) return 6;
-                    if (name.includes('dry hop')) return 7;
                     if (name.includes('pasteur')) return 9;
                     
                     return null; // No specific capability required
@@ -1634,7 +1633,7 @@
                     if (name.includes('boil')) return '#dc2626'; // Red
                     if (name.includes('ferment')) return '#059669'; // Green
                     if (name.includes('lager') && !name.includes('packag')) return '#059669'; // Green (but not packaging)
-                    if (name.includes('condition') || name.includes('dry hop')) return '#0d9488'; // Teal
+                    if (name.includes('condition')) return '#0d9488'; // Teal
                     if (name.includes('pasteur')) return '#7c2d12'; // Brown
                     
                     // Generic manufacturing operations
@@ -1828,8 +1827,6 @@
                                             (operationNameLower.includes('ferment') && targetResourceNameLower.includes('fermenter tank')) ||
                                             // Conditioning operations can only go on Bright Tanks
                                             (operationNameLower.includes('condition') && targetResourceNameLower.includes('bright tank')) ||
-                                            // Dry Hopping can go on Fermenter Tanks
-                                            (operationNameLower.includes('dry hop') && targetResourceNameLower.includes('fermenter tank')) ||
                                             // Packaging operations can only go on Bottling/Canning Lines
                                             (operationNameLower.includes('packag') && (targetResourceNameLower.includes('bottling') || 
                                                                                         targetResourceNameLower.includes('canning'))) ||
