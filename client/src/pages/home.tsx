@@ -1,14 +1,20 @@
 import React, { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { useLocation } from 'wouter';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem } from '@/components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { WorkWithAgentModal } from '@/components/WorkWithAgentModal';
 import { ReferUserModal } from '@/components/ReferUserModal';
+import { useToast } from '@/hooks/use-toast';
+import { queryClient, apiRequest } from '@/lib/queryClient';
 import { 
   Sparkles, 
   Activity, 
@@ -33,7 +39,14 @@ import {
   Settings,
   RefreshCw,
   Archive,
-  X
+  X,
+  Loader2,
+  Info,
+  CheckCircle2,
+  PlayCircle,
+  Cog,
+  FileText,
+  List
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useDeviceType } from '@/hooks/useDeviceType';
@@ -51,6 +64,28 @@ interface ActionRecommendation {
   estimatedImpact: string;
   createdAt: string;
   aiAgent: string;
+  actionType?: string;
+  affectedEntities?: string[];
+  suggestedActions?: string[];
+  metadata?: any;
+}
+
+interface RecommendationPlan {
+  recommendation: ActionRecommendation;
+  steps: PlanStep[];
+  estimatedDuration: string;
+  resourcesRequired: string[];
+  potentialRisks: string[];
+  rollbackPlan: string;
+}
+
+interface PlanStep {
+  id: number;
+  title: string;
+  description: string;
+  type: 'automatic' | 'manual' | 'review';
+  duration: string;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
 }
 
 interface SystemEvent {
@@ -106,6 +141,7 @@ export default function HomePage() {
   const { user } = useAuth();
   const isMobile = useDeviceType() === 'mobile';
   const [location] = useLocation();
+  const { toast } = useToast();
   
   // Only enable polling when we're actively on the home page
   const isOnHomePage = location === '/home' || location === '/';
@@ -123,6 +159,64 @@ export default function HomePage() {
     recommendation: ActionRecommendation | null;
   }>({ isOpen: false, recommendation: null });
 
+  // Plan preview modal state
+  const [planPreviewModal, setPlanPreviewModal] = useState<{
+    isOpen: boolean;
+    recommendation: ActionRecommendation | null;
+    plan: RecommendationPlan | null;
+    isLoading: boolean;
+  }>({ isOpen: false, recommendation: null, plan: null, isLoading: false });
+
+  // Apply recommendation mutation
+  const applyRecommendation = useMutation({
+    mutationFn: async (recommendationId: string) => {
+      return await apiRequest(`/api/ai/recommendations/${recommendationId}/apply`, {
+        method: 'POST',
+      });
+    },
+    onSuccess: (data, variables) => {
+      toast({
+        title: "Recommendation Applied",
+        description: "The recommendation has been successfully implemented.",
+      });
+      // Refresh recommendations list
+      queryClient.invalidateQueries({ queryKey: ['/api/ai/recommendations'] });
+      // Close any open modals
+      setPlanPreviewModal({ isOpen: false, recommendation: null, plan: null, isLoading: false });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Apply Recommendation",
+        description: error.message || "An error occurred while applying the recommendation.",
+        variant: "destructive",
+      });
+    },
+  });
+
+  // Generate plan mutation
+  const generatePlan = useMutation({
+    mutationFn: async (recommendationId: string) => {
+      return await apiRequest(`/api/ai/recommendations/${recommendationId}/plan`, {
+        method: 'GET',
+      });
+    },
+    onSuccess: (data) => {
+      setPlanPreviewModal((prev) => ({ 
+        ...prev, 
+        plan: data, 
+        isLoading: false 
+      }));
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Failed to Generate Plan",
+        description: error.message || "Could not generate the implementation plan.",
+        variant: "destructive",
+      });
+      setPlanPreviewModal((prev) => ({ ...prev, isLoading: false }));
+    },
+  });
+
   const openWorkWithAgent = (recommendation: ActionRecommendation) => {
     setWorkWithAgentModal({ isOpen: true, recommendation });
   };
@@ -137,6 +231,36 @@ export default function HomePage() {
 
   const closeReferUser = () => {
     setReferUserModal({ isOpen: false, recommendation: null });
+  };
+
+  // Handlers for Resolve Now and Show Plan First
+  const handleResolveNow = (recommendation: ActionRecommendation) => {
+    applyRecommendation.mutate(recommendation.id);
+  };
+
+  const handleShowPlanFirst = (recommendation: ActionRecommendation) => {
+    setPlanPreviewModal({ 
+      isOpen: true, 
+      recommendation, 
+      plan: null, 
+      isLoading: true 
+    });
+    generatePlan.mutate(recommendation.id);
+  };
+
+  const closePlanPreview = () => {
+    setPlanPreviewModal({ 
+      isOpen: false, 
+      recommendation: null, 
+      plan: null, 
+      isLoading: false 
+    });
+  };
+
+  const handleApplyFromPlan = () => {
+    if (planPreviewModal.recommendation) {
+      applyRecommendation.mutate(planPreviewModal.recommendation.id);
+    }
   };
 
   // Fetch available dashboards with fallback data for mobile testing
@@ -552,8 +676,14 @@ export default function HomePage() {
                               <DropdownMenuItem 
                                 className="flex items-start gap-3 p-4 cursor-pointer"
                                 data-testid={`resolve-now-${recommendation.id}`}
+                                onClick={() => handleResolveNow(recommendation)}
+                                disabled={applyRecommendation.isPending}
                               >
-                                <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                {applyRecommendation.isPending ? (
+                                  <Loader2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0 animate-spin" />
+                                ) : (
+                                  <Zap className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
+                                )}
                                 <div className="flex-1">
                                   <div className="font-medium">Resolve Now</div>
                                   <div className="text-sm text-muted-foreground">Execute the action immediately</div>
@@ -562,6 +692,7 @@ export default function HomePage() {
                               <DropdownMenuItem 
                                 className="flex items-start gap-3 p-4 cursor-pointer"
                                 data-testid={`show-plan-${recommendation.id}`}
+                                onClick={() => handleShowPlanFirst(recommendation)}
                               >
                                 <Eye className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
                                 <div className="flex-1">
@@ -1081,6 +1212,229 @@ export default function HomePage() {
           recommendation={referUserModal.recommendation}
         />
       )}
+
+      {/* Plan Preview Modal */}
+      <Dialog open={planPreviewModal.isOpen} onOpenChange={(open) => !open && closePlanPreview()}>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="w-5 h-5 text-blue-600" />
+              Implementation Plan
+            </DialogTitle>
+            <DialogDescription>
+              Review the detailed steps for implementing: {planPreviewModal.recommendation?.title}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <ScrollArea className="flex-1 my-6">
+            <div className="space-y-6">
+              {planPreviewModal.isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-primary" />
+                </div>
+              ) : planPreviewModal.plan ? (
+                <>
+                  {/* Plan Overview */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Overview</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">
+                          Estimated Duration: <strong>{planPreviewModal.plan.estimatedDuration || '5-10 minutes'}</strong>
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <Package className="w-4 h-4 text-muted-foreground mt-1" />
+                        <div className="text-sm">
+                          <span>Resources Required:</span>
+                          <ul className="list-disc list-inside mt-1 text-muted-foreground">
+                            {(planPreviewModal.plan.resourcesRequired || ['System resources', 'Database access']).map((resource, idx) => (
+                              <li key={idx}>{resource}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Implementation Steps */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <List className="w-4 h-4" />
+                        Implementation Steps
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        {(planPreviewModal.plan.steps || generateDefaultSteps(planPreviewModal.recommendation)).map((step) => (
+                          <div key={step.id} className="flex gap-3">
+                            <div className={cn(
+                              "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1",
+                              step.type === 'automatic' && "bg-green-100 text-green-700",
+                              step.type === 'manual' && "bg-blue-100 text-blue-700",
+                              step.type === 'review' && "bg-amber-100 text-amber-700"
+                            )}>
+                              {step.type === 'automatic' ? <Cog className="w-4 h-4" /> :
+                               step.type === 'manual' ? <Users className="w-4 h-4" /> :
+                               <Eye className="w-4 h-4" />}
+                            </div>
+                            <div className="flex-1">
+                              <div className="font-medium text-sm">{step.title}</div>
+                              <p className="text-sm text-muted-foreground mt-1">{step.description}</p>
+                              <div className="flex items-center gap-4 mt-2">
+                                <Badge variant="secondary" className="text-xs">
+                                  {step.type}
+                                </Badge>
+                                <span className="text-xs text-muted-foreground">
+                                  Duration: {step.duration}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* Potential Risks */}
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertTitle>Potential Risks</AlertTitle>
+                    <AlertDescription>
+                      <ul className="list-disc list-inside mt-2 space-y-1">
+                        {(planPreviewModal.plan.potentialRisks || ['Temporary resource reallocation', 'Schedule adjustments required']).map((risk, idx) => (
+                          <li key={idx}>{risk}</li>
+                        ))}
+                      </ul>
+                    </AlertDescription>
+                  </Alert>
+
+                  {/* Rollback Plan */}
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">Rollback Plan</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        {planPreviewModal.plan.rollbackPlan || 'All changes can be reverted through the system\'s undo functionality. A backup will be created automatically before implementation.'}
+                      </p>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                // Show recommendation details if plan isn't loaded
+                planPreviewModal.recommendation && (
+                  <div className="space-y-4">
+                    <Alert>
+                      <Info className="h-4 w-4" />
+                      <AlertTitle>Recommendation Details</AlertTitle>
+                      <AlertDescription className="mt-2">
+                        {planPreviewModal.recommendation.description}
+                      </AlertDescription>
+                    </Alert>
+                    
+                    {planPreviewModal.recommendation.suggestedActions && (
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Suggested Actions</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <ul className="list-disc list-inside space-y-1">
+                            {planPreviewModal.recommendation.suggestedActions.map((action, idx) => (
+                              <li key={idx} className="text-sm text-muted-foreground">{action}</li>
+                            ))}
+                          </ul>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {planPreviewModal.recommendation.affectedEntities && (
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base">Affected Entities</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex flex-wrap gap-2">
+                            {planPreviewModal.recommendation.affectedEntities.map((entity, idx) => (
+                              <Badge key={idx} variant="outline">{entity}</Badge>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+                  </div>
+                )
+              )}
+            </div>
+          </ScrollArea>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={closePlanPreview}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleApplyFromPlan} 
+              disabled={applyRecommendation.isPending || planPreviewModal.isLoading}
+            >
+              {applyRecommendation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Applying...
+                </>
+              ) : (
+                <>
+                  <PlayCircle className="w-4 h-4 mr-2" />
+                  Apply Recommendation
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
+
+// Helper function to generate default steps if none provided
+function generateDefaultSteps(recommendation: ActionRecommendation | null): PlanStep[] {
+  if (!recommendation) return [];
+  
+  return [
+    {
+      id: 1,
+      title: 'Validate Current State',
+      description: 'System will verify current production schedule and resource availability',
+      type: 'automatic',
+      duration: '30 seconds',
+      status: 'pending'
+    },
+    {
+      id: 2,
+      title: 'Apply Changes',
+      description: `Implement ${recommendation.category} recommendation: ${recommendation.title}`,
+      type: 'automatic',
+      duration: '1-2 minutes',
+      status: 'pending'
+    },
+    {
+      id: 3,
+      title: 'Verify Implementation',
+      description: 'Confirm changes have been applied correctly and validate constraints',
+      type: 'automatic',
+      duration: '30 seconds',
+      status: 'pending'
+    },
+    {
+      id: 4,
+      title: 'Review Results',
+      description: 'Review the updated schedule and confirm optimization objectives are met',
+      type: 'review',
+      duration: '1 minute',
+      status: 'pending'
+    }
+  ];
 }
