@@ -1995,8 +1995,10 @@
                         autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
                         recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
                         
-                        // CRITICAL: Constraint configuration for preventing overlaps
-                        constraintsMode: 'none',      // 'none' = disable constraint enforcement (dependencies are visual only)
+                        // CRITICAL: Constraint configuration 
+                        // We use 'honor' to respect date constraints (need-by dates for ALAP)
+                        // But we don't load dependencies to avoid dependency conflict popups
+                        constraintsMode: 'honor',    // 'honor' = enforce date constraints but no deps loaded
                         manuallyScheduled: false,    // Allow engine to move tasks to resolve conflicts
                         
                         // Scheduling engine configuration
@@ -4426,14 +4428,14 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // Load data WITHOUT dependencies to prevent scheduling conflicts
-                    // Since we use constraintsMode: 'none' and schedule based on job priority + sequence numbers only,
-                    // we don't need dependencies at all - they were causing conflict popups even in 'none' mode
+                    // Load data WITHOUT dependencies to prevent dependency conflicts
+                    // We keep constraintsMode: 'honor' to respect date constraints (need-by dates for ALAP)
+                    // But load no dependencies since our algorithms use job priority + sequence numbers only
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: [] // Empty array - no dependencies loaded to prevent any conflicts
+                        dependenciesData: [] // Empty array - no dependencies = no dependency conflicts
                     });
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
