@@ -3573,8 +3573,22 @@
                 }
                 
                 // ---- ALAP scheduled by Job Need-By date ----
+                // ============================================================================
+                // ALAP (As Late As Possible) - Backward Scheduling Algorithm
+                // ============================================================================
+                // This algorithm schedules operations backward from their need-by dates:
+                // 1. Jobs are sorted by priority REVERSED (5 before 1) so lowest priority 
+                //    schedules first and gets placed latest, leaving room for high priority
+                // 2. Operations within each job are scheduled in REVERSE sequence order
+                // 3. Last operation ends at the job's need-by date
+                // 4. Earlier operations work backward in time (finish-to-start)
+                //
+                // IMPORTANT: Dependency lines are VISUAL ONLY for the Gantt chart.
+                // The scheduling logic IGNORES dependencies and uses only priority + sequence.
+                // ============================================================================
                 window.alapScheduling = async function alapScheduling() {
-                    console.log('🚀 ALAP: Backward scheduling using per-job Need-By dates');
+                    console.log('🚀 ALAP: Backward scheduling from Need-By dates');
+                    console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
                     
                     const scheduler = window.scheduler;
                     const { project, eventStore, dependencyStore, assignmentStore, resourceStore } = scheduler;
@@ -3599,7 +3613,11 @@
                     const requireNeedDates = (window.activeConstraints?.needDates ?? true);
                     console.log(`ALAP: needDates constraint = ${requireNeedDates}`);
                     
-                    // -------- helpers --------
+                    // ============================================================================
+                    // Helper Functions for ALAP Algorithm
+                    // ============================================================================
+                    
+                    // Convert various date formats to Date object or null
                     const asDateOrNull = (v) => {
                         if (!v) return null;
                         if (v instanceof Date) return isNaN(v) ? null : v;
@@ -3608,6 +3626,7 @@
                         return isNaN(d) ? null : d;
                     };
                     
+                    // Get the job identifier from an event (handles various data structures)
                     const getJobKey = (ev) => {
                         // Prefer stable job id if present; fall back to name
                         // Check multiple possible field names where job data might be stored
@@ -3616,7 +3635,8 @@
                                ev.data?.jobId ?? ev.data?.jobName ?? null;
                     };
                     
-                    // Try a variety of likely field names from PT payloads
+                    // Extract the need-by/due date from event data
+                    // Searches multiple field locations for compatibility with various data formats
                     const extractDueFromEvent = (ev) => {
                         const p = ev.ptData || ev.data || {};
                         // Look for jobDueDate first as it's the field from our PT data API
@@ -4055,12 +4075,28 @@
                     }, 100);
                 }
                 
+                // ============================================================================
+                // DRUM (Theory of Constraints) - Bottleneck-Based Scheduling Algorithm
+                // ============================================================================
+                // This algorithm implements the Drum-Buffer-Rope (DBR) methodology:
+                // 1. Identifies the bottleneck resource (drum) - highest total load
+                // 2. Schedules the drum optimally (longest operations first)
+                // 3. Schedules feeding resources to keep drum supplied (rope)
+                // 4. Adds buffers to protect the drum from disruptions
+                //
+                // IMPORTANT: Dependency lines are VISUAL ONLY for the Gantt chart.
+                // The scheduling logic IGNORES dependencies and focuses on bottleneck optimization.
+                // ============================================================================
                 async function drumScheduling() {
-                    // Theory of Constraints - optimize around bottleneck
-                    console.log('🚀 Starting Drum (TOC) scheduling...');
+                    console.log('🚀 Starting Drum (TOC) scheduling - Theory of Constraints');
+                    console.log('📌 NOTE: Dependencies are visual-only. Scheduling optimizes bottleneck resource.');
+                    
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
-                    // Find bottleneck resource (most loaded)
+                    // ========================================================================
+                    // Step 1: Identify the Bottleneck Resource (The Drum)
+                    // The resource with the highest total workload becomes the constraint
+                    // ========================================================================
                     const resourceLoad = {};
                     events.forEach(event => {
                         if (!resourceLoad[event.resourceId]) {
@@ -4084,48 +4120,65 @@
                     }
                     
                     const drumResource = scheduler.resourceStore.getById(drumResourceId);
-                    console.log(`  Bottleneck (drum): ${drumResource?.name || drumResourceId} with ${maxLoad.toFixed(1)}h total load`);
+                    console.log(`  🥁 Bottleneck (drum) identified: ${drumResource?.name || drumResourceId}`);
+                    console.log(`     Total load: ${maxLoad.toFixed(1)} hours`);
                     
-                    const baseDate = new Date(2025, 8, 3);
-                    baseDate.setHours(7, 0, 0, 0);
+                    // Use today as the base scheduling date (similar to ASAP)
+                    const baseDate = new Date();
+                    baseDate.setHours(7, 0, 0, 0); // Start at 7 AM today
                     
-                    // Schedule drum resource optimally - use assignments to find resource
+                    // ========================================================================
+                    // Step 2: Schedule the Drum (Bottleneck) Resource
+                    // Operations on the drum are scheduled longest-first to minimize makespan
+                    // ========================================================================
                     const drumEvents = events.filter(e => {
                         const assignment = scheduler.assignmentStore.find(a => a.eventId === e.id);
                         return assignment && assignment.resourceId === drumResourceId;
                     });
                     let drumTime = new Date(baseDate);
                     
-                    drumEvents.sort((a, b) => b.duration - a.duration); // Longest first
+                    // Sort drum operations by duration (longest first for optimal throughput)
+                    drumEvents.sort((a, b) => b.duration - a.duration);
+                    console.log(`  📋 Scheduling ${drumEvents.length} operations on drum resource`);
                     
                     drumEvents.forEach(event => {
                         event.startDate = new Date(drumTime);
                         const durationMs = event.duration * 60 * 60 * 1000;
                         event.endDate = new Date(event.startDate.getTime() + durationMs);
-                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000); // 15 min buffer for drum
+                        // Add protective buffer between drum operations (Theory of Constraints principle)
+                        drumTime = new Date(event.endDate.getTime() + 15 * 60 * 1000); // 15 min buffer
+                        console.log(`    ⏱️ ${event.name}: ${event.duration.toFixed(1)}h`);
                     });
                     
-                    // Schedule feeding resources - use assignments to find resource
+                    // ========================================================================
+                    // Step 3: Schedule the Rope (Feeding Resources)
+                    // Non-bottleneck resources are scheduled to feed the drum on time
+                    // ========================================================================
                     const feedingEvents = events.filter(e => {
                         const assignment = scheduler.assignmentStore.find(a => a.eventId === e.id);
                         return assignment && assignment.resourceId !== drumResourceId;
                     });
-                    const resourceSchedules = {};
+                    const resourceSchedules = {}; // Track next available time for each resource
+                    
+                    console.log(`  🔗 Scheduling ${feedingEvents.length} feeding operations`);
                     
                     feedingEvents.forEach(event => {
                         const assignment = scheduler.assignmentStore.find(a => a.eventId === event.id);
                         const resourceId = assignment ? assignment.resourceId : null;
                         if (!resourceId) return;
                         
+                        // Initialize resource timeline if not exists
                         if (!resourceSchedules[resourceId]) {
                             const feedTime = new Date(baseDate);
-                            feedTime.setHours(7, 0, 0, 0); // Same start time
+                            feedTime.setHours(7, 0, 0, 0); // Start at same time as drum
                             resourceSchedules[resourceId] = feedTime;
                         }
                         
+                        // Schedule operation sequentially on its resource
                         event.startDate = new Date(resourceSchedules[resourceId]);
                         const durationMs = event.duration * 60 * 60 * 1000;
                         event.endDate = new Date(event.startDate.getTime() + durationMs);
+                        // Add buffer to protect feeding operations (rope principle)
                         resourceSchedules[resourceId] = new Date(event.endDate.getTime() + 30 * 60 * 1000); // 30 min buffer
                     });
                     
