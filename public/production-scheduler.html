@@ -1381,8 +1381,9 @@
             
             try {
                 console.log('📊 Checking if Bryntum is loaded...');
-                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                if (typeof window.SchedulerPro === 'undefined') {
                     console.error('❌ Bryntum SchedulerPro library not loaded!');
+                    console.log('Available window properties:', Object.keys(window).filter(k => k.includes('Scheduler')).slice(0, 10));
                     // Notify parent of error
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
@@ -1395,9 +1396,9 @@
                     return;
                 }
                 
-                // Initialize scheduler using global bryntum object
-                const { SchedulerPro } = bryntum.schedulerpro;
-                console.log('✅ Bryntum SchedulerPro loaded successfully');
+                // Initialize scheduler using SchedulerPro from ES module (now on window)
+                const SchedulerPro = window.SchedulerPro;
+                console.log('✅ Bryntum SchedulerPro loaded successfully', SchedulerPro);
                 
                 // Notify parent window that scheduler is ready
                 if (window.parent !== window) {
@@ -3256,7 +3257,7 @@
                         // 2. Operation sequence within each job
                         
                         const scheduler = window.scheduler;
-                        const { project, eventStore, dependencyStore } = scheduler;
+                        const { project, eventStore, dependencyStore, assignmentStore } = scheduler;
                         
                         // Store and clear dependencies to prevent conflicts
                         const savedDependencies = dependencyStore.records.map(dep => dep.data);
@@ -3270,8 +3271,6 @@
                         
                         console.log('🚀 Starting ASAP scheduling (Forward from Today)...');
                         console.log('📌 NOTE: Dependencies are visual-only. Scheduling uses priority + sequence.');
-                        
-                        const { eventStore, dependencyStore, project, assignmentStore } = scheduler;
                         const events = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                         console.log(`  Total operations to schedule: ${events.length}`);
                     

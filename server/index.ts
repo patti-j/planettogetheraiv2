@@ -123,6 +123,36 @@ app.use((req, res, next) => {
     res.sendFile(path.resolve('public/scheduler-test/index.html'));
   });
 
+  // Serve JavaScript module files with correct MIME type
+  app.get('/*.module.js', (req, res) => {
+    const filePath = `public${req.path}`;
+    
+    if (fs.existsSync(filePath)) {
+      res.set({
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'public, max-age=31536000'
+      });
+      res.sendFile(path.resolve(filePath));
+    } else {
+      res.status(404).send('Module not found');
+    }
+  });
+
+  // Serve all JavaScript files with correct MIME type
+  app.get('/*.js', (req, res) => {
+    const filePath = `public${req.path}`;
+    
+    if (fs.existsSync(filePath)) {
+      res.set({
+        'Content-Type': 'application/javascript',
+        'Cache-Control': 'public, max-age=31536000'
+      });
+      res.sendFile(path.resolve(filePath));
+    } else {
+      res.status(404).send('JavaScript file not found');
+    }
+  });
+
   // Serve HTML files directly from public directory with no caching
   app.get('/*.html', (req, res) => {
     const filePath = `public${req.path}`;
