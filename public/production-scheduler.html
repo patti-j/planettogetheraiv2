@@ -1159,22 +1159,44 @@
             const sch = window.scheduler;
             if (!sch) return console.error('❌ Scheduler not initialized yet');
 
-            const { resourceStore, eventStore, project } = sch;
+            const { resourceStore, eventStore, assignmentStore, project } = sch;
 
             sch.suspendRefresh();
             resourceStore.clearFilters();
             eventStore.clearFilters();
 
             if (area !== 'all') {
+                console.log(`📍 Filtering resources by planning area: "${area}"`);
+                
+                // Filter resources by planning area
                 resourceStore.filter(r => (r.planning_area ?? r.data?.planning_area) === area);
-                const visible = new Set(resourceStore.records.map(r => String(r.id)));
-                eventStore.filter(ev => visible.has(String(ev.resourceId)));
+                
+                // Get IDs of visible resources
+                const visibleResourceIds = new Set(resourceStore.records.map(r => String(r.id)));
+                console.log(`  ✅ ${visibleResourceIds.size} resources visible in area "${area}"`);
+                
+                // Filter events based on their assignments (not resourceId which doesn't exist)
+                eventStore.filter(ev => {
+                    // Find the assignment for this event
+                    const assignment = assignmentStore.find(a => a.eventId === ev.id);
+                    if (!assignment) {
+                        console.warn(`  ⚠️ Event "${ev.name}" has no assignment`);
+                        return false;
+                    }
+                    return visibleResourceIds.has(String(assignment.resourceId));
+                });
+                
+                console.log(`  ✅ ${eventStore.count} events visible after filtering`);
+            } else {
+                console.log('📍 Showing all planning areas');
             }
 
             sch.resumeRefresh();
             await project.commitAsync();
             await project.propagate();
             sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+            
+            console.log('✅ Planning area filter applied successfully');
         }
         
         // Wait for DOM to load
