@@ -4525,14 +4525,8 @@
         });
     </script>
     
-    <!-- Constraint Settings Modal Scripts -->
+    <!-- Additional Scripts -->
     <script>
-        // Initialize constraint settings
-        window.activeConstraints = {};
-        
-        // Constraint modal functions
-        function openConstraintModal() {
-            const modal = document.getElementById('constraintModal');
             modal.classList.add('active');
             
             // Load saved constraints or use defaults
@@ -4652,16 +4646,7 @@
             const savedTheme = localStorage.getItem('theme') || 'light';
             document.body.className = savedTheme === 'dark' ? 'dark-theme' : '';
             
-            // Constraint settings button
-            document.getElementById('constraintSettings').addEventListener('click', openConstraintModal);
-            
-            // Click outside modal to close
-            document.getElementById('constraintModal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeConstraintModal();
-                }
-            });
-            
+            // Constraint settings removed - functionality simplified
             // Listen for theme changes from parent window
             window.addEventListener('message', (e) => {
                 if (e.data && e.data.type === 'SET_THEME') {
