@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>Production Schedule - UMD Only (Patched)</title>
+
+  <!-- Bryntum Scheduler Pro CSS (classic-light) -->
+  <link rel="stylesheet" href="/schedulerpro.classic-light.css?v=633" id="scheduler-theme" />
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin:0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Arial, sans-serif;
+      background:#f5f5f5; display:flex; flex-direction:column; height:100vh; font-size:14px;
+    }
+    .header { background:#fff; padding:1rem 2rem; display:flex; justify-content:space-between; align-items:center; box-shadow:0 2px 10px rgba(0,0,0,.06); flex-shrink:0; }
+    .toolbar { background:#fff; padding:.75rem 2rem; display:flex; align-items:center; gap:.5rem; border-bottom:1px solid #e5e7eb; flex-wrap:wrap; }
+    .toolbar-group { display:flex; align-items:center; gap:.4rem; padding-right:.75rem; border-right:1px solid #e5e7eb; }
+    .toolbar-group:last-child { border-right:none; }
+    .toolbar label { font-size:.82rem; color:#666; font-weight:500; white-space:nowrap; }
+    .toolbar select, .toolbar button { padding:.375rem .625rem; border:1px solid #ddd; border-radius:4px; background:#fff; font-size:.875rem; cursor:pointer; }
+    .toolbar button.icon-only { padding:.375rem .5rem; min-width:32px; }
+    .scheduler-container { flex:1; margin:1rem; background:#fff; border-radius:8px; box-shadow:0 4px 20px rgba(0,0,0,.08); overflow:hidden; position:relative; display:flex; flex-direction:column; min-height:0; }
+    #scheduler { flex:1; min-height:0; }
+    .status-bar { background:#fff; padding:.5rem 2rem; display:flex; justify-content:space-between; align-items:center; font-size:.875rem; color:#666; border-top:1px solid #e5e7eb; flex-shrink:0; }
+    .loading-overlay { position:absolute; inset:0; background:rgba(255,255,255,.9); display:flex; align-items:center; justify-content:center; z-index:1000; }
+    .loading-spinner { width:50px; height:50px; border:3px solid #f3f3f3; border-top:3px solid #666; border-radius:50%; animation:spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-box { background:#fff; border:1px solid #f1c0c0; color:#7a1f1f; padding:1rem 1.25rem; border-radius:8px; max-width:640px; }
+    .constraint-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:3000; align-items:center; justify-content:center; }
+    .constraint-modal.active { display:flex; }
+    .constraint-modal-content { background:#fff; border-radius:8px; width:90%; max-width:800px; max-height:80vh; overflow:hidden; display:flex; flex-direction:column; }
+    .constraint-modal-header { padding:1rem 1.5rem; background:#f5f5f5; border-bottom:1px solid #ddd; display:flex; justify-content:space-between; align-items:center; }
+    .constraint-modal-body { flex:1; overflow:auto; padding:1.5rem; }
+    .constraint-modal-footer { padding:1rem 1.5rem; background:#f5f5f5; border-top:1px solid #ddd; display:flex; justify-content:flex-end; gap:.5rem; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Production Schedule</h1>
+    <div class="header-actions">
+      <span id="lastUpdate">Last updated: --</span>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <div class="toolbar-group">
+      <label for="viewPreset">View:</label>
+      <select id="viewPreset">
+        <option value="hourAndDay">Hour & Day</option>
+        <option value="dayAndWeek" selected>Day & Week</option>
+        <option value="weekAndMonth">Week & Month</option>
+        <option value="monthAndYear">Month & Year</option>
+      </select>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="planningAreaFilter">Planning Area:</label>
+      <select id="planningAreaFilter">
+        <option value="all">All Areas</option>
+      </select>
+      <button id="applyPlanningAreaFilter" class="scheduler-btn" style="margin-left:.5rem;">Apply Filter</button>
+    </div>
+
+    <div class="toolbar-group" style="display:flex; gap:.25rem;">
+      <button id="zoomIn" class="icon-only" title="Zoom In">＋</button>
+      <button id="zoomOut" class="icon-only" title="Zoom Out">－</button>
+      <button id="zoomToFit" class="icon-only" title="Fit to View">⤢</button>
+    </div>
+
+    <div class="toolbar-group">
+      <label for="schedulingAlgorithm">Algorithm:</label>
+      <select id="schedulingAlgorithm">
+        <option value="asap">ASAP (Forward)</option>
+        <option value="alap">ALAP (Backward)</option>
+        <option value="drum">Theory of Constraints (DBR)</option>
+      </select>
+      <button id="applyScheduling">Apply</button>
+      <button id="constraintSettings" title="Configure Constraints">Constraints</button>
+    </div>
+
+    <div class="toolbar-group">
+      <button id="saveSchedule">Save</button>
+      <button id="loadScheduleBtn">Load</button>
+      <button id="refreshSchedule" class="icon-only" title="Refresh">⟳</button>
+    </div>
+  </div>
+
+  <div class="scheduler-container">
+    <div id="scheduler"></div>
+    <div id="loadingOverlay" class="loading-overlay">
+      <div class="loading-spinner" aria-label="Loading…"></div>
+    </div>
+  </div>
+
+  <div class="status-bar">
+    <span id="operationCount">0 operations scheduled</span>
+    <span id="resourceUtilization">Resource utilization: --</span>
+  </div>
+
+  <!-- Constraint Settings Modal (minimal safe placeholder) -->
+  <div id="constraintModal" class="constraint-modal" aria-hidden="true">
+    <div class="constraint-modal-content">
+      <div class="constraint-modal-header">
+        <h2>Optimization Constraints</h2>
+        <button class="constraint-modal-close" id="closeConstraintModalBtn" title="Close">×</button>
+      </div>
+      <div class="constraint-modal-body">
+        <p>This modal mirrors your existing UI. Implement your constraint toggles here.</p>
+      </div>
+      <div class="constraint-modal-footer">
+        <button id="resetConstraintsBtn">Reset to Defaults</button>
+        <button id="cancelConstraintsBtn">Cancel</button>
+        <button class="apply" id="applyConstraintsBtn">Apply Constraints</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Load Bryntum Scheduler Pro (UMD) -->
+  <script src="/schedulerpro.umd.js?v=633"></script>
+
+  <script>
+    (function () {
+      const $ = (id) => document.getElementById(id);
+      const log = (...a) => console.log('[UMD-Patch]', ...a);
+
+      // Global, robust error surface
+      window.onerror = function (msg, url, lineNo, columnNo, error) {
+        const box = document.createElement('div');
+        box.className = 'error-box';
+        box.innerHTML = '<strong>Scheduler failed to start</strong><div style="margin-top:.5rem;">' +
+          String(msg) + '</div>';
+        const overlay = $('loadingOverlay');
+        if (overlay) {
+          overlay.innerHTML = '';
+          overlay.appendChild(box);
+        } else {
+          alert(String(msg));
+        }
+        return true;
+      };
+
+      // Bind planning-area filter early (also expose window.applyPlanningAreaFilter for legacy callers)
+      document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'applyPlanningAreaFilter') {
+          e.preventDefault();
+          applyPlanningAreaFilter().catch(console.error);
+        }
+      });
+      window.applyPlanningAreaFilter = async function () {
+        await applyPlanningAreaFilter();
+      };
+
+      document.addEventListener('DOMContentLoaded', start);
+
+      async function start() {
+        log('DOM ready. Verifying Bryntum UMD…');
+        const SchedulerPro =
+          window.bryntum?.schedulerpro?.SchedulerPro ||
+          window.bryntum?.SchedulerPro;
+
+        if (!SchedulerPro) {
+          throw new Error('Could not find bryntum SchedulerPro on window. Ensure /schedulerpro.umd.js is reachable.');
+        }
+
+        // Load data (PT endpoints). If backend is unavailable, use fallback.
+        const { resources, events, dependencies } = await loadDataWithFallback();
+
+        // Instantiate
+        const preset = $('viewPreset').value || 'dayAndWeek';
+        const scheduler = new SchedulerPro({
+          appendTo   : 'scheduler',
+          startDate  : new Date(2025, 8, 3, 8),
+          endDate    : new Date(2025, 8, 17, 18),
+          viewPreset : preset,
+          allowOverlap : false,
+
+          project : {
+            autoCalculate        : true,
+            recalculateAfterLoad : true,
+            schedulingDirection  : 'forward',
+            constraintsMode      : 'honor'
+          },
+
+          columns : [
+            { type: 'resourceInfo', text: 'Resource', field: 'name', width: 180 }
+          ],
+
+          resources,
+          events,
+          dependencies,
+
+          listeners : {
+            calculate() { updateStats(); }
+          }
+        });
+
+        window.scheduler = scheduler;
+        log('Scheduler started.');
+        const overlay = $('loadingOverlay');
+        if (overlay) overlay.style.display = 'none';
+
+        // Populate planning areas into dropdown (based on resources)
+        populatePlanningAreas(resources);
+
+        // UI bindings
+        $('viewPreset').addEventListener('change', (e) => scheduler.setViewPreset(e.target.value));
+        $('applyScheduling').addEventListener('click', onApplyScheduling);
+        $('zoomIn').addEventListener('click', () => scheduler.zoomIn());
+        $('zoomOut').addEventListener('click', () => scheduler.zoomOut());
+        $('zoomToFit').addEventListener('click', () => scheduler.zoomToFit({ leftMargin: 50, rightMargin: 50 }));
+        $('refreshSchedule').addEventListener('click', async () => { await scheduler.project.propagate(); updateStats(); });
+        $('saveSchedule').addEventListener('click', () => alert('Stub: saveSchedule'));
+        $('loadScheduleBtn').addEventListener('click', () => alert('Stub: loadSchedule'));
+
+        // Constraint modal handlers (safe placeholders)
+        $('constraintSettings').addEventListener('click', openConstraintModal);
+        $('closeConstraintModalBtn').addEventListener('click', closeConstraintModal);
+        $('cancelConstraintsBtn').addEventListener('click', closeConstraintModal);
+        $('resetConstraintsBtn').addEventListener('click', () => alert('Stub: resetConstraints'));
+        $('applyConstraintsBtn').addEventListener('click', () => { alert('Stub: applyConstraints'); closeConstraintModal(); });
+
+        updateStats();
+
+        async function onApplyScheduling() {
+          const alg = $('schedulingAlgorithm').value;
+          if (alg === 'asap') {
+            scheduler.project.schedulingDirection = 'forward';
+            await scheduler.project.propagate();
+            scheduler.toast?.('Applied ASAP (forward)');
+          } else if (alg === 'alap') {
+            // Minimal, engine-driven backward propagation.
+            scheduler.project.schedulingDirection = 'backward';
+            await scheduler.project.propagate();
+            scheduler.project.schedulingDirection = 'forward';
+            scheduler.toast?.('Applied ALAP (backward)');
+          } else {
+            scheduler.toast?.(`${alg} not implemented in this smoke test`);
+          }
+          updateStats();
+        }
+
+        function updateStats() {
+          const ops = scheduler.eventStore.count;
+          $('operationCount').textContent = `${ops} operations scheduled`;
+        }
+      }
+
+      async function loadDataWithFallback() {
+        try {
+          const [r, e, d] = await Promise.all([
+            fetch('/api/resources'),
+            fetch('/api/pt-operations'),
+            fetch('/api/pt-dependencies')
+          ]);
+          if (r.ok && e.ok) {
+            const resources = await r.json();
+            const ops = await e.json();
+            const deps = d.ok ? await d.json() : [];
+
+            // Map operations to Bryntum event fields if needed
+            const events = ops.map((o, i) => ({
+              id          : o.id ?? ('op_' + i),
+              name        : o.name ?? o.operationName ?? `Op ${i+1}`,
+              resourceId  : o.resourceId ?? o.machineId ?? o.resource_id,
+              startDate   : o.startDate ? new Date(o.startDate) : null,
+              endDate     : o.endDate ? new Date(o.endDate) : null,
+              duration    : o.duration ?? o.durationHours ?? 1,
+              durationUnit: o.durationUnit ?? 'h'
+            }));
+
+            // Ensure each event has dates so grid renders
+            const baseline = new Date(2025, 8, 3, 8);
+            events.forEach((ev, idx) => {
+              if (!ev.startDate || !ev.endDate) {
+                ev.startDate = new Date(baseline.getTime() + idx * 2 * 60 * 60 * 1000);
+                ev.endDate   = new Date(ev.startDate.getTime() + (ev.duration ?? 1) * 60 * 60 * 1000);
+              }
+            });
+
+            return { resources, events, dependencies: deps };
+          }
+        } catch (err) {
+          console.warn('Backend fetch failed, using fallback demo data.', err);
+        }
+
+        // Fallback demo data
+        const resources = [
+          { id: 1, name: 'Machine A', planning_area: 'A1' },
+          { id: 2, name: 'Machine B', planning_area: 'B2' },
+          { id: 3, name: 'Machine C', planning_area: 'A1' }
+        ];
+        const start = new Date(2025, 8, 3, 8);
+        const events = [
+          { id: 1, name: 'Op 1', resourceId: 1, startDate: start, endDate: new Date(start.getTime() + 2*3600_000) },
+          { id: 2, name: 'Op 2', resourceId: 1, startDate: new Date(start.getTime() + 3*3600_000), endDate: new Date(start.getTime() + 5*3600_000) },
+          { id: 3, name: 'Op 3', resourceId: 2, startDate: new Date(start.getTime() + 1*3600_000), endDate: new Date(start.getTime() + 4*3600_000) }
+        ];
+        const dependencies = [{ id: 1, fromEvent: 1, toEvent: 2, type: 0 }];
+        return { resources, events, dependencies };
+      }
+
+      function populatePlanningAreas(resources) {
+        const ddl = document.getElementById('planningAreaFilter');
+        if (!ddl) return;
+        const set = new Set();
+        resources.forEach(r => { if (r.planning_area) set.add(r.planning_area); });
+        [...set].sort().forEach(area => {
+          const opt = document.createElement('option');
+          opt.value = area; opt.textContent = area;
+          ddl.appendChild(opt);
+        });
+      }
+
+      async function applyPlanningAreaFilter() {
+        const ddl = document.getElementById('planningAreaFilter');
+        const area = ddl?.value || 'all';
+        const sch = window.scheduler;
+        if (!sch) return;
+
+        const { resourceStore, eventStore, project } = sch;
+        sch.suspendRefresh();
+        resourceStore.clearFilters();
+        eventStore.clearFilters();
+
+        if (area !== 'all') {
+          resourceStore.filter(r => (r.planning_area ?? r.data?.planning_area) === area);
+          const visible = new Set(resourceStore.records.map(r => String(r.id)));
+          eventStore.filter(ev => visible.has(String(ev.resourceId)));
+        }
+        sch.resumeRefresh();
+        await project.commitAsync();
+        await project.propagate();
+        sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+      }
+
+      function openConstraintModal() {
+        const m = document.getElementById('constraintModal');
+        if (m) { m.classList.add('active'); m.setAttribute('aria-hidden', 'false'); }
+      }
+      function closeConstraintModal() {
+        const m = document.getElementById('constraintModal');
+        if (m) { m.classList.remove('active'); m.setAttribute('aria-hidden', 'true'); }
+      }
+    })();
+  </script>
+</body>
+</html>

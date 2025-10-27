@@ -1655,231 +1655,42 @@
                     // Keep events array empty - better to show an empty scheduler than wrong data
                 }
 
-                // Use the dependencies that were fetched from the database
-                // These are generated from operation sequence numbers for visual display
-                // With constraintsMode: 'honor', they show as lines but don't cause conflicts
-                let dependencies = fetchedDependencies || [];
+                // ===== PT DEPENDENCIES ONLY (NO BRYNTUM GENERATION) =====
+                // Use ONLY the dependencies fetched from the database (based on operation sequence)
+                // These dependencies are for VISUAL DISPLAY ONLY and do NOT constrain scheduling
+                // Scheduling is based on: Job Priority (1=highest) and Operation Sequence Numbers
                 
-                console.log('===== DEPENDENCIES FOR VISUAL DISPLAY =====');
-                console.log(`Total dependencies from database: ${dependencies.length}`);
+                let dependencies = [];
+                
+                // Process PT dependencies from database
+                if (fetchedDependencies && fetchedDependencies.length > 0) {
+                    console.log('📋 Processing PT dependencies from database...');
+                    console.log(`   Found ${fetchedDependencies.length} dependencies based on operation sequences`);
+                    
+                    // Use ONLY PT dependencies, ensuring they're properly formatted for Bryntum
+                    dependencies = fetchedDependencies.map(dep => ({
+                        id: String(dep.id),
+                        from: dep.from,
+                        to: dep.to,
+                        type: dep.type || 2, // 2 = Finish-to-Start
+                        lag: dep.lag || 0,
+                        lagUnit: dep.lagUnit || 'hour',
+                        // Mark as INACTIVE to prevent constraint enforcement
+                        inactive: true,
+                        cls: 'visual-dependency'
+                    }));
+                    
+                    console.log(`✅ ${dependencies.length} PT dependencies ready for visual display`);
+                } else {
+                    console.log('ℹ️ No PT dependencies found in database');
+                }
+                
+                console.log('===== PT DEPENDENCIES CONFIGURATION =====');
+                console.log(`Total dependencies: ${dependencies.length} (from PT database only)`);
                 console.log('Dependencies show workflow between operations but DO NOT constrain scheduling');
                 console.log('Scheduling based on: Job Priority (1=highest) and Operation Sequence Numbers only');
-                
-                // First, let's see what brewery operations we have
-                const breweryOps = events.filter(event => {
-                    const opName = (event.operationName || event.name || '').toLowerCase();
-                    return opName.includes('milling') || 
-                           opName.includes('mashing') || 
-                           opName.includes('lautering') || 
-                           opName.includes('boiling') || 
-                           opName.includes('whirlpool') || 
-                           opName.includes('cooling') || 
-                           opName.includes('fermentation');
-                });
-                
-                console.log(`Found ${breweryOps.length} brewery operations`);
-                
-                // Group by job and show what jobs we have
-                const jobGroups = {};
-                breweryOps.forEach(op => {
-                    const jobId = op.jobId || 'NO_JOB';
-                    if (!jobGroups[jobId]) {
-                        jobGroups[jobId] = [];
-                    }
-                    jobGroups[jobId].push(op);
-                });
-                
-                console.log('Jobs found:', Object.keys(jobGroups));
-                
-                // DISABLED: No dependency generation at all to prevent Bryntum conflict popups
-                const needAdditionalDeps = false; // Always false - we don't want any dependencies
-                
-                if (!needAdditionalDeps) {
-                    console.log(`\n✅ No dependencies loaded - scheduling based on priority and sequence only`);
-                } else {
-                    // This block will never run since needAdditionalDeps is always false
-                    console.log('\n🔗 DISABLED: Dependency generation is turned off');
-                
-                // Group ALL operations by job (not just brewery ops)
-                // CRITICAL: Only group by jobId to prevent cross-job dependencies
-                const allJobGroups = {};
-                events.forEach(op => {
-                    // Use ONLY jobId - never fallback to jobName to prevent cross-job dependencies
-                    const jobId = op.jobId;
-                    if (jobId && jobId !== 'NO_JOB') {
-                        if (!allJobGroups[jobId]) {
-                            allJobGroups[jobId] = [];
-                        }
-                        allJobGroups[jobId].push(op);
-                    }
-                });
-                
-                console.log(`Found ${Object.keys(allJobGroups).length} jobs with proper jobId`);
-                console.log('Job IDs found:', Object.keys(allJobGroups));
-                
-                // Define process order for brewery operations
-                const processOrder = {
-                    'mill': 1,
-                    'mash': 2,
-                    'lauter': 3,
-                    'boil': 4,
-                    'kettle': 4,
-                    'whirlpool': 5,
-                    'cool': 6,
-                    'ferment': 7,
-                    'dry-hop': 7.5,  // AFTER fermentation, before conditioning
-                    'dry hop': 7.5,  // Alternative spelling
-                    'condition': 8,
-                    'bright': 8,     // Bright tank is same as conditioning
-                    'packag': 9,
-                    'bottl': 9,      // Bottling is packaging
-                    'can': 9         // Canning is packaging
-                };
-                
-                let totalDepsCreated = 0;
-                
-                // Process each job
-                Object.entries(allJobGroups).forEach(([jobId, jobOps]) => {
-                    if (jobOps.length < 2) {
-                        // Skip jobs with only one operation
-                        console.log(`  Skipping Job ${jobId}: Only ${jobOps.length} operation`);
-                        return;
-                    }
-                    
-                    console.log(`\n  📦 Job ${jobId} (${jobOps[0].jobName || 'Unknown'}): ${jobOps.length} operations`);
-                    console.log(`    Operations in job:`, jobOps.map(op => op.name));
-                    
-                    // Try to determine process order for each operation
-                    jobOps.forEach(op => {
-                        const opName = (op.name || '').toLowerCase();
-                        let order = 999; // Default high number for unknown operations
-                        
-                        // Check if it's a brewery operation
-                        for (const [key, value] of Object.entries(processOrder)) {
-                            if (opName.includes(key)) {
-                                order = value;
-                                break;
-                            }
-                        }
-                        
-                        // Use sequence_number if available (most reliable)
-                        if (op.sequence_number !== null && op.sequence_number !== undefined) {
-                            order = op.sequence_number;
-                            console.log(`    Using sequence_number ${op.sequence_number} for ${op.name}`);
-                        }
-                        // Otherwise, if not a brewery operation, try to use scheduled start time as order
-                        else if (order === 999 && op.startDate) {
-                            order = new Date(op.startDate).getTime();
-                        }
-                        
-                        op.processOrder = order;
-                    });
-                    
-                    // Sort operations by process order (or by scheduled time)
-                    const sortedOps = jobOps.sort((a, b) => {
-                        // First try process order
-                        if (a.processOrder !== b.processOrder) {
-                            return a.processOrder - b.processOrder;
-                        }
-                        // Then try scheduled start time
-                        if (a.startDate && b.startDate) {
-                            return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
-                        }
-                        // Finally, use ID as tiebreaker
-                        return a.id - b.id;
-                    });
-                    
-                    // ============================================================================
-                    // IMPORTANT: Dependencies are VISUAL ONLY
-                    // These dependency lines create visual connections on the Gantt chart
-                    // but DO NOT affect the scheduling logic. All three algorithms
-                    // (ASAP, ALAP, Drum/TOC) ignore these dependencies and schedule based on:
-                    // - Job priority (1=highest, 5=lowest)
-                    // - Operation sequence numbers within each job
-                    // ============================================================================
-                    // Create dependencies between successive operations (for visual display)
-                    for (let i = 0; i < sortedOps.length - 1; i++) {
-                        const from = sortedOps[i];
-                        const to = sortedOps[i + 1];
-                        
-                        // Check if dependency already exists
-                        const existingDep = dependencies.find(d => 
-                            d.from === from.id && d.to === to.id
-                        );
-                        
-                        if (!existingDep) {
-                            const depId = `dep_job${jobId}_${i}_${from.id}_${to.id}`;
-                            dependencies.push({
-                                id: depId,
-                                from: from.id,
-                                to: to.id,
-                                type: 2, // Finish-to-Start (visual only, not enforced by scheduling)
-                                lag: 0,
-                                lagUnit: 'hour'
-                            });
-                            console.log(`    ✅ ${from.name} → ${to.name} (visual dependency)`);
-                            totalDepsCreated++;
-                        }
-                    }
-                });
-                
-                console.log(`\n✅ Created ${totalDepsCreated} new dependencies across all jobs`);
-                
-                } // End of needAdditionalDeps else block
-                
-                console.log(`\n===== DEPENDENCY GENERATION END =====`);
-                console.log(`TOTAL DEPENDENCIES: ${dependencies.length}`);
-                if (dependencies.length > 0) {
-                    console.log('Sample dependencies:', dependencies.slice(0, 3));
-                }
-                
-                // Add some demo dependencies if we're using demo data
-                if (events.length <= 3 && events[0]?.name?.includes('Demo')) {
-                    dependencies.push(
-                        {
-                            id: 'dep1',
-                            from: 1,
-                            to: 2,
-                            type: 2, // Finish-to-Start
-                            lag: 1,
-                            lagUnit: 'hour'
-                        },
-                        {
-                            id: 'dep2',
-                            from: 2,
-                            to: 3,
-                            type: 2, // Finish-to-Start
-                            lag: 0,
-                            lagUnit: 'hour'
-                        }
-                    );
-                }
-                
-                console.log(`🔗 Created ${dependencies.length} dependencies between operations`);
-                
-                // Log first few dependencies for debugging
-                if (dependencies.length > 0) {
-                    console.log('Sample dependencies:', dependencies.slice(0, 5));
-                    
-                    // Verify that the event IDs in dependencies match actual events
-                    const eventIds = new Set(events.map(e => e.id));
-                    let missingFrom = 0;
-                    let missingTo = 0;
-                    dependencies.forEach(dep => {
-                        if (!eventIds.has(dep.from)) {
-                            console.warn(`Dependency ${dep.id} has invalid 'from' ID: ${dep.from}`);
-                            missingFrom++;
-                        }
-                        if (!eventIds.has(dep.to)) {
-                            console.warn(`Dependency ${dep.id} has invalid 'to' ID: ${dep.to}`);
-                            missingTo++;
-                        }
-                    });
-                    if (missingFrom > 0 || missingTo > 0) {
-                        console.error(`⚠️ Found ${missingFrom} invalid 'from' IDs and ${missingTo} invalid 'to' IDs in dependencies!`);
-                        console.log('Available event IDs:', Array.from(eventIds).slice(0, 20));
-                    }
-                }
+                console.log('Bryntum dependency generation: DISABLED');
+                console.log('All dependencies are from PT database based on operation sequence numbers');
 
                 // Detect mobile device
                 const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
