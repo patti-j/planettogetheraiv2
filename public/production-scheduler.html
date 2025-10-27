@@ -3039,8 +3039,8 @@
                             return priorityA - priorityB;
                         }
                         
-                        // If same priority, sort by job ID for consistency
-                        return keyA.localeCompare(keyB);
+                        // If same priority, sort by job ID for consistency (convert to string for comparison)
+                        return String(keyA).localeCompare(String(keyB));
                     });
                     
                     // Flatten sorted jobs into a single sorted events array
