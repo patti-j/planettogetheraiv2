@@ -3241,8 +3241,13 @@
                     
                     // Restore the saved dependencies for visual display
                     if (savedDependencies && savedDependencies.length > 0) {
-                        dependencyStore.add(savedDependencies);
-                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                        // Ensure all restored dependencies are marked as inactive
+                        const inactiveDependencies = savedDependencies.map(dep => ({
+                            ...dep,
+                            inactive: true // Force inactive flag for visual-only display
+                        }));
+                        dependencyStore.add(inactiveDependencies);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
@@ -3698,8 +3703,13 @@
                     
                     // Restore the saved dependencies for visual display
                     if (savedDependencies && savedDependencies.length > 0) {
-                        dependencyStore.add(savedDependencies);
-                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                        // Ensure all restored dependencies are marked as inactive
+                        const inactiveDependencies = savedDependencies.map(dep => ({
+                            ...dep,
+                            inactive: true // Force inactive flag for visual-only display
+                        }));
+                        dependencyStore.add(inactiveDependencies);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
                     }
                     
                     console.log('▶️ Restored conflict validation settings');
@@ -4025,8 +4035,13 @@
                     
                     // Restore the saved dependencies for visual display
                     if (savedDependencies && savedDependencies.length > 0) {
-                        dependencyStore.add(savedDependencies);
-                        console.log(`▶️ Restored ${savedDependencies.length} visual dependencies`);
+                        // Ensure all restored dependencies are marked as inactive
+                        const inactiveDependencies = savedDependencies.map(dep => ({
+                            ...dep,
+                            inactive: true // Force inactive flag for visual-only display
+                        }));
+                        dependencyStore.add(inactiveDependencies);
+                        console.log(`▶️ Restored ${inactiveDependencies.length} visual dependencies (inactive)`);
                     }
                     
                     console.log('✅ Drum (TOC) scheduling completed');
