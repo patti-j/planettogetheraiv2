@@ -1654,21 +1654,37 @@
                     // Keep events array empty - better to show an empty scheduler than wrong data
                 }
 
-                // ===== DEPENDENCIES COMPLETELY DISABLED =====
-                // Dependencies are causing conflict dialogs even when marked inactive
-                // To eliminate ALL conflicts, we're not loading any dependencies at all
+                // ===== PT DEPENDENCIES VISUAL DISPLAY =====
+                // Load PT dependencies from database as VISUAL-ONLY lines
+                // These show workflow but DO NOT constrain scheduling
+                // Conflict suppression handlers prevent any dependency conflict dialogs
                 // Scheduling is based ONLY on: Job Priority (1=highest) and Operation Sequence Numbers
                 
                 let dependencies = [];
                 
                 console.log('===== DEPENDENCY CONFIGURATION =====');
-                console.log('Dependencies: COMPLETELY DISABLED to prevent Bryntum conflicts');
+                console.log('Dependencies: ENABLED for visual display (non-constraining)');
                 console.log('Scheduling based on: Job Priority (1=highest) and Operation Sequence Numbers only');
-                console.log('PT dependencies stored in database but NOT loaded into Bryntum scheduler');
+                console.log('PT dependencies show workflow connections but do NOT affect scheduling');
                 
-                // Store fetched dependencies count for reference but don't load them
+                // Load PT dependencies from database for visual display
                 if (fetchedDependencies && fetchedDependencies.length > 0) {
-                    console.log(`ℹ️ ${fetchedDependencies.length} PT dependencies exist in database (not loaded into scheduler)`);
+                    console.log(`📋 Loading ${fetchedDependencies.length} PT dependencies for visual display...`);
+                    
+                    // Map dependencies with inactive flag to prevent constraint enforcement
+                    dependencies = fetchedDependencies.map(dep => ({
+                        id: String(dep.id),
+                        from: dep.from,
+                        to: dep.to,
+                        type: dep.type || 2, // 2 = Finish-to-Start
+                        lag: dep.lag || 0,
+                        lagUnit: dep.lagUnit || 'hour',
+                        // Mark as inactive to prevent automatic constraint enforcement
+                        inactive: true,
+                        cls: 'visual-dependency'
+                    }));
+                    
+                    console.log(`✅ ${dependencies.length} PT dependencies ready for visual display`);
                 } else {
                     console.log('ℹ️ No PT dependencies found in database');
                 }
@@ -1791,8 +1807,9 @@
                     },
 
                     features: {
-                        // Dependencies feature DISABLED to prevent conflict dialogs
-                        dependencies: false,
+                        // Dependencies feature ENABLED for visual display
+                        // Conflict handlers suppress any constraint conflicts
+                        dependencies: true,
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -4247,14 +4264,15 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // Load data WITHOUT dependencies to prevent ALL conflicts
-                    // Dependencies completely disabled - Bryntum was showing conflict dialogs even with inactive: true
+                    // Load data WITH PT dependencies for visual workflow display
+                    // Dependencies marked as inactive to prevent constraint enforcement
+                    // Conflict suppression handlers prevent any dependency conflict dialogs
                     // Scheduling based purely on job priority and operation sequence numbers
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
-                        assignmentsData: assignments // Assignments link events to resources
-                        // dependenciesData: NOT INCLUDED - dependencies completely disabled
+                        assignmentsData: assignments, // Assignments link events to resources
+                        dependenciesData: dependencies // PT dependencies for visual workflow display only
                     });
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
