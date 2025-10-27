@@ -1116,6 +1116,10 @@
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
+    <script>
+        // Create global bryntum object if it doesn't exist
+        window.bryntum = window.bryntum || {};
+    </script>
     <script src="/schedulerpro.umd.js?v=633" onload="console.log('✅ Bryntum script loaded!')" onerror="console.error('❌ Failed to load Bryntum script!')"></script>
     
     <!-- Initialize the scheduler -->
