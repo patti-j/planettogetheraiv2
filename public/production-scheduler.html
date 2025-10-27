@@ -1156,24 +1156,47 @@
             console.log('🔥 [Planning Area Filter] Apply clicked');
             const ddl = document.getElementById('planningAreaFilter');
             const area = ddl?.value || 'all';
+            console.log(`🔍 Selected planning area: "${area}"`);
+            
             const sch = window.scheduler;
-            if (!sch) return console.error('❌ Scheduler not initialized yet');
+            if (!sch) {
+                console.error('❌ Scheduler not initialized yet');
+                return;
+            }
 
             const { resourceStore, eventStore, assignmentStore, project } = sch;
+            
+            console.log(`🔍 Before filtering: ${resourceStore.count} resources, ${eventStore.count} events`);
 
             sch.suspendRefresh();
             resourceStore.clearFilters();
             eventStore.clearFilters();
+            console.log('🔍 Cleared all existing filters');
 
             if (area !== 'all') {
                 console.log(`📍 Filtering resources by planning area: "${area}"`);
                 
+                // Log all resources to see what planning areas they have
+                const allResources = resourceStore.records;
+                console.log('🔍 All resources:', allResources.map(r => ({
+                    id: r.id,
+                    name: r.name,
+                    planning_area: r.planning_area ?? r.data?.planning_area
+                })));
+                
                 // Filter resources by planning area
-                resourceStore.filter(r => (r.planning_area ?? r.data?.planning_area) === area);
+                resourceStore.filter(r => {
+                    const resourceArea = r.planning_area ?? r.data?.planning_area;
+                    const match = resourceArea === area;
+                    if (match) {
+                        console.log(`  ✅ Resource "${r.name}" matches area "${area}"`);
+                    }
+                    return match;
+                });
                 
                 // Get IDs of visible resources
                 const visibleResourceIds = new Set(resourceStore.records.map(r => String(r.id)));
-                console.log(`  ✅ ${visibleResourceIds.size} resources visible in area "${area}"`);
+                console.log(`  ✅ ${visibleResourceIds.size} resources visible in area "${area}":`, Array.from(visibleResourceIds));
                 
                 // Filter events based on their assignments (not resourceId which doesn't exist)
                 eventStore.filter(ev => {
@@ -1183,7 +1206,14 @@
                         console.warn(`  ⚠️ Event "${ev.name}" has no assignment`);
                         return false;
                     }
-                    return visibleResourceIds.has(String(assignment.resourceId));
+                    const resourceId = String(assignment.resourceId);
+                    const match = visibleResourceIds.has(resourceId);
+                    if (match) {
+                        console.log(`  ✅ Event "${ev.name}" assigned to resource ${resourceId} (visible)`);
+                    } else {
+                        console.log(`  ❌ Event "${ev.name}" assigned to resource ${resourceId} (filtered out)`);
+                    }
+                    return match;
                 });
                 
                 console.log(`  ✅ ${eventStore.count} events visible after filtering`);
@@ -1192,11 +1222,12 @@
             }
 
             sch.resumeRefresh();
+            console.log('🔍 Committing and propagating changes...');
             await project.commitAsync();
             await project.propagate();
             sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
             
-            console.log('✅ Planning area filter applied successfully');
+            console.log(`✅ Planning area filter applied successfully. Final: ${resourceStore.count} resources, ${eventStore.count} events`);
         }
         
         // Wait for DOM to load
@@ -3268,17 +3299,23 @@
                     
                     // Restore the ORIGINAL dependencies from global storage
                     // This ensures we always get back the PT dependencies from the database
+                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
                     const originalDeps = window.originalDependencies || [];
+                    console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
+                    
                     if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
                         const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
+                        
+                        console.log('🔍 Adding dependencies back to store...');
                         dependencyStore.add(inactiveDependencies);
                         console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
                     } else {
-                        console.log('ℹ️ No original dependencies to restore');
+                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
@@ -3732,17 +3769,23 @@
                     
                     // Restore the ORIGINAL dependencies from global storage
                     // This ensures we always get back the PT dependencies from the database
+                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
                     const originalDeps = window.originalDependencies || [];
+                    console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
+                    
                     if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
                         const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
+                        
+                        console.log('🔍 Adding dependencies back to store...');
                         dependencyStore.add(inactiveDependencies);
                         console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
                     } else {
-                        console.log('ℹ️ No original dependencies to restore');
+                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
                     }
                     
                     console.log('▶️ Restored conflict validation settings');
@@ -4068,17 +4111,23 @@
                     
                     // Restore the ORIGINAL dependencies from global storage
                     // This ensures we always get back the PT dependencies from the database
+                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
                     const originalDeps = window.originalDependencies || [];
+                    console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
+                    
                     if (originalDeps.length > 0) {
                         // Ensure all restored dependencies are marked as inactive
                         const inactiveDependencies = originalDeps.map(dep => ({
                             ...dep,
                             inactive: true // Force inactive flag for visual-only display
                         }));
+                        
+                        console.log('🔍 Adding dependencies back to store...');
                         dependencyStore.add(inactiveDependencies);
                         console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
+                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
                     } else {
-                        console.log('ℹ️ No original dependencies to restore');
+                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
                     }
                     
                     console.log('✅ Drum (TOC) scheduling completed');
