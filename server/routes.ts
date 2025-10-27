@@ -781,46 +781,52 @@ router.patch("/api/user-preferences/:userId", async (req, res) => {
 // Recent pages routes
 router.post("/api/recent-pages", async (req, res) => {
   try {
-    // Check for token authentication
-    const authHeader = req.headers.authorization;
     let userId: number | null = null;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    // Development bypass - automatically provide admin access
+    if (process.env.NODE_ENV === 'development') {
+      userId = 1; // Use admin user ID in development
+    } else {
+      // Check for token authentication
+      const authHeader = req.headers.authorization;
       
-      // Check token store
-      global.tokenStore = global.tokenStore || new Map();
-      let tokenData = global.tokenStore.get(token);
-      
-      // If not in memory store, try to reconstruct from token (for server restart resilience)
-      if (!tokenData) {
-        try {
-          const decoded = Buffer.from(token, 'base64').toString();
-          const [tokenUserId, timestamp] = decoded.split(':');
-          
-          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-            const tokenAge = Date.now() - Number(timestamp);
-            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        
+        // Check token store
+        global.tokenStore = global.tokenStore || new Map();
+        let tokenData = global.tokenStore.get(token);
+        
+        // If not in memory store, try to reconstruct from token (for server restart resilience)
+        if (!tokenData) {
+          try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [tokenUserId, timestamp] = decoded.split(':');
             
-            if (tokenAge < maxAge) {
-              // Verify user exists in database
-              const user = await storage.getUser(Number(tokenUserId));
-              if (user && user.isActive) {
-                userId = Number(tokenUserId);
+            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+              const tokenAge = Date.now() - Number(timestamp);
+              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+              
+              if (tokenAge < maxAge) {
+                // Verify user exists in database
+                const user = await storage.getUser(Number(tokenUserId));
+                if (user && user.isActive) {
+                  userId = Number(tokenUserId);
+                }
               }
             }
+          } catch (err) {
+            // Invalid token format
           }
-        } catch (err) {
-          // Invalid token format
+        } else if (tokenData.expiresAt > Date.now()) {
+          userId = tokenData.userId;
         }
-      } else if (tokenData.expiresAt > Date.now()) {
-        userId = tokenData.userId;
       }
-    }
-    
-    // Fallback to session
-    if (!userId) {
-      userId = (req.session as any)?.userId;
+      
+      // Fallback to session
+      if (!userId) {
+        userId = (req.session as any)?.userId;
+      }
     }
     
     if (!userId) {
@@ -837,46 +843,52 @@ router.post("/api/recent-pages", async (req, res) => {
 
 router.get("/api/recent-pages", async (req, res) => {
   try {
-    // Check for token authentication
-    const authHeader = req.headers.authorization;
     let userId: number | null = null;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    // Development bypass - automatically provide admin access
+    if (process.env.NODE_ENV === 'development') {
+      userId = 1; // Use admin user ID in development
+    } else {
+      // Check for token authentication
+      const authHeader = req.headers.authorization;
       
-      // Check token store
-      global.tokenStore = global.tokenStore || new Map();
-      let tokenData = global.tokenStore.get(token);
-      
-      // If not in memory store, try to reconstruct from token (for server restart resilience)
-      if (!tokenData) {
-        try {
-          const decoded = Buffer.from(token, 'base64').toString();
-          const [tokenUserId, timestamp] = decoded.split(':');
-          
-          if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
-            const tokenAge = Date.now() - Number(timestamp);
-            const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.substring(7);
+        
+        // Check token store
+        global.tokenStore = global.tokenStore || new Map();
+        let tokenData = global.tokenStore.get(token);
+        
+        // If not in memory store, try to reconstruct from token (for server restart resilience)
+        if (!tokenData) {
+          try {
+            const decoded = Buffer.from(token, 'base64').toString();
+            const [tokenUserId, timestamp] = decoded.split(':');
             
-            if (tokenAge < maxAge) {
-              // Verify user exists in database
-              const user = await storage.getUser(Number(tokenUserId));
-              if (user && user.isActive) {
-                userId = Number(tokenUserId);
+            if (!isNaN(Number(tokenUserId)) && !isNaN(Number(timestamp))) {
+              const tokenAge = Date.now() - Number(timestamp);
+              const maxAge = 7 * 24 * 60 * 60 * 1000; // 7 days
+              
+              if (tokenAge < maxAge) {
+                // Verify user exists in database
+                const user = await storage.getUser(Number(tokenUserId));
+                if (user && user.isActive) {
+                  userId = Number(tokenUserId);
+                }
               }
             }
+          } catch (err) {
+            // Invalid token format
           }
-        } catch (err) {
-          // Invalid token format
+        } else if (tokenData.expiresAt > Date.now()) {
+          userId = tokenData.userId;
         }
-      } else if (tokenData.expiresAt > Date.now()) {
-        userId = tokenData.userId;
       }
-    }
-    
-    // Fallback to session
-    if (!userId) {
-      userId = (req.session as any)?.userId;
+      
+      // Fallback to session
+      if (!userId) {
+        userId = (req.session as any)?.userId;
+      }
     }
     
     if (!userId) {
@@ -1267,7 +1279,7 @@ router.get("/api/users-with-roles", async (req, res) => {
   }
 });
 
-router.get("/users/:userId/current-role", async (req, res) => {
+router.get("/api/users/:userId/current-role", async (req, res) => {
   try {
     const userId = parseInt(req.params.userId);
     const userRoles = await storage.getUserRoles(userId);
@@ -1290,6 +1302,45 @@ router.get("/users/:userId/current-role", async (req, res) => {
     console.error("Error fetching user current role:", error);
     res.status(500).json({ message: "Failed to fetch current role" });
   }
+});
+
+// Add missing assigned-roles endpoint
+router.get("/api/users/:userId/assigned-roles", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId);
+    const userRoles = await storage.getUserRoles(userId);
+    
+    const roles = await Promise.all(
+      userRoles.map(async (ur) => {
+        const role = await storage.getRole(ur.roleId);
+        return role ? {
+          id: role.id,
+          name: role.name,
+          description: role.description || `${role.name} role`
+        } : null;
+      })
+    );
+    
+    res.json(roles.filter(r => r !== null));
+  } catch (error) {
+    console.error("Error fetching user assigned roles:", error);
+    res.status(500).json({ message: "Failed to fetch assigned roles" });
+  }
+});
+
+// Add onboarding status endpoint stub
+router.get("/api/onboarding/status", async (req, res) => {
+  // Return empty status for now - the frontend handles 404 gracefully
+  res.json({ 
+    completed: true,
+    currentStep: null 
+  });
+});
+
+// Add hints endpoint stub
+router.get("/api/hints", async (req, res) => {
+  // Return empty hints array for now - the frontend handles 404 gracefully
+  res.json([]);
 });
 
 // ============================================
