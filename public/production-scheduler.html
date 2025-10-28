@@ -2970,6 +2970,25 @@
                     }
                 }
 
+                // Shared helper functions for job extraction and sorting
+                function getJobKey(ev) {
+                    return ev.jobId ?? ev.jobID ?? ev.job_id ??
+                           ev.jobName ?? ev.job_name ??
+                           ev.ptData?.jobId ?? ev.ptData?.jobName ??
+                           ev.data?.jobId ?? ev.data?.jobName ?? null;
+                }
+
+                function getJobNumber(jobKey) {
+                    if (!jobKey) return Number.MAX_SAFE_INTEGER;
+                    const m = String(jobKey).match(/\d+/g);
+                    return m ? parseInt(m.join(''), 10) : Number.MAX_SAFE_INTEGER;
+                }
+
+                function getSequence(ev) {
+                    return ev.sequence_number ?? ev.sequenceNumber ??
+                           ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
+                }
+
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
                 let isAsapRunning = false; // Add flag to prevent re-entrance
@@ -3032,19 +3051,7 @@
                     // ============================================================================
                     // Helper Functions for Data Extraction
                     // ============================================================================
-                    
-                    // Get the job identifier from an event (handles various data structures)
-                    const getJobKey = (ev) => {
-                        return ev.jobId ?? ev.jobID ?? ev.job_id ?? ev.jobName ?? ev.job_name ?? 
-                               ev.ptData?.jobId ?? ev.ptData?.jobName ?? 
-                               ev.data?.jobId ?? ev.data?.jobName ?? null;
-                    };
-                    
-                    // Get the sequence number for operation ordering within a job
-                    const getSequence = (ev) => {
-                        return ev.sequence_number || ev.sequenceNumber || 
-                               ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
-                    };
+                    // Note: Using shared getJobKey, getJobNumber, and getSequence functions defined above
                     
                     // Get the job priority (1=highest priority, 5=lowest priority)
                     const getPriority = (event) => {
@@ -3103,22 +3110,18 @@
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
-                    // ASAP: Sort jobs by priority ASC (1 before 5) so highest priority schedules first
+                    // ASAP: Sort jobs by job NUMBER ASC (001 before 012) so Job 001 finishes first
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
-                        // Skip orphans for priority sorting
+                        // Skip orphans - they go last
                         if (keyA === '_orphans_') return 1;
                         if (keyB === '_orphans_') return -1;
                         
-                        const priorityA = parseInt(getPriority(opsA[0]));
-                        const priorityB = parseInt(getPriority(opsB[0]));
+                        // Sort by job NUMBER (not priority!) ascending
+                        // Job 001 should schedule first, Job 012 should schedule last
+                        const jobNumA = getJobNumber(keyA);
+                        const jobNumB = getJobNumber(keyB);
                         
-                        // ASAP: Sort by priority ASC (lower number = higher priority = schedule first)
-                        if (priorityA !== priorityB) {
-                            return priorityA - priorityB;
-                        }
-                        
-                        // If same priority, sort by job ID for consistency (convert to string for comparison)
-                        return String(keyA).localeCompare(String(keyB));
+                        return jobNumA - jobNumB; // Ascending order: 001, 002, ..., 012
                     });
                     
                     // Flatten sorted jobs into a single sorted events array
@@ -3535,14 +3538,7 @@
                         return isNaN(d) ? null : d;
                     };
                     
-                    // Get the job identifier from an event (handles various data structures)
-                    const getJobKey = (ev) => {
-                        // Prefer stable job id if present; fall back to name
-                        // Check multiple possible field names where job data might be stored
-                        return ev.jobId ?? ev.jobID ?? ev.job_id ?? ev.jobName ?? ev.job_name ?? 
-                               ev.ptData?.jobId ?? ev.ptData?.jobName ?? 
-                               ev.data?.jobId ?? ev.data?.jobName ?? null;
-                    };
+                    // Note: Using shared getJobKey, getJobNumber, and getSequence functions defined at top
                     
                     // Extract the need-by/due date from event data
                     // Searches multiple field locations for compatibility with various data formats
@@ -3597,12 +3593,6 @@
                     // 🔄 SIMPLIFIED: Using sequence numbers directly - no dependencies needed!
                     console.log('📋 Using sequence numbers for finish-to-start scheduling');
                     
-                    // Get sequence number from event
-                    const getSequence = (ev) => {
-                        return ev.sequence_number || ev.sequenceNumber || 
-                               ev.ptData?.sequence_number || ev.ptData?.sequenceNumber || 0;
-                    };
-                    
                     // Group operations by job and sort by sequence number
                     const jobOperations = new Map(); // jobKey -> array of events sorted by sequence
                     
@@ -3645,43 +3635,24 @@
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // Helper to get job priority from event
-                    const getJobPriority = (jobKey, operations) => {
-                        // Try to get priority from any operation in this job
-                        for (const op of operations) {
-                            const priority = op.jobPriority || op.job_priority || 
-                                           op.ptData?.jobPriority || op.ptData?.job_priority ||
-                                           op.data?.jobPriority || op.data?.job_priority;
-                            if (priority !== undefined && priority !== null) {
-                                return parseInt(priority);
-                            }
-                        }
-                        return 999; // Default low priority if not found
-                    };
-                    
-                    // ALAP: Sort jobs by priority DESCENDING (5 to 1) so highest priority schedules last
-                    // This ensures Priority 1 (highest) gets scheduled last and thus gets earliest position
+                    // ALAP: Sort jobs by job NUMBER DESC (012 before 001) 
+                    // In backward scheduling, what schedules first finishes last (closest to need-by)
+                    // So Job 012 schedules first to finish last, Job 001 schedules last to finish first
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
-                        const priorityA = getJobPriority(keyA, opsA);
-                        const priorityB = getJobPriority(keyB, opsB);
+                        // Sort by job NUMBER descending (not priority!)
+                        // Job 012 should schedule first (gets latest position/finishes last)
+                        // Job 001 should schedule last (gets earliest position/finishes first)
+                        const jobNumA = getJobNumber(keyA);
+                        const jobNumB = getJobNumber(keyB);
                         
-                        // Sort by priority DESC (higher number first = lower priority first)
-                        // Priority 5 schedules first (gets latest position), Priority 1 schedules last (gets earliest position)
-                        if (priorityA !== priorityB) {
-                            return priorityB - priorityA; // DESCENDING: 5, 4, 3, 2, 1
-                        }
-                        
-                        // If same priority, sort by due date (latest first for backward scheduling)
-                        const dueA = jobDueMap.get(keyA) || globalFallback;
-                        const dueB = jobDueMap.get(keyB) || globalFallback;
-                        return dueB.getTime() - dueA.getTime(); // Latest due dates first
+                        return jobNumB - jobNumA; // DESCENDING: 012, 011, ..., 002, 001
                     });
                     
-                    console.log('📊 ALAP Job scheduling order (lowest priority first for backward scheduling):');
+                    console.log('📊 ALAP Job scheduling order (descending by job number for backward scheduling):');
                     sortedJobs.forEach(([jobKey, ops], index) => {
-                        const priority = getJobPriority(jobKey, ops);
+                        const jobNum = getJobNumber(jobKey);
                         const due = jobDueMap.get(jobKey) || globalFallback;
-                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier)' : 'in middle'}`);
+                        console.log(`  ${index + 1}. Job #${jobNum}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
                     });
                     
                     // Process each job completely
