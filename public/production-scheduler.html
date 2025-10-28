@@ -3506,9 +3506,104 @@
                 
                 // Listen for messages from parent window (main app's Max AI panel)
                 window.addEventListener('message', (event) => {
+                    console.log('Production Scheduler received message:', event.data);
+                    
                     // Handle algorithm run requests from parent
                     if (event.data && event.data.type === 'RUN_ALGORITHM') {
                         runSchedulerAlgorithm(event.data.algorithm);
+                    }
+                    // Handle scheduler commands from Max AI
+                    else if (event.data?.type === 'SCHEDULER_COMMAND') {
+                        switch (event.data.command) {
+                            case 'RUN_ASAP':
+                                runSchedulerAlgorithm('ASAP');
+                                break;
+                            case 'RUN_ALAP':
+                                runSchedulerAlgorithm('ALAP');
+                                break;
+                            case 'RUN_CRITICAL_PATH':
+                                runSchedulerAlgorithm('CRITICAL_PATH');
+                                break;
+                            case 'LEVEL_RESOURCES':
+                                runSchedulerAlgorithm('LEVEL_RESOURCES');
+                                break;
+                            case 'RUN_TOC':
+                                runSchedulerAlgorithm('DRUM_TOC');
+                                break;
+                            case 'CHANGE_VIEW_WEEK':
+                                const viewSelect = document.getElementById('viewType');
+                                if (viewSelect) {
+                                    viewSelect.value = 'weekAndDayView';
+                                    viewSelect.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'CHANGE_VIEW_MONTH':
+                                const viewSelectMonth = document.getElementById('viewType');
+                                if (viewSelectMonth) {
+                                    viewSelectMonth.value = 'monthAndYear';
+                                    viewSelectMonth.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                        }
+                    } else if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
+                        const action = event.data.action;
+                        
+                        switch (action) {
+                            case 'zoom_in':
+                                document.getElementById('zoomIn')?.click();
+                                break;
+                            case 'zoom_out':
+                                document.getElementById('zoomOut')?.click();
+                                break;
+                            case 'zoom_fit':
+                                document.getElementById('zoomToFit')?.click();
+                                break;
+                            case 'week_view':
+                                const viewSelectWeek = document.getElementById('viewPreset');
+                                if (viewSelectWeek) {
+                                    viewSelectWeek.value = 'dayAndWeek';
+                                    viewSelectWeek.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'day_view':
+                                const viewSelectDay = document.getElementById('viewPreset');
+                                if (viewSelectDay) {
+                                    viewSelectDay.value = 'hourAndDay';
+                                    viewSelectDay.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                            case 'month_view':
+                                const viewSelectMonthView = document.getElementById('viewPreset');
+                                if (viewSelectMonthView) {
+                                    viewSelectMonthView.value = 'monthAndYear';
+                                    viewSelectMonthView.dispatchEvent(new Event('change'));
+                                }
+                                break;
+                        }
+                    } else if (event.data?.type === 'RUN_SCHEDULER_ALGORITHM') {
+                        const algorithm = event.data.algorithm;
+                        const algorithmMap = {
+                            'ASAP': 'asap',
+                            'ALAP': 'alap',
+                            'CRITICAL_PATH': 'criticalPath',
+                            'LEVEL_RESOURCES': 'levelResources',
+                            'DRUM_TOC': 'drum'
+                        };
+                        
+                        const algorithmValue = algorithmMap[algorithm];
+                        if (algorithmValue) {
+                            const algorithmSelect = document.getElementById('schedulingAlgorithm');
+                            const applyButton = document.getElementById('applyScheduling');
+                            
+                            if (algorithmSelect && applyButton) {
+                                algorithmSelect.value = algorithmValue;
+                                applyButton.click();
+                                console.log(`Applied scheduling algorithm: ${algorithm}`);
+                            }
+                        }
+                    } else if (event.data?.type === 'SET_THEME') {
+                        // Theme toggle removed - using consistent light theme with blue-purple gradient
+                        console.log('Theme toggle disabled - using consistent light theme');
                     }
                 });
                 
@@ -4613,72 +4708,7 @@
                     }
                 }
                 
-                // Listen for messages from Max AI
-                window.addEventListener('message', (event) => {
-                    console.log('Production Scheduler received message:', event.data);
-                    
-                    // Handle scheduler commands from Max AI
-                    if (event.data?.type === 'SCHEDULER_VIEW_CONTROL') {
-                        const action = event.data.action;
-                        
-                        switch (action) {
-                            case 'zoom_in':
-                                document.getElementById('zoomIn')?.click();
-                                break;
-                            case 'zoom_out':
-                                document.getElementById('zoomOut')?.click();
-                                break;
-                            case 'zoom_fit':
-                                document.getElementById('zoomToFit')?.click();
-                                break;
-                            case 'week_view':
-                                const viewSelect = document.getElementById('viewPreset');
-                                if (viewSelect) {
-                                    viewSelect.value = 'dayAndWeek';
-                                    viewSelect.dispatchEvent(new Event('change'));
-                                }
-                                break;
-                            case 'day_view':
-                                const viewSelectDay = document.getElementById('viewPreset');
-                                if (viewSelectDay) {
-                                    viewSelectDay.value = 'hourAndDay';
-                                    viewSelectDay.dispatchEvent(new Event('change'));
-                                }
-                                break;
-                            case 'month_view':
-                                const viewSelectMonth = document.getElementById('viewPreset');
-                                if (viewSelectMonth) {
-                                    viewSelectMonth.value = 'monthAndYear';
-                                    viewSelectMonth.dispatchEvent(new Event('change'));
-                                }
-                                break;
-                        }
-                    } else if (event.data?.type === 'RUN_SCHEDULER_ALGORITHM') {
-                        const algorithm = event.data.algorithm;
-                        const algorithmMap = {
-                            'ASAP': 'asap',
-                            'ALAP': 'alap',
-                            'CRITICAL_PATH': 'criticalPath',
-                            'LEVEL_RESOURCES': 'levelResources',
-                            'DRUM_TOC': 'drum'
-                        };
-                        
-                        const algorithmValue = algorithmMap[algorithm];
-                        if (algorithmValue) {
-                            const algorithmSelect = document.getElementById('schedulingAlgorithm');
-                            const applyButton = document.getElementById('applyScheduling');
-                            
-                            if (algorithmSelect && applyButton) {
-                                algorithmSelect.value = algorithmValue;
-                                applyButton.click();
-                                console.log(`Applied scheduling algorithm: ${algorithm}`);
-                            }
-                        }
-                    } else if (event.data?.type === 'SET_THEME') {
-                        // Theme toggle removed - using consistent light theme with blue-purple gradient
-                        console.log('Theme toggle disabled - using consistent light theme');
-                    }
-                });
+                // Duplicate listener removed - functionality merged into main listener above
                 
             } catch (error) {
                 console.error('Failed to initialize scheduler:', error);
