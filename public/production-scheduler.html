@@ -2991,6 +2991,31 @@
                            ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
                 }
 
+                // Left compaction helper for forward scheduling (ASAP)
+                async function compactLeftPerResource() {
+                    const { resourceStore, eventStore } = scheduler;
+                    for (const res of resourceStore.records) {
+                        const evs = eventStore.records
+                            .filter(e => String(e.resourceId) === String(res.id))
+                            .filter(e => e.startDate && e.endDate)
+                            .sort((a, b) => a.startDate - b.startDate);
+                        
+                        let cursor = evs.length ? new Date(evs[0].startDate) : null;
+                        for (let i = 0; i < evs.length; i++) {
+                            const cur = evs[i];
+                            if (i === 0) continue;
+                            const dur = cur.endDate - cur.startDate;
+                            // Slide left up to the previous event's end
+                            const prevEnd = evs[i - 1].endDate;
+                            if (cur.startDate > prevEnd) {
+                                cur.set({ startDate: new Date(prevEnd), endDate: new Date(prevEnd.getTime() + dur) });
+                            }
+                        }
+                    }
+                    await scheduler.project.commitAsync();
+                    await scheduler.project.propagate();
+                }
+
                 // Scheduling Algorithm Implementations
                 // Make asapScheduling globally accessible
                 let isAsapRunning = false; // Add flag to prevent re-entrance
@@ -3346,6 +3371,11 @@
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
+                    
+                    // Apply left compaction to remove gaps
+                    console.log('📦 Applying left compaction to remove gaps...');
+                    await compactLeftPerResource();
+                    console.log('✅ Left compaction complete - gaps removed');
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
