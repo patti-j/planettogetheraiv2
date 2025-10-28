@@ -1014,6 +1014,160 @@ router.delete("/api/items/:id", async (req, res) => {
   }
 });
 
+// Workflow Management Endpoints
+router.get("/api/workflows", async (req, res) => {
+  try {
+    const { category, status } = req.query;
+    const workflows = await storage.getWorkflows({
+      category: category as string,
+      status: status as string
+    });
+    res.json(workflows);
+  } catch (error) {
+    console.error("Error fetching workflows:", error);
+    res.status(500).json({ message: "Failed to fetch workflows" });
+  }
+});
+
+router.get("/api/workflows/:id", async (req, res) => {
+  try {
+    const workflow = await storage.getWorkflow(parseInt(req.params.id));
+    if (!workflow) {
+      return res.status(404).json({ message: "Workflow not found" });
+    }
+    res.json(workflow);
+  } catch (error) {
+    console.error("Error fetching workflow:", error);
+    res.status(500).json({ message: "Failed to fetch workflow" });
+  }
+});
+
+router.post("/api/workflows", async (req, res) => {
+  try {
+    const newWorkflow = await storage.createWorkflow(req.body);
+    res.json(newWorkflow);
+  } catch (error) {
+    console.error("Error creating workflow:", error);
+    res.status(500).json({ message: "Failed to create workflow" });
+  }
+});
+
+router.put("/api/workflows/:id", async (req, res) => {
+  try {
+    const updatedWorkflow = await storage.updateWorkflow(parseInt(req.params.id), req.body);
+    if (!updatedWorkflow) {
+      return res.status(404).json({ message: "Workflow not found" });
+    }
+    res.json(updatedWorkflow);
+  } catch (error) {
+    console.error("Error updating workflow:", error);
+    res.status(500).json({ message: "Failed to update workflow" });
+  }
+});
+
+router.delete("/api/workflows/:id", async (req, res) => {
+  try {
+    const deleted = await storage.deleteWorkflow(parseInt(req.params.id));
+    if (!deleted) {
+      return res.status(404).json({ message: "Workflow not found" });
+    }
+    res.json({ message: "Workflow deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting workflow:", error);
+    res.status(500).json({ message: "Failed to delete workflow" });
+  }
+});
+
+// Execute workflow endpoint
+router.post("/api/workflows/:id/execute", async (req, res) => {
+  try {
+    const workflowId = parseInt(req.params.id);
+    const workflow = await storage.getWorkflow(workflowId);
+    
+    if (!workflow) {
+      return res.status(404).json({ message: "Workflow not found" });
+    }
+    
+    if (workflow.status !== 'active') {
+      return res.status(400).json({ message: "Workflow is not active" });
+    }
+    
+    const execution = await storage.createWorkflowExecution({
+      workflowId,
+      triggeredBy: 'manual',
+      triggeredByUserId: req.user?.id,
+      inputData: req.body
+    });
+    
+    res.json(execution);
+  } catch (error) {
+    console.error("Error executing workflow:", error);
+    res.status(500).json({ message: "Failed to execute workflow" });
+  }
+});
+
+// Workflow executions endpoints
+router.get("/api/workflow-executions", async (req, res) => {
+  try {
+    const { workflowId } = req.query;
+    const executions = await storage.getWorkflowExecutions(
+      workflowId ? parseInt(workflowId as string) : undefined
+    );
+    res.json(executions);
+  } catch (error) {
+    console.error("Error fetching workflow executions:", error);
+    res.status(500).json({ message: "Failed to fetch workflow executions" });
+  }
+});
+
+router.get("/api/workflow-executions/:id", async (req, res) => {
+  try {
+    const execution = await storage.getWorkflowExecution(parseInt(req.params.id));
+    if (!execution) {
+      return res.status(404).json({ message: "Execution not found" });
+    }
+    res.json(execution);
+  } catch (error) {
+    console.error("Error fetching workflow execution:", error);
+    res.status(500).json({ message: "Failed to fetch workflow execution" });
+  }
+});
+
+// Workflow templates endpoints
+router.get("/api/workflow-templates", async (req, res) => {
+  try {
+    const { category } = req.query;
+    const templates = await storage.getWorkflowTemplates(category as string);
+    res.json(templates);
+  } catch (error) {
+    console.error("Error fetching workflow templates:", error);
+    res.status(500).json({ message: "Failed to fetch workflow templates" });
+  }
+});
+
+router.get("/api/workflow-templates/:id", async (req, res) => {
+  try {
+    const template = await storage.getWorkflowTemplate(parseInt(req.params.id));
+    if (!template) {
+      return res.status(404).json({ message: "Template not found" });
+    }
+    res.json(template);
+  } catch (error) {
+    console.error("Error fetching workflow template:", error);
+    res.status(500).json({ message: "Failed to fetch workflow template" });
+  }
+});
+
+router.post("/api/workflow-templates", async (req, res) => {
+  try {
+    const newTemplate = await storage.createWorkflowTemplate(req.body);
+    res.json(newTemplate);
+  } catch (error) {
+    console.error("Error creating workflow template:", error);
+    res.status(500).json({ message: "Failed to create workflow template" });
+  }
+});
+
 // Stock items endpoint for ATP-CTP page
 router.get("/api/stock-items", async (req, res) => {
   try {

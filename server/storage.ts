@@ -226,6 +226,24 @@ export interface IStorage {
   getAutonomousOptimization(id: number): Promise<AutonomousOptimization | undefined>;
   updateAutonomousOptimization(id: number, data: Partial<InsertAutonomousOptimization>): Promise<AutonomousOptimization | undefined>;
   deleteAutonomousOptimization(id: number): Promise<boolean>;
+
+  // Workflow Management
+  createWorkflow(data: any): Promise<any>;
+  getWorkflows(filters?: { category?: string; status?: string }): Promise<any[]>;
+  getWorkflow(id: number): Promise<any | undefined>;
+  updateWorkflow(id: number, data: any): Promise<any | undefined>;
+  deleteWorkflow(id: number): Promise<boolean>;
+  
+  // Workflow Executions
+  createWorkflowExecution(data: any): Promise<any>;
+  getWorkflowExecutions(workflowId?: number): Promise<any[]>;
+  getWorkflowExecution(id: number): Promise<any | undefined>;
+  updateWorkflowExecution(id: number, data: any): Promise<any | undefined>;
+  
+  // Workflow Templates
+  getWorkflowTemplates(category?: string): Promise<any[]>;
+  getWorkflowTemplate(id: number): Promise<any | undefined>;
+  createWorkflowTemplate(data: any): Promise<any>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2224,6 +2242,219 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error deleting autonomous optimization:', error);
       return false;
+    }
+  }
+
+  // Workflow Management
+  async createWorkflow(data: any): Promise<any> {
+    try {
+      // For now, return mock data - actual implementation will use workflow tables
+      return {
+        id: Date.now(),
+        ...data,
+        createdAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error creating workflow:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflows(filters?: { category?: string; status?: string }): Promise<any[]> {
+    try {
+      // Return mock data for now
+      return [
+        {
+          id: 1,
+          name: 'Daily Production Report',
+          description: 'Automatically generate and distribute daily production reports',
+          category: 'manufacturing',
+          status: 'active',
+          triggerType: 'schedule',
+          cronExpression: '0 9 * * *',
+          aiEnabled: true,
+          executionCount: 245,
+          tags: ['reporting', 'production']
+        },
+        {
+          id: 2,
+          name: 'Quality Alert Response',
+          description: 'Respond to quality issues with automated escalation and remediation',
+          category: 'quality',
+          status: 'active',
+          triggerType: 'event',
+          aiEnabled: true,
+          executionCount: 189,
+          tags: ['quality', 'alerts']
+        },
+        {
+          id: 3,
+          name: 'Maintenance Schedule',
+          description: 'Schedule and track preventive maintenance activities',
+          category: 'maintenance',
+          status: 'draft',
+          triggerType: 'schedule',
+          cronExpression: '0 0 * * 1',
+          aiEnabled: false,
+          executionCount: 0,
+          tags: ['maintenance']
+        }
+      ].filter(w => {
+        if (filters?.category && w.category !== filters.category) return false;
+        if (filters?.status && w.status !== filters.status) return false;
+        return true;
+      });
+    } catch (error) {
+      console.error('Error fetching workflows:', error);
+      return [];
+    }
+  }
+
+  async getWorkflow(id: number): Promise<any | undefined> {
+    const workflows = await this.getWorkflows();
+    return workflows.find(w => w.id === id);
+  }
+
+  async updateWorkflow(id: number, data: any): Promise<any | undefined> {
+    try {
+      return {
+        id,
+        ...data,
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error updating workflow:', error);
+      return undefined;
+    }
+  }
+
+  async deleteWorkflow(id: number): Promise<boolean> {
+    try {
+      return true;
+    } catch (error) {
+      console.error('Error deleting workflow:', error);
+      return false;
+    }
+  }
+
+  // Workflow Executions
+  async createWorkflowExecution(data: any): Promise<any> {
+    try {
+      return {
+        id: Date.now(),
+        executionId: `exec-${Date.now()}`,
+        ...data,
+        status: 'running',
+        startedAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error creating workflow execution:', error);
+      throw error;
+    }
+  }
+
+  async getWorkflowExecutions(workflowId?: number): Promise<any[]> {
+    try {
+      return [
+        {
+          id: 1,
+          executionId: 'exec-1',
+          workflowId: 1,
+          workflowName: 'Daily Production Report',
+          status: 'completed',
+          startedAt: new Date('2025-10-28T09:00:00'),
+          completedAt: new Date('2025-10-28T09:00:45'),
+          duration: 45,
+          triggeredBy: 'schedule'
+        },
+        {
+          id: 2,
+          executionId: 'exec-2',
+          workflowId: 2,
+          workflowName: 'Quality Alert Response',
+          status: 'running',
+          startedAt: new Date('2025-10-28T13:30:00'),
+          triggeredBy: 'event'
+        }
+      ].filter(e => !workflowId || e.workflowId === workflowId);
+    } catch (error) {
+      console.error('Error fetching workflow executions:', error);
+      return [];
+    }
+  }
+
+  async getWorkflowExecution(id: number): Promise<any | undefined> {
+    const executions = await this.getWorkflowExecutions();
+    return executions.find(e => e.id === id);
+  }
+
+  async updateWorkflowExecution(id: number, data: any): Promise<any | undefined> {
+    try {
+      return {
+        id,
+        ...data,
+        updatedAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error updating workflow execution:', error);
+      return undefined;
+    }
+  }
+
+  // Workflow Templates
+  async getWorkflowTemplates(category?: string): Promise<any[]> {
+    try {
+      return [
+        {
+          id: 1,
+          name: 'Daily Production Report',
+          description: 'Automatically generate and distribute daily production reports',
+          category: 'reporting',
+          usageCount: 245
+        },
+        {
+          id: 2,
+          name: 'Quality Alert Response',
+          description: 'Respond to quality issues with automated escalation and remediation',
+          category: 'quality',
+          usageCount: 189
+        },
+        {
+          id: 3,
+          name: 'Maintenance Schedule',
+          description: 'Schedule and track preventive maintenance activities',
+          category: 'maintenance',
+          usageCount: 156
+        },
+        {
+          id: 4,
+          name: 'Inventory Reorder',
+          description: 'Automatically reorder materials when stock reaches threshold',
+          category: 'inventory',
+          usageCount: 312
+        }
+      ].filter(t => !category || t.category === category);
+    } catch (error) {
+      console.error('Error fetching workflow templates:', error);
+      return [];
+    }
+  }
+
+  async getWorkflowTemplate(id: number): Promise<any | undefined> {
+    const templates = await this.getWorkflowTemplates();
+    return templates.find(t => t.id === id);
+  }
+
+  async createWorkflowTemplate(data: any): Promise<any> {
+    try {
+      return {
+        id: Date.now(),
+        ...data,
+        createdAt: new Date()
+      };
+    } catch (error) {
+      console.error('Error creating workflow template:', error);
+      throw error;
     }
   }
 }
