@@ -1225,7 +1225,34 @@
             console.log('🔍 Committing and propagating changes...');
             await project.commitAsync();
             await project.propagate();
-            sch.zoomToFit({ leftMargin: 50, rightMargin: 50 });
+            
+            // Add a small delay before zoom to ensure DOM has updated, especially when showing all areas
+            console.log('🔍 Waiting for DOM update before zoom...');
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Use specific zoom options for better fit
+            const zoomOptions = {
+                leftMargin: 50,
+                rightMargin: 50,
+                topMargin: 50,
+                bottomMargin: 50,
+                // Force recalculation of the time axis
+                resetScroll: true
+            };
+            
+            if (area === 'all') {
+                console.log('🔍 Zooming to fit ALL areas...');
+                // For "All Areas", ensure we capture the full time range
+                await sch.zoomToFit(zoomOptions);
+                // Double-check zoom worked by doing it again after a slight delay
+                await new Promise(resolve => setTimeout(resolve, 200));
+                await sch.zoomToFit(zoomOptions);
+                console.log('✅ Zoom to fit completed for ALL areas');
+            } else {
+                console.log(`🔍 Zooming to fit area "${area}"...`);
+                await sch.zoomToFit(zoomOptions);
+                console.log(`✅ Zoom to fit completed for area "${area}"`);
+            }
             
             console.log(`✅ Planning area filter applied successfully. Final: ${resourceStore.count} resources, ${eventStore.count} events`);
         }
