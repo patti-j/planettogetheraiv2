@@ -3357,26 +3357,13 @@
                                 const schedulerRect = scheduler.element.getBoundingClientRect();
                                 const x = event.clientX - schedulerRect.left;
                                 const y = event.clientY - schedulerRect.top;
-
                                 
-                                if (hasSuccessors) {
-                                    // This event has successors - clear constraints to let dependencies drive
-                                    eventRecord.constraintType = null;
-                                    eventRecord.constraintDate = null;
-                                    console.log(`🔄 Clearing constraints for "${eventRecord.name}" to let dependencies drive in ALAP mode`);
-                                } else {
-                                    // Leaf event - can have FNLT constraint
-                                    eventRecord.constraintType = 'finishnolaterthan';
-                                    eventRecord.constraintDate = eventRecord.endDate;
-                                }
-                            } else if (currentSchedulingMode === 'ASAP') {
-                                // For ASAP, apply SNET constraint as usual
-                                eventRecord.constraintType = 'startnoearlierthan';
-                                eventRecord.constraintDate = eventRecord.startDate;
-                            } else {
-                                // For other modes, clear constraints
-                                eventRecord.constraintType = null;
-                                eventRecord.constraintDate = null;
+                                // TODO: Implement actual drop logic here
+                                // This would create a new event at the drop location
+                                console.log('📍 Drop coordinates:', { x, y });
+                                
+                            } catch (error) {
+                                console.error('❌ Error during drop operation:', error);
                             }
                         }
                     }
