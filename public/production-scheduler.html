@@ -4679,16 +4679,6 @@
                         console.log('Theme toggle disabled - using consistent light theme');
                     }
                 });
-                
-            } catch (error) {
-                console.error('Failed to initialize scheduler:', error);
-                // Only show error if initialization actually failed (not just warnings)
-                if (error.message && error.message !== 'undefined') {
-                    console.error('Scheduler initialization error details:', error.message);
-                }
-                // Try to continue with scheduler initialization even if some resources fail
-                document.getElementById('loadingOverlay').style.display = 'none';
-            }
         });
     </script>
     
