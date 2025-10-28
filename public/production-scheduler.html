@@ -4431,32 +4431,82 @@
                     // Keep a copy globally
                     window.originalDependencies = dependencies || [];
                     
-                    // Draw dependency lines without letting the engine see them
-                    if (scheduler.features?.dependencies?.store) {
+                    // CRITICAL FIX: Wait for events to be rendered before adding dependencies
+                    // Bryntum needs events to be in the DOM before dependencies can link to them
+                    setTimeout(() => {
+                        // Draw dependency lines without letting the engine see them
+                        if (scheduler.features?.dependencies?.store) {
                         console.log('🔍 Dependency feature store found, adding visual lines...');
                         console.log('Dependencies to add:', window.originalDependencies.length);
                         
+                        // DEBUG: Check if events exist with the IDs we're trying to link
+                        const eventIds = scheduler.eventStore.records.map(e => e.id);
+                        console.log('📋 Available event IDs:', eventIds);
+                        console.log('📋 Event ID types:', eventIds.slice(0, 3).map(id => typeof id));
+                        console.log('📋 First 3 dependencies from/to:', window.originalDependencies.slice(0, 3).map(d => ({
+                            from: d.from, 
+                            fromType: typeof d.from,
+                            to: d.to,
+                            toType: typeof d.to
+                        })));
+                        
+                        // CRITICAL FIX: Convert dependency from/to to match event ID types
+                        // Events have numeric IDs but dependencies might have string IDs
+                        const eventIdType = eventIds.length > 0 ? typeof eventIds[0] : 'number';
+                        console.log(`📋 Event ID type detected: ${eventIdType}`);
+                        
                         scheduler.features.dependencies.store.removeAll();
                         
-                        // Important: we only copy the fields needed for drawing lines
-                        const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                            id: String(id), 
-                            from: from,
-                            to: to,
-                            type: type,
-                            lag: lag,
-                            lagUnit: lagUnit
-                        }));
+                        // Convert dependency from/to to match event ID type
+                        const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => {
+                            // Convert from/to to the same type as event IDs
+                            const convertedFrom = eventIdType === 'number' ? Number(from) : String(from);
+                            const convertedTo = eventIdType === 'number' ? Number(to) : String(to);
+                            
+                            return {
+                                id: String(id), 
+                                from: convertedFrom,
+                                to: convertedTo,
+                                type: type,
+                                lag: lag,
+                                lagUnit: lagUnit
+                            };
+                        });
                         
-                        console.log('First dependency to add:', depsToAdd[0]);
+                        console.log('First dependency to add (after conversion):', depsToAdd[0]);
                         scheduler.features.dependencies.store.add(depsToAdd);
                         
                         console.log(`🎨 Rendered ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
                         console.log('Dependency store records:', scheduler.features.dependencies.store.records);
+                        
+                        // DEBUG: Check if dependencies were actually linked to events
+                        const linkedDeps = scheduler.features.dependencies.store.records.filter(d => d.fromEvent && d.toEvent);
+                        console.log(`✅ Successfully linked dependencies: ${linkedDeps.length}/${scheduler.features.dependencies.store.count}`);
+                        if (linkedDeps.length === 0 && scheduler.features.dependencies.store.count > 0) {
+                            console.error('❌ NO DEPENDENCIES WERE LINKED TO EVENTS! Check that event IDs match dependency from/to values.');
+                            
+                            // Add visible debug panel
+                            const debugPanel = document.createElement('div');
+                            debugPanel.style.cssText = 'position: fixed; top: 150px; right: 10px; background: yellow; border: 2px solid red; padding: 10px; z-index: 99999; max-width: 400px; max-height: 300px; overflow: auto;';
+                            debugPanel.innerHTML = `
+                                <h3 style="color: red; margin: 0 0 10px 0;">⚠️ DEPENDENCY DEBUG</h3>
+                                <p><strong>Event IDs (first 5):</strong> ${eventIds.slice(0, 5).join(', ')}</p>
+                                <p><strong>Event ID types:</strong> ${eventIds.slice(0, 3).map(id => typeof id).join(', ')}</p>
+                                <p><strong>Dependency from/to (first 3):</strong><br>
+                                ${window.originalDependencies.slice(0, 3).map(d => `from: ${d.from} (${typeof d.from}) → to: ${d.to} (${typeof d.to})`).join('<br>')}</p>
+                                <p><strong>Dependencies in store:</strong> ${scheduler.features.dependencies.store.count}</p>
+                                <p><strong>Linked dependencies:</strong> ${linkedDeps.length}</p>
+                            `;
+                            document.body.appendChild(debugPanel);
+                            
+                            // Auto-remove after 30 seconds
+                            setTimeout(() => debugPanel.remove(), 30000);
+                        }
                     } else {
                         console.warn('⚠️ Dependencies feature not available or store not found');
                         console.log('Scheduler features:', Object.keys(scheduler.features || {}));
                     }
+                    }, 100); // End of setTimeout for dependencies - wait 100ms for events to render
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
