@@ -1765,13 +1765,8 @@
                     }));
                     
                     console.log(`✅ ${dependencies.length} PT dependencies ready for visual display`);
-                    
-                    // Store original dependencies globally so they can be restored after scheduling
-                    window.originalDependencies = dependencies;
-                    console.log('💾 Stored original dependencies globally for restoration after scheduling');
                 } else {
                     console.log('ℹ️ No PT dependencies found in database');
-                    window.originalDependencies = [];
                 }
 
                 // Detect mobile device
@@ -2996,12 +2991,10 @@
                         // 2. Operation sequence within each job
                         
                         const scheduler = window.scheduler;
-                        const { project, eventStore, dependencyStore, assignmentStore } = scheduler;
+                        const { project, eventStore, assignmentStore } = scheduler;
                         
-                        // Clear dependencies to prevent conflicts during scheduling
-                        // (We'll restore from window.originalDependencies at the end)
-                        dependencyStore.removeAll();
-                        console.log('⏸️ Temporarily removed dependencies for conflict-free ASAP scheduling');
+                        // No need to clear dependencies - they're only in the feature store for visual display
+                        console.log('🎨 Dependencies are visual-only, no clearing needed for ASAP scheduling');
                         // 3. Manufacturing release date (if specified in ptjobs table)
                         // 
                         // IMPORTANT: Dependency lines are VISUAL ONLY for the Gantt chart.
@@ -3324,25 +3317,21 @@
                     console.log('  🔄 Propagating schedule...');
                     await project.propagate();
                     
-                    // Restore the ORIGINAL dependencies from global storage
-                    // This ensures we always get back the PT dependencies from the database
-                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
+                    // Restore visual-only dependencies to feature store (not project store)
+                    console.log('🔍 Restoring visual dependencies...');
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0) {
-                        // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = originalDeps.map(dep => ({
-                            ...dep,
-                            inactive: true // Force inactive flag for visual-only display
-                        }));
-                        
-                        console.log('🔍 Adding dependencies back to store...');
-                        dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
-                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
-                    } else {
-                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
+                            originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                id: String(id), from, to, type, lag, lagUnit
+                            }))
+                        );
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                    } else if (originalDeps.length === 0) {
+                        console.log('⚠️ No original dependencies to restore');
                     }
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
@@ -3519,10 +3508,8 @@
                     project.autoSync = false; // Prevent automatic syncing during changes
                     project.validateConstraintInterval = false; // Disable constraint validation during scheduling
                     
-                    // Clear all dependencies to prevent any conflicts
-                    // (We'll restore from window.originalDependencies at the end)
-                    dependencyStore.removeAll();
-                    console.log('⏸️ Temporarily removed dependencies for conflict-free ALAP scheduling');
+                    // No need to clear dependencies - they're only in the feature store for visual display
+                    console.log('🎨 Dependencies are visual-only, no clearing needed for ALAP scheduling');
                     
                     // Guard
                     const allEvents = [...eventStore.records].filter(e => e.resourceId !== 'unscheduled');
@@ -3794,25 +3781,21 @@
                     project.autoSync = originalAutoSync;
                     project.validateConstraintInterval = originalValidateConstraintInterval;
                     
-                    // Restore the ORIGINAL dependencies from global storage
-                    // This ensures we always get back the PT dependencies from the database
-                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
+                    // Restore visual-only dependencies to feature store (not project store)
+                    console.log('🔍 Restoring visual dependencies...');
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0) {
-                        // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = originalDeps.map(dep => ({
-                            ...dep,
-                            inactive: true // Force inactive flag for visual-only display
-                        }));
-                        
-                        console.log('🔍 Adding dependencies back to store...');
-                        dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
-                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
-                    } else {
-                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
+                            originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                id: String(id), from, to, type, lag, lagUnit
+                            }))
+                        );
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                    } else if (originalDeps.length === 0) {
+                        console.log('⚠️ No original dependencies to restore');
                     }
                     
                     console.log('▶️ Restored conflict validation settings');
@@ -4035,12 +4018,8 @@
                     console.log('🚀 Starting Drum (TOC) scheduling - Theory of Constraints');
                     console.log('📌 NOTE: Dependencies are visual-only. Scheduling optimizes bottleneck resource.');
                     
-                    const { dependencyStore } = scheduler;
-                    
-                    // Clear dependencies to prevent conflicts during scheduling
-                    // (We'll restore from window.originalDependencies at the end)
-                    dependencyStore.removeAll();
-                    console.log('⏸️ Temporarily removed dependencies for conflict-free Drum scheduling');
+                    // No need to clear dependencies - they're only in the feature store for visual display
+                    console.log('🎨 Dependencies are visual-only, no clearing needed for Drum scheduling');
                     
                     const events = [...scheduler.eventStore.records].filter(e => e.resourceId !== 'unscheduled');
                     
@@ -4136,25 +4115,21 @@
                     await scheduler.project.commitAsync();
                     await scheduler.project.propagate();
                     
-                    // Restore the ORIGINAL dependencies from global storage
-                    // This ensures we always get back the PT dependencies from the database
-                    console.log('🔍 Checking window.originalDependencies:', window.originalDependencies);
+                    // Restore visual-only dependencies to feature store (not project store)
+                    console.log('🔍 Restoring visual dependencies...');
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0) {
-                        // Ensure all restored dependencies are marked as inactive
-                        const inactiveDependencies = originalDeps.map(dep => ({
-                            ...dep,
-                            inactive: true // Force inactive flag for visual-only display
-                        }));
-                        
-                        console.log('🔍 Adding dependencies back to store...');
-                        dependencyStore.add(inactiveDependencies);
-                        console.log(`▶️ Restored ${inactiveDependencies.length} ORIGINAL PT dependencies (inactive)`);
-                        console.log(`🔍 DependencyStore now has ${dependencyStore.count} dependencies`);
-                    } else {
-                        console.log('⚠️ No original dependencies to restore! window.originalDependencies is empty or undefined');
+                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        scheduler.features.dependencies.store.add(
+                            originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                id: String(id), from, to, type, lag, lagUnit
+                            }))
+                        );
+                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                    } else if (originalDeps.length === 0) {
+                        console.log('⚠️ No original dependencies to restore');
                     }
                     
                     console.log('✅ Drum (TOC) scheduling completed');
@@ -4404,16 +4379,28 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
-                    // Load data WITH PT dependencies for visual workflow display
-                    // Dependencies marked as inactive to prevent constraint enforcement
-                    // Conflict suppression handlers prevent any dependency conflict dialogs
-                    // Scheduling based purely on job priority and operation sequence numbers
+                    // Load data WITHOUT dependencies to prevent engine constraints
+                    // Dependencies will be added to feature store for visual-only rendering
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
-                        assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: dependencies // PT dependencies for visual workflow display only
+                        assignmentsData: assignments // Assignments link events to resources
                     });
+                    
+                    // Keep a copy globally
+                    window.originalDependencies = dependencies || [];
+                    
+                    // Draw dependency lines without letting the engine see them
+                    if (scheduler.features?.dependencies?.store) {
+                        scheduler.features.dependencies.store.removeAll();
+                        // Important: we only copy the fields needed for drawing lines
+                        scheduler.features.dependencies.store.add(
+                            window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                id: String(id), from, to, type, lag, lagUnit
+                            }))
+                        );
+                        console.log(`🎨 Rendered ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                    }
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
