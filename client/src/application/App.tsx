@@ -123,7 +123,6 @@ import Billing from "@/pages/billing";
 import AlgorithmManagement from "@/pages/algorithm-management";
 import MobileDashboardView from "@/pages/mobile-dashboard-view";
 import MemoryBooks from "@/pages/memory-books";
-import Workflows from "@/pages/Workflows";
 import DataImportClean from "@/pages/data-import-clean";
 import DataImportSimple from "@/pages/data-import-simple";
 import Help from "@/pages/help";
@@ -382,11 +381,6 @@ export default function ApplicationApp() {
               
               {/* AI & Analytics Routes */}
               <Route path="/autonomous-optimization" component={AutonomousOptimization} />
-              <Route path="/workflows">
-                <ProtectedRoute feature="workflows" action="view">
-                  <Workflows />
-                </ProtectedRoute>
-              </Route>
               <Route path="/demand-forecasting" component={DemandForecasting} />
               <Route path="/onboarding-assistant" component={OnboardingAssistant} />
               <Route path="/design-studio" component={DesignStudio} />

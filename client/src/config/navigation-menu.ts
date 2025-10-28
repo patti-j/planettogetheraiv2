@@ -81,7 +81,6 @@ export const navigationGroups: NavigationGroup[] = [
     borderColor: "border-purple-200 dark:border-purple-800",
     features: [
       { icon: Sparkles, label: "Max AI Assistant", href: "#max", feature: "ai-assistant", action: "view", color: "bg-gradient-to-r from-purple-500 to-pink-600", isAI: true, requiresOnboarding: false },
-      { icon: Sparkles, label: "AI Workflow Automation", href: "/workflows", feature: "workflows", action: "view", color: "bg-gradient-to-r from-purple-500 to-indigo-600" },
       { icon: GraduationCap, label: "Onboarding Assistant", href: "/onboarding-assistant", feature: "systems-management", action: "view", color: "bg-gradient-to-r from-purple-600 to-pink-500" },
       { icon: Sparkles, label: "Autonomous Optimization", href: "/autonomous-optimization", feature: "analytics", action: "view", color: "bg-gradient-to-r from-blue-500 to-purple-600" },
       { icon: Sparkles, label: "Demand Forecasting", href: "/demand-forecasting", feature: "analytics", action: "view", color: "bg-purple-500" },
