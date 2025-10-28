@@ -4587,14 +4587,6 @@
                 // Hide loading overlay
                 document.getElementById('loadingOverlay').style.display = 'none';
                 
-            } catch (error) {
-                console.error('Failed to initialize scheduler:', error);
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.innerHTML = '<div class="error-message">Failed to initialize scheduler. Please refresh the page.</div>';
-                }
-            }
-
                 // Check for pending scheduler commands from Max AI (after navigation)
                 const pendingCommand = sessionStorage.getItem('pendingSchedulerCommand');
                 if (pendingCommand) {
@@ -4687,6 +4679,13 @@
                         console.log('Theme toggle disabled - using consistent light theme');
                     }
                 });
+            } catch (error) {
+                console.error('Failed to initialize scheduler:', error);
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.innerHTML = '<div class="error-message">Failed to initialize scheduler. Please refresh the page.</div>';
+                }
+            }
         });  // End of DOMContentLoaded
     </script>
     
