@@ -3964,83 +3964,117 @@
                     }
                 }
                 
-                // Scheduling Algorithm Implementations using Bryntum's constraint system
+                // Helper function to find next free slot on a resource
+                function findNextFreeSlot(busy, from, durMs) {
+                    // busy: array of [startMs, endMs], sorted by start
+                    let t = +from;
+                    for (const [s, e] of busy) {
+                        if (t + durMs <= s) return new Date(t);      // fits before next busy
+                        if (t < e) t = e;                            // push right past overlap
+                    }
+                    return new Date(t);                             // after last event
+                }
+                
+                // Helper function to find previous free slot on a resource (for ALAP)
+                function findPrevFreeSlot(busy, latestEnd, durMs) {
+                    // busy sorted; search for latest gap ending <= latestEnd
+                    let prevEnd = +latestEnd;
+                    // iterate backwards
+                    for (let i = busy.length - 1; i >= 0; i--) {
+                        const [s, e] = busy[i];
+                        if (e <= prevEnd) {
+                            // free window is (e, prevEnd); try to fit at end
+                            if (prevEnd - durMs >= e) return new Date(prevEnd - durMs);
+                            prevEnd = s; // slide left to before this busy block
+                        }
+                        else if (s < prevEnd && e > prevEnd) {
+                            prevEnd = s; // we're inside a busy block; jump left
+                        }
+                    }
+                    // before first busy block
+                    return new Date(Math.max(prevEnd - durMs, 0));
+                }
+                
+                // Scheduling Algorithm Implementations with proper slot-packing
                 async function asapScheduling() {
-                    // ASAP - Use Bryntum's constraint system for forward scheduling
-                    console.log('🚀 Applying ASAP scheduling using Bryntum engine...');
-                    currentSchedulingMode = 'ASAP'; // Set mode for drag handler
+                    console.log('🚀 Applying ASAP scheduling with slot-packing...');
+                    currentSchedulingMode = 'ASAP';
                     
-                    const project = scheduler.project;
-                    const baseDate = new Date(2025, 8, 3, 7, 0, 0); // September 3, 2025 at 7 AM
+                    const { eventStore, assignmentStore } = scheduler;
                     
-                    // Set project start date for forward scheduling
-                    project.startDate = baseDate;
+                    // Build busy map per resource
+                    const busy = new Map(); // resourceId -> [[sMs,eMs],...]
                     
-                    // Get all scheduled events (exclude unscheduled)
-                    const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
-                    console.log(`  Total operations to schedule: ${events.length}`);
-                    
-                    // Apply ASAP constraints to all events
-                    events.forEach(event => {
-                        // Clear any existing constraints
-                        event.constraintType = null;
-                        event.constraintDate = null;
-                        
-                        // Apply Start No Earlier Than constraint for ASAP behavior
-                        event.constraintType = 'startnoearlierthan';
-                        event.constraintDate = baseDate;
-                        event.manuallyScheduled = false; // Let the engine control dates
+                    // Initialize busy arrays for all resources
+                    scheduler.resourceStore.records.forEach(r => {
+                        if (r.id !== 'unscheduled') {
+                            busy.set(r.id, []);
+                        }
                     });
                     
-                    // Create dependencies between sequential operations on the same resource
-                    // This prevents overlaps automatically
-                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
+                    const base = new Date(2025, 8, 3, 7, 0, 0); // Sept 3, 2025 at 7 AM
                     
-                    for (const resource of resources) {
-                        // Get all events assigned to this resource
-                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
+                    // Get all scheduled events and group by job
+                    const events = eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                    console.log(`  Total operations to schedule: ${events.length}`);
+                    
+                    // Group events by job and sort by priority/sequence
+                    const jobMap = new Map();
+                    events.forEach(ev => {
+                        // Extract job info from event data or name
+                        const jobKey = ev.job || ev.name.match(/Job (\d+)/)?.[1] || 'unknown';
+                        const priority = ev.priority || 3; // Default priority if not set
+                        const sequence = ev.sequence || parseInt(ev.name.match(/Op (\d+)/)?.[1]) || 0;
                         
-                        if (resourceEvents.length < 2) continue;
+                        if (!jobMap.has(jobKey)) {
+                            jobMap.set(jobKey, { priority, ops: [] });
+                        }
+                        jobMap.get(jobKey).ops.push({ event: ev, sequence });
+                    });
+                    
+                    // Sort jobs by priority (1 is highest) then ops by sequence
+                    const sortedJobs = Array.from(jobMap.entries()).sort((a, b) => {
+                        return a[1].priority - b[1].priority; // Lower number = higher priority
+                    });
+                    
+                    // Schedule each job's operations in order
+                    for (const [jobKey, jobData] of sortedJobs) {
+                        // Sort operations by sequence
+                        jobData.ops.sort((a, b) => a.sequence - b.sequence);
                         
-                        // Sort by current start date or ID
-                        resourceEvents.sort((a, b) => {
-                            if (a.startDate && b.startDate) {
-                                return a.startDate.getTime() - b.startDate.getTime();
-                            }
-                            return a.id - b.id;
-                        });
+                        console.log(`  Scheduling Job ${jobKey} (priority ${jobData.priority}) with ${jobData.ops.length} operations`);
                         
-                        // Create Finish-to-Start dependencies between sequential operations
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const fromEvent = resourceEvents[i];
-                            const toEvent = resourceEvents[i + 1];
-                            
-                            // Check if dependency already exists
-                            const existingDep = scheduler.dependencyStore.find(d =>
-                                d.from === fromEvent.id && d.to === toEvent.id
+                        for (const { event: ev } of jobData.ops) {
+                            // Find assignment to get resource
+                            const asg = assignmentStore.records.find(a => 
+                                a.eventId === ev.id || 
+                                (a.event === ev)
                             );
                             
-                            if (!existingDep) {
-                                // Add dependency to prevent overlaps
-                                scheduler.dependencyStore.add({
-                                    id: `asap_dep_${fromEvent.id}_${toEvent.id}`,
-                                    from: fromEvent.id,
-                                    to: toEvent.id,
-                                    type: 2, // Finish-to-Start
-                                    lag: 0.5, // 30 minute buffer
-                                    lagUnit: 'hour'
-                                });
-                                console.log(`    Added dependency: ${fromEvent.name} → ${toEvent.name}`);
-                            }
+                            const resourceId = asg?.resourceId || ev.resourceId;
+                            if (!resourceId || resourceId === 'unscheduled') continue;
+                            
+                            const durMs = (ev.duration || 1) * 60 * 60 * 1000; // Convert hours to ms
+                            const list = busy.get(resourceId) || [];
+                            
+                            // Find next free slot
+                            const start = findNextFreeSlot(list, base, durMs);
+                            const end = new Date(+start + durMs);
+                            
+                            // Update event dates
+                            ev.setStartEndDate(start, end, true);
+                            
+                            // Add to busy list and keep sorted
+                            list.push([+start, +end]);
+                            list.sort((a, b) => a[0] - b[0]);
+                            busy.set(resourceId, list);
                         }
                     }
                     
-                    // Let the Bryntum engine recalculate all dates
-                    await project.commitAsync();
+                    await scheduler.project.commitAsync();
+                    console.log('✅ ASAP scheduling completed with slot-packing');
                     
-                    console.log('✅ ASAP scheduling completed by Bryntum engine');
-                    
-                    // Verify results
+                    // Verify and report results
                     let totalScheduled = 0;
                     let earliestStart = null;
                     let latestEnd = null;
