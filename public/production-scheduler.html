@@ -1813,7 +1813,7 @@
                                 (schedulingIssue.type === 'dependencyconflict' || 
                                  schedulingIssue.type === 'dependency' ||
                                  schedulingIssue.description?.toLowerCase().includes('dependency'))) {
-                                console.log('⚠️ Dependency conflict SUPPRESSED - dependencies disabled');
+                                console.log('⚠️ Dependency conflict SUPPRESSED (visual-only deps)');
                                 return false; // Prevent the dialog
                             }
                             
