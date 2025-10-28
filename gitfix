@@ -1,0 +1,3 @@
+#!/bin/bash
+# Git wrapper that disables askpass
+GIT_ASKPASS="" GIT_TERMINAL_PROMPT=0 git "$@"
