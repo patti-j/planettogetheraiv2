@@ -4393,6 +4393,17 @@
                     console.log('Assignments count:', assignments.length);
                     console.log('Dependencies count:', dependencies.length);
                     
+                    // Debug: Log if we actually have data to load
+                    if (resources.length === 0) {
+                        console.warn('⚠️ WARNING: No resources to load - scheduler will be empty');
+                    }
+                    if (eventsForScheduler.length === 0) {
+                        console.warn('⚠️ WARNING: No events to load - scheduler will be empty');
+                    }
+                    if (dependencies.length > 0) {
+                        console.log('✅ Dependencies array has data:', dependencies[0]);
+                    }
+                    
                     // Debug overlay removed - was obstructing the view
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
