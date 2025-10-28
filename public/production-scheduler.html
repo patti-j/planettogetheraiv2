@@ -2901,6 +2901,94 @@
                            ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
                 }
 
+                // Runtime test functions - can be run in DevTools console
+                // Make these globally accessible for testing
+                window.getJobKey = getJobKey;
+                window.getJobPriority = getJobPriority;
+                window.getSequence = getSequence;
+                
+                // Test A: Verify no engine dependencies (only visual dependencies)
+                window.testNoDependencies = function() {
+                    const engineDeps = scheduler.project.dependencyStore?.count || 0;
+                    const visualDeps = scheduler.features?.dependencies?.store?.count || 0;
+                    console.assert(engineDeps === 0, 'Project dependencyStore should be empty');
+                    console.log('✅ Test A - Dependencies Check:');
+                    console.log('  Engine dependencies:', engineDeps, '(should be 0)');
+                    console.log('  Visual dependencies:', visualDeps, '(visual lines only)');
+                    return engineDeps === 0;
+                };
+
+                // Test B: Verify job finish order by priority
+                window.testJobFinishOrder = function() {
+                    const groups = new Map();
+                    scheduler.eventStore.records.forEach(e => {
+                        const k = getJobKey(e); 
+                        if (!k) return;
+                        const arr = groups.get(k) || groups.set(k, []).get(k);
+                        arr.push(e);
+                    });
+                    const finishByJob = [...groups.entries()].map(([k, ops]) => ({
+                        job: k,
+                        priority: getJobPriority(ops[0]),
+                        finish: new Date(Math.max(...ops.map(o => o.endDate?.getTime() || 0)))
+                    })).sort((a, b) => a.finish - b.finish);
+                    
+                    console.log('✅ Test B - Job Finish Order (should be by priority 1→5):');
+                    console.table(finishByJob);
+                    
+                    // Verify priority order
+                    let valid = true;
+                    for (let i = 0; i < finishByJob.length - 1; i++) {
+                        if (finishByJob[i].priority > finishByJob[i + 1].priority) {
+                            console.warn(`⚠️ Job with priority ${finishByJob[i].priority} finishes after priority ${finishByJob[i + 1].priority}`);
+                            valid = false;
+                        }
+                    }
+                    return valid;
+                };
+
+                // Test C: Check for overlaps
+                window.testNoOverlaps = function() {
+                    let overlaps = 0;
+                    const byRes = new Map();
+                    scheduler.assignmentStore.forEach(a => {
+                        const r = a.resourceId, e = scheduler.eventStore.getById(a.eventId);
+                        if (!e) return;
+                        (byRes.get(r) || byRes.set(r, []).get(r)).push(e);
+                    });
+                    byRes.forEach((list, resourceId) => {
+                        list.sort((a, b) => a.startDate - b.startDate);
+                        for (let i = 0; i < list.length - 1; i++) {
+                            if (list[i].endDate > list[i + 1].startDate) {
+                                overlaps++;
+                                const resource = scheduler.resourceStore.getById(resourceId);
+                                console.error(`❌ Overlap on ${resource?.name}: "${list[i].name}" ends at ${list[i].endDate.toLocaleString()} but "${list[i + 1].name}" starts at ${list[i + 1].startDate.toLocaleString()}`);
+                            }
+                        }
+                    });
+                    console.log('✅ Test C - Overlap Check:');
+                    console.log('  Overlaps found:', overlaps);
+                    console.assert(overlaps === 0, 'No overlaps expected');
+                    return overlaps === 0;
+                };
+
+                // Run all tests
+                window.runAllTests = function() {
+                    console.log('🧪 Running all scheduler tests...\n');
+                    const testA = window.testNoDependencies();
+                    const testB = window.testJobFinishOrder();
+                    const testC = window.testNoOverlaps();
+                    
+                    console.log('\n📊 Test Results:');
+                    console.log('  Test A (No Engine Dependencies):', testA ? '✅ PASS' : '❌ FAIL');
+                    console.log('  Test B (Job Priority Order):', testB ? '✅ PASS' : '❌ FAIL');
+                    console.log('  Test C (No Overlaps):', testC ? '✅ PASS' : '❌ FAIL');
+                    
+                    const allPass = testA && testB && testC;
+                    console.log('\n' + (allPass ? '🎉 All tests passed!' : '⚠️ Some tests failed'));
+                    return allPass;
+                };
+
                 // Left compaction helper for forward scheduling (ASAP)
                 async function compactLeftPerResource() {
                     const { resourceStore, eventStore } = scheduler;
