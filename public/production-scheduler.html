@@ -4100,105 +4100,116 @@
                 }
                 
                 async function alapScheduling() {
-                    // ALAP - Use Bryntum's constraint system for backward scheduling
-                    console.log('⏰ Applying ALAP scheduling using Bryntum constraints...');
-                    currentSchedulingMode = 'ALAP'; // Set mode for drag handler
+                    console.log('⏰ Applying ALAP scheduling with backward packing...');
+                    currentSchedulingMode = 'ALAP';
                     
-                    const project = scheduler.project;
-                    const dueDate = new Date(2025, 8, 17, 17, 0, 0); // September 17, 2025 at 5 PM
+                    const { eventStore, assignmentStore } = scheduler;
                     
                     // Get all scheduled events
-                    const events = scheduler.eventStore.records.filter(e => e.resourceId !== 'unscheduled');
+                    const events = eventStore.records.filter(e => e.resourceId !== 'unscheduled');
                     console.log(`  Total operations to schedule: ${events.length}`);
                     
-                    // Configure project for backward scheduling using proper API
-                    await project.setDirection('Backward');
-                    project.setConstraint({ 
-                        type: 'finishnolaterthan', 
-                        date: dueDate 
+                    // Extract Need-By dates from events or use default
+                    const jobDueMap = new Map(); // jobKey -> Date
+                    
+                    // Group events by job and extract due dates
+                    const jobMap = new Map();
+                    events.forEach(ev => {
+                        // Extract job info from event data or name
+                        const jobKey = ev.job || ev.name.match(/Job (\d+)/)?.[1] || 'unknown';
+                        const priority = ev.priority || 3; // Default priority if not set
+                        const sequence = ev.sequence || parseInt(ev.name.match(/Op (\d+)/)?.[1]) || 0;
+                        
+                        if (!jobMap.has(jobKey)) {
+                            jobMap.set(jobKey, { priority, ops: [] });
+                        }
+                        jobMap.get(jobKey).ops.push({ event: ev, sequence });
+                        
+                        // Try to get Need-By date from event data
+                        if (ev.needBy || ev.dueDate) {
+                            const dueDate = ev.needBy || ev.dueDate;
+                            if (dueDate instanceof Date) {
+                                jobDueMap.set(jobKey, dueDate);
+                            } else if (typeof dueDate === 'string') {
+                                jobDueMap.set(jobKey, new Date(dueDate));
+                            }
+                        }
                     });
-                    await project.propagate();
                     
-                    // First ensure dependencies exist between sequential operations on same resource
-                    const resources = scheduler.resourceStore.records.filter(r => r.id !== 'unscheduled');
+                    // Default due date if not specified
+                    const defaultDueDate = new Date(2025, 8, 17, 17, 0, 0); // Sept 17, 2025 at 5 PM
                     
-                    for (const resource of resources) {
-                        const resourceEvents = events.filter(e => e.resourceId === resource.id);
-                        
-                        if (resourceEvents.length < 2) continue;
-                        
-                        // Sort by job and operation sequence for logical order
-                        resourceEvents.sort((a, b) => {
-                            // Parse job number and operation sequence from names
-                            const aMatch = a.name.match(/Job (\d+).*Op (\d+)/);
-                            const bMatch = b.name.match(/Job (\d+).*Op (\d+)/);
-                            
-                            if (aMatch && bMatch) {
-                                const aJob = parseInt(aMatch[1]);
-                                const bJob = parseInt(bMatch[1]);
-                                const aOp = parseInt(aMatch[2]);
-                                const bOp = parseInt(bMatch[2]);
-                                
-                                // Sort by job first, then by operation
-                                if (aJob !== bJob) return aJob - bJob;
-                                return aOp - bOp;
-                            }
-                            
-                            // Fallback to ID if name parsing fails
-                            return a.id - b.id;
-                        });
-                        
-                        // Ensure dependencies exist
-                        for (let i = 0; i < resourceEvents.length - 1; i++) {
-                            const fromEvent = resourceEvents[i];
-                            const toEvent = resourceEvents[i + 1];
-                            
-                            const existingDep = scheduler.dependencyStore.find(d =>
-                                d.from === fromEvent.id && d.to === toEvent.id
-                            );
-                            
-                            if (!existingDep) {
-                                scheduler.dependencyStore.add({
-                                    id: `alap_dep_${fromEvent.id}_${toEvent.id}`,
-                                    from: fromEvent.id,
-                                    to: toEvent.id,
-                                    type: 2, // Finish-to-Start
-                                    lag: 0.5, // 30 minute buffer
-                                    lagUnit: 'hour'
-                                });
-                            }
+                    // Check for missing Need-By dates and use default
+                    const missingDueDates = [];
+                    for (const [jobKey] of jobMap) {
+                        if (!jobDueMap.has(jobKey)) {
+                            missingDueDates.push(jobKey);
+                            jobDueMap.set(jobKey, defaultDueDate); // Use default for now
                         }
                     }
                     
-                    // Apply Finish No Later Than constraints to ALL events for ALAP
-                    events.forEach(event => {
-                        event.constraintType = 'finishnolaterthan';
-                        event.constraintDate = dueDate;
-                        event.manuallyScheduled = false;
+                    if (missingDueDates.length > 0) {
+                        console.warn(`  Jobs missing Need-By dates (using default ${defaultDueDate.toLocaleDateString()}):`, missingDueDates);
+                    }
+                    
+                    // Build busy map per resource
+                    const busy = new Map(); // resourceId -> [[sMs,eMs],...]
+                    
+                    // Initialize busy arrays for all resources
+                    scheduler.resourceStore.records.forEach(r => {
+                        if (r.id !== 'unscheduled') {
+                            busy.set(r.id, []);
+                        }
                     });
                     
-                    // Let the Bryntum engine recalculate with backward scheduling
-                    await project.commitAsync();
-                    
-                    // After initial scheduling, adjust constraints to maintain relationships
-                    // Only keep FNLT constraints on events that truly need them
-                    const leafEvents = events.filter(event => {
-                        const hasSuccessors = scheduler.dependencyStore.query(d => d.from === event.id).length > 0;
-                        return !hasSuccessors;
+                    // Sort jobs by priority DESC (5→1), so lower priority jobs get scheduled first
+                    const sortedJobs = Array.from(jobMap.entries()).sort((a, b) => {
+                        return b[1].priority - a[1].priority; // Higher number = lower priority, schedule first
                     });
                     
-                    console.log(`  Found ${leafEvents.length} leaf operations (final operations)`);
+                    // Schedule each job's operations backward from its Need-By date
+                    for (const [jobKey, jobData] of sortedJobs) {
+                        // Sort operations by sequence ASC for forward dependency
+                        jobData.ops.sort((a, b) => a.sequence - b.sequence);
+                        
+                        const jobDueDate = jobDueMap.get(jobKey);
+                        console.log(`  Scheduling Job ${jobKey} (priority ${jobData.priority}) backward from ${jobDueDate.toLocaleDateString()}`);
+                        
+                        let cursor = +jobDueDate; // Start from job Need-By
+                        
+                        // Schedule operations backward (last op first)
+                        for (const { event: ev } of [...jobData.ops].reverse()) {
+                            // Find assignment to get resource
+                            const asg = assignmentStore.records.find(a => 
+                                a.eventId === ev.id || 
+                                (a.event === ev)
+                            );
+                            
+                            const resourceId = asg?.resourceId || ev.resourceId;
+                            if (!resourceId || resourceId === 'unscheduled') continue;
+                            
+                            const durMs = (ev.duration || 1) * 60 * 60 * 1000; // Convert hours to ms
+                            const list = busy.get(resourceId) || [];
+                            
+                            // Find latest free slot before cursor
+                            const start = findPrevFreeSlot(list, new Date(cursor), durMs);
+                            const end = new Date(+start + durMs);
+                            
+                            // Update event dates
+                            ev.setStartEndDate(start, end, true);
+                            
+                            // Tighten cursor to the start of the op we just placed
+                            cursor = +start;
+                            
+                            // Add to busy list and keep sorted
+                            list.push([+start, +end]);
+                            list.sort((a, b) => a[0] - b[0]);
+                            busy.set(resourceId, list);
+                        }
+                    }
                     
-                    // Clear constraints on non-leaf events to let dependencies drive their dates
-                    events.filter(e => !leafEvents.includes(e)).forEach(event => {
-                        event.constraintType = null;
-                        event.constraintDate = null;
-                    });
-                    
-                    // Commit again to let dependencies drive the schedule
-                    await project.commitAsync();
-                    
-                    console.log('✅ ALAP scheduling completed by Bryntum engine');
+                    await scheduler.project.commitAsync();
+                    console.log('✅ ALAP scheduling completed with backward packing');
                     
                     // Verify results
                     let totalScheduled = 0;
