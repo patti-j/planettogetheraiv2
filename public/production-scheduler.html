@@ -331,16 +331,18 @@
             filter: invert(1) hue-rotate(-180deg);
         }
         
-        /* Dependency lines styling */
+        /* Dependency lines styling - BRIGHT RED FOR TESTING */
         .b-sch-dependency {
-            stroke: #666 !important;
-            stroke-width: 2 !important;
-            opacity: 0.8 !important;
+            stroke: #FF0000 !important;  /* Bright red */
+            stroke-width: 5 !important;  /* Very thick */
+            opacity: 1 !important;  /* Full opacity */
+            z-index: 99999 !important;
         }
         
         .b-sch-dependency-arrow {
-            fill: #666 !important;
-            stroke: #666 !important;
+            fill: #FF0000 !important;  /* Bright red */
+            stroke: #FF0000 !important;
+            opacity: 1 !important;
         }
         
         .b-sch-dependency:hover {
