@@ -2978,10 +2978,12 @@
                            ev.data?.jobId ?? ev.data?.jobName ?? null;
                 }
 
-                function getJobNumber(jobKey) {
-                    if (!jobKey) return Number.MAX_SAFE_INTEGER;
-                    const m = String(jobKey).match(/\d+/g);
-                    return m ? parseInt(m.join(''), 10) : Number.MAX_SAFE_INTEGER;
+                function getJobPriority(ev) {
+                    // Priority 1 = highest, Priority 5 = lowest
+                    const priority = ev.jobPriority ?? ev.job_priority ?? 
+                                   ev.ptData?.jobPriority ?? ev.ptData?.job_priority ??
+                                   ev.data?.jobPriority ?? ev.data?.job_priority ?? 999;
+                    return parseInt(priority);
                 }
 
                 function getSequence(ev) {
@@ -3110,18 +3112,24 @@
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
-                    // ASAP: Sort jobs by job NUMBER ASC (001 before 012) so Job 001 finishes first
+                    // ASAP: Sort jobs by PRIORITY ASC (1 before 5) so Priority 1 finishes first
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         // Skip orphans - they go last
                         if (keyA === '_orphans_') return 1;
                         if (keyB === '_orphans_') return -1;
                         
-                        // Sort by job NUMBER (not priority!) ascending
-                        // Job 001 should schedule first, Job 012 should schedule last
-                        const jobNumA = getJobNumber(keyA);
-                        const jobNumB = getJobNumber(keyB);
+                        // Sort by job PRIORITY ascending
+                        // Priority 1 (highest) should schedule first and finish first
+                        // Priority 5 (lowest) should schedule last and finish last
+                        const priorityA = getJobPriority(opsA[0]);
+                        const priorityB = getJobPriority(opsB[0]);
                         
-                        return jobNumA - jobNumB; // Ascending order: 001, 002, ..., 012
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
+                        }
+                        
+                        // If same priority, sort by job key for consistency
+                        return String(keyA).localeCompare(String(keyB));
                     });
                     
                     // Flatten sorted jobs into a single sorted events array
@@ -3635,24 +3643,29 @@
                     // Process each job independently
                     console.log('\n📍 Processing jobs with sequence-based backward scheduling...');
                     
-                    // ALAP: Sort jobs by job NUMBER DESC (012 before 001) 
+                    // ALAP: Sort jobs by PRIORITY DESC (5 before 1) 
                     // In backward scheduling, what schedules first finishes last (closest to need-by)
-                    // So Job 012 schedules first to finish last, Job 001 schedules last to finish first
+                    // So Priority 5 schedules first to finish last, Priority 1 schedules last to finish first
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
-                        // Sort by job NUMBER descending (not priority!)
-                        // Job 012 should schedule first (gets latest position/finishes last)
-                        // Job 001 should schedule last (gets earliest position/finishes first)
-                        const jobNumA = getJobNumber(keyA);
-                        const jobNumB = getJobNumber(keyB);
+                        // Sort by job PRIORITY descending
+                        // Priority 5 (lowest) should schedule first (gets latest position/finishes last)
+                        // Priority 1 (highest) should schedule last (gets earliest position/finishes first)
+                        const priorityA = getJobPriority(opsA[0]);
+                        const priorityB = getJobPriority(opsB[0]);
                         
-                        return jobNumB - jobNumA; // DESCENDING: 012, 011, ..., 002, 001
+                        if (priorityA !== priorityB) {
+                            return priorityB - priorityA; // DESCENDING: 5, 4, 3, 2, 1
+                        }
+                        
+                        // If same priority, sort by job key for consistency
+                        return String(keyB).localeCompare(String(keyA));
                     });
                     
-                    console.log('📊 ALAP Job scheduling order (descending by job number for backward scheduling):');
+                    console.log('📊 ALAP Job scheduling order (descending by priority for backward scheduling):');
                     sortedJobs.forEach(([jobKey, ops], index) => {
-                        const jobNum = getJobNumber(jobKey);
+                        const priority = getJobPriority(ops[0]);
                         const due = jobDueMap.get(jobKey) || globalFallback;
-                        console.log(`  ${index + 1}. Job #${jobNum}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
+                        console.log(`  ${index + 1}. Priority ${priority}: ${jobKey} (Due: ${due.toLocaleDateString()}) - schedules ${index === 0 ? 'FIRST (placed later/finishes last)' : index === sortedJobs.length - 1 ? 'LAST (placed earlier/finishes first)' : 'in middle'}`);
                     });
                     
                     // Process each job completely
