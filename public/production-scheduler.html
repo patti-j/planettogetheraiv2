@@ -4709,14 +4709,6 @@
                 }
                 
                 // Duplicate listener removed - functionality merged into main listener above
-                
-            } catch (error) {
-                console.error('Failed to initialize scheduler:', error);
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.innerHTML = '<div class="error-message">Failed to initialize scheduler. Please refresh the page.</div>';
-                }
-            }
         });  // End of DOMContentLoaded
     </script>
     

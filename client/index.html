@@ -1,88 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
-    <title>PlanetTogether - Production Scheduling Software</title>
-    <link rel="icon" type="image/png" href="/favicon.png" />
-    <script>
-      // Prevent theme flash by immediately setting theme before React loads
-      (function() {
-        // CRITICAL: Set theme immediately to prevent dark mode flash
-        const storedTheme = localStorage.getItem('theme') || 'light';
-        if (storedTheme === 'dark') {
-          document.documentElement.classList.add('dark');
-        } else {
-          document.documentElement.classList.remove('dark');
-        }
-        
-        // AI theme colors
-        const colors = {
-          'purple-pink': { from: '280 83% 62%', to: '323 86% 66%' },
-          'blue-indigo': { from: '213 94% 68%', to: '239 84% 67%' },
-          'emerald-teal': { from: '160 84% 39%', to: '172 66% 50%' },
-          'orange-red': { from: '24 95% 53%', to: '0 84% 60%' },
-          'violet-purple': { from: '262 80% 60%', to: '280 83% 62%' },
-          'cyan-blue': { from: '189 95% 51%', to: '213 94% 68%' }
-        };
-        
-        // Get theme from localStorage (demo users) or default to blue-indigo
-        const demoTheme = localStorage.getItem('demo-ai-theme') || 'blue-indigo';
-        const theme = colors[demoTheme] || colors['blue-indigo'];
-        
-        // Set CSS variables immediately
-        document.documentElement.style.setProperty('--ai-gradient-from', theme.from);
-        document.documentElement.style.setProperty('--ai-gradient-to', theme.to);
-      })();
-    </script>
-    <!-- Bryntum Scheduler Pro CSS -->
-    <link rel="stylesheet" href="/schedulerpro.classic-light.css" id="bryntum-theme">
-    <!-- Bryntum Scheduler Pro UMD Script -->
-    <script src="/schedulerpro.umd.js"></script>
-  </head>
-  <body>
-    <div id="root"></div>
-    <style>
-      /* Prevent flash of unstyled content - set initial background immediately */
-      body {
-        background-color: white;
-        transition: none !important;
-      }
-      body.dark {
-        background-color: rgb(17 24 39);
-      }
-    </style>
-    <script>
-      // Apply body background color immediately based on theme
-      (function() {
-        const theme = localStorage.getItem('theme') || 'light';
-        if (theme === 'dark') {
-          document.body.classList.add('dark');
-        }
-      })();
-    </script>
-    <script type="module" src="/src/main.tsx"></script>
-    <!-- This is a replit script which adds a banner on the top of the page when opened in development mode outside the replit environment -->
-    <script type="text/javascript" src="https://replit.com/public/js/replit-dev-banner.js"></script>
-    <script>
-      // Clear any service workers and caches that might have old code
-      if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.getRegistrations().then(function(registrations) {
-          for(let registration of registrations) {
-            registration.unregister();
-            console.log('Service worker unregistered');
-          }
-        });
-      }
-      // Clear all caches
-      if (window.caches) {
-        caches.keys().then(names => {
-          names.forEach(name => {
-            caches.delete(name);
-            console.log('Cache cleared:', name);
-          });
-        });
-      }
-    </script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlanetTogether - Manufacturing SCM + APS System</title>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
 </html>
