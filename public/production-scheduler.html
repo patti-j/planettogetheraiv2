@@ -1435,6 +1435,11 @@
                     // No fallback - let resources stay empty rather than showing wrong equipment
                     resources = [];
                 }
+                
+                console.log('📊 After fetching all data:');
+                console.log('  Resources:', resources.length);
+                console.log('  Operations:', ptOperations.length);
+                console.log('  Dependencies:', fetchedDependencies.length);
 
                 // Map resources to create resource lookup by both ID and name
                 const resourceMap = new Map();
@@ -1703,6 +1708,11 @@
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 // Use SchedulerPro from the ES module (now available on window)
+                console.log('🚀 Creating SchedulerPro instance...');
+                console.log('  Events to load:', events.length);
+                console.log('  Dependencies to load:', dependencies.length);
+                console.log('  Resources to load:', resources.length);
+                
                 window.scheduler = new window.SchedulerPro({
                     appendTo: 'scheduler',
                     
@@ -4421,18 +4431,48 @@
                     
                     // Draw dependency lines without letting the engine see them
                     if (scheduler.features?.dependencies?.store) {
+                        console.log('🔍 Dependency feature store found, adding visual lines...');
+                        console.log('Dependencies to add:', window.originalDependencies.length);
+                        
                         scheduler.features.dependencies.store.removeAll();
+                        
                         // Important: we only copy the fields needed for drawing lines
-                        scheduler.features.dependencies.store.add(
-                            window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), from, to, type, lag, lagUnit
-                            }))
-                        );
+                        const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                            id: String(id), 
+                            from: from,
+                            to: to,
+                            type: type,
+                            lag: lag,
+                            lagUnit: lagUnit
+                        }));
+                        
+                        console.log('First dependency to add:', depsToAdd[0]);
+                        scheduler.features.dependencies.store.add(depsToAdd);
+                        
                         console.log(`🎨 Rendered ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                        console.log('Dependency store records:', scheduler.features.dependencies.store.records);
+                    } else {
+                        console.warn('⚠️ Dependencies feature not available or store not found');
+                        console.log('Scheduler features:', Object.keys(scheduler.features || {}));
                     }
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
+                    
+                    // Debug: Check if dependencies feature is available
+                    console.log('🔍 Checking dependencies feature:');
+                    console.log('  Dependencies feature enabled?', scheduler.features?.dependencies !== undefined);
+                    console.log('  Dependencies feature store?', scheduler.features?.dependencies?.store !== undefined);
+                    if (scheduler.features?.dependencies?.store) {
+                        console.log('  Dependencies in store:', scheduler.features.dependencies.store.count);
+                        console.log('  First dependency:', scheduler.features.dependencies.store.first);
+                    }
+                    
+                    // Also check project's dependency store
+                    console.log('  Project dependency store?', scheduler.project?.dependencyStore !== undefined);
+                    if (scheduler.project?.dependencyStore) {
+                        console.log('  Dependencies in project store:', scheduler.project.dependencyStore.count);
+                    }
                     
                     // Save the original stores immediately after loading
                     // This ensures we have the unfiltered data before any filtering occurs
