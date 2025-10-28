@@ -2155,22 +2155,6 @@
                     schedulerColumns.push({ text: 'Category', field: 'category', width: categoryColumnWidth });
                 }
                 
-                // Store original dependencies for visual reference
-                window.originalDependencies = dependencies;
-                
-                // Build a visual-only DependencyStore BEFORE creating Scheduler
-                // Mark all dependencies as inactive so they don't constrain scheduling
-                const visualDeps = dependencies.map(d => ({
-                    ...d,
-                    inactive: true,              // render-only, no scheduling constraints
-                    cls: 'visual-dependency'     // CSS class for styling
-                }));
-                
-                // Create independent dependency store for the feature
-                const dependencyFeatureStore = new bryntum.schedulerpro.DependencyStore({ 
-                    data: visualDeps 
-                });
-                
                 // Create scheduler instance with proper Bryntum project engine configuration
                 // Make scheduler globally accessible for Max AI
                 window.scheduler = new SchedulerPro({
@@ -2195,8 +2179,8 @@
                     // CRITICAL: Prevent overlapping events on same resource
                     allowOverlap: false,
                     
-                    // Event layout to handle overlaps - 'none' prevents visual stacking
-                    eventLayout: 'none',  // Use 'none' for cleaner appearance
+                    // Event layout to handle overlaps - 'stack' prevents visual overlaps
+                    eventLayout: 'stack',  // 'stack' | 'pack' | 'none' - stack shows overlaps clearly
                     
                     // Sort overlapping events by startDate first (REQUIRED for predictable results)
                     overlappingEventSorter: (a, b) => {
@@ -2224,11 +2208,6 @@
                         autoSync: false,
                         silenceInitialCommit: true, // Prevent initial save attempts
                         
-                        // Disable constraints since we're doing manual scheduling
-                        constraintsMode: 'none',
-                        autoCalculate: false,
-                        recalculateAfterLoad: false,
-                        
                         // Enable the scheduling engine's automatic calculations
                         autoCalculatePercentDone: true,
                         
@@ -2243,14 +2222,16 @@
                             ]
                         },
                         
-                        // Load inline data - NO dependencies in project
+                        // Load inline data - properly structured
                         resourceStore: {
                             data: resources
                         },
                         eventStore: {
                             data: events
                         },
-                        // Do NOT load dependencies here - they go to the feature store
+                        dependencyStore: {
+                            data: dependencies
+                        },
                         
                         // Enable automatic date calculations by the engine
                         autoCalculateStartDate: true,
@@ -2258,10 +2239,8 @@
                     },
 
                     features: {
-                        // Dependencies feature with its own store for visual-only lines
-                        dependencies: {
-                            store: dependencyFeatureStore  // Use our custom store with inactive deps
-                        },
+                        // Dependencies feature for showing task relationships
+                        dependencies: true,
                         
                         // PercentBar feature - visualize progress on operations
                         percentBar: {
@@ -4516,8 +4495,8 @@
                 await scheduler.project.loadInlineData({
                     resourcesData: resources,
                     eventsData: events,
-                    assignmentsData: []
-                    // NO dependenciesData - dependencies are visual only via feature store
+                    assignmentsData: [],
+                    dependenciesData: dependencies
                 });
                 
                 // Commit the data to finalize the loading
