@@ -1401,8 +1401,8 @@
                             lagUnit: dep.lagUnit || 'hour',
                             fromEvent: dep.from, // Also include for compatibility
                             toEvent: dep.to,     // Also include for compatibility
-                            // Mark as inactive so they show visually but don't constrain
-                            inactive: true,
+                            // DON'T mark as inactive - that prevents rendering!
+                            // constraintsMode: 'none' already prevents constraint enforcement
                             cls: 'visual-dependency' // CSS class for visual styling
                         }));
                         console.log('✅ Dependencies fetched from database (for visual display):', fetchedDependencies.length);
@@ -1676,8 +1676,8 @@
                         type: dep.type || 2, // 2 = Finish-to-Start
                         lag: dep.lag || 0,
                         lagUnit: dep.lagUnit || 'hour',
-                        // Mark as inactive to prevent automatic constraint enforcement
-                        inactive: true,
+                        // DON'T mark as inactive - that prevents rendering!
+                        // constraintsMode: 'none' already prevents constraint enforcement
                         cls: 'visual-dependency'
                     }));
                     
