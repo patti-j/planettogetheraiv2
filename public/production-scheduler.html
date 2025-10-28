@@ -3141,19 +3141,24 @@
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
-                    // ASAP: Sort jobs by JOB NUMBER ASC (001 before 012) so Job 001 finishes first
+                    // ASAP: Sort jobs by PRIORITY ASC (1 before 5) so Priority 1 finishes first
                     const sortedJobs = Array.from(jobOperations.entries()).sort(([keyA, opsA], [keyB, opsB]) => {
                         // Skip orphans - they go last
                         if (keyA === '_orphans_') return 1;
                         if (keyB === '_orphans_') return -1;
                         
-                        // Sort by job NUMBER ascending
-                        // Job 001 should schedule first and finish first
-                        // Job 012 should schedule last and finish last
-                        const jobNumA = getJobNumber(keyA);
-                        const jobNumB = getJobNumber(keyB);
+                        // Sort by job PRIORITY ascending
+                        // Priority 1 (highest) should schedule first and finish first
+                        // Priority 5 (lowest) should schedule last and finish last
+                        const priorityA = getJobPriority(opsA[0]);
+                        const priorityB = getJobPriority(opsB[0]);
                         
-                        return jobNumA - jobNumB; // Ascending: 001, 002, ..., 012
+                        if (priorityA !== priorityB) {
+                            return priorityA - priorityB; // Ascending: 1, 2, 3, 4, 5
+                        }
+                        
+                        // If same priority, sort by job key for consistency
+                        return String(keyA).localeCompare(String(keyB));
                     });
                     
                     // Flatten sorted jobs into a single sorted events array
