@@ -4706,6 +4706,11 @@
                 }
                 
                 // Duplicate listener removed - functionality merged into main listener above
+            } catch (error) {
+                console.error('Error initializing scheduler:', error);
+                document.getElementById('loadingOverlay').style.display = 'none';
+                alert('Failed to initialize scheduler. Please refresh the page.');
+            }
         });  // End of DOMContentLoaded
     </script>
     
