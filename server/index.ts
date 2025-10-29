@@ -123,6 +123,25 @@ app.use((req, res, next) => {
     res.sendFile(path.resolve('public/scheduler-test/index.html'));
   });
 
+  // Serve production-scheduler.html specifically
+  app.get('/production-scheduler.html', (req, res) => {
+    const filePath = path.resolve('public/production-scheduler.html');
+    
+    // Set no-cache headers
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'Content-Type': 'text/html'
+    });
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('Production scheduler file not found');
+    }
+  });
+
   // COMMENTED OUT: These handlers were intercepting Vite's files
   // The static middleware and Vite will handle these files properly
   /*
