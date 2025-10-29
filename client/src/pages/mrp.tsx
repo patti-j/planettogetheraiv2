@@ -6,7 +6,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import { AlertTriangle, PlayCircle, CheckCircle, Clock, BarChart3, Calendar, Package, Zap } from "lucide-react";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { 
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { AlertTriangle, PlayCircle, CheckCircle, Clock, BarChart3, Calendar, Package, Zap, Star, Search, Download } from "lucide-react";
 import { MrpRun, MrpRequirement, MrpActionMessage, MasterProductionSchedule } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { toast } from "@/hooks/use-toast";
@@ -20,6 +36,12 @@ export default function MrpPage() {
   const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
   const [showRunDialog, setShowRunDialog] = useState(false);
   const queryClient = useQueryClient();
+  
+  // Saved forecasts state
+  const [showForecastDialog, setShowForecastDialog] = useState(false);
+  const [forecastSearch, setForecastSearch] = useState("");
+  const [selectedForecast, setSelectedForecast] = useState<any>(null);
+  const [showForecastTable, setShowForecastTable] = useState(false);
 
   // Fetch MRP runs
   const { data: mrpRuns = [], isLoading: runsLoading } = useQuery({
@@ -47,6 +69,12 @@ export default function MrpPage() {
   // Fetch master production schedule
   const { data: mps = [], isLoading: mpsLoading } = useQuery({
     queryKey: ["/api/mrp/master-production-schedule"],
+  });
+  
+  // Fetch saved forecasts
+  const { data: savedForecasts = [], isLoading: forecastsLoading } = useQuery({
+    queryKey: ["/api/forecasting/saved-forecasts"],
+    enabled: showForecastDialog,
   });
 
   // Create new MRP run
@@ -117,10 +145,16 @@ export default function MrpPage() {
             Plan and manage material requirements across your manufacturing operations
           </p>
         </div>
-        <Button onClick={() => setShowRunDialog(true)} className="gap-2">
-          <Zap className="h-4 w-4" />
-          New MRP Run
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowForecastDialog(true)} variant="outline" className="gap-2">
+            <Star className="h-4 w-4" />
+            Load Forecast
+          </Button>
+          <Button onClick={() => setShowRunDialog(true)} className="gap-2">
+            <Zap className="h-4 w-4" />
+            New MRP Run
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
@@ -312,6 +346,226 @@ export default function MrpPage() {
           onSubmit={(data) => createRunMutation.mutate(data)}
           isSubmitting={createRunMutation.isPending}
         />
+      )}
+      
+      {/* Forecast Selection Dialog */}
+      <Dialog open={showForecastDialog} onOpenChange={setShowForecastDialog}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Load Saved Forecast</DialogTitle>
+            <DialogDescription>
+              Select a saved forecast to view or use for material planning
+            </DialogDescription>
+          </DialogHeader>
+          
+          {/* Search Box */}
+          <div className="flex items-center gap-2 mb-4">
+            <Search className="h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search forecasts..."
+              value={forecastSearch}
+              onChange={(e) => setForecastSearch(e.target.value)}
+              className="flex-1"
+            />
+          </div>
+          
+          {/* Forecast List */}
+          {forecastsLoading ? (
+            <div className="text-center py-8">Loading saved forecasts...</div>
+          ) : (
+            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+              {savedForecasts
+                .filter((forecast: any) => 
+                  forecast.name.toLowerCase().includes(forecastSearch.toLowerCase()) ||
+                  (forecast.description && forecast.description.toLowerCase().includes(forecastSearch.toLowerCase()))
+                )
+                .map((forecast: any) => (
+                  <Card 
+                    key={forecast.id}
+                    className="cursor-pointer hover:bg-accent transition-colors"
+                    onClick={() => {
+                      setSelectedForecast(forecast);
+                      setShowForecastDialog(false);
+                      setShowForecastTable(true);
+                    }}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <h4 className="font-medium">{forecast.name}</h4>
+                          {forecast.description && (
+                            <p className="text-sm text-muted-foreground">{forecast.description}</p>
+                          )}
+                          <div className="flex gap-4 text-xs text-muted-foreground">
+                            <span>Model: {forecast.modelType || "N/A"}</span>
+                            <span>Period: {forecast.forecastDays} days</span>
+                            <span>Items: {forecast.forecastedItems?.length || 0}</span>
+                            <span>Created: {new Date(forecast.createdAt).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <Star className="h-4 w-4 text-yellow-500" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              {savedForecasts.filter((forecast: any) => 
+                forecast.name.toLowerCase().includes(forecastSearch.toLowerCase()) ||
+                (forecast.description && forecast.description.toLowerCase().includes(forecastSearch.toLowerCase()))
+              ).length === 0 && (
+                <div className="text-center py-8 text-muted-foreground">
+                  No saved forecasts found
+                </div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+      
+      {/* Forecast Table Dialog */}
+      {selectedForecast && (
+        <Dialog open={showForecastTable} onOpenChange={setShowForecastTable}>
+          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{selectedForecast.name}</DialogTitle>
+              <DialogDescription>
+                {selectedForecast.description || "Forecast data table"}
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              {/* Forecast Metadata */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <p className="text-sm font-medium">Model Type</p>
+                  <p className="text-sm text-muted-foreground">{selectedForecast.modelType || "N/A"}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Forecast Period</p>
+                  <p className="text-sm text-muted-foreground">{selectedForecast.forecastDays} days</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Items</p>
+                  <p className="text-sm text-muted-foreground">{selectedForecast.forecastedItems?.length || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm font-medium">Accuracy (MAPE)</p>
+                  <p className="text-sm text-muted-foreground">
+                    {selectedForecast.metrics?.mape ? `${selectedForecast.metrics.mape.toFixed(2)}%` : "N/A"}
+                  </p>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              {/* Forecast Data Table */}
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <h3 className="font-medium">Forecast Data</h3>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        // Export as CSV
+                        const forecastData = selectedForecast.forecastData?.forecast || selectedForecast.forecastData;
+                        if (!forecastData) return;
+                        
+                        const csv = [
+                          ["Date", "Forecast Value", "Lower Bound", "Upper Bound"].join(","),
+                          ...forecastData.map((row: any) => 
+                            [
+                              new Date(row.date).toLocaleDateString(),
+                              row.value || row.forecast,
+                              row.lower,
+                              row.upper
+                            ].join(",")
+                          )
+                        ].join("\n");
+                        
+                        const blob = new Blob([csv], { type: "text/csv" });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement("a");
+                        a.href = url;
+                        a.download = `${selectedForecast.name.replace(/[^a-z0-9]/gi, '_')}_forecast.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                        
+                        toast({
+                          title: "Success",
+                          description: "Forecast exported as CSV"
+                        });
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      Export CSV
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="border rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Forecast Value</TableHead>
+                        <TableHead className="text-right">Lower Bound</TableHead>
+                        <TableHead className="text-right">Upper Bound</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {(() => {
+                        const forecastData = selectedForecast.forecastData?.forecast || selectedForecast.forecastData;
+                        if (!forecastData || !Array.isArray(forecastData)) {
+                          return (
+                            <TableRow>
+                              <TableCell colSpan={4} className="text-center text-muted-foreground">
+                                No forecast data available
+                              </TableCell>
+                            </TableRow>
+                          );
+                        }
+                        
+                        return forecastData.slice(0, 50).map((row: any, index: number) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              {new Date(row.date).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {(row.value || row.forecast)?.toFixed(2) || "0.00"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {row.lower?.toFixed(2) || "0.00"}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              {row.upper?.toFixed(2) || "0.00"}
+                            </TableCell>
+                          </TableRow>
+                        ));
+                      })()}
+                    </TableBody>
+                  </Table>
+                  {(() => {
+                    const forecastData = selectedForecast.forecastData?.forecast || selectedForecast.forecastData;
+                    if (forecastData && forecastData.length > 50) {
+                      return (
+                        <div className="text-center text-sm text-muted-foreground py-2 border-t">
+                          Showing first 50 of {forecastData.length} rows. Export to view all data.
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       )}
     </div>
   );
