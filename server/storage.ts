@@ -42,6 +42,9 @@ import {
   items, capabilities,
   type Item, type InsertItem,
   type Capability, type InsertCapability,
+  // Saved Forecasts types
+  savedForecasts,
+  type SavedForecast, type InsertSavedForecast,
   // Workflow Automation types
   workflows, workflowSteps, workflowExecutions, workflowTemplates, workflowLogs,
   type Workflow, type InsertWorkflow,
@@ -253,6 +256,13 @@ export interface IStorage {
   getWorkflowTemplates(category?: string): Promise<any[]>;
   getWorkflowTemplate(id: number): Promise<any | undefined>;
   createWorkflowTemplate(data: any): Promise<any>;
+  
+  // Saved Forecasts
+  getSavedForecasts(userId: number): Promise<SavedForecast[]>;
+  getSavedForecast(id: number): Promise<SavedForecast | undefined>;
+  createSavedForecast(data: InsertSavedForecast): Promise<SavedForecast>;
+  updateSavedForecast(id: number, data: Partial<InsertSavedForecast>): Promise<SavedForecast | undefined>;
+  deleteSavedForecast(id: number): Promise<boolean>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -2489,6 +2499,80 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating workflow template:', error);
       throw error;
+    }
+  }
+  
+  // Saved Forecasts Implementation
+  async getSavedForecasts(userId: number): Promise<SavedForecast[]> {
+    try {
+      return await db.select()
+        .from(savedForecasts)
+        .where(and(
+          eq(savedForecasts.userId, userId),
+          eq(savedForecasts.isActive, true)
+        ))
+        .orderBy(desc(savedForecasts.createdAt));
+    } catch (error) {
+      console.error('Error fetching saved forecasts:', error);
+      return [];
+    }
+  }
+
+  async getSavedForecast(id: number): Promise<SavedForecast | undefined> {
+    try {
+      const result = await db.select()
+        .from(savedForecasts)
+        .where(eq(savedForecasts.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching saved forecast:', error);
+      return undefined;
+    }
+  }
+
+  async createSavedForecast(data: InsertSavedForecast): Promise<SavedForecast> {
+    try {
+      const result = await db.insert(savedForecasts)
+        .values(data)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating saved forecast:', error);
+      throw error;
+    }
+  }
+
+  async updateSavedForecast(id: number, data: Partial<InsertSavedForecast>): Promise<SavedForecast | undefined> {
+    try {
+      const result = await db.update(savedForecasts)
+        .set({
+          ...data,
+          updatedAt: new Date()
+        })
+        .where(eq(savedForecasts.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating saved forecast:', error);
+      return undefined;
+    }
+  }
+
+  async deleteSavedForecast(id: number): Promise<boolean> {
+    try {
+      // Soft delete by setting isActive to false
+      const result = await db.update(savedForecasts)
+        .set({
+          isActive: false,
+          updatedAt: new Date()
+        })
+        .where(eq(savedForecasts.id, id))
+        .returning();
+      return result.length > 0;
+    } catch (error) {
+      console.error('Error deleting saved forecast:', error);
+      return false;
     }
   }
 }

@@ -11655,5 +11655,133 @@ router.delete("/api/autonomous-optimization/:id", requireAuth, async (req, res) 
   }
 });
 
+// ============================================
+// Saved Forecasts Routes
+// ============================================
+
+// Get saved forecasts for current user
+router.get("/api/forecasting/saved-forecasts", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const forecasts = await storage.getSavedForecasts(userId);
+    res.json(forecasts);
+  } catch (error: any) {
+    console.error("Error fetching saved forecasts:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch saved forecasts",
+      message: error.message 
+    });
+  }
+});
+
+// Get specific saved forecast
+router.get("/api/forecasting/saved-forecast/:id", requireAuth, async (req, res) => {
+  try {
+    const forecast = await storage.getSavedForecast(parseInt(req.params.id));
+    if (!forecast) {
+      return res.status(404).json({ error: "Saved forecast not found" });
+    }
+    
+    // Check if user owns this forecast
+    if (forecast.userId !== req.user?.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    res.json(forecast);
+  } catch (error: any) {
+    console.error("Error fetching saved forecast:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch saved forecast",
+      message: error.message 
+    });
+  }
+});
+
+// Save a new forecast
+router.post("/api/forecasting/save-forecast", requireAuth, async (req, res) => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: "User not authenticated" });
+    }
+    
+    const forecastData = {
+      ...req.body,
+      userId: userId
+    };
+    
+    const savedForecast = await storage.createSavedForecast(forecastData);
+    res.status(201).json(savedForecast);
+  } catch (error: any) {
+    console.error("Error saving forecast:", error);
+    res.status(500).json({ 
+      error: "Failed to save forecast",
+      message: error.message 
+    });
+  }
+});
+
+// Update a saved forecast
+router.patch("/api/forecasting/saved-forecast/:id", requireAuth, async (req, res) => {
+  try {
+    const forecastId = parseInt(req.params.id);
+    
+    // Check ownership first
+    const existing = await storage.getSavedForecast(forecastId);
+    if (!existing) {
+      return res.status(404).json({ error: "Saved forecast not found" });
+    }
+    if (existing.userId !== req.user?.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const updated = await storage.updateSavedForecast(forecastId, req.body);
+    if (!updated) {
+      return res.status(404).json({ error: "Failed to update forecast" });
+    }
+    
+    res.json(updated);
+  } catch (error: any) {
+    console.error("Error updating saved forecast:", error);
+    res.status(500).json({ 
+      error: "Failed to update saved forecast",
+      message: error.message 
+    });
+  }
+});
+
+// Delete a saved forecast
+router.delete("/api/forecasting/saved-forecast/:id", requireAuth, async (req, res) => {
+  try {
+    const forecastId = parseInt(req.params.id);
+    
+    // Check ownership first
+    const existing = await storage.getSavedForecast(forecastId);
+    if (!existing) {
+      return res.status(404).json({ error: "Saved forecast not found" });
+    }
+    if (existing.userId !== req.user?.id) {
+      return res.status(403).json({ error: "Access denied" });
+    }
+    
+    const deleted = await storage.deleteSavedForecast(forecastId);
+    if (!deleted) {
+      return res.status(404).json({ error: "Failed to delete forecast" });
+    }
+    
+    res.status(204).send();
+  } catch (error: any) {
+    console.error("Error deleting saved forecast:", error);
+    res.status(500).json({ 
+      error: "Failed to delete saved forecast",
+      message: error.message 
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;
