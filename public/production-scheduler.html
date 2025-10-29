@@ -1917,9 +1917,29 @@
                     }
                 };
 
-                // Create a visual-only dependency store
-                // Configure the store to treat all dependencies as inactive (visual-only)
-                const visualDependencyStore = new SchedulerPro.DependencyStore({
+                // Create a visual-only dependency store - OPTIONAL feature
+                // Dependencies are visual-only and do not constrain scheduling
+                let visualDependencyStore = null;
+                
+                try {
+                    // Check if DependencyStore is available in bryntum namespace
+                    let DependencyStore = null;
+                    
+                    // Check various possible locations for DependencyStore
+                    if (window.bryntum?.schedulerpro?.DependencyStore) {
+                        DependencyStore = window.bryntum.schedulerpro.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.schedulerpro.DependencyStore');
+                    } else if (typeof SchedulerPro !== 'undefined' && SchedulerPro.DependencyStore) {
+                        DependencyStore = SchedulerPro.DependencyStore;
+                        console.log('✅ Found DependencyStore at SchedulerPro.DependencyStore');
+                    } else {
+                        console.log('⚠️ DependencyStore not available - visual dependencies will be disabled');
+                        console.log('  Available on bryntum:', window.bryntum ? Object.keys(window.bryntum) : 'bryntum not found');
+                        console.log('  Available on SchedulerPro:', typeof SchedulerPro !== 'undefined' ? Object.keys(SchedulerPro) : 'SchedulerPro not found');
+                    }
+                    
+                    // Only create store if DependencyStore is found
+                    visualDependencyStore = DependencyStore ? new DependencyStore({
                     // Define fields with active always defaulting to false
                     fields: [
                         { name: 'from', type: 'string' },
@@ -1932,24 +1952,35 @@
                         { name: 'active', type: 'boolean', defaultValue: false }
                     ],
                     data: [] // Start with empty, will load after scheduler is initialized
-                });
+                }) : null;
                 
-                // Override add/update methods to force dependencies to be inactive
-                const originalAdd = visualDependencyStore.add;
-                visualDependencyStore.add = function(records, silent) {
-                    // Ensure all records are inactive
-                    const processedRecords = Array.isArray(records) ? records : [records];
-                    processedRecords.forEach(r => {
-                        if (r) {
-                            r.active = false;
-                            r.cls = 'b-inactive';
-                        }
-                    });
-                    return originalAdd.call(this, records, silent);
-                };
-                
-                // Make visual dependency store globally accessible
-                window.visualDependencyStore = visualDependencyStore;
+                    if (visualDependencyStore) {
+                        // Override add/update methods to force dependencies to be inactive
+                        const originalAdd = visualDependencyStore.add;
+                        visualDependencyStore.add = function(records, silent) {
+                            // Ensure all records are inactive
+                            const processedRecords = Array.isArray(records) ? records : [records];
+                            processedRecords.forEach(r => {
+                                if (r) {
+                                    r.active = false;
+                                    r.cls = 'b-inactive';
+                                }
+                            });
+                            return originalAdd.call(this, records, silent);
+                        };
+                        
+                        // Make visual dependency store globally accessible
+                        window.visualDependencyStore = visualDependencyStore;
+                        console.log('✅ Visual dependency store created successfully');
+                    } else {
+                        console.warn('⚠️ Visual dependency store not created - DependencyStore not available');
+                        window.visualDependencyStore = null;
+                    }
+                } catch (error) {
+                    console.error('❌ Error creating visual dependency store:', error);
+                    console.warn('⚠️ Continuing without visual dependencies');
+                    window.visualDependencyStore = null;
+                }
                 
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
@@ -4852,9 +4883,11 @@
                                     visualStore.add(depsToAdd);
                                     
                                     // Bind visual store to the dependencies feature for rendering
-                                    if (scheduler.features.dependencies) {
+                                    if (scheduler.features && scheduler.features.dependencies && visualStore) {
                                         scheduler.features.dependencies.store = visualStore;
                                         console.log('✅ Visual dependency store bound to scheduler');
+                                    } else if (!visualStore) {
+                                        console.warn('⚠️ Could not bind visual dependencies - store not available');
                                     }
                                     
                                     console.log(`✅ Loaded ${visualStore.count} visual-only dependencies`);
