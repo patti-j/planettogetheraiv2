@@ -1538,8 +1538,9 @@ router.get("/users/:userId/assigned-roles", async (req, res) => {
 router.get("/api/roles-management", async (req, res) => {
   try {
     const roles = await storage.getRoles();
+    const allUsers = await storage.getUsers();
     
-    // Add permissions to each role
+    // Add permissions and user count to each role
     const rolesWithPermissions = await Promise.all(
       roles.map(async (role) => {
         const rolePermissions = await storage.getRolePermissions(role.id);
@@ -1552,9 +1553,19 @@ router.get("/api/roles-management", async (req, res) => {
           }
         }
         
+        // Count users with this role
+        let userCount = 0;
+        for (const user of allUsers) {
+          const userRoles = await storage.getUserRoles(user.id);
+          if (userRoles.some(ur => ur.roleId === role.id)) {
+            userCount++;
+          }
+        }
+        
         return {
           ...role,
-          permissions
+          permissions,
+          userCount
         };
       })
     );
