@@ -1917,6 +1917,33 @@
                     }
                 };
 
+                // Create a custom VisualDependency model that forces dependencies to be inactive
+                class VisualDependencyModel extends SchedulerPro.DependencyModel {
+                    static get fields() {
+                        return [
+                            // Force active to always be false for visual-only behavior
+                            { name: 'active', defaultValue: false },
+                            { name: 'inactive', defaultValue: true }
+                        ];
+                    }
+                    
+                    // Override active getter to always return false
+                    get active() {
+                        return false;
+                    }
+                    
+                    // Prevent setting active to true
+                    set active(value) {
+                        // Do nothing - always stay inactive
+                    }
+                }
+                
+                // Create a custom DependencyStore using our visual-only model
+                const visualDependencyStore = new SchedulerPro.DependencyStore({
+                    modelClass: VisualDependencyModel,
+                    data: dependencies // Load our PT dependencies
+                });
+                
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
@@ -1945,11 +1972,24 @@
                             return true;
                         },
                         
+                        // Hook into project load to force dependencies inactive
+                        projectChange: ({ project }) => {
+                            if (project && project.dependencyStore) {
+                                // Force all dependencies to be inactive before any propagation
+                                project.dependencyStore.forEach(dep => {
+                                    dep.active = false;
+                                    dep.inactive = true;
+                                });
+                                console.log('🔧 Forced all dependencies inactive in project store');
+                            }
+                        },
+                        
                         // Allow inactive (visual-only) dependencies, block active (constraining) dependencies
                         beforeDependencyAdd: ({ dependency }) => {
                             // Always mark dependencies as inactive for visual display only
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
+                                dependency.active = false;
                                 console.log('📋 Dependency marked as inactive (visual-only):', dependency.id);
                             }
                             
@@ -1961,11 +2001,23 @@
                             // Ensure dependency remains inactive during updates
                             if (dependency && !dependency.inactive) {
                                 dependency.inactive = true;
+                                dependency.active = false;
                                 console.log('📋 Dependency update - enforced inactive flag:', dependency.id);
                             }
                             
                             // Allow the update now that inactive flag is set
                             return true;
+                        },
+                        
+                        // Hook before any scheduling propagation
+                        beforeProjectPropagate: ({ project }) => {
+                            // Ensure all dependencies are inactive before propagation
+                            if (project && project.dependencyStore) {
+                                project.dependencyStore.forEach(dep => {
+                                    dep.active = false;
+                                    dep.inactive = true;
+                                });
+                            }
                         }
                     },
                     
