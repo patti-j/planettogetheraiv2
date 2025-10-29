@@ -7,8 +7,16 @@ import { Combobox } from "@/components/ui/combobox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Brush } from 'recharts';
-import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp, RefreshCw, Trash2, Info, Download, FileText } from "lucide-react";
+import { Loader2, Sparkles, Database, TrendingUp, Search, ChevronDown, ChevronUp, RefreshCw, Trash2, Info, Download, FileText, Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import html2canvas from "html2canvas";
 
@@ -149,6 +157,11 @@ export default function DemandForecasting() {
     scenarios?: string;
     items?: string;
   }>({});
+  
+  // Save forecast state
+  const [showSaveDialog, setShowSaveDialog] = useState<boolean>(false);
+  const [forecastName, setForecastName] = useState<string>("");
+  const [forecastDescription, setForecastDescription] = useState<string>("");
   
   // Fetch SQL Server tables
   const { data: tablesData, isLoading: isLoadingTables } = useQuery({
@@ -338,6 +351,29 @@ export default function DemandForecasting() {
         variant: "destructive",
       });
     },
+  });
+  
+  // Save forecast mutation
+  const saveForecastMutation = useMutation({
+    mutationFn: async (data: any) => {
+      return apiRequest("/api/forecasting/save-forecast", "POST", data);
+    },
+    onSuccess: () => {
+      toast({
+        title: "Success",
+        description: "Forecast saved successfully"
+      });
+      setShowSaveDialog(false);
+      setForecastName("");
+      setForecastDescription("");
+    },
+    onError: (error: any) => {
+      toast({
+        variant: "destructive",
+        title: "Save Failed",
+        description: error.message || "Failed to save forecast"
+      });
+    }
   });
 
   // Auto-select first item when in individual mode and forecast is available
@@ -1731,7 +1767,22 @@ export default function DemandForecasting() {
                         />
                       </>
                     )}
-                    {/* Export buttons */}
+                    {/* Save and Export buttons */}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        const timestamp = new Date().toISOString().split('T')[0];
+                        const itemName = selectedForecastItem || "Overall";
+                        setForecastName(`${itemName} Forecast - ${timestamp}`);
+                        setShowSaveDialog(true);
+                      }}
+                      title="Save forecast to favorites"
+                      disabled={!forecastMutation.data}
+                    >
+                      <Star className="h-4 w-4 mr-1" />
+                      Save
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -1921,6 +1972,85 @@ export default function DemandForecasting() {
           </Card>
         </div>
       )}
+      
+      {/* Save Forecast Dialog */}
+      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Save Forecast to Favorites</DialogTitle>
+            <DialogDescription>
+              Save this forecast for easy access in Material Requirements Planning
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="forecast-name">Name</Label>
+              <Input
+                id="forecast-name"
+                value={forecastName}
+                onChange={(e) => setForecastName(e.target.value)}
+                placeholder="Enter a name for this forecast"
+              />
+            </div>
+            <div>
+              <Label htmlFor="forecast-description">Description (Optional)</Label>
+              <Input
+                id="forecast-description"
+                value={forecastDescription}
+                onChange={(e) => setForecastDescription(e.target.value)}
+                placeholder="Add a description"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (!forecastName.trim()) {
+                  toast({
+                    variant: "destructive",
+                    title: "Name Required",
+                    description: "Please enter a name for the forecast"
+                  });
+                  return;
+                }
+                
+                // Prepare forecast data
+                const forecastData = forecastMutation.data;
+                const saveData = {
+                  name: forecastName.trim(),
+                  description: forecastDescription.trim(),
+                  modelType,
+                  forecastDays,
+                  itemColumn,
+                  quantityColumn,
+                  dateColumn,
+                  forecastedItems: forecastData?.forecastedItemNames || [],
+                  planningAreas: selectedPlanningAreas,
+                  scenarios: selectedScenarios,
+                  forecastData: forecastData?.overall || forecastData,
+                  itemForecasts: forecastData?.items,
+                  metrics: forecastData?.overall?.metrics || forecastData?.metrics
+                };
+                
+                saveForecastMutation.mutate(saveData);
+              }}
+              disabled={saveForecastMutation.isPending}
+            >
+              {saveForecastMutation.isPending ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                "Save Forecast"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
