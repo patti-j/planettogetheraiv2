@@ -356,7 +356,8 @@ export default function DemandForecasting() {
   // Save forecast mutation
   const saveForecastMutation = useMutation({
     mutationFn: async (data: any) => {
-      return apiRequest("/api/forecasting/save-forecast", "POST", data);
+      const response = await apiRequest("POST", "/api/forecasting/save-forecast", data);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
