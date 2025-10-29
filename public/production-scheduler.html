@@ -1223,6 +1223,114 @@
             setTimeout(() => sch.zoomToFit({ leftMargin: 50, rightMargin: 50 }), 100);
         }
         
+        // Function to render PT dependencies as visual-only SVG lines
+        function renderPTDependencyLines(scheduler, dependencies) {
+            try {
+                console.log(`🎨 Rendering ${dependencies.length} PT dependency lines...`);
+                
+                // Wait for scheduler to be fully rendered
+                setTimeout(() => {
+                    // Get or create SVG container for dependency lines
+                    const schedulerEl = scheduler.element;
+                    let svgContainer = schedulerEl.querySelector('.pt-dependency-lines');
+                    
+                    if (svgContainer) {
+                        // Clear existing lines
+                        svgContainer.innerHTML = '';
+                    } else {
+                        // Create SVG container
+                        svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        svgContainer.classList.add('pt-dependency-lines');
+                        svgContainer.style.position = 'absolute';
+                        svgContainer.style.top = '0';
+                        svgContainer.style.left = '0';
+                        svgContainer.style.width = '100%';
+                        svgContainer.style.height = '100%';
+                        svgContainer.style.pointerEvents = 'none'; // Make lines non-interactive
+                        svgContainer.style.zIndex = '100'; // Above events but below drag handles
+                        
+                        // Insert into scheduler's foreground canvas
+                        const foregroundCanvas = schedulerEl.querySelector('.b-sch-foreground-canvas') || 
+                                               schedulerEl.querySelector('.b-grid-body-container');
+                        if (foregroundCanvas) {
+                            foregroundCanvas.appendChild(svgContainer);
+                        }
+                    }
+                    
+                    // Draw each dependency as a line
+                    let linesDrawn = 0;
+                    dependencies.forEach(dep => {
+                        const fromEvent = scheduler.eventStore.getById(dep.from);
+                        const toEvent = scheduler.eventStore.getById(dep.to);
+                        
+                        if (fromEvent && toEvent) {
+                            // Get event elements
+                            const fromEl = scheduler.getElementFromEventRecord(fromEvent);
+                            const toEl = scheduler.getElementFromEventRecord(toEvent);
+                            
+                            if (fromEl && toEl) {
+                                // Get positions
+                                const fromRect = fromEl.getBoundingClientRect();
+                                const toRect = toEl.getBoundingClientRect();
+                                const containerRect = svgContainer.getBoundingClientRect();
+                                
+                                // Calculate line coordinates (from right edge of source to left edge of target)
+                                const x1 = fromRect.right - containerRect.left;
+                                const y1 = fromRect.top + fromRect.height / 2 - containerRect.top;
+                                const x2 = toRect.left - containerRect.left;
+                                const y2 = toRect.top + toRect.height / 2 - containerRect.top;
+                                
+                                // Create SVG path for dependency line with arrow
+                                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                                
+                                // Create curved line path
+                                const midX = (x1 + x2) / 2;
+                                const d = `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`;
+                                
+                                path.setAttribute('d', d);
+                                path.setAttribute('stroke', '#2d3748'); // Dark gray
+                                path.setAttribute('stroke-width', '2.5');
+                                path.setAttribute('fill', 'none');
+                                path.setAttribute('marker-end', 'url(#arrowhead)');
+                                path.classList.add('pt-dependency-line');
+                                
+                                svgContainer.appendChild(path);
+                                linesDrawn++;
+                            }
+                        }
+                    });
+                    
+                    // Add arrowhead marker definition if not exists
+                    if (!svgContainer.querySelector('#arrowhead')) {
+                        const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                        const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+                        marker.setAttribute('id', 'arrowhead');
+                        marker.setAttribute('markerWidth', '10');
+                        marker.setAttribute('markerHeight', '10');
+                        marker.setAttribute('refX', '9');
+                        marker.setAttribute('refY', '3');
+                        marker.setAttribute('orient', 'auto');
+                        
+                        const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                        polygon.setAttribute('points', '0 0, 10 3, 0 6');
+                        polygon.setAttribute('fill', '#2d3748');
+                        
+                        marker.appendChild(polygon);
+                        defs.appendChild(marker);
+                        svgContainer.appendChild(defs);
+                    }
+                    
+                    console.log(`✅ PT dependency lines rendered successfully: ${linesDrawn} lines drawn`);
+                }, 500); // Wait 500ms for scheduler to render
+                
+            } catch (error) {
+                console.error('❌ Error rendering PT dependency lines:', error);
+            }
+        }
+        
+        // Make function globally accessible
+        window.renderPTDependencyLines = renderPTDependencyLines;
+        
         // Wait for DOM to load
         // Guard to prevent multiple initialization attempts
         let schedulerInitialized = false;
@@ -3529,6 +3637,14 @@
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
+                    // Render PT dependencies as visual lines after scheduling
+                    if (window.originalDependencies && window.originalDependencies.length > 0) {
+                        console.log('🎨 Rendering PT dependencies as visual lines after ASAP scheduling...');
+                        setTimeout(() => {
+                            window.renderPTDependencyLines(scheduler, window.originalDependencies);
+                        }, 1000); // Wait 1 second for DOM to fully update
+                    }
+                    
                     // Apply left compaction to remove gaps
                     console.log('📦 Applying left compaction to remove gaps...');
                     await compactLeftPerResource();
@@ -4576,7 +4692,7 @@
                     });
                     
                     // Keep a copy globally
-                    window.originalDependencies = dependencies || [];
+                    window.originalDependencies = fetchedDependencies || [];
                     
                     // Draw dependency lines after the scheduler is ready
                     // Use setTimeout to ensure the scheduler is fully initialized
