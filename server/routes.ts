@@ -1078,6 +1078,76 @@ router.delete("/api/workflows/:id", async (req, res) => {
   }
 });
 
+// AI-powered workflow generation endpoint
+router.post("/api/workflows/ai-generate", async (req, res) => {
+  try {
+    const { prompt, category } = req.body;
+    
+    if (!prompt) {
+      return res.status(400).json({ message: "Prompt is required" });
+    }
+
+    // Import OpenAI
+    const { default: OpenAI } = await import("openai");
+    const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+    // Generate workflow using OpenAI
+    const aiResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "system",
+          content: `You are a workflow automation expert for manufacturing systems. Generate a detailed workflow configuration based on the user's request. The workflow should be in JSON format with the following structure:
+          {
+            "name": "Workflow name",
+            "description": "Clear description",
+            "category": "production|quality|maintenance|inventory",
+            "triggerType": "manual|schedule|event|api",
+            "triggerConfig": {},
+            "definition": {
+              "steps": [
+                {
+                  "name": "Step name",
+                  "description": "What this step does",
+                  "stepType": "action|condition|loop|parallel|ai_task",
+                  "actionType": "schedule_job|assign_resource|quality_check|send_notification|update_status|data_analysis",
+                  "actionConfig": {},
+                  "conditions": []
+                }
+              ]
+            },
+            "aiEnabled": true,
+            "aiPrompt": "Original user prompt"
+          }`
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      response_format: { type: "json_object" }
+    });
+
+    const generatedWorkflow = JSON.parse(aiResponse.choices[0].message.content || "{}");
+    
+    // Add metadata and save the workflow
+    const workflowData = {
+      ...generatedWorkflow,
+      category: category || generatedWorkflow.category || "manufacturing",
+      status: "draft",
+      aiPrompt: prompt,
+      aiModel: "gpt-4o",
+      aiEnabled: true
+    };
+
+    const newWorkflow = await storage.createWorkflow(workflowData);
+    res.json(newWorkflow);
+  } catch (error) {
+    console.error("Error generating workflow with AI:", error);
+    res.status(500).json({ message: "Failed to generate workflow" });
+  }
+});
+
 // Execute workflow endpoint
 router.post("/api/workflows/:id/execute", async (req, res) => {
   try {
