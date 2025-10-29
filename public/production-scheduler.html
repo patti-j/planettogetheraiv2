@@ -1895,13 +1895,9 @@
                     },
 
                     features: {
-                        // Dependencies feature ENABLED for visual display
-                        // Conflict handlers suppress any constraint conflicts
-                        dependencies: {
-                            disabled: false,
-                            allowCreate: false, // Prevent creating new dependencies via UI
-                            showTooltip: false  // Hide dependency tooltips
-                        },
+                        // Dependencies feature DISABLED - using PT dependencies for visualization only
+                        // This deactivates Bryntum's dependency feature completely
+                        dependencies: false,
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
