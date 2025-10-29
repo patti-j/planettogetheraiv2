@@ -1055,17 +1055,64 @@ def forecast():
         return jsonify({"error": str(e)}), 500
 
 def forecast_linear_regression(model_info, df, forecast_days):
-    """Generate forecast using Linear Regression"""
+    """Generate forecast using Linear Regression with intermittent demand handling"""
     model = model_info['model']
     scaler = model_info['scaler']
     feature_cols = model_info['feature_cols']
     residual_std = model_info.get('residual_std', 0.1)
+    
+    # Analyze historical intermittency pattern
+    historical_values = df['value'].values
+    zero_ratio = np.sum(historical_values == 0) / len(historical_values) if len(historical_values) > 0 else 0
+    non_zero_values = historical_values[historical_values > 0]
+    
+    # Calculate statistics for intermittent demand detection
+    if len(non_zero_values) > 0:
+        mean_non_zero = np.mean(non_zero_values)
+        std_non_zero = np.std(non_zero_values)
+        min_non_zero = np.min(non_zero_values)
+        # Dynamic threshold: values below this are likely noise and should be zero
+        threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
+    else:
+        # If all historical values are zero, forecast all zeros
+        predictions = []
+        last_date = df['date'].max()
+        for i in range(forecast_days):
+            next_date = last_date + pd.Timedelta(days=i+1)
+            predictions.append({
+                "date": next_date.strftime('%Y-%m-%d'),
+                "value": 0.0,
+                "lower": 0.0,
+                "upper": 0.0
+            })
+        return {
+            "predictions": predictions,
+            "metrics": {"mape": 0.0, "rmse": 0.0}
+        }
+    
+    print(f"Linear Regression - Intermittency analysis: zero_ratio={zero_ratio:.2f}, mean_non_zero={mean_non_zero:.2f}, threshold={threshold:.2f}", flush=True)
     
     # Use last data for iterative forecasting
     forecast_df = df.tail(30).copy()
     predictions = []
     
     last_date = df['date'].max()
+    
+    # Track recent pattern for intermittent demand simulation
+    recent_pattern = df.tail(14)['value'].values  # Look at last 2 weeks
+    days_between_orders = []
+    last_order_day = -1
+    for idx, val in enumerate(recent_pattern):
+        if val > 0:
+            if last_order_day >= 0:
+                days_between_orders.append(idx - last_order_day)
+            last_order_day = idx
+    
+    # Calculate average interval between orders
+    avg_interval = np.mean(days_between_orders) if days_between_orders else (1 / (1 - zero_ratio) if zero_ratio < 1 else 7)
+    
+    # Initialize counter for intermittent pattern
+    days_since_last_order = 0
     
     for i in range(forecast_days):
         # Calculate next date first
@@ -1096,10 +1143,33 @@ def forecast_linear_regression(model_info, df, forecast_days):
         pred_value = model.predict(X_next_scaled)[0]
         pred_value = max(0, pred_value)  # Ensure non-negative
         
-        # Calculate confidence intervals using residual std
-        margin = 1.96 * residual_std
-        lower = max(0, pred_value - margin)
-        upper = pred_value + margin
+        # Apply intermittent demand logic
+        days_since_last_order += 1
+        
+        # Determine if this day should have demand based on historical pattern
+        if zero_ratio > 0.3:  # If historically >30% of days have zero demand
+            # Use interval-based approach
+            if days_since_last_order < avg_interval * 0.7:
+                # Too soon after last order, likely zero
+                if pred_value < mean_non_zero * 0.5:
+                    pred_value = 0
+            
+            # Apply threshold to filter out noise
+            if pred_value < threshold and pred_value > 0:
+                pred_value = 0
+            
+            # If we predict an order, reset counter
+            if pred_value > 0:
+                days_since_last_order = 0
+        
+        # Calculate confidence intervals
+        if pred_value == 0:
+            lower = 0
+            upper = 0
+        else:
+            margin = 1.96 * residual_std
+            lower = max(0, pred_value - margin)
+            upper = pred_value + margin
         
         # Add to forecast
         predictions.append({
@@ -1114,6 +1184,11 @@ def forecast_linear_regression(model_info, df, forecast_days):
             'date': [next_date],
             'value': [pred_value]
         })], ignore_index=True)
+    
+    # Log intermittency in forecast
+    forecast_values = [p['value'] for p in predictions]
+    forecast_zero_ratio = sum(1 for v in forecast_values if v == 0) / len(forecast_values) if forecast_values else 0
+    print(f"Linear Regression - Forecast intermittency: {forecast_zero_ratio:.2f} (historical: {zero_ratio:.2f})", flush=True)
     
     # Calculate metrics on training data
     train_features = create_features(df.copy())
@@ -1132,16 +1207,64 @@ def forecast_linear_regression(model_info, df, forecast_days):
     }
 
 def forecast_random_forest(model_info, df, forecast_days):
-    """Generate forecast using Random Forest with proper confidence intervals"""
+    """Generate forecast using Random Forest with intermittent demand handling"""
     model = model_info['model']
     feature_cols = model_info['feature_cols']
     residual_std = model_info.get('residual_std', 0)
+    
+    # Analyze historical intermittency pattern
+    historical_values = df['value'].values
+    zero_ratio = np.sum(historical_values == 0) / len(historical_values) if len(historical_values) > 0 else 0
+    non_zero_values = historical_values[historical_values > 0]
+    
+    # Calculate statistics for intermittent demand detection
+    if len(non_zero_values) > 0:
+        mean_non_zero = np.mean(non_zero_values)
+        std_non_zero = np.std(non_zero_values)
+        min_non_zero = np.min(non_zero_values)
+        # Dynamic threshold: values below this are likely noise and should be zero
+        threshold = min(min_non_zero * 0.5, mean_non_zero * 0.1) if min_non_zero > 0 else mean_non_zero * 0.1
+    else:
+        # If all historical values are zero, forecast all zeros
+        predictions = []
+        last_date = df['date'].max()
+        for i in range(forecast_days):
+            next_date = last_date + pd.Timedelta(days=i+1)
+            predictions.append({
+                "date": next_date.strftime('%Y-%m-%d'),
+                "value": 0.0,
+                "lower": 0.0,
+                "upper": 0.0
+            })
+        training_metrics = model_info.get('training_metrics', {})
+        return {
+            "predictions": predictions,
+            "metrics": training_metrics
+        }
+    
+    print(f"Intermittency analysis: zero_ratio={zero_ratio:.2f}, mean_non_zero={mean_non_zero:.2f}, threshold={threshold:.2f}", flush=True)
     
     # Use last data point to start forecasting
     forecast_df = df.tail(30).copy()
     predictions = []
     
     last_date = df['date'].max()
+    
+    # Track recent pattern for intermittent demand simulation
+    recent_pattern = df.tail(14)['value'].values  # Look at last 2 weeks
+    days_between_orders = []
+    last_order_day = -1
+    for idx, val in enumerate(recent_pattern):
+        if val > 0:
+            if last_order_day >= 0:
+                days_between_orders.append(idx - last_order_day)
+            last_order_day = idx
+    
+    # Calculate average interval between orders
+    avg_interval = np.mean(days_between_orders) if days_between_orders else (1 / (1 - zero_ratio) if zero_ratio < 1 else 7)
+    
+    # Initialize counter for intermittent pattern
+    days_since_last_order = 0
     
     for i in range(forecast_days):
         # Create features for next prediction
@@ -1156,12 +1279,35 @@ def forecast_random_forest(model_info, df, forecast_days):
         
         # Predict
         pred_value = model.predict(X_next)[0]
-        pred_value = max(0, pred_value)  # Ensure non-negative
+        pred_value = max(0, pred_value)
         
-        # Calculate confidence intervals using residual std
-        margin = 1.96 * residual_std
-        lower = max(0, pred_value - margin)
-        upper = pred_value + margin
+        # Apply intermittent demand logic
+        days_since_last_order += 1
+        
+        # Determine if this day should have demand based on historical pattern
+        if zero_ratio > 0.3:  # If historically >30% of days have zero demand
+            # Use interval-based approach
+            if days_since_last_order < avg_interval * 0.7:
+                # Too soon after last order, likely zero
+                if pred_value < mean_non_zero * 0.5:
+                    pred_value = 0
+            
+            # Apply threshold to filter out noise
+            if pred_value < threshold and pred_value > 0:
+                pred_value = 0
+            
+            # If we predict an order, reset counter
+            if pred_value > 0:
+                days_since_last_order = 0
+        
+        # Calculate confidence intervals
+        if pred_value == 0:
+            lower = 0
+            upper = 0
+        else:
+            margin = 1.96 * residual_std
+            lower = max(0, pred_value - margin)
+            upper = pred_value + margin
         
         # Add to forecast
         next_date = last_date + pd.Timedelta(days=i+1)
@@ -1178,6 +1324,11 @@ def forecast_random_forest(model_info, df, forecast_days):
             'value': [pred_value]
         })
         forecast_df = pd.concat([forecast_df, new_row], ignore_index=True)
+    
+    # Log intermittency in forecast
+    forecast_values = [p['value'] for p in predictions]
+    forecast_zero_ratio = sum(1 for v in forecast_values if v == 0) / len(forecast_values) if forecast_values else 0
+    print(f"Forecast intermittency: {forecast_zero_ratio:.2f} (historical: {zero_ratio:.2f})", flush=True)
     
     # Return the actual training metrics stored with the model
     training_metrics = model_info.get('training_metrics', {})

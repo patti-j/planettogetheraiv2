@@ -1,0 +1,28 @@
+{
+  "schema": "publish",
+  "table": "DASHt_SalesOrders",
+  "date_col": "RequiredAvailableDate",
+  "item_col": "ItemName",
+  "qty_col": "QtyOrdered",
+  "model_type": "ARIMA",
+  "forecast_days": 30,
+  "item": "FG1",
+  "cache_key": "0aa57c323baaedbb",
+  "cached_at": "2025-10-29T18:58:49.592233",
+  "planning_areas": [
+    "BI01",
+    "BI02"
+  ],
+  "scenario_names": [
+    "Scenario 1",
+    "Scenario 2",
+    "Scenario Copy 1"
+  ],
+  "hyperparameter_tuning": false,
+  "metrics": {
+    "mape": 99.71561759407565,
+    "rmse": 128.30766065647296,
+    "accuracy": 0.2843824059243474
+  },
+  "training_points": 1609
+}

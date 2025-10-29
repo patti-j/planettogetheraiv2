@@ -1,0 +1,28 @@
+{
+  "schema": "publish",
+  "table": "DASHt_SalesOrders",
+  "date_col": "RequiredAvailableDate",
+  "item_col": "ItemName",
+  "qty_col": "QtyOrdered",
+  "model_type": "Prophet",
+  "forecast_days": 30,
+  "item": "SUB1",
+  "cache_key": "3b127060edf325fb",
+  "cached_at": "2025-10-29T18:59:50.388638",
+  "planning_areas": [
+    "BI01",
+    "BI02"
+  ],
+  "scenario_names": [
+    "Scenario 1",
+    "Scenario 2",
+    "Scenario Copy 1"
+  ],
+  "hyperparameter_tuning": false,
+  "metrics": {
+    "mape": 91.4755063537104,
+    "rmse": 72.54086863939997,
+    "accuracy": 8.5244936462896
+  },
+  "training_points": 373
+}
