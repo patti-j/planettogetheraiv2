@@ -472,14 +472,14 @@ app.use((req, res, next) => {
   // Get streams available to user based on their role
   async function getUserAvailableStreams(userId: number, storage: DatabaseStorage): Promise<string[]> {
     try {
-      const user = await storage.getUserById(userId);
+      const user = await storage.getUser(userId);
       if (!user) return [];
 
       const userRoles = await storage.getUserRoles(userId);
       const availableStreams = new Set<string>();
 
       for (const userRole of userRoles) {
-        const role = await storage.getRoleById(userRole.roleId);
+        const role = await storage.getRole(userRole.roleId);
         if (role?.name) {
           // Check which streams this role can access
           Object.entries(STREAM_PERMISSIONS).forEach(([streamType, allowedRoles]) => {

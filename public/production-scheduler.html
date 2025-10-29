@@ -3215,14 +3215,9 @@
                             console.log(`⚠️ Operation "${eventRecord.name}" moved to unscheduled`);
                             updateStatus(); // Update metrics
 
-/*                        } else if (!eventRecord.isUnscheduled && targetResourceRecord.id !== 'unscheduled') {
-                            // Regular drag between scheduled resources - handle based on mode
-                            if (currentSchedulingMode === 'ALAP') {
-                                // For ALAP mode, handle constraints more intelligently
-                                const hasSuccessors = scheduler.dependencyStore.query(d => d.from === eventRecord.id).length > 0;
                         }
-                    });
-                });*/
+                    }
+                });
                 
                 // ============================================
                 // DRAG HELPER IMPLEMENTATION
