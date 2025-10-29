@@ -575,7 +575,10 @@ export default function AIScenarioCreator() {
                       </Badge>
                     </CardTitle>
                     <CardDescription>
-                      {scenario.description}
+                      {typeof scenario.description === 'object' && scenario.description !== null 
+                        ? (scenario.description.content || 
+                           JSON.stringify(scenario.description, null, 2))
+                        : scenario.description}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
