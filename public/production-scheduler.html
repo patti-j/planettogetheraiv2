@@ -4682,11 +4682,32 @@
                     // Keep console logging for debugging if needed
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
+                    // Transform PT operations to ensure they have the correct format for Bryntum
+                    const transformedEvents = eventsForScheduler.map(event => {
+                        // Ensure dates are Date objects
+                        const startDate = event.startDate ? (event.startDate instanceof Date ? event.startDate : new Date(event.startDate)) : null;
+                        const endDate = event.endDate ? (event.endDate instanceof Date ? event.endDate : new Date(event.endDate)) : null;
+                        
+                        return {
+                            id: event.id,
+                            name: event.name || 'Unnamed Operation',
+                            startDate: startDate,
+                            endDate: endDate,
+                            eventColor: event.eventColor || event.color || 'green',
+                            // Remove resourceId from event - it should come from assignments
+                            percentDone: event.percentDone || 0,
+                            duration: event.duration,
+                            durationUnit: event.durationUnit || 'hour'
+                        };
+                    }).filter(e => e.startDate && e.endDate); // Only include events with valid dates
+                    
+                    console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
+                    
                     // Load data WITHOUT dependencies to prevent engine constraints
                     // Dependencies will be added manually as inactive visual-only lines
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
-                        eventsData: eventsForScheduler, // Events without resourceId
+                        eventsData: transformedEvents, // Use transformed events
                         assignmentsData: assignments, // Assignments link events to resources
                         dependenciesData: [] // CRITICAL: Empty array to ensure NO dependencies are loaded initially
                     });
@@ -4697,6 +4718,12 @@
                     // Draw dependency lines after the scheduler is ready
                     // Use setTimeout to ensure the scheduler is fully initialized
                     setTimeout(() => {
+                        // Render PT dependencies as visual-only lines
+                        if (fetchedDependencies && fetchedDependencies.length > 0) {
+                            console.log('🎨 Rendering PT dependencies as visual lines after initial load...');
+                            window.renderPTDependencyLines(scheduler, fetchedDependencies);
+                        }
+                        
                         try {
                             // Check for Lager packaging dependency
                             console.log('🔍 Checking for Lager packaging dependencies:');
