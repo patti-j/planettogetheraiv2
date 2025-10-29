@@ -41,7 +41,14 @@ import {
   // Master Data types
   items, capabilities,
   type Item, type InsertItem,
-  type Capability, type InsertCapability
+  type Capability, type InsertCapability,
+  // Workflow Automation types
+  workflows, workflowSteps, workflowExecutions, workflowTemplates, workflowLogs,
+  type Workflow, type InsertWorkflow,
+  type WorkflowStep, type InsertWorkflowStep,
+  type WorkflowExecution, type InsertWorkflowExecution,
+  type WorkflowTemplate, type InsertWorkflowTemplate,
+  type WorkflowLog, type InsertWorkflowLog
 } from "@shared/schema";
 import { eq, and, desc, sql, ilike } from "drizzle-orm";
 import { db } from "./db";
