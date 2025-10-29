@@ -142,6 +142,21 @@ app.use((req, res, next) => {
     }
   });
 
+  // Serve Bryntum module files specifically
+  app.get('/schedulerpro.module.js', (req, res) => {
+    const filePath = path.resolve('public/schedulerpro.module.js');
+    res.set({
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'public, max-age=31536000'
+    });
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('Scheduler module not found');
+    }
+  });
+
   // COMMENTED OUT: These handlers were intercepting Vite's files
   // The static middleware and Vite will handle these files properly
   /*
