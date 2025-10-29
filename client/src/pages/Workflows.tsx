@@ -378,23 +378,275 @@ function ExecutionHistory() {
   );
 }
 
-// Workflow Builder Component (placeholder for now)
+// Workflow Builder Component with AI generation
 function WorkflowBuilder({ onClose }: { onClose: () => void }) {
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [generatedWorkflow, setGeneratedWorkflow] = useState<any>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [workflowName, setWorkflowName] = useState('');
+  const [workflowDescription, setWorkflowDescription] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('manufacturing');
+  const { toast } = useToast();
+
+  const handleAiGenerate = async () => {
+    if (!aiPrompt.trim()) {
+      toast({
+        title: 'Prompt Required',
+        description: 'Please describe the workflow you want to create',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const response = await fetch('/api/workflows/ai-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prompt: aiPrompt,
+          category: selectedCategory,
+        }),
+      });
+
+      if (!response.ok) throw new Error('Failed to generate workflow');
+      
+      const workflow = await response.json();
+      setGeneratedWorkflow(workflow);
+      setWorkflowName(workflow.name || '');
+      setWorkflowDescription(workflow.description || '');
+      
+      toast({
+        title: 'Workflow Generated!',
+        description: 'AI has created a workflow based on your description',
+      });
+    } catch (error) {
+      toast({
+        title: 'Generation Failed',
+        description: 'Could not generate workflow. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const handleSaveWorkflow = async () => {
+    if (generatedWorkflow) {
+      try {
+        const response = await fetch(`/api/workflows/${generatedWorkflow.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            ...generatedWorkflow,
+            name: workflowName,
+            description: workflowDescription,
+            status: 'active',
+          }),
+        });
+
+        if (!response.ok) throw new Error('Failed to save workflow');
+
+        toast({
+          title: 'Workflow Saved',
+          description: 'Your workflow has been saved and activated',
+        });
+        
+        queryClient.invalidateQueries({ queryKey: ['/api/workflows'] });
+        onClose();
+      } catch (error) {
+        toast({
+          title: 'Save Failed',
+          description: 'Could not save workflow',
+          variant: 'destructive',
+        });
+      }
+    }
+  };
+
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto p-6 max-w-6xl">
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Workflow Builder</h2>
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Sparkles className="w-6 h-6 text-primary" />
+          AI Workflow Builder
+        </h2>
         <Button onClick={onClose} variant="outline">Close</Button>
       </div>
-      <Card className="p-8 text-center">
-        <CardContent>
-          <Sparkles className="w-16 h-16 mx-auto mb-4 text-primary" />
-          <h3 className="text-xl font-semibold mb-2">AI-Powered Workflow Builder</h3>
-          <p className="text-muted-foreground">
-            The visual workflow builder with AI assistance will be implemented here
-          </p>
-        </CardContent>
-      </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* AI Generation Panel */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Describe Your Workflow</CardTitle>
+            <CardDescription>
+              Tell AI what you want to automate and it will create a workflow for you
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-sm font-medium mb-2 block">Category</label>
+              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="production">Production</SelectItem>
+                  <SelectItem value="quality">Quality Control</SelectItem>
+                  <SelectItem value="maintenance">Maintenance</SelectItem>
+                  <SelectItem value="inventory">Inventory</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="text-sm font-medium mb-2 block">
+                Describe what you want to automate
+              </label>
+              <textarea
+                className="w-full min-h-[150px] p-3 border rounded-md"
+                placeholder="Example: Create a workflow that monitors production line efficiency every hour. If efficiency drops below 80%, send alerts to the production manager and create a maintenance ticket. Also generate a daily summary report."
+                value={aiPrompt}
+                onChange={(e) => setAiPrompt(e.target.value)}
+              />
+            </div>
+
+            <Button 
+              onClick={handleAiGenerate}
+              className="w-full"
+              disabled={isGenerating}
+            >
+              {isGenerating ? (
+                <>
+                  <Activity className="w-4 h-4 mr-2 animate-spin" />
+                  Generating...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate with AI
+                </>
+              )}
+            </Button>
+
+            {/* Sample Prompts */}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Try these examples:</p>
+              <div className="space-y-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-xs"
+                  onClick={() => setAiPrompt('Monitor inventory levels and automatically create purchase orders when stock falls below minimum thresholds')}
+                >
+                  Inventory Auto-Reorder
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-xs"
+                  onClick={() => setAiPrompt('Schedule daily quality checks, collect data, and escalate any issues that exceed tolerance limits')}
+                >
+                  Quality Monitoring
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start text-xs"
+                  onClick={() => setAiPrompt('Generate production reports every shift with KPIs, send to managers, and flag any anomalies')}
+                >
+                  Shift Reporting
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Workflow Preview Panel */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Workflow Preview</CardTitle>
+            <CardDescription>
+              Review and customize your AI-generated workflow
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {generatedWorkflow ? (
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Name</label>
+                  <Input
+                    value={workflowName}
+                    onChange={(e) => setWorkflowName(e.target.value)}
+                    placeholder="Workflow name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Description</label>
+                  <textarea
+                    className="w-full min-h-[80px] p-3 border rounded-md"
+                    value={workflowDescription}
+                    onChange={(e) => setWorkflowDescription(e.target.value)}
+                    placeholder="Workflow description"
+                  />
+                </div>
+
+                {/* Workflow Steps */}
+                <div>
+                  <label className="text-sm font-medium mb-2 block">Workflow Steps</label>
+                  <div className="space-y-2">
+                    {generatedWorkflow.definition?.steps?.map((step: any, index: number) => (
+                      <div key={index} className="p-3 border rounded-md bg-muted/50">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-primary text-white flex items-center justify-center text-xs">
+                            {index + 1}
+                          </div>
+                          <span className="font-medium">{step.name}</span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1 ml-8">
+                          {step.description}
+                        </p>
+                        <div className="flex gap-2 mt-2 ml-8">
+                          <Badge variant="outline" className="text-xs">
+                            {step.stepType}
+                          </Badge>
+                          {step.actionType && (
+                            <Badge variant="secondary" className="text-xs">
+                              {step.actionType}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={handleSaveWorkflow}
+                    className="flex-1"
+                  >
+                    Save & Activate
+                  </Button>
+                  <Button 
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => setGeneratedWorkflow(null)}
+                  >
+                    Start Over
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Activity className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p>Your AI-generated workflow will appear here</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
