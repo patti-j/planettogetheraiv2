@@ -1228,40 +1228,32 @@
             try {
                 console.log(`🎨 Rendering ${dependencies.length} PT dependency lines...`);
                 
-                // Disable dependency rendering for now to prevent SVG errors
-                // Dependencies are visual-only and not required for scheduling algorithms
-                console.log('⚠️ Dependency line rendering temporarily disabled to prevent SVG conflicts');
-                return;
-                
-                /* DISABLED CODE - Causes SVG/Bryntum conflicts
                 // Wait for scheduler to be fully rendered
                 setTimeout(() => {
-                    // Get or create SVG container for dependency lines
+                    // Get scheduler element
                     const schedulerEl = scheduler.element;
-                    let svgContainer = schedulerEl.querySelector('.pt-dependency-lines');
                     
-                    if (svgContainer) {
-                        // Clear existing lines
-                        svgContainer.innerHTML = '';
-                    } else {
-                        // Create SVG container
-                        svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        svgContainer.classList.add('pt-dependency-lines');
-                        svgContainer.style.position = 'absolute';
-                        svgContainer.style.top = '0';
-                        svgContainer.style.left = '0';
-                        svgContainer.style.width = '100%';
-                        svgContainer.style.height = '100%';
-                        svgContainer.style.pointerEvents = 'none'; // Make lines non-interactive
-                        svgContainer.style.zIndex = '100'; // Above events but below drag handles
-                        
-                        // Insert into scheduler's foreground canvas
-                        const foregroundCanvas = schedulerEl.querySelector('.b-sch-foreground-canvas') || 
-                                               schedulerEl.querySelector('.b-grid-body-container');
-                        if (foregroundCanvas) {
-                            foregroundCanvas.appendChild(svgContainer);
-                        }
+                    // Remove any existing dependency container
+                    const existingSvg = document.querySelector('.pt-dependency-overlay');
+                    if (existingSvg) {
+                        existingSvg.remove();
                     }
+                    
+                    // Create SVG container as overlay OUTSIDE Bryntum's DOM
+                    const svgContainer = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                    svgContainer.setAttribute('class', 'pt-dependency-overlay');
+                    svgContainer.style.position = 'absolute';
+                    svgContainer.style.top = '0';
+                    svgContainer.style.left = '0';
+                    svgContainer.style.width = '100%';
+                    svgContainer.style.height = '100%';
+                    svgContainer.style.pointerEvents = 'none';
+                    svgContainer.style.zIndex = '100';
+                    
+                    // Find the scheduler's main container and add as sibling
+                    const schedulerWrapper = schedulerEl.closest('.scheduler-container') || schedulerEl.parentElement;
+                    schedulerWrapper.style.position = 'relative';
+                    schedulerWrapper.appendChild(svgContainer);
                     
                     // Draw each dependency as a line
                     let linesDrawn = 0;
@@ -1298,7 +1290,7 @@
                                 path.setAttribute('stroke-width', '2.5');
                                 path.setAttribute('fill', 'none');
                                 path.setAttribute('marker-end', 'url(#arrowhead)');
-                                path.classList.add('pt-dependency-line');
+                                path.setAttribute('class', 'pt-dependency-line');
                                 
                                 svgContainer.appendChild(path);
                                 linesDrawn++;
@@ -1328,7 +1320,6 @@
                     
                     console.log(`✅ PT dependency lines rendered successfully: ${linesDrawn} lines drawn`);
                 }, 500); // Wait 500ms for scheduler to render
-                */
                 
             } catch (error) {
                 console.error('❌ Error rendering PT dependency lines:', error);
