@@ -54,7 +54,9 @@ function useAuthStatus() {
       
       // Development mode auto-authentication - bypass login requirement
       const isDev = import.meta.env.MODE === 'development';
-      if (isDev) {
+      const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
+      
+      if (isDev && !hasExplicitlyLoggedOut) {
         console.log('🔧 [App.tsx] Development mode: Auto-authenticating user');
         
         // Check if we already have a token
@@ -83,29 +85,37 @@ function useAuthStatus() {
           }
         }
         
-        // Fetch a new development token
-        try {
-          console.log('🔧 Fetching development authentication token...');
-          const response = await fetch('/api/auth/dev-token');
-          
-          if (response.ok) {
-            const data = await response.json();
+        // Only fetch a new development token if user hasn't explicitly logged out
+        if (!hasExplicitlyLoggedOut) {
+          // Fetch a new development token
+          try {
+            console.log('🔧 Fetching development authentication token...');
+            const response = await fetch('/api/auth/dev-token');
             
-            // Store the token and user data
-            localStorage.setItem('auth_token', data.token);
-            localStorage.setItem('user', JSON.stringify(data.user));
-            
-            console.log('🔧 Development token stored successfully');
-            setIsAuthenticated(true);
-          } else {
-            console.error('Failed to get development token');
+            if (response.ok) {
+              const data = await response.json();
+              
+              // Store the token and user data
+              localStorage.setItem('auth_token', data.token);
+              localStorage.setItem('user', JSON.stringify(data.user));
+              
+              console.log('🔧 Development token stored successfully');
+              setIsAuthenticated(true);
+            } else {
+              console.error('Failed to get development token');
+              setIsAuthenticated(false);
+            }
+          } catch (error) {
+            console.error('Error fetching development token:', error);
             setIsAuthenticated(false);
           }
-        } catch (error) {
-          console.error('Error fetching development token:', error);
-          setIsAuthenticated(false);
         }
         
+        setIsLoading(false);
+        return;
+      } else if (isDev && hasExplicitlyLoggedOut) {
+        console.log('🔧 [App.tsx] Development mode: User explicitly logged out, skipping auto-login');
+        setIsAuthenticated(false);
         setIsLoading(false);
         return;
       }
