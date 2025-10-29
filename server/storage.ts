@@ -73,6 +73,8 @@ export interface IStorage {
   getPermissions(): Promise<Permission[]>;
   getPermission(id: number): Promise<Permission | undefined>;
   createPermission(permission: any): Promise<Permission>;
+  updatePermission(id: number, permission: any): Promise<Permission | undefined>;
+  deletePermission(id: number): Promise<boolean>;
 
   // User Role Management
   getUserRoles(userId: number): Promise<any[]>;
@@ -384,6 +386,31 @@ export class DatabaseStorage implements IStorage {
   async createPermission(permission: any): Promise<Permission> {
     const [newPermission] = await db.insert(permissions).values(permission).returning();
     return newPermission;
+  }
+
+  async updatePermission(id: number, permission: any): Promise<Permission | undefined> {
+    try {
+      const { id: _, ...updateData } = permission;
+      const [updatedPermission] = await db
+        .update(permissions)
+        .set(updateData)
+        .where(eq(permissions.id, id))
+        .returning();
+      return updatedPermission || undefined;
+    } catch (error) {
+      console.error('Error updating permission:', error);
+      return undefined;
+    }
+  }
+
+  async deletePermission(id: number): Promise<boolean> {
+    try {
+      const result = await db.delete(permissions).where(eq(permissions.id, id));
+      return result.rowCount > 0;
+    } catch (error) {
+      console.error('Error deleting permission:', error);
+      return false;
+    }
   }
 
   // User Role Management
