@@ -1988,6 +1988,41 @@
                     window.visualDependencyStore = null;
                 }
                 
+                // CRITICAL FIX: Create a custom ProjectModel that completely disables dependency engine
+                class NoOpProjectModel extends bryntum.schedulerpro.ProjectModel {
+                    constructor(config) {
+                        super(config);
+                        // Disable ALL automatic scheduling
+                        this.autoSchedule = false;
+                        this.autoCalculate = false;
+                        this.delayCalculation = true;
+                        
+                        // Override schedule/propagate to no-op
+                        this.schedule = () => { 
+                            console.log('⛔ ProjectModel.schedule() blocked - using manual scheduling only');
+                            return Promise.resolve(); 
+                        };
+                        this.propagate = () => { 
+                            console.log('⛔ ProjectModel.propagate() blocked - using manual scheduling only');
+                            return Promise.resolve(); 
+                        };
+                        
+                        // Disconnect dependency store completely from engine
+                        // Dependencies will ONLY be used for visual display
+                        this._dependencyStore = null;
+                    }
+                    
+                    // Override dependency store getter/setter to prevent reconnection
+                    get dependencyStore() {
+                        return null; // Always return null to engine
+                    }
+                    
+                    set dependencyStore(value) {
+                        // Do nothing - prevent setting dependency store
+                        console.log('⛔ Attempt to set dependencyStore blocked');
+                    }
+                }
+                
                 window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
@@ -2091,8 +2126,8 @@
                     // Disable sync storage to prevent errors
                     syncDataOnLoad: false,
 
-                    // Single project configuration with strict no-overlap constraints
-                    project: {
+                    // Single project configuration with COMPLETELY DISABLED automatic scheduling
+                    project: new NoOpProjectModel({
                         autoLoad: false,
                         autoSync: false,
                         silenceInitialCommit: true, // Prevent initial save attempts
@@ -2100,11 +2135,13 @@
                         // Note: inline data will be loaded after fetching from API
                         // resources, events, dependencies will be provided via loadInlineData()
                         
-                        // Enable automatic scheduling dates
-                        autoCalculateStartDate: true,
-                        autoCalculateEndDate: true,
+                        // CRITICAL: Disable ALL automatic calculations
+                        autoCalculateStartDate: false, // DISABLED
+                        autoCalculateEndDate: false,   // DISABLED  
                         autoCalculate: false,          // DISABLED - Only recalculate when explicitly triggered
                         recalculateAfterLoad: false,  // DISABLED - Don't auto-recalculate after loading
+                        autoSchedule: false,           // DISABLED - No automatic scheduling
+                        delayCalculation: true         // DISABLED - Delay all calculations
                         
                         // CRITICAL: Constraint configuration 
                         // We use 'none' to prevent all constraint conflicts including dependencies
@@ -3645,13 +3682,32 @@
                     // NOTE: Dependencies are NOT used for scheduling logic, only visual display
                     // ============================================================================
                     for (const [jobKey, operations] of sortedJobs) {
+                        // CRITICAL: Skip orphan operations entirely - they have no job context
+                        if (jobKey === '_orphans_') {
+                            console.warn(`\n⚠️ Skipping ${operations.length} orphan operations (no job ID)`);
+                            console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
+                            
+                            // Move orphan operations out of the visible schedule
+                            operations.forEach(ev => {
+                                const farFuture = new Date('2099-12-31');
+                                ev.set({
+                                    startDate: farFuture,
+                                    endDate: new Date(farFuture.getTime() + 3600000),
+                                    manuallyScheduled: false,
+                                    hidden: true
+                                });
+                                console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
+                            });
+                            continue; // Skip to next job
+                        }
+                        
                         console.log(`\n🏭 Processing Job: ${jobKey} with ${operations.length} operations`);
                         
                         // Determine the start date for this job
                         let jobStartDate = today; // Default to today
                         
                         // Check if this job has a manufacturing release date
-                        if (operations.length > 0 && jobKey !== '_orphans_') {
+                        if (operations.length > 0) {
                             const releaseDate = getManufacturingReleaseDate(operations[0]);
                             if (releaseDate) {
                                 jobStartDate = releaseDate;
@@ -4196,19 +4252,25 @@
                         console.log(`  📝 Committed job ${jobKey} to stores`);
                     }
                     
-                    // Handle any orphan operations (no job ID)
+                    // Handle any orphan operations (no job ID) - FILTER THEM OUT
                     const orphans = allEvents.filter(ev => !getJobKey(ev));
                     if (orphans.length > 0) {
-                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID)`);
-                        // Schedule orphans to start from current date
-                        const baseDate = new Date();
+                        console.warn(`\n⚠️ Found ${orphans.length} orphan operations (no job ID) - EXCLUDING FROM SCHEDULE`);
+                        console.warn('🗑️ Orphan operations will be hidden to prevent scheduling conflicts');
+                        
+                        // CRITICAL: Remove orphan operations from the scheduler entirely
+                        // They have no job context and cannot be properly scheduled
                         orphans.forEach(ev => {
-                            const durationMs = ev.durationMS ?? (ev.duration * 60 * 60 * 1000);
+                            // Hide the orphan operation by moving it far in the future
+                            // This prevents it from interfering with real scheduling
+                            const farFuture = new Date('2099-12-31');
                             ev.set({
-                                startDate: baseDate,
-                                endDate: new Date(baseDate.getTime() + durationMs),
-                                manuallyScheduled: false
+                                startDate: farFuture,
+                                endDate: new Date(farFuture.getTime() + 3600000), // 1 hour duration
+                                manuallyScheduled: false,
+                                hidden: true // Mark as hidden
                             });
+                            console.log(`  🗑️ Orphan operation "${ev.name}" moved out of scheduling range`);
                         });
                     }
                     
