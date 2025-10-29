@@ -1640,6 +1640,203 @@ router.get("/api/permissions/grouped", async (req, res) => {
   }
 });
 
+// AI-powered access management endpoint
+router.post("/api/ai-access-management", async (req, res) => {
+  try {
+    const { prompt, context } = req.body;
+    
+    console.log("Processing AI access management command:", prompt);
+    
+    // Call OpenAI to interpret the command
+    const openai = storage.getOpenAIClient();
+    if (!openai) {
+      throw new Error("OpenAI client not configured");
+    }
+    
+    const systemPrompt = `You are an assistant for managing users, roles, and permissions in a manufacturing system. 
+    Analyze the user's natural language command and determine what actions to take.
+    
+    Available actions:
+    - Create user: {action: "create_user", data: {username, email, firstName, lastName, password, roleIds}}
+    - Update user: {action: "update_user", data: {userId, username?, email?, firstName?, lastName?, isActive?, roleIds?}}
+    - Delete user: {action: "delete_user", data: {userId}}
+    - Create role: {action: "create_role", data: {name, description, permissionIds}}
+    - Update role: {action: "update_role", data: {roleId, name?, description?, permissionIds?}}
+    - Delete role: {action: "delete_role", data: {roleId}}
+    - Create permission: {action: "create_permission", data: {name, feature, action, description}}
+    - Update permission: {action: "update_permission", data: {permissionId, name?, feature?, action?, description?}}
+    - Delete permission: {action: "delete_permission", data: {permissionId}}
+    - List/query: {action: "query", data: {type: "users"|"roles"|"permissions", filter?}}
+    
+    Context:
+    - Users: ${JSON.stringify(context.users)}
+    - Roles: ${JSON.stringify(context.roles)}
+    - Permissions: ${JSON.stringify(context.permissions)}
+    
+    Respond with a JSON object containing:
+    {
+      "actions": [array of actions to take],
+      "message": "human-readable summary of what was done"
+    }`;
+    
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: prompt }
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.3
+    });
+    
+    const aiResponse = JSON.parse(completion.choices[0].message.content || "{}");
+    console.log("AI Response:", aiResponse);
+    
+    // Execute the actions
+    const results: any[] = [];
+    const changedEntities: string[] = [];
+    
+    for (const action of aiResponse.actions || []) {
+      try {
+        switch (action.action) {
+          case "create_user": {
+            const newUser = await storage.createUser({
+              ...action.data,
+              isActive: true,
+              createdAt: new Date()
+            });
+            results.push({ action: "create_user", success: true, user: newUser });
+            changedEntities.push('users');
+            break;
+          }
+          
+          case "update_user": {
+            const updatedUser = await storage.updateUser(action.data.userId, action.data);
+            results.push({ action: "update_user", success: true, user: updatedUser });
+            changedEntities.push('users');
+            break;
+          }
+          
+          case "delete_user": {
+            await storage.deleteUser(action.data.userId);
+            results.push({ action: "delete_user", success: true, userId: action.data.userId });
+            changedEntities.push('users');
+            break;
+          }
+          
+          case "create_role": {
+            const newRole = await storage.createRole({
+              ...action.data,
+              isSystemRole: false,
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+            results.push({ action: "create_role", success: true, role: newRole });
+            changedEntities.push('roles');
+            break;
+          }
+          
+          case "update_role": {
+            const updatedRole = await storage.updateRole(action.data.roleId, {
+              ...action.data,
+              updatedAt: new Date()
+            });
+            results.push({ action: "update_role", success: true, role: updatedRole });
+            changedEntities.push('roles');
+            break;
+          }
+          
+          case "delete_role": {
+            await storage.deleteRole(action.data.roleId);
+            results.push({ action: "delete_role", success: true, roleId: action.data.roleId });
+            changedEntities.push('roles');
+            break;
+          }
+          
+          case "create_permission": {
+            const newPermission = await storage.createPermission(action.data);
+            results.push({ action: "create_permission", success: true, permission: newPermission });
+            changedEntities.push('permissions');
+            break;
+          }
+          
+          case "update_permission": {
+            const updatedPermission = await storage.updatePermission(action.data.permissionId, action.data);
+            results.push({ action: "update_permission", success: true, permission: updatedPermission });
+            changedEntities.push('permissions');
+            break;
+          }
+          
+          case "delete_permission": {
+            await storage.deletePermission(action.data.permissionId);
+            results.push({ action: "delete_permission", success: true, permissionId: action.data.permissionId });
+            changedEntities.push('permissions');
+            break;
+          }
+          
+          case "query": {
+            let queryResults: any[] = [];
+            if (action.data.type === 'users') {
+              queryResults = await storage.getUsers();
+              if (action.data.filter) {
+                // Apply filter based on the query
+                const filterStr = action.data.filter.toLowerCase();
+                queryResults = queryResults.filter((u: any) => 
+                  u.username?.toLowerCase().includes(filterStr) ||
+                  u.email?.toLowerCase().includes(filterStr) ||
+                  u.roles?.some((r: any) => r.name?.toLowerCase().includes(filterStr))
+                );
+              }
+            } else if (action.data.type === 'roles') {
+              queryResults = await storage.getRoles();
+              if (action.data.filter) {
+                const filterStr = action.data.filter.toLowerCase();
+                queryResults = queryResults.filter((r: any) => 
+                  r.name?.toLowerCase().includes(filterStr) ||
+                  r.description?.toLowerCase().includes(filterStr)
+                );
+              }
+            } else if (action.data.type === 'permissions') {
+              queryResults = await storage.getPermissions();
+              if (action.data.filter) {
+                const filterStr = action.data.filter.toLowerCase();
+                queryResults = queryResults.filter((p: any) => 
+                  p.name?.toLowerCase().includes(filterStr) ||
+                  p.feature?.toLowerCase().includes(filterStr) ||
+                  p.action?.toLowerCase().includes(filterStr)
+                );
+              }
+            }
+            results.push({ action: "query", success: true, results: queryResults });
+            break;
+          }
+        }
+      } catch (error) {
+        console.error(`Error executing action ${action.action}:`, error);
+        results.push({ 
+          action: action.action, 
+          success: false, 
+          error: error instanceof Error ? error.message : "Unknown error" 
+        });
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: aiResponse.message || "Operations completed successfully",
+      results,
+      changedEntities: [...new Set(changedEntities)]
+    });
+    
+  } catch (error) {
+    console.error("Error in AI access management:", error);
+    res.status(500).json({
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to process AI command"
+    });
+  }
+});
+
 // Get all users with their roles for the User Access Management page
 router.get("/api/users-with-roles", async (req, res) => {
   try {
