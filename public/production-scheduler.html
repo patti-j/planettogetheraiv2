@@ -1991,8 +1991,22 @@
                 // CRITICAL FIX: Create a custom ProjectModel that completely disables dependency engine
                 class NoOpProjectModel extends bryntum.schedulerpro.ProjectModel {
                     constructor(config) {
-                        super(config);
-                        // Disable ALL automatic scheduling
+                        // Ensure config has safe defaults to prevent null errors
+                        const safeConfig = {
+                            ...config,
+                            autoSchedule: false,
+                            autoCalculate: false,
+                            delayCalculation: true,
+                            // Provide empty stores if not present to avoid null errors
+                            eventStore: config?.eventStore || { data: [] },
+                            resourceStore: config?.resourceStore || { data: [] },
+                            dependencyStore: null, // Explicitly set to null
+                            assignmentStore: config?.assignmentStore || { data: [] }
+                        };
+                        
+                        super(safeConfig);
+                        
+                        // Double-ensure scheduling is disabled after super() call
                         this.autoSchedule = false;
                         this.autoCalculate = false;
                         this.delayCalculation = true;
@@ -2007,6 +2021,11 @@
                             return Promise.resolve(); 
                         };
                         
+                        // Override calculation methods to prevent null errors
+                        this.calculate = () => Promise.resolve();
+                        this.commit = () => Promise.resolve();
+                        this.refresh = () => Promise.resolve();
+                        
                         // Disconnect dependency store completely from engine
                         // Dependencies will ONLY be used for visual display
                         this._dependencyStore = null;
@@ -2020,6 +2039,19 @@
                     set dependencyStore(value) {
                         // Do nothing - prevent setting dependency store
                         console.log('⛔ Attempt to set dependencyStore blocked');
+                    }
+                    
+                    // Override methods that might access stores to prevent null errors
+                    get totalCount() {
+                        return this.eventStore?.totalCount || 0;
+                    }
+                    
+                    get count() {
+                        return this.eventStore?.count || 0;
+                    }
+                    
+                    hasDataInStores() {
+                        return (this.eventStore?.count || 0) > 0;
                     }
                 }
                 
