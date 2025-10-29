@@ -331,42 +331,44 @@
             filter: invert(1) hue-rotate(-180deg);
         }
         
-        /* Dependency lines styling */
+        /* Dependency lines styling - SOLID and DARK */
         .b-sch-dependency {
-            stroke: #666 !important;
-            stroke-width: 2 !important;
-            opacity: 0.8 !important;
+            stroke: #2d3748 !important; /* Very dark gray */
+            stroke-width: 2.5 !important;
+            opacity: 1 !important;
+            stroke-dasharray: none !important; /* SOLID lines */
         }
         
         .b-sch-dependency-arrow {
-            fill: #666 !important;
-            stroke: #666 !important;
+            fill: #2d3748 !important;
+            stroke: #2d3748 !important;
         }
         
         .b-sch-dependency:hover {
-            stroke: #333 !important;
+            stroke: #1a202c !important; /* Almost black on hover */
             stroke-width: 3 !important;
             opacity: 1 !important;
         }
         
         .b-sch-dependency-arrow:hover {
-            fill: #333 !important;
-            stroke: #333 !important;
+            fill: #1a202c !important;
+            stroke: #1a202c !important;
         }
         
-        /* Visual-only dependencies - solid lines with lighter color */
+        /* Visual-only dependencies - SOLID dark lines */
         .b-sch-dependency.b-inactive,
         .b-sch-dependency.visual-dependency {
-            stroke: #999 !important;
-            stroke-width: 1.5 !important;
-            opacity: 0.6 !important;
+            stroke: #2d3748 !important; /* Dark gray */
+            stroke-width: 2.5 !important;
+            opacity: 0.9 !important;
+            stroke-dasharray: none !important; /* SOLID - no dashes */
         }
         
         .b-sch-dependency.b-inactive .b-sch-dependency-arrow,
         .b-sch-dependency.visual-dependency .b-sch-dependency-arrow {
-            fill: #999 !important;
-            stroke: #999 !important;
-            opacity: 0.6 !important;
+            fill: #2d3748 !important;
+            stroke: #2d3748 !important;
+            opacity: 0.9 !important;
         }
         
         /* Critical path dependency styling */
@@ -1008,42 +1010,46 @@
         }
         
         /* Dependency line styling */
-        /* Make dependency lines darker in light mode */
+        /* Make dependency lines darker and solid in light mode */
         .b-sch-dependency,
         .b-sch-dependency-line {
-            stroke: #4a5568 !important; /* Darker gray for better visibility */
-            stroke-width: 2 !important;
-            opacity: 0.8 !important;
+            stroke: #2d3748 !important; /* Very dark gray for excellent visibility */
+            stroke-width: 2.5 !important;
+            opacity: 1 !important;
+            stroke-dasharray: none !important; /* Solid lines */
         }
         
-        /* Visual-only dependency styling */
+        /* Visual-only dependency styling - solid lines, slightly darker */
         .visual-dependency,
         .visual-dependency .b-sch-dependency-line {
-            stroke: #4a5568 !important;
-            stroke-dasharray: 5, 5 !important; /* Dashed line to indicate visual-only */
-            opacity: 0.7 !important;
+            stroke: #1a202c !important; /* Almost black for maximum visibility */
+            stroke-width: 2.5 !important;
+            stroke-dasharray: none !important; /* SOLID lines - no dashes */
+            opacity: 0.9 !important;
         }
         
         /* Inactive dependency styling - ensure they don't interfere */
         .b-inactive.b-sch-dependency,
         .b-sch-dependency.b-inactive {
             pointer-events: none !important;
-            stroke: #6b7280 !important;
-            opacity: 0.6 !important;
+            stroke: #2d3748 !important; /* Dark solid lines */
+            stroke-dasharray: none !important; /* SOLID lines */
+            opacity: 0.85 !important;
         }
         
         /* Dark theme dependency lines */
         .dark-theme .b-sch-dependency,
         .dark-theme .b-sch-dependency-line {
-            stroke: #9ca3af !important;
-            opacity: 0.9 !important;
+            stroke: #cbd5e0 !important; /* Light gray for dark theme */
+            opacity: 1 !important;
+            stroke-dasharray: none !important; /* Solid lines */
         }
         
         .dark-theme .visual-dependency,
         .dark-theme .visual-dependency .b-sch-dependency-line {
-            stroke: #9ca3af !important;
-            stroke-dasharray: 5, 5 !important;
-            opacity: 0.8 !important;
+            stroke: #e2e8f0 !important; /* Very light for dark theme */
+            stroke-dasharray: none !important; /* SOLID lines */
+            opacity: 0.95 !important;
         }
     </style>
 </head>
