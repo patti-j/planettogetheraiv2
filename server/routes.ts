@@ -2473,7 +2473,61 @@ router.post("/monitoring-agent/stop", async (req, res) => {
   }
 });
 
-// Serve Bryntum assets - Route already defined above, removing duplicate
+// Serve Bryntum assets (JavaScript and CSS files)
+router.get("/schedulerpro.umd.js", (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'schedulerpro.umd.js');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Bryntum library not found');
+  }
+});
+
+router.get("/schedulerpro.module.js", (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'schedulerpro.module.js');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Bryntum module not found');
+  }
+});
+
+router.get("/schedulerpro.classic-light.css", (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'schedulerpro.classic-light.css');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Bryntum CSS not found');
+  }
+});
+
+router.get("/schedulerpro.classic-dark.css", (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'schedulerpro.classic-dark.css');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Bryntum dark CSS not found');
+  }
+});
+
+router.get("/schedulerpro.stockholm.css", (req, res) => {
+  const filePath = path.join(process.cwd(), 'public', 'schedulerpro.stockholm.css');
+  if (fs.existsSync(filePath)) {
+    res.setHeader('Content-Type', 'text/css');
+    res.setHeader('Cache-Control', 'public, max-age=31536000');
+    res.sendFile(filePath);
+  } else {
+    res.status(404).send('Bryntum Stockholm CSS not found');
+  }
+});
 
 // Serve Bryntum Production Scheduler HTML  
 router.get("/api/production-scheduler", (req, res) => {

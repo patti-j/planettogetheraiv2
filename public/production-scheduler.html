@@ -3362,14 +3362,22 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
-                        scheduler.features.dependencies.store.removeAll();
-                        scheduler.features.dependencies.store.add(
+                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
+                        const depStore = scheduler.project.dependencyStore;
+                        depStore.removeAll();
+                        depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), from, to, type, lag, lagUnit
+                                id: String(id), 
+                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
+                                toEvent: to,      // not from/to
+                                type: type,
+                                lag: lag,
+                                lagUnit: lagUnit,
+                                inactive: true,
+                                cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -3804,14 +3812,22 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
-                        scheduler.features.dependencies.store.removeAll();
-                        scheduler.features.dependencies.store.add(
+                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
+                        const depStore = scheduler.project.dependencyStore;
+                        depStore.removeAll();
+                        depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), from, to, type, lag, lagUnit
+                                id: String(id), 
+                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
+                                toEvent: to,      // not from/to
+                                type: type,
+                                lag: lag,
+                                lagUnit: lagUnit,
+                                inactive: true,
+                                cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4138,14 +4154,22 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.features?.dependencies?.store) {
-                        scheduler.features.dependencies.store.removeAll();
-                        scheduler.features.dependencies.store.add(
+                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
+                        const depStore = scheduler.project.dependencyStore;
+                        depStore.removeAll();
+                        depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), from, to, type, lag, lagUnit
+                                id: String(id), 
+                                fromEvent: from,  // Bryntum uses fromEvent/toEvent
+                                toEvent: to,      // not from/to
+                                type: type,
+                                lag: lag,
+                                lagUnit: lagUnit,
+                                inactive: true,
+                                cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4408,17 +4432,55 @@
                     // Keep a copy globally
                     window.originalDependencies = dependencies || [];
                     
-                    // Draw dependency lines without letting the engine see them
-                    if (scheduler.features?.dependencies?.store) {
-                        scheduler.features.dependencies.store.removeAll();
-                        // Important: we only copy the fields needed for drawing lines
-                        scheduler.features.dependencies.store.add(
-                            window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                id: String(id), from, to, type, lag, lagUnit
-                            }))
-                        );
-                        console.log(`🎨 Rendered ${scheduler.features.dependencies.store.count} visual-only dependency lines`);
-                    }
+                    // Draw dependency lines after the scheduler is ready
+                    // Use setTimeout to ensure the scheduler is fully initialized
+                    setTimeout(() => {
+                        try {
+                            // Try multiple ways to access the dependency store
+                            let depStore = null;
+                            
+                            // Method 1: Through project.dependencyStore
+                            if (scheduler.project && scheduler.project.dependencyStore) {
+                                depStore = scheduler.project.dependencyStore;
+                                console.log('✅ Using scheduler.project.dependencyStore');
+                            } 
+                            // Method 2: Through dependencyStore directly
+                            else if (scheduler.dependencyStore) {
+                                depStore = scheduler.dependencyStore;
+                                console.log('✅ Using scheduler.dependencyStore');
+                            }
+                            // Method 3: Through features
+                            else if (scheduler.features?.dependencies) {
+                                // Create dependencies without using a store
+                                console.log('⚠️ Dependencies feature exists but no store available');
+                            }
+                            
+                            if (depStore) {
+                                depStore.removeAll();
+                                // Important: we only copy the fields needed for drawing lines
+                                const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
+                                    id: String(id), 
+                                    fromEvent: from,  // Use from/to for now
+                                    toEvent: to,      
+                                    type: type,
+                                    lag: lag,
+                                    lagUnit: lagUnit,
+                                    inactive: true,   // Mark as inactive for visual-only
+                                    cls: 'visual-dependency'
+                                }));
+                                depStore.add(depsToAdd);
+                                console.log(`🎨 Rendered ${depStore.count} visual-only dependency lines`);
+                            } else {
+                                console.warn('⚠️ Dependency store not available - dependencies won\'t be displayed');
+                                console.log('Available scheduler properties:', Object.keys(scheduler));
+                                if (scheduler.project) {
+                                    console.log('Available project properties:', Object.keys(scheduler.project));
+                                }
+                            }
+                        } catch (error) {
+                            console.error('❌ Error adding dependencies:', error);
+                        }
+                    }, 1000);
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
