@@ -1185,6 +1185,55 @@
             return true;
         };
         
+        // Wait for Bryntum library to be available
+        function waitForBryntum(callback) {
+            const checkInterval = setInterval(() => {
+                // Check multiple possible locations for SchedulerPro (from UMD bundle)
+                if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.SchedulerPro) {
+                    clearInterval(checkInterval);
+                    console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
+                    // Make SchedulerPro globally available for easier access
+                    window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
+                    callback();
+                } else if (typeof SchedulerPro !== 'undefined') {
+                    // Check if SchedulerPro is directly on window
+                    clearInterval(checkInterval);
+                    console.log('✅ Bryntum SchedulerPro loaded directly on window');
+                    window.SchedulerPro = SchedulerPro;
+                    callback();
+                } else if (typeof window.SchedulerPro !== 'undefined') {
+                    // Already available
+                    clearInterval(checkInterval);
+                    console.log('✅ Bryntum SchedulerPro already available on window');
+                    callback();
+                } else {
+                    console.log('⏳ Waiting for Bryntum SchedulerPro to load...');
+                    // Debug: Log what's available
+                    if (typeof bryntum !== 'undefined') {
+                        console.log('  bryntum object found, contents:', Object.keys(bryntum || {}));
+                        if (bryntum.schedulerpro) {
+                            console.log('  bryntum.schedulerpro found, contents:', Object.keys(bryntum.schedulerpro || {}));
+                        }
+                    }
+                }
+            }, 100);
+            
+            // Timeout after 10 seconds
+            setTimeout(() => {
+                clearInterval(checkInterval);
+                console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
+                const loadingOverlay = document.getElementById('loadingOverlay');
+                if (loadingOverlay) {
+                    loadingOverlay.innerHTML = `
+                        <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
+                            <h3>Loading Error</h3>
+                            <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
+                        </div>
+                    `;
+                }
+            }, 10000);
+        }
+        
         // --- Planning area filter: robust wiring + safe filtering ---
         // Bind once, unconditionally
         document.addEventListener('click', (e) => {
@@ -1343,56 +1392,13 @@
             }
             schedulerInitialized = true;
             
-            try {
-                console.log('📊 Checking if Bryntum is loaded...');
-                
-                // Wait for Bryntum to be available with retry mechanism
-                let retries = 0;
-                const maxRetries = 50;
-                const retryDelay = 100; // milliseconds
-                
-                while (retries < maxRetries) {
-                    // Debug: Check what's available on window
-                    console.log(`🔍 Checking for Bryntum library (attempt ${retries + 1}/${maxRetries})...`);
+            // Wait for Bryntum library to load before proceeding
+            waitForBryntum(async () => {
+                try {
+                    console.log('📊 Bryntum loaded successfully, starting scheduler initialization...');
+                    console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
                     
-                    // The Bryntum UMD file exports to window.bryntum.schedulerpro namespace
-                    if (window.bryntum?.schedulerpro?.SchedulerPro) {
-                        window.SchedulerPro = window.bryntum.schedulerpro.SchedulerPro;
-                        console.log('✅ Found SchedulerPro at window.bryntum.schedulerpro.SchedulerPro');
-                        break;
-                    }
-                    
-                    // Also check for direct SchedulerPro on window
-                    if (window.SchedulerPro) {
-                        console.log('✅ Found SchedulerPro directly on window');
-                        break;
-                    }
-                    
-                    if (retries === maxRetries - 1) {
-                        // Last retry failed
-                        console.error('❌ Bryntum SchedulerPro library not loaded after', maxRetries * retryDelay, 'ms!');
-                        console.error('window.bryntum structure:', window.bryntum);
-                        console.error('Available Bryntum items on window:', Object.keys(window).filter(k => k.toLowerCase().includes('scheduler') || k.toLowerCase().includes('bryntum')));
-                        // Notify parent of error
-                        if (window.parent !== window) {
-                            window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
-                        }
-                        // Hide loading overlay when directly accessed
-                        const loadingOverlay = document.getElementById('loadingOverlay');
-                        if (loadingOverlay) {
-                            loadingOverlay.style.display = 'none';
-                        }
-                        return;
-                    }
-                    
-                    // Wait before next retry
-                    await new Promise(resolve => setTimeout(resolve, retryDelay));
-                    retries++;
-                }
-                
-                console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
-                
-                // Notify parent window that scheduler is ready
+                    // Notify parent window that scheduler is ready
                 if (window.parent !== window) {
                     window.parent.postMessage({ type: 'SCHEDULER_READY' }, '*');
                     console.log('📤 Sent SCHEDULER_READY message to parent');
@@ -2115,7 +2121,11 @@
                     features: {
                         // Dependencies feature ENABLED - using PT dependencies for visualization
                         // Bryntum will handle the rendering natively
-                        dependencies: true,
+                        dependencies: {
+                            disabled: false,
+                            // Bind the visual dependency store if it exists
+                            store: window.visualDependencyStore || null
+                        },
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -4854,7 +4864,7 @@
                                 if (window.visualDependencyStore) {
                                     const visualStore = window.visualDependencyStore;
                                     
-                                    // Map dependencies to proper format
+                                    // Map dependencies to proper format, coercing to integers
                                     const depsToAdd = fetchedDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => {
                                         // Verify the events exist
                                         const fromEvent = scheduler.eventStore.getById(from);
@@ -4869,8 +4879,8 @@
                                             id: String(id),
                                             from: from,      // Use 'from' and 'to' for Bryntum dependency model
                                             to: to,
-                                            type: type,
-                                            lag: lag,
+                                            type: parseInt(type) || 2,  // Coerce to integer
+                                            lag: parseInt(lag) || 0,    // Coerce to integer
                                             lagUnit: lagUnit,
                                             inactive: true,  // Mark as inactive for visual-only
                                             active: false,   // Extra safety
@@ -4883,11 +4893,17 @@
                                     visualStore.add(depsToAdd);
                                     
                                     // Bind visual store to the dependencies feature for rendering
-                                    if (scheduler.features && scheduler.features.dependencies && visualStore) {
-                                        scheduler.features.dependencies.store = visualStore;
-                                        console.log('✅ Visual dependency store bound to scheduler');
-                                    } else if (!visualStore) {
-                                        console.warn('⚠️ Could not bind visual dependencies - store not available');
+                                    if (scheduler.features && scheduler.features.dependencies) {
+                                        // Force the dependency feature to use our visual store
+                                        if (!scheduler.features.dependencies.store || scheduler.features.dependencies.store !== visualStore) {
+                                            scheduler.features.dependencies.store = visualStore;
+                                            console.log('✅ Visual dependency store bound to scheduler.features.dependencies');
+                                        }
+                                        
+                                        // Also trigger a refresh to ensure rendering
+                                        scheduler.features.dependencies.refresh?.();
+                                    } else {
+                                        console.warn('⚠️ Dependencies feature not available on scheduler');
                                     }
                                     
                                     console.log(`✅ Loaded ${visualStore.count} visual-only dependencies`);
@@ -5121,6 +5137,7 @@
                 const overlay = document.getElementById('loadingOverlay');
                 if (overlay) overlay.style.display = 'none';
             }
+            }); // End of waitForBryntum callback
         });
     </script>
     
