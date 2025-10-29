@@ -1484,6 +1484,52 @@ router.get("/api/roles-management", async (req, res) => {
   }
 });
 
+// Update role permissions
+router.patch("/api/roles-management/:id", async (req, res) => {
+  try {
+    const roleId = parseInt(req.params.id);
+    const { permissions } = req.body;
+    
+    console.log(`Updating permissions for role ${roleId}:`, permissions);
+    
+    // First, get all existing permissions for this role and remove them
+    const existingPermissions = await storage.getRolePermissions(roleId);
+    for (const rolePerm of existingPermissions) {
+      await storage.deleteRolePermission(roleId, rolePerm.permissionId);
+    }
+    
+    // Then add the new permissions
+    if (permissions && permissions.length > 0) {
+      for (const permissionId of permissions) {
+        await storage.createRolePermission({ roleId, permissionId });
+      }
+    }
+    
+    // Fetch the updated role with permissions
+    const role = await storage.getRole(roleId);
+    const rolePermissions = await storage.getRolePermissions(roleId);
+    const fullPermissions = [];
+    
+    for (const rolePerm of rolePermissions) {
+      const permission = await storage.getPermission(rolePerm.permissionId);
+      if (permission) {
+        fullPermissions.push(permission);
+      }
+    }
+    
+    const updatedRole = {
+      ...role,
+      permissions: fullPermissions
+    };
+    
+    console.log(`Successfully updated role ${roleId} with ${permissions.length} permissions`);
+    res.json(updatedRole);
+  } catch (error) {
+    console.error("Error updating role permissions:", error);
+    res.status(500).json({ message: "Failed to update role permissions" });
+  }
+});
+
 // Get permissions grouped by category
 router.get("/api/permissions/grouped", async (req, res) => {
   try {
