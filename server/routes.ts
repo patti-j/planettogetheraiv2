@@ -10443,6 +10443,179 @@ router.post("/api/algorithm-governance/approvals", enhancedAuth, async (req, res
   }
 });
 
+// ============================================
+// Algorithm Requirements Management Routes
+// ============================================
+
+// Get all algorithm requirements
+router.get("/api/algorithm-requirements", async (req, res) => {
+  try {
+    const filters = {
+      requirementType: req.query.requirementType as string,
+      category: req.query.category as string,
+      priority: req.query.priority as string
+    };
+    
+    const requirements = await storage.getAlgorithmRequirements(filters);
+    res.json(requirements);
+  } catch (error) {
+    console.error("Error fetching algorithm requirements:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirements" });
+  }
+});
+
+// Get single algorithm requirement
+router.get("/api/algorithm-requirements/:id", async (req, res) => {
+  try {
+    const requirement = await storage.getAlgorithmRequirement(parseInt(req.params.id));
+    if (!requirement) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement" });
+  }
+});
+
+// Create algorithm requirement
+router.post("/api/algorithm-requirements", enhancedAuth, async (req, res) => {
+  try {
+    const requirement = await storage.createAlgorithmRequirement(req.body);
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error creating algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement" });
+  }
+});
+
+// Update algorithm requirement
+router.put("/api/algorithm-requirements/:id", enhancedAuth, async (req, res) => {
+  try {
+    const requirement = await storage.updateAlgorithmRequirement(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!requirement) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json(requirement);
+  } catch (error) {
+    console.error("Error updating algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to update algorithm requirement" });
+  }
+});
+
+// Delete algorithm requirement
+router.delete("/api/algorithm-requirements/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteAlgorithmRequirement(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Algorithm requirement not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting algorithm requirement:", error);
+    res.status(500).json({ error: "Failed to delete algorithm requirement" });
+  }
+});
+
+// Get algorithm requirement associations
+router.get("/api/algorithm-requirement-associations", async (req, res) => {
+  try {
+    const algorithmId = req.query.algorithmId ? parseInt(req.query.algorithmId as string) : undefined;
+    const requirementId = req.query.requirementId ? parseInt(req.query.requirementId as string) : undefined;
+    
+    const associations = await storage.getAlgorithmRequirementAssociations(algorithmId, requirementId);
+    res.json(associations);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement associations:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement associations" });
+  }
+});
+
+// Create algorithm requirement association
+router.post("/api/algorithm-requirement-associations", enhancedAuth, async (req, res) => {
+  try {
+    const association = await storage.createAlgorithmRequirementAssociation(req.body);
+    res.json(association);
+  } catch (error) {
+    console.error("Error creating algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement association" });
+  }
+});
+
+// Update algorithm requirement association
+router.put("/api/algorithm-requirement-associations/:id", enhancedAuth, async (req, res) => {
+  try {
+    const association = await storage.updateAlgorithmRequirementAssociation(
+      parseInt(req.params.id),
+      req.body
+    );
+    if (!association) {
+      return res.status(404).json({ error: "Algorithm requirement association not found" });
+    }
+    res.json(association);
+  } catch (error) {
+    console.error("Error updating algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to update algorithm requirement association" });
+  }
+});
+
+// Delete algorithm requirement association
+router.delete("/api/algorithm-requirement-associations/:id", enhancedAuth, async (req, res) => {
+  try {
+    const success = await storage.deleteAlgorithmRequirementAssociation(parseInt(req.params.id));
+    if (!success) {
+      return res.status(404).json({ error: "Algorithm requirement association not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error("Error deleting algorithm requirement association:", error);
+    res.status(500).json({ error: "Failed to delete algorithm requirement association" });
+  }
+});
+
+// Get algorithm requirement validations
+router.get("/api/algorithm-requirement-validations", async (req, res) => {
+  try {
+    const filters = {
+      algorithmId: req.query.algorithmId ? parseInt(req.query.algorithmId as string) : undefined,
+      requirementId: req.query.requirementId ? parseInt(req.query.requirementId as string) : undefined,
+      testRunId: req.query.testRunId ? parseInt(req.query.testRunId as string) : undefined,
+      validationStatus: req.query.validationStatus as string
+    };
+    
+    const validations = await storage.getAlgorithmRequirementValidations(filters);
+    res.json(validations);
+  } catch (error) {
+    console.error("Error fetching algorithm requirement validations:", error);
+    res.status(500).json({ error: "Failed to fetch algorithm requirement validations" });
+  }
+});
+
+// Create algorithm requirement validation
+router.post("/api/algorithm-requirement-validations", enhancedAuth, async (req, res) => {
+  try {
+    const validation = await storage.createAlgorithmRequirementValidation(req.body);
+    res.json(validation);
+  } catch (error) {
+    console.error("Error creating algorithm requirement validation:", error);
+    res.status(500).json({ error: "Failed to create algorithm requirement validation" });
+  }
+});
+
+// Get latest validations for an algorithm
+router.get("/api/algorithm-requirement-validations/latest/:algorithmId", async (req, res) => {
+  try {
+    const validations = await storage.getLatestValidations(parseInt(req.params.algorithmId));
+    res.json(validations);
+  } catch (error) {
+    console.error("Error fetching latest validations:", error);
+    res.status(500).json({ error: "Failed to fetch latest validations" });
+  }
+});
+
 // Execute algorithm by name (generic endpoint for Production Scheduler integration)
 // This endpoint executes algorithms server-side using the Optimization Studio
 // algorithm implementations and returns the optimized schedule.
