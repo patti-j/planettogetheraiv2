@@ -229,7 +229,8 @@ router.post('/train', async (req, res) => {
     
     for (const item of items) {
       // Build WHERE clause with hierarchical filtering
-      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+      // Remove the ${qtyCol} IS NOT NULL filter to include all dates
+      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`];
       
       // Add planning area filter
       if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
@@ -247,13 +248,13 @@ router.post('/train', async (req, res) => {
       
       const whereClause = whereConditions.join(' AND ');
       
-      // Fetch historical data for this item
+      // Fetch historical data for this item, using ISNULL to convert NULL quantities to 0
       const result = await pool.request()
         .input('item', sql.VarChar, item)
         .query(`
           SELECT 
             ${dateCol} as date,
-            SUM(CAST(${qtyCol} AS FLOAT)) as value
+            SUM(ISNULL(CAST(${qtyCol} AS FLOAT), 0)) as value
           FROM ${tableName}
           WHERE ${whereClause}
           GROUP BY ${dateCol}
@@ -261,11 +262,33 @@ router.post('/train', async (req, res) => {
         `);
       
       if (result.recordset.length > 0) {
-        // Format training data for this item
-        itemsData[item] = result.recordset.map((r: any) => ({
-          date: new Date(r.date).toISOString().split('T')[0],
-          value: r.value
-        }));
+        // Get min and max dates from the data
+        const dates = result.recordset.map((r: any) => new Date(r.date));
+        const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+        
+        // Create a map for quick lookup of actual values
+        const dataMap = new Map();
+        result.recordset.forEach((r: any) => {
+          const dateStr = new Date(r.date).toISOString().split('T')[0];
+          dataMap.set(dateStr, r.value);
+        });
+        
+        // Fill in all dates between min and max with zeros for missing days
+        const filledData = [];
+        const currentDate = new Date(minDate);
+        
+        while (currentDate <= maxDate) {
+          const dateStr = currentDate.toISOString().split('T')[0];
+          filledData.push({
+            date: dateStr,
+            value: dataMap.get(dateStr) || 0  // Use 0 for dates without data
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        itemsData[item] = filledData;
+        console.log(`Loaded ${filledData.length} days of data for item ${item} (including ${filledData.filter(d => d.value === 0).length} zero-demand days)`);
       } else {
         console.log(`No data found for item: ${item}`);
       }
@@ -363,7 +386,8 @@ router.post('/forecast', async (req, res) => {
     
     for (const item of items) {
       // Build WHERE clause with hierarchical filtering
-      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`, `${qtyCol} IS NOT NULL`];
+      // Remove the ${qtyCol} IS NOT NULL filter to include all dates
+      let whereConditions = [`${itemCol} = @item`, `${dateCol} IS NOT NULL`];
       
       // Add planning area filter
       if (planningAreaColumn && selectedPlanningAreas && selectedPlanningAreas.length > 0) {
@@ -381,13 +405,13 @@ router.post('/forecast', async (req, res) => {
       
       const whereClause = whereConditions.join(' AND ');
       
-      // Fetch historical data for this item
+      // Fetch historical data for this item, using ISNULL to convert NULL quantities to 0
       const result = await pool.request()
         .input('item', sql.VarChar, item)
         .query(`
           SELECT 
             ${dateCol} as date,
-            SUM(CAST(${qtyCol} AS FLOAT)) as value
+            SUM(ISNULL(CAST(${qtyCol} AS FLOAT), 0)) as value
           FROM ${tableName}
           WHERE ${whereClause}
           GROUP BY ${dateCol}
@@ -395,11 +419,33 @@ router.post('/forecast', async (req, res) => {
         `);
       
       if (result.recordset.length > 0) {
-        // Format historical data for this item
-        itemsData[item] = result.recordset.map((r: any) => ({
-          date: new Date(r.date).toISOString().split('T')[0],
-          value: r.value
-        }));
+        // Get min and max dates from the data
+        const dates = result.recordset.map((r: any) => new Date(r.date));
+        const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
+        const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+        
+        // Create a map for quick lookup of actual values
+        const dataMap = new Map();
+        result.recordset.forEach((r: any) => {
+          const dateStr = new Date(r.date).toISOString().split('T')[0];
+          dataMap.set(dateStr, r.value);
+        });
+        
+        // Fill in all dates between min and max with zeros for missing days
+        const filledData = [];
+        const currentDate = new Date(minDate);
+        
+        while (currentDate <= maxDate) {
+          const dateStr = currentDate.toISOString().split('T')[0];
+          filledData.push({
+            date: dateStr,
+            value: dataMap.get(dateStr) || 0  // Use 0 for dates without data
+          });
+          currentDate.setDate(currentDate.getDate() + 1);
+        }
+        
+        itemsData[item] = filledData;
+        console.log(`Loaded ${filledData.length} days of data for item ${item} (including ${filledData.filter(d => d.value === 0).length} zero-demand days)`);
       } else {
         console.log(`No historical data found for item: ${item}`);
       }
