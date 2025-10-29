@@ -4684,9 +4684,28 @@
                     
                     // Transform PT operations to ensure they have the correct format for Bryntum
                     const transformedEvents = eventsForScheduler.map(event => {
-                        // Ensure dates are Date objects
-                        const startDate = event.startDate ? (event.startDate instanceof Date ? event.startDate : new Date(event.startDate)) : null;
-                        const endDate = event.endDate ? (event.endDate instanceof Date ? event.endDate : new Date(event.endDate)) : null;
+                        // Ensure dates are Date objects - provide default if null
+                        let startDate = null;
+                        let endDate = null;
+                        
+                        // If operation has scheduled dates, use them
+                        if (event.startDate) {
+                            startDate = event.startDate instanceof Date ? event.startDate : new Date(event.startDate);
+                        }
+                        if (event.endDate) {
+                            endDate = event.endDate instanceof Date ? event.endDate : new Date(event.endDate);
+                        }
+                        
+                        // If no scheduled dates, create unscheduled placeholder dates for display
+                        // These will be replaced by ASAP/ALAP/Drum algorithms
+                        if (!startDate || !endDate) {
+                            const today = new Date();
+                            today.setHours(8, 0, 0, 0);  // Start at 8 AM
+                            startDate = new Date(today);
+                            // Use duration if available, otherwise default to 1 hour
+                            const durationHours = event.duration || 1;
+                            endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000);
+                        }
                         
                         return {
                             id: event.id,
@@ -4697,9 +4716,10 @@
                             // Remove resourceId from event - it should come from assignments
                             percentDone: event.percentDone || 0,
                             duration: event.duration,
-                            durationUnit: event.durationUnit || 'hour'
+                            durationUnit: event.durationUnit || 'hour',
+                            isUnscheduled: !event.startDate || !event.endDate  // Flag unscheduled operations
                         };
-                    }).filter(e => e.startDate && e.endDate); // Only include events with valid dates
+                    }); // Removed filter - keep all operations for scheduling
                     
                     console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
                     
