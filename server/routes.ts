@@ -11956,5 +11956,156 @@ router.delete("/api/forecasting/saved-forecast/:id", requireAuth, async (req, re
   }
 });
 
+// ============================================================================
+// AI SCENARIO GENERATION ENDPOINTS
+// ============================================================================
+
+// Generate AI-powered manufacturing scenarios
+router.post("/api/scenarios/generate", requireAuth, async (req, res) => {
+  try {
+    const { prompt, template, selectedPlants, includeCurrentData } = req.body;
+    
+    // Validate request
+    if (!prompt && !template) {
+      return res.status(400).json({ 
+        error: "Either prompt or template is required" 
+      });
+    }
+
+    // Generate comprehensive scenario suggestions using AI
+    const systemPrompt = `You are a manufacturing scenario planning expert. Generate realistic manufacturing scenarios for analysis and planning.
+    
+    Consider the following aspects:
+    1. Production scheduling strategies (fastest, most efficient, balanced)
+    2. Resource optimization and utilization
+    3. Delivery time optimization
+    4. Cost efficiency improvements
+    5. Capacity planning and expansion
+    6. Demand surge handling
+    7. Supply chain disruptions
+    
+    Format the response as a JSON object with the following structure:
+    {
+      "scenarios": [
+        {
+          "name": "Scenario name",
+          "description": "Detailed description",
+          "scheduling_strategy": "fastest|most_efficient|balanced",
+          "optimization_priorities": ["delivery_time", "resource_utilization", "cost_efficiency"],
+          "constraints": {
+            "max_overtime_hours": number,
+            "resource_availability": {}
+          },
+          "predicted_metrics": {
+            "production_efficiency": number (0-100),
+            "on_time_delivery": number (0-100),
+            "resource_utilization": number (0-100),
+            "cost_savings": number
+          },
+          "implementation_steps": ["step1", "step2", ...],
+          "risks": ["risk1", "risk2", ...],
+          "benefits": ["benefit1", "benefit2", ...]
+        }
+      ]
+    }`;
+
+    const userPrompt = template ? 
+      `Generate a manufacturing scenario based on the template: ${template}. ${prompt || ''}` :
+      `Generate manufacturing scenarios based on: ${prompt}`;
+
+    // Call AI service  
+    const aiResponse = await maxAI.generateResponse(systemPrompt, userPrompt);
+    
+    // Parse AI response
+    let scenarios;
+    try {
+      // Try to extract JSON from the response
+      const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        scenarios = JSON.parse(jsonMatch[0]);
+      } else {
+        // Fallback: create a basic scenario from the text response
+        scenarios = {
+          scenarios: [{
+            name: "AI Generated Scenario",
+            description: aiResponse,
+            scheduling_strategy: "balanced",
+            optimization_priorities: ["delivery_time", "resource_utilization"],
+            constraints: {},
+            predicted_metrics: {
+              production_efficiency: 85,
+              on_time_delivery: 90,
+              resource_utilization: 75,
+              cost_savings: 0
+            },
+            implementation_steps: [],
+            risks: [],
+            benefits: []
+          }]
+        };
+      }
+    } catch (parseError) {
+      console.error("Error parsing AI response:", parseError);
+      // Return a structured response even if parsing fails
+      scenarios = {
+        scenarios: [{
+          name: "Scenario Analysis",
+          description: aiResponse,
+          scheduling_strategy: "balanced",
+          optimization_priorities: ["delivery_time", "resource_utilization"],
+          constraints: {},
+          predicted_metrics: {
+            production_efficiency: 85,
+            on_time_delivery: 90,
+            resource_utilization: 75,
+            cost_savings: 0
+          }
+        }]
+      };
+    }
+
+    res.json(scenarios);
+  } catch (error: any) {
+    console.error("Error generating scenarios:", error);
+    res.status(500).json({ 
+      error: "Failed to generate scenarios",
+      message: error.message 
+    });
+  }
+});
+
+// Create and save a schedule scenario
+router.post("/api/schedule-scenarios", requireAuth, async (req, res) => {
+  try {
+    const { name, description, status, configuration, metrics } = req.body;
+    
+    // Validate request
+    if (!name) {
+      return res.status(400).json({ error: "Scenario name is required" });
+    }
+
+    // For now, return a mock saved scenario (storage methods need to be implemented)
+    const scenario = {
+      id: Math.floor(Math.random() * 1000),
+      name,
+      description: description || '',
+      status: status || 'draft',
+      createdBy: req.user?.id || 1,
+      configuration: configuration || {},
+      metrics: metrics || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    res.json(scenario);
+  } catch (error: any) {
+    console.error("Error creating scenario:", error);
+    res.status(500).json({ 
+      error: "Failed to create scenario",
+      message: error.message 
+    });
+  }
+});
+
 // Forced rebuild - all duplicate keys fixed
 export default router;

@@ -330,7 +330,7 @@ export default function AIScenarioCreator() {
                   <Loader2 className="h-4 w-4 animate-spin" />
                   <span className="text-sm text-gray-500">Loading plants...</span>
                 </div>
-              ) : plants.length === 0 ? (
+              ) : (plants as Plant[]).length === 0 ? (
                 <div className="text-center py-8">
                   <Factory className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                   <p className="text-gray-500">
