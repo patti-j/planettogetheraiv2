@@ -156,6 +156,21 @@ app.use((req, res, next) => {
       res.status(404).send('Scheduler module not found');
     }
   });
+  
+  // Serve Bryntum UMD file specifically
+  app.get('/schedulerpro.umd.js', (req, res) => {
+    const filePath = path.resolve('public/schedulerpro.umd.js');
+    res.set({
+      'Content-Type': 'application/javascript',
+      'Cache-Control': 'public, max-age=31536000'
+    });
+    
+    if (fs.existsSync(filePath)) {
+      res.sendFile(filePath);
+    } else {
+      res.status(404).send('Scheduler UMD not found');
+    }
+  });
 
   // COMMENTED OUT: These handlers were intercepting Vite's files
   // The static middleware and Vite will handle these files properly

@@ -1578,6 +1578,12 @@
             try {
                 // Mark first task as in progress
                 
+                // Wait for Bryntum to be available
+                if (typeof bryntum === 'undefined' || !bryntum.schedulerpro) {
+                    console.error('Bryntum SchedulerPro not loaded');
+                    throw new Error('Bryntum library not loaded properly');
+                }
+                
                 // Initialize scheduler using global bryntum object
                 const { SchedulerPro } = bryntum.schedulerpro;
                 
