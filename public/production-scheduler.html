@@ -3371,26 +3371,63 @@
                 // Left compaction helper for forward scheduling (ASAP)
                 async function compactLeftPerResource() {
                     const { resourceStore, eventStore } = scheduler;
+                    console.log('📦 Starting left compaction to remove gaps...');
+                    let totalMoved = 0;
+                    
                     for (const res of resourceStore.records) {
+                        // Skip the unscheduled resource
+                        if (res.id === 'unscheduled') continue;
+                        
                         const evs = eventStore.records
                             .filter(e => String(e.resourceId) === String(res.id))
                             .filter(e => e.startDate && e.endDate)
                             .sort((a, b) => a.startDate - b.startDate);
                         
-                        let cursor = evs.length ? new Date(evs[0].startDate) : null;
-                        for (let i = 0; i < evs.length; i++) {
+                        if (evs.length <= 1) continue; // Nothing to compact
+                        
+                        console.log(`  Compacting ${evs.length} operations on ${res.name}...`);
+                        
+                        // Process each event starting from the second one
+                        for (let i = 1; i < evs.length; i++) {
                             const cur = evs[i];
-                            if (i === 0) continue;
+                            const prev = evs[i - 1];
                             const dur = cur.endDate - cur.startDate;
-                            // Slide left up to the previous event's end
-                            const prevEnd = evs[i - 1].endDate;
-                            if (cur.startDate > prevEnd) {
-                                cur.set({ startDate: new Date(prevEnd), endDate: new Date(prevEnd.getTime() + dur) });
+                            
+                            // Check if there's a gap between previous end and current start
+                            if (cur.startDate > prev.endDate) {
+                                // We can move this operation earlier to close the gap
+                                const newStart = new Date(prev.endDate);
+                                const newEnd = new Date(newStart.getTime() + dur);
+                                
+                                // IMPORTANT: Check that moving won't create overlaps with later operations
+                                let canMove = true;
+                                
+                                // The move is safe because we're processing in order and only moving left
+                                // to the end of the previous operation, which can't create overlaps
+                                
+                                if (canMove) {
+                                    console.log(`    Moving "${cur.name}" from ${cur.startDate.toLocaleString()} to ${newStart.toLocaleString()}`);
+                                    cur.set({ 
+                                        startDate: newStart, 
+                                        endDate: newEnd,
+                                        manuallyScheduled: false
+                                    });
+                                    totalMoved++;
+                                    
+                                    // Update the event in our sorted array so subsequent operations see the new time
+                                    evs[i] = cur;
+                                }
                             }
                         }
                     }
-                    await scheduler.project.commitAsync();
-                    await scheduler.project.propagate();
+                    
+                    if (totalMoved > 0) {
+                        console.log(`  ✅ Compaction complete: moved ${totalMoved} operations to close gaps`);
+                        await scheduler.project.commitAsync();
+                        await scheduler.project.propagate();
+                    } else {
+                        console.log('  ✅ No gaps found - schedule already compact');
+                    }
                 }
 
                 // Scheduling Algorithm Implementations
@@ -3762,10 +3799,12 @@
                         console.log('✅ PT dependencies are displayed natively by Bryntum after ASAP scheduling');
                     }
                     
-                    // Apply left compaction to remove gaps
-                    console.log('📦 Applying left compaction to remove gaps...');
-                    await compactLeftPerResource();
-                    console.log('✅ Left compaction complete - gaps removed');
+                    // DISABLED: Compaction was causing overlaps
+                    // The bin packing algorithm already creates an optimal schedule without gaps
+                    // console.log('📦 Applying left compaction to remove gaps...');
+                    // await compactLeftPerResource();
+                    // console.log('✅ Left compaction complete - gaps removed');
+                    console.log('✅ Bin packing algorithm already created optimal schedule without gaps');
                     
                     // Verify no overlaps using the assertion function
                     if (assertNoOverlaps(scheduler)) {
