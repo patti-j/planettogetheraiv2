@@ -1348,32 +1348,48 @@
             try {
                 console.log('📊 Checking if Bryntum is loaded...');
                 
-                // Debug: Check what's available on window
-                console.log('🔍 Checking for Bryntum library...');
-                console.log('window.bryntum:', window.bryntum);
-                console.log('window.bryntum.schedulerpro:', window.bryntum?.schedulerpro);
+                // Wait for Bryntum to be available with retry mechanism
+                let retries = 0;
+                const maxRetries = 50;
+                const retryDelay = 100; // milliseconds
                 
-                // The Bryntum UMD file exports to window.bryntum.schedulerpro namespace (line 327 in UMD file)
-                // Set up a reference to SchedulerPro for easier access
-                if (window.bryntum?.schedulerpro?.SchedulerPro) {
-                    window.SchedulerPro = window.bryntum.schedulerpro.SchedulerPro;
-                    console.log('✅ Found SchedulerPro at window.bryntum.schedulerpro.SchedulerPro');
-                }
-                
-                if (!window.SchedulerPro) {
-                    console.error('❌ Bryntum SchedulerPro library not loaded!');
-                    console.error('window.bryntum structure:', window.bryntum);
-                    console.error('Available Bryntum items on window:', Object.keys(window).filter(k => k.toLowerCase().includes('scheduler') || k.toLowerCase().includes('bryntum')));
-                    // Notify parent of error
-                    if (window.parent !== window) {
-                        window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
+                while (retries < maxRetries) {
+                    // Debug: Check what's available on window
+                    console.log(`🔍 Checking for Bryntum library (attempt ${retries + 1}/${maxRetries})...`);
+                    
+                    // The Bryntum UMD file exports to window.bryntum.schedulerpro namespace
+                    if (window.bryntum?.schedulerpro?.SchedulerPro) {
+                        window.SchedulerPro = window.bryntum.schedulerpro.SchedulerPro;
+                        console.log('✅ Found SchedulerPro at window.bryntum.schedulerpro.SchedulerPro');
+                        break;
                     }
-                    // Hide loading overlay when directly accessed
-                    const loadingOverlay = document.getElementById('loadingOverlay');
-                    if (loadingOverlay) {
-                        loadingOverlay.style.display = 'none';
+                    
+                    // Also check for direct SchedulerPro on window
+                    if (window.SchedulerPro) {
+                        console.log('✅ Found SchedulerPro directly on window');
+                        break;
                     }
-                    return;
+                    
+                    if (retries === maxRetries - 1) {
+                        // Last retry failed
+                        console.error('❌ Bryntum SchedulerPro library not loaded after', maxRetries * retryDelay, 'ms!');
+                        console.error('window.bryntum structure:', window.bryntum);
+                        console.error('Available Bryntum items on window:', Object.keys(window).filter(k => k.toLowerCase().includes('scheduler') || k.toLowerCase().includes('bryntum')));
+                        // Notify parent of error
+                        if (window.parent !== window) {
+                            window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
+                        }
+                        // Hide loading overlay when directly accessed
+                        const loadingOverlay = document.getElementById('loadingOverlay');
+                        if (loadingOverlay) {
+                            loadingOverlay.style.display = 'none';
+                        }
+                        return;
+                    }
+                    
+                    // Wait before next retry
+                    await new Promise(resolve => setTimeout(resolve, retryDelay));
+                    retries++;
                 }
                 
                 console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
