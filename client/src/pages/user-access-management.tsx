@@ -1096,13 +1096,40 @@ export default function UserAccessManagementPage() {
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="permissionFeature">Feature</Label>
-                          <Input
-                            id="permissionFeature"
-                            value={permissionForm.feature}
-                            onChange={(e) => setPermissionForm({...permissionForm, feature: e.target.value})}
-                            placeholder="e.g., production-reports"
-                            className="w-full"
-                          />
+                          <Select value={permissionForm.feature} onValueChange={(value) => setPermissionForm({...permissionForm, feature: value})}>
+                            <SelectTrigger id="permissionFeature" className="w-full">
+                              <SelectValue placeholder="Select feature/module" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {/* Common features - add new ones as they're created */}
+                              <SelectItem value="dashboard">Dashboard</SelectItem>
+                              <SelectItem value="production">Production</SelectItem>
+                              <SelectItem value="scheduling">Scheduling</SelectItem>
+                              <SelectItem value="quality">Quality</SelectItem>
+                              <SelectItem value="inventory">Inventory</SelectItem>
+                              <SelectItem value="maintenance">Maintenance</SelectItem>
+                              <SelectItem value="reporting">Reporting</SelectItem>
+                              <SelectItem value="users">User Management</SelectItem>
+                              <SelectItem value="roles">Role Management</SelectItem>
+                              <SelectItem value="permissions">Permission Management</SelectItem>
+                              <SelectItem value="settings">Settings</SelectItem>
+                              <SelectItem value="ai">AI Features</SelectItem>
+                              <SelectItem value="workflows">Workflows</SelectItem>
+                              <SelectItem value="analytics">Analytics</SelectItem>
+                              <SelectItem value="master-data">Master Data</SelectItem>
+                              <SelectItem value="business-goals">Business Goals</SelectItem>
+                              <SelectItem value="agents">Agent Management</SelectItem>
+                              {/* Show existing features that aren't in the common list */}
+                              {features.filter(f => !['dashboard', 'production', 'scheduling', 'quality', 'inventory', 
+                                'maintenance', 'reporting', 'users', 'roles', 'permissions', 'settings', 'ai', 
+                                'workflows', 'analytics', 'master-data', 'business-goals', 'agents'].includes(f))
+                                .map(feature => (
+                                  <SelectItem key={feature} value={feature}>
+                                    {feature.charAt(0).toUpperCase() + feature.slice(1).replace(/-/g, ' ')}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label htmlFor="permissionAction">Action</Label>
