@@ -1161,7 +1161,7 @@
     </div>
 
     <!-- Load Bryntum Scheduler Pro UMD -->
-    <script src="/schedulerpro.umd.js?v=633"></script>
+    <script id="bryntum-script" src="/schedulerpro.umd.js?v=633"></script>
     
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
@@ -1351,19 +1351,19 @@
                 // Debug: Check what's available on window
                 console.log('🔍 Checking for Bryntum library...');
                 console.log('window.bryntum:', window.bryntum);
-                console.log('window.BryntumSchedulerPro:', window.BryntumSchedulerPro);
-                console.log('window.schedulerpro:', window.schedulerpro);
+                console.log('window.bryntum.schedulerpro:', window.bryntum?.schedulerpro);
                 
-                // Check for SchedulerPro in various locations
-                const SchedulerPro =
-                    window.bryntum?.schedulerpro?.SchedulerPro || // normal UMD nested
-                    window.bryntum?.SchedulerPro ||               // flat fallback
-                    window.BryntumSchedulerPro?.SchedulerPro ||   // Alternative namespace
-                    window.schedulerpro?.SchedulerPro;            // Another alternative
+                // The Bryntum UMD file exports to window.bryntum.schedulerpro namespace (line 327 in UMD file)
+                // Set up a reference to SchedulerPro for easier access
+                if (window.bryntum?.schedulerpro?.SchedulerPro) {
+                    window.SchedulerPro = window.bryntum.schedulerpro.SchedulerPro;
+                    console.log('✅ Found SchedulerPro at window.bryntum.schedulerpro.SchedulerPro');
+                }
                 
-                if (!SchedulerPro) {
+                if (!window.SchedulerPro) {
                     console.error('❌ Bryntum SchedulerPro library not loaded!');
-                    console.error('Available on window:', Object.keys(window).filter(k => k.toLowerCase().includes('bryntum') || k.toLowerCase().includes('scheduler')));
+                    console.error('window.bryntum structure:', window.bryntum);
+                    console.error('Available Bryntum items on window:', Object.keys(window).filter(k => k.toLowerCase().includes('scheduler') || k.toLowerCase().includes('bryntum')));
                     // Notify parent of error
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
@@ -1376,9 +1376,7 @@
                     return;
                 }
                 
-                // Make SchedulerPro available on window for the rest of the code
-                window.SchedulerPro = SchedulerPro;
-                console.log('✅ Bryntum SchedulerPro loaded successfully', SchedulerPro);
+                console.log('✅ Bryntum SchedulerPro loaded successfully', window.SchedulerPro);
                 
                 // Notify parent window that scheduler is ready
                 if (window.parent !== window) {
@@ -1905,7 +1903,7 @@
                     }
                 };
 
-                window.scheduler = new window.SchedulerPro({
+                window.scheduler = new SchedulerPro({
                     appendTo: 'scheduler',
                     
                     columns: schedulerColumns,
