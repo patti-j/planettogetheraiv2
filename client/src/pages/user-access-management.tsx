@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { 
   Users, Shield, Key, Plus, Edit, Trash2, Eye, Settings,
   CheckCircle, AlertCircle, UserPlus, Search, ChevronDown,
-  ChevronRight, UserCheck, Lock, Copy
+  ChevronRight, UserCheck, Lock, Copy, Sparkles, Send, Bot
 } from "lucide-react";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -114,6 +114,12 @@ export default function UserAccessManagementPage() {
     action: '',
     description: ''
   });
+  
+  // AI Management states
+  const [showAIPanel, setShowAIPanel] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [aiProcessing, setAiProcessing] = useState(false);
+  const [aiResponse, setAiResponse] = useState<string>('');
 
   const { toast } = useToast();
   const { aiTheme } = useAITheme();
@@ -452,6 +458,66 @@ export default function UserAccessManagementPage() {
     );
   };
 
+  // AI Management function
+  const handleAIPrompt = async () => {
+    if (!aiPrompt.trim()) return;
+    
+    setAiProcessing(true);
+    setAiResponse('');
+    
+    try {
+      const response = await apiRequest("POST", "/api/ai-access-management", {
+        prompt: aiPrompt,
+        context: {
+          users: users.map(u => ({ id: u.id, username: u.username, email: u.email, roles: u.roles?.map(r => r.name) })),
+          roles: roles.map(r => ({ id: r.id, name: r.name, description: r.description, permissions: r.permissions.length })),
+          permissions: allPermissions.map(p => ({ id: p.id, name: p.name, feature: p.feature, action: p.action }))
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        setAiResponse(result.message || 'Operation completed successfully');
+        
+        // Refresh data based on what was changed
+        if (result.changedEntities) {
+          if (result.changedEntities.includes('users')) {
+            queryClient.invalidateQueries({ queryKey: ["/api/users-with-roles"] });
+          }
+          if (result.changedEntities.includes('roles')) {
+            queryClient.invalidateQueries({ queryKey: ["/api/roles-management"] });
+          }
+          if (result.changedEntities.includes('permissions')) {
+            queryClient.invalidateQueries({ queryKey: ["/api/permissions/grouped"] });
+          }
+        }
+        
+        toast({
+          title: "AI Command Executed",
+          description: result.message || "Operation completed successfully",
+        });
+      } else {
+        setAiResponse(result.error || 'Failed to process command');
+        toast({
+          title: "AI Command Failed",
+          description: result.error || "Failed to process the command",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('AI command error:', error);
+      setAiResponse('Error processing command. Please try again.');
+      toast({
+        title: "Error",
+        description: "Failed to process AI command",
+        variant: "destructive"
+      });
+    } finally {
+      setAiProcessing(false);
+    }
+  };
+
   const togglePermission = (permissionId: number) => {
     setRoleForm(prev => ({
       ...prev,
@@ -595,6 +661,109 @@ export default function UserAccessManagementPage() {
           </p>
         </div>
       </div>
+
+      {/* AI Management Panel */}
+      <Card>
+        <CardHeader className="cursor-pointer" onClick={() => setShowAIPanel(!showAIPanel)}>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5 text-blue-600" />
+              <CardTitle className="text-lg">AI Access Management</CardTitle>
+            </div>
+            {showAIPanel ? <ChevronDown className="h-5 w-5" /> : <ChevronRight className="h-5 w-5" />}
+          </div>
+          <CardDescription>
+            Use natural language to manage users, roles, and permissions
+          </CardDescription>
+        </CardHeader>
+        {showAIPanel && (
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="ai-prompt">What would you like to do?</Label>
+              <div className="flex gap-2">
+                <Textarea
+                  id="ai-prompt"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  placeholder="Examples:&#10;• Create a new user named John Doe with email john@example.com&#10;• Give the admin role all permissions&#10;• Remove user Mike from the Manager role&#10;• Create a new role called 'Viewer' with read-only permissions&#10;• Show me all users with admin privileges"
+                  className="min-h-[100px] flex-1"
+                  disabled={aiProcessing}
+                />
+              </div>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleAIPrompt}
+                  disabled={aiProcessing || !aiPrompt.trim()}
+                  className={`${aiTheme ? "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700" : ""}`}
+                >
+                  {aiProcessing ? (
+                    <>
+                      <Bot className="h-4 w-4 mr-2 animate-pulse" />
+                      Processing...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Execute Command
+                    </>
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setAiPrompt('');
+                    setAiResponse('');
+                  }}
+                  disabled={aiProcessing}
+                >
+                  Clear
+                </Button>
+              </div>
+              
+              {/* Example prompts */}
+              <div className="space-y-2">
+                <Label className="text-sm text-muted-foreground">Quick actions:</Label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    "List all admin users",
+                    "Create a new viewer role",
+                    "Grant all permissions to admin",
+                    "Remove inactive users"
+                  ].map((prompt) => (
+                    <Button
+                      key={prompt}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setAiPrompt(prompt)}
+                      disabled={aiProcessing}
+                    >
+                      {prompt}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Response area */}
+              {aiResponse && (
+                <div className={`p-4 rounded-lg border ${
+                  aiResponse.includes('Error') || aiResponse.includes('Failed') 
+                    ? 'bg-red-50 border-red-300 text-red-800 dark:bg-red-950/20 dark:border-red-800 dark:text-red-200'
+                    : 'bg-green-50 border-green-300 text-green-800 dark:bg-green-950/20 dark:border-green-800 dark:text-green-200'
+                }`}>
+                  <div className="flex items-start gap-2">
+                    {aiResponse.includes('Error') || aiResponse.includes('Failed') ? (
+                      <AlertCircle className="h-5 w-5 mt-0.5" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 mt-0.5" />
+                    )}
+                    <div className="flex-1 whitespace-pre-wrap">{aiResponse}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       {/* Main Content Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
