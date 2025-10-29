@@ -2023,9 +2023,9 @@
                     },
 
                     features: {
-                        // Dependencies feature DISABLED - using PT dependencies for visualization only
-                        // This deactivates Bryntum's dependency feature completely
-                        dependencies: false,
+                        // Dependencies feature ENABLED - using PT dependencies for visualization
+                        // Bryntum will handle the rendering natively
+                        dependencies: true,
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -3657,12 +3657,9 @@
                     
                     console.log('\n✅ ASAP scheduling completed using job priority and sequence order');
                     
-                    // Render PT dependencies as visual lines after scheduling
+                    // Dependencies are already loaded in Bryntum's dependency store
                     if (window.originalDependencies && window.originalDependencies.length > 0) {
-                        console.log('🎨 Rendering PT dependencies as visual lines after ASAP scheduling...');
-                        setTimeout(() => {
-                            window.renderPTDependencyLines(scheduler, window.originalDependencies);
-                        }, 1000); // Wait 1 second for DOM to fully update
+                        console.log('✅ PT dependencies are displayed natively by Bryntum after ASAP scheduling');
                     }
                     
                     // Apply left compaction to remove gaps
@@ -4743,25 +4740,24 @@
                     
                     console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
                     
-                    // Load data WITHOUT dependencies to prevent engine constraints
-                    // Dependencies will be added manually as inactive visual-only lines
+                    // Load data WITH dependencies for visual display
+                    // Dependencies are marked as inactive so they don't constrain scheduling
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: transformedEvents, // Use transformed events
                         assignmentsData: assignments, // Assignments link events to resources
-                        dependenciesData: [] // CRITICAL: Empty array to ensure NO dependencies are loaded initially
+                        dependenciesData: fetchedDependencies // Load PT dependencies directly into Bryntum
                     });
                     
                     // Keep a copy globally
                     window.originalDependencies = fetchedDependencies || [];
                     
-                    // Draw dependency lines after the scheduler is ready
-                    // Use setTimeout to ensure the scheduler is fully initialized
+                    // Dependencies are now handled by Bryntum natively
+                    // No need for custom SVG rendering
                     setTimeout(() => {
-                        // Render PT dependencies as visual-only lines
                         if (fetchedDependencies && fetchedDependencies.length > 0) {
-                            console.log('🎨 Rendering PT dependencies as visual lines after initial load...');
-                            window.renderPTDependencyLines(scheduler, fetchedDependencies);
+                            console.log(`✅ Loaded ${fetchedDependencies.length} PT dependencies into Bryntum's dependency store`);
+                            console.log('Dependencies are visual-only and won\'t constrain scheduling');
                         }
                         
                         try {
