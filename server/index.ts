@@ -123,6 +123,9 @@ app.use((req, res, next) => {
     res.sendFile(path.resolve('public/scheduler-test/index.html'));
   });
 
+  // COMMENTED OUT: These handlers were intercepting Vite's files
+  // The static middleware and Vite will handle these files properly
+  /*
   // Serve JavaScript module files with correct MIME type
   app.get('/*.module.js', (req, res) => {
     const filePath = `public${req.path}`;
@@ -170,6 +173,7 @@ app.use((req, res, next) => {
       res.status(404).send('File not found');
     }
   });
+  */
 
 
   // Serve Bryntum static assets from public directory

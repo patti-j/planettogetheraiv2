@@ -22,7 +22,7 @@ export function log(message: string, source = "express") {
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
     middlewareMode: true,
-    hmr: { server },
+    hmr: false, // Disable HMR in middleware mode to avoid WebSocket conflicts
     allowedHosts: true as const,
   };
 
@@ -41,14 +41,25 @@ export async function setupVite(app: Express, server: Server) {
   });
 
   app.use(vite.middlewares);
-  app.use("*", async (req, res, next) => {
+  
+  // Only catch actual page routes for SPA, not assets or Vite internal routes
+  // Using wildcard for all non-asset routes to support client-side routing
+  app.get("*", async (req, res, next) => {
     const url = req.originalUrl;
     
     // Skip API routes - let them be handled by Express router
     if (url.startsWith('/api/')) {
       return next();
     }
-
+    
+    // Skip Vite internal routes, assets, and dependency requests
+    if (url.startsWith('/@') || 
+        url.startsWith('/src/') || 
+        url.startsWith('/node_modules/') ||
+        url.includes('.')) {
+      return next();
+    }
+    
     try {
       const clientTemplate = path.resolve(
         import.meta.dirname,
