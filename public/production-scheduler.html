@@ -1187,25 +1187,46 @@
         
         // Wait for Bryntum library to be available
         function waitForBryntum(callback) {
+            let timeoutHandle = null;
+            let intervalCleared = false;
+            
             const checkInterval = setInterval(() => {
                 // Check multiple possible locations for SchedulerPro (from UMD bundle)
                 if (typeof bryntum !== 'undefined' && bryntum.schedulerpro && bryntum.schedulerpro.SchedulerPro) {
-                    clearInterval(checkInterval);
-                    console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
-                    // Make SchedulerPro globally available for easier access
-                    window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
-                    callback();
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro loaded at bryntum.schedulerpro.SchedulerPro');
+                        // Make SchedulerPro globally available for easier access
+                        window.SchedulerPro = bryntum.schedulerpro.SchedulerPro;
+                        callback();
+                    }
                 } else if (typeof SchedulerPro !== 'undefined') {
                     // Check if SchedulerPro is directly on window
-                    clearInterval(checkInterval);
-                    console.log('✅ Bryntum SchedulerPro loaded directly on window');
-                    window.SchedulerPro = SchedulerPro;
-                    callback();
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro loaded directly on window');
+                        window.SchedulerPro = SchedulerPro;
+                        callback();
+                    }
                 } else if (typeof window.SchedulerPro !== 'undefined') {
                     // Already available
-                    clearInterval(checkInterval);
-                    console.log('✅ Bryntum SchedulerPro already available on window');
-                    callback();
+                    if (!intervalCleared) {
+                        clearInterval(checkInterval);
+                        intervalCleared = true;
+                        if (timeoutHandle) {
+                            clearTimeout(timeoutHandle);
+                        }
+                        console.log('✅ Bryntum SchedulerPro already available on window');
+                        callback();
+                    }
                 } else {
                     console.log('⏳ Waiting for Bryntum SchedulerPro to load...');
                     // Debug: Log what's available
@@ -1218,18 +1239,29 @@
                 }
             }, 100);
             
-            // Timeout after 10 seconds
-            setTimeout(() => {
-                clearInterval(checkInterval);
-                console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
-                const loadingOverlay = document.getElementById('loadingOverlay');
-                if (loadingOverlay) {
-                    loadingOverlay.innerHTML = `
-                        <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
-                            <h3>Loading Error</h3>
-                            <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
-                        </div>
-                    `;
+            // Timeout after 10 seconds - but only show error if we still don't have Bryntum
+            timeoutHandle = setTimeout(() => {
+                if (!intervalCleared) {
+                    clearInterval(checkInterval);
+                    intervalCleared = true;
+                    
+                    // Double-check if Bryntum is really not loaded before showing error
+                    if (typeof window.SchedulerPro === 'undefined' && 
+                        (typeof bryntum === 'undefined' || !bryntum.schedulerpro?.SchedulerPro)) {
+                        console.error('❌ Bryntum SchedulerPro failed to load after 10 seconds');
+                        const loadingOverlay = document.getElementById('loadingOverlay');
+                        // Only show error if loading overlay is visible and empty
+                        if (loadingOverlay && loadingOverlay.style.display !== 'none' && !loadingOverlay.querySelector('.loading-spinner')) {
+                            loadingOverlay.innerHTML = `
+                                <div style="color: red; font-size: 16px; padding: 20px; background: white; border-radius: 8px;">
+                                    <h3>Loading Error</h3>
+                                    <p>Bryntum Scheduler Pro failed to load. Please refresh the page.</p>
+                                </div>
+                            `;
+                        }
+                    } else {
+                        console.log('✅ Bryntum already loaded, timeout cleared');
+                    }
                 }
             }, 10000);
         }
