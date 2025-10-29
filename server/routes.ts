@@ -1452,13 +1452,73 @@ router.get("/users/:userId/assigned-roles", async (req, res) => {
   }
 });
 
+// Get all roles for role management
+router.get("/api/roles-management", async (req, res) => {
+  try {
+    const roles = await storage.getRoles();
+    
+    // Add permissions to each role
+    const rolesWithPermissions = await Promise.all(
+      roles.map(async (role) => {
+        const rolePermissions = await storage.getRolePermissions(role.id);
+        const permissions = [];
+        
+        for (const rolePerm of rolePermissions) {
+          const permission = await storage.getPermission(rolePerm.permissionId);
+          if (permission) {
+            permissions.push(permission);
+          }
+        }
+        
+        return {
+          ...role,
+          permissions
+        };
+      })
+    );
+    
+    res.json(rolesWithPermissions);
+  } catch (error) {
+    console.error("Error fetching roles:", error);
+    res.status(500).json({ message: "Failed to fetch roles" });
+  }
+});
+
+// Get permissions grouped by category
+router.get("/api/permissions/grouped", async (req, res) => {
+  try {
+    const permissions = await storage.getPermissions();
+    
+    // Group permissions by feature/module
+    const groupedObj = permissions.reduce((acc, perm) => {
+      const [feature] = perm.feature.split('-');
+      if (!acc[feature]) {
+        acc[feature] = [];
+      }
+      acc[feature].push(perm);
+      return acc;
+    }, {} as Record<string, any[]>);
+    
+    // Convert to array format expected by frontend
+    const grouped = Object.entries(groupedObj).map(([feature, perms]) => ({
+      feature,
+      permissions: perms
+    }));
+    
+    res.json(grouped);
+  } catch (error) {
+    console.error("Error fetching grouped permissions:", error);
+    res.status(500).json({ message: "Failed to fetch permissions" });
+  }
+});
+
 // Get all users with their roles for the User Access Management page
 router.get("/api/users-with-roles", async (req, res) => {
   try {
     console.log("Fetching all users with roles...");
     
     // Get all users
-    const allUsers = await storage.getAllUsers();
+    const allUsers = await storage.getUsers();
     
     // For each user, fetch their roles
     const usersWithRoles = await Promise.all(
