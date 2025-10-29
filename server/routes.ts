@@ -2176,6 +2176,45 @@ router.get("/api/master-data/operations", requireAuth, async (req, res) => {
   }
 });
 
+// Get operation dependencies for production scheduler (visual only)
+router.get("/api/operations-dependencies", async (req, res) => {
+  try {
+    // Return test dependency data for visual demonstration
+    // In production, this would fetch from ptoperationdependencies table
+    const testDependencies = [
+      {
+        id: 1,
+        source_operation_id: "1",  // First operation
+        target_operation_id: "2",   // Second operation  
+        type: 2,  // Finish-to-Start
+        lag: 0,
+        lagUnit: "hour"
+      },
+      {
+        id: 2,
+        source_operation_id: "2",  // Second operation
+        target_operation_id: "3",   // Third operation
+        type: 2,  // Finish-to-Start
+        lag: 0,
+        lagUnit: "hour"
+      },
+      {
+        id: 3,
+        source_operation_id: "3",  // Third operation
+        target_operation_id: "4",   // Fourth operation
+        type: 2,  // Finish-to-Start
+        lag: 0,
+        lagUnit: "hour"
+      }
+    ];
+    
+    res.json(testDependencies);
+  } catch (error) {
+    console.error("Error fetching operation dependencies:", error);
+    res.status(500).json({ message: "Failed to fetch dependencies" });
+  }
+});
+
 // Populate manufacturing tables from PT tables
 router.post("/api/master-data/populate-from-pt", requireAuth, async (req, res) => {
   try {
