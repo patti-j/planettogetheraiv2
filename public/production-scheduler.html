@@ -4943,7 +4943,15 @@
                             percentDone: event.percentDone || 0,
                             duration: event.duration,
                             durationUnit: event.durationUnit || 'hour',
-                            isUnscheduled: !event.startDate || !event.endDate  // Flag unscheduled operations
+                            isUnscheduled: !event.startDate || !event.endDate,  // Flag unscheduled operations
+                            // CRITICAL: Preserve job information to prevent orphan treatment
+                            jobId: event.jobId,
+                            jobName: event.jobName,
+                            jobPriority: event.jobPriority,
+                            jobDueDate: event.jobDueDate,
+                            sequence_number: event.sequence_number,
+                            operationId: event.operationId,
+                            manually_scheduled: event.manually_scheduled
                         };
                     }); // Removed filter - keep all operations for scheduling
                     
