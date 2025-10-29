@@ -1006,6 +1006,45 @@
         .scheduler-notification {
             transition: all 0.3s ease-out;
         }
+        
+        /* Dependency line styling */
+        /* Make dependency lines darker in light mode */
+        .b-sch-dependency,
+        .b-sch-dependency-line {
+            stroke: #4a5568 !important; /* Darker gray for better visibility */
+            stroke-width: 2 !important;
+            opacity: 0.8 !important;
+        }
+        
+        /* Visual-only dependency styling */
+        .visual-dependency,
+        .visual-dependency .b-sch-dependency-line {
+            stroke: #4a5568 !important;
+            stroke-dasharray: 5, 5 !important; /* Dashed line to indicate visual-only */
+            opacity: 0.7 !important;
+        }
+        
+        /* Inactive dependency styling - ensure they don't interfere */
+        .b-inactive.b-sch-dependency,
+        .b-sch-dependency.b-inactive {
+            pointer-events: none !important;
+            stroke: #6b7280 !important;
+            opacity: 0.6 !important;
+        }
+        
+        /* Dark theme dependency lines */
+        .dark-theme .b-sch-dependency,
+        .dark-theme .b-sch-dependency-line {
+            stroke: #9ca3af !important;
+            opacity: 0.9 !important;
+        }
+        
+        .dark-theme .visual-dependency,
+        .dark-theme .visual-dependency .b-sch-dependency-line {
+            stroke: #9ca3af !important;
+            stroke-dasharray: 5, 5 !important;
+            opacity: 0.8 !important;
+        }
     </style>
 </head>
 <body>
@@ -4422,11 +4461,12 @@
                     console.log(`Loading: ${resources.length} resources, ${eventsForScheduler.length} events, ${assignments.length} assignments`);
                     
                     // Load data WITHOUT dependencies to prevent engine constraints
-                    // Dependencies will be added to feature store for visual-only rendering
+                    // Dependencies will be added manually as inactive visual-only lines
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: eventsForScheduler, // Events without resourceId
-                        assignmentsData: assignments // Assignments link events to resources
+                        assignmentsData: assignments, // Assignments link events to resources
+                        dependenciesData: [] // CRITICAL: Empty array to ensure NO dependencies are loaded initially
                     });
                     
                     // Keep a copy globally
@@ -4436,7 +4476,19 @@
                     // Use setTimeout to ensure the scheduler is fully initialized
                     setTimeout(() => {
                         try {
-                            // Try multiple ways to access the dependency store
+                            // Check for Lager packaging dependency
+                            console.log('🔍 Checking for Lager packaging dependencies:');
+                            const lagerPackagingDeps = window.originalDependencies.filter(dep => {
+                                const fromName = scheduler.eventStore.getById(dep.from)?.name || '';
+                                const toName = scheduler.eventStore.getById(dep.to)?.name || '';
+                                return fromName.toLowerCase().includes('lager') || 
+                                       toName.toLowerCase().includes('lager') ||
+                                       fromName.toLowerCase().includes('packag') ||
+                                       toName.toLowerCase().includes('packag');
+                            });
+                            console.log('Lager/Packaging related dependencies:', lagerPackagingDeps);
+                            
+                            // Try to access the dependency store
                             let depStore = null;
                             
                             // Method 1: Through project.dependencyStore
@@ -4449,27 +4501,48 @@
                                 depStore = scheduler.dependencyStore;
                                 console.log('✅ Using scheduler.dependencyStore');
                             }
-                            // Method 3: Through features
-                            else if (scheduler.features?.dependencies) {
-                                // Create dependencies without using a store
-                                console.log('⚠️ Dependencies feature exists but no store available');
-                            }
                             
                             if (depStore) {
+                                // Clear any existing dependencies first
                                 depStore.removeAll();
-                                // Important: we only copy the fields needed for drawing lines
-                                const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
-                                    id: String(id), 
-                                    fromEvent: from,  // Use from/to for now
-                                    toEvent: to,      
-                                    type: type,
-                                    lag: lag,
-                                    lagUnit: lagUnit,
-                                    inactive: true,   // Mark as inactive for visual-only
-                                    cls: 'visual-dependency'
-                                }));
+                                depStore.suspendEvents(); // Suspend events to prevent conflict checks
+                                
+                                // Add dependencies as inactive visual-only lines
+                                const depsToAdd = window.originalDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => {
+                                    // Verify the events exist
+                                    const fromEvent = scheduler.eventStore.getById(from);
+                                    const toEvent = scheduler.eventStore.getById(to);
+                                    
+                                    if (!fromEvent || !toEvent) {
+                                        console.warn(`⚠️ Dependency ${id} missing event: from=${from} (${fromEvent?.name || 'NOT FOUND'}), to=${to} (${toEvent?.name || 'NOT FOUND'})`);
+                                        return null;
+                                    }
+                                    
+                                    return {
+                                        id: String(id), 
+                                        fromEvent: from,  // Bryntum uses fromEvent/toEvent
+                                        toEvent: to,      
+                                        type: type,
+                                        lag: lag,
+                                        lagUnit: lagUnit,
+                                        inactive: true,   // CRITICAL: Mark as inactive for visual-only
+                                        cls: 'visual-dependency b-inactive', // Add both classes
+                                        active: false,    // Extra safety - mark as not active
+                                        allowedOverlap: true // Allow overlaps since these are visual-only
+                                    };
+                                }).filter(dep => dep !== null);
+                                
+                                // Add the dependencies
                                 depStore.add(depsToAdd);
+                                depStore.resumeEvents(); // Resume events after adding
+                                
                                 console.log(`🎨 Rendered ${depStore.count} visual-only dependency lines`);
+                                console.log('Dependencies added:', depsToAdd.map(d => ({
+                                    id: d.id,
+                                    from: scheduler.eventStore.getById(d.fromEvent)?.name,
+                                    to: scheduler.eventStore.getById(d.toEvent)?.name,
+                                    inactive: d.inactive
+                                })));
                             } else {
                                 console.warn('⚠️ Dependency store not available - dependencies won\'t be displayed');
                                 console.log('Available scheduler properties:', Object.keys(scheduler));
@@ -4480,7 +4553,7 @@
                         } catch (error) {
                             console.error('❌ Error adding dependencies:', error);
                         }
-                    }, 1000);
+                    }, 1500); // Increase timeout slightly to ensure scheduler is ready
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
