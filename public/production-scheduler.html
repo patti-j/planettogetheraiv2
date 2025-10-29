@@ -1149,7 +1149,15 @@
     </div>
 
     <div class="scheduler-container">
-        <div id="scheduler"></div>
+        <div id="scheduler">
+            <!-- Initial loading message to prevent flash of error message -->
+            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                <div style="text-align: center;">
+                    <div class="loading-spinner" style="display: inline-block; margin-bottom: 10px;"></div>
+                    <div>Loading Production Scheduler...</div>
+                </div>
+            </div>
+        </div>
         <div class="loading-overlay" id="loadingOverlay">
             <div class="loading-spinner"></div>
         </div>
@@ -2353,6 +2361,11 @@
                                 const jobInfo = eventRecord.jobName || eventRecord.data?.jobName || '';
                                 const jobDisplay = jobInfo ? `<strong style="color: #0066cc;">Job: ${jobInfo}</strong><br>` : '';
                                 
+                                // Check if operation is actually scheduled (has resource and valid dates)
+                                const hasResource = eventRecord.assignments && eventRecord.assignments.length > 0;
+                                const hasValidDates = eventRecord.startDate && eventRecord.endDate;
+                                const isCurrentlyUnscheduled = !hasResource || !hasValidDates;
+                                
                                 return `
                                     <div style="padding: 10px; min-width: 200px;">
                                         ${jobDisplay}
@@ -2363,7 +2376,7 @@
                                             Duration: ${eventRecord.duration} ${eventRecord.durationUnit}<br>
                                             Progress: ${eventRecord.percentDone}%
                                         </div>
-                                        ${eventRecord.isUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
+                                        ${isCurrentlyUnscheduled ? '<br><span style="color: orange; font-weight: bold;">⚠️ Unscheduled - Drag to a resource to schedule</span>' : ''}
                                     </div>
                                 `;
                             }
