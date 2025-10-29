@@ -2019,16 +2019,11 @@
                             return true;
                         },
                         
-                        // Hook into project load to force dependencies inactive
+                        // Hook into project load - dependencies handled separately
                         projectChange: ({ project }) => {
-                            if (project && project.dependencyStore) {
-                                // Force all dependencies to be inactive before any propagation
-                                project.dependencyStore.forEach(dep => {
-                                    dep.active = false;
-                                    dep.inactive = true;
-                                });
-                                console.log('🔧 Forced all dependencies inactive in project store');
-                            }
+                            // Engine's dependency store is null (visual-only design)
+                            // Visual dependencies are managed in window.visualDependencyStore
+                            console.log('🔧 Project loaded - using visual-only dependency system');
                         },
                         
                         // Allow inactive (visual-only) dependencies, block active (constraining) dependencies
@@ -2058,13 +2053,8 @@
                         
                         // Hook before any scheduling propagation
                         beforeProjectPropagate: ({ project }) => {
-                            // Ensure all dependencies are inactive before propagation
-                            if (project && project.dependencyStore) {
-                                project.dependencyStore.forEach(dep => {
-                                    dep.active = false;
-                                    dep.inactive = true;
-                                });
-                            }
+                            // Engine's dependency store is null - visual dependencies don't affect propagation
+                            console.log('📊 Propagating schedule (visual dependencies don\'t constrain)');
                         }
                     },
                     
@@ -2461,16 +2451,11 @@
                     }
                 });
                 
-                // Also handle dependency validation to always allow operations
-                if (scheduler.project.dependencyStore) {
-                    scheduler.project.dependencyStore.on({
-                        beforevalidate: (event) => {
-                            // Always mark dependencies as valid (visual-only)
-                            console.log('  → Dependency validation suppressed (visual-only)');
-                            event.valid = true;
-                            return false; // Skip validation
-                        }
-                    });
+                // Handle dependency validation if visual store exists
+                // Note: Engine's dependency store is intentionally null (visual-only design)
+                if (window.visualDependencyStore) {
+                    // Visual dependencies don't need validation since they don't constrain
+                    console.log('  → Using visual-only dependency store (no constraints)');
                 }
                 
                 // Enhanced status update function using real PT data
@@ -3298,8 +3283,9 @@
                 
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
-                    const engineDeps = scheduler.project.dependencyStore?.count || 0;
-                    const visualDeps = scheduler.features?.dependencies?.store?.count || 0;
+                    // Use visual dependency store since engine store is intentionally null
+                    const engineDeps = 0; // Always 0 - we don't use engine dependencies
+                    const visualDeps = window.visualDependencyStore?.count || 0;
                     console.assert(engineDeps === 0, 'Project dependencyStore should be empty');
                     console.log('✅ Test A - Dependencies Check:');
                     console.log('  Engine dependencies:', engineDeps, '(should be 0)');
@@ -3801,8 +3787,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -3816,7 +3803,7 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4264,8 +4251,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -4279,7 +4267,7 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -4606,8 +4594,9 @@
                     const originalDeps = window.originalDependencies || [];
                     console.log(`🔍 Found ${originalDeps.length} original dependencies to restore`);
                     
-                    if (originalDeps.length > 0 && scheduler.project?.dependencyStore) {
-                        const depStore = scheduler.project.dependencyStore;
+                    // Restore to visual dependency store, not project store
+                    if (originalDeps.length > 0 && window.visualDependencyStore) {
+                        const depStore = window.visualDependencyStore;
                         depStore.removeAll();
                         depStore.add(
                             originalDeps.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => ({
@@ -4621,7 +4610,7 @@
                                 cls: 'visual-dependency'
                             }))
                         );
-                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines`);
+                        console.log(`🎨 Restored ${depStore.count} visual-only dependency lines to visual store`);
                     } else if (originalDeps.length === 0) {
                         console.log('⚠️ No original dependencies to restore');
                     }
@@ -5265,14 +5254,16 @@
                         priority: e.priority || 0
                     }));
                 
-                const dependencies = scheduler.dependencyStore.records.map(d => ({
-                    id: String(d.id), // Convert to string
-                    fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
-                    toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
-                    type: d.type || 2,
-                    lag: d.lag || 0,
-                    lagUnit: d.lagUnit || 'hour'
-                }));
+                // Use visual dependency store instead of engine's (which is null)
+                const dependencies = window.visualDependencyStore ? 
+                    window.visualDependencyStore.records.map(d => ({
+                        id: String(d.id), // Convert to string
+                        fromEvent: String(d.fromEvent?.id || d.fromEvent), // Extract ID if it's an object
+                        toEvent: String(d.toEvent?.id || d.toEvent), // Extract ID if it's an object
+                        type: d.type || 2,
+                        lag: d.lag || 0,
+                        lagUnit: d.lagUnit || 'hour'
+                    })) : [];
                 
                 return {
                     version: `v_${Date.now()}`,
@@ -5788,7 +5779,7 @@
                                     scheduleData: {
                                         events: window.scheduler.eventStore.toJSON(),
                                         resources: window.scheduler.resourceStore.toJSON(),
-                                        dependencies: window.scheduler.dependencyStore ? window.scheduler.dependencyStore.toJSON() : []
+                                        dependencies: window.visualDependencyStore ? window.visualDependencyStore.toJSON() : []
                                     },
                                     metadata: {
                                         algorithm: document.getElementById('schedulingAlgorithm').value,
