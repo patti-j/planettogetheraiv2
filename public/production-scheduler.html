@@ -1228,6 +1228,12 @@
             try {
                 console.log(`🎨 Rendering ${dependencies.length} PT dependency lines...`);
                 
+                // Disable dependency rendering for now to prevent SVG errors
+                // Dependencies are visual-only and not required for scheduling algorithms
+                console.log('⚠️ Dependency line rendering temporarily disabled to prevent SVG conflicts');
+                return;
+                
+                /* DISABLED CODE - Causes SVG/Bryntum conflicts
                 // Wait for scheduler to be fully rendered
                 setTimeout(() => {
                     // Get or create SVG container for dependency lines
@@ -1322,6 +1328,7 @@
                     
                     console.log(`✅ PT dependency lines rendered successfully: ${linesDrawn} lines drawn`);
                 }, 500); // Wait 500ms for scheduler to render
+                */
                 
             } catch (error) {
                 console.error('❌ Error rendering PT dependency lines:', error);
