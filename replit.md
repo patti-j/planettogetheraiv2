@@ -38,7 +38,7 @@ The system prioritizes user experience, data integrity, performance, accessibili
 -   **Database**: PostgreSQL with Drizzle ORM.
 -   **Storage**: DatabaseStorage class implementing IStorage interface.
 -   **API Design**: RESTful API with JSON responses, role-based authentication.
--   **Authentication System**: Unified role-based permissions system with JWT authentication.
+-   **Authentication System**: Unified role-based permissions system with JWT authentication. **Development Mode Enhancement (10/29/2025)**: Auto-login respects explicit logouts - when users log out in development, they stay logged out until manually logging in again, allowing testing with different users. Fresh preview starts continue to auto-login with the most recent user.
 -   **AI Integration**: OpenAI GPT-4o for NLP, intelligent data generation, custom metric calculation, AI-powered modifications, and dynamic content creation.
 -   **Hint System Service**: Intelligent contextual hints with user interaction tracking.
 

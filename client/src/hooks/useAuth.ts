@@ -172,8 +172,11 @@ export function useAuth() {
       // Token-based authentication - get token from localStorage
       let token = localStorage.getItem('auth_token');
       if (!token) {
-        // In development mode, fetch a development token
-        if (isDev) {
+        // Check if user explicitly logged out in development mode
+        const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
+        
+        // In development mode, fetch a development token ONLY if user hasn't explicitly logged out
+        if (isDev && !hasExplicitlyLoggedOut) {
           console.log('🔧 [useAuth] Development mode: Fetching development token...');
           try {
             const devTokenResponse = await fetch('/api/auth/dev-token');
@@ -228,6 +231,8 @@ export function useAuth() {
             };
             return devUser;
           }
+        } else if (isDev && hasExplicitlyLoggedOut) {
+          console.log('🔧 [useAuth] Development mode: User explicitly logged out, skipping auto-login');
         }
         return null;
       }
@@ -242,8 +247,11 @@ export function useAuth() {
         // Token invalid/expired - clear it
         localStorage.removeItem('auth_token');
         
-        // In development mode, fall back to auto-login even with invalid token
-        if (isDev) {
+        // Check if user explicitly logged out
+        const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
+        
+        // In development mode, fall back to auto-login only if user hasn't explicitly logged out
+        if (isDev && !hasExplicitlyLoggedOut) {
           console.log('🔧 Development mode: Token invalid, using auto-login as admin user');
           const devUser = {
             id: 1,
@@ -255,6 +263,8 @@ export function useAuth() {
             roles: [createRoleStructure('Administrator')]
           };
           return devUser;
+        } else if (isDev && hasExplicitlyLoggedOut) {
+          console.log('🔧 Development mode: Token invalid but user explicitly logged out, staying logged out');
         }
         
         return null;
@@ -349,6 +359,13 @@ export function useAuth() {
     },
     onSuccess: async (data) => {
       try {
+        // Clear the explicit logout flag since user is now logging in
+        const isDev = import.meta.env.MODE === 'development';
+        if (isDev) {
+          localStorage.removeItem('dev_explicit_logout');
+          console.log('🔧 Cleared explicit logout flag after successful login');
+        }
+        
         // Detect if user is on mobile device
         const isMobile = window.innerWidth <= 480 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         const redirectPath = isMobile ? '/mobile-home' : '/home';
@@ -431,6 +448,13 @@ export function useAuth() {
       } catch (error) {
         console.error("Server logout failed:", error);
         // Continue with local cleanup even if server fails
+      }
+      
+      // Set flag to track explicit logout in development mode
+      const isDev = import.meta.env.MODE === 'development';
+      if (isDev) {
+        localStorage.setItem('dev_explicit_logout', 'true');
+        console.log("✓ Marked explicit logout in development mode");
       }
       
       // Clear only authentication-related items from localStorage
