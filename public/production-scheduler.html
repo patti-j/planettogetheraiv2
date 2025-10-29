@@ -1742,6 +1742,47 @@
                 // Create scheduler instance with ASAP scheduling
                 // Make scheduler globally accessible for Max AI
                 // Use SchedulerPro from the ES module (now available on window)
+                // Add conflict resolution handler before creating scheduler
+                // This will automatically resolve dependency conflicts
+                const handleSchedulingConflict = (conflict) => {
+                    console.log('🔧 Auto-resolving scheduling conflict');
+                    
+                    // Always choose to ignore dependency conflicts
+                    if (conflict && conflict.resolutions) {
+                        // Look for resolution that removes or deactivates the dependency
+                        for (const resolution of conflict.resolutions) {
+                            if (resolution.description && 
+                                (resolution.description.toLowerCase().includes('deactivate dependency') ||
+                                 resolution.description.toLowerCase().includes('remove dependency'))) {
+                                console.log('  → Auto-selected: Ignoring dependency constraint');
+                                resolution.resolve();
+                                return;
+                            }
+                        }
+                        
+                        // If no dependency resolution, remove constraints
+                        for (const resolution of conflict.resolutions) {
+                            if (resolution.description && 
+                                resolution.description.toLowerCase().includes('remove') &&
+                                resolution.description.toLowerCase().includes('constraint')) {
+                                console.log('  → Auto-selected: Removing date constraint');
+                                resolution.resolve();
+                                return;
+                            }
+                        }
+                        
+                        // Last resort: cancel
+                        for (const resolution of conflict.resolutions) {
+                            if (resolution.description && 
+                                resolution.description.toLowerCase().includes('cancel')) {
+                                console.log('  → Cancelling operation');
+                                resolution.resolve();
+                                return;
+                            }
+                        }
+                    }
+                };
+
                 window.scheduler = new window.SchedulerPro({
                     appendTo: 'scheduler',
                     
@@ -1850,7 +1891,11 @@
                     features: {
                         // Dependencies feature ENABLED for visual display
                         // Conflict handlers suppress any constraint conflicts
-                        dependencies: true,
+                        dependencies: {
+                            disabled: false,
+                            allowCreate: false, // Prevent creating new dependencies via UI
+                            showTooltip: false  // Hide dependency tooltips
+                        },
                         
                         // Enable drag and drop with tooltip
                         eventDrag: {
@@ -2128,6 +2173,65 @@
                         }
                     });
                 });
+                
+                // Add event listeners to automatically handle scheduling conflicts
+                scheduler.project.on({
+                    schedulingconflict: (event) => {
+                        console.log('📋 Scheduling conflict detected:', event.conflict);
+                        
+                        // Automatically resolve the conflict
+                        const conflict = event.conflict;
+                        if (conflict && conflict.resolutions && conflict.resolutions.length > 0) {
+                            // Find resolution to deactivate or remove dependency
+                            for (const resolution of conflict.resolutions) {
+                                const desc = (resolution.description || '').toLowerCase();
+                                if (desc.includes('deactivate dependency') || 
+                                    desc.includes('remove dependency')) {
+                                    console.log('  → Auto-resolving: Ignoring dependency');
+                                    resolution.resolve();
+                                    return false; // Prevent default dialog
+                                }
+                            }
+                            
+                            // Otherwise remove constraints
+                            for (const resolution of conflict.resolutions) {
+                                const desc = (resolution.description || '').toLowerCase();
+                                if (desc.includes('remove') && desc.includes('constraint')) {
+                                    console.log('  → Auto-resolving: Removing constraint');
+                                    resolution.resolve();
+                                    return false; // Prevent default dialog
+                                }
+                            }
+                            
+                            // Default: cancel
+                            const cancelResolution = conflict.resolutions.find(r => 
+                                (r.description || '').toLowerCase().includes('cancel'));
+                            if (cancelResolution) {
+                                console.log('  → Auto-resolving: Cancelling');
+                                cancelResolution.resolve();
+                                return false; // Prevent default dialog
+                            }
+                        }
+                    },
+                    
+                    beforeschedulingconflictdialog: (event) => {
+                        // Prevent the dialog from showing
+                        console.log('  → Suppressing conflict dialog');
+                        return false;
+                    }
+                });
+                
+                // Also handle dependency validation to always allow operations
+                if (scheduler.project.dependencyStore) {
+                    scheduler.project.dependencyStore.on({
+                        beforevalidate: (event) => {
+                            // Always mark dependencies as valid (visual-only)
+                            console.log('  → Dependency validation suppressed (visual-only)');
+                            event.valid = true;
+                            return false; // Skip validation
+                        }
+                    });
+                }
                 
                 // Enhanced status update function using real PT data
                 function updateStatus() {
