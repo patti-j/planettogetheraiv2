@@ -608,6 +608,17 @@ router.get("/users", async (req, res) => {
   }
 });
 
+// API endpoint for users (used by business goals and other components)
+router.get("/api/users", async (req, res) => {
+  try {
+    const users = await storage.getUsers();
+    res.json(users);
+  } catch (error) {
+    console.error("Error fetching users:", error);
+    res.status(500).json({ message: "Failed to fetch users" });
+  }
+});
+
 router.get("/users/:id", async (req, res) => {
   try {
     const user = await storage.getUser(Number(req.params.id));
