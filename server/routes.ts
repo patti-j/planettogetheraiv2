@@ -1612,6 +1612,102 @@ router.patch("/api/roles-management/:id", async (req, res) => {
   }
 });
 
+// Create new permission
+router.post("/api/permissions", async (req, res) => {
+  try {
+    const { name, feature, action, description } = req.body;
+    
+    console.log("Creating new permission:", { name, feature, action });
+    
+    // Validate required fields
+    if (!name || !feature || !action) {
+      return res.status(400).json({
+        error: "Missing required fields",
+        message: "Name, feature, and action are required"
+      });
+    }
+    
+    const newPermission = await storage.createPermission({
+      name,
+      feature,
+      action,
+      description: description || ''
+    });
+    
+    console.log("Permission created successfully:", newPermission);
+    res.json(newPermission);
+  } catch (error) {
+    console.error("Error creating permission:", error);
+    res.status(500).json({ 
+      error: "Failed to create permission",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Update permission
+router.put("/api/permissions/:id", async (req, res) => {
+  try {
+    const permissionId = parseInt(req.params.id);
+    const updateData = req.body;
+    
+    console.log(`Updating permission ${permissionId}:`, updateData);
+    
+    const updatedPermission = await storage.updatePermission(permissionId, updateData);
+    
+    if (!updatedPermission) {
+      return res.status(404).json({ error: "Permission not found" });
+    }
+    
+    console.log("Permission updated successfully:", updatedPermission);
+    res.json(updatedPermission);
+  } catch (error) {
+    console.error("Error updating permission:", error);
+    res.status(500).json({ 
+      error: "Failed to update permission",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Delete permission
+router.delete("/api/permissions/:id", async (req, res) => {
+  try {
+    const permissionId = parseInt(req.params.id);
+    
+    console.log(`Deleting permission ${permissionId}`);
+    
+    const deleted = await storage.deletePermission(permissionId);
+    
+    if (!deleted) {
+      return res.status(404).json({ error: "Permission not found" });
+    }
+    
+    console.log("Permission deleted successfully");
+    res.json({ success: true, message: "Permission deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting permission:", error);
+    res.status(500).json({ 
+      error: "Failed to delete permission",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
+// Get all permissions
+router.get("/api/permissions", async (req, res) => {
+  try {
+    const permissions = await storage.getPermissions();
+    res.json(permissions);
+  } catch (error) {
+    console.error("Error fetching permissions:", error);
+    res.status(500).json({ 
+      error: "Failed to fetch permissions",
+      message: error instanceof Error ? error.message : "Unknown error"
+    });
+  }
+});
+
 // Get permissions grouped by category
 router.get("/api/permissions/grouped", async (req, res) => {
   try {
