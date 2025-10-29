@@ -621,6 +621,77 @@ router.get("/users/:id", async (req, res) => {
   }
 });
 
+// Update user endpoint for User Access Management
+router.put("/api/users/:id", async (req, res) => {
+  try {
+    const userId = parseInt(req.params.id);
+    const updateData = req.body;
+    
+    console.log(`Updating user ${userId}:`, updateData);
+    
+    // Update user information
+    const updatedUser = await storage.updateUser(userId, {
+      username: updateData.username,
+      email: updateData.email,
+      firstName: updateData.firstName,
+      lastName: updateData.lastName,
+      isActive: updateData.isActive,
+      jobTitle: updateData.jobTitle,
+      department: updateData.department,
+      phoneNumber: updateData.phoneNumber
+    });
+    
+    if (!updatedUser) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Handle role updates if provided
+    if (updateData.roles && Array.isArray(updateData.roles)) {
+      // First, remove all existing roles for this user
+      const existingRoles = await storage.getUserRoles(userId);
+      for (const userRole of existingRoles) {
+        await storage.deleteUserRole(userId, userRole.roleId);
+      }
+      
+      // Then add the new roles
+      for (const roleId of updateData.roles) {
+        await storage.createUserRole({
+          userId: userId,
+          roleId: roleId,
+          assignedAt: new Date(),
+          assignedBy: 1 // Using admin user as default assignedBy
+        });
+      }
+    }
+    
+    // Fetch the updated user with roles
+    const userRoles = await storage.getUserRoles(userId);
+    const roles = [];
+    
+    for (const userRole of userRoles) {
+      const role = await storage.getRole(userRole.roleId);
+      if (role) {
+        roles.push({
+          id: role.id,
+          name: role.name,
+          description: role.description || `${role.name} role`
+        });
+      }
+    }
+    
+    const response = {
+      ...updatedUser,
+      roles: roles
+    };
+    
+    console.log(`Successfully updated user ${userId}`);
+    res.json(response);
+  } catch (error) {
+    console.error("Error updating user:", error);
+    res.status(500).json({ message: "Failed to update user" });
+  }
+});
+
 // Company onboarding routes
 router.get("/onboarding/status", async (req, res) => {
   try {
