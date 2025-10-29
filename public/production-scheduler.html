@@ -1944,8 +1944,8 @@
                     fields: [
                         { name: 'from', type: 'string' },
                         { name: 'to', type: 'string' },
-                        { name: 'type', type: 'number', defaultValue: 2 },
-                        { name: 'lag', type: 'number', defaultValue: 0 },
+                        { name: 'type', type: 'int', defaultValue: 2 },  // Changed to 'int' per Bryntum requirement
+                        { name: 'lag', type: 'int', defaultValue: 0 },    // Changed to 'int' per Bryntum requirement
                         { name: 'lagUnit', type: 'string', defaultValue: 'day' },
                         { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
                         // Force active to false - visual only
