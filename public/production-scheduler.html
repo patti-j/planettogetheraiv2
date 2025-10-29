@@ -1348,14 +1348,22 @@
             try {
                 console.log('📊 Checking if Bryntum is loaded...');
                 
-                // Check for SchedulerPro in the UMD bundle
+                // Debug: Check what's available on window
+                console.log('🔍 Checking for Bryntum library...');
+                console.log('window.bryntum:', window.bryntum);
+                console.log('window.BryntumSchedulerPro:', window.BryntumSchedulerPro);
+                console.log('window.schedulerpro:', window.schedulerpro);
+                
+                // Check for SchedulerPro in various locations
                 const SchedulerPro =
                     window.bryntum?.schedulerpro?.SchedulerPro || // normal UMD nested
-                    window.bryntum?.SchedulerPro;                 // flat fallback
+                    window.bryntum?.SchedulerPro ||               // flat fallback
+                    window.BryntumSchedulerPro?.SchedulerPro ||   // Alternative namespace
+                    window.schedulerpro?.SchedulerPro;            // Another alternative
                 
                 if (!SchedulerPro) {
                     console.error('❌ Bryntum SchedulerPro library not loaded!');
-                    console.error('Bryntum UMD not found on window.bryntum');
+                    console.error('Available on window:', Object.keys(window).filter(k => k.toLowerCase().includes('bryntum') || k.toLowerCase().includes('scheduler')));
                     // Notify parent of error
                     if (window.parent !== window) {
                         window.parent.postMessage({ type: 'SCHEDULER_ERROR', error: 'Bryntum library not loaded' }, '*');
