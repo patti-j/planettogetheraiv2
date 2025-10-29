@@ -1917,32 +1917,36 @@
                     }
                 };
 
-                // Create a custom VisualDependency model that forces dependencies to be inactive
-                class VisualDependencyModel extends SchedulerPro.DependencyModel {
-                    static get fields() {
-                        return [
-                            // Force active to always be false for visual-only behavior
-                            { name: 'active', defaultValue: false },
-                            { name: 'inactive', defaultValue: true }
-                        ];
-                    }
-                    
-                    // Override active getter to always return false
-                    get active() {
-                        return false;
-                    }
-                    
-                    // Prevent setting active to true
-                    set active(value) {
-                        // Do nothing - always stay inactive
-                    }
-                }
-                
-                // Create a custom DependencyStore using our visual-only model
+                // Create a visual-only dependency store
+                // Configure the store to treat all dependencies as inactive (visual-only)
                 const visualDependencyStore = new SchedulerPro.DependencyStore({
-                    modelClass: VisualDependencyModel,
+                    // Define fields with active always defaulting to false
+                    fields: [
+                        { name: 'from', type: 'string' },
+                        { name: 'to', type: 'string' },
+                        { name: 'type', type: 'number', defaultValue: 2 },
+                        { name: 'lag', type: 'number', defaultValue: 0 },
+                        { name: 'lagUnit', type: 'string', defaultValue: 'day' },
+                        { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
+                        // Force active to false - visual only
+                        { name: 'active', type: 'boolean', defaultValue: false }
+                    ],
                     data: [] // Start with empty, will load after scheduler is initialized
                 });
+                
+                // Override add/update methods to force dependencies to be inactive
+                const originalAdd = visualDependencyStore.add;
+                visualDependencyStore.add = function(records, silent) {
+                    // Ensure all records are inactive
+                    const processedRecords = Array.isArray(records) ? records : [records];
+                    processedRecords.forEach(r => {
+                        if (r) {
+                            r.active = false;
+                            r.cls = 'b-inactive';
+                        }
+                    });
+                    return originalAdd.call(this, records, silent);
+                };
                 
                 // Make visual dependency store globally accessible
                 window.visualDependencyStore = visualDependencyStore;
