@@ -2278,8 +2278,58 @@ export const optimizationRunResponseSchema = z.object({
 export type OptimizationRunResponse = z.infer<typeof optimizationRunResponseSchema>;
 
 // ============================================
+// Saved Forecasts for MRP Integration
+// ============================================
+
+export const savedForecasts = pgTable("saved_forecasts", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Forecast metadata
+  modelType: varchar("model_type", { length: 50 }),
+  forecastDays: integer("forecast_days"),
+  itemColumn: varchar("item_column", { length: 100 }),
+  quantityColumn: varchar("quantity_column", { length: 100 }),
+  dateColumn: varchar("date_column", { length: 100 }),
+  
+  // Forecast period
+  forecastStartDate: timestamp("forecast_start_date"),
+  forecastEndDate: timestamp("forecast_end_date"),
+  
+  // Items and filters used
+  forecastedItems: jsonb("forecasted_items").default(sql`'[]'::jsonb`), // Array of item names
+  planningAreas: jsonb("planning_areas").default(sql`'[]'::jsonb`),
+  scenarios: jsonb("scenarios").default(sql`'[]'::jsonb`),
+  
+  // Forecast data table (array of {date, value, lower, upper})
+  forecastData: jsonb("forecast_data").notNull(),
+  
+  // Individual item forecasts if available
+  itemForecasts: jsonb("item_forecasts"), // Object with item names as keys
+  
+  // Accuracy metrics
+  metrics: jsonb("metrics"), // MAPE, RMSE, MAE etc.
+  
+  // System fields
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow()
+});
+
+// ============================================
 // Master Data Types
 // ============================================
+
+// Saved Forecasts types
+export const insertSavedForecastSchema = createInsertSchema(savedForecasts).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertSavedForecast = z.infer<typeof insertSavedForecastSchema>;
+export type SavedForecast = typeof savedForecasts.$inferSelect;
 
 // Items types
 export const insertItemSchema = createInsertSchema(items).omit({ 
