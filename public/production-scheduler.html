@@ -1935,30 +1935,73 @@
                     if (window.bryntum?.schedulerpro?.DependencyStore) {
                         DependencyStore = window.bryntum.schedulerpro.DependencyStore;
                         console.log('✅ Found DependencyStore at window.bryntum.schedulerpro.DependencyStore');
+                    } else if (window.bryntum?.gantt?.DependencyStore) {
+                        DependencyStore = window.bryntum.gantt.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.gantt.DependencyStore');
                     } else if (typeof SchedulerPro !== 'undefined' && SchedulerPro.DependencyStore) {
                         DependencyStore = SchedulerPro.DependencyStore;
                         console.log('✅ Found DependencyStore at SchedulerPro.DependencyStore');
+                    } else if (window.bryntum?.scheduler?.DependencyStore) {
+                        DependencyStore = window.bryntum.scheduler.DependencyStore;
+                        console.log('✅ Found DependencyStore at window.bryntum.scheduler.DependencyStore');
                     } else {
-                        console.log('⚠️ DependencyStore not available - visual dependencies will be disabled');
-                        console.log('  Available on bryntum:', window.bryntum ? Object.keys(window.bryntum) : 'bryntum not found');
-                        console.log('  Available on SchedulerPro:', typeof SchedulerPro !== 'undefined' ? Object.keys(SchedulerPro) : 'SchedulerPro not found');
+                        // Try to create a simple store if DependencyStore not found
+                        console.log('⚠️ DependencyStore class not found in standard locations');
+                        console.log('  Attempting to use basic Store class for visual dependencies...');
+                        
+                        // Use basic Store which is available in all Bryntum packages
+                        if (window.bryntum?.data?.Store || window.bryntum?.store?.Store) {
+                            DependencyStore = window.bryntum.data?.Store || window.bryntum.store?.Store;
+                            console.log('✅ Using basic Store class for visual dependencies');
+                        } else {
+                            console.log('⚠️ No Store class found - visual dependencies will be disabled');
+                            console.log('  Available on bryntum:', window.bryntum ? Object.keys(window.bryntum) : 'bryntum not found');
+                        }
                     }
                     
-                    // Only create store if DependencyStore is found
-                    visualDependencyStore = DependencyStore ? new DependencyStore({
-                    // Define fields with active always defaulting to false
-                    fields: [
-                        { name: 'from', type: 'string' },
-                        { name: 'to', type: 'string' },
-                        { name: 'type', type: 'int', defaultValue: 2 },  // Changed to 'int' per Bryntum requirement
-                        { name: 'lag', type: 'int', defaultValue: 0 },    // Changed to 'int' per Bryntum requirement
-                        { name: 'lagUnit', type: 'string', defaultValue: 'day' },
-                        { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
-                        // Force active to false - visual only
-                        { name: 'active', type: 'boolean', defaultValue: false }
-                    ],
-                    data: [] // Start with empty, will load after scheduler is initialized
-                }) : null;
+                    // Create store only if we found a Store class
+                    if (DependencyStore) {
+                        visualDependencyStore = new DependencyStore({
+                            // Define fields with active always defaulting to false
+                            fields: [
+                                { name: 'from', type: 'string' },
+                                { name: 'to', type: 'string' },
+                                { name: 'type', type: 'int', defaultValue: 2 },  // Changed to 'int' per Bryntum requirement
+                                { name: 'lag', type: 'int', defaultValue: 0 },    // Changed to 'int' per Bryntum requirement
+                                { name: 'lagUnit', type: 'string', defaultValue: 'day' },
+                                { name: 'cls', type: 'string', defaultValue: 'b-inactive' },
+                                // Force active to false - visual only
+                                { name: 'active', type: 'boolean', defaultValue: false }
+                            ],
+                            data: [] // Start with empty, will load after scheduler is initialized
+                        });
+                    } else {
+                        // Create a simple array-based store as fallback
+                        console.log('⚠️ Creating simple array-based dependency store as fallback');
+                        visualDependencyStore = {
+                            data: [],
+                            records: [],
+                            count: 0,
+                            add: function(items) {
+                                const itemsArray = Array.isArray(items) ? items : [items];
+                                this.data.push(...itemsArray);
+                                this.records = this.data;
+                                this.count = this.data.length;
+                                return itemsArray;
+                            },
+                            removeAll: function() {
+                                this.data = [];
+                                this.records = [];
+                                this.count = 0;
+                            },
+                            toJSON: function() {
+                                return this.data;
+                            },
+                            getById: function(id) {
+                                return this.data.find(d => d.id === id);
+                            }
+                        };
+                    }
                 
                     if (visualDependencyStore) {
                         // Override add/update methods to force dependencies to be inactive
@@ -2103,7 +2146,11 @@
                             data: [],
                             autoLoad: false
                         },
-                        dependencyStore: null, // No dependencies - visual only
+                        // Enable dependency store for visual-only dependencies
+                        dependencyStore: {
+                            data: [],
+                            autoLoad: false
+                        },
                         
                         // Disable ALL automatic scheduling
                         autoCalculateStartDate: false,
@@ -2120,11 +2167,10 @@
 
                     features: {
                         // Dependencies feature ENABLED - using PT dependencies for visualization
-                        // Bryntum will handle the rendering natively
+                        // Dependencies are loaded directly into scheduler's dependency store as inactive
                         dependencies: {
-                            disabled: false,
-                            // Bind the visual dependency store if it exists
-                            store: window.visualDependencyStore || null
+                            disabled: false
+                            // No need to specify store - will use project.dependencyStore automatically
                         },
                         
                         // Enable drag and drop with tooltip
@@ -4903,93 +4949,40 @@
                     
                     console.log(`✅ Transformed ${transformedEvents.length} valid events with dates`);
                     
-                    // Load data WITHOUT dependencies in project store to prevent constraints
-                    // Dependencies will be handled separately through visual-only store
+                    // Load data including dependencies (marked as inactive for visual-only)
+                    // Transform dependencies to ensure they're inactive/visual-only
+                    const visualDependencies = (fetchedDependencies || []).map(dep => ({
+                        id: String(dep.id),
+                        from: dep.from,
+                        to: dep.to,
+                        type: parseInt(dep.type) || 2,
+                        lag: parseInt(dep.lag) || 0,
+                        lagUnit: dep.lagUnit || 'hour',
+                        active: false,  // CRITICAL: Mark as inactive for visual-only
+                        cls: 'b-inactive visual-dependency'  // Add CSS class for styling
+                    }));
+                    
                     await scheduler.project.loadInlineData({
                         resourcesData: resources,
                         eventsData: transformedEvents, // Use transformed events
                         assignmentsData: assignments, // Assignments link events to resources
-                        // DO NOT load dependencies here - keep project.dependencyStore empty
-                        dependenciesData: [] // Empty array to ensure no dependencies in engine
+                        dependenciesData: visualDependencies // Load inactive dependencies for visualization
                     });
                     
                     // Keep a copy globally
                     window.originalDependencies = fetchedDependencies || [];
                     
-                    // Load visual dependencies into separate store for display only
-                    // This ensures dependencies are rendered but don't constrain scheduling
-                    setTimeout(() => {
-                        try {
-                            if (fetchedDependencies && fetchedDependencies.length > 0) {
-                                console.log(`📋 Loading ${fetchedDependencies.length} visual-only dependencies...`);
-                                
-                                // Access the visual dependency store we created earlier
-                                if (window.visualDependencyStore) {
-                                    const visualStore = window.visualDependencyStore;
-                                    
-                                    // Map dependencies to proper format, coercing to integers
-                                    const depsToAdd = fetchedDependencies.map(({ id, from, to, type = 2, lag = 0, lagUnit = 'hour' }) => {
-                                        // Verify the events exist
-                                        const fromEvent = scheduler.eventStore.getById(from);
-                                        const toEvent = scheduler.eventStore.getById(to);
-                                        
-                                        if (!fromEvent || !toEvent) {
-                                            console.warn(`⚠️ Dependency ${id} missing event: from=${from}, to=${to}`);
-                                            return null;
-                                        }
-                                        
-                                        return {
-                                            id: String(id),
-                                            from: from,      // Use 'from' and 'to' for Bryntum dependency model
-                                            to: to,
-                                            type: parseInt(type) || 2,  // Coerce to integer
-                                            lag: parseInt(lag) || 0,    // Coerce to integer
-                                            lagUnit: lagUnit,
-                                            inactive: true,  // Mark as inactive for visual-only
-                                            active: false,   // Extra safety
-                                            cls: 'visual-dependency b-inactive'
-                                        };
-                                    }).filter(dep => dep !== null);
-                                    
-                                    // Clear and reload the visual dependency store
-                                    visualStore.removeAll();
-                                    visualStore.add(depsToAdd);
-                                    
-                                    // Bind visual store to the dependencies feature for rendering
-                                    if (scheduler.features && scheduler.features.dependencies) {
-                                        // Force the dependency feature to use our visual store
-                                        if (!scheduler.features.dependencies.store || scheduler.features.dependencies.store !== visualStore) {
-                                            scheduler.features.dependencies.store = visualStore;
-                                            console.log('✅ Visual dependency store bound to scheduler.features.dependencies');
-                                        }
-                                        
-                                        // Also trigger a refresh to ensure rendering
-                                        scheduler.features.dependencies.refresh?.();
-                                    } else {
-                                        console.warn('⚠️ Dependencies feature not available on scheduler');
-                                    }
-                                    
-                                    console.log(`✅ Loaded ${visualStore.count} visual-only dependencies`);
-                                    console.log('Project dependency store count (should be 0):', scheduler.project.dependencyStore?.count || 0);
-                                    
-                                    // Log some dependency details for debugging
-                                    const sampleDeps = depsToAdd.slice(0, 3);
-                                    console.log('Sample dependencies:', sampleDeps.map(d => ({
-                                        id: d.id,
-                                        from: scheduler.eventStore.getById(d.from)?.name,
-                                        to: scheduler.eventStore.getById(d.to)?.name,
-                                        inactive: d.inactive
-                                    })));
-                                } else {
-                                    console.warn('⚠️ Visual dependency store not created');
-                                }
-                            } else {
-                                console.log('ℹ️ No dependencies to load');
-                            }
-                        } catch (error) {
-                            console.error('❌ Error loading visual dependencies:', error);
-                        }
-                    }, 1500); // Wait for scheduler to be ready
+                    // Log dependency loading status
+                    console.log(`✅ Loaded ${visualDependencies.length} visual-only dependencies`);
+                    if (visualDependencies.length > 0) {
+                        const sampleDeps = visualDependencies.slice(0, 3);
+                        console.log('Sample dependencies:', sampleDeps.map(d => ({
+                            id: d.id,
+                            from: d.from,
+                            to: d.to,
+                            active: d.active
+                        })));
+                    }
                     
                     console.log(`✅ Loaded! Store has: ${scheduler.eventStore.count} events`);
                     console.log('✅ Inline data loaded successfully');
