@@ -4700,6 +4700,8 @@
                         }, 500);
                     } catch (error) {
                         console.error('Failed to execute pending scheduler command:', error);
+                    } finally {
+                        // Cleanup - nothing specific needed here
                     }
                 }
                 
