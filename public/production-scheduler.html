@@ -6398,26 +6398,75 @@
             
             // Helper function to load a selected schedule
             async function loadSelectedSchedule(selectedSchedule) {
-                // Load the schedule using Bryntum's loadInlineData method
-                if (window.scheduler && window.scheduler.project) {
-                    // Load the project data
-                    await window.scheduler.project.loadInlineData(selectedSchedule.scheduleData);
-                    
-                    // Restore metadata if available
-                    if (selectedSchedule.metadata) {
-                        if (selectedSchedule.metadata.algorithm) {
-                            document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                try {
+                    // Load the schedule using Bryntum's loadInlineData method
+                    if (window.scheduler && window.scheduler.project) {
+                        // Try to load using Bryntum's built-in method first
+                        let loadSuccess = false;
+                        
+                        try {
+                            // Clean up the schedule data before loading
+                            const cleanedData = {
+                                events: selectedSchedule.scheduleData.events || [],
+                                resources: selectedSchedule.scheduleData.resources || [],
+                                // Skip dependencies as they cause issues with Bryntum's internal methods
+                                // Dependencies are visual-only anyway
+                                dependencies: []
+                            };
+                            
+                            await window.scheduler.project.loadInlineData(cleanedData);
+                            loadSuccess = true;
+                        } catch (loadError) {
+                            console.warn('Could not use loadInlineData, trying manual load:', loadError);
+                            
+                            // Fallback: manually load the data into stores
+                            try {
+                                // Clear existing data first
+                                window.scheduler.eventStore.removeAll();
+                                
+                                // Load events manually
+                                if (selectedSchedule.scheduleData.events && Array.isArray(selectedSchedule.scheduleData.events)) {
+                                    const events = selectedSchedule.scheduleData.events.map(event => {
+                                        // Ensure dates are properly parsed
+                                        return {
+                                            ...event,
+                                            startDate: event.startDate ? new Date(event.startDate) : null,
+                                            endDate: event.endDate ? new Date(event.endDate) : null
+                                        };
+                                    });
+                                    window.scheduler.eventStore.add(events);
+                                    loadSuccess = true;
+                                }
+                                
+                                // Resources should already be loaded from the API, so skip loading them
+                                // This prevents overwriting the current resource structure
+                                
+                                // Dependencies are visual-only and optional, skip them to avoid errors
+                            } catch (manualLoadError) {
+                                console.error('Manual load also failed:', manualLoadError);
+                                throw new Error('Could not load schedule data');
+                            }
                         }
-                        if (selectedSchedule.metadata.constraints) {
-                            window.activeConstraints = selectedSchedule.metadata.constraints;
+                        
+                        if (!loadSuccess) {
+                            throw new Error('Failed to load schedule data');
                         }
-                    }
-                    
-                    // Store the schedule ID for future updates
-                    window.currentScheduleId = selectedSchedule.id;
-                    
-                    // Zoom to fit the entire schedule in view
-                    const events = window.scheduler.eventStore.records;
+                        
+                        // Restore metadata if available
+                        if (selectedSchedule.metadata) {
+                            if (selectedSchedule.metadata.algorithm) {
+                                document.getElementById('schedulingAlgorithm').value = selectedSchedule.metadata.algorithm;
+                            }
+                            if (selectedSchedule.metadata.constraints) {
+                                window.activeConstraints = selectedSchedule.metadata.constraints;
+                            }
+                        }
+                        
+                        // Store the schedule ID for future updates
+                        window.currentScheduleId = selectedSchedule.id;
+                        
+                        // Zoom to fit the entire schedule in view
+                        const events = window.scheduler.eventStore.records;
                     if (events && events.length > 0) {
                         // Find the earliest and latest dates in the schedule
                         let minDate = null;
@@ -6457,11 +6506,15 @@
                         }
                     }
                     
-                    // Update status
-                    document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
-                    updateStatus();
-                    
-                    console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                        // Update status
+                        document.getElementById('lastUpdate').textContent = `Loaded: ${selectedSchedule.name}`;
+                        updateStatus();
+                        
+                        console.log('✅ Schedule loaded successfully:', selectedSchedule.name);
+                    }
+                } catch (error) {
+                    console.error('❌ Error loading schedule:', error);
+                    alert(`Failed to load schedule: ${error.message || 'Unknown error'}. Please try again or select a different schedule.`);
                 }
             }
             
