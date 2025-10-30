@@ -50,6 +50,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import * as models from "powerbi-models";
+import { useLocation } from "wouter";
 
 // Report Type Helper Component
 function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' | 'custom' | 'paginated', showLabel?: boolean }) {
@@ -103,6 +104,7 @@ function ReportTypeMark({ type, showLabel = true }: { type: 'all' | 'standard' |
 }
 
 export default function Dashboard() {
+  const [location] = useLocation();
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState("");
   const [selectedWorkspace, setSelectedWorkspace] = useState<{id: string, name: string} | null>(null);
   const [selectedReportId, setSelectedReportId] = useState("");
@@ -114,6 +116,7 @@ export default function Dashboard() {
   const [filterPaneVisible, setFilterPaneVisible] = useState(false);
   const [showMobileFilterDrawer, setShowMobileFilterDrawer] = useState(false);
   const [settingsDropdownOpen, setSettingsDropdownOpen] = useState(false);
+  const [urlParamsProcessed, setUrlParamsProcessed] = useState(false);
 
   // Refs to track timeouts and prevent race conditions
   const embedTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -279,7 +282,93 @@ export default function Dashboard() {
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
+  const handleWorkspaceSelect = (workspaceId: string) => {
+    const workspace = workspaces?.find(w => w.id === workspaceId);
+    if (workspace) {
+      setSelectedWorkspaceId(workspaceId);
+      setSelectedWorkspace(workspace);
+      // Reset report selection when workspace changes
+      setSelectedReportId("");
+      setShowEmbed(false);
+      setEmbedConfig(null);
+    }
+  };
   
+  // Process URL parameters for auto-loading reports
+  useEffect(() => {
+    if (!urlParamsProcessed && location) {
+      const params = new URLSearchParams(location.split('?')[1] || '');
+      const workspaceParam = params.get('workspace');
+      const reportParam = params.get('report');
+      const reportNameParam = params.get('reportName');
+      
+      if (workspaceParam || reportParam || reportNameParam) {
+        console.log('📍 URL parameters detected:', { workspace: workspaceParam, report: reportParam, reportName: reportNameParam });
+        setUrlParamsProcessed(true);
+        
+        // Store the params to use after data loads
+        if (workspaceParam) sessionStorage.setItem('pending_workspace', workspaceParam);
+        if (reportParam) sessionStorage.setItem('pending_report', reportParam);
+        if (reportNameParam) sessionStorage.setItem('pending_report_name', reportNameParam);
+      }
+    }
+  }, [location, urlParamsProcessed]);
+  
+  // Auto-load workspace and report based on URL params or stored values
+  useEffect(() => {
+    const pendingWorkspace = sessionStorage.getItem('pending_workspace');
+    const pendingReport = sessionStorage.getItem('pending_report');
+    const pendingReportName = sessionStorage.getItem('pending_report_name');
+    
+    // Handle workspace selection
+    if (pendingWorkspace && workspaces && workspaces.length > 0 && !selectedWorkspaceId) {
+      const workspace = workspaces.find(w => w.id === pendingWorkspace || w.name === pendingWorkspace);
+      if (workspace) {
+        console.log('🏢 Auto-selecting workspace:', workspace.name);
+        handleWorkspaceSelect(workspace.id);
+        sessionStorage.removeItem('pending_workspace');
+      }
+    }
+    
+    // Handle report selection by ID or name
+    if ((pendingReport || pendingReportName) && allReports && allReports.length > 0 && selectedWorkspaceId && !selectedReportId) {
+      let report = null;
+      
+      if (pendingReport) {
+        report = allReports.find(r => r.id === pendingReport);
+      }
+      
+      if (!report && pendingReportName) {
+        // Try exact match first
+        report = allReports.find(r => r.name === pendingReportName);
+        
+        // If no exact match, try case-insensitive match
+        if (!report) {
+          const lowerReportName = pendingReportName.toLowerCase();
+          report = allReports.find(r => r.name.toLowerCase() === lowerReportName);
+        }
+        
+        // If still no match, try partial match
+        if (!report) {
+          const lowerReportName = pendingReportName.toLowerCase();
+          report = allReports.find(r => r.name.toLowerCase().includes(lowerReportName));
+        }
+      }
+      
+      if (report) {
+        console.log('📊 Auto-selecting report:', report.name);
+        handleReportSelect(report.id);
+        sessionStorage.removeItem('pending_report');
+        sessionStorage.removeItem('pending_report_name');
+      } else {
+        console.warn('⚠️ Report not found:', pendingReportName || pendingReport);
+        // Clear the pending values after attempting
+        sessionStorage.removeItem('pending_report');
+        sessionStorage.removeItem('pending_report_name');
+      }
+    }
+  }, [workspaces, allReports, selectedWorkspaceId, selectedReportId, handleReportSelect]);
+
   // Automatic authentication on component mount
   useEffect(() => {
     const autoConnect = async () => {
@@ -331,19 +420,6 @@ export default function Dashboard() {
       }
     };
   }, []);
-
-
-  const handleWorkspaceSelect = (workspaceId: string) => {
-    const workspace = workspaces?.find(w => w.id === workspaceId);
-    if (workspace) {
-      setSelectedWorkspaceId(workspaceId);
-      setSelectedWorkspace(workspace);
-      // Reset report selection when workspace changes
-      setSelectedReportId("");
-      setShowEmbed(false);
-      setEmbedConfig(null);
-    }
-  };
   
   // Auto-load report when selected - with race condition protection
   const handleReportSelect = useCallback(async (reportId: string) => {
