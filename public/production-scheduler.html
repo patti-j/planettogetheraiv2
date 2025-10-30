@@ -2171,10 +2171,23 @@
                         autoSync: false,
                         silenceInitialCommit: true,
                         
-                        // Store configurations
+                        // Store configurations with custom fields
                         eventStore: {
                             data: [],
-                            autoLoad: false
+                            autoLoad: false,
+                            // Define custom fields to preserve from API
+                            fields: [
+                                'jobId',
+                                'jobExternalId',
+                                'jobName',
+                                { name: 'jobPriority', type: 'number', defaultValue: 999 },
+                                'jobDueDate',
+                                'operationName',
+                                'resourceName',
+                                'isUnscheduled',
+                                { name: 'sequence_number', type: 'number', defaultValue: 0 },
+                                'ptData'
+                            ]
                         },
                         resourceStore: {
                             data: [],
