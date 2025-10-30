@@ -1697,10 +1697,10 @@
                 let events = ptOperations.map((operation, index) => {
                     // Log job names and priorities for debugging  
                     if (index < 5) {
-                        console.log(`Operation ${index}: ${operation.name}`);
-                        console.log(`  Raw API data:`, operation);
-                        console.log(`  jobPriority: ${operation.jobPriority}, priority: ${operation.priority}`);
-                        console.log(`  Full operation object keys:`, Object.keys(operation));
+                        console.log(`🔴 PRIORITY DEBUG - Operation ${index}: ${operation.name}`);
+                        console.log(`  📊 API jobPriority field: ${operation.jobPriority} (type: ${typeof operation.jobPriority})`);
+                        console.log(`  📊 API priority field: ${operation.priority} (type: ${typeof operation.priority})`);
+                        console.log(`  📊 Full operation:`, operation);
                     }
                     
                     // First try to find a matching resource based on capability
@@ -1774,6 +1774,14 @@
                         ptData: operation // Keep original PT data for algorithms
                     };
                 }); // Include all operations, even unscheduled ones
+                
+                // DEBUG: Check what events have after mapping
+                console.log('🔴 PRIORITY DEBUG - First 3 events after mapping:', events.slice(0, 3).map(e => ({
+                    name: e.name,
+                    jobName: e.jobName,
+                    jobPriority: e.jobPriority,
+                    jobPriorityType: typeof e.jobPriority
+                })));
                 
                 // LOG IMMEDIATELY to verify code is running
                 console.log('🚀 SCHEDULER LOADED - Total events:', events.length);
