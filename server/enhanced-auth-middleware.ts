@@ -30,26 +30,12 @@ interface AuthResult {
 // Enhanced authentication middleware supporting JWT and API keys
 export async function enhancedAuth(req: AuthenticatedRequest, res: Response, next: NextFunction) {
   try {
-    // Development bypass - automatically provide admin access UNLESS explicitly logged out
-    if (process.env.NODE_ENV === 'development') {
-      // Check if user has explicitly logged out (sent from frontend)
-      const hasExplicitlyLoggedOut = req.headers['x-dev-explicit-logout'] === 'true';
-      
-      if (hasExplicitlyLoggedOut) {
-        console.log("🔧 [Enhanced Auth] Development mode: User explicitly logged out, requiring authentication");
-        // Continue to normal authentication flow
-      } else {
-        console.log("🔧 [Enhanced Auth] Development mode: Providing automatic admin access");
-        req.user = {
-          id: 1,
-          username: 'admin',
-          email: 'admin@planettogether.com',
-          type: 'user',
-          permissions: ['*']
-        };
-        return next();
-      }
-    }
+    // DISABLED AUTO-LOGIN - User must manually log in
+    // if (process.env.NODE_ENV === 'development') {
+    //   console.log("🔧 [Enhanced Auth] Development mode: Providing automatic admin access");
+    //   req.user = {...};
+    //   return next();
+    // }
 
     const authResult = await authenticateRequest(req);
     

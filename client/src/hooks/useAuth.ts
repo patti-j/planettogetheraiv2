@@ -166,74 +166,14 @@ export function useAuth() {
     refetchInterval: false, // Disable auto-refetch to prevent login page issues
     // Handle 401 errors gracefully - treat as not authenticated rather than error
     queryFn: async ({ queryKey }) => {
-      // Development mode auto-login: bypass authentication for easier previews
-      const isDev = import.meta.env.MODE === 'development';
+      // DISABLED AUTO-LOGIN - User must manually log in
+      // const isDev = import.meta.env.MODE === 'development';
+      // if (isDev) { ... auto-login code ... }
       
       // Token-based authentication - get token from localStorage
       let token = localStorage.getItem('auth_token');
       if (!token) {
-        // Check if user explicitly logged out in development mode
-        const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
-        
-        // In development mode, fetch a development token ONLY if user hasn't explicitly logged out
-        if (isDev && !hasExplicitlyLoggedOut) {
-          console.log('🔧 [useAuth] Development mode: Fetching development token...');
-          try {
-            const devTokenResponse = await fetch('/api/auth/dev-token');
-            if (devTokenResponse.ok) {
-              const devData = await devTokenResponse.json();
-              
-              // Store the token and user data
-              localStorage.setItem('auth_token', devData.token);
-              localStorage.setItem('user', JSON.stringify(devData.user));
-              
-              console.log('🔧 [useAuth] Development token stored successfully');
-              token = devData.token;
-              
-              // Return the user data with proper permissions
-              if (devData.user.roles && Array.isArray(devData.user.roles)) {
-                devData.user.roles = devData.user.roles.map((role: any) => {
-                  if (!role.permissions || role.permissions.length === 0) {
-                    return createRoleStructure(role.name);
-                  }
-                  return role;
-                });
-              } else {
-                devData.user.roles = [createRoleStructure('Administrator')];
-              }
-              
-              return devData.user;
-            } else {
-              console.error('Failed to get development token from server');
-              // Fallback to local user object
-              const devUser = {
-                id: 1,
-                username: "admin",
-                email: "admin@planettogether.com",
-                firstName: "Admin",
-                lastName: "User",
-                isActive: true,
-                roles: [createRoleStructure('Administrator')]
-              };
-              return devUser;
-            }
-          } catch (error) {
-            console.error('Error fetching development token:', error);
-            // Fallback to local user object
-            const devUser = {
-              id: 1,
-              username: "admin",
-              email: "admin@planettogether.com",
-              firstName: "Admin",
-              lastName: "User",
-              isActive: true,
-              roles: [createRoleStructure('Administrator')]
-            };
-            return devUser;
-          }
-        } else if (isDev && hasExplicitlyLoggedOut) {
-          console.log('🔧 [useAuth] Development mode: User explicitly logged out, skipping auto-login');
-        }
+        console.log('🔧 [useAuth] No token found, manual login required');
         return null;
       }
 
@@ -246,27 +186,7 @@ export function useAuth() {
       if (res.status === 401) {
         // Token invalid/expired - clear it
         localStorage.removeItem('auth_token');
-        
-        // Check if user explicitly logged out
-        const hasExplicitlyLoggedOut = localStorage.getItem('dev_explicit_logout') === 'true';
-        
-        // In development mode, fall back to auto-login only if user hasn't explicitly logged out
-        if (isDev && !hasExplicitlyLoggedOut) {
-          console.log('🔧 Development mode: Token invalid, using auto-login as admin user');
-          const devUser = {
-            id: 1,
-            username: "admin",
-            email: "admin@planettogether.com",
-            firstName: "Admin",
-            lastName: "User",
-            isActive: true,
-            roles: [createRoleStructure('Administrator')]
-          };
-          return devUser;
-        } else if (isDev && hasExplicitlyLoggedOut) {
-          console.log('🔧 Development mode: Token invalid but user explicitly logged out, staying logged out');
-        }
-        
+        console.log('🔧 [useAuth] Token invalid/expired, manual login required');
         return null;
       }
 

@@ -409,36 +409,12 @@ router.get("/api/auth/me", async (req, res) => {
   console.log("=== AUTH CHECK ===");
   console.log(`Authorization header: ${req.headers.authorization ? 'Bearer ***' : 'None'}`);
   console.log(`Session userId: ${req.session.userId}`);
-  console.log(`X-Dev-Explicit-Logout header: ${req.headers['x-dev-explicit-logout']}`);
   
-  // Development bypass - automatically provide admin access UNLESS explicitly logged out
-  if (process.env.NODE_ENV === 'development') {
-    // Check if user has explicitly logged out (sent from frontend)
-    const hasExplicitlyLoggedOut = req.headers['x-dev-explicit-logout'] === 'true';
-    
-    if (hasExplicitlyLoggedOut) {
-      console.log("🔧 Development mode: User explicitly logged out, requiring authentication");
-      // Continue to normal authentication flow below
-    } else {
-      console.log("🔧 Development mode: Providing automatic admin access");
-      return res.json({
-        user: {
-          id: 1,
-          username: "admin",
-          email: "admin@planettogether.com",
-          firstName: "Admin",
-          lastName: "User",
-          roles: [{
-            id: 1,
-            name: "Administrator",
-            description: "System administrator with full access",
-            permissions: []
-          }],
-          permissions: ["*"] // Full access in dev mode
-        }
-      });
-    }
-  }
+  // DISABLED AUTO-LOGIN - User must manually log in
+  // if (process.env.NODE_ENV === 'development') {
+  //   console.log("🔧 Development mode: Providing automatic admin access");
+  //   return res.json({...});
+  // }
   
   const authHeader = req.headers.authorization;
   let tokenData = null;
