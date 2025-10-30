@@ -1270,6 +1270,144 @@ router.get("/api/workflow-executions/:id", async (req, res) => {
   }
 });
 
+// ============================================
+// Workflow Triggers API - Scheduled, Event-based, and Metric-based Execution
+// ============================================
+
+// Get all triggers for a workflow
+router.get("/api/workflows/:workflowId/triggers", async (req, res) => {
+  try {
+    const workflowId = parseInt(req.params.workflowId);
+    const triggers = await storage.getWorkflowTriggers(workflowId);
+    res.json(triggers);
+  } catch (error) {
+    console.error("Error fetching workflow triggers:", error);
+    res.status(500).json({ message: "Failed to fetch workflow triggers" });
+  }
+});
+
+// Get specific trigger details
+router.get("/api/workflow-triggers/:id", async (req, res) => {
+  try {
+    const trigger = await storage.getWorkflowTrigger(parseInt(req.params.id));
+    if (!trigger) {
+      return res.status(404).json({ message: "Trigger not found" });
+    }
+    res.json(trigger);
+  } catch (error) {
+    console.error("Error fetching workflow trigger:", error);
+    res.status(500).json({ message: "Failed to fetch workflow trigger" });
+  }
+});
+
+// Create new trigger
+router.post("/api/workflow-triggers", async (req, res) => {
+  try {
+    const triggerData = {
+      ...req.body,
+      createdBy: req.user?.id,
+      status: 'active'
+    };
+    
+    // Calculate nextRunAt for scheduled triggers
+    if (triggerData.triggerType === 'scheduled' && triggerData.cronExpression) {
+      // Will be calculated by scheduling engine
+      triggerData.nextRunAt = new Date();
+    }
+    
+    const newTrigger = await storage.createWorkflowTrigger(triggerData);
+    res.json(newTrigger);
+  } catch (error) {
+    console.error("Error creating workflow trigger:", error);
+    res.status(500).json({ message: "Failed to create workflow trigger" });
+  }
+});
+
+// Update trigger
+router.patch("/api/workflow-triggers/:id", async (req, res) => {
+  try {
+    const triggerId = parseInt(req.params.id);
+    const updateData = {
+      ...req.body,
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    };
+    
+    const updatedTrigger = await storage.updateWorkflowTrigger(triggerId, updateData);
+    if (!updatedTrigger) {
+      return res.status(404).json({ message: "Trigger not found" });
+    }
+    res.json(updatedTrigger);
+  } catch (error) {
+    console.error("Error updating workflow trigger:", error);
+    res.status(500).json({ message: "Failed to update workflow trigger" });
+  }
+});
+
+// Delete trigger
+router.delete("/api/workflow-triggers/:id", async (req, res) => {
+  try {
+    const triggerId = parseInt(req.params.id);
+    await storage.deleteWorkflowTrigger(triggerId);
+    res.json({ success: true, message: "Trigger deleted successfully" });
+  } catch (error) {
+    console.error("Error deleting workflow trigger:", error);
+    res.status(500).json({ message: "Failed to delete workflow trigger" });
+  }
+});
+
+// Enable trigger
+router.post("/api/workflow-triggers/:id/enable", async (req, res) => {
+  try {
+    const triggerId = parseInt(req.params.id);
+    const trigger = await storage.updateWorkflowTrigger(triggerId, {
+      isEnabled: true,
+      status: 'active',
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    });
+    res.json(trigger);
+  } catch (error) {
+    console.error("Error enabling workflow trigger:", error);
+    res.status(500).json({ message: "Failed to enable workflow trigger" });
+  }
+});
+
+// Disable trigger
+router.post("/api/workflow-triggers/:id/disable", async (req, res) => {
+  try {
+    const triggerId = parseInt(req.params.id);
+    const trigger = await storage.updateWorkflowTrigger(triggerId, {
+      isEnabled: false,
+      status: 'paused',
+      updatedBy: req.user?.id,
+      updatedAt: new Date()
+    });
+    res.json(trigger);
+  } catch (error) {
+    console.error("Error disabling workflow trigger:", error);
+    res.status(500).json({ message: "Failed to disable workflow trigger" });
+  }
+});
+
+// Get trigger execution history
+router.get("/api/workflow-triggers/:id/executions", async (req, res) => {
+  try {
+    const triggerId = parseInt(req.params.id);
+    const { limit = 50, offset = 0 } = req.query;
+    
+    const executions = await storage.getWorkflowTriggerExecutions(
+      triggerId,
+      parseInt(limit as string),
+      parseInt(offset as string)
+    );
+    res.json(executions);
+  } catch (error) {
+    console.error("Error fetching trigger execution history:", error);
+    res.status(500).json({ message: "Failed to fetch trigger execution history" });
+  }
+});
+
 // Workflow templates endpoints
 router.get("/api/workflow-templates", async (req, res) => {
   try {

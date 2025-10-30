@@ -1932,6 +1932,100 @@ export const insertWorkflowLogSchema = createInsertSchema(workflowLogs).omit({
 export type InsertWorkflowLog = z.infer<typeof insertWorkflowLogSchema>;
 export type WorkflowLog = typeof workflowLogs.$inferSelect;
 
+// Workflow Triggers - Advanced trigger management for scheduled, event-based, and metric-based execution
+export const workflowTriggers = pgTable("workflow_triggers", {
+  id: serial("id").primaryKey(),
+  workflowId: integer("workflow_id").references(() => workflows.id, { onDelete: "cascade" }).notNull(),
+  
+  // Trigger identification
+  name: varchar("name", { length: 200 }).notNull(),
+  description: text("description"),
+  
+  // Trigger type: scheduled, event, metric
+  triggerType: varchar("trigger_type", { length: 50 }).notNull(), // scheduled, event, metric
+  
+  // Scheduled trigger configuration
+  scheduleConfig: jsonb("schedule_config"), // { cronExpression, timezone, startDate, endDate }
+  cronExpression: varchar("cron_expression", { length: 100 }), // e.g., "0 9 * * *" for daily at 9am
+  timezone: varchar("timezone", { length: 50 }).default("America/New_York"),
+  nextRunAt: timestamp("next_run_at"),
+  lastRunAt: timestamp("last_run_at"),
+  
+  // Event-based trigger configuration
+  eventConfig: jsonb("event_config"), // { eventType, eventFilters, conditions }
+  eventType: varchar("event_type", { length: 100 }), // job_completed, resource_available, quality_alert, etc.
+  eventFilters: jsonb("event_filters"), // Filters to match specific events
+  
+  // Metric-based trigger configuration
+  metricConfig: jsonb("metric_config"), // { metricName, threshold, operator, aggregation }
+  metricName: varchar("metric_name", { length: 100 }), // production_efficiency, resource_utilization, etc.
+  metricThreshold: numeric("metric_threshold", { precision: 10, scale: 2 }), // Threshold value
+  metricOperator: varchar("metric_operator", { length: 20 }), // >, <, >=, <=, ==, !=
+  metricAggregation: varchar("metric_aggregation", { length: 50 }), // avg, sum, min, max, count
+  metricWindow: integer("metric_window_minutes").default(60), // Time window for metric calculation
+  
+  // Trigger status and control
+  isEnabled: boolean("is_enabled").default(true),
+  status: varchar("status", { length: 50 }).default("active"), // active, paused, disabled, error
+  
+  // Execution limits
+  maxExecutionsPerDay: integer("max_executions_per_day"),
+  maxConcurrentExecutions: integer("max_concurrent_executions").default(1),
+  executionTimeout: integer("execution_timeout_seconds").default(3600),
+  
+  // Trigger statistics
+  executionCount: integer("execution_count").default(0),
+  successCount: integer("success_count").default(0),
+  failureCount: integer("failure_count").default(0),
+  lastExecutionStatus: varchar("last_execution_status", { length: 50 }),
+  lastExecutionAt: timestamp("last_execution_at"),
+  lastError: text("last_error"),
+  
+  // Audit fields
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: integer("created_by").references(() => users.id),
+  updatedBy: integer("updated_by").references(() => users.id)
+});
+
+// Workflow Trigger Executions - Track each trigger execution
+export const workflowTriggerExecutions = pgTable("workflow_trigger_executions", {
+  id: serial("id").primaryKey(),
+  triggerId: integer("trigger_id").references(() => workflowTriggers.id, { onDelete: "cascade" }).notNull(),
+  workflowExecutionId: integer("workflow_execution_id").references(() => workflowExecutions.id),
+  
+  // Execution details
+  status: varchar("status", { length: 50 }).notNull(), // success, failed, skipped
+  triggerData: jsonb("trigger_data"), // Data that triggered the execution (event data, metric values, etc.)
+  
+  // Timing
+  triggeredAt: timestamp("triggered_at").defaultNow(),
+  completedAt: timestamp("completed_at"),
+  durationMilliseconds: integer("duration_milliseconds"),
+  
+  // Error tracking
+  errorMessage: text("error_message"),
+  errorDetails: jsonb("error_details"),
+  
+  // Metadata
+  notes: text("notes")
+});
+
+// Insert schemas for Workflow Triggers
+export const insertWorkflowTriggerSchema = createInsertSchema(workflowTriggers).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true
+});
+export type InsertWorkflowTrigger = z.infer<typeof insertWorkflowTriggerSchema>;
+export type WorkflowTrigger = typeof workflowTriggers.$inferSelect;
+
+export const insertWorkflowTriggerExecutionSchema = createInsertSchema(workflowTriggerExecutions).omit({
+  id: true
+});
+export type InsertWorkflowTriggerExecution = z.infer<typeof insertWorkflowTriggerExecutionSchema>;
+export type WorkflowTriggerExecution = typeof workflowTriggerExecutions.$inferSelect;
+
 // ============================================
 // Optimization Studio Tables
 // ============================================

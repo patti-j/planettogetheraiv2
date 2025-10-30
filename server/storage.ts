@@ -263,6 +263,14 @@ export interface IStorage {
   getWorkflowTemplate(id: number): Promise<any | undefined>;
   createWorkflowTemplate(data: any): Promise<any>;
   
+  // Workflow Triggers - Scheduled, Event-based, and Metric-based Execution
+  getWorkflowTriggers(workflowId: number): Promise<any[]>;
+  getWorkflowTrigger(id: number): Promise<any | undefined>;
+  createWorkflowTrigger(data: any): Promise<any>;
+  updateWorkflowTrigger(id: number, data: any): Promise<any | undefined>;
+  deleteWorkflowTrigger(id: number): Promise<boolean>;
+  getWorkflowTriggerExecutions(triggerId: number, limit?: number, offset?: number): Promise<any[]>;
+  
   // Saved Forecasts
   getSavedForecasts(userId: number): Promise<SavedForecast[]>;
   getSavedForecast(id: number): Promise<SavedForecast | undefined>;
@@ -2724,6 +2732,84 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error creating workflow template:', error);
       throw error;
+    }
+  }
+  
+  // Workflow Triggers Implementation - Scheduled, Event-based, and Metric-based Execution
+  async getWorkflowTriggers(workflowId: number): Promise<any[]> {
+    try {
+      const result = await db.select()
+        .from(workflowTriggers)
+        .where(eq(workflowTriggers.workflowId, workflowId))
+        .orderBy(desc(workflowTriggers.createdAt));
+      return result;
+    } catch (error) {
+      console.error('Error fetching workflow triggers:', error);
+      return [];
+    }
+  }
+
+  async getWorkflowTrigger(id: number): Promise<any | undefined> {
+    try {
+      const result = await db.select()
+        .from(workflowTriggers)
+        .where(eq(workflowTriggers.id, id))
+        .limit(1);
+      return result[0];
+    } catch (error) {
+      console.error('Error fetching workflow trigger:', error);
+      return undefined;
+    }
+  }
+
+  async createWorkflowTrigger(data: any): Promise<any> {
+    try {
+      const result = await db.insert(workflowTriggers)
+        .values(data)
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error creating workflow trigger:', error);
+      throw error;
+    }
+  }
+
+  async updateWorkflowTrigger(id: number, data: any): Promise<any | undefined> {
+    try {
+      const result = await db.update(workflowTriggers)
+        .set({ ...data, updatedAt: new Date() })
+        .where(eq(workflowTriggers.id, id))
+        .returning();
+      return result[0];
+    } catch (error) {
+      console.error('Error updating workflow trigger:', error);
+      return undefined;
+    }
+  }
+
+  async deleteWorkflowTrigger(id: number): Promise<boolean> {
+    try {
+      await db.delete(workflowTriggers)
+        .where(eq(workflowTriggers.id, id));
+      return true;
+    } catch (error) {
+      console.error('Error deleting workflow trigger:', error);
+      return false;
+    }
+  }
+
+  async getWorkflowTriggerExecutions(triggerId: number, limit: number = 50, offset: number = 0): Promise<any[]> {
+    try {
+      const result = await db.select()
+        .from(workflowTriggerExecutions)
+        .where(eq(workflowTriggerExecutions.triggerId, triggerId))
+        .orderBy(desc(workflowTriggerExecutions.executedAt))
+        .limit(limit)
+        .offset(offset);
+      return result;
+    } catch (error) {
+      console.error('Error fetching workflow trigger executions:', error);
+      return [];
     }
   }
   
