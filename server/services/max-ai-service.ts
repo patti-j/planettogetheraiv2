@@ -12,6 +12,7 @@ import { dataCatalog } from './data-catalog';
 import { semanticRegistry } from './semantic-registry';
 import { agentTrainingLoader } from './agent-training-loader';
 import { DEFAULT_MODEL, DEFAULT_TEMPERATURE } from '../config/ai-model';
+import { PowerBIService } from './powerbi';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -166,6 +167,9 @@ export class MaxAIService {
   private navigationPromise: Promise<any> | null = null;
   private dataTypesPromise: Promise<any> | null = null;
   private readonly CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+  
+  // PowerBI Service instance
+  private powerBIService = new PowerBIService();
   
   // Enhanced memory system - detect and store user preferences/instructions with improved context awareness
   private async detectAndStoreMemory(userId: number, userMessage: string, aiResponse: string): Promise<void> {
@@ -2896,25 +2900,76 @@ Please answer their question using this data.`
         console.log('🎯 Detected report request, searching for reports...');
         
         try {
-          // Search for the report using our discovery API
+          // Extract report name and workspace from the query
           const reportName = reportNameMatch ? reportNameMatch[1] : query;
-          const searchResponse = await fetch(`http://localhost:5000/api/reports/find?name=${encodeURIComponent(reportName)}`, {
-            headers: {
-              'Authorization': `Bearer ${context.userId}` // Use proper auth token
-            }
-          });
+          const workspaceMatch = query.match(/(?:from|in|workspace)\s+(?:the\s+)?([^,.\s]+(?:\s+[^,.\s]+)*?)(?:\s+workspace)?(?:\s|$)/i);
+          const workspaceName = workspaceMatch ? workspaceMatch[1] : null;
           
-          if (searchResponse.ok) {
-            const result = await searchResponse.json();
-            if (result.found) {
-              console.log('📊 Found report:', result.report.name);
-              return {
-                content: `Loading ${result.report.name} report...`,
-                action: {
-                  type: 'navigate',
-                  target: result.report.directUrl // Use the direct URL with report parameters
+          console.log('🔍 Searching for report:', { reportName, workspaceName });
+          
+          // Get Power BI access token
+          const clientId = process.env.POWERBI_APPLICATION_ID;
+          const clientSecret = process.env.POWERBI_APPLICATION_SECRET;
+          const tenantId = process.env.POWERBI_TENANT_ID;
+          
+          if (clientId && clientSecret && tenantId) {
+            // Authenticate with Power BI
+            const accessToken = await this.powerBIService.authenticateServicePrincipal(
+              clientId,
+              clientSecret,
+              tenantId
+            );
+            
+            // Get all workspaces
+            const workspaces = await this.powerBIService.getWorkspaces(accessToken);
+            
+            // Search for the report
+            for (const workspace of workspaces) {
+              // If workspace name is specified, filter by it
+              if (workspaceName && !workspace.name.toLowerCase().includes(workspaceName.toLowerCase())) {
+                continue;
+              }
+              
+              try {
+                const reports = await this.powerBIService.getReportsFromWorkspace(accessToken, workspace.id);
+                
+                for (const report of reports) {
+                  // Check if report name matches (partial match, case-insensitive)
+                  if (report.name.toLowerCase().includes(reportName.toLowerCase())) {
+                    console.log('📊 Found report:', report.name, 'in workspace:', workspace.name);
+                    
+                    // Construct direct URL with workspace and report parameters
+                    const directUrl = `/reports?workspace=${workspace.id}&report=${report.id}&autoLoad=true`;
+                    
+                    return {
+                      content: `Opening "${report.name}" from the ${workspace.name} workspace...`,
+                      action: {
+                        type: 'navigate',
+                        target: directUrl
+                      }
+                    };
+                  }
                 }
-              };
+              } catch (error) {
+                console.warn(`Failed to search reports in workspace ${workspace.name}:`, error);
+              }
+            }
+            
+            // If no report found but workspace was specified, navigate to reports page with workspace filter
+            if (workspaceName) {
+              const targetWorkspace = workspaces.find(w => 
+                w.name.toLowerCase().includes(workspaceName.toLowerCase())
+              );
+              
+              if (targetWorkspace) {
+                return {
+                  content: `Opening the ${targetWorkspace.name} workspace in reports section...`,
+                  action: {
+                    type: 'navigate',
+                    target: `/reports?workspace=${targetWorkspace.id}`
+                  }
+                };
+              }
             }
           }
         } catch (error) {
@@ -2923,7 +2978,7 @@ Please answer their question using this data.`
         
         // If no specific report found, navigate to reports page
         return {
-          content: `Taking you to the reports section...`,
+          content: `Taking you to the reports section to browse available reports...`,
           action: {
             type: 'navigate',
             target: '/reports'
