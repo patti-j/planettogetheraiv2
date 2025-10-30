@@ -3471,11 +3471,32 @@
                            ev.ptData?.sequence_number ?? ev.ptData?.sequenceNumber ?? 0;
                 }
 
+                // Process rank tiebreaker for when sequences are missing or tied
+                function processRank(name = '') {
+                    const n = name.toLowerCase();
+                    if (n.includes('mill')) return 10;
+                    if (n.includes('mash') || n.includes('decoction')) return 20;
+                    if (n.includes('lauter')) return 30;
+                    if (n.includes('boil') || n.includes('kettle')) return 40;
+                    if (n.includes('ferment')) return 50;
+                    if (n.includes('bright') || n.includes('condition')) return 60;
+                    if (n.includes('packag') || n.includes('bottl') || n.includes('cann')) return 70;
+                    return 999;
+                }
+
+                // Enhanced sequence sorting key that includes process rank as tiebreaker
+                function sequenceSortKey(ev) {
+                    const seq = Number(getSequence(ev) || 0);
+                    return seq * 100 + processRank(ev.name || ev.operationName || '');
+                }
+
                 // Runtime test functions - can be run in DevTools console
                 // Make these globally accessible for testing
                 window.getJobKey = getJobKey;
                 window.getJobPriority = getJobPriority;
                 window.getSequence = getSequence;
+                window.processRank = processRank;
+                window.sequenceSortKey = sequenceSortKey;
                 
                 // Test A: Verify no engine dependencies (only visual dependencies)
                 window.testNoDependencies = function() {
@@ -3758,9 +3779,9 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number
+                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => getSequence(a) - getSequence(b));
+                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
                     }
                     
@@ -4408,9 +4429,9 @@
                         jobOperations.get(key).push(ev);
                     }
                     
-                    // Sort each job's operations by sequence number
+                    // Sort each job's operations by sequence number (with process rank as tiebreaker)
                     for (const [jobKey, operations] of jobOperations.entries()) {
-                        operations.sort((a, b) => getSequence(a) - getSequence(b));
+                        operations.sort((a, b) => sequenceSortKey(a) - sequenceSortKey(b));
                         console.log(`  Job "${jobKey}": ${operations.length} operations (seq ${getSequence(operations[0])} to ${getSequence(operations[operations.length - 1])})`);
                     }
                     
@@ -4471,12 +4492,10 @@
                         const jobDue = jobDueMap.get(jobKey) || globalFallback;
                         console.log(`  Due: ${jobDue.toLocaleString()}`);
                         
-                        // CRITICAL: Sort operations by sequence ASCENDING first
+                        // CRITICAL: Sort operations by sequence ASCENDING first (with process rank as tiebreaker)
                         // Then we'll process them in reverse order for backward scheduling
                         operations.sort((a, b) => {
-                            const seqA = getSequence(a);
-                            const seqB = getSequence(b);
-                            return seqA - seqB; // Sort ascending: 10, 20, 30, 40, 50
+                            return sequenceSortKey(a) - sequenceSortKey(b); // Sort ascending with process rank tiebreaker
                         });
                         
                         console.log(`  Operations: ${operations.length} (sequences ${operations.map(op => getSequence(op)).join(', ')})`);
