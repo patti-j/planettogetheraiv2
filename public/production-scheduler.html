@@ -1166,6 +1166,27 @@
     <script>
         console.log('🔥 SCHEDULER SCRIPT STARTING...');
         
+        // Store authentication token globally
+        let globalAuthToken = null;
+        
+        // Listen for authentication token from parent window
+        window.addEventListener('message', function(event) {
+            if (event.data?.type === 'SET_AUTH_TOKEN' && event.data?.token) {
+                console.log('🔐 Received auth token from parent window');
+                globalAuthToken = event.data.token;
+                // Also store in localStorage for persistence
+                localStorage.setItem('auth_token', event.data.token);
+            }
+        });
+        
+        // Helper function to get authentication token
+        function getAuthToken() {
+            // First check global token (from postMessage), then localStorage, then parent window
+            return globalAuthToken || 
+                   localStorage.getItem('auth_token') || 
+                   window.parent?.localStorage?.getItem('auth_token');
+        }
+        
         // Global error handler to catch any errors
         window.onerror = function(msg, url, lineNo, columnNo, error) {
             console.error('❌ Global error:', msg, 'at', url + ':' + lineNo);
@@ -1455,8 +1476,8 @@
                 // Load all planning areas for the dropdown (once on startup)
                 async function loadPlanningAreas() {
                     try {
-                        // Get auth token from parent window or localStorage
-                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        // Get auth token using helper function
+                        const authToken = getAuthToken();
                         const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
                         
                         const response = await fetch('/api/resources', { headers: authHeaders });
@@ -1502,8 +1523,8 @@
                 let fetchedDependencies = []; // Store dependencies at a higher scope
                 
                 try {
-                    // Get auth token from parent window or localStorage
-                    const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                    // Get auth token using helper function
+                    const authToken = getAuthToken();
                     const authHeaders = authToken ? { 'Authorization': `Bearer ${authToken}` } : {};
                     
                     // Fetch resources, PT operations, jobs, and dependencies from the backend APIs
@@ -3373,8 +3394,8 @@
                         
                         console.log(`💾 Saving schedule to database (${operations.length} operations)...`);
                         
-                        // Get auth token from parent window or localStorage
-                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        // Get auth token using helper function
+                        const authToken = getAuthToken();
                         
                         const response = await fetch('/api/pt-operations/schedule', {
                             method: 'PATCH',
@@ -5884,8 +5905,8 @@
                         
                         console.log(`📝 Updating ${operations.length} scheduled operations in database...`);
                         
-                        // Get auth token from parent window or localStorage
-                        const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                        // Get auth token using helper function
+                        const authToken = getAuthToken();
                         
                         // Update main database with new schedule times
                         const response = await fetch('/api/pt-operations/schedule', {
@@ -5983,7 +6004,7 @@
             window.loadSchedule = async function() {
                 try {
                     // Get auth token
-                    const authToken = window.parent?.localStorage?.getItem('auth_token') || localStorage.getItem('auth_token');
+                    const authToken = getAuthToken();
                     
                     // Fetch saved schedules from database
                     const response = await fetch('/api/saved-schedules', {
