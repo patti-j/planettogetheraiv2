@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'wouter';
-import { navigationGroups } from '@/config/navigation-menu';
+import { getNavigationItemByHref } from '@/config/navigation-menu';
 
 interface RecentPage {
   path: string;
@@ -12,32 +12,25 @@ interface RecentPage {
 const RECENT_PAGES_KEY = 'recent_pages';
 const MAX_RECENT_PAGES = 8;
 
-// Find page info from navigation config
+// Find page info from navigation config using the centralized helper
+// This ensures icons always match the main navigation menu
 function getPageInfo(path: string) {
-  for (const group of navigationGroups) {
-    for (const feature of group.features) {
-      if (feature.href === path) {
-        return {
-          label: feature.label,
-          icon: feature.icon.name || 'FileText'
-        };
-      }
-    }
+  // Use the centralized navigation helper to get the correct item
+  const navItem = getNavigationItemByHref(path);
+  
+  if (navItem) {
+    // Extract icon name from the Lucide icon component
+    // The icon component has a displayName property (e.g., Sparkles component has displayName "Sparkles")
+    const iconName = navItem.icon?.displayName || navItem.icon?.name || 'FileText';
+    return {
+      label: navItem.label,
+      icon: iconName
+    };
   }
   
-  // Fallback for common paths
+  // Fallback for paths not in main navigation (like /mobile-home, /account, /settings)
   const pathMap: Record<string, { label: string; icon: string }> = {
     '/mobile-home': { label: 'Home', icon: 'Home' },
-    '/production-schedule': { label: 'Production Schedule', icon: 'Calendar' },
-    '/product-wheels': { label: 'Product Wheels', icon: 'Disc' },
-    '/smart-kpi-tracking': { label: 'SMART KPI Tracking', icon: 'Gauge' },
-    '/operations': { label: 'Operations', icon: 'Settings' },
-    '/resources': { label: 'Resources', icon: 'Users' },
-    '/jobs': { label: 'Production Orders', icon: 'Package' },
-    '/quality': { label: 'Quality Management', icon: 'CheckCircle' },
-    '/inventory': { label: 'Inventory', icon: 'Package' },
-    '/alerts': { label: 'Alerts', icon: 'AlertTriangle' },
-    '/onboarding': { label: 'Getting Started', icon: 'BookOpen' },
     '/account': { label: 'Account Settings', icon: 'Settings' },
     '/settings': { label: 'Settings', icon: 'Settings' }
   };
