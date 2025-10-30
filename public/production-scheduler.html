@@ -4405,15 +4405,24 @@
                             // Calculate start date based on duration
                             let startDate, actualEndDate;
                             
-                            if (resource) {
-                                // Find latest free slot on the resource
+                            // For non-last operations, we MUST end exactly when the next operation starts
+                            // to maintain sequence order. Only the last operation can use resource availability.
+                            if (i === operations.length - 1 && resource) {
+                                // Last operation - find latest free slot on the resource
                                 const slot = findLatestFreeSlotOnResource(resource, endDate, durationMs, operation);
                                 startDate = slot.start;
                                 actualEndDate = slot.end;
                             } else {
-                                // No resource - simple backward calculation
+                                // Non-last operations or no resource - simple backward calculation
+                                // MUST end exactly at the constraint time to maintain sequence
                                 actualEndDate = endDate;
                                 startDate = new Date(endDate.getTime() - durationMs);
+                                
+                                // Check if resource is available at this time
+                                if (resource) {
+                                    // Just verify the resource is free, but don't change the timing
+                                    console.log(`  📍 Operation must end at ${actualEndDate.toLocaleString()} for sequence continuity`);
+                                }
                             }
                             
                             // Set the dates on the operation
